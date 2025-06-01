@@ -32,6 +32,10 @@ class _SettingsSearchBarState extends State<SettingsSearchBar> {
         child: SearchBar(
           controller: _controller,
           focusNode: _focusNode, // connect the focus node
+          hintText: 'Search Settings',
+          hintStyle: MaterialStateProperty.all(
+              TextStyle(color: Colors.white.withOpacity(0.5))
+          ),
           padding: const WidgetStatePropertyAll<EdgeInsets>(
             EdgeInsets.symmetric(horizontal: 16.0),
           ),
