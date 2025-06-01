@@ -277,6 +277,8 @@ List<SearchableSettingItem> buildSettingItemList({
     SearchableSettingItem(
         title: "Appearance Settings",
         searchTags: [
+          "Dark Mode",
+          "Light Mode",
           "Advanced Theming",
           "Tablet Mode",
           "Immersive Mode" "Material You",
@@ -497,11 +499,11 @@ List<SearchableSettingItem> buildSettingItemList({
         "Scroll to Bottom When Sending Messages"
       ],
       onTap: () {
-          ns.pushAndRemoveSettingsUntil(
-            context,
-            ConversationPanel(),
-                (Route route) => route.isFirst,
-          );
+        ns.pushAndRemoveSettingsUntil(
+          context,
+          ConversationPanel(),
+              (Route route) => route.isFirst,
+        );
       },
       widget: SettingsTile(
         backgroundColor: tileColor,

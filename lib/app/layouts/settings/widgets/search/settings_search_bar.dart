@@ -34,11 +34,16 @@ class _SettingsSearchBarState extends State<SettingsSearchBar> {
           focusNode: _focusNode, // connect the focus node
           hintText: 'Search Settings',
           hintStyle: MaterialStateProperty.all(
-              TextStyle(color: Colors.white.withOpacity(0.5))
+              TextStyle(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white.withOpacity(0.5)
+                    : Colors.black.withOpacity(0.5),
+              )
           ),
           padding: const WidgetStatePropertyAll<EdgeInsets>(
             EdgeInsets.symmetric(horizontal: 16.0),
           ),
+          elevation: const MaterialStatePropertyAll(1),
           onTap: () {
             // Optional: expand search or open a view
           },
