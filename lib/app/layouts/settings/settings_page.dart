@@ -1,4 +1,5 @@
 import 'package:bluebubbles/app/layouts/settings/pages/server/server_management_panel.dart';
+import 'package:bluebubbles/app/layouts/settings/widgets/search/searchable_setting_item.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/search/settings_search_breadcrumb_tile.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/search/settings_items_list.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/search/settings_search_bar.dart';
@@ -42,7 +43,7 @@ class _SettingsPageState extends OptimizedState<SettingsPage> {
         ns.pushAndRemoveSettingsUntil(
           context,
           widget.initialPage ?? ServerManagementPanel(),
-          (route) => route.isFirst,
+              (route) => route.isFirst,
         );
       });
     } else if (widget.initialPage != null) {
@@ -59,12 +60,13 @@ class _SettingsPageState extends OptimizedState<SettingsPage> {
   Widget build(BuildContext context) {
     final settingsItemList = buildSettingItemList(
         context: context,
+        searchQuery: searchQuery,
         tileColor: tileColor,
         samsung: samsung,
         iOS: iOS, material:
-        material, iosSubtitle:
-        iosSubtitle, materialSubtitle:
-        materialSubtitle,
+    material, iosSubtitle:
+    iosSubtitle, materialSubtitle:
+    materialSubtitle,
         ss: ss,
         ns: ns,
         progress: progress,
@@ -118,47 +120,100 @@ class _SettingsPageState extends OptimizedState<SettingsPage> {
                         ...(() {
                           final lowerQuery = searchQuery.toLowerCase();
 
-                          // Case 1: Empty searchQuery — show everything
-                          if (searchQuery.isEmpty) {
-                            return settingsItemList.map((item) => item.widget).toList();
+                          // Build widgets list dynamically
+                          final List<Widget> widgets = [];
+
+                          for (final item in settingsItemList) {
+                            if (item is SearchableSettingItem) {
+                              // Flat item (SearchableSettingItem)
+                              final titleMatches = item.title.toLowerCase().contains(lowerQuery);
+                              final tagMatches = item.searchTags.any(
+                                    (tag) => tag.toLowerCase().contains(lowerQuery),
+                              );
+
+                              if (searchQuery.isEmpty || titleMatches || tagMatches) {
+                                widgets.add(item);
+
+                                if (searchQuery.isNotEmpty) {
+                                  final matchingTags = item.searchTags.where(
+                                        (tag) => tag.toLowerCase().contains(lowerQuery),
+                                  );
+
+                                  for (final tag in matchingTags) {
+                                    widgets.add(SearchBreadcrumbTile(
+                                      origin: item.title,
+                                      destination: tag,
+                                      onTap: item.onTap,
+                                    ));
+                                  }
+                                }
+                              }
+                            } else if (item is SettingsSection) {
+                              // Section → recurse into children
+                              final sectionWidgets = <Widget>[];
+
+                              if (item.searchableSettingsItems != null) {
+                                final matchingItems = item.searchableSettingsItems!.where((childItem) {
+                                  final titleMatches = childItem.title.toLowerCase().contains(lowerQuery);
+                                  final tagMatches = childItem.searchTags.any(
+                                        (tag) => tag.toLowerCase().contains(lowerQuery),
+                                  );
+                                  return titleMatches || tagMatches;
+                                }).toList();
+
+                                if (searchQuery.isEmpty) {
+                                  // No search → show whole section
+                                  sectionWidgets.add(item);
+                                } else if (matchingItems.isNotEmpty) {
+                                  // If any children match → rebuild section with only matching children
+                                  sectionWidgets.add(SettingsSection(
+                                    backgroundColor: item.backgroundColor,
+                                    searchQuery: searchQuery,
+                                    searchableSettingsItems: matchingItems,
+                                    children: null, // Only show matching searchable children
+                                  ));
+
+                                  // Add breadcrumbs for matching child tags
+                                  for (final matchingItem in matchingItems) {
+                                    final matchingTags = matchingItem.searchTags.where(
+                                          (tag) => tag.toLowerCase().contains(lowerQuery),
+                                    );
+
+                                    for (final tag in matchingTags) {
+                                      sectionWidgets.add(SearchBreadcrumbTile(
+                                        origin: matchingItem.title,
+                                        destination: tag,
+                                        onTap: matchingItem.onTap,
+                                      ));
+                                    }
+                                  }
+                                }
+                              } else if (item.children != null && searchQuery.isEmpty) {
+                                // Section with non-searchable children → show if no search
+                                sectionWidgets.add(item);
+                              }
+
+                              // Add section content to main list
+                              widgets.addAll(sectionWidgets);
+                            } else {
+                              // Other Widget → show only if no search
+                              if (searchQuery.isEmpty) {
+                                widgets.add(item);
+                              }
+                            }
                           }
 
-                          // Case 2: Search active — filter by title or tag
-                          final filteredItems = settingsItemList.where((item) {
-                            final titleMatches = item.title.toLowerCase().contains(lowerQuery);
-                            final tagMatches = item.searchTags.any(
-                                  (tag) => tag.toLowerCase().contains(lowerQuery),
-                            );
-                            return titleMatches || tagMatches;
-                          }).toList();
-
-                          if (filteredItems.isEmpty) {
+                          // If searching and no results → show EmptySearchResult
+                          final visibleWidgetsCount = widgets.length;
+                          if (searchQuery.isNotEmpty && visibleWidgetsCount <= 1) {
                             return [EmptySearchResult()];
                           }
 
-                          // Expand into widgets with breadcrumbs if needed
-                          return filteredItems.expand((item) {
-                            final widgets = <Widget>[];
-
-                            widgets.add(item.widget);
-
-                            final matchingTags = item.searchTags.where(
-                                  (tag) => tag.toLowerCase().contains(lowerQuery),
-                            );
-
-                            for (final tag in matchingTags) {
-                              widgets.add(SearchBreadcrumbTile(
-                                origin: item.title,
-                                destination: tag,
-                                onTap: item.onTap,
-                              ));
-                            }
-
-                            return widgets;
-                          }).toList();
+                          return widgets;
                         })(),
                       ]),
                     ),
+
                   ],
                 ),
                 right: LayoutBuilder(builder: (context, constraints) {
