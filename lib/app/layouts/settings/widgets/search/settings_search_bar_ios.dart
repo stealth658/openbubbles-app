@@ -1,0 +1,43 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+
+class SettingsSearchBariOS extends StatefulWidget {
+  final ValueChanged<String>? onChanged;
+  final TextEditingController controller;
+  final FocusNode focusNode;
+
+  const SettingsSearchBariOS({super.key, this.onChanged, required this.controller, required this.focusNode});
+
+  @override
+  State<SettingsSearchBariOS> createState() => _SettingsSearchBariOSState();
+}
+
+class _SettingsSearchBariOSState extends State<SettingsSearchBariOS>{
+  String searchValue = '';
+
+  @override
+  Widget build(BuildContext context) {
+   return CupertinoSearchTextField(
+     controller: widget.controller,
+     focusNode: widget.focusNode, // connect the focus node
+     placeholder: "Search Settings",
+     placeholderStyle: TextStyle(
+       color: Theme.of(context).brightness == Brightness.dark
+           ? Colors.white.withOpacity(0.5)
+           : Colors.black.withOpacity(0.5),
+     ),
+     style: TextStyle(
+       color: Theme.of(context).brightness == Brightness.dark
+           ? CupertinoColors.white // white text color for dark mode
+           : CupertinoColors.black // black text color for light mode
+     ),
+     onChanged: (query){
+       setState(() {
+         searchValue = query.toLowerCase();
+       });
+       widget.onChanged?.call(searchValue);
+     },
+   );
+  }
+  
+}

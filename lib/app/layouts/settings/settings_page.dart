@@ -43,7 +43,7 @@ class _SettingsPageState extends OptimizedState<SettingsPage> {
         ns.pushAndRemoveSettingsUntil(
           context,
           widget.initialPage ?? ServerManagementPanel(),
-              (route) => route.isFirst,
+          (route) => route.isFirst,
         );
       });
     } else if (widget.initialPage != null) {
@@ -63,16 +63,15 @@ class _SettingsPageState extends OptimizedState<SettingsPage> {
         searchQuery: searchQuery,
         tileColor: tileColor,
         samsung: samsung,
-        iOS: iOS, material:
-    material, iosSubtitle:
-    iosSubtitle, materialSubtitle:
-    materialSubtitle,
+        iOS: iOS,
+        material: material,
+        iosSubtitle: iosSubtitle,
+        materialSubtitle: materialSubtitle,
         ss: ss,
         ns: ns,
         progress: progress,
         totalSize: totalSize,
-        uploadingContacts: uploadingContacts
-    );
+        uploadingContacts: uploadingContacts);
 
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
@@ -83,179 +82,206 @@ class _SettingsPageState extends OptimizedState<SettingsPage> {
               ? Colors.transparent
               : context.theme.colorScheme.background, // navigation bar color
           systemNavigationBarIconBrightness:
-          context.theme.colorScheme.brightness.opposite,
+              context.theme.colorScheme.brightness.opposite,
           statusBarColor: Colors.transparent, // status bar color
-          statusBarIconBrightness: context.theme.colorScheme.brightness.opposite,
+          statusBarIconBrightness:
+              context.theme.colorScheme.brightness.opposite,
         ),
         child: Actions(
             actions: {
               GoBackIntent: GoBackAction(context),
             },
             child: Obx(() => Container(
-              color:
-              context.theme.colorScheme.background.themeOpacity(context),
-              child: TabletModeWrapper(
-                initialRatio: 0.4,
-                minRatio: kIsDesktop || kIsWeb ? 0.2 : 0.33,
-                maxRatio: 0.5,
-                allowResize: true,
-                left: SettingsScaffold(
-                  title: "Settings",
-                  initialHeader:
-                  kIsWeb ? "Server & Message Management" : (!iOS || kIsDesktop) ? "Profile" : null,
-                  iosSubtitle: iosSubtitle,
-                  materialSubtitle: materialSubtitle,
-                  tileColor: tileColor,
-                  headerColor: headerColor,
-                  bodySlivers: [
-                    SliverList(
-                      delegate: SliverChildListDelegate([
-                        SettingsSearchBar(
-                          onChanged: (value) {
-                            setState(() {
-                              searchQuery = value.trim();
-                            });
-                          },
-                        ),
-                        ...(() {
-                          final lowerQuery = searchQuery.toLowerCase();
+                  color: context.theme.colorScheme.background
+                      .themeOpacity(context),
+                  child: TabletModeWrapper(
+                    initialRatio: 0.4,
+                    minRatio: kIsDesktop || kIsWeb ? 0.2 : 0.33,
+                    maxRatio: 0.5,
+                    allowResize: true,
+                    left: SettingsScaffold(
+                      title: "Settings",
+                      initialHeader: kIsWeb
+                          ? "Server & Message Management"
+                          : (!iOS || kIsDesktop)
+                              ? "Profile"
+                              : null,
+                      iosSubtitle: iosSubtitle,
+                      materialSubtitle: materialSubtitle,
+                      tileColor: tileColor,
+                      headerColor: headerColor,
+                      bodySlivers: [
+                        SliverList(
+                          delegate: SliverChildListDelegate([
+                            SettingsSearchBar(
+                              iOS: iOS,
+                              onChanged: (value) {
+                                setState(() {
+                                  searchQuery = value.trim();
+                                });
+                              },
+                            ),
+                            ...(() {
+                              final lowerQuery = searchQuery.toLowerCase();
 
-                          // Build widgets list dynamically
-                          final List<Widget> widgets = [];
+                              // Build widgets list dynamically
+                              final List<Widget> widgets = [];
 
-                          for (final item in settingsItemList) {
-                            if (item is SearchableSettingItem) {
-                              // Flat item (SearchableSettingItem)
-                              final titleMatches = item.title.toLowerCase().contains(lowerQuery);
-                              final tagMatches = item.searchTags.any(
-                                    (tag) => tag.toLowerCase().contains(lowerQuery),
-                              );
-
-                              if (searchQuery.isEmpty || titleMatches || tagMatches) {
-                                widgets.add(item);
-
-                                if (searchQuery.isNotEmpty) {
-                                  final matchingTags = item.searchTags.where(
-                                        (tag) => tag.toLowerCase().contains(lowerQuery),
+                              for (final item in settingsItemList) {
+                                if (item is SearchableSettingItem) {
+                                  // Flat item (SearchableSettingItem)
+                                  final titleMatches = item.title
+                                      .toLowerCase()
+                                      .contains(lowerQuery);
+                                  final tagMatches = item.searchTags.any(
+                                    (tag) =>
+                                        tag.toLowerCase().contains(lowerQuery),
                                   );
 
-                                  for (final tag in matchingTags) {
-                                    widgets.add(SearchBreadcrumbTile(
-                                      origin: item.title,
-                                      destination: tag,
-                                      onTap: item.onTap,
-                                    ));
-                                  }
-                                }
-                              }
-                            } else if (item is SettingsSection) {
-                              // Section → recurse into children
-                              final sectionWidgets = <Widget>[];
+                                  if (searchQuery.isEmpty ||
+                                      titleMatches ||
+                                      tagMatches) {
+                                    widgets.add(item);
 
-                              if (item.searchableSettingsItems != null) {
-                                final matchingItems = item.searchableSettingsItems!.where((childItem) {
-                                  final titleMatches = childItem.title.toLowerCase().contains(lowerQuery);
-                                  final tagMatches = childItem.searchTags.any(
-                                        (tag) => tag.toLowerCase().contains(lowerQuery),
-                                  );
-                                  return titleMatches || tagMatches;
-                                }).toList();
+                                    if (searchQuery.isNotEmpty) {
+                                      final matchingTags =
+                                          item.searchTags.where(
+                                        (tag) => tag
+                                            .toLowerCase()
+                                            .contains(lowerQuery),
+                                      );
 
-                                if (searchQuery.isEmpty) {
-                                  // No search → show whole section
-                                  sectionWidgets.add(item);
-                                } else if (matchingItems.isNotEmpty) {
-                                  // If any children match → rebuild section with only matching children
-                                  sectionWidgets.add(SettingsSection(
-                                    backgroundColor: item.backgroundColor,
-                                    searchQuery: searchQuery,
-                                    searchableSettingsItems: matchingItems,
-                                    children: null, // Only show matching searchable children
-                                  ));
-
-                                  // Add breadcrumbs for matching child tags
-                                  for (final matchingItem in matchingItems) {
-                                    final matchingTags = matchingItem.searchTags.where(
-                                          (tag) => tag.toLowerCase().contains(lowerQuery),
-                                    );
-
-                                    for (final tag in matchingTags) {
-                                      sectionWidgets.add(SearchBreadcrumbTile(
-                                        origin: matchingItem.title,
-                                        destination: tag,
-                                        onTap: matchingItem.onTap,
-                                      ));
+                                      for (final tag in matchingTags) {
+                                        widgets.add(SearchBreadcrumbTile(
+                                          origin: item.title,
+                                          destination: tag,
+                                          onTap: item.onTap,
+                                        ));
+                                      }
                                     }
                                   }
+                                } else if (item is SettingsSection) {
+                                  // Section → recurse into children
+                                  final sectionWidgets = <Widget>[];
+
+                                  if (item.searchableSettingsItems != null) {
+                                    final matchingItems = item
+                                        .searchableSettingsItems!
+                                        .where((childItem) {
+                                      final titleMatches = childItem.title
+                                          .toLowerCase()
+                                          .contains(lowerQuery);
+                                      final tagMatches =
+                                          childItem.searchTags.any(
+                                        (tag) => tag
+                                            .toLowerCase()
+                                            .contains(lowerQuery),
+                                      );
+                                      return titleMatches || tagMatches;
+                                    }).toList();
+
+                                    if (searchQuery.isEmpty) {
+                                      // No search → show whole section
+                                      sectionWidgets.add(item);
+                                    } else if (matchingItems.isNotEmpty) {
+                                      // If any children match → rebuild section with only matching children
+                                      sectionWidgets.add(SettingsSection(
+                                        backgroundColor: item.backgroundColor,
+                                        searchQuery: searchQuery,
+                                        searchableSettingsItems: matchingItems,
+                                        children:
+                                            null, // Only show matching searchable children
+                                      ));
+
+                                      // Add breadcrumbs for matching child tags
+                                      for (final matchingItem
+                                          in matchingItems) {
+                                        final matchingTags =
+                                            matchingItem.searchTags.where(
+                                          (tag) => tag
+                                              .toLowerCase()
+                                              .contains(lowerQuery),
+                                        );
+
+                                        for (final tag in matchingTags) {
+                                          sectionWidgets
+                                              .add(SearchBreadcrumbTile(
+                                            origin: matchingItem.title,
+                                            destination: tag,
+                                            onTap: matchingItem.onTap,
+                                          ));
+                                        }
+                                      }
+                                    }
+                                  } else if (item.children != null &&
+                                      searchQuery.isEmpty) {
+                                    // Section with non-searchable children → show if no search
+                                    sectionWidgets.add(item);
+                                  }
+
+                                  // Add section content to main list
+                                  widgets.addAll(sectionWidgets);
+                                } else {
+                                  // Other Widget → show only if no search
+                                  if (searchQuery.isEmpty) {
+                                    widgets.add(item);
+                                  }
                                 }
-                              } else if (item.children != null && searchQuery.isEmpty) {
-                                // Section with non-searchable children → show if no search
-                                sectionWidgets.add(item);
                               }
 
-                              // Add section content to main list
-                              widgets.addAll(sectionWidgets);
-                            } else {
-                              // Other Widget → show only if no search
-                              if (searchQuery.isEmpty) {
-                                widgets.add(item);
+                              // If searching and no results → show EmptySearchResult
+                              final visibleWidgetsCount = widgets.length;
+                              if (searchQuery.isNotEmpty &&
+                                  visibleWidgetsCount <= 1) {
+                                return [EmptySearchResult(searchQuery: searchQuery,)];
                               }
-                            }
-                          }
 
-                          // If searching and no results → show EmptySearchResult
-                          final visibleWidgetsCount = widgets.length;
-                          if (searchQuery.isNotEmpty && visibleWidgetsCount <= 1) {
-                            return [EmptySearchResult()];
-                          }
-
-                          return widgets;
-                        })(),
-                      ]),
-                    ),
-
-                  ],
-                ),
-                right: LayoutBuilder(builder: (context, constraints) {
-                  ns.maxWidthSettings = constraints.maxWidth;
-                  return PopScope(
-                    canPop: false,
-                    onPopInvoked: (_) async {
-                      Get.until((route) {
-                        if (route.settings.name == "initial") {
-                          Get.back();
-                        } else {
-                          Get.back(id: 3);
-                        }
-                        return true;
-                      }, id: 3);
-                    },
-                    child: Navigator(
-                      key: Get.nestedKey(3),
-                      onPopPage: (route, _) {
-                        route.didPop(false);
-                        return false;
-                      },
-                      pages: [
-                        CupertinoPage(
-                            name: "initial",
-                            child: Scaffold(
-                                backgroundColor:
-                                ss.settings.skin.value != Skins.iOS
-                                    ? tileColor
-                                    : headerColor,
-                                body: Center(
-                                  child: Text(
-                                      "Select a settings page from the list",
-                                      style:
-                                      context.theme.textTheme.bodyLarge),
-                                ))),
+                              return widgets;
+                            })(),
+                          ]),
+                        ),
                       ],
                     ),
-                  );
-                }),
-              ),
-            ))),
+                    right: LayoutBuilder(builder: (context, constraints) {
+                      ns.maxWidthSettings = constraints.maxWidth;
+                      return PopScope(
+                        canPop: false,
+                        onPopInvoked: (_) async {
+                          Get.until((route) {
+                            if (route.settings.name == "initial") {
+                              Get.back();
+                            } else {
+                              Get.back(id: 3);
+                            }
+                            return true;
+                          }, id: 3);
+                        },
+                        child: Navigator(
+                          key: Get.nestedKey(3),
+                          onPopPage: (route, _) {
+                            route.didPop(false);
+                            return false;
+                          },
+                          pages: [
+                            CupertinoPage(
+                                name: "initial",
+                                child: Scaffold(
+                                    backgroundColor:
+                                        ss.settings.skin.value != Skins.iOS
+                                            ? tileColor
+                                            : headerColor,
+                                    body: Center(
+                                      child: Text(
+                                          "Select a settings page from the list",
+                                          style: context
+                                              .theme.textTheme.bodyLarge),
+                                    ))),
+                          ],
+                        ),
+                      );
+                    }),
+                  ),
+                ))),
       ),
     );
   }

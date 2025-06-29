@@ -1,9 +1,11 @@
+import 'package:bluebubbles/app/layouts/settings/widgets/search/settings_search_bar_ios.dart';
 import 'package:flutter/material.dart';
 
 class SettingsSearchBar extends StatefulWidget {
   final ValueChanged<String>? onChanged;
+  final bool iOS;
 
-  const SettingsSearchBar({super.key, this.onChanged});
+  const SettingsSearchBar({super.key, this.onChanged, required this.iOS});
 
   @override
   State<SettingsSearchBar> createState() => _SettingsSearchBarState();
@@ -11,13 +13,21 @@ class SettingsSearchBar extends StatefulWidget {
 
 class _SettingsSearchBarState extends State<SettingsSearchBar> {
   String searchValue = '';
-  final SearchController _controller = SearchController();
-  final FocusNode _focusNode = FocusNode(); // add focus node
+  final TextEditingController _controller = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
 
   @override
   void dispose() {
-    _focusNode.dispose(); // clean up focus node
+    _focusNode.dispose();
+    _controller.dispose();
     super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant SettingsSearchBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // sync the controller text when widget changes
+    _controller.text = searchValue;
   }
 
   @override
@@ -25,28 +35,38 @@ class _SettingsSearchBarState extends State<SettingsSearchBar> {
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
       onTap: () {
-        FocusScope.of(context).unfocus(); // dismiss keyboard if tapped outside
+        FocusScope.of(context).unfocus();
       },
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: SearchBar(
+        child: widget.iOS
+            ? SettingsSearchBariOS(
+          // use cupertino search bar if iOS style
           controller: _controller,
-          focusNode: _focusNode, // connect the focus node
+          focusNode: _focusNode,
+          onChanged: (query) {
+            setState(() {
+              searchValue = query.toLowerCase();
+            });
+            widget.onChanged?.call(searchValue);
+          },
+        )
+            : SearchBar(
+          // material themed search bar
+          controller: _controller,
+          focusNode: _focusNode,
           hintText: 'Search Settings',
           hintStyle: MaterialStateProperty.all(
-              TextStyle(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.white.withOpacity(0.5)
-                    : Colors.black.withOpacity(0.5),
-              )
+            TextStyle(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white.withOpacity(0.5)
+                  : Colors.black.withOpacity(0.5),
+            ),
           ),
           padding: const WidgetStatePropertyAll<EdgeInsets>(
             EdgeInsets.symmetric(horizontal: 16.0),
           ),
           elevation: const MaterialStatePropertyAll(1),
-          onTap: () {
-            // Optional: expand search or open a view
-          },
           onChanged: (query) {
             setState(() {
               searchValue = query.toLowerCase();
@@ -63,7 +83,7 @@ class _SettingsSearchBarState extends State<SettingsSearchBar> {
                     setState(() {
                       searchValue = '';
                       _controller.text = '';
-                      _focusNode.unfocus(); // remove focus when cleared
+                      _focusNode.unfocus();
                     });
                     widget.onChanged?.call('');
                   },
