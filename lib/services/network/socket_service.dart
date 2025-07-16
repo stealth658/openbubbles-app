@@ -12,6 +12,7 @@ import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
 import 'package:socket_io_client/socket_io_client.dart';
+import 'websocket_adapter.dart';
 
 SocketService socket = Get.isRegistered<SocketService>() ? Get.find<SocketService>() : Get.put(SocketService());
 
@@ -63,6 +64,9 @@ class SocketService extends GetxService {
         .setQuery({"guid": password})
         .setTransports(['websocket', 'polling'])
         .setExtraHeaders(http.headers)
+        // WebsocketAdapter allows socket io client
+        // to trust user certificates on Android
+        .setHttpClientAdapter(WebsocketAdapter())
         // Disable so that we can create the listeners first
         .disableAutoConnect()
         .enableReconnection();
@@ -195,7 +199,6 @@ class SocketService extends GetxService {
         if (data is SocketException) {
           handleSocketException(data);
         }
-
         state.value = SocketState.error;
         // After 5 seconds of an error, we should retry the connection
         _reconnectTimer = Timer(const Duration(seconds: 5), () async {
