@@ -857,7 +857,7 @@ List<Widget> buildSettingItemList({
             "Clear Last Opened Chat",
             "Sync Handles & Contacts",
             "Sync Chat Info"
-          ], // ar
+          ], // Tags to search
           onTap: () async {
             ns.pushAndRemoveSettingsUntil(
               context,
