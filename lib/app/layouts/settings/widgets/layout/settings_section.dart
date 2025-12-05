@@ -75,7 +75,7 @@ class SettingsSection extends StatelessWidget {
                 color: backgroundColor.darkenAmount(0.1).withValues(alpha: 0.25),
                 spreadRadius: 5,
                 blurRadius: 7,
-                offset: const Offset(0, 3), // shadow offset
+                offset: const Offset(0, 3),
               ),
             ],
           )
