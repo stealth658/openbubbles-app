@@ -11,26 +11,26 @@ class SearchBreadcrumbTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.only(right: 40, left: 40, top: 15, bottom: 15),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '$origin',
-                    style:
-                    DefaultTextStyle.of(context).style.apply(fontSizeFactor: 1.5),
-                  ),
-                  Text('$destination')
-                ],
-              ),
-              const Icon(Icons.keyboard_arrow_right_outlined)
-            ],
-          ),
+      child: Padding(
+        padding: const EdgeInsets.only(right: 40, left: 40, top: 15, bottom: 15),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '$origin',
+                  style:
+                  DefaultTextStyle.of(context).style.apply(fontSizeFactor: 1.5),
+                ),
+                Text('$destination')
+              ],
+            ),
+            const Icon(Icons.keyboard_arrow_right_outlined)
+          ],
         ),
+      ),
     );
   }
 }
