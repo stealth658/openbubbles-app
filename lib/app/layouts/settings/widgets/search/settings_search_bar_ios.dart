@@ -12,7 +12,7 @@ class SettingsSearchBariOS extends StatefulWidget {
   State<SettingsSearchBariOS> createState() => _SettingsSearchBariOSState();
 }
 
-class _SettingsSearchBariOSState extends State<SettingsSearchBariOS>{
+class _SettingsSearchBariOSState extends State<SettingsSearchBariOS> {
   String searchValue = '';
 
   @override
