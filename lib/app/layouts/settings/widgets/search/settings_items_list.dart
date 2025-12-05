@@ -905,14 +905,8 @@ List<Widget> buildSettingItemList({
             "Delete Backup?",
             "Restore Backup?",
             "Create New",
-            "Overwrite Backup?",
             "Restore Local",
             "Restore Settings?",
-            "Delete Backup?",
-            "Restore Backup?",
-            "Create New",
-            "Restore Local",
-            "Restore Backup?"
           ],
           onTap: () {
             ns.pushAndRemoveSettingsUntil(
