@@ -233,7 +233,7 @@ class _SettingsPageState extends OptimizedState<SettingsPage> {
                               final visibleWidgetsCount = widgets.length;
                               if (searchQuery.isNotEmpty &&
                                   visibleWidgetsCount <= 1) {
-                                return [EmptySearchResult(searchQuery: searchQuery,)];
+                                return [EmptySearchResult(searchQuery: searchQuery)];
                               }
 
                               return widgets;
