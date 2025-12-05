@@ -811,19 +811,19 @@ List<Widget> buildSettingItemList({
 
         // Notification Providers Tile
         SearchableSettingItem(
-          title: "Notification Providers", // Title
+          title: "Notification Providers", // Title to search
           searchTags: [
             "Google Firebase (FCM)",
             "Background Service",
             "Unified Push"
-          ], // to
+          ], // Search tags
           onTap: () async {
             ns.pushAndRemoveSettingsUntil(
               context,
               NotificationProvidersPanel(),
                   (Route route) => route.isFirst,
             );
-          }, // search
+          }, // On tap to search
           child: SettingsTile(
             backgroundColor: tileColor,
             onTap: () async {
