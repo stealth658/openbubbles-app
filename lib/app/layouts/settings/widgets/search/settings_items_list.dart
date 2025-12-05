@@ -288,7 +288,7 @@ List<Widget> buildSettingItemList({
           "Light Mode",
           "Advanced Theming",
           "Tablet Mode",
-          "Immersive Mode" "Material You",
+          "Immersive Mode", "Material You",
           "Colors for Media",
           "Colorful Avatars",
           "Colorful Bubbles",
