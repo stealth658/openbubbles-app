@@ -845,7 +845,7 @@ List<Widget> buildSettingItemList({
 
         // Developer Tools Tile
         SearchableSettingItem(
-          title: "Developer Tools", // Title to se
+          title: "Developer Tools", // Title to search
           searchTags: [
             "Fetch Contacts With Verbose Logging",
             "View Latest Log",
