@@ -992,7 +992,7 @@ List<Widget> buildSettingItemList({
                     actions: [
                       Obx(
                             () => uploadingContacts.value
-                            ? Container(height: 0, width: 0)
+                            ? const SizedBox.shrink()
                             : TextButton(
                           child: Text(
                             "Close",
