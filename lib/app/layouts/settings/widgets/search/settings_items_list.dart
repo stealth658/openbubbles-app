@@ -864,7 +864,7 @@ List<Widget> buildSettingItemList({
               TroubleshootPanel(),
                   (Route route) => route.isFirst,
             );
-          }, // ch
+          },
           child: SettingsTile(
             backgroundColor: tileColor,
             onTap: () async {
