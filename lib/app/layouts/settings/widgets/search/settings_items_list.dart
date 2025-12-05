@@ -914,7 +914,7 @@ List<Widget> buildSettingItemList({
               BackupRestorePanel(),
                   (Route route) => route.isFirst,
             );
-          }, // Title to search
+          },
           child: SettingsTile(
             backgroundColor: tileColor,
             onTap: () {
