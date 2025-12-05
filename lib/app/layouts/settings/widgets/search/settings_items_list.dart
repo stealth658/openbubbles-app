@@ -899,7 +899,7 @@ List<Widget> buildSettingItemList({
       backgroundColor: tileColor,
       searchableSettingsItems: [
         SearchableSettingItem(
-          title: "Backup & Restore", //
+          title: "Backup & Restore",
           searchTags: [
             "Overwrite Backup?",
             "Delete Backup?",
