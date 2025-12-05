@@ -32,66 +32,60 @@ class _SettingsSearchBarState extends State<SettingsSearchBar> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.translucent,
-      onTap: () {
-        FocusScope.of(context).unfocus();
-      },
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: widget.iOS
-            ? SettingsSearchBariOS(
-          // use cupertino search bar if iOS style
-          controller: _controller,
-          focusNode: _focusNode,
-          onChanged: (query) {
-            setState(() {
-              searchValue = query.toLowerCase();
-            });
-            widget.onChanged?.call(searchValue);
-          },
-        )
-            : SearchBar(
-          // material themed search bar
-          controller: _controller,
-          focusNode: _focusNode,
-          hintText: 'Search Settings',
-          hintStyle: MaterialStateProperty.all(
-            TextStyle(
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.white.withOpacity(0.5)
-                  : Colors.black.withOpacity(0.5),
-            ),
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: widget.iOS
+          ? SettingsSearchBariOS(
+        // use cupertino search bar if iOS style
+        controller: _controller,
+        focusNode: _focusNode,
+        onChanged: (query) {
+          setState(() {
+            searchValue = query.toLowerCase();
+          });
+          widget.onChanged?.call(searchValue);
+        },
+      )
+          : SearchBar(
+        // material themed search bar
+        controller: _controller,
+        focusNode: _focusNode,
+        hintText: 'Search Settings',
+        hintStyle: MaterialStateProperty.all(
+          TextStyle(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.white.withOpacity(0.5)
+                : Colors.black.withOpacity(0.5),
           ),
-          padding: const WidgetStatePropertyAll<EdgeInsets>(
-            EdgeInsets.symmetric(horizontal: 16.0),
-          ),
-          elevation: const MaterialStatePropertyAll(1),
-          onChanged: (query) {
-            setState(() {
-              searchValue = query.toLowerCase();
-            });
-            widget.onChanged?.call(searchValue);
-          },
-          leading: const Icon(Icons.search),
-          trailing: <Widget>[
-            if (searchValue.isNotEmpty)
-              Tooltip(
-                message: 'Clear search',
-                child: IconButton(
-                  onPressed: () {
-                    setState(() {
-                      searchValue = '';
-                      _controller.text = '';
-                      _focusNode.unfocus();
-                    });
-                    widget.onChanged?.call('');
-                  },
-                  icon: const Icon(Icons.clear),
-                ),
-              ),
-          ],
         ),
+        padding: const WidgetStatePropertyAll<EdgeInsets>(
+          EdgeInsets.symmetric(horizontal: 16.0),
+        ),
+        elevation: const MaterialStatePropertyAll(1),
+        onChanged: (query) {
+          setState(() {
+            searchValue = query.toLowerCase();
+          });
+          widget.onChanged?.call(searchValue);
+        },
+        leading: const Icon(Icons.search),
+        trailing: <Widget>[
+          if (searchValue.isNotEmpty)
+            Tooltip(
+              message: 'Clear search',
+              child: IconButton(
+                onPressed: () {
+                  setState(() {
+                    searchValue = '';
+                    _controller.text = '';
+                    _focusNode.unfocus();
+                  });
+                  widget.onChanged?.call('');
+                },
+                icon: const Icon(Icons.clear),
+              ),
+            ),
+        ],
       ),
     );
   }
