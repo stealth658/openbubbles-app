@@ -412,9 +412,10 @@ class SettingsService extends GetxService {
     final stream = github.repositories.listReleases(RepositorySlug('bluebubblesapp', 'bluebubbles-app'));
     final release = await stream.firstWhere((element) => !(element.isDraft ?? false) && !(element.isPrerelease ?? false) && element.tagName != null);
     final version = release.tagName!.split("+").first.replaceAll("v", "");
-    final code = release.tagName!.split("+").last;
+    final code = release.tagName!.split("+").last.split('-').first;
+    final isDesktopRelease = release.tagName!.split('+').last.contains('desktop');
     final buildNumber = fs.packageInfo.buildNumber.lastChars(min(4, fs.packageInfo.buildNumber.length));
-    if (int.parse(code) <= int.parse(buildNumber) || prefs.getString("client-update-check") == code) return;
+    if (int.parse(code) <= int.parse(buildNumber) || prefs.getString("client-update-check") == code || (Platform.isAndroid && isDesktopRelease)) return;
     showDialog(
       context: Get.context!,
       builder: (context) => AlertDialog(
