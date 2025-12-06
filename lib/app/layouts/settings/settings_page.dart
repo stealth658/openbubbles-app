@@ -33,6 +33,28 @@ class _SettingsPageState extends OptimizedState<SettingsPage> {
   final RxnInt totalSize = RxnInt();
 
   String searchQuery = "";
+  List<Widget>? _cachedSettingsItemList;
+
+  // Lazy-load and cache the settings list
+  List<Widget> _getSettingsItemList(BuildContext context) {
+    _cachedSettingsItemList ??= buildSettingItemList(
+        context: context,
+        searchQuery: searchQuery,
+        tileColor: tileColor,
+        samsung: samsung,
+        iOS: iOS,
+        material: material,
+        iosSubtitle: iosSubtitle,
+        materialSubtitle: materialSubtitle,
+        ss: ss,
+        ns: ns,
+        progress: progress,
+        totalSize: totalSize,
+        uploadingContacts: uploadingContacts,
+      );
+
+    return _cachedSettingsItemList!;
+  }
 
   @override
   void initState() {
@@ -58,21 +80,6 @@ class _SettingsPageState extends OptimizedState<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final settingsItemList = buildSettingItemList(
-        context: context,
-        searchQuery: searchQuery,
-        tileColor: tileColor,
-        samsung: samsung,
-        iOS: iOS,
-        material: material,
-        iosSubtitle: iosSubtitle,
-        materialSubtitle: materialSubtitle,
-        ss: ss,
-        ns: ns,
-        progress: progress,
-        totalSize: totalSize,
-        uploadingContacts: uploadingContacts);
-
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
       onTap: () => FocusScope.of(context).unfocus(),
@@ -103,9 +110,7 @@ class _SettingsPageState extends OptimizedState<SettingsPage> {
                       title: "Settings",
                       initialHeader: kIsWeb
                           ? "Server & Message Management"
-                          : (!iOS || kIsDesktop)
-                              ? "Profile"
-                              : null,
+                          : null,
                       iosSubtitle: iosSubtitle,
                       materialSubtitle: materialSubtitle,
                       tileColor: tileColor,
@@ -117,12 +122,13 @@ class _SettingsPageState extends OptimizedState<SettingsPage> {
                               iOS: iOS,
                               onChanged: (value) {
                                 setState(() {
-                                  searchQuery = value.trim();
+                                  searchQuery = value.trim().toLowerCase();
                                 });
                               },
                             ),
                             ...(() {
-                              final lowerQuery = searchQuery.toLowerCase();
+                              final lowerQuery = searchQuery;
+                              final settingsItemList = _getSettingsItemList(context);
 
                               // Build widgets list dynamically
                               final List<Widget> widgets = [];
@@ -187,7 +193,6 @@ class _SettingsPageState extends OptimizedState<SettingsPage> {
                                       // If any children match → rebuild section with only matching children
                                       sectionWidgets.add(SettingsSection(
                                         backgroundColor: item.backgroundColor,
-                                        searchQuery: searchQuery,
                                         searchableSettingsItems: matchingItems,
                                         children:
                                             null, // Only show matching searchable children

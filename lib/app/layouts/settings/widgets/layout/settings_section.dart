@@ -9,44 +9,26 @@ class SettingsSection extends StatelessWidget {
   // group searchable settings into a rounded rectangle
   final List<SearchableSettingItem>? searchableSettingsItems;
   final Color backgroundColor;
-  final String? searchQuery;
 
   SettingsSection({
     this.children,
     required this.backgroundColor,
     this.searchableSettingsItems,
-    this.searchQuery,
   });
 
   @override
   Widget build(BuildContext context) {
     List<Widget> displayedChildren = [];
 
-    final isSearching = searchQuery != null && searchQuery!.isNotEmpty;
-
     if (searchableSettingsItems != null) {
-      if (isSearching) {
-        final lowerQuery = searchQuery!.toLowerCase();
-
-        final matchingItems = searchableSettingsItems!.where((item) {
-          final titleMatches = item.title.toLowerCase().contains(lowerQuery);
-          final tagMatches = item.searchTags.any(
-                (tag) => tag.toLowerCase().contains(lowerQuery),
-          );
-          return titleMatches || tagMatches;
-        }).toList();
-
-        displayedChildren = matchingItems.map((item) => item.child).toList();
-      } else {
-        // No search → show all searchable items
-        displayedChildren = searchableSettingsItems!.map((item) => item.child).toList();
-      }
+      // No filtering here - parent already filtered if needed
+      displayedChildren = searchableSettingsItems!.map((item) => item.child).toList();
     } else if (children != null) {
       displayedChildren = children!;
     }
 
-    // If searching and nothing matches → hide section
-    if (displayedChildren.isEmpty && isSearching) {
+    // If no children, hide section
+    if (displayedChildren.isEmpty) {
       return const SizedBox.shrink();
     }
 

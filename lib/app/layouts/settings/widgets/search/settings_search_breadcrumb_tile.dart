@@ -20,11 +20,10 @@ class SearchBreadcrumbTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '$origin',
-                  style:
-                  DefaultTextStyle.of(context).style.apply(fontSizeFactor: 1.5),
+                  '$destination',
+                  style: Theme.of(context).textTheme.titleMedium,
                 ),
-                Text('$destination')
+                Text('$origin', style: Theme.of(context).textTheme.bodyMedium)
               ],
             ),
             const Icon(Icons.keyboard_arrow_right_outlined)

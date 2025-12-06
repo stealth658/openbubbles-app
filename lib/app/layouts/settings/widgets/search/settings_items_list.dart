@@ -1,6 +1,10 @@
 import '../../pages/misc/misc_panel.dart';
 import '../../pages/scheduling/message_reminders_panel.dart';
 import '../../pages/scheduling/scheduled_messages_panel.dart';
+import '../tiles/connection_server_tile.dart';
+import '../tiles/contact_upload_progress.dart';
+import '../tiles/private_api_tile.dart';
+import '../tiles/redacted_mode_tile.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:bluebubbles/app/components/avatars/contact_avatar_widget.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/advanced/notification_providers_panel.dart';
@@ -55,6 +59,16 @@ List<Widget> buildSettingItemList({
   return [
     if (!kIsWeb && (!iOS || kIsDesktop))
       SearchableSettingItem(
+        title: "Profile",
+        child: SettingsHeader(
+          height: 40,
+          iosSubtitle: iosSubtitle,
+          materialSubtitle: materialSubtitle,
+          text: "Profile",
+        ),
+      ),
+    if (!kIsWeb && (!iOS || kIsDesktop))
+      SearchableSettingItem(
         title:
         ss.settings.redactedMode.value && ss.settings.hideContactInfo.value
             ? "User Name"
@@ -92,6 +106,7 @@ List<Widget> buildSettingItemList({
       SearchableSettingItem(
         title: "Server & Message Management",
         child: SettingsHeader(
+          height: 40,
           iosSubtitle: iosSubtitle,
           materialSubtitle: materialSubtitle,
           text: "Server & Message Management",
@@ -124,106 +139,13 @@ List<Widget> buildSettingItemList({
       child: SettingsSection(
         backgroundColor: tileColor,
         children: [
-          // Obx wrapped tile for connection state
-          Obx(() {
-            String? subtitle;
-            switch (socket.state.value) {
-              case SocketState.connected:
-                subtitle = "Connected";
-                break;
-              case SocketState.disconnected:
-                subtitle = "Disconnected";
-                break;
-              case SocketState.error:
-                subtitle = "Error";
-                break;
-              case SocketState.connecting:
-                subtitle = "Connecting";
-                break;
-            }
-
-            return SettingsTile(
-              backgroundColor: tileColor,
-              title: "Connection & Server",
-              onTap: () {
-                ns.pushAndRemoveSettingsUntil(
-                  context,
-                  ServerManagementPanel(),
-                      (Route route) => route.isFirst,
-                );
-              },
-              onLongPress: () {
-                Clipboard.setData(ClipboardData(text: http.origin));
-                if (!Platform.isAndroid ||
-                    (fs.androidInfo?.version.sdkInt ?? 0) < 33) {
-                  showSnackbar("Copied", "Server address copied to clipboard!");
-                }
-              },
-              leading: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Material(
-                    shape: samsung
-                        ? SquircleBorder(
-                      side: BorderSide(
-                        color: getIndicatorColor(socket.state.value),
-                        width: 3.0,
-                      ),
-                    )
-                        : null,
-                    color: ss.settings.skin.value != Skins.Material
-                        ? getIndicatorColor(socket.state.value)
-                        : Colors.transparent,
-                    borderRadius: iOS ? BorderRadius.circular(6) : null,
-                    child: SizedBox(
-                      width: 30,
-                      height: 30,
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          Icon(
-                            iOS
-                                ? CupertinoIcons.antenna_radiowaves_left_right
-                                : Icons.router,
-                            color: ss.settings.skin.value != Skins.Material
-                                ? Colors.white
-                                : Colors.grey,
-                            size: ss.settings.skin.value != Skins.Material
-                                ? 21
-                                : 28,
-                          ),
-                          if (material)
-                            Positioned.fill(
-                              child: Align(
-                                alignment: Alignment.bottomRight,
-                                child: getIndicatorIcon(
-                                  socket.state.value,
-                                  size: 12,
-                                  showAlpha: false,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    subtitle,
-                    style: context.theme.textTheme.bodyMedium!.apply(
-                        color:
-                        context.theme.colorScheme.outline.withAlpha(220)),
-                  ),
-                  const SizedBox(width: 5),
-                  const NextButton(),
-                ],
-              ),
-            );
-          }),
+          // Optimized reactive tile for connection state
+          ConnectionServerTile(
+            tileColor: tileColor,
+            samsung: samsung,
+            iOS: iOS,
+            material: material,
+          ),
 
           if (ss.serverDetailsSync().item4 >= 205) const SettingsDivider(),
           if (ss.serverDetailsSync().item4 >= 205)
@@ -344,7 +266,6 @@ List<Widget> buildSettingItemList({
 
     SettingsSection(
       backgroundColor: tileColor,
-      searchQuery: searchQuery,
       searchableSettingsItems: [
         // Media Settings Tile
         SearchableSettingItem(
@@ -662,7 +583,6 @@ List<Widget> buildSettingItemList({
 
     SettingsSection(
       backgroundColor: tileColor,
-      searchQuery: searchQuery,
       searchableSettingsItems: [
         // Private API Features Tile
         SearchableSettingItem(
@@ -687,44 +607,7 @@ List<Widget> buildSettingItemList({
                   (Route route) => route.isFirst,
             );
           },
-          child: Obx(() => SettingsTile(
-            backgroundColor: tileColor,
-            title: "Private API Features",
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  ss.settings.enablePrivateAPI.value
-                      ? ss.settings.serverPrivateAPI.value == false
-                      ? "Not Set Up"
-                      : "Enabled"
-                      : "Disabled",
-                  style: context.theme.textTheme.bodyMedium!.apply(
-                    color: context.theme.colorScheme.outline
-                        .withValues(alpha: 0.85),
-                  ),
-                ),
-                const SizedBox(width: 5),
-                const NextButton(),
-              ],
-            ),
-            onTap: () async {
-              ns.pushAndRemoveSettingsUntil(
-                context,
-                PrivateAPIPanel(),
-                    (Route route) => route.isFirst,
-              );
-            },
-            leading: SettingsLeadingIcon(
-              iosIcon: CupertinoIcons.exclamationmark_shield_fill,
-              materialIcon: Icons.gpp_maybe,
-              containerColor: ss.settings.enablePrivateAPI.value
-                  ? ss.settings.serverPrivateAPI.value == false
-                  ? Colors.redAccent
-                  : Colors.green
-                  : Colors.amber,
-            ),
-          )),
+          child: PrivateAPITile(tileColor: tileColor),
         ),
 
         // Redacted Mode Tile
@@ -744,38 +627,7 @@ List<Widget> buildSettingItemList({
                   (Route route) => route.isFirst,
             );
           },
-          child: Obx(() => SettingsTile(
-            backgroundColor: tileColor,
-            title: "Redacted Mode",
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  ss.settings.redactedMode.value ? "Enabled" : "Disabled",
-                  style: context.theme.textTheme.bodyMedium!.apply(
-                    color: context.theme.colorScheme.outline
-                        .withValues(alpha: 0.85),
-                  ),
-                ),
-                const SizedBox(width: 5),
-                const NextButton(),
-              ],
-            ),
-            onTap: () async {
-              ns.pushAndRemoveSettingsUntil(
-                context,
-                RedactedModePanel(),
-                    (Route route) => route.isFirst,
-              );
-            },
-            leading: SettingsLeadingIcon(
-              iosIcon: CupertinoIcons.wand_stars,
-              materialIcon: Icons.auto_fix_high,
-              containerColor: ss.settings.redactedMode.value
-                  ? Colors.green
-                  : Colors.redAccent,
-            ),
-          )),
+          child: RedactedModeTile(tileColor: tileColor),
         ),
 
         // Tasker Integration Tile (only for Android)
@@ -952,61 +804,11 @@ List<Widget> buildSettingItemList({
 
                 showDialog(
                   context: context,
-                  builder: (context) => AlertDialog(
-                    backgroundColor: context.theme.colorScheme.properSurface,
-                    title: Text("Uploading contacts...",
-                        style: context.theme.textTheme.titleLarge),
-                    content: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        Obx(
-                              () => Text(
-                            '${progress.value != null && totalSize.value != null ? (progress.value! * totalSize.value! / 1000).getFriendlySize(withSuffix: false) : ""} / ${((totalSize.value ?? 0).toDouble() / 1000).getFriendlySize()} (${((progress.value ?? 0) * 100).floor()}%)',
-                            style: context.theme.textTheme.bodyLarge,
-                          ),
-                        ),
-                        const SizedBox(height: 10.0),
-                        Obx(
-                              () => LinearProgressIndicator(
-                            backgroundColor: context.theme.colorScheme.outline,
-                            value: progress.value,
-                            minHeight: 5,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              context.theme.colorScheme.primary,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 15.0),
-                        Obx(
-                              () => Text(
-                            progress.value == 1
-                                ? "Upload Complete!"
-                                : "You can close this dialog. Contacts will continue to upload in the background.",
-                            textAlign: TextAlign.center,
-                            style: context.theme.textTheme.bodyLarge,
-                          ),
-                        ),
-                      ],
-                    ),
-                    actions: [
-                      Obx(
-                            () => uploadingContacts.value
-                            ? const SizedBox.shrink()
-                            : TextButton(
-                          child: Text(
-                            "Close",
-                            style: context.theme.textTheme.bodyLarge!
-                                .copyWith(
-                                color: context
-                                    .theme.colorScheme.primary),
-                          ),
-                          onPressed: () async {
-                            closeDialog.call();
-                          },
-                        ),
-                      ),
-                    ],
+                  builder: (context) => ContactUploadProgress(
+                    progress: progress,
+                    totalSize: totalSize,
+                    uploadingContacts: uploadingContacts,
+                    onClose: closeDialog,
                   ),
                 );
 

@@ -25,19 +25,20 @@ class _SettingsSearchBariOSState extends State<SettingsSearchBariOS> {
        color: Theme.of(context).brightness == Brightness.dark
            ? Colors.white.withOpacity(0.5)
            : Colors.black.withOpacity(0.5),
+        fontSize: Theme.of(context).textTheme.bodyLarge?.fontSize
      ),
      style: TextStyle(
        color: Theme.of(context).brightness == Brightness.dark
            ? CupertinoColors.white // white text color for dark mode
-           : CupertinoColors.black // black text color for light mode
+           : CupertinoColors.black, // black text color for light mode
+        fontSize: Theme.of(context).textTheme.bodyLarge?.fontSize
      ),
      onChanged: (query){
        setState(() {
          searchValue = query.toLowerCase();
        });
-       widget.onChanged?.call(searchValue);
+       widget.onChanged?.call(query);
      },
    );
   }
-  
 }

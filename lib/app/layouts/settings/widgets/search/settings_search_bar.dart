@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bluebubbles/app/layouts/settings/widgets/search/settings_search_bar_ios.dart';
 import 'package:flutter/material.dart';
 
@@ -15,9 +17,30 @@ class _SettingsSearchBarState extends State<SettingsSearchBar> {
   String searchValue = '';
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focusNode = FocusNode();
+  Timer? _debounceTimer;
+
+  void _onSearchChanged(String query) {
+    setState(() {
+      searchValue = query.toLowerCase();
+    });
+
+    _debounceTimer?.cancel();
+
+    if (query.trim().isEmpty) {
+      widget.onChanged?.call('');
+      return;
+    }
+
+    if (query.trim().length < 3) return;
+
+    _debounceTimer = Timer(const Duration(milliseconds: 500), () {
+      widget.onChanged?.call(searchValue);
+    });
+  }
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _focusNode.dispose();
     _controller.dispose();
     super.dispose();
@@ -39,12 +62,7 @@ class _SettingsSearchBarState extends State<SettingsSearchBar> {
         // use cupertino search bar if iOS style
         controller: _controller,
         focusNode: _focusNode,
-        onChanged: (query) {
-          setState(() {
-            searchValue = query.toLowerCase();
-          });
-          widget.onChanged?.call(searchValue);
-        },
+        onChanged: _onSearchChanged,
       )
           : SearchBar(
         // material themed search bar
@@ -62,12 +80,7 @@ class _SettingsSearchBarState extends State<SettingsSearchBar> {
           EdgeInsets.symmetric(horizontal: 16.0),
         ),
         elevation: const MaterialStatePropertyAll(1),
-        onChanged: (query) {
-          setState(() {
-            searchValue = query.toLowerCase();
-          });
-          widget.onChanged?.call(searchValue);
-        },
+        onChanged: _onSearchChanged,
         leading: const Icon(Icons.search),
         trailing: <Widget>[
           if (searchValue.isNotEmpty)
@@ -75,6 +88,7 @@ class _SettingsSearchBarState extends State<SettingsSearchBar> {
               message: 'Clear search',
               child: IconButton(
                 onPressed: () {
+                  _debounceTimer?.cancel();
                   setState(() {
                     searchValue = '';
                     _controller.text = '';

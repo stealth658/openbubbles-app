@@ -6,18 +6,20 @@ class SettingsHeader extends StatelessWidget {
   final TextStyle? iosSubtitle;
   final TextStyle? materialSubtitle;
   final String text;
+  final double? height;
 
   SettingsHeader({
     required this.iosSubtitle,
     required this.materialSubtitle,
     required this.text,
+    this.height,
   });
 
   @override
   Widget build(BuildContext context) {
     if (ss.settings.skin.value == Skins.Samsung) return const SizedBox(height: 15);
     return Container(
-      height: ss.settings.skin.value == Skins.iOS ? 60 : 40,
+      height: height ?? (ss.settings.skin.value == Skins.iOS ? 60 : 40),
       alignment: Alignment.bottomLeft,
       color: Colors.transparent,
       child: Padding(
