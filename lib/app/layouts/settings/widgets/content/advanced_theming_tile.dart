@@ -42,7 +42,7 @@ class _AdvancedThemingTileState extends OptimizedState<AdvancedThemingTile> {
                   final result = await showThemeDialog(widget.tuple.item1.value);
                   if (result != null) {
                     final map = widget.currentTheme.toMap();
-                    map["data"]["colorScheme"][widget.tuple.item1.key] = result.value;
+                    map["data"]["colorScheme"][widget.tuple.item1.key] = result.toARGB32();
                     widget.currentTheme.data = ThemeStruct.fromMap(map).data;
                     widget.currentTheme.save();
                     if (widget.currentTheme.name == prefs().i.getString("selected-dark")) {
@@ -65,7 +65,7 @@ class _AdvancedThemingTileState extends OptimizedState<AdvancedThemingTile> {
                   final result = await showThemeDialog(widget.tuple.item2!.value);
                   if (result != null) {
                     final map = widget.currentTheme.toMap();
-                    map["data"]["colorScheme"][widget.tuple.item2!.key] = result.value;
+                    map["data"]["colorScheme"][widget.tuple.item2!.key] = result.toARGB32();
                     widget.currentTheme.data = ThemeStruct.fromMap(map).data;
                     widget.currentTheme.save();
                     if (widget.currentTheme.name == prefs().i.getString("selected-dark")) {

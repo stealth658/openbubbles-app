@@ -41,9 +41,9 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                             onChanged: (bool val) async {
                               var localAuth = LocalAuthentication();
                               bool didAuthenticate = await localAuth.authenticate(
-                                  localizedReason:
-                                      'Please authenticate to ${val == true ? "enable" : "disable"} security',
-                                  options: const AuthenticationOptions(stickyAuth: true));
+                                  localizedReason: 'Please authenticate to ${val == true ? "enable" : "disable"} security',
+                                  persistAcrossBackgrounding: true,
+                              );
                               if (didAuthenticate) {
                                 ss().settings.shouldSecure.value = val;
                                 if (val == false) {
@@ -117,7 +117,8 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                               var localAuth = LocalAuthentication();
                               bool didAuthenticate = await localAuth.authenticate(
                                   localizedReason: 'Please authenticate to change your security level',
-                                  options: const AuthenticationOptions(stickyAuth: true));
+                                  persistAcrossBackgrounding: true,
+                              );
                               if (didAuthenticate) {
                                 if (val != null) {
                                   ss().settings.securityLevel.value = val;
@@ -154,10 +155,9 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                             isThreeLine: true,
                             backgroundColor: tileColor,
                             leading: const SettingsLeadingIcon(
-                              iosIcon: CupertinoIcons.keyboard,
-                              materialIcon: Icons.keyboard,
-                              containerColor: Colors.teal
-                            ),
+                                iosIcon: CupertinoIcons.keyboard,
+                                materialIcon: Icons.keyboard,
+                                containerColor: Colors.teal),
                           )),
                   ],
                 ),
@@ -178,10 +178,9 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                         isThreeLine: true,
                         backgroundColor: tileColor,
                         leading: const SettingsLeadingIcon(
-                          iosIcon: CupertinoIcons.speedometer,
-                          materialIcon: Icons.speed_outlined,
-                          containerColor: Colors.green
-                        ),
+                            iosIcon: CupertinoIcons.speedometer,
+                            materialIcon: Icons.speed_outlined,
+                            containerColor: Colors.green),
                       )),
                   const SettingsDivider(),
                   Obx(() {
@@ -191,10 +190,9 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                         subtitle: "Controls how fast scrolling occurs",
                         isThreeLine: true,
                         leading: SettingsLeadingIcon(
-                          iosIcon: CupertinoIcons.arrow_up_down_square,
-                          materialIcon: Icons.mouse_outlined,
-                          containerColor: Colors.orange
-                        ),
+                            iosIcon: CupertinoIcons.arrow_up_down_square,
+                            materialIcon: Icons.mouse_outlined,
+                            containerColor: Colors.orange),
                       );
                     } else {
                       return const SizedBox.shrink();
@@ -281,10 +279,9 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                         backgroundColor: tileColor,
                         isThreeLine: true,
                         leading: const SettingsLeadingIcon(
-                          iosIcon: CupertinoIcons.hand_raised,
-                          materialIcon: Icons.back_hand_outlined,
-                          containerColor: Colors.orange
-                        ),
+                            iosIcon: CupertinoIcons.hand_raised,
+                            materialIcon: Icons.back_hand_outlined,
+                            containerColor: Colors.orange),
                       )),
                 ],
               ),
@@ -324,8 +321,7 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                           leading: const SettingsLeadingIcon(
                               iosIcon: CupertinoIcons.textformat_abc_dottedunderline,
                               materialIcon: Icons.spellcheck_outlined,
-                              containerColor: Colors.cyan
-                          ),
+                              containerColor: Colors.cyan),
                         )),
                   if (kIsDesktop || kIsWeb)
                     Obx(() => ss().settings.spellcheck.value ? SettingsOptions<(String, String)>(
@@ -350,13 +346,11 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                         },
                         initialVal: !isNullOrZero(ss().settings.sendDelay.value),
                         title: "Send Delay",
-                        subtitle: "Adds a delay before sending a message to prevent accidental sends. During this time, you can cancel the message.",
+                        subtitle:
+                            "Adds a delay before sending a message to prevent accidental sends. During this time, you can cancel the message.",
                         backgroundColor: tileColor,
                         leading: const SettingsLeadingIcon(
-                          iosIcon: CupertinoIcons.timer,
-                          materialIcon: Icons.timer,
-                          containerColor: Colors.green
-                        ),
+                            iosIcon: CupertinoIcons.timer, materialIcon: Icons.timer, containerColor: Colors.green),
                       )),
                   Obx(() {
                     if (!isNullOrZero(ss().settings.sendDelay.value)) {
@@ -387,10 +381,9 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                         title: "Use 24 Hour Format for Times",
                         backgroundColor: tileColor,
                         leading: const SettingsLeadingIcon(
-                          iosIcon: CupertinoIcons.clock,
-                          materialIcon: Icons.access_time,
-                          containerColor: Colors.blue
-                        ),
+                            iosIcon: CupertinoIcons.clock,
+                            materialIcon: Icons.access_time,
+                            containerColor: Colors.blue),
                       )),
                   const SettingsDivider(),
                   if (Platform.isAndroid)
@@ -409,13 +402,11 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                           title: "Allow Upside-Down Rotation",
                           backgroundColor: tileColor,
                           leading: const SettingsLeadingIcon(
-                            iosIcon: CupertinoIcons.rotate_right,
-                            materialIcon: Icons.screen_rotation,
-                            containerColor: Colors.orange
-                          ),
+                              iosIcon: CupertinoIcons.rotate_right,
+                              materialIcon: Icons.screen_rotation,
+                              containerColor: Colors.orange),
                         )),
-                  if (Platform.isAndroid)
-                    const SettingsDivider(),
+                  if (Platform.isAndroid) const SettingsDivider(),
                   Obx(() {
                     if (iOS) {
                       return const SettingsTile(
@@ -423,10 +414,9 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                         subtitle: "Controls the maximum number of contact avatars in a group chat's widget",
                         isThreeLine: true,
                         leading: SettingsLeadingIcon(
-                          iosIcon: CupertinoIcons.person_2,
-                          materialIcon: Icons.people,
-                          containerColor: Colors.purple
-                        ),
+                            iosIcon: CupertinoIcons.person_2,
+                            materialIcon: Icons.people,
+                            containerColor: Colors.purple),
                       );
                     } else {
                       return const SizedBox.shrink();
