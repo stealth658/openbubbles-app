@@ -14,10 +14,11 @@ import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:slugify/slugify.dart';
 import 'package:universal_io/io.dart';
+import 'package:get_it/get_it.dart';
 
-FilesystemService fs = Get.isRegistered<FilesystemService>() ? Get.find<FilesystemService>() : Get.put(FilesystemService());
+FilesystemService fs() => GetIt.I<FilesystemService>();
 
-class FilesystemService extends GetxService {
+class FilesystemService {
   late Directory appDocDir;
   late final PackageInfo packageInfo;
   AndroidDeviceInfo? androidInfo;
@@ -79,7 +80,7 @@ class FilesystemService extends GetxService {
 
   void checkFont() async {
     if (!kIsWeb) {
-      final file = File("${fs.appDocDir.path}/font/apple.ttf");
+      final file = File("${fs().appDocDir.path}/font/apple.ttf");
       final exists = await file.exists();
       if (exists) {
         final bytes = await file.readAsBytes();

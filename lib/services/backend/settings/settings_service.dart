@@ -7,6 +7,7 @@ import 'package:bluebubbles/app/wrappers/scrollbar_wrapper.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -16,27 +17,25 @@ import 'package:get/get.dart';
 import 'package:github/github.dart' hide Source;
 import 'package:local_auth/local_auth.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:store_checker/store_checker.dart';
 import 'package:tuple/tuple.dart';
 import 'package:universal_io/io.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:version/version.dart';
+import 'package:get_it/get_it.dart';
 
-SettingsService ss = Get.isRegistered<SettingsService>() ? Get.find<SettingsService>() : Get.put(SettingsService());
+SettingsService ss() => GetIt.I<SettingsService>();
 
-class SettingsService extends GetxService {
+class SettingsService {
   late Settings settings;
   late FCMData fcmData;
   bool _canAuthenticate = false;
   bool _showingPapiPopup = false;
-  late final SharedPreferences prefs;
   Completer<void> initCompleted = Completer<void>();
 
-  bool get canAuthenticate => _canAuthenticate && (Platform.isWindows || (fs.androidInfo?.version.sdkInt ?? 0) > 28);
+  bool get canAuthenticate => _canAuthenticate && (Platform.isWindows || (fs().androidInfo?.version.sdkInt ?? 0) > 28);
 
   Future<void> init({bool headless = false}) async {
-    prefs = await SharedPreferences.getInstance();
     settings = Settings.getSettings();
     if (!headless && !kIsWeb && !kIsDesktop) {
       // Parallelize independent operations
@@ -69,8 +68,8 @@ class SettingsService extends GetxService {
             _canAuthenticate = await LocalAuthentication().isDeviceSupported();
           } catch (_) {}
         }
-        ss.settings.launchAtStartup.value =
-            await setupLaunchAtStartup(ss.settings.launchAtStartup.value, ss.settings.launchAtStartupMinimized.value);
+        ss().settings.launchAtStartup.value =
+            await setupLaunchAtStartup(ss().settings.launchAtStartup.value, ss().settings.launchAtStartupMinimized.value);
       });
     }
 
@@ -163,15 +162,15 @@ class SettingsService extends GetxService {
         final serverVersion = response.data['data']['server_version'];
         final code = Version.parse(serverVersion ?? "0.0.0");
         final versionCode = code.major * 100 + code.minor * 21 + code.patch;
-        if (version != null) await prefs.setInt("macos-version", version);
-        if (minorVersion != null) await prefs.setInt("macos-minor-version", minorVersion);
-        if (serverVersion != null) await prefs.setString("server-version", serverVersion);
-        await prefs.setInt("server-version-code", versionCode);
+        if (version != null) await prefs().i.setInt("macos-version", version);
+        if (minorVersion != null) await prefs().i.setInt("macos-minor-version", minorVersion);
+        if (serverVersion != null) await prefs().i.setString("server-version", serverVersion);
+        await prefs().i.setInt("server-version-code", versionCode);
 
         if (settings.finishedSetup.value && settings.reachedConversationList.value) {
           if (settings.enablePrivateAPI.value) {
-            await prefs.setBool('private-api-enable-tip', true);
-          } else if (settings.serverPrivateAPI.value == true && prefs.getBool('private-api-enable-tip') != true) {
+            await prefs().i.setBool('private-api-enable-tip', true);
+          } else if (settings.serverPrivateAPI.value == true && prefs().i.getBool('private-api-enable-tip') != true) {
             final ScrollController controller = ScrollController();
             if (_showingPapiPopup) Navigator.of(Get.context!).pop();
             _showingPapiPopup = true;
@@ -229,7 +228,7 @@ class SettingsService extends GetxService {
                             alignment: Alignment.center,
                             child: ElevatedButton(
                               onPressed: () async {
-                                await prefs.setBool('private-api-enable-tip', true);
+                                await prefs().i.setBool('private-api-enable-tip', true);
                                 Navigator.of(context).pop();
                                 ns.closeSettings(context);
                                 ns.closeAllConversationView(context);
@@ -260,7 +259,7 @@ class SettingsService extends GetxService {
                             alignment: Alignment.center,
                             child: TextButton(
                               onPressed: () async {
-                                await prefs.setBool('private-api-enable-tip', true);
+                                await prefs().i.setBool('private-api-enable-tip', true);
                                 Navigator.of(context).pop();
                               },
                               child: const Text("Don't ask again"),
@@ -287,10 +286,10 @@ class SettingsService extends GetxService {
   }
 
   Tuple4<int, int, String, int> serverDetailsSync() => Tuple4(
-      prefs.getInt("macos-version") ?? 11,
-      prefs.getInt("macos-minor-version") ?? 0,
-      prefs.getString("server-version") ?? "0.0.0",
-      prefs.getInt("server-version-code") ?? 0);
+      prefs().i.getInt("macos-version") ?? 11,
+      prefs().i.getInt("macos-minor-version") ?? 0,
+      prefs().i.getString("server-version") ?? "0.0.0",
+      prefs().i.getInt("server-version-code") ?? 0);
 
   Future<bool> get isMinSierra async {
     final val = await getServerDetails();
@@ -323,33 +322,33 @@ class SettingsService extends GetxService {
   }
 
   bool get isMinMontereySync {
-    return (prefs.getInt("macos-version") ?? 11) >= 12;
+    return (prefs().i.getInt("macos-version") ?? 11) >= 12;
   }
 
   bool get isMinBigSurSync {
-    return (prefs.getInt("macos-version") ?? 11) >= 11;
+    return (prefs().i.getInt("macos-version") ?? 11) >= 11;
   }
 
   bool get isMinVenturaSync {
-    return (prefs.getInt("macos-version") ?? 11) >= 13;
+    return (prefs().i.getInt("macos-version") ?? 11) >= 13;
   }
 
   bool get isMinCatalinaSync {
-    return (prefs.getInt("macos-minor-version") ?? 11) >= 15 || isMinBigSurSync;
+    return (prefs().i.getInt("macos-minor-version") ?? 11) >= 15 || isMinBigSurSync;
   }
 
   bool get isMinSonomaSync {
-    return (prefs.getInt("macos-version") ?? 11) >= 14;
+    return (prefs().i.getInt("macos-version") ?? 11) >= 14;
   }
 
   bool get isMinSequioaSync {
-    return (prefs.getInt("macos-version") ?? 11) >= 15;
+    return (prefs().i.getInt("macos-version") ?? 11) >= 15;
   }
 
   /// Group chats can be created on macOS <= Catalina or
   /// if the Private API is enabled, and the server supports it (v1.8.0).
   Future<bool> canCreateGroupChat() async {
-    int serverVersion = (await ss.getServerDetails()).item4;
+    int serverVersion = (await ss().getServerDetails()).item4;
     bool isMin_1_8_0 = serverVersion >= 268; // Server: v1.8.0 (1 * 100 + 8 * 21 + 0)
     bool papiEnabled = settings.enablePrivateAPI.value;
     return (isMin_1_8_0 && papiEnabled) || !isMinBigSurSync;
@@ -358,7 +357,7 @@ class SettingsService extends GetxService {
   /// Group chats can be created on macOS <= Catalina or
   /// if the Private API is enabled, and the server supports it (v1.8.0).
   bool canCreateGroupChatSync() {
-    int serverVersion = ss.serverDetailsSync().item4;
+    int serverVersion = ss().serverDetailsSync().item4;
     bool isMin_1_8_0 = serverVersion >= 268; // Server: v1.8.0 (1 * 100 + 8 * 21 + 0)
     bool papiEnabled = settings.enablePrivateAPI.value;
     return (isMin_1_8_0 && papiEnabled) || !isMinBigSurSync;
@@ -369,7 +368,7 @@ class SettingsService extends GetxService {
     if (response.statusCode == 200) {
       bool available = response.data['data']['available'] ?? false;
       Map<String, dynamic> metadata = response.data['data']['metadata'] ?? {};
-      if (!available || prefs.getString("server-update-check") == metadata['version']) return;
+      if (!available || prefs().i.getString("server-update-check") == metadata['version']) return;
       showDialog(
         context: Get.context!,
         builder: (context) => AlertDialog(
@@ -398,7 +397,7 @@ class SettingsService extends GetxService {
               child: Text("OK",
                   style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
               onPressed: () async {
-                await prefs.setString("server-update-check", metadata['version']);
+                await prefs().i.setString("server-update-check", metadata['version']);
                 Navigator.of(context).pop();
               },
             ),
@@ -406,7 +405,7 @@ class SettingsService extends GetxService {
               child: Text("Install",
                   style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
               onPressed: () async {
-                await prefs.setString("server-update-check", metadata['version']);
+                await prefs().i.setString("server-update-check", metadata['version']);
                 http.installUpdate();
                 Navigator.of(context).pop();
               },
@@ -427,9 +426,9 @@ class SettingsService extends GetxService {
     final version = release.tagName!.split("+").first.replaceAll("v", "");
     final code = release.tagName!.split("+").last.split('-').first;
     final isDesktopRelease = release.tagName!.split('+').last.contains('desktop');
-    final buildNumber = fs.packageInfo.buildNumber.lastChars(min(4, fs.packageInfo.buildNumber.length));
+    final buildNumber = fs().packageInfo.buildNumber.lastChars(min(4, fs().packageInfo.buildNumber.length));
     if (int.parse(code) <= int.parse(buildNumber) ||
-        prefs.getString("client-update-check") == code ||
+        prefs().i.getString("client-update-check") == code ||
         (Platform.isAndroid && isDesktopRelease)) return;
     showDialog(
       context: Get.context!,
@@ -464,7 +463,7 @@ class SettingsService extends GetxService {
             child: Text("OK",
                 style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
             onPressed: () async {
-              await prefs.setString("client-update-check", code);
+              await prefs().i.setString("client-update-check", code);
               Navigator.of(context).pop();
             },
           ),

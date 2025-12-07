@@ -2,6 +2,7 @@ import 'package:bluebubbles/app/layouts/settings/pages/misc/logging_panel.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/content/log_level_selector.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/content/next_button.dart';
 import 'package:bluebubbles/helpers/backend/settings_helpers.dart';
+import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
 import 'package:bluebubbles/services/backend/sync/chat_sync_manager.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
@@ -36,7 +37,7 @@ class _TroubleshootPanelState extends OptimizedState<TroubleshootPanel> {
     super.initState();
 
     // Count how many .log files are in the log directory
-    final Directory logDir = Directory(Logger.logDir);
+    final Directory logDir = Directory(Logger().logDir);
     if (logDir.existsSync()) {
       final List<FileSystemEntity> files = logDir.listSync();
       final logFiles =
@@ -186,11 +187,11 @@ class _TroubleshootPanelState extends OptimizedState<TroubleshootPanel> {
 
                           try {
                             showSnackbar("Please Wait", "Compressing ${logFileCount.value} log file(s)...");
-                            String filePath = Logger.compressLogs();
+                            String filePath = Logger().compressLogs();
                             final File zippedLogFile = File(filePath);
 
                             // Copy the file to downloads
-                            String newPath = await fs.saveToDownloads(zippedLogFile);
+                            String newPath = await fs().saveToDownloads(zippedLogFile);
 
                             // Delete the original file
                             zippedLogFile.deleteSync();
@@ -205,7 +206,7 @@ class _TroubleshootPanelState extends OptimizedState<TroubleshootPanel> {
                               },
                             );
                           } catch (ex, stacktrace) {
-                            Logger.error("Failed to export logs!", error: ex, trace: stacktrace);
+                            Logger().error("Failed to export logs!", error: ex, trace: stacktrace);
                             showSnackbar("Failed to export logs!", "Error: ${ex.toString()}");
                           } finally {
                             isExportingLogs = false;
@@ -220,9 +221,9 @@ class _TroubleshootPanelState extends OptimizedState<TroubleshootPanel> {
                           materialIcon: Icons.file_open,
                         ),
                         title: "Open Logs",
-                        subtitle: Logger.logDir,
+                        subtitle: Logger().logDir,
                         onTap: () async {
-                          final File logFile = File(Logger.logDir);
+                          final File logFile = File(Logger().logDir);
                           if (logFile.existsSync()) {
                             logFile.createSync(recursive: true);
                           }
@@ -238,7 +239,7 @@ class _TroubleshootPanelState extends OptimizedState<TroubleshootPanel> {
                       title: "Clear Logs",
                       subtitle: "Deletes all stored log files.",
                       onTap: () async {
-                        Logger.clearLogs();
+                        Logger().clearLogs();
                         showSnackbar(
                             "Logs Cleared", "All logs have been deleted.");
                         logFileCount.value = 0;
@@ -252,9 +253,9 @@ class _TroubleshootPanelState extends OptimizedState<TroubleshootPanel> {
                         materialIcon: Icons.folder,
                       ),
                       title: "Open App Data Location",
-                      subtitle: fs.appDocDir.path,
+                      subtitle: fs().appDocDir.path,
                       onTap: () async =>
-                          await launchUrl(Uri.file(fs.appDocDir.path)),
+                          await launchUrl(Uri.file(fs().appDocDir.path)),
                     ),
                 ]),
                 if (Platform.isAndroid)
@@ -300,7 +301,7 @@ class _TroubleshootPanelState extends OptimizedState<TroubleshootPanel> {
                   children: [
                     SettingsTile(
                         onTap: () async {
-                          await ss.prefs.remove("lastOpenedChat");
+                          await prefs().i.remove("lastOpenedChat");
                           showSnackbar("Success", "Successfully cleared the last opened chat!");
                         },
                         leading: const SettingsLeadingIcon(
@@ -333,7 +334,7 @@ class _TroubleshootPanelState extends OptimizedState<TroubleshootPanel> {
                             showSnackbar("Success",
                                 "Successfully re-synced handles! You may need to close and re-open the app for changes to take effect.");
                           } catch (ex, stacktrace) {
-                            Logger.error("Failed to reset contacts!", error: ex, trace: stacktrace);
+                            Logger().error("Failed to reset contacts!", error: ex, trace: stacktrace);
 
                             showSnackbar("Failed to re-sync handles!",
                                 "Error: ${ex.toString()}");
@@ -372,7 +373,7 @@ class _TroubleshootPanelState extends OptimizedState<TroubleshootPanel> {
                             showSnackbar("Success",
                                 "Successfully synced your chat info! You may need to close and re-open the app for changes to take effect.");
                           } catch (ex, stacktrace) {
-                            Logger.error("Failed to sync chat info!", error: ex, trace: stacktrace);
+                            Logger().error("Failed to sync chat info!", error: ex, trace: stacktrace);
                             showSnackbar("Failed to sync chat info!",
                                 "Error: ${ex.toString()}");
                           } finally {

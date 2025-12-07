@@ -25,11 +25,11 @@ String? sanitizeServerAddress({String? address}) {
 }
 
 Future<int> getOrCreateUniqueId() async {
-  int uniqueId = ss.settings.firstFcmRegisterDate.value;
+  int uniqueId = ss().settings.firstFcmRegisterDate.value;
   if (uniqueId == 0) {
     uniqueId = (DateTime.now().millisecondsSinceEpoch / 1000).round();
-    ss.settings.firstFcmRegisterDate.value = uniqueId;
-    await ss.settings.saveOne('firstFcmRegisterDate');
+    ss().settings.firstFcmRegisterDate.value = uniqueId;
+    await ss().settings.saveOne('firstFcmRegisterDate');
   }
 
   return uniqueId;
@@ -65,7 +65,7 @@ Future<String> getDeviceName() async {
       deviceName = items.join("_").toLowerCase().replaceAll(' ', '_');
     }
   } catch (ex, stack) {
-    Logger.error("Failed to get device name! Defaulting to 'bluebubbles-client'", error: ex, trace: stack);
+    Logger().error("Failed to get device name! Defaulting to 'bluebubbles-client'", error: ex, trace: stack);
   }
 
   return deviceName;

@@ -188,7 +188,7 @@ class CupertinoHeader extends StatelessWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize =>
       Size.fromHeight((Get.context!.orientation == Orientation.landscape && Platform.isAndroid ? 55 : 75) *
-          ss.settings.avatarScale.value);
+          ss().settings.avatarScale.value);
 }
 
 class _UnreadIcon extends StatefulWidget {
@@ -341,7 +341,7 @@ class _ChatIconAndTitleState extends CustomState<_ChatIconAndTitle, void, Conver
 
   @override
   Widget build(BuildContext context) {
-    final hideInfo = ss.settings.redactedMode.value && ss.settings.hideContactInfo.value;
+    final hideInfo = ss().settings.redactedMode.value && ss().settings.hideContactInfo.value;
     String _title = title;
     if (hideInfo) {
       _title = controller.chat.isGroup ? controller.chat.fakeName : controller.chat.participants[0].fakeName;

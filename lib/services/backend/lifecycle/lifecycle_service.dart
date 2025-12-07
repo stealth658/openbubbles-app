@@ -39,14 +39,14 @@ class LifecycleService extends GetxService with WidgetsBindingObserver {
   }
 
   Future<void> init({bool headless = false, bool isBubble = false}) async {
-    Logger.debug("Initializing LifecycleService${headless ? " in headless mode" : ""}");
+    Logger().debug("Initializing LifecycleService${headless ? " in headless mode" : ""}");
 
     isUiThread = !headless;
     this.isBubble = isBubble;
 
     handleForegroundService(AppLifecycleState.resumed);
 
-    Logger.debug("LifecycleService initialized");
+    Logger().debug("LifecycleService initialized");
   }
 
   @override
@@ -57,7 +57,7 @@ class LifecycleService extends GetxService with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
-    Logger.debug("App State changed to $state");
+    Logger().debug("App State changed to $state");
 
     // If the current state is resume, and we've already had a resume, remove all states up to the last resume.
     if (state == AppLifecycleState.resumed && statesSinceLastResume.contains(AppLifecycleState.resumed)) {
@@ -74,7 +74,7 @@ class LifecycleService extends GetxService with WidgetsBindingObserver {
       open();
     } else if (state != AppLifecycleState.inactive) {
       SystemChannels.textInput.invokeMethod('TextInput.hide').catchError((e, stack) {
-        Logger.error("Error caught while hiding keyboard!", error: e, trace: stack);
+        Logger().error("Error caught while hiding keyboard!", error: e, trace: stack);
       });
       if (isBubble) {
         closeBubble();
@@ -101,10 +101,10 @@ class LifecycleService extends GetxService with WidgetsBindingObserver {
     if (Platform.isAndroid && keepAlive) {
       // We only want the foreground service to run when the app is not active
       if (state == AppLifecycleState.resumed) {
-        Logger.info(tag: "LifecycleService", "Stopping foreground service");
+        Logger().info(tag: "LifecycleService", "Stopping foreground service");
         mcs.invokeMethod("stop-foreground-service");
       } else if ([AppLifecycleState.paused, AppLifecycleState.detached].contains(state)) {
-        Logger.info(tag: "LifecycleService", "Starting foreground service");
+        Logger().info(tag: "LifecycleService", "Starting foreground service");
         mcs.invokeMethod("start-foreground-service");
       }
     }

@@ -76,13 +76,13 @@ class FullscreenMediaHolderState extends OptimizedState<FullscreenMediaHolder> {
     return TitleBarWrapper(
       child: AnnotatedRegion<SystemUiOverlayStyle>(
         value: SystemUiOverlayStyle(
-          systemNavigationBarColor: ss.settings.immersiveMode.value
+          systemNavigationBarColor: ss().settings.immersiveMode.value
               ? Colors.transparent
               : context.theme.colorScheme.background, // navigation bar color
           systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
           statusBarColor: Colors.transparent, // status bar color
           statusBarIconBrightness:
-              ss.settings.skin.value != Skins.iOS ? Brightness.light : context.theme.colorScheme.brightness.opposite,
+              ss().settings.skin.value != Skins.iOS ? Brightness.light : context.theme.colorScheme.brightness.opposite,
         ),
         child: Actions(
           actions: {
@@ -130,17 +130,17 @@ class FullscreenMediaHolderState extends OptimizedState<FullscreenMediaHolder> {
                 focusNode: focusNode,
                 autofocus: true,
                 onKeyEvent: (node, event) {
-                  Logger.info(
+                  Logger().info(
                       "Got device label ${event.deviceType.label}, physical key ${event.physicalKey.toString()}, logical key ${event.logicalKey.toString()}",
                       tag: "RawKeyboardListener");
                   if (event.physicalKey.debugName == "Arrow Right") {
-                    if (ss.settings.fullscreenViewerSwipeDir.value == SwipeDirection.RIGHT) {
+                    if (ss().settings.fullscreenViewerSwipeDir.value == SwipeDirection.RIGHT) {
                       controller.previousPage(duration: const Duration(milliseconds: 300), curve: Curves.easeIn);
                     } else {
                       controller.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeIn);
                     }
                   } else if (event.physicalKey.debugName == "Arrow Left") {
-                    if (ss.settings.fullscreenViewerSwipeDir.value == SwipeDirection.LEFT) {
+                    if (ss().settings.fullscreenViewerSwipeDir.value == SwipeDirection.LEFT) {
                       controller.previousPage(duration: const Duration(milliseconds: 300), curve: Curves.easeIn);
                     } else {
                       controller.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeIn);
@@ -156,7 +156,7 @@ class FullscreenMediaHolderState extends OptimizedState<FullscreenMediaHolder> {
                       (attachments.length == 1
                           ? const NeverScrollableScrollPhysics()
                           : ThemeSwitcher.getScrollPhysics()),
-                  reverse: ss.settings.fullscreenViewerSwipeDir.value == SwipeDirection.RIGHT,
+                  reverse: ss().settings.fullscreenViewerSwipeDir.value == SwipeDirection.RIGHT,
                   itemCount: attachments.length,
                   onPageChanged: (int val) {
                     widget.videoController?.player.pause();

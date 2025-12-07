@@ -85,7 +85,7 @@ class _SettingsPageState extends OptimizedState<SettingsPage> {
       onTap: () => FocusScope.of(context).unfocus(),
       child: AnnotatedRegion<SystemUiOverlayStyle>(
         value: SystemUiOverlayStyle(
-          systemNavigationBarColor: ss.settings.immersiveMode.value
+          systemNavigationBarColor: ss().settings.immersiveMode.value
               ? Colors.transparent
               : context.theme.colorScheme.background, // navigation bar color
           systemNavigationBarIconBrightness:
@@ -272,7 +272,7 @@ class _SettingsPageState extends OptimizedState<SettingsPage> {
                                 name: "initial",
                                 child: Scaffold(
                                     backgroundColor:
-                                        ss.settings.skin.value != Skins.iOS
+                                        ss().settings.skin.value != Skins.iOS
                                             ? tileColor
                                             : headerColor,
                                     body: Center(

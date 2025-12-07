@@ -116,7 +116,7 @@ extension ChatListHelpers on RxList<Chat> {
   }
 
   RxList<Chat> unknownSendersHelper(bool unknown) {
-    if (!ss.settings.filterUnknownSenders.value) return this;
+    if (!ss().settings.filterUnknownSenders.value) return this;
     if (unknown) {
       return where((e) => !e.isGroup && e.participants.firstOrNull?.contact == null).toList().obs;
     } else {
@@ -127,7 +127,7 @@ extension ChatListHelpers on RxList<Chat> {
 
 extension PlatformSpecificCapitalize on String {
   String get psCapitalize {
-    if (ss.settings.skin.value == Skins.iOS) {
+    if (ss().settings.skin.value == Skins.iOS) {
       return toUpperCase();
     } else {
       return this;

@@ -66,11 +66,11 @@ class _OauthPanelState extends OptimizedState<OauthPanel> {
       return;
     }
 
-    String oldPassword = ss.settings.guidAuthKey.value;
-    String oldAddr = ss.settings.serverAddress.value;
+    String oldPassword = ss().settings.guidAuthKey.value;
+    String oldAddr = ss().settings.serverAddress.value;
 
-    ss.settings.serverAddress.value = addr;
-    ss.settings.guidAuthKey.value = password;
+    ss().settings.serverAddress.value = addr;
+    ss().settings.guidAuthKey.value = password;
 
     dio.Response? serverResponse;
     await http.ping().then((response) {
@@ -81,16 +81,16 @@ class _OauthPanelState extends OptimizedState<OauthPanel> {
 
     if (serverResponse?.statusCode == 401) {
       error = "Authentication failed. Incorrect password!";
-      ss.settings.serverAddress.value = oldAddr;
-      ss.settings.guidAuthKey.value = oldPassword;
-      await ss.settings.saveMany(["serverAddress", "guidAuthKey"]);
+      ss().settings.serverAddress.value = oldAddr;
+      ss().settings.guidAuthKey.value = oldPassword;
+      await ss().settings.saveMany(["serverAddress", "guidAuthKey"]);
       return setState(() {});
     }
     if (serverResponse?.statusCode != 200) {
       error = "Failed to connect to $addr! Please ensure your Server's URL is accessible from your device.";
-      ss.settings.serverAddress.value = oldAddr;
-      ss.settings.guidAuthKey.value = oldPassword;
-      await ss.settings.saveMany(["serverAddress", "guidAuthKey"]);
+      ss().settings.serverAddress.value = oldAddr;
+      ss().settings.guidAuthKey.value = oldPassword;
+      await ss().settings.saveMany(["serverAddress", "guidAuthKey"]);
       return setState(() {});
     }
 

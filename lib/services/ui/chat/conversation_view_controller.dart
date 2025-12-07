@@ -5,6 +5,7 @@ import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:bluebubbles/app/components/custom_text_editing_controllers.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -105,7 +106,7 @@ class ConversationViewController extends StatefulController with GetSingleTicker
     scrollController.addListener(() {
       if (!scrollController.hasClients) return;
       if (keyboardOpen
-          && ss.settings.hideKeyboardOnScroll.value
+          && ss().settings.hideKeyboardOnScroll.value
           && scrollController.offset > _keyboardOffset + 100) {
         focusNode.unfocus();
         subjectFocusNode.unfocus();
@@ -164,7 +165,7 @@ class ConversationViewController extends StatefulController with GetSingleTicker
       );
     }
 
-    if (ss.settings.openKeyboardOnSTB.value) {
+    if (ss().settings.openKeyboardOnSTB.value) {
       focusNode.requestFocus();
     }
   }
@@ -235,17 +236,17 @@ class ConversationViewController extends StatefulController with GetSingleTicker
 
   Future<void> saveReplyToMessageState() async {
     if (replyToMessage != null) {
-      await ss.prefs.setString('replyToMessage_${chat.guid}', replyToMessage!.item1.guid!);
-      await ss.prefs.setInt('replyToMessagePart_${chat.guid}', replyToMessage!.item2);
+      await prefs().i.setString('replyToMessage_${chat.guid}', replyToMessage!.item1.guid!);
+      await prefs().i.setInt('replyToMessagePart_${chat.guid}', replyToMessage!.item2);
     } else {
-      await ss.prefs.remove('replyToMessage_${chat.guid}');
-      await ss.prefs.remove('replyToMessagePart_${chat.guid}');
+      await prefs().i.remove('replyToMessage_${chat.guid}');
+      await prefs().i.remove('replyToMessagePart_${chat.guid}');
     }
   }
 
   Future<void> loadReplyToMessageState() async {
-    final replyToMessageGuid = ss.prefs.getString('replyToMessage_${chat.guid}');
-    final replyToMessagePart = ss.prefs.getInt('replyToMessagePart_${chat.guid}');
+    final replyToMessageGuid = prefs().i.getString('replyToMessage_${chat.guid}');
+    final replyToMessagePart = prefs().i.getInt('replyToMessagePart_${chat.guid}');
     if (replyToMessageGuid != null && replyToMessagePart != null) {
       final message = Message.findOne(guid: replyToMessageGuid);
       if (message != null) {

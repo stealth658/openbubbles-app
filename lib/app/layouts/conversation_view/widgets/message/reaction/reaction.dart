@@ -89,7 +89,7 @@ class ReactionWidgetState extends OptimizedState<ReactionWidget> {
 
   @override
   Widget build(BuildContext context) {
-    if (ss.settings.skin.value != Skins.iOS) {
+    if (ss().settings.skin.value != Skins.iOS) {
       return Container(
         width: 30,
         height: 30,
@@ -123,8 +123,8 @@ class ReactionWidgetState extends OptimizedState<ReactionWidget> {
                         colorScheme: context.theme.colorScheme.copyWith(
                           primary: context.theme.colorScheme.bubble(context, true),
                           onPrimary: context.theme.colorScheme.onBubble(context, true),
-                          surface: ss.settings.monetTheming.value == Monet.full ? null : (context.theme.extensions[BubbleColors] as BubbleColors?)?.receivedBubbleColor,
-                          onSurface: ss.settings.monetTheming.value == Monet.full ? null : (context.theme.extensions[BubbleColors] as BubbleColors?)?.onReceivedBubbleColor,
+                          surface: ss().settings.monetTheming.value == Monet.full ? null : (context.theme.extensions[BubbleColors] as BubbleColors?)?.receivedBubbleColor,
+                          onSurface: ss().settings.monetTheming.value == Monet.full ? null : (context.theme.extensions[BubbleColors] as BubbleColors?)?.onReceivedBubbleColor,
                         ),
                       ),
                       child: Stack(
@@ -235,7 +235,7 @@ class ReactionWidgetState extends OptimizedState<ReactionWidget> {
               return DeferPointer(
                 child: GestureDetector(
                   child: Icon(
-                    ss.settings.skin.value == Skins.iOS ? CupertinoIcons.exclamationmark_circle : Icons.error_outline,
+                    ss().settings.skin.value == Skins.iOS ? CupertinoIcons.exclamationmark_circle : Icons.error_outline,
                     color: context.theme.colorScheme.error,
                   ),
                   onTap: () {

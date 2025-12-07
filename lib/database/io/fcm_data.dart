@@ -1,5 +1,6 @@
 import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/objectbox.g.dart';
+import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:objectbox/objectbox.dart';
@@ -46,34 +47,34 @@ class FCMData {
     Database.fcmData.put(this);
     final future = Future(() async {
       if (projectID != null) {
-        await ss.prefs.setString('projectID', projectID!);
+        await prefs().i.setString('projectID', projectID!);
       } else {
-        await ss.prefs.remove('projectID');
+        await prefs().i.remove('projectID');
       }
       if (storageBucket != null) {
-        await ss.prefs.setString('storageBucket', storageBucket!);
+        await prefs().i.setString('storageBucket', storageBucket!);
       } else {
-        await ss.prefs.remove('storageBucket');
+        await prefs().i.remove('storageBucket');
       }
       if (apiKey != null) {
-        await ss.prefs.setString('apiKey', apiKey!);
+        await prefs().i.setString('apiKey', apiKey!);
       } else {
-        await ss.prefs.remove('apiKey');
+        await prefs().i.remove('apiKey');
       }
       if (firebaseURL != null) {
-        await ss.prefs.setString('firebaseURL', firebaseURL!);
+        await prefs().i.setString('firebaseURL', firebaseURL!);
       } else {
-        await ss.prefs.remove('firebaseURL');
+        await prefs().i.remove('firebaseURL');
       }
       if (clientID != null) {
-        await ss.prefs.setString('clientID', clientID!);
+        await prefs().i.setString('clientID', clientID!);
       } else {
-        await ss.prefs.remove('clientID');
+        await prefs().i.remove('clientID');
       }
       if (applicationID != null) {
-        await ss.prefs.setString('applicationID', applicationID!);
+        await prefs().i.setString('applicationID', applicationID!);
       } else {
-        await ss.prefs.remove('applicationID');
+        await prefs().i.remove('applicationID');
       }
     });
 
@@ -81,31 +82,31 @@ class FCMData {
       await future;
     }
 
-    ss.fcmData = this;
+    ss().fcmData = this;
     return this;
   }
 
   static Future<void> deleteFcmData() async {
     Database.fcmData.removeAll();
-    await ss.prefs.remove('projectID');
-    await ss.prefs.remove('storageBucket');
-    await ss.prefs.remove('apiKey');
-    await ss.prefs.remove('firebaseURL');
-    await ss.prefs.remove('clientID');
-    await ss.prefs.remove('applicationID');
-    ss.fcmData = FCMData();
+    await prefs().i.remove('projectID');
+    await prefs().i.remove('storageBucket');
+    await prefs().i.remove('apiKey');
+    await prefs().i.remove('firebaseURL');
+    await prefs().i.remove('clientID');
+    await prefs().i.remove('applicationID');
+    ss().fcmData = FCMData();
   }
 
   static FCMData getFCM() {
     final result = Database.fcmData.getAll();
     if (result.isEmpty) {
       return FCMData(
-        projectID: ss.prefs.getString('projectID'),
-        storageBucket: ss.prefs.getString('storageBucket'),
-        apiKey: ss.prefs.getString('apiKey'),
-        firebaseURL: ss.prefs.getString('firebaseURL'),
-        clientID: ss.prefs.getString('clientID'),
-        applicationID: ss.prefs.getString('applicationID'),
+        projectID: prefs().i.getString('projectID'),
+        storageBucket: prefs().i.getString('storageBucket'),
+        apiKey: prefs().i.getString('apiKey'),
+        firebaseURL: prefs().i.getString('firebaseURL'),
+        clientID: prefs().i.getString('clientID'),
+        applicationID: prefs().i.getString('applicationID'),
       );
     }
     return result.first;

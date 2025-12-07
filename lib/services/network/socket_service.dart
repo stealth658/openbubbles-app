@@ -34,23 +34,23 @@ class SocketService extends GetxService {
   StreamSubscription<InternetStatus>? internetConnectionListener;
 
   String get serverAddress => http.origin;
-  String get password => ss.settings.guidAuthKey.value;
+  String get password => ss().settings.guidAuthKey.value;
 
   @override
   void onInit() {
     super.onInit();
 
-    Logger.debug("Initializing socket service...");
+    Logger().debug("Initializing socket service...");
     startSocket();
     Connectivity().onConnectivityChanged.listen((event) {
       if (!event.contains(ConnectivityResult.wifi) &&
           !event.contains(ConnectivityResult.ethernet) &&
           http.originOverride != null) {
-        Logger.info("Detected switch off wifi, removing localhost address...");
+        Logger().info("Detected switch off wifi, removing localhost address...");
         http.originOverride = null;
       }
     });
-    Logger.debug("Initialized socket service");
+    Logger().debug("Initialized socket service");
   }
 
   @override
@@ -117,7 +117,7 @@ class SocketService extends GetxService {
       );
 
       internetConnectionListener = internetConnection!.onStatusChange.listen((InternetStatus status) {
-        Logger.info("Internet status changed: $status");
+        Logger().info("Internet status changed: $status");
         switch (status) {
           case InternetStatus.connected:
             reconnect();
@@ -156,7 +156,7 @@ class SocketService extends GetxService {
 
   void forgetConnection() {
     closeSocket();
-    ss.settings.guidAuthKey.value = "";
+    ss().settings.guidAuthKey.value = "";
     clearServerUrl(saveAdditionalSettings: ["guidAuthKey"]);
   }
 
@@ -188,13 +188,13 @@ class SocketService extends GetxService {
         NetworkTasks.onConnect();
         notif.clearSocketError();
       case SocketState.disconnected:
-        Logger.info("Disconnected from socket...");
+        Logger().info("Disconnected from socket...");
         state.value = SocketState.disconnected;
       case SocketState.connecting:
-        Logger.info("Connecting to socket...");
+        Logger().info("Connecting to socket...");
         state.value = SocketState.connecting;
       case SocketState.error:
-        Logger.info("Socket connect error, fetching new URL...");
+        Logger().info("Socket connect error, fetching new URL...");
 
         if (data is SocketException) {
           handleSocketException(data);
@@ -209,7 +209,7 @@ class SocketService extends GetxService {
 
           if (state.value == SocketState.connected) return;
 
-          if (!ss.settings.keepAppAlive.value) {
+          if (!ss().settings.keepAppAlive.value) {
             notif.createSocketError();
           }
         });

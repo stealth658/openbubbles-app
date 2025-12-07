@@ -68,7 +68,7 @@ class _UnsupportedInteractiveState extends OptimizedState<UnsupportedInteractive
     } else if (temp is IconData) {
       icon = temp;
     }
-    return icon ?? (ss.settings.skin.value == Skins.iOS ? CupertinoIcons.square_grid_3x2 : Icons.apps);
+    return icon ?? (ss().settings.skin.value == Skins.iOS ? CupertinoIcons.square_grid_3x2 : Icons.apps);
   }
 
   @override

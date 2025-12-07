@@ -61,10 +61,10 @@ class _TaskerPanelState extends OptimizedState<TaskerPanel> {
                   children: [
                     Obx(() => SettingsSwitch(
                       onChanged: (bool val) {
-                        ss.settings.sendEventsToTasker.value = val;
-                        ss.saveSettings();
+                        ss().settings.sendEventsToTasker.value = val;
+                        ss().saveSettings();
                       },
-                      initialVal: ss.settings.sendEventsToTasker.value,
+                      initialVal: ss().settings.sendEventsToTasker.value,
                       title: "Send Events to Tasker",
                       subtitle: "Send events emitted by the server to Tasker via Intent broadcasts",
                       backgroundColor: tileColor,

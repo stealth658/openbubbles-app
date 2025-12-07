@@ -75,7 +75,7 @@ class _TextBubbleState extends CustomState<TextBubble, void, MessageWidgetContro
   List<Color> getBubbleColors() {
     if (selected && !iOS) return [context.theme.colorScheme.tertiaryContainer, context.theme.colorScheme.tertiaryContainer];
     List<Color> bubbleColors = [context.theme.colorScheme.properSurface, context.theme.colorScheme.properSurface];
-    if (ss.settings.colorfulBubbles.value && !message.isFromMe!) {
+    if (ss().settings.colorfulBubbles.value && !message.isFromMe!) {
       if (message.handle?.color == null) {
         bubbleColors = toColorGradient(message.handle?.address);
       } else {
@@ -117,7 +117,7 @@ class _TextBubbleState extends CustomState<TextBubble, void, MessageWidgetContro
           part,
           message,
           colorOverride: selected ? context.theme.colorScheme.onTertiaryContainer
-              : ss.settings.colorfulBubbles.value && !message.isFromMe!
+              : ss().settings.colorfulBubbles.value && !message.isFromMe!
               ? getBubbleColors().first.oppositeLightenOrDarken(75) : null,
           hideBodyText: widget.subjectOnly,
         ),
@@ -126,7 +126,7 @@ class _TextBubbleState extends CustomState<TextBubble, void, MessageWidgetContro
           part,
           message,
           colorOverride: selected ? context.theme.colorScheme.onTertiaryContainer
-              : ss.settings.colorfulBubbles.value && !message.isFromMe!
+              : ss().settings.colorfulBubbles.value && !message.isFromMe!
               ? getBubbleColors().first.oppositeLightenOrDarken(75) : null,
           hideBodyText: widget.subjectOnly,
         ),

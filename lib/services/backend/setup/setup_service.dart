@@ -15,8 +15,8 @@ class SetupService extends GetxService {
   }
 
   Future<void> _finishSetup() async {
-    ss.settings.finishedSetup.value = true;
-    await ss.saveSettings();
+    ss().settings.finishedSetup.value = true;
+    await ss().saveSettings();
 
     await StartupTasks.onStartup();
     await NetworkTasks.onConnect();

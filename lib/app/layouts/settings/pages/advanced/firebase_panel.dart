@@ -95,7 +95,7 @@ class _FirebasePanelState extends OptimizedState<FirebasePanel> {
                   backgroundColor: tileColor,
                   children: [
                     Obx(() {
-                      final _enabled = (kIsDesktop || ss.settings.firstFcmRegisterDate.value != 0) && !ss.fcmData.isNull;
+                      final _enabled = (kIsDesktop || ss().settings.firstFcmRegisterDate.value != 0) && !ss().fcmData.isNull;
                       return SettingsTile(
                         backgroundColor: tileColor,
                         title: "Firebase Status",
@@ -119,20 +119,20 @@ class _FirebasePanelState extends OptimizedState<FirebasePanel> {
                       );
                     }),
                     Obx(() {
-                      final _enabled = ss.settings.firstFcmRegisterDate.value != 0 && !ss.fcmData.isNull && socket.socket.connected;
+                      final _enabled = ss().settings.firstFcmRegisterDate.value != 0 && !ss().fcmData.isNull && socket.socket.connected;
                       if (_enabled) return const SizedBox.shrink();
                       return const SettingsDivider();
                     }),
                     Obx(() {
-                      final _enabled = ss.settings.firstFcmRegisterDate.value != 0 && !ss.fcmData.isNull && socket.socket.connected;
+                      final _enabled = ss().settings.firstFcmRegisterDate.value != 0 && !ss().fcmData.isNull && socket.socket.connected;
                       if (_enabled) return const SizedBox.shrink();
 
                       return SettingsTile(
                         backgroundColor: tileColor,
                         title: "Load Configurations from Server",
                         subtitle: 'Download Firebase configurations directly from your server.',
-                        trailing: Obx(() => ss.settings.skin.value != Skins.Material ? Icon(
-                            ss.settings.skin.value != Skins.Material
+                        trailing: Obx(() => ss().settings.skin.value != Skins.Material ? Icon(
+                            ss().settings.skin.value != Skins.Material
                                 ? CupertinoIcons.refresh
                                 : Icons.refresh,
                             color: context.theme.colorScheme.outline.withValues(alpha: 0.5),
@@ -154,7 +154,7 @@ class _FirebasePanelState extends OptimizedState<FirebasePanel> {
                                 error.value = "Firebase not configured on the server!";
                               }
                             } catch (e) {
-                              Logger.error("Error loading Firebase Configurations: ${e.toString()}");
+                              Logger().error("Error loading Firebase Configurations: ${e.toString()}");
                             } finally {
                               isLoading.value = false;
                             }
@@ -208,24 +208,24 @@ class _FirebasePanelState extends OptimizedState<FirebasePanel> {
                       );
                     }),
                     Obx(() {
-                      final _enabled = ss.settings.firstFcmRegisterDate.value != 0 && !ss.fcmData.isNull;
+                      final _enabled = ss().settings.firstFcmRegisterDate.value != 0 && !ss().fcmData.isNull;
                       if (_enabled && !isSnap) return const SizedBox.shrink();
                       return const SettingsDivider();
                     }),
                     Obx(() {
-                      final _enabled = ss.settings.firstFcmRegisterDate.value != 0 && !ss.fcmData.isNull;
+                      final _enabled = ss().settings.firstFcmRegisterDate.value != 0 && !ss().fcmData.isNull;
                       if (_enabled && !isSnap) return const SizedBox.shrink();
 
                       return SettingsTile(
                         leading: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                           Obx(() => Material(
-                              shape: ss.settings.skin.value == Skins.Samsung
+                              shape: ss().settings.skin.value == Skins.Samsung
                                   ? SquircleBorder(
                                       side: BorderSide(color: context.theme.colorScheme.outline.withValues(alpha: 0.5), width: 1.0),
                                     )
                                   : null,
                               color: Colors.transparent,
-                              borderRadius: ss.settings.skin.value == Skins.iOS ? BorderRadius.circular(6) : null,
+                              borderRadius: ss().settings.skin.value == Skins.iOS ? BorderRadius.circular(6) : null,
                               child: SizedBox(
                                   width: 31,
                                   height: 31,
@@ -259,20 +259,20 @@ class _FirebasePanelState extends OptimizedState<FirebasePanel> {
                     }),
                     if (!kIsDesktop && !kIsWeb)
                       Obx(() {
-                        final _enabled = ss.settings.firstFcmRegisterDate.value != 0 && !ss.fcmData.isNull;
+                        final _enabled = ss().settings.firstFcmRegisterDate.value != 0 && !ss().fcmData.isNull;
                         if (!_enabled) return const SizedBox.shrink();
                         return const SettingsDivider();
                       }),
                     if (!kIsDesktop && !kIsWeb)
                       Obx(() {
-                      final _enabled = ss.settings.firstFcmRegisterDate.value != 0 && !ss.fcmData.isNull;
+                      final _enabled = ss().settings.firstFcmRegisterDate.value != 0 && !ss().fcmData.isNull;
                       if (!_enabled) return const SizedBox.shrink();
 
                       return SettingsTile(
                         backgroundColor: tileColor,
                         title: "Re-register Device with Server",
-                        trailing: Obx(() => ss.settings.skin.value != Skins.Material ? Icon(
-                            ss.settings.skin.value != Skins.Material
+                        trailing: Obx(() => ss().settings.skin.value != Skins.Material ? Icon(
+                            ss().settings.skin.value != Skins.Material
                                 ? CupertinoIcons.refresh
                                 : Icons.refresh_outlined,
                             color: context.theme.colorScheme.outline.withValues(alpha: 0.5),
@@ -287,7 +287,7 @@ class _FirebasePanelState extends OptimizedState<FirebasePanel> {
                             await fcm.registerDevice();
                             showSnackbar("Device Registered", "Successfully re-registered device with server!");
                           } catch (e, s) {
-                            Logger.error("Failed to re-register device with server", error: e, trace: s);
+                            Logger().error("Failed to re-register device with server", error: e, trace: s);
                             showSnackbar("Error", "Failed to re-register device with server! Error: ${e.toString()}");
                           }
                         },
@@ -296,7 +296,7 @@ class _FirebasePanelState extends OptimizedState<FirebasePanel> {
                   ],
                 ),
                 Obx(() {
-                  final _enabled = ss.settings.firstFcmRegisterDate.value != 0 && !ss.fcmData.isNull;
+                  final _enabled = ss().settings.firstFcmRegisterDate.value != 0 && !ss().fcmData.isNull;
                   if (!_enabled) return const SizedBox.shrink();
                   return SettingsHeader(
                     iosSubtitle: iosSubtitle,
@@ -308,7 +308,7 @@ class _FirebasePanelState extends OptimizedState<FirebasePanel> {
                   backgroundColor: tileColor,
                   children: [
                     Obx(() {
-                      final _enabled = ss.settings.firstFcmRegisterDate.value != 0 && !ss.fcmData.isNull;
+                      final _enabled = ss().settings.firstFcmRegisterDate.value != 0 && !ss().fcmData.isNull;
                       if (!_enabled) return const SizedBox.shrink();
                       return Container(
                         child: Padding(
@@ -316,13 +316,13 @@ class _FirebasePanelState extends OptimizedState<FirebasePanel> {
                           child: SelectableText.rich(
                               TextSpan(children: [
                                 const TextSpan(text: "Project ID: ", style: TextStyle(fontWeight: FontWeight.bold)),
-                                TextSpan(text: ss.fcmData.projectID!),
+                                TextSpan(text: ss().fcmData.projectID!),
                                 const TextSpan(text: "\n"),
                                 const TextSpan(text: "App ID: ", style: TextStyle(fontWeight: FontWeight.bold)),
-                                TextSpan(text: ss.fcmData.applicationID!),
+                                TextSpan(text: ss().fcmData.applicationID!),
                                 const TextSpan(text: "\n"),
                                 const TextSpan(text: "Firebase URL: ", style: TextStyle(fontWeight: FontWeight.bold)),
-                                TextSpan(text: ss.fcmData.firebaseURL ?? "N/A"),
+                                TextSpan(text: ss().fcmData.firebaseURL ?? "N/A"),
 
                               ]),
                           )
@@ -332,7 +332,7 @@ class _FirebasePanelState extends OptimizedState<FirebasePanel> {
                   ],
                 ),
                 Obx(() {
-                  final _enabled = ss.settings.firstFcmRegisterDate.value != 0 && !ss.fcmData.isNull;
+                  final _enabled = ss().settings.firstFcmRegisterDate.value != 0 && !ss().fcmData.isNull;
                   if (!_enabled) return const SizedBox.shrink();
                   return SettingsHeader(
                     iosSubtitle: iosSubtitle,
@@ -344,7 +344,7 @@ class _FirebasePanelState extends OptimizedState<FirebasePanel> {
                   backgroundColor: tileColor,
                   children: [
                     Obx(() {
-                      final _enabled = ss.settings.firstFcmRegisterDate.value != 0 && !ss.fcmData.isNull;
+                      final _enabled = ss().settings.firstFcmRegisterDate.value != 0 && !ss().fcmData.isNull;
                       if (!_enabled) return const SizedBox.shrink();
 
                       return SettingsTile(
@@ -398,11 +398,11 @@ class _FirebasePanelState extends OptimizedState<FirebasePanel> {
                                           await mcs.invokeMethod("firebase-delete-token");
                                         }
                                       } catch (e, s) {
-                                        Logger.error("Failed to delete Firebase FCM token", error: e, trace: s);
+                                        Logger().error("Failed to delete Firebase FCM token", error: e, trace: s);
                                       }
 
-                                      ss.settings.firstFcmRegisterDate.value = 0;
-                                      await ss.settings.saveOne('firstFcmRegisterDate');
+                                      ss().settings.firstFcmRegisterDate.value = 0;
+                                      await ss().settings.saveOne('firstFcmRegisterDate');
                                       exit(0);
                                     },
                                   ),

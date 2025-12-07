@@ -4,10 +4,10 @@ import 'package:archive/archive_io.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/utils/logger/outputs/log_stream_output.dart';
 import 'package:flutter/foundation.dart';
-import 'package:get/get.dart';
 import 'package:logger/logger.dart';
 import 'package:path/path.dart';
 import 'package:universal_io/io.dart';
+import 'package:get_it/get_it.dart';
 
 // ignore: library_prefixes
 import 'package:logger/logger.dart' as LoggerFactory;
@@ -15,9 +15,7 @@ import 'package:logger/logger.dart' as LoggerFactory;
 import 'outputs/debug_console_output.dart';
 
 // ignore: non_constant_identifier_names
-BaseLogger Logger = Get.isRegistered<BaseLogger>()
-    ? Get.find<BaseLogger>()
-    : Get.put(BaseLogger());
+BaseLogger Logger() => GetIt.I<BaseLogger>();
 
 enum LogLevel { INFO, WARN, ERROR, DEBUG, TRACE, FATAL }
 
@@ -30,7 +28,7 @@ const Map<Level, bool> defaultExcludeBoxes = {
   LoggerFactory.Level.fatal: false,
 };
 
-class BaseLogger extends GetxService {
+class BaseLogger {
   LoggerFactory.Logger _logger = LoggerFactory.Logger();
 
   final StreamController<String> logStream =
@@ -108,7 +106,7 @@ class BaseLogger extends GetxService {
   }
 
   String get logDir {
-    return join(fs.appDocDir.path, 'logs');
+    return join(fs().appDocDir.path, 'logs');
   }
 
   LoggerFactory.Logger get logger {
@@ -118,11 +116,11 @@ class BaseLogger extends GetxService {
   Future<void> init() async {
     _logger = createLogger();
 
-    if (ss.initCompleted.isCompleted) {
-      currentLevel = ss.settings.logLevel.value;
+    if (ss().initCompleted.isCompleted) {
+      currentLevel = ss().settings.logLevel.value;
     } else {
-      ss.initCompleted.future.then((_) {
-        currentLevel = ss.settings.logLevel.value;
+      ss().initCompleted.future.then((_) {
+        currentLevel = ss().settings.logLevel.value;
       });
     }
 
@@ -164,8 +162,8 @@ class BaseLogger extends GetxService {
     _showColors = null;
     _excludeBoxes = null;
 
-    if (ss.initCompleted.isCompleted) {
-      _currentLevel = ss.settings.logLevel.value;
+    if (ss().initCompleted.isCompleted) {
+      _currentLevel = ss().settings.logLevel.value;
     }
 
     _logger = createLogger();
@@ -186,10 +184,10 @@ class BaseLogger extends GetxService {
   }
 
   String compressLogs() {
-    final Directory logDir = Directory(Logger.logDir);
+    final Directory logDir = Directory(Logger().logDir);
     final date = DateTime.now().toIso8601String().split('T').first;
     final File zippedLogFile =
-        File("${fs.appDocDir.path}/bluebubbles-logs-$date.zip");
+        File("${fs().appDocDir.path}/bluebubbles-logs-$date.zip");
     if (zippedLogFile.existsSync()) zippedLogFile.deleteSync();
 
     final List<FileSystemEntity> files = logDir.listSync();
@@ -208,7 +206,7 @@ class BaseLogger extends GetxService {
   }
 
   Future<List<String>> getLogs({maxLines = 1000}) async {
-    final Directory logDir = Directory(Logger.logDir);
+    final Directory logDir = Directory(Logger().logDir);
     if (!logDir.existsSync()) return [];
 
     final List<FileSystemEntity> files = logDir.listSync();
@@ -242,7 +240,7 @@ class BaseLogger extends GetxService {
   }
 
   void clearLogs() {
-    final Directory logDir = Directory(Logger.logDir);
+    final Directory logDir = Directory(Logger().logDir);
     if (!logDir.existsSync()) return;
 
     for (final file in logDir.listSync()) {

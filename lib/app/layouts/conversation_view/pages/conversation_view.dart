@@ -42,11 +42,11 @@ class ConversationViewState extends OptimizedState<ConversationView> {
   void initState() {
     super.initState();
 
-    Logger.debug("Initializing Conversation View for ${chat.guid}");
+    Logger().debug("Initializing Conversation View for ${chat.guid}");
     controller.fromChatCreator = widget.fromChatCreator;
     cm.setActiveChatSync(chat);
     cm.activeChat!.controller = controller;
-    Logger.debug("Conversation View initialized for ${chat.guid}");
+    Logger().debug("Conversation View initialized for ${chat.guid}");
 
     if (widget.onInit != null) {
       Future.delayed(Duration.zero, widget.onInit!);
@@ -65,7 +65,7 @@ class ConversationViewState extends OptimizedState<ConversationView> {
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
-        systemNavigationBarColor: ss.settings.immersiveMode.value
+        systemNavigationBarColor: ss().settings.immersiveMode.value
             ? Colors.transparent
             : context.theme.colorScheme.background,
         systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
@@ -79,10 +79,10 @@ class ConversationViewState extends OptimizedState<ConversationView> {
           colorScheme: context.theme.colorScheme.copyWith(
             primary: context.theme.colorScheme.bubble(context, chat.isIMessage),
             onPrimary: context.theme.colorScheme.onBubble(context, chat.isIMessage),
-            surface: ss.settings.monetTheming.value == Monet.full
+            surface: ss().settings.monetTheming.value == Monet.full
                 ? null
                 : (context.theme.extensions[BubbleColors] as BubbleColors?)?.receivedBubbleColor,
-            onSurface: ss.settings.monetTheming.value == Monet.full
+            onSurface: ss().settings.monetTheming.value == Monet.full
                 ? null
                 : (context.theme.extensions[BubbleColors] as BubbleColors?)?.onReceivedBubbleColor,
           ),
@@ -112,28 +112,28 @@ class ConversationViewState extends OptimizedState<ConversationView> {
             top: false,
             bottom: false,
             child: Scaffold(
-              backgroundColor: ss.settings.windowEffect.value != WindowEffect.disabled ? Colors.transparent : context.theme.colorScheme.background,
+              backgroundColor: ss().settings.windowEffect.value != WindowEffect.disabled ? Colors.transparent : context.theme.colorScheme.background,
               extendBodyBehindAppBar: true,
               appBar: PreferredSize(
-                  preferredSize: Size(ns.width(context), (kIsDesktop ? (!iOS ? 25 : 5) : 0) + 90 * (iOS ? ss.settings.avatarScale.value : 0) + (!iOS ? kToolbarHeight : 0)),
+                  preferredSize: Size(ns.width(context), (kIsDesktop ? (!iOS ? 25 : 5) : 0) + 90 * (iOS ? ss().settings.avatarScale.value : 0) + (!iOS ? kToolbarHeight : 0)),
                   child: iOS
                   ? CupertinoHeader(controller: controller)
                   : MaterialHeader(controller: controller) as PreferredSizeWidget),
               body: Actions(
                 actions: {
-                  if (ss.settings.enablePrivateAPI.value)
+                  if (ss().settings.enablePrivateAPI.value)
                     ReplyRecentIntent: ReplyRecentAction(widget.chat),
-                  if (ss.settings.enablePrivateAPI.value)
+                  if (ss().settings.enablePrivateAPI.value)
                     HeartRecentIntent: HeartRecentAction(widget.chat),
-                  if (ss.settings.enablePrivateAPI.value)
+                  if (ss().settings.enablePrivateAPI.value)
                     LikeRecentIntent: LikeRecentAction(widget.chat),
-                  if (ss.settings.enablePrivateAPI.value)
+                  if (ss().settings.enablePrivateAPI.value)
                     DislikeRecentIntent: DislikeRecentAction(widget.chat),
-                  if (ss.settings.enablePrivateAPI.value)
+                  if (ss().settings.enablePrivateAPI.value)
                     LaughRecentIntent: LaughRecentAction(widget.chat),
-                  if (ss.settings.enablePrivateAPI.value)
+                  if (ss().settings.enablePrivateAPI.value)
                     EmphasizeRecentIntent: EmphasizeRecentAction(widget.chat),
-                  if (ss.settings.enablePrivateAPI.value)
+                  if (ss().settings.enablePrivateAPI.value)
                     QuestionRecentIntent: QuestionRecentAction(widget.chat),
                   OpenChatDetailsIntent: OpenChatDetailsAction(context, widget.chat),
                 },
@@ -211,12 +211,12 @@ class ConversationViewState extends OptimizedState<ConversationView> {
                                   child: GestureDetector(
                                     onPanUpdate: (details) {
                                       if (!mounted) return;
-                                      if (ss.settings.swipeToCloseKeyboard.value &&
+                                      if (ss().settings.swipeToCloseKeyboard.value &&
                                           details.delta.dy > 0 &&
                                           controller.keyboardOpen) {
                                         controller.focusNode.unfocus();
                                         controller.subjectFocusNode.unfocus();
-                                      } else if (ss.settings.swipeToOpenKeyboard.value &&
+                                      } else if (ss().settings.swipeToOpenKeyboard.value &&
                                           details.delta.dy < 0 &&
                                           !controller.keyboardOpen) {
                                         controller.focusNode.requestFocus();

@@ -4,6 +4,7 @@ import 'dart:core';
 import 'package:bluebubbles/helpers/ui/theme_helpers.dart';
 import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/objectbox.g.dart';
+import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/foundation.dart';
@@ -74,7 +75,7 @@ class ThemeStruct {
   }
 
   static ThemeStruct getLightTheme() {
-    final name = ss.prefs.getString("selected-light");
+    final name = prefs().i.getString("selected-light");
     final query = Database.themes.query(ThemeStruct_.name.equals(name ?? "Bright White")).build();
     query.limit = 1;
     final result = query.findFirst();
@@ -85,7 +86,7 @@ class ThemeStruct {
   }
 
   static ThemeStruct getDarkTheme() {
-    final name = ss.prefs.getString("selected-dark");
+    final name = prefs().i.getString("selected-dark");
     final query = Database.themes.query(ThemeStruct_.name.equals(name ?? "OLED Dark")).build();
     query.limit = 1;
     final result = query.findFirst();

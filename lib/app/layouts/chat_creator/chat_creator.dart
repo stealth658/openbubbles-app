@@ -70,7 +70,7 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
   Timer? _debounce;
   Completer<void>? createCompleter;
 
-  bool canCreateGroupChats = ss.canCreateGroupChatSync();
+  bool canCreateGroupChats = ss().canCreateGroupChatSync();
 
   @override
   void initState() {
@@ -287,7 +287,7 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
-        systemNavigationBarColor: ss.settings.immersiveMode.value
+        systemNavigationBarColor: ss().settings.immersiveMode.value
             ? Colors.transparent
             : context.theme.colorScheme.background, // navigation bar color
         systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
@@ -295,7 +295,7 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
         statusBarIconBrightness: context.theme.colorScheme.brightness.opposite,
       ),
       child: Scaffold(
-        backgroundColor: ss.settings.windowEffect.value != WindowEffect.disabled
+        backgroundColor: ss().settings.windowEffect.value != WindowEffect.disabled
             ? Colors.transparent
             : context.theme.colorScheme.background,
         appBar: PreferredSize(
@@ -310,7 +310,7 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
             surfaceTintColor: context.theme.colorScheme.primary,
             leading: buildBackButton(context),
             backgroundColor: Colors.transparent,
-            centerTitle: ss.settings.skin.value == Skins.iOS,
+            centerTitle: ss().settings.skin.value == Skins.iOS,
             title: Text(
               "New Conversation",
               style: context.theme.textTheme.titleLarge,
@@ -460,7 +460,7 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
                                   selectionControls:
                                       iOS ? cupertinoTextSelectionControls : materialTextSelectionControls,
                                   autofocus: kIsWeb || kIsDesktop,
-                                  enableIMEPersonalizedLearning: !ss.settings.incognitoKeyboard.value,
+                                  enableIMEPersonalizedLearning: !ss().settings.incognitoKeyboard.value,
                                   textInputAction: TextInputAction.done,
                                   cursorColor: context.theme.colorScheme.primary,
                                   cursorHeight: context.theme.textTheme.bodyMedium!.fontSize! * 1.25,
@@ -545,10 +545,10 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
                     colorScheme: context.theme.colorScheme.copyWith(
                       primary: context.theme.colorScheme.bubble(context, iMessage),
                       onPrimary: context.theme.colorScheme.onBubble(context, iMessage),
-                      surface: ss.settings.monetTheming.value == Monet.full
+                      surface: ss().settings.monetTheming.value == Monet.full
                           ? null
                           : (context.theme.extensions[BubbleColors] as BubbleColors?)?.receivedBubbleColor,
-                      onSurface: ss.settings.monetTheming.value == Monet.full
+                      onSurface: ss().settings.monetTheming.value == Monet.full
                           ? null
                           : (context.theme.extensions[BubbleColors] as BubbleColors?)?.onReceivedBubbleColor,
                     ),
@@ -580,7 +580,7 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
                                     }
                                     final chat = filteredChats[index];
                                     final hideInfo =
-                                        ss.settings.redactedMode.value && ss.settings.hideContactInfo.value;
+                                        ss().settings.redactedMode.value && ss().settings.hideContactInfo.value;
                                     String _title = chat.properTitle;
                                     if (hideInfo) {
                                       _title =
@@ -625,7 +625,7 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
                                       contact.phones = getUniqueNumbers(contact.phones);
                                       contact.emails = getUniqueEmails(contact.emails);
                                       final hideInfo =
-                                          ss.settings.redactedMode.value && ss.settings.hideContactInfo.value;
+                                          ss().settings.redactedMode.value && ss().settings.hideContactInfo.value;
                                       return Column(
                                         key: ValueKey(contact.id),
                                         mainAxisSize: MainAxisSize.min,
@@ -690,10 +690,10 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
                     colorScheme: context.theme.colorScheme.copyWith(
                       primary: context.theme.colorScheme.bubble(context, iMessage),
                       onPrimary: context.theme.colorScheme.onBubble(context, iMessage),
-                      surface: ss.settings.monetTheming.value == Monet.full
+                      surface: ss().settings.monetTheming.value == Monet.full
                           ? null
                           : (context.theme.extensions[BubbleColors] as BubbleColors?)?.receivedBubbleColor,
-                      onSurface: ss.settings.monetTheming.value == Monet.full
+                      onSurface: ss().settings.monetTheming.value == Monet.full
                           ? null
                           : (context.theme.extensions[BubbleColors] as BubbleColors?)?.onReceivedBubbleColor,
                     ),

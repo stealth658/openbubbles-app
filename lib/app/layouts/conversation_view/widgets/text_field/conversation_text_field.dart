@@ -90,7 +90,7 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
 
     if (controller.fromChatCreator) {
       controller.focusNode.requestFocus();
-    } else if (ss.settings.autoOpenKeyboard.value) {
+    } else if (ss().settings.autoOpenKeyboard.value) {
       updateObx(() {
         controller.focusNode.requestFocus();
       });
@@ -245,8 +245,8 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
       _debounceTyping?.cancel();
       oldText = newText;
       // don't send a bunch of duplicate events for every typing change
-      if (ss.settings.enablePrivateAPI.value &&
-          (chat.autoSendTypingIndicators ?? ss.settings.privateSendTypingIndicators.value)) {
+      if (ss().settings.enablePrivateAPI.value &&
+          (chat.autoSendTypingIndicators ?? ss().settings.privateSendTypingIndicators.value)) {
         if (_debounceTyping == null) {
           socket.sendMessage("started-typing", {"chatGuid": chatGuid});
         }
@@ -272,7 +272,7 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
             emojiName = newEmojiText.substring(match.start + 1, match.end).toLowerCase();
             allMatches = limitGenerator(emojiQuery(emojiName), limit: 50).toSet().toList(); // Maybe make this configurable?
           }
-          Logger.info("${allMatches.length} matches found for: $emojiName");
+          Logger().info("${allMatches.length} matches found for: $emojiName");
         }
         if (allMatches.isNotEmpty) {
           controller.mentionMatches.value = [];
@@ -286,7 +286,7 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
         }
       }
 
-      if (ss.settings.enablePrivateAPI.value && !subject && newEmojiText.contains("@")) {
+      if (ss().settings.enablePrivateAPI.value && !subject && newEmojiText.contains("@")) {
         final regExp = RegExp(r"(?<=^|[^a-zA-Z\d])@(?:[^@ \n]+|$)(?=[ \n]|$)", multiLine: true);
         final matches = regExp.allMatches(newEmojiText);
         List<Mentionable> allMatches = [];
@@ -323,7 +323,7 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
                     e.displayName.isCaseInsensitiveContains(mentionName)))
                 .toList());
           }
-          Logger.info("${allMatches.length} matches found for: $mentionName");
+          Logger().info("${allMatches.length} matches found for: $mentionName");
         }
         if (allMatches.isNotEmpty) {
           controller.emojiMatches.value = [];
@@ -359,7 +359,7 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
     controller.textController.dispose();
     controller.subjectTextController.dispose();
     recorderController?.dispose();
-    if (chat.autoSendTypingIndicators ?? ss.settings.privateSendTypingIndicators.value) {
+    if (chat.autoSendTypingIndicators ?? ss().settings.privateSendTypingIndicators.value) {
       socket.sendMessage("stopped-typing", {"chatGuid": chatGuid});
     }
 
@@ -400,19 +400,19 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
       if (response.statusCode == 200 && response.data != null) {
         showSnackbar("Notice", "Message scheduled successfully for ${buildFullDate(date)}");
       } else {
-        Logger.error("Scheduled message error: ${response.statusCode}");
-        Logger.error(response.data);
+        Logger().error("Scheduled message error: ${response.statusCode}");
+        Logger().error(response.data);
         showSnackbar("Error", "Something went wrong!");
       }
     } else {
-      if (text.isEmpty && controller.subjectTextController.text.isEmpty && !ss.settings.privateAPIAttachmentSend.value) {
+      if (text.isEmpty && controller.subjectTextController.text.isEmpty && !ss().settings.privateAPIAttachmentSend.value) {
         if (controller.replyToMessage != null) {
           return showSnackbar("Error", "Turn on Private API Attachment Send to send replies with media!");
         } else if (effect != null) {
           return showSnackbar("Error", "Turn on Private API Attachment Send to send effects with media!");
         }
       }
-      if (effect == null && ss.settings.enablePrivateAPI.value) {
+      if (effect == null && ss().settings.enablePrivateAPI.value) {
         final cleansed = text.replaceAll("!", "").toLowerCase();
         switch (cleansed) {
           case "congratulations":
@@ -891,7 +891,7 @@ class TextFieldComponentState extends State<TextFieldComponent> {
       isRecordingNotifier.value = recorderController?.isRecording ?? false;
     });
 
-    assert(!(subjectTextController == null && !isChatCreator && ss.settings.enablePrivateAPI.value && ss.settings.privateSubjectLine.value && chat!.isIMessage));
+    assert(!(subjectTextController == null && !isChatCreator && ss().settings.enablePrivateAPI.value && ss().settings.privateSubjectLine.value && chat!.isIMessage));
   }
 
   @override
@@ -901,9 +901,9 @@ class TextFieldComponentState extends State<TextFieldComponent> {
     super.dispose();
   }
 
-  bool get iOS => ss.settings.skin.value == Skins.iOS;
+  bool get iOS => ss().settings.skin.value == Skins.iOS;
 
-  bool get samsung => ss.settings.skin.value == Skins.Samsung;
+  bool get samsung => ss().settings.skin.value == Skins.Samsung;
 
   Chat? get chat => controller?.chat;
 
@@ -959,7 +959,7 @@ class TextFieldComponentState extends State<TextFieldComponent> {
                     }
                     return const SizedBox.shrink();
                   }),
-                if (!isChatCreator && ss.settings.enablePrivateAPI.value && ss.settings.privateSubjectLine.value && chat!.isIMessage)
+                if (!isChatCreator && ss().settings.enablePrivateAPI.value && ss().settings.privateSubjectLine.value && chat!.isIMessage)
                   TextField(
                     textCapitalization: TextCapitalization.sentences,
                     focusNode: controller!.subjectFocusNode,
@@ -970,7 +970,7 @@ class TextFieldComponentState extends State<TextFieldComponent> {
                     keyboardType: TextInputType.multiline,
                     maxLines: 14,
                     minLines: 1,
-                    enableIMEPersonalizedLearning: !ss.settings.incognitoKeyboard.value,
+                    enableIMEPersonalizedLearning: !ss().settings.incognitoKeyboard.value,
                     textInputAction: TextInputAction.next,
                     cursorColor: context.theme.colorScheme.primary,
                     cursorHeight: context.theme.extension<BubbleText>()!.bubbleText.fontSize! * 1.25,
@@ -997,7 +997,7 @@ class TextFieldComponentState extends State<TextFieldComponent> {
                     },
                     contentInsertionConfiguration: ContentInsertionConfiguration(onContentInserted: onContentCommit),
                   ),
-                if (!isChatCreator && ss.settings.enablePrivateAPI.value && ss.settings.privateSubjectLine.value && chat!.isIMessage && iOS)
+                if (!isChatCreator && ss().settings.enablePrivateAPI.value && ss().settings.privateSubjectLine.value && chat!.isIMessage && iOS)
                   Divider(
                     height: 1.5,
                     thickness: 1.5,
@@ -1015,8 +1015,8 @@ class TextFieldComponentState extends State<TextFieldComponent> {
                   maxLines: 14,
                   minLines: 1,
                   autofocus: (kIsWeb || kIsDesktop) && !isChatCreator,
-                  enableIMEPersonalizedLearning: !ss.settings.incognitoKeyboard.value,
-                  textInputAction: ss.settings.sendWithReturn.value && !kIsWeb && !kIsDesktop ? TextInputAction.send : TextInputAction.newline,
+                  enableIMEPersonalizedLearning: !ss().settings.incognitoKeyboard.value,
+                  textInputAction: ss().settings.sendWithReturn.value && !kIsWeb && !kIsDesktop ? TextInputAction.send : TextInputAction.newline,
                   cursorColor: context.theme.colorScheme.primary,
                   cursorHeight: context.theme.extension<BubbleText>()!.bubbleText.fontSize! * 1.25,
                   decoration: InputDecoration(
@@ -1025,7 +1025,7 @@ class TextFieldComponentState extends State<TextFieldComponent> {
                     isCollapsed: true,
                     hintText: isChatCreator
                         ? "New Message"
-                        : ss.settings.recipientAsPlaceholder.value == true
+                        : ss().settings.recipientAsPlaceholder.value == true
                             ? isRecording ? "" : chat!.getTitle()
                             : (chat!.isTextForwarding && !isRecording)
                                 ? "Text Forwarding"
@@ -1143,13 +1143,13 @@ class TextFieldComponentState extends State<TextFieldComponent> {
 
   void onContentCommit(KeyboardInsertedContent content) async {
     // Add some debugging logs
-    Logger.info("[Content Commit] Keyboard received content");
-    Logger.info("  -> Content Type: ${content.mimeType}");
-    Logger.info("  -> URI: ${content.uri}");
-    Logger.info("  -> Content Length: ${content.hasData ? content.data!.length : "null"}");
+    Logger().info("[Content Commit] Keyboard received content");
+    Logger().info("  -> Content Type: ${content.mimeType}");
+    Logger().info("  -> URI: ${content.uri}");
+    Logger().info("  -> Content Length: ${content.hasData ? content.data!.length : "null"}");
 
     // Parse the filename from the URI and read the data as a List<int>
-    String filename = fs.uriToFilename(content.uri, content.mimeType);
+    String filename = fs().uriToFilename(content.uri, content.mimeType);
 
     // Save the data to a location and add it to the file picker
     if (content.hasData) {
@@ -1234,9 +1234,9 @@ class TextFieldComponentState extends State<TextFieldComponent> {
     if (ev.logicalKey == LogicalKeyboardKey.arrowUp) {
       if (chat != null &&
           controller!.lastFocusedTextController.text.isEmpty &&
-          ss.settings.editLastSentMessageOnUpArrow.value &&
-          ss.isMinVenturaSync &&
-          ss.serverDetailsSync().item4 >= 148) {
+          ss().settings.editLastSentMessageOnUpArrow.value &&
+          ss().isMinVenturaSync &&
+          ss().serverDetailsSync().item4 >= 148) {
         final message = ms(chat!.guid).mostRecentSent;
         if (message != null && !message.guid!.startsWith("temp")) {
           final parts = mwc(message).parts;
@@ -1311,7 +1311,7 @@ class TextFieldComponentState extends State<TextFieldComponent> {
 
         return KeyEventResult.handled;
       }
-      if (ss.settings.privateSubjectLine.value) {
+      if (ss().settings.privateSubjectLine.value) {
         if (ev.logicalKey == LogicalKeyboardKey.tab) {
           // Tab to switch between text fields
           if (!HardwareKeyboard.instance.isShiftPressed && controller!.subjectFocusNode.hasPrimaryFocus) {
@@ -1353,7 +1353,7 @@ class TextFieldComponentState extends State<TextFieldComponent> {
     }
 
     if (kIsDesktop || kIsWeb) return KeyEventResult.ignored;
-    if (ev.physicalKey == PhysicalKeyboardKey.enter && ss.settings.sendWithReturn.value) {
+    if (ev.physicalKey == PhysicalKeyboardKey.enter && ss().settings.sendWithReturn.value) {
       if (!isNullOrEmpty(textController.text) || !isNullOrEmpty(controller!.subjectTextController.text)) {
         sendMessage();
         controller!.focusNode.previousFocus(); // I genuinely don't know why this works

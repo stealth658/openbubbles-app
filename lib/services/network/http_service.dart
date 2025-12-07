@@ -17,7 +17,7 @@ class HttpService extends GetxService {
   String? originOverride;
 
   /// Get the URL origin from the current server address
-  String get origin => originOverride ?? (Uri.parse(ss.settings.serverAddress.value).hasScheme ? Uri.parse(ss.settings.serverAddress.value).origin : '');
+  String get origin => originOverride ?? (Uri.parse(ss().settings.serverAddress.value).hasScheme ? Uri.parse(ss().settings.serverAddress.value).origin : '');
   String get apiRoot => "$origin/api/v1";
 
   /// Helper function to build query params, this way we only need to add the
@@ -27,7 +27,7 @@ class HttpService extends GetxService {
     if (params.isEmpty) {
       params = {};
     }
-    params['guid'] = ss.settings.guidAuthKey.value;
+    params['guid'] = ss().settings.guidAuthKey.value;
     return params;
   }
 
@@ -61,13 +61,13 @@ class HttpService extends GetxService {
   }
 
   Map<String, String> get headers {
-    if (ss.settings.serverAddress.contains('ngrok')) {
-      ss.settings.customHeaders.addAll({'ngrok-skip-browser-warning': 'true'});
-    } else if (ss.settings.serverAddress.contains('zrok')) {
-      ss.settings.customHeaders.addAll({'skip_zrok_interstitial': 'true'});
+    if (ss().settings.serverAddress.contains('ngrok')) {
+      ss().settings.customHeaders.addAll({'ngrok-skip-browser-warning': 'true'});
+    } else if (ss().settings.serverAddress.contains('zrok')) {
+      ss().settings.customHeaders.addAll({'skip_zrok_interstitial': 'true'});
     }
 
-    return ss.settings.customHeaders;
+    return ss().settings.customHeaders;
   }
 
   /// Initialize dio with a couple options and intercept all requests for logging
@@ -75,8 +75,8 @@ class HttpService extends GetxService {
   void onInit() {
     dio = Dio(BaseOptions(
       connectTimeout: const Duration(milliseconds: 15000),
-      receiveTimeout: Duration(milliseconds: ss.settings.apiTimeout.value),
-      sendTimeout: Duration(milliseconds: ss.settings.apiTimeout.value),
+      receiveTimeout: Duration(milliseconds: ss().settings.apiTimeout.value),
+      sendTimeout: Duration(milliseconds: ss().settings.apiTimeout.value),
       headers: headers,
     ));
     // Native Adapter will use the native http implementation on macOS, iOS and Android. 
@@ -130,7 +130,7 @@ class HttpService extends GetxService {
   Future<Response> serverInfo({CancelToken? cancelToken}) async {
     final now = DateTime.now();
     if (_serverInfoCache != null && _lastServerInfoFetch != null && now.difference(_lastServerInfoFetch!) < const Duration(minutes: 1)) {
-      Logger.debug("Server info was recently fetched. Using cache...");
+      Logger().debug("Server info was recently fetched. Using cache...");
       return _serverInfoCache!;
     }
 
@@ -411,7 +411,7 @@ class HttpService extends GetxService {
             "addresses": addresses,
             "message": message,
             "service": service,
-            "method": ss.settings.enablePrivateAPI.value ? 'private-api' : 'apple-script'
+            "method": ss().settings.enablePrivateAPI.value ? 'private-api' : 'apple-script'
           },
           cancelToken: cancelToken
       );
@@ -630,14 +630,14 @@ class HttpService extends GetxService {
         "method": method,
       };
 
-      data.addAllIf(ss.settings.enablePrivateAPI.value && ss.settings.privateAPISend.value, {
+      data.addAllIf(ss().settings.enablePrivateAPI.value && ss().settings.privateAPISend.value, {
         "effectId": effectId,
         "subject": subject,
         "selectedMessageGuid": selectedMessageGuid,
         "partIndex": partIndex
       });
 
-      if (ss.settings.enablePrivateAPI.value && ss.settings.privateAPISend.value && ss.isMinVenturaSync) {
+      if (ss().settings.enablePrivateAPI.value && ss().settings.privateAPISend.value && ss().isMinVenturaSync) {
         data["ddScan"] = ddScan;
       }
 
@@ -665,7 +665,7 @@ class HttpService extends GetxService {
         "method": method
       });
 
-      if (ss.settings.enablePrivateAPI.value && ss.settings.privateAPIAttachmentSend.value) {
+      if (ss().settings.enablePrivateAPI.value && ss().settings.privateAPIAttachmentSend.value) {
         Map<String, dynamic> papiData = {
           "effectId": effectId,
           "subject": subject,
@@ -706,7 +706,7 @@ class HttpService extends GetxService {
         "parts": parts
       };
 
-      if (ss.isMinVenturaSync) {
+      if (ss().isMinVenturaSync) {
         data["ddScan"] = ddScan;
       }
 
@@ -1043,7 +1043,7 @@ class HttpService extends GetxService {
           "payload": {
             "chatGuid": chatGuid,
             "message": message,
-            "method": ss.settings.privateAPISend.value ? 'private-api' : "apple-script"
+            "method": ss().settings.privateAPISend.value ? 'private-api' : "apple-script"
           },
           "scheduledFor": date.millisecondsSinceEpoch,
           "schedule": schedule,
@@ -1251,119 +1251,119 @@ class HttpService extends GetxService {
         var res = await ping();
         expect(res.data['message'], "pong");
         s.stop();
-        Logger.info("Request took ${s.elapsedMilliseconds} ms");
+        Logger().info("Request took ${s.elapsedMilliseconds} ms");
       });
       test("Server Info", () async {
         s.start();
         var res = await serverInfo();
         expect(res.data['status'], 200);
         s.stop();
-        Logger.info("Request took ${s.elapsedMilliseconds} ms");
+        Logger().info("Request took ${s.elapsedMilliseconds} ms");
       });
       test("Server Stat Totals", () async {
         s.start();
         var res = await serverStatTotals();
         expect(res.data['status'], 200);
         s.stop();
-        Logger.info("Request took ${s.elapsedMilliseconds} ms");
+        Logger().info("Request took ${s.elapsedMilliseconds} ms");
       });
       test("Server Stat Media", () async {
         s.start();
         var res = await serverStatMedia();
         expect(res.data['status'], 200);
         s.stop();
-        Logger.info("Request took ${s.elapsedMilliseconds} ms");
+        Logger().info("Request took ${s.elapsedMilliseconds} ms");
       });
       test("Server Logs", () async {
         s.start();
         var res = await serverLogs();
         expect(res.data['status'], 200);
         s.stop();
-        Logger.info("Request took ${s.elapsedMilliseconds} ms");
+        Logger().info("Request took ${s.elapsedMilliseconds} ms");
       });
       test("FCM Client", () async {
         s.start();
         var res = await fcmClient();
         expect(res.data['status'], 200);
         s.stop();
-        Logger.info("Request took ${s.elapsedMilliseconds} ms");
+        Logger().info("Request took ${s.elapsedMilliseconds} ms");
       });
       test("Attachment Count", () async {
         s.start();
         var res = await attachmentCount();
         expect(res.data['status'], 200);
         s.stop();
-        Logger.info("Request took ${s.elapsedMilliseconds} ms");
+        Logger().info("Request took ${s.elapsedMilliseconds} ms");
       });
       test("Chats", () async {
         s.start();
         var res = await chats();
         expect(res.data['status'], 200);
         s.stop();
-        Logger.info("Request took ${s.elapsedMilliseconds} ms");
+        Logger().info("Request took ${s.elapsedMilliseconds} ms");
       });
       test("Chat Count", () async {
         s.start();
         var res = await chatCount();
         expect(res.data['status'], 200);
         s.stop();
-        Logger.info("Request took ${s.elapsedMilliseconds} ms");
+        Logger().info("Request took ${s.elapsedMilliseconds} ms");
       });
       test("Message Count", () async {
         s.start();
         var res = await messageCount();
         expect(res.data['status'], 200);
         s.stop();
-        Logger.info("Request took ${s.elapsedMilliseconds} ms");
+        Logger().info("Request took ${s.elapsedMilliseconds} ms");
       });
       test("My Message Count", () async {
         s.start();
         var res = await messageCount(onlyMe: true);
         expect(res.data['status'], 200);
         s.stop();
-        Logger.info("Request took ${s.elapsedMilliseconds} ms");
+        Logger().info("Request took ${s.elapsedMilliseconds} ms");
       });
       test("Messages", () async {
         s.start();
         var res = await messages();
         expect(res.data['status'], 200);
         s.stop();
-        Logger.info("Request took ${s.elapsedMilliseconds} ms");
+        Logger().info("Request took ${s.elapsedMilliseconds} ms");
       });
       test("Handle Count", () async {
         s.start();
         var res = await handleCount();
         expect(res.data['status'], 200);
         s.stop();
-        Logger.info("Request took ${s.elapsedMilliseconds} ms");
+        Logger().info("Request took ${s.elapsedMilliseconds} ms");
       });
       test("iCloud Contacts", () async {
         s.start();
         var res = await contacts();
         expect(res.data['status'], 200);
         s.stop();
-        Logger.info("Request took ${s.elapsedMilliseconds} ms");
+        Logger().info("Request took ${s.elapsedMilliseconds} ms");
       });
       test("Theme Backup", () async {
         s.start();
         var res = await getTheme();
         expect(res.data['status'], 200);
         s.stop();
-        Logger.info("Request took ${s.elapsedMilliseconds} ms");
+        Logger().info("Request took ${s.elapsedMilliseconds} ms");
       });
       test("Settings Backup", () async {
         s.start();
         var res = await getSettings();
         expect(res.data['status'], 200);
         s.stop();
-        Logger.info("Request took ${s.elapsedMilliseconds} ms");
+        Logger().info("Request took ${s.elapsedMilliseconds} ms");
       });
       test("Landing Page", () async {
         s.start();
         var res = await landingPage();
         expect(res.statusCode, 200);
         s.stop();
-        Logger.info("Request took ${s.elapsedMilliseconds} ms");
+        Logger().info("Request took ${s.elapsedMilliseconds} ms");
       });
     });
   }
@@ -1374,13 +1374,13 @@ class ApiInterceptor extends Interceptor {
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    Logger.info("Request: [${options.method}] ${options.path}", tag: "HTTP Service");
+    Logger().info("Request: [${options.method}] ${options.path}", tag: "HTTP Service");
     return super.onRequest(options, handler);
   }
 
   @override
   void onResponse(Response response, ResponseInterceptorHandler handler) {
-    Logger.info("Response: [${response.statusCode}] ${response.requestOptions.path}", tag: "HTTP Service");
+    Logger().info("Response: [${response.statusCode}] ${response.requestOptions.path}", tag: "HTTP Service");
     return super.onResponse(response, handler);
   }
 
@@ -1392,7 +1392,7 @@ class ApiInterceptor extends Interceptor {
     params.remove("password");
 
     // Make a nice log of what failed
-    Logger.error("""Failed Request: [${err.requestOptions.method}] ${err.requestOptions.path}
+    Logger().error("""Failed Request: [${err.requestOptions.method}] ${err.requestOptions.path}
   -> Error: ${err.error ?? 'No Error'}
   -> Request Params: ${params.toString()}
   -> Request Data: ${err.requestOptions.data ?? 'No Data'}

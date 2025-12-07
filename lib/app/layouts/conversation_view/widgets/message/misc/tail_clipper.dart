@@ -21,7 +21,7 @@ class TailClipper extends CustomClipper<Path>{
     final double start = isFromMe ? 0 : 10;
     final double end = isFromMe ? size.width - 10 : size.width;
     path.moveTo(start, 20);
-    if (!isFromMe && (showTail && ss.settings.skin.value == Skins.iOS)) {
+    if (!isFromMe && (showTail && ss().settings.skin.value == Skins.iOS)) {
       path.lineTo(start, size.height - 10);
       path.arcToPoint(Offset(0, size.height), radius: const Radius.circular(10));
       // intersect slightly more than 45 deg on the arc
@@ -36,7 +36,7 @@ class TailClipper extends CustomClipper<Path>{
         path.arcToPoint(Offset(start + 20, size.height), radius: const Radius.circular(20), clockwise: false);
       }
     }
-    if (isFromMe && (showTail && ss.settings.skin.value == Skins.iOS)) {
+    if (isFromMe && (showTail && ss().settings.skin.value == Skins.iOS)) {
       path.lineTo(end - 20, size.height);
       // intersect slightly more than 45 deg on the arc
       path.arcToPoint(Offset(end - 6.547, size.height - 5.201), radius: const Radius.circular(20), clockwise: false);
@@ -51,7 +51,7 @@ class TailClipper extends CustomClipper<Path>{
         path.arcToPoint(Offset(end, size.height - 20), radius: const Radius.circular(20), clockwise: false);
       }
     }
-    if (connectUpper && ss.settings.skin.value != Skins.iOS) {
+    if (connectUpper && ss().settings.skin.value != Skins.iOS) {
       if (isFromMe) {
         path.lineTo(end, 5);
         path.arcToPoint(Offset(end - 5, 0), radius: const Radius.circular(5), clockwise: false);
@@ -103,7 +103,7 @@ class TailPainter extends CustomPainter {
     final double start = isFromMe ? 0 : 10;
     final double end = isFromMe ? size.width - 10 : size.width;
     path.moveTo(start, 20);
-    if (!isFromMe && (showTail && ss.settings.skin.value == Skins.iOS)) {
+    if (!isFromMe && (showTail && ss().settings.skin.value == Skins.iOS)) {
       path.lineTo(start, size.height - 10);
       path.arcToPoint(Offset(0, size.height), radius: const Radius.circular(10));
       // intersect slightly more than 45 deg on the arc
@@ -114,7 +114,7 @@ class TailPainter extends CustomPainter {
       path.arcToPoint(Offset(start + 20, size.height), radius: const Radius.circular(20), clockwise: false);
     }
     path.lineTo(end - 20, size.height);
-    if (isFromMe && (showTail && ss.settings.skin.value == Skins.iOS)) {
+    if (isFromMe && (showTail && ss().settings.skin.value == Skins.iOS)) {
       // intersect slightly more than 45 deg on the arc
       path.arcToPoint(Offset(end - 6.547, size.height - 5.201), radius: const Radius.circular(20), clockwise: false);
       path.arcToPoint(Offset(size.width, size.height), radius: const Radius.circular(20), clockwise: false);

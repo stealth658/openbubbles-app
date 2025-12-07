@@ -40,10 +40,10 @@ class FirebaseDatabaseService extends GetxService {
       Map<String, dynamic>? data = response.data["data"];
       if (!isNullOrEmpty(data)) {
         FCMData newData = FCMData.fromMap(data!);
-        await ss.saveFCMData(newData);
+        await ss().saveFCMData(newData);
       }
     } catch (e, s) {
-      Logger.error("Failed to fetch Firebase Config!", error: e, trace: s);
+      Logger().error("Failed to fetch Firebase Config!", error: e, trace: s);
       if (e is Response && e.statusCode == 404) {
         await FCMData.deleteFcmData();
       }
@@ -57,24 +57,24 @@ class FirebaseDatabaseService extends GetxService {
   /// Fetch the new server URL from the Firebase Database
   Future<String?> fetchNewUrl() async {
     // Make sure setup is complete and we have valid data
-    if (!ss.settings.finishedSetup.value) return null;
-    if (ss.fcmData.isNull) {
-      Logger.error("Firebase Data was null when fetching new URL!");
+    if (!ss().settings.finishedSetup.value) return null;
+    if (ss().fcmData.isNull) {
+      Logger().error("Firebase Data was null when fetching new URL!");
       return null;
     }
 
     try {
       String? url;
-      Logger.info("Fetching new server URL from Firebase");
+      Logger().info("Fetching new server URL from Firebase");
       // Use firebase_dart on web and desktop
       if (kIsWeb || kIsDesktop) {
         // Instantiate the FirebaseDatabase, and try to access the serverUrl field
         final defaultOptions = FirebaseOptions(
-          apiKey: ss.fcmData.apiKey ?? '',
-          appId: ss.fcmData.applicationID ?? '',
+          apiKey: ss().fcmData.apiKey ?? '',
+          appId: ss().fcmData.applicationID ?? '',
           messagingSenderId: '',
-          projectId: ss.fcmData.projectID ?? '',
-          databaseURL: ss.fcmData.firebaseURL,
+          projectId: ss().fcmData.projectID ?? '',
+          databaseURL: ss().fcmData.firebaseURL,
         );
 
         late final FirebaseApp app;
@@ -84,7 +84,7 @@ class FirebaseDatabaseService extends GetxService {
           app = Firebase.apps.first;
         }
 
-        if (!isNullOrEmpty(ss.fcmData.firebaseURL)) {
+        if (!isNullOrEmpty(ss().fcmData.firebaseURL)) {
           final FirebaseDatabase db = FirebaseDatabase(app: app);
           final DatabaseReference ref = db.reference().child('config').child('serverUrl');
 
@@ -99,15 +99,15 @@ class FirebaseDatabaseService extends GetxService {
         }
       } else {
         // First, try to auth with FCM with the current data
-        Logger.info('Authenticating with FCM', tag: 'FCM-Auth');
-        await mcs.invokeMethod('firebase-auth', ss.fcmData.toMap());
+        Logger().info('Authenticating with FCM', tag: 'FCM-Auth');
+        await mcs.invokeMethod('firebase-auth', ss().fcmData.toMap());
         url = sanitizeServerAddress(address: await mcs.invokeMethod("get-server-url"));
       }
 
-      await saveNewServerUrl(url ?? ss.settings.serverAddress.value, force: true);
+      await saveNewServerUrl(url ?? ss().settings.serverAddress.value, force: true);
       return url;
     } catch (e, s) {
-      Logger.error("Failed to fetch URL!", error: e, trace: s);
+      Logger().error("Failed to fetch URL!", error: e, trace: s);
       return null;
     }
   }

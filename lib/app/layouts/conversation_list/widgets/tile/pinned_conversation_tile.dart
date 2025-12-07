@@ -110,7 +110,7 @@ class _PinnedConversationTileState extends CustomState<PinnedConversationTile, v
                 builder: (BuildContext context, BoxConstraints constraints) {
                   // Great math right here
                   final availableWidth = constraints.maxWidth;
-                  final colCount = kIsDesktop ? ss.settings.pinColumnsLandscape.value : ss.settings.pinColumnsPortrait.value;
+                  final colCount = kIsDesktop ? ss().settings.pinColumnsLandscape.value : ss().settings.pinColumnsPortrait.value;
                   final spaceBetween = (colCount - 1) * 30;
                   final maxWidth = max(((availableWidth - spaceBetween) / colCount).floorToDouble(), 0).toDouble();
 
@@ -334,7 +334,7 @@ class _ChatTitleState extends CustomState<ChatTitle, void, ConversationTileContr
         vertical: widget.width * 0.075,
       ),
       child: Obx(() {
-        final hideInfo = ss.settings.redactedMode.value && ss.settings.hideContactInfo.value;
+        final hideInfo = ss().settings.redactedMode.value && ss().settings.hideContactInfo.value;
         final style = context.theme.textTheme.bodyMedium!.apply(
           color: controller.shouldHighlight.value
               ? context.theme.colorScheme.onBubble(context, controller.chat.isIMessage)
@@ -396,7 +396,7 @@ class PinnedIndicators extends StatelessWidget {
       }
 
       final showMarker = controller.chat.latestMessage.indicatorToShow;
-      if (ss.settings.statusIndicatorsOnChats.value && !controller.chat.isGroup && showMarker != Indicator.NONE) {
+      if (ss().settings.statusIndicatorsOnChats.value && !controller.chat.isGroup && showMarker != Indicator.NONE) {
         return Positioned(
           left: sqrt(width) - width * 0.05 * sqrt(2),
           top: width - width * 0.13 * 2,

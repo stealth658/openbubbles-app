@@ -47,7 +47,7 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
             SettingsSection(
               backgroundColor: tileColor,
               children: [
-                if (!kIsWeb && !kIsDesktop && (fs.androidInfo?.version.sdkInt ?? 0) >= 30)
+                if (!kIsWeb && !kIsDesktop && (fs().androidInfo?.version.sdkInt ?? 0) >= 30)
                   SettingsTile(
                     title: "Notification Settings",
                     subtitle: "Customize notification sounds, importance, and more for this specific chat",
@@ -69,7 +69,7 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
                     trailing: Padding(
                       padding: const EdgeInsets.only(right: 15.0),
                       child: Icon(
-                        ss.settings.skin.value == Skins.iOS ? CupertinoIcons.person : Icons.person_outlined,
+                        ss().settings.skin.value == Skins.iOS ? CupertinoIcons.person : Icons.person_outlined,
                       ),
                     ),
                     onTap: () {
@@ -188,58 +188,58 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
                     );
                   },
                 ),
-                if (!kIsWeb && !chat.isGroup && ss.settings.enablePrivateAPI.value) const SettingsDivider(),
-                if (!kIsWeb && !chat.isGroup && ss.settings.enablePrivateAPI.value)
+                if (!kIsWeb && !chat.isGroup && ss().settings.enablePrivateAPI.value) const SettingsDivider(),
+                if (!kIsWeb && !chat.isGroup && ss().settings.enablePrivateAPI.value)
                   SettingsSwitch(
                     title: "Send Typing Indicators",
-                    initialVal: chat.autoSendTypingIndicators ?? ss.settings.privateSendTypingIndicators.value,
+                    initialVal: chat.autoSendTypingIndicators ?? ss().settings.privateSendTypingIndicators.value,
                     onChanged: (value) {
                       chat.toggleAutoType(value);
                       setState(() {});
                     },
                     backgroundColor: tileColor,
                   ),
-                if (!kIsWeb && !chat.isGroup && ss.settings.enablePrivateAPI.value)
+                if (!kIsWeb && !chat.isGroup && ss().settings.enablePrivateAPI.value)
                   SettingsSwitch(
                       title: "Follow Global Setting",
                       subtitle:
-                          "Typing Indicators ${ss.settings.privateSendTypingIndicators.value ? "Enabled" : "Disabled"}",
+                          "Typing Indicators ${ss().settings.privateSendTypingIndicators.value ? "Enabled" : "Disabled"}",
                       initialVal: chat.autoSendTypingIndicators == null,
                       onChanged: (value) {
                         if (!value) {
-                          chat.toggleAutoType(ss.settings.privateSendTypingIndicators.value);
+                          chat.toggleAutoType(ss().settings.privateSendTypingIndicators.value);
                         } else {
                           chat.toggleAutoType(null);
                         }
                         setState(() {});
                       }),
-                if (!kIsWeb && !chat.isGroup && ss.settings.enablePrivateAPI.value) const SettingsDivider(),
-                if (!kIsWeb && !chat.isGroup && ss.settings.enablePrivateAPI.value)
+                if (!kIsWeb && !chat.isGroup && ss().settings.enablePrivateAPI.value) const SettingsDivider(),
+                if (!kIsWeb && !chat.isGroup && ss().settings.enablePrivateAPI.value)
                   SettingsSwitch(
-                    title: "${ss.settings.privateManualMarkAsRead.value ? "Automatically " : ""}Send Read Receipts",
-                    initialVal: chat.autoSendReadReceipts ?? ss.settings.privateMarkChatAsRead.value,
+                    title: "${ss().settings.privateManualMarkAsRead.value ? "Automatically " : ""}Send Read Receipts",
+                    initialVal: chat.autoSendReadReceipts ?? ss().settings.privateMarkChatAsRead.value,
                     onChanged: (value) {
                       chat.toggleAutoRead(value);
                       setState(() {});
                     },
                     backgroundColor: tileColor,
                   ),
-                if (!kIsWeb && !chat.isGroup && ss.settings.enablePrivateAPI.value)
+                if (!kIsWeb && !chat.isGroup && ss().settings.enablePrivateAPI.value)
                   SettingsSwitch(
                     title: "Follow Global Setting",
                     subtitle:
-                        "${ss.settings.privateManualMarkAsRead.value ? "Automatic " : ""}Read Receipts ${ss.settings.privateMarkChatAsRead.value ? "Enabled" : "Disabled"}",
+                        "${ss().settings.privateManualMarkAsRead.value ? "Automatic " : ""}Read Receipts ${ss().settings.privateMarkChatAsRead.value ? "Enabled" : "Disabled"}",
                     initialVal: chat.autoSendReadReceipts == null,
                     onChanged: (value) {
                       if (!value) {
-                        chat.toggleAutoRead(ss.settings.privateMarkChatAsRead.value);
+                        chat.toggleAutoRead(ss().settings.privateMarkChatAsRead.value);
                       } else {
                         chat.toggleAutoRead(null);
                       }
                       setState(() {});
                     },
                   ),
-                if ((!kIsWeb && !chat.isGroup && ss.settings.enablePrivateAPI.value) || chat.isGroup)
+                if ((!kIsWeb && !chat.isGroup && ss().settings.enablePrivateAPI.value) || chat.isGroup)
                   const SettingsDivider(),
                 if (chat.isGroup)
                   SettingsSwitch(

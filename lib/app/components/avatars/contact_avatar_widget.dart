@@ -50,7 +50,7 @@ class _ContactAvatarWidgetState extends OptimizedState<ContactAvatarWidget> {
   }
 
   void onAvatarTap() async {
-    if (!ss.settings.colorfulAvatars.value && !ss.settings.colorfulBubbles.value) return;
+    if (!ss().settings.colorfulAvatars.value && !ss().settings.colorfulBubbles.value) return;
 
     bool didReset = false;
     final Color color = await showColorPickerDialog(
@@ -113,7 +113,7 @@ class _ContactAvatarWidgetState extends OptimizedState<ContactAvatarWidget> {
     Color tileColor =
         ts.inDarkMode(context) ? context.theme.colorScheme.properSurface : context.theme.colorScheme.background;
 
-    final size = ((widget.size ?? 40) * (widget.scaleSize ? ss.settings.avatarScale.value : 1)).roundToDouble();
+    final size = ((widget.size ?? 40) * (widget.scaleSize ? ss().settings.avatarScale.value : 1)).roundToDouble();
     List<Color> colors = [];
     if (widget.handle?.color == null) {
       colors = toColorGradient(widget.handle?.address);
@@ -125,7 +125,7 @@ class _ContactAvatarWidgetState extends OptimizedState<ContactAvatarWidget> {
     }
 
     return Obx(() => MouseRegion(
-          cursor: !widget.editable || !ss.settings.colorfulAvatars.value || widget.handle == null
+          cursor: !widget.editable || !ss().settings.colorfulAvatars.value || widget.handle == null
               ? MouseCursor.defer
               : SystemMouseCursors.click,
           child: GestureDetector(
@@ -152,13 +152,13 @@ class _ContactAvatarWidgetState extends OptimizedState<ContactAvatarWidget> {
                   begin: AlignmentDirectional.topStart,
                   end: AlignmentDirectional.bottomEnd,
                   colors: [
-                    !ss.settings.colorfulAvatars.value ? HexColor("928E8E") : (iOS ? colors[1] : colors[0]),
-                    !ss.settings.colorfulAvatars.value ? HexColor("686868") : colors[0]
+                    !ss().settings.colorfulAvatars.value ? HexColor("928E8E") : (iOS ? colors[1] : colors[0]),
+                    !ss().settings.colorfulAvatars.value ? HexColor("686868") : colors[0]
                   ],
                   stops: [0.3, 0.9],
                 ),
                 border: Border.all(
-                    color: ss.settings.skin.value == Skins.Samsung ? tileColor : context.theme.colorScheme.background,
+                    color: ss().settings.skin.value == Skins.Samsung ? tileColor : context.theme.colorScheme.background,
                     width: widget.borderThickness,
                     strokeAlign: BorderSide.strokeAlignOutside),
                 shape: BoxShape.circle,
@@ -166,14 +166,14 @@ class _ContactAvatarWidgetState extends OptimizedState<ContactAvatarWidget> {
               clipBehavior: Clip.antiAlias,
               alignment: Alignment.center,
               child: Obx(() {
-                final hideContactInfo = ss.settings.redactedMode.value && ss.settings.hideContactInfo.value;
-                final genAvatars = ss.settings.redactedMode.value && ss.settings.generateFakeAvatars.value;
-                final iOS = ss.settings.skin.value == Skins.iOS;
+                final hideContactInfo = ss().settings.redactedMode.value && ss().settings.hideContactInfo.value;
+                final genAvatars = ss().settings.redactedMode.value && ss().settings.generateFakeAvatars.value;
+                final iOS = ss().settings.skin.value == Skins.iOS;
                 final avatar = contact?.avatar;
-                if (!hideContactInfo && widget.handle == null && ss.settings.userAvatarPath.value != null) {
-                  dynamic file = File(ss.settings.userAvatarPath.value!);
+                if (!hideContactInfo && widget.handle == null && ss().settings.userAvatarPath.value != null) {
+                  dynamic file = File(ss().settings.userAvatarPath.value!);
                   return CircleAvatar(
-                    key: ValueKey(ss.settings.userAvatarPath.value!),
+                    key: ValueKey(ss().settings.userAvatarPath.value!),
                     radius: size / 2,
                     backgroundImage: Image.file(file).image,
                     backgroundColor: Colors.transparent,

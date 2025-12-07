@@ -137,7 +137,7 @@ class Message {
       try {
         attributedBody = (json['attributedBody'] as List).map((a) => AttributedBody.fromMap(a)).toList();
       } catch (e, stack) {
-        Logger.error('Failed to parse attributed body!', error: e, trace: stack);
+        Logger().error('Failed to parse attributed body!', error: e, trace: stack);
       }
     }
 
@@ -156,14 +156,14 @@ class Message {
     try {
       msi = (json['messageSummaryInfo'] as List? ?? []).map((e) => MessageSummaryInfo.fromJson(e)).toList();
     } catch (e, stack) {
-      Logger.error('Failed to parse summary info!', error: e, trace: stack);
+      Logger().error('Failed to parse summary info!', error: e, trace: stack);
     }
 
     PayloadData? payloadData;
     try {
       payloadData = json['payloadData'] == null ? null : PayloadData.fromJson(json['payloadData']);
     } catch (e, stack) {
-      Logger.error('Failed to parse payload data!', error: e, trace: stack);
+      Logger().error('Failed to parse payload data!', error: e, trace: stack);
     }
 
     return Message(

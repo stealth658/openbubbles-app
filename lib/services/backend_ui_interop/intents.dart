@@ -22,7 +22,7 @@ class OpenSettingsAction extends Action<OpenSettingsIntent> {
 
   @override
   Object? invoke(covariant OpenSettingsIntent intent) async {
-    if (ss.settings.finishedSetup.value) {
+    if (ss().settings.finishedSetup.value) {
       final currentChat = cm.activeChat?.chat;
       ns.closeAllConversationView(context);
       await cm.setAllInactive();
@@ -34,7 +34,7 @@ class OpenSettingsAction extends Action<OpenSettingsIntent> {
         ),
       );
       if (currentChat != null) {
-        if (ss.settings.tabletMode.value) {
+        if (ss().settings.tabletMode.value) {
           ns.pushAndRemoveUntil(
             context,
             ConversationView(
@@ -62,7 +62,7 @@ class OpenNewChatCreatorAction extends Action<OpenNewChatCreatorIntent> {
 
   @override
   Object? invoke(covariant OpenNewChatCreatorIntent intent) {
-    if (ss.settings.finishedSetup.value) {
+    if (ss().settings.finishedSetup.value) {
       eventDispatcher.emit("update-highlight", null);
       ns.pushAndRemoveUntil(
         context,
@@ -85,7 +85,7 @@ class OpenSearchAction extends Action<OpenSearchIntent> {
 
   @override
   Object? invoke(covariant OpenSearchIntent intent) async {
-    if (ss.settings.finishedSetup.value) {
+    if (ss().settings.finishedSetup.value) {
       ns.pushLeft(
         context,
         SearchView(),
@@ -107,7 +107,7 @@ class ReplyRecentAction extends Action<ReplyRecentIntent> {
   @override
   Object? invoke(covariant ReplyRecentIntent intent) async {
     final message = ms(chat.guid).mostRecentReceived;
-    if (message != null && ss.settings.enablePrivateAPI.value) {
+    if (message != null && ss().settings.enablePrivateAPI.value) {
       final parts = mwc(message).parts;
       cvc(chat).replyToMessage = Tuple2(message, parts.length - 1);
     }
@@ -127,7 +127,7 @@ class HeartRecentAction extends Action<HeartRecentIntent> {
   @override
   Object? invoke(covariant HeartRecentIntent intent) async {
     final message = ms(chat.guid).mostRecent;
-    if (message != null && ss.settings.enablePrivateAPI.value) {
+    if (message != null && ss().settings.enablePrivateAPI.value) {
       _sendReactionHelper(chat, message, ReactionTypes.LOVE);
     }
     return null;
@@ -146,7 +146,7 @@ class LikeRecentAction extends Action<LikeRecentIntent> {
   @override
   Object? invoke(covariant LikeRecentIntent intent) async {
     final message = ms(chat.guid).mostRecent;
-    if (message != null && ss.settings.enablePrivateAPI.value) {
+    if (message != null && ss().settings.enablePrivateAPI.value) {
       _sendReactionHelper(chat, message, ReactionTypes.LIKE);
     }
     return null;
@@ -165,7 +165,7 @@ class DislikeRecentAction extends Action<DislikeRecentIntent> {
   @override
   Object? invoke(covariant DislikeRecentIntent intent) async {
     final message = ms(chat.guid).mostRecent;
-    if (message != null && ss.settings.enablePrivateAPI.value) {
+    if (message != null && ss().settings.enablePrivateAPI.value) {
       _sendReactionHelper(chat, message, ReactionTypes.DISLIKE);
     }
     return null;
@@ -184,7 +184,7 @@ class LaughRecentAction extends Action<LaughRecentIntent> {
   @override
   Object? invoke(covariant LaughRecentIntent intent) async {
     final message = ms(chat.guid).mostRecent;
-    if (message != null && ss.settings.enablePrivateAPI.value) {
+    if (message != null && ss().settings.enablePrivateAPI.value) {
       _sendReactionHelper(chat, message, ReactionTypes.LAUGH);
     }
     return null;
@@ -203,7 +203,7 @@ class EmphasizeRecentAction extends Action<EmphasizeRecentIntent> {
   @override
   Object? invoke(covariant EmphasizeRecentIntent intent) async {
     final message = ms(chat.guid).mostRecent;
-    if (message != null && ss.settings.enablePrivateAPI.value) {
+    if (message != null && ss().settings.enablePrivateAPI.value) {
       _sendReactionHelper(chat, message, ReactionTypes.EMPHASIZE);
     }
     return null;
@@ -222,7 +222,7 @@ class QuestionRecentAction extends Action<QuestionRecentIntent> {
   @override
   Object? invoke(covariant QuestionRecentIntent intent) async {
     final message = ms(chat.guid).mostRecent;
-    if (message != null && ss.settings.enablePrivateAPI.value) {
+    if (message != null && ss().settings.enablePrivateAPI.value) {
       _sendReactionHelper(chat, message, ReactionTypes.QUESTION);
     }
     return null;
@@ -314,7 +314,7 @@ class StartIncrementalSyncIntent extends Intent {
 class StartIncrementalSyncAction extends Action<StartIncrementalSyncIntent> {
   @override
   Object? invoke(covariant StartIncrementalSyncIntent intent) {
-    if (ss.settings.finishedSetup.value) {
+    if (ss().settings.finishedSetup.value) {
       sync.startIncrementalSync();
     }
     return null;
@@ -332,7 +332,7 @@ class GoBackAction extends Action<GoBackIntent> {
 
   @override
   Object? invoke(covariant GoBackIntent intent) {
-    if (ss.settings.finishedSetup.value && !(Get.isDialogOpen ?? true)) {
+    if (ss().settings.finishedSetup.value && !(Get.isDialogOpen ?? true)) {
       ns.backConversationView(context);
     }
     return null;

@@ -512,7 +512,7 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
                                     minimumSize: WidgetStateProperty.all(const Size(30, 30)),
                                   ),
                                   onPressed: () async {
-                                    ss.settings.customHeaders.value = {};
+                                    ss().settings.customHeaders.value = {};
                                     http.onInit();
                                     connect(urlController.text, passwordController.text);
                                   },
@@ -647,7 +647,7 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
       return;
     }
 
-    ss.settings.guidAuthKey.value = password;
+    ss().settings.guidAuthKey.value = password;
     await saveNewServerUrl(addr, saveAdditionalSettings: ["guidAuthKey"]);
 
     // Request data from the API
@@ -708,7 +708,7 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
     } else {
       try {
         FCMData fcmData = FCMData.fromMap(data["data"]);
-        await ss.saveFCMData(fcmData);
+        await ss().saveFCMData(fcmData);
       } catch (_) {
         if (Platform.isAndroid) {
           showDialog(

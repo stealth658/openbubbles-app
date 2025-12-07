@@ -13,8 +13,8 @@ class ListItem extends StatelessWidget {
   final VoidCallback update;
   ListItem({required this.chat, required this.controller, required this.update});
 
-  MaterialSwipeAction get leftAction => ss.settings.materialLeftAction.value;
-  MaterialSwipeAction get rightAction => ss.settings.materialRightAction.value;
+  MaterialSwipeAction get leftAction => ss().settings.materialLeftAction.value;
+  MaterialSwipeAction get rightAction => ss().settings.materialRightAction.value;
 
   Widget slideBackground(Chat chat, bool left) {
     MaterialSwipeAction action;
@@ -97,7 +97,7 @@ class ListItem extends StatelessWidget {
         },
       );
 
-      if (ss.settings.swipableConversationTiles.value) {
+      if (ss().settings.swipableConversationTiles.value) {
         return Dismissible(
           background: (kIsDesktop || kIsWeb)
               ? null

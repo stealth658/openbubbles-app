@@ -37,7 +37,7 @@ class ChatsService extends GetxService {
       final countQuery = (Database.chats.query(Chat_.dateDeleted.isNull())..order(Chat_.id, flags: Order.descending))
           .watch(triggerImmediately: true);
       countSub = countQuery.listen((event) async {
-        if (!ss.settings.finishedSetup.value) return;
+        if (!ss().settings.finishedSetup.value) return;
         final newCount = event.count();
         if (newCount > currentCount && currentCount != 0) {
           final chat = event.findFirst()!;
@@ -53,18 +53,18 @@ class ChatsService extends GetxService {
       });
     } else {
       countSub = WebListeners.newChat.listen((chat) async {
-        if (!ss.settings.finishedSetup.value) return;
+        if (!ss().settings.finishedSetup.value) return;
         await addChat(chat);
       });
     }
   }
 
   Future<void> init({bool force = false}) async {
-    if (!force && !ss.settings.finishedSetup.value) return;
-    Logger.info("Fetching chats...", tag: "ChatBloc");
+    if (!force && !ss().settings.finishedSetup.value) return;
+    Logger().info("Fetching chats...", tag: "ChatBloc");
     currentCount = Chat.count() ??
         (await http.chatCount().catchError((err) {
-          Logger.info("Error when fetching chat count!", tag: "ChatBloc");
+          Logger().info("Error when fetching chat count!", tag: "ChatBloc");
           return Response(requestOptions: RequestOptions(path: ''));
         }))
             .data['data']['total'] ??
@@ -103,7 +103,7 @@ class ChatsService extends GetxService {
       loadedChatBatch.value = true;
     }
     loadedAllChats.complete();
-    Logger.info("Finished fetching chats (${chats.length}).", tag: "ChatBloc");
+    Logger().info("Finished fetching chats (${chats.length}).", tag: "ChatBloc");
     // update share targets
     if (Platform.isAndroid) {
       StartupTasks.waitForUI().then((_) async {
@@ -190,7 +190,7 @@ class ChatsService extends GetxService {
           "tag": NotificationsService.NEW_MESSAGE_TAG
         }
       );
-      if (ss.settings.enablePrivateAPI.value && ss.settings.privateMarkChatAsRead.value) {
+      if (ss().settings.enablePrivateAPI.value && ss().settings.privateMarkChatAsRead.value) {
         http.markChatRead(c.guid);
       }
     }

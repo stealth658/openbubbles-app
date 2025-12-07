@@ -44,10 +44,10 @@ class _MessagePopupHolderState extends OptimizedState<MessagePopupHolder> {
     Offset? childPos = (globalKey.currentContext?.findRenderObject() as RenderBox?)?.localToGlobal(Offset.zero);
     if (size == null || childPos == null) return;
     childPos = Offset(childPos.dx - MediaQueryData.fromView(View.of(context)).padding.left - (iOS ? 0 : ns.widthChatListLeft(context)), childPos.dy);
-    final tuple = await ss.getServerDetails();
+    final tuple = await ss().getServerDetails();
     final version = tuple.item4;
-    final minSierra = await ss.isMinSierra;
-    final minBigSur = await ss.isMinBigSur;
+    final minSierra = await ss().isMinSierra;
+    final minBigSur = await ss().isMinBigSur;
     if (!iOS) {
       widget.cvController.selected.add(message);
     }
@@ -69,8 +69,8 @@ class _MessagePopupHolderState extends OptimizedState<MessagePopupHolder> {
                 colorScheme: ctx.theme.colorScheme.copyWith(
                   primary: ctx.theme.colorScheme.bubble(ctx, true),
                   onPrimary: ctx.theme.colorScheme.onBubble(ctx, true),
-                  surface: ss.settings.monetTheming.value == Monet.full ? null : (ctx.theme.extensions[BubbleColors] as BubbleColors?)?.receivedBubbleColor,
-                  onSurface: ss.settings.monetTheming.value == Monet.full ? null : (ctx.theme.extensions[BubbleColors] as BubbleColors?)?.onReceivedBubbleColor,
+                  surface: ss().settings.monetTheming.value == Monet.full ? null : (ctx.theme.extensions[BubbleColors] as BubbleColors?)?.receivedBubbleColor,
+                  onSurface: ss().settings.monetTheming.value == Monet.full ? null : (ctx.theme.extensions[BubbleColors] as BubbleColors?)?.onReceivedBubbleColor,
                 ),
               ),
               child: PopupScope(
@@ -111,8 +111,8 @@ class _MessagePopupHolderState extends OptimizedState<MessagePopupHolder> {
 
   void sendTapback([String? type, int? part]) {
     HapticFeedback.lightImpact();
-    final reaction = type ?? ss.settings.quickTapbackType.value;
-    Logger.info("Sending reaction type: $reaction");
+    final reaction = type ?? ss().settings.quickTapbackType.value;
+    Logger().info("Sending reaction type: $reaction");
     outq.queue(OutgoingItem(
       type: QueueType.sendMessage,
       chat: message.getChat() ?? cm.activeChat!.chat,
@@ -135,14 +135,14 @@ class _MessagePopupHolderState extends OptimizedState<MessagePopupHolder> {
     return GestureDetector(
       key: globalKey,
       onDoubleTap: widget.isEditing ? null
-        : ss.settings.doubleTapForDetails.value || message.guid!.startsWith('temp')
+        : ss().settings.doubleTapForDetails.value || message.guid!.startsWith('temp')
         ? () => openPopup()
-        : ss.settings.enableQuickTapback.value && widget.cvController.chat.isIMessage
+        : ss().settings.enableQuickTapback.value && widget.cvController.chat.isIMessage
         ? () => sendTapback(null, widget.part.part)
         : null,
       onLongPress: widget.isEditing ? null
-        : ss.settings.doubleTapForDetails.value &&
-        ss.settings.enableQuickTapback.value &&
+        : ss().settings.doubleTapForDetails.value &&
+        ss().settings.enableQuickTapback.value &&
         widget.cvController.chat.isIMessage &&
         !message.guid!.startsWith('temp')
         ? () => sendTapback(null, widget.part.part)

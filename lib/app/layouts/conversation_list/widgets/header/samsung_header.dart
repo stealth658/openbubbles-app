@@ -16,7 +16,7 @@ class SamsungHeader extends CustomStateful<ConversationListController> {
 }
 
 class _SamsungHeaderState extends CustomState<SamsungHeader, void, ConversationListController> {
-  Color get backgroundColor => ss.settings.windowEffect.value == WindowEffect.disabled
+  Color get backgroundColor => ss().settings.windowEffect.value == WindowEffect.disabled
       ? headerColor
       : Colors.transparent;
   bool get showArchived => controller.showArchivedChats;

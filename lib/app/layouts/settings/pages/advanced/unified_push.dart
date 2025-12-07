@@ -23,8 +23,8 @@ class UnifiedPushPanel extends CustomStateful<UnifiedPushPanelController> {
 
 class _UnifiedPushPanelState
     extends CustomState<UnifiedPushPanel, void, UnifiedPushPanelController> {
-  final RxBool enabled = ss.settings.enableUnifiedPush;
-  final RxString endpoint = ss.settings.endpointUnifiedPush;
+  final RxBool enabled = ss().settings.enableUnifiedPush;
+  final RxString endpoint = ss().settings.endpointUnifiedPush;
 
   @override
   Widget build(BuildContext context) {
@@ -165,13 +165,13 @@ class _UnifiedPushPanelState
         sub?.cancel();
         sub = null;
     });
-    ss.settings.enableUnifiedPush.value = val;
+    ss().settings.enableUnifiedPush.value = val;
     if (val) {
       await mcs.invokeMethod("UnifiedPushHandler", {"operation": "register"});
     } else {
       await mcs.invokeMethod("UnifiedPushHandler", {"operation": "unregister"});
-      ss.settings.endpointUnifiedPush.value = "";
+      ss().settings.endpointUnifiedPush.value = "";
     }
-    ss.saveSettings();
+    ss().saveSettings();
   }
 }

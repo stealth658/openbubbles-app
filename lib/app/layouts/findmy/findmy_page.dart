@@ -69,12 +69,12 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
     socket.socket.on("new-findmy-location", (data) {
       try {
         final friend = FindMyFriend.fromJson(data);
-        Logger.info("Received new location for ${friend.handle?.address}");
+        Logger().info("Received new location for ${friend.handle?.address}");
         if ((friend.latitude ?? 0) == 0 && (friend.longitude ?? 0) == 0) return;
         final existingFriendIndex = friends.indexWhere((e) => e.handle?.uniqueAddressAndService == friend.handle?.uniqueAddressAndService);
         final existingFriend = existingFriendIndex == -1 ? null : friends[existingFriendIndex];
         if (existingFriend == null || existingFriend.status == null || friend.locatingInProgress || LocationStatus.values.indexOf(existingFriend.status!) <= LocationStatus.values.indexOf(friend.status ?? LocationStatus.legacy)) {
-          Logger.info("Updating map for ${friend.handle?.address}");
+          Logger().info("Updating map for ${friend.handle?.address}");
           friends[existingFriendIndex] = friend;
 
           friendsWithLocation = friends.where((item) => (item.latitude ?? 0) != 0 && (item.longitude ?? 0) != 0).toList();
@@ -164,7 +164,7 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
           refreshing2 = false;
         });
       } catch (e, s) {
-        Logger.error("Failed to parse FindMy Friends location data!", error: e, trace: s);
+        Logger().error("Failed to parse FindMy Friends location data!", error: e, trace: s);
         setState(() {
           fetching2 = null;
           refreshing2 = false;
@@ -236,7 +236,7 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
           refreshing = false;
         });
       } catch (e, s) {
-        Logger.error("Failed to parse FindMy Devices location data!", error: e, trace: s);
+        Logger().error("Failed to parse FindMy Devices location data!", error: e, trace: s);
         setState(() {
           fetching = null;
           refreshing = false;
@@ -417,8 +417,8 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
                       final item = devicesWithLocation[i];
                       return ListTile(
                         mouseCursor: MouseCursor.defer,
-                        title: Text(ss.settings.redactedMode.value ? "Device" : (item.name ?? "Unknown Device")),
-                        subtitle: Text(ss.settings.redactedMode.value ? "Location" : (item.address?.label ?? item.address?.mapItemFullAddress ?? "No location found")),
+                        title: Text(ss().settings.redactedMode.value ? "Device" : (item.name ?? "Unknown Device")),
+                        subtitle: Text(ss().settings.redactedMode.value ? "Location" : (item.address?.label ?? item.address?.mapItemFullAddress ?? "No location found")),
                         onTap: item.location?.latitude != null && item.location?.longitude != null
                             ? () async {
                                 await panelController.close();
@@ -503,8 +503,8 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
                       initiallyExpanded: true,
                       children: devicesWithoutLocation
                           .map((item) => ListTile(
-                                title: Text(ss.settings.redactedMode.value ? "Device" : (item.name ?? "Unknown Device")),
-                                subtitle: Text(ss.settings.redactedMode.value ? "Location" : (item.address?.label ?? item.address?.mapItemFullAddress ?? "No location found")),
+                                title: Text(ss().settings.redactedMode.value ? "Device" : (item.name ?? "Unknown Device")),
+                                subtitle: Text(ss().settings.redactedMode.value ? "Location" : (item.address?.label ?? item.address?.mapItemFullAddress ?? "No location found")),
                                 onTap: item.location?.latitude != null && item.location?.longitude != null
                                     ? () async {
                                         await panelController.close();
@@ -604,8 +604,8 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
                     itemBuilder: (context, i) {
                       final item = itemsWithLocation[i];
                       return ListTile(
-                        title: Text(ss.settings.redactedMode.value ? "Item" : (item.name ?? "Unknown Item")),
-                        subtitle: Text(ss.settings.redactedMode.value ? "Location" : (item.address?.label ?? item.address?.mapItemFullAddress ?? "No location found")),
+                        title: Text(ss().settings.redactedMode.value ? "Item" : (item.name ?? "Unknown Item")),
+                        subtitle: Text(ss().settings.redactedMode.value ? "Location" : (item.address?.label ?? item.address?.mapItemFullAddress ?? "No location found")),
                         trailing: item.location?.latitude != null && item.location?.longitude != null ? ButtonTheme(
                           minWidth: 1,
                           child: TextButton(
@@ -690,8 +690,8 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
                       initiallyExpanded: true,
                       children: itemsWithoutLocation
                           .map((item) => ListTile(
-                                title: Text(ss.settings.redactedMode.value ? "Item" : (item.name ?? "Unknown Device")),
-                                subtitle: Text(ss.settings.redactedMode.value ? "Location" : (item.address?.label ?? item.address?.mapItemFullAddress ?? "No location found")),
+                                title: Text(ss().settings.redactedMode.value ? "Item" : (item.name ?? "Unknown Device")),
+                                subtitle: Text(ss().settings.redactedMode.value ? "Location" : (item.address?.label ?? item.address?.mapItemFullAddress ?? "No location found")),
                                 onTap: item.location?.latitude != null && item.location?.longitude != null
                                     ? () async {
                                         await panelController.close();
@@ -793,7 +793,7 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
                       return ListTile(
                         leading: ContactAvatarWidget(handle: item.handle),
                         title: Text(item.handle?.displayName ?? item.title ?? "Unknown Friend"),
-                        subtitle: Text(ss.settings.redactedMode.value ? "Location" : ("${item.shortAddress ?? "No location found"}${item.lastUpdated == null || item.status == LocationStatus.live ? "" : "\nLast updated ${buildDate(item.lastUpdated)}"}")),
+                        subtitle: Text(ss().settings.redactedMode.value ? "Location" : ("${item.shortAddress ?? "No location found"}${item.lastUpdated == null || item.status == LocationStatus.live ? "" : "\nLast updated ${buildDate(item.lastUpdated)}"}")),
                         trailing: item.latitude != null && item.longitude != null ? Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -889,7 +889,7 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
                                 mouseCursor: MouseCursor.defer,
                                 leading: ContactAvatarWidget(handle: item.handle),
                                 title: Text(item.handle?.displayName ?? item.title ?? "Unknown Friend"),
-                                subtitle: Text(ss.settings.redactedMode.value ? "Location" : (item.longAddress ?? "No location found")),
+                                subtitle: Text(ss().settings.redactedMode.value ? "Location" : (item.longAddress ?? "No location found")),
                                 onLongPress: () async {
                                   const encoder = JsonEncoder.withIndent("     ");
                                   final str = encoder.convert(item.toJson());
@@ -939,7 +939,7 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
         value: SystemUiOverlayStyle(
-          systemNavigationBarColor: ss.settings.immersiveMode.value
+          systemNavigationBarColor: ss().settings.immersiveMode.value
               ? Colors.transparent
               : context.theme.colorScheme.background, // navigation bar color
           systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
@@ -1083,8 +1083,8 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
                               controller: devicesController,
                               slivers: [
                                 if (samsung) buildSamsungAppBar(context, "FindMy Devices"),
-                                if (ss.settings.skin.value != Skins.Samsung) ...devicesBodySlivers,
-                                if (ss.settings.skin.value == Skins.Samsung)
+                                if (ss().settings.skin.value != Skins.Samsung) ...devicesBodySlivers,
+                                if (ss().settings.skin.value == Skins.Samsung)
                                   SliverToBoxAdapter(
                                     child: ConstrainedBox(
                                       constraints: BoxConstraints(
@@ -1108,8 +1108,8 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
                               controller: itemsController,
                               slivers: [
                                 if (samsung) buildSamsungAppBar(context, "FindMy Items"),
-                                if (ss.settings.skin.value != Skins.Samsung) ...itemsBodySlivers,
-                                if (ss.settings.skin.value == Skins.Samsung)
+                                if (ss().settings.skin.value != Skins.Samsung) ...itemsBodySlivers,
+                                if (ss().settings.skin.value == Skins.Samsung)
                                   SliverToBoxAdapter(
                                     child: ConstrainedBox(
                                       constraints: BoxConstraints(
@@ -1224,7 +1224,7 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
                 children: <Widget>[
                   NotificationListener<ScrollEndNotification>(
                     onNotification: (_) {
-                      if (ss.settings.skin.value != Skins.Samsung || kIsWeb || kIsDesktop) return false;
+                      if (ss().settings.skin.value != Skins.Samsung || kIsWeb || kIsDesktop) return false;
                       final scrollDistance = context.height / 3 - 57;
 
                       if (friendsController.hasClients && friendsController.offset > 0 && friendsController.offset < scrollDistance) {
@@ -1245,8 +1245,8 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
                               : ThemeSwitcher.getScrollPhysics(),
                           slivers: <Widget>[
                             if (samsung) buildSamsungAppBar(context, "FindMy Friends"),
-                            if (ss.settings.skin.value != Skins.Samsung) ...friendsBodySlivers,
-                            if (ss.settings.skin.value == Skins.Samsung)
+                            if (ss().settings.skin.value != Skins.Samsung) ...friendsBodySlivers,
+                            if (ss().settings.skin.value == Skins.Samsung)
                               SliverToBoxAdapter(
                                 child: ConstrainedBox(
                                   constraints: BoxConstraints(
@@ -1268,7 +1268,7 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
                   ),
                   NotificationListener<ScrollEndNotification>(
                     onNotification: (_) {
-                      if (ss.settings.skin.value != Skins.Samsung || kIsWeb || kIsDesktop) return false;
+                      if (ss().settings.skin.value != Skins.Samsung || kIsWeb || kIsDesktop) return false;
                       final scrollDistance = context.height / 3 - 57;
 
                       if (devicesController.hasClients && devicesController.offset > 0 && devicesController.offset < scrollDistance) {
@@ -1289,8 +1289,8 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
                               : ThemeSwitcher.getScrollPhysics(),
                           slivers: <Widget>[
                             if (samsung) buildSamsungAppBar(context, "FindMy Devices"),
-                            if (ss.settings.skin.value != Skins.Samsung) ...devicesBodySlivers,
-                            if (ss.settings.skin.value == Skins.Samsung)
+                            if (ss().settings.skin.value != Skins.Samsung) ...devicesBodySlivers,
+                            if (ss().settings.skin.value == Skins.Samsung)
                               SliverToBoxAdapter(
                                 child: ConstrainedBox(
                                   constraints: BoxConstraints(
@@ -1312,7 +1312,7 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
                   ),
                   NotificationListener<ScrollEndNotification>(
                     onNotification: (_) {
-                      if (ss.settings.skin.value != Skins.Samsung || kIsWeb || kIsDesktop) return false;
+                      if (ss().settings.skin.value != Skins.Samsung || kIsWeb || kIsDesktop) return false;
                       final scrollDistance = context.height / 3 - 57;
 
                       if (itemsController.hasClients && itemsController.offset > 0 && itemsController.offset < scrollDistance) {
@@ -1333,8 +1333,8 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
                               : ThemeSwitcher.getScrollPhysics(),
                           slivers: <Widget>[
                             if (samsung) buildSamsungAppBar(context, "FindMy Items"),
-                            if (ss.settings.skin.value != Skins.Samsung) ...itemsBodySlivers,
-                            if (ss.settings.skin.value == Skins.Samsung)
+                            if (ss().settings.skin.value != Skins.Samsung) ...itemsBodySlivers,
+                            if (ss().settings.skin.value == Skins.Samsung)
                               SliverToBoxAdapter(
                                 child: ConstrainedBox(
                                   constraints: BoxConstraints(
@@ -1616,8 +1616,8 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(ss.settings.redactedMode.value ? "Device" : (item.name ?? "Unknown Device"), style: context.theme.textTheme.labelLarge),
-                          Text(ss.settings.redactedMode.value ? "Location" : (item.address?.label ?? item.address?.mapItemFullAddress ?? "No location found"),
+                          Text(ss().settings.redactedMode.value ? "Device" : (item.name ?? "Unknown Device"), style: context.theme.textTheme.labelLarge),
+                          Text(ss().settings.redactedMode.value ? "Location" : (item.address?.label ?? item.address?.mapItemFullAddress ?? "No location found"),
                               style: context.theme.textTheme.bodySmall),
                         ],
                       ),
@@ -1640,7 +1640,7 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
                         children: [
                           Text(item.handle?.displayName ?? item.title ?? "Unknown Friend",
                               style: context.theme.textTheme.labelLarge),
-                          Text(ss.settings.redactedMode.value ? "Location" : (item.longAddress ?? "No location found"), style: context.theme.textTheme.bodySmall),
+                          Text(ss().settings.redactedMode.value ? "Location" : (item.longAddress ?? "No location found"), style: context.theme.textTheme.bodySmall),
                           if (item.lastUpdated != null && item.status != LocationStatus.live)
                             Text("Last updated ${buildDate(item.lastUpdated)}", style: context.theme.textTheme.bodySmall),
                           if (item.status != null)

@@ -164,12 +164,12 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
 
   @override
   Widget build(BuildContext context) {
-    double narrowWidth = message.isFromMe! || !ss.settings.alwaysShowAvatars.value ? 330 : 360;
+    double narrowWidth = message.isFromMe! || !ss().settings.alwaysShowAvatars.value ? 330 : 360;
     bool narrowScreen = ns.width(widthContext) < narrowWidth;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
-        systemNavigationBarColor: ss.settings.immersiveMode.value ? Colors.transparent : context.theme.colorScheme.background, // navigation bar color
+        systemNavigationBarColor: ss().settings.immersiveMode.value ? Colors.transparent : context.theme.colorScheme.background, // navigation bar color
         systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
         statusBarColor: Colors.transparent, // status bar color
         statusBarIconBrightness: context.theme.colorScheme.brightness.opposite,
@@ -182,8 +182,8 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
             primary: context.theme.colorScheme.bubble(context, chat.isIMessage),
             onPrimary: context.theme.colorScheme.onBubble(context, chat.isIMessage),
             surface:
-                ss.settings.monetTheming.value == Monet.full ? null : (context.theme.extensions[BubbleColors] as BubbleColors?)?.receivedBubbleColor,
-            onSurface: ss.settings.monetTheming.value == Monet.full
+                ss().settings.monetTheming.value == Monet.full ? null : (context.theme.extensions[BubbleColors] as BubbleColors?)?.receivedBubbleColor,
+            onSurface: ss().settings.monetTheming.value == Monet.full
                 ? null
                 : (context.theme.extensions[BubbleColors] as BubbleColors?)?.onReceivedBubbleColor,
           ),
@@ -191,7 +191,7 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
         child: TitleBarWrapper(
             child: Scaffold(
                 extendBodyBehindAppBar: true,
-                backgroundColor: kIsDesktop && iOS && ss.settings.windowEffect.value != WindowEffect.disabled
+                backgroundColor: kIsDesktop && iOS && ss().settings.windowEffect.value != WindowEffect.disabled
                     ? context.theme.colorScheme.properSurface.withValues(alpha: 0.6)
                     : Colors.transparent,
                 appBar: iOS
@@ -221,12 +221,12 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
                     GestureDetector(
                       onTap: popDetails,
                       child: iOS
-                          ? (ss.settings.highPerfMode.value
+                          ? (ss().settings.highPerfMode.value
                               ? Container(color: context.theme.colorScheme.background.withValues(alpha: 0.8))
                               : BackdropFilter(
                                   filter: ImageFilter.blur(
-                                      sigmaX: kIsDesktop && ss.settings.windowEffect.value != WindowEffect.disabled ? 10 : 30,
-                                      sigmaY: kIsDesktop && ss.settings.windowEffect.value != WindowEffect.disabled ? 10 : 30),
+                                      sigmaX: kIsDesktop && ss().settings.windowEffect.value != WindowEffect.disabled ? 10 : 30,
+                                      sigmaY: kIsDesktop && ss().settings.windowEffect.value != WindowEffect.disabled ? 10 : 30),
                                   child: Container(
                                     color: context.theme.colorScheme.properSurface.withValues(alpha: 0.3),
                                   ),
@@ -265,7 +265,7 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
                           child: reactions.isNotEmpty ? ReactionDetails(reactions: reactions) : const SizedBox.shrink(),
                         ),
                       ),
-                    if (ss.settings.enablePrivateAPI.value && isSent && minSierra && chat.isIMessage)
+                    if (ss().settings.enablePrivateAPI.value && isSent && minSierra && chat.isIMessage)
                       Positioned(
                         bottom: (iOS ? itemHeight * numberToShow + 35 + widget.size.height : context.height - materialOffset)
                             .clamp(0, context.height - (narrowScreen ? 200 : 125)),
@@ -399,7 +399,7 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
                           },
                         ),
                       ),
-                    if (!iOS && ss.settings.enablePrivateAPI.value && minBigSur && chat.isIMessage && isSent)
+                    if (!iOS && ss().settings.enablePrivateAPI.value && minBigSur && chat.isIMessage && isSent)
                       Positioned(
                         left: !message.isFromMe!
                             ? widget.childPosition.dx + widget.size.width + (reactions.isNotEmpty ? 20 : 5)
@@ -447,7 +447,7 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
         await as.saveToDisk(content, isDocument: part.attachments.first.mimeStart != "image" && part.attachments.first.mimeStart != "video");
       }
     } catch (ex, trace) {
-      Logger.error("Error downloading attachment: ${ex.toString()}", error: ex, trace: trace);
+      Logger().error("Error downloading attachment: ${ex.toString()}", error: ex, trace: trace);
       showSnackbar("Save Error", ex.toString());
     }
   }
@@ -459,14 +459,14 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
   }
 
   Future<void> openAttachmentWeb() async {
-    await launchUrlString("${part.attachments.first.webUrl!}?guid=${ss.settings.guidAuthKey}");
+    await launchUrlString("${part.attachments.first.webUrl!}?guid=${ss().settings.guidAuthKey}");
     popDetails();
   }
 
   void copyText() {
     Clipboard.setData(ClipboardData(text: part.fullText));
     popDetails();
-    if (!Platform.isAndroid || (fs.androidInfo?.version.sdkInt ?? 0) < 33) {
+    if (!Platform.isAndroid || (fs().androidInfo?.version.sdkInt ?? 0) < 33) {
       showSnackbar("Copied", "Copied to clipboard!");
     }
   }
@@ -560,7 +560,7 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
       progress.value = 1;
       downloadingAttachments.value = false;
     } catch (ex, trace) {
-      Logger.error("Failed to download original attachment!", error: ex, trace: trace);
+      Logger().error("Failed to download original attachment!", error: ex, trace: trace);
       showSnackbar("Download Error", ex.toString());
     }
   }
@@ -637,7 +637,7 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
       }
       downloadingAttachments.value = false;
     } catch (ex, trace) {
-      Logger.error("Failed to download live photo!", error: ex, trace: trace);
+      Logger().error("Failed to download live photo!", error: ex, trace: trace);
       showSnackbar("Download Error", ex.toString());
     }
   }
@@ -854,7 +854,7 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
   get _allActions {
     final canEdit = (message.dateCreated?.toUtc().isWithin(DateTime.now().toUtc(), minutes: 15) ?? false);
     return [
-        if (ss.settings.enablePrivateAPI.value && minBigSur && chat.isIMessage && isSent)
+        if (ss().settings.enablePrivateAPI.value && minBigSur && chat.isIMessage && isSent)
           DetailsMenuActionWidget(
             onTap: reply,
             action: DetailsMenuAction.Reply,
@@ -928,15 +928,15 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
             onTap: createContact,
             action: DetailsMenuAction.CreateContact,
           ),
-        if (ss.isMinVenturaSync && message.isFromMe! && !message.guid!.startsWith("temp") && ss.serverDetailsSync().item4 >= 148)
+        if (ss().isMinVenturaSync && message.isFromMe! && !message.guid!.startsWith("temp") && ss().serverDetailsSync().item4 >= 148)
           DetailsMenuActionWidget(
             onTap: unsend,
             action: DetailsMenuAction.UndoSend,
           ),
-        if (ss.isMinVenturaSync &&
+        if (ss().isMinVenturaSync &&
             message.isFromMe! &&
             !message.guid!.startsWith("temp") &&
-            ss.serverDetailsSync().item4 >= 148 &&
+            ss().serverDetailsSync().item4 >= 148 &&
             (part.text?.isNotEmpty ?? false))
           DetailsMenuActionWidget(
             onTap: edit,
@@ -976,7 +976,7 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
           onTap: messageInfo,
           action: DetailsMenuAction.MessageInfo,
         ),
-      ].sorted((a, b) => ss.settings.detailsMenuActions.indexOf(a.action).compareTo(ss.settings.detailsMenuActions.indexOf(b.action)));
+      ].sorted((a, b) => ss().settings.detailsMenuActions.indexOf(a.action).compareTo(ss().settings.detailsMenuActions.indexOf(b.action)));
   }
 
   Widget buildDetailsMenu(BuildContext context) {
@@ -1004,7 +1004,7 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
                       children: allActions.sublist(numberToShow - 1),
                     );
                     Get.dialog(
-                        ss.settings.skin.value == Skins.iOS
+                        ss().settings.skin.value == Skins.iOS
                             ? CupertinoAlertDialog(
                                 backgroundColor: context.theme.colorScheme.properSurface,
                                 content: content,
@@ -1050,7 +1050,7 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
         padding: EdgeInsets.only(top: kIsDesktop ? 20 : 0),
         child: PopupMenuButton<int>(
           color: context.theme.colorScheme.properSurface,
-          shape: ss.settings.skin.value != Skins.Material ? const RoundedRectangleBorder(
+          shape: ss().settings.skin.value != Skins.Material ? const RoundedRectangleBorder(
             borderRadius: BorderRadius.all(Radius.circular(20.0)),
           ) : null,
           onSelected: (int value) {
@@ -1092,7 +1092,7 @@ class ReactionDetails extends StatelessWidget {
         child: Container(
           alignment: Alignment.center,
           height: 120,
-          color: context.theme.colorScheme.properSurface.withAlpha(ss.settings.skin.value == Skins.iOS ? 150 : 255),
+          color: context.theme.colorScheme.properSurface.withAlpha(ss().settings.skin.value == Skins.iOS ? 150 : 255),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10.0),
             child: ListView.separated(
@@ -1103,7 +1103,7 @@ class ReactionDetails extends StatelessWidget {
               separatorBuilder: (context, index) => const SizedBox(width: 10),
               itemBuilder: (context, index) {
                 final message = reactions[index];
-                final hideContactInfo = ss.settings.redactedMode.value && ss.settings.hideContactInfo.value;
+                final hideContactInfo = ss().settings.redactedMode.value && ss().settings.hideContactInfo.value;
                 return Column(
                   key: ValueKey(message.guid!),
                   mainAxisSize: MainAxisSize.min,
@@ -1117,23 +1117,23 @@ class ReactionDetails extends StatelessWidget {
                         fontSize: 22,
                       ),
                     ),
-                    if (!ss.settings.hideNamesForReactions.value && !hideContactInfo)
+                    if (!ss().settings.hideNamesForReactions.value && !hideContactInfo)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 8.0),
                         child: Text(
-                          message.isFromMe! ? ss.settings.userName.value : (message.handle?.displayName ?? "Unknown"),
+                          message.isFromMe! ? ss().settings.userName.value : (message.handle?.displayName ?? "Unknown"),
                           style: context.theme.textTheme.bodySmall!.copyWith(color: context.theme.colorScheme.properOnSurface),
                         ),
                       ),
-                    if (ss.settings.hideNamesForReactions.value)
+                    if (ss().settings.hideNamesForReactions.value)
                       const SizedBox(
                         height: 8,
                       ),
-                    if (!ss.settings.hideNamesForReactions.value && hideContactInfo)
+                    if (!ss().settings.hideNamesForReactions.value && hideContactInfo)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 8.0),
                         child: Text(
-                          message.isFromMe! ? ss.settings.userName.value : (message.handle?.fakeName ?? "Friend"),
+                          message.isFromMe! ? ss().settings.userName.value : (message.handle?.fakeName ?? "Friend"),
                           style: context.theme.textTheme.bodySmall!.copyWith(color: context.theme.colorScheme.properOnSurface),
                         ),
                       ),
@@ -1151,11 +1151,11 @@ class ReactionDetails extends StatelessWidget {
                         ],
                       ),
                       child: Padding(
-                        padding: ss.settings.skin.value == Skins.iOS
+                        padding: ss().settings.skin.value == Skins.iOS
                             ? const EdgeInsets.only(top: 8.0, left: 7.0, right: 7.0, bottom: 7.0)
                                 .add(EdgeInsets.only(right: message.associatedMessageType == "emphasize" ? 1 : 0))
                             : EdgeInsets.zero,
-                        child: ss.settings.skin.value == Skins.iOS
+                        child: ss().settings.skin.value == Skins.iOS
                             ? SvgPicture.asset(
                                 'assets/reactions/${message.associatedMessageType}-black.svg',
                                 colorFilter: ColorFilter.mode(

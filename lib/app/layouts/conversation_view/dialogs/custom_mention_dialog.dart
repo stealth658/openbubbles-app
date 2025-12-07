@@ -35,7 +35,7 @@ Future<String?> showCustomMentionDialog(BuildContext context, Mentionable? menti
             autocorrect: true,
             scrollPhysics: const CustomBouncingScrollPhysics(),
             autofocus: true,
-            enableIMEPersonalizedLearning: !ss.settings.incognitoKeyboard.value,
+            enableIMEPersonalizedLearning: !ss().settings.incognitoKeyboard.value,
             decoration: InputDecoration(
               labelText: "Custom Mention",
               hintText: mention?.handle.displayName ?? "",

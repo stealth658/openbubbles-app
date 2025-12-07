@@ -22,7 +22,7 @@ class OutgoingQueue extends Queue {
       case QueueType.sendAttachment:
         return await ah.prepAttachment(item.chat, item.message);
       default:
-        Logger.info("Unhandled queue event: ${item.type.name}");
+        Logger().info("Unhandled queue event: ${item.type.name}");
         break;
     }
   }
@@ -68,7 +68,7 @@ class OutgoingQueue extends Queue {
         await handleSend(() => ah.sendAttachment(item.chat, item.message, item.customArgs?['audio'] ?? false), item.chat);
         break;
       default:
-        Logger.info("Unhandled queue event: ${item.type.name}");
+        Logger().info("Unhandled queue event: ${item.type.name}");
         break;
     }
   }

@@ -50,7 +50,7 @@ class _ScheduledMessagesPanelState extends OptimizedState<ScheduledMessagesPanel
       scheduled.remove(item);
       setState(() {});
     } else {
-      Logger.error(response.data);
+      Logger().error(response.data);
       showSnackbar("Error", "Something went wrong!");
     }
   }

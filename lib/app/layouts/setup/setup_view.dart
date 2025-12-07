@@ -59,7 +59,7 @@ class _SetupViewState extends OptimizedState<SetupView> {
 
     ever(socket.state, (event) {
       if (event == SocketState.error
-          && !ss.settings.finishedSetup.value
+          && !ss().settings.finishedSetup.value
           && controller.pageController.hasClients
           && controller.currentPage > controller.pageOfNoReturn) {
         showDialog(
@@ -85,7 +85,7 @@ class _SetupViewState extends OptimizedState<SetupView> {
     return PopScope(
       canPop: false,
       child: Scaffold(
-        backgroundColor: ss.settings.windowEffect.value != WindowEffect.disabled ? Colors.transparent : context.theme.colorScheme.background,
+        backgroundColor: ss().settings.windowEffect.value != WindowEffect.disabled ? Colors.transparent : context.theme.colorScheme.background,
         body: SafeArea(
           child: Column(
             children: <Widget>[

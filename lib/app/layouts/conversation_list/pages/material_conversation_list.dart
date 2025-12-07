@@ -24,7 +24,7 @@ class MaterialConversationList extends StatefulWidget {
 class _MaterialConversationListState extends OptimizedState<MaterialConversationList> {
   bool get showArchived => widget.parentController.showArchivedChats;
   bool get showUnknown => widget.parentController.showUnknownSenders;
-  Color get backgroundColor => ss.settings.windowEffect.value == WindowEffect.disabled
+  Color get backgroundColor => ss().settings.windowEffect.value == WindowEffect.disabled
       ? context.theme.colorScheme.background
       : Colors.transparent;
   ConversationListController get controller => widget.parentController;
@@ -34,7 +34,7 @@ class _MaterialConversationListState extends OptimizedState<MaterialConversation
     super.initState();
     // update widget when background color changes
     if (kIsDesktop) {
-      ss.settings.windowEffect.listen((WindowEffect effect) {
+      ss().settings.windowEffect.listen((WindowEffect effect) {
         setState(() {});
       });
     }

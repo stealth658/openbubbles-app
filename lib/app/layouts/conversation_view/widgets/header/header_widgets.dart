@@ -28,7 +28,7 @@ class ManualMarkState extends OptimizedState<ManualMark> {
 
   @override
   Widget build(BuildContext context) {
-    final manualMark = ss.settings.enablePrivateAPI.value && ss.settings.privateManualMarkAsRead.value && !(chat.autoSendReadReceipts ?? false);
+    final manualMark = ss().settings.enablePrivateAPI.value && ss().settings.privateManualMarkAsRead.value && !(chat.autoSendReadReceipts ?? false);
     return Obx(() {
       if (!manualMark && !widget.controller.inSelectMode.value) return const SizedBox.shrink();
       return Row(
@@ -127,7 +127,7 @@ class ManualMarkState extends OptimizedState<ManualMark> {
 class ConnectionIndicator extends StatelessWidget {
   const ConnectionIndicator();
 
-  bool get noniOS => ss.settings.skin.value != Skins.iOS;
+  bool get noniOS => ss().settings.skin.value != Skins.iOS;
 
   @override
   Widget build(BuildContext context) {

@@ -171,7 +171,7 @@ class Attachment {
     existing.save(null);
 
     // change the directory path
-    String appDocPath = fs.appDocDir.path;
+    String appDocPath = fs().appDocDir.path;
     String pathName = "$appDocPath/attachments/$oldGuid";
     Directory directory = Directory(pathName);
 
@@ -227,7 +227,7 @@ class Attachment {
 
   String? get mimeStart => mimeType?.split("/").first;
 
-  static String get baseDirectory => "${fs.appDocDir.path}/attachments";
+  static String get baseDirectory => "${fs().appDocDir.path}/attachments";
 
   String get directory => "$baseDirectory/$guid";
 

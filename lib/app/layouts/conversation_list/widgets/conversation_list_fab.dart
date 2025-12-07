@@ -53,7 +53,7 @@ class _ConversationListFABState extends CustomState<ConversationListFAB, void, C
     final widget = Obx(() => Column(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        if (ss.settings.cameraFAB.value && iOS && !kIsWeb && !kIsDesktop)
+        if (ss().settings.cameraFAB.value && iOS && !kIsWeb && !kIsDesktop)
           ConstrainedBox(
             constraints: const BoxConstraints(
               maxWidth: 45,
@@ -70,12 +70,12 @@ class _ConversationListFABState extends CustomState<ConversationListFAB, void, C
               backgroundColor: context.theme.colorScheme.primaryContainer,
             ),
           ),
-        if (ss.settings.cameraFAB.value && iOS && !kIsWeb && !kIsDesktop)
+        if (ss().settings.cameraFAB.value && iOS && !kIsWeb && !kIsDesktop)
           const SizedBox(
             height: 10,
           ),
         InkWell(
-          onLongPress: iOS || !ss.settings.cameraFAB.value || kIsWeb || kIsDesktop
+          onLongPress: iOS || !ss().settings.cameraFAB.value || kIsWeb || kIsDesktop
             ? null : () => controller.openCamera(context),
           child: FloatingActionButton(
             backgroundColor: context.theme.colorScheme.primary,
@@ -126,7 +126,7 @@ class _ConversationListFABState extends CustomState<ConversationListFAB, void, C
               Positioned(
                 right: material ? 15 : 0,
                 child: InkWell(
-                  onLongPress: ss.settings.cameraFAB.value && !kIsWeb && !kIsDesktop
+                  onLongPress: ss().settings.cameraFAB.value && !kIsWeb && !kIsDesktop
                       ? () => controller.openCamera(context) : null,
                   child: Container(
                     height: 65,

@@ -57,7 +57,7 @@ class ConnectionServerTile extends StatelessWidget {
         onLongPress: () {
           Clipboard.setData(ClipboardData(text: http.origin));
           if (!Platform.isAndroid ||
-              (fs.androidInfo?.version.sdkInt ?? 0) < 33) {
+              (fs().androidInfo?.version.sdkInt ?? 0) < 33) {
             showSnackbar("Copied", "Server address copied to clipboard!");
           }
         },
@@ -73,7 +73,7 @@ class ConnectionServerTile extends StatelessWidget {
                       ),
                     )
                   : null,
-              color: ss.settings.skin.value != Skins.Material
+              color: ss().settings.skin.value != Skins.Material
                   ? getIndicatorColor(socket.state.value)
                   : Colors.transparent,
               borderRadius: iOS ? BorderRadius.circular(6) : null,
@@ -87,10 +87,10 @@ class ConnectionServerTile extends StatelessWidget {
                       iOS
                           ? CupertinoIcons.antenna_radiowaves_left_right
                           : Icons.router,
-                      color: ss.settings.skin.value != Skins.Material
+                      color: ss().settings.skin.value != Skins.Material
                           ? Colors.white
                           : Colors.grey,
-                      size: ss.settings.skin.value != Skins.Material
+                      size: ss().settings.skin.value != Skins.Material
                           ? 21
                           : 28,
                     ),

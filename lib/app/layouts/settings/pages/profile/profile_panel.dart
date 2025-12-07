@@ -40,7 +40,7 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
         accountInfo.addAll(result.data['data']);
       }
       opacity.value = 1.0;
-      if (ss.isMinBigSurSync) {
+      if (ss().isMinBigSurSync) {
         final result2 = await http.getAccountContact();
         if (!isNullOrEmpty(result2.data.isNotEmpty)) {
           accountContact.addAll(result2.data['data']);
@@ -53,15 +53,15 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
   }
 
   void updateName() async {
-    final nameController = TextEditingController(text: ss.settings.userName.value);
+    final nameController = TextEditingController(text: ss().settings.userName.value);
     done() async {
       if (nameController.text.isEmpty) {
         showSnackbar("Error", "Enter a name!");
         return;
       }
       Get.back();
-      ss.settings.userName.value = nameController.text;
-      await ss.settings.saveOne("userName");
+      ss().settings.userName.value = nameController.text;
+      await ss().settings.saveOne("userName");
       setState(() {});
     }
     await showDialog(
@@ -105,10 +105,10 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
   }
 
   void removePhoto() {
-    File file = File(ss.settings.userAvatarPath.value!);
+    File file = File(ss().settings.userAvatarPath.value!);
     file.delete();
-    ss.settings.userAvatarPath.value = null;
-    ss.saveSettings();
+    ss().settings.userAvatarPath.value = null;
+    ss().saveSettings();
   }
 
   @override
@@ -144,7 +144,7 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
                             size: 100,
                           ),
                         ),
-                        Obx(() => ss.settings.userAvatarPath.value != null ? Positioned(
+                        Obx(() => ss().settings.userAvatarPath.value != null ? Positioned(
                           right: -5,
                           top: -5,
                           child: InkWell(
@@ -184,8 +184,8 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
                             color: context.theme.colorScheme.onBackground,
                           ),
                           children: MessageHelper.buildEmojiText(
-                            ss.settings.redactedMode.value && ss.settings.hideContactInfo.value
-                                ? "User Name" : ss.settings.userName.value,
+                            ss().settings.redactedMode.value && ss().settings.hideContactInfo.value
+                                ? "User Name" : ss().settings.userName.value,
                             context.theme.textTheme.headlineMedium!.copyWith(
                               fontWeight: FontWeight.bold,
                               color: context.theme.colorScheme.onBackground,
@@ -206,11 +206,11 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
                         text: TextSpan(
                           style: context.theme.textTheme.bodyMedium!.apply(color: context.theme.colorScheme.outline),
                           children: MessageHelper.buildEmojiText(
-                              ss.settings.redactedMode.value && ss.settings.hideContactInfo.value
+                              ss().settings.redactedMode.value && ss().settings.hideContactInfo.value
                                   ? "User iCloud"
-                                  : ss.settings.iCloudAccount.isEmpty
+                                  : ss().settings.iCloudAccount.isEmpty
                                   ? "Unknown iCloud account"
-                                  : ss.settings.iCloudAccount.value,
+                                  : ss().settings.iCloudAccount.value,
                               context.theme.textTheme.bodyMedium!.apply(color: context.theme.colorScheme.outline)
                           ),
                         ),
@@ -259,17 +259,17 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
                           text: TextSpan(
                             style: context.theme.textTheme.bodyLarge,
                             children: MessageHelper.buildEmojiText(
-                              ss.settings.redactedMode.value && ss.settings.hideContactInfo.value
-                                  ? "User Name" : ss.settings.userName.value,
+                              ss().settings.redactedMode.value && ss().settings.hideContactInfo.value
+                                  ? "User Name" : ss().settings.userName.value,
                               context.theme.textTheme.bodyLarge!,
                             ),
                           ),
                         ),
-                        subtitle: Text(ss.settings.redactedMode.value && ss.settings.hideContactInfo.value
+                        subtitle: Text(ss().settings.redactedMode.value && ss().settings.hideContactInfo.value
                             ? "User iCloud"
-                            : ss.settings.iCloudAccount.isEmpty
+                            : ss().settings.iCloudAccount.isEmpty
                             ? "Unknown iCloud account"
-                            : ss.settings.iCloudAccount.value, style: context.theme.textTheme.bodyMedium!.apply(color: context.theme.colorScheme.outline)),
+                            : ss().settings.iCloudAccount.value, style: context.theme.textTheme.bodyMedium!.apply(color: context.theme.colorScheme.outline)),
                         trailing: Icon(Icons.edit_outlined, color: context.theme.colorScheme.onBackground),
                       ),
                     ),
@@ -290,7 +290,7 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
                     ),
                   ),
                 if (!iOS)
-                  Obx(() => ss.settings.userAvatarPath.value != null ? Padding(
+                  Obx(() => ss().settings.userAvatarPath.value != null ? Padding(
                     padding: const EdgeInsets.only(bottom: 5.0),
                     child: Material(
                       color: Colors.transparent,
@@ -314,7 +314,7 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
                     backgroundColor: tileColor,
                     children: [
                       Obx(() {
-                        bool redact = ss.settings.redactedMode.value;
+                        bool redact = ss().settings.redactedMode.value;
                         return Container(
                           child: Padding(
                             padding: const EdgeInsets.only(bottom: 8.0, left: 15, top: 8.0, right: 15),

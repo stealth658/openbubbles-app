@@ -41,7 +41,7 @@ class _ChatCreatorTileState extends OptimizedState<ChatCreatorTile> with Automat
     return ListTile(
         mouseCursor: MouseCursor.defer,
         enableFeedback: true,
-        dense: ss.settings.denseChatTiles.value,
+        dense: ss().settings.denseChatTiles.value,
         minVerticalPadding: 10,
         horizontalTitleGap: 10,
         title: RichText(

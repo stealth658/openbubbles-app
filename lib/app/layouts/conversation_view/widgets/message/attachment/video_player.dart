@@ -93,20 +93,20 @@ class PlayPauseButton extends StatelessWidget {
                   child: Padding(
                     padding: EdgeInsets.only(
                       left:
-                          ss.settings.skin.value == Skins.iOS && !(controller?.player.state.playing ?? false) ? 17 : 10,
-                      top: ss.settings.skin.value == Skins.iOS ? 13 : 10,
+                          ss().settings.skin.value == Skins.iOS && !(controller?.player.state.playing ?? false) ? 17 : 10,
+                      top: ss().settings.skin.value == Skins.iOS ? 13 : 10,
                       right: 10,
                       bottom: 10,
                     ),
                     child: Obx(
                       () => controller?.player.state.playing ?? false
                           ? Icon(
-                              ss.settings.skin.value == Skins.iOS ? CupertinoIcons.pause : Icons.pause,
+                              ss().settings.skin.value == Skins.iOS ? CupertinoIcons.pause : Icons.pause,
                               color: context.iconColor,
                               size: 45,
                             )
                           : Icon(
-                              ss.settings.skin.value == Skins.iOS ? CupertinoIcons.play : Icons.play_arrow,
+                              ss().settings.skin.value == Skins.iOS ? CupertinoIcons.play : Icons.play_arrow,
                               color: context.iconColor,
                               size: 45,
                             ),
@@ -164,10 +164,10 @@ class MuteButton extends StatelessWidget {
                       padding: const EdgeInsets.all(5),
                       child: Icon(
                         muted.value
-                            ? ss.settings.skin.value == Skins.iOS
+                            ? ss().settings.skin.value == Skins.iOS
                                 ? CupertinoIcons.volume_mute
                                 : Icons.volume_mute
-                            : ss.settings.skin.value == Skins.iOS
+                            : ss().settings.skin.value == Skins.iOS
                                 ? CupertinoIcons.volume_up
                                 : Icons.volume_up,
                         color: Colors.white,
@@ -194,7 +194,7 @@ class _VideoPlayerState extends OptimizedState<VideoPlayer> with AutomaticKeepAl
   VideoController? videoController;
 
   final RxBool showPlayPauseOverlay = true.obs;
-  final RxBool muted = ss.settings.startVideosMuted.value.obs;
+  final RxBool muted = ss().settings.startVideosMuted.value.obs;
   final RxDouble aspectRatio = 1.0.obs;
   Uint8List? thumbnail;
 
@@ -273,7 +273,7 @@ class _VideoPlayerState extends OptimizedState<VideoPlayer> with AutomaticKeepAl
       } catch (ex) {
         // If an error occurs, set the thumnail to the cached no preview image.
         // Only save to DB if the status wasn't already `error` somehow
-        thumbnail = fs.noVideoPreviewIcon;
+        thumbnail = fs().noVideoPreviewIcon;
         if (attachment.metadata?['thumbnail_status'] != 'error') {
           attachment.metadata ??= {};
           attachment.metadata!['thumbnail_status'] = 'error';
@@ -527,7 +527,7 @@ class FullscreenButton extends StatelessWidget {
               ),
               padding: const EdgeInsets.all(5),
               child: Icon(
-                ss.settings.skin.value == Skins.iOS ? CupertinoIcons.fullscreen : Icons.fullscreen,
+                ss().settings.skin.value == Skins.iOS ? CupertinoIcons.fullscreen : Icons.fullscreen,
                 color: Colors.white,
                 size: 15,
               ),

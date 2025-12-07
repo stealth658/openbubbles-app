@@ -52,18 +52,18 @@ const balloonBundleIdMap = {
 };
 
 final balloonBundleIdIconMap = {
-  'com.apple.Handwriting.HandwritingProvider': ss.settings.skin.value == Skins.iOS ? CupertinoIcons.pencil_outline : Icons.brush_outlined,
-  'com.apple.DigitalTouchBalloonProvider': ss.settings.skin.value == Skins.iOS ? CupertinoIcons.scribble : Icons.draw_outlined,
+  'com.apple.Handwriting.HandwritingProvider': ss().settings.skin.value == Skins.iOS ? CupertinoIcons.pencil_outline : Icons.brush_outlined,
+  'com.apple.DigitalTouchBalloonProvider': ss().settings.skin.value == Skins.iOS ? CupertinoIcons.scribble : Icons.draw_outlined,
   'com.apple.messages.MSMessageExtensionBalloonPlugin': {
-    'com.nearfuturespecialists.imessagepoll.MessagesExtension': ss.settings.skin.value == Skins.iOS ? CupertinoIcons.doc_chart : Icons.ballot_outlined,
-    'be.nieldeckx.poll.extension': ss.settings.skin.value == Skins.iOS ? CupertinoIcons.doc_chart : Icons.ballot_outlined,
-    'com.gamerdelights.gamepigeon.ext': ss.settings.skin.value == Skins.iOS ? CupertinoIcons.game_controller : Icons.sports_esports_outlined,
-    'com.google.ios.youtube.MessagesExtension': ss.settings.skin.value == Skins.iOS ? CupertinoIcons.play_rectangle_fill : Icons.smart_display,
-    'com.shazam.Shazam.imessageextension': ss.settings.skin.value == Skins.iOS ? CupertinoIcons.music_mic : Icons.noise_aware,
-    'com.apple.mobileslideshow.PhotosMessagesApp': ss.settings.skin.value == Skins.iOS ? CupertinoIcons.slider_horizontal_below_rectangle : Icons.slideshow,
+    'com.nearfuturespecialists.imessagepoll.MessagesExtension': ss().settings.skin.value == Skins.iOS ? CupertinoIcons.doc_chart : Icons.ballot_outlined,
+    'be.nieldeckx.poll.extension': ss().settings.skin.value == Skins.iOS ? CupertinoIcons.doc_chart : Icons.ballot_outlined,
+    'com.gamerdelights.gamepigeon.ext': ss().settings.skin.value == Skins.iOS ? CupertinoIcons.game_controller : Icons.sports_esports_outlined,
+    'com.google.ios.youtube.MessagesExtension': ss().settings.skin.value == Skins.iOS ? CupertinoIcons.play_rectangle_fill : Icons.smart_display,
+    'com.shazam.Shazam.imessageextension': ss().settings.skin.value == Skins.iOS ? CupertinoIcons.music_mic : Icons.noise_aware,
+    'com.apple.mobileslideshow.PhotosMessagesApp': ss().settings.skin.value == Skins.iOS ? CupertinoIcons.slider_horizontal_below_rectangle : Icons.slideshow,
     'com.contextoptional.OpenTable.Messages': Icons.dinner_dining_outlined,
-    'com.apple.PassbookUIService.PeerPaymentMessagesExtension': ss.settings.skin.value == Skins.iOS ? CupertinoIcons.money_dollar : Icons.attach_money,
-    'com.google.Maps.MessagesExtension': ss.settings.skin.value == Skins.iOS ? CupertinoIcons.location_solid : Icons.location_on_outlined,
+    'com.apple.PassbookUIService.PeerPaymentMessagesExtension': ss().settings.skin.value == Skins.iOS ? CupertinoIcons.money_dollar : Icons.attach_money,
+    'com.google.Maps.MessagesExtension': ss().settings.skin.value == Skins.iOS ? CupertinoIcons.location_solid : Icons.location_on_outlined,
   }
 };
 

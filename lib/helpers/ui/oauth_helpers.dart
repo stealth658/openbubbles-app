@@ -1,4 +1,5 @@
 import 'package:bluebubbles/helpers/helpers.dart';
+import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:desktop_webview_auth/desktop_webview_auth.dart';
@@ -74,7 +75,7 @@ Future<String?> googleOAuth(BuildContext context) async {
         throw Exception("No account!");
       }
     } catch (e, stack) {
-      Logger.error("Failed to sign in with Google (Android/Web)", error: e, trace: stack);
+      Logger().error("Failed to sign in with Google (Android/Web)", error: e, trace: stack);
       return null;
     }
     // desktop implementation
@@ -85,8 +86,8 @@ Future<String?> googleOAuth(BuildContext context) async {
       scope: defaultScopes.join(' '),
     );
     try {
-      final width = ss.prefs.getDouble('window-width')?.toInt();
-      final height = ss.prefs.getDouble('window-height')?.toInt();
+      final width = prefs().i.getDouble('window-width')?.toInt();
+      final height = prefs().i.getDouble('window-height')?.toInt();
       final result = await DesktopWebviewAuth.signIn(
         args,
         width: width != null ? (width * 0.9).ceil() : null,
@@ -99,7 +100,7 @@ Future<String?> googleOAuth(BuildContext context) async {
         throw Exception("No access token!");
       }
     } catch (e, stack) {
-      Logger.error("Failed to sign in with Google (Desktop)", error: e, trace: stack);
+      Logger().error("Failed to sign in with Google (Desktop)", error: e, trace: stack);
       return null;
     }
   }

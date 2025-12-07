@@ -61,7 +61,7 @@ class SearchViewState extends OptimizedState<SearchView> {
   bool isNotFromMe = false;
   DateTime? sinceDate;
 
-  Color get backgroundColor => ss.settings.windowEffect.value == WindowEffect.disabled
+  Color get backgroundColor => ss().settings.windowEffect.value == WindowEffect.disabled
       ? context.theme.colorScheme.background
       : Colors.transparent;
 
@@ -257,7 +257,7 @@ class SearchViewState extends OptimizedState<SearchView> {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Icon(
-                          ss.settings.skin.value == Skins.iOS ? CupertinoIcons.info : Icons.info_outline,
+                          ss().settings.skin.value == Skins.iOS ? CupertinoIcons.info : Icons.info_outline,
                           size: 20,
                           color: context.theme.colorScheme.primary,
                         ),
@@ -295,7 +295,7 @@ class SearchViewState extends OptimizedState<SearchView> {
                         maxLines: 1,
                         prefix: Padding(
                           padding: const EdgeInsets.only(left: 15),
-                          child: Icon(ss.settings.skin.value == Skins.iOS ? CupertinoIcons.search : Icons.search,
+                          child: Icon(ss().settings.skin.value == Skins.iOS ? CupertinoIcons.search : Icons.search,
                               color: context.theme.colorScheme.outline),
                         ),
                         suffix: Padding(
@@ -308,7 +308,7 @@ class SearchViewState extends OptimizedState<SearchView> {
                                   })
                               : Padding(
                                   padding: const EdgeInsets.all(12.0),
-                                  child: ss.settings.skin.value == Skins.iOS
+                                  child: ss().settings.skin.value == Skins.iOS
                                       ? Theme(
                                           data: ThemeData(
                                             cupertinoOverrideTheme: CupertinoThemeData(
@@ -445,7 +445,7 @@ class SearchViewState extends OptimizedState<SearchView> {
                     (context, index) {
                       TextStyle subtitleStyle = context.theme.textTheme.bodySmall!
                           .copyWith(color: context.theme.colorScheme.outline, height: 1.5)
-                          .apply(fontSizeFactor: ss.settings.skin.value == Skins.Material ? 1.05 : 1.0);
+                          .apply(fontSizeFactor: ss().settings.skin.value == Skins.Material ? 1.05 : 1.0);
 
                       final chat = currentSearch!.results[index].item1;
                       final message = currentSearch!.results[index].item2;
@@ -488,7 +488,7 @@ class SearchViewState extends OptimizedState<SearchView> {
 
                       return Container(
                         decoration: BoxDecoration(
-                          border: !ss.settings.hideDividers.value
+                          border: !ss().settings.hideDividers.value
                               ? Border(
                                   bottom: BorderSide(
                                     color: context.theme.colorScheme.background.oppositeLightenOrDarken(15),
@@ -513,7 +513,7 @@ class SearchViewState extends OptimizedState<SearchView> {
                               children: spans,
                             ),
                             overflow: TextOverflow.ellipsis,
-                            maxLines: ss.settings.denseChatTiles.value
+                            maxLines: ss().settings.denseChatTiles.value
                                 ? 1
                                 : material
                                     ? 3

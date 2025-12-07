@@ -1,17 +1,18 @@
 import 'dart:convert';
 
 import 'package:bluebubbles/helpers/helpers.dart';
+import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 Future<bool> showCustomHeadersDialog(BuildContext context) async {
-  RxInt headers = ss.settings.customHeaders.length.clamp(0, 100).obs;
+  RxInt headers = ss().settings.customHeaders.length.clamp(0, 100).obs;
   List<TextEditingController> keyControllers = [];
   List<TextEditingController> valueControllers = [];
-  if (ss.settings.customHeaders.isNotEmpty) {
-    ss.settings.customHeaders.forEach((key, value) {
+  if (ss().settings.customHeaders.isNotEmpty) {
+    ss().settings.customHeaders.forEach((key, value) {
       keyControllers.add(TextEditingController(text: key));
       valueControllers.add(TextEditingController(text: value));
     });
@@ -40,7 +41,7 @@ Future<bool> showCustomHeadersDialog(BuildContext context) async {
                     return ListView.builder(
                     shrinkWrap: true,
                     itemCount: headers.value,
-                    findChildIndexCallback: (key) => findChildIndexByKey(ss.settings.customHeaders.keys.toList(), key, (item) => item),
+                    findChildIndexCallback: (key) => findChildIndexByKey(ss().settings.customHeaders.keys.toList(), key, (item) => item),
                     itemBuilder: (context, index) {
                       return Row(
                           key: ValueKey(index),
@@ -126,9 +127,9 @@ Future<bool> showCustomHeadersDialog(BuildContext context) async {
                 }
               });
 
-              ss.settings.customHeaders.value = map;
-              await ss.settings.saveOne('customHeaders');
-              await ss.prefs.setString('customHeaders', jsonEncode(http.headers));
+              ss().settings.customHeaders.value = map;
+              await ss().settings.saveOne('customHeaders');
+              await prefs().i.setString('customHeaders', jsonEncode(http.headers));
               http.onInit();
               Navigator.of(context).pop(true);
             }

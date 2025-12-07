@@ -29,8 +29,8 @@ class SyncService extends GetxService {
   Future<void> startFullSync() async {
     // Set the last sync date (for incremental, even though this isn't incremental)
     // We won't try an incremental sync until the last (full) sync date is set
-    ss.settings.lastIncrementalSync.value = DateTime.now().millisecondsSinceEpoch;
-    await ss.saveSettings();
+    ss().settings.lastIncrementalSync.value = DateTime.now().millisecondsSinceEpoch;
+    await ss().saveSettings();
 
     _manager = FullSyncManager(
         messageCount: numberOfMessagesPerPage.toInt(),
@@ -62,15 +62,15 @@ class SyncService extends GetxService {
       try {
         isolate = await FlutterIsolate.spawn(incrementalSyncIsolate, [port.sendPort, http.originOverride]);
       } catch (e, stack) {
-        Logger.error('Got error when opening isolate!', error: e, trace: stack);
+        Logger().error('Got error when opening isolate!', error: e, trace: stack);
         port.close();
       }
       result = await completer.future;
       if (result.isNotEmpty && (result.first.isNotEmpty || result.last.isNotEmpty)) {
         contacts.addAll(Contact.getContacts());
         // auto upload contacts if requested
-        if (ss.settings.syncContactsAutomatically.value) {
-          Logger.debug("Contact changes detected, uploading to server...");
+        if (ss().settings.syncContactsAutomatically.value) {
+          Logger().debug("Contact changes detected, uploading to server...");
           final _contacts = <Map<String, dynamic>>[];
           for (Contact c in contacts) {
             var map = c.toMap();
@@ -78,9 +78,9 @@ class SyncService extends GetxService {
           }
           http.createContact(_contacts).catchError((err, stack) {
             if (err is Response) {
-              Logger.error(err.data["error"]["message"].toString(), error: err, trace: stack);
+              Logger().error(err.data["error"]["message"].toString(), error: err, trace: stack);
             } else {
-              Logger.error("Failed to create contacts!", error: err, trace: stack);
+              Logger().error("Failed to create contacts!", error: err, trace: stack);
             }
             return Response(requestOptions: RequestOptions(path: ''));
           });
@@ -108,23 +108,23 @@ Future<List<List<int>>> incrementalSyncIsolate(List? items) async {
       http.originOverride = address;
     }
 
-    int syncStart = ss.settings.lastIncrementalSync.value;
-    int startRowId = ss.settings.lastIncrementalSyncRowId.value;
+    int syncStart = ss().settings.lastIncrementalSync.value;
+    int startRowId = ss().settings.lastIncrementalSyncRowId.value;
     final incrementalSyncManager = IncrementalSyncManager(
       startTimestamp: syncStart, startRowId: startRowId, saveMarker: true);
     await incrementalSyncManager.start();
     chats.sort();
   } catch (ex, s) {
-    Logger.error('Incremental sync failed!', error: ex, trace: s);
+    Logger().error('Incremental sync failed!', error: ex, trace: s);
   }
-  Logger.info('Starting contact refresh');
+  Logger().info('Starting contact refresh');
   try {
     final refreshedItems = await cs.refreshContacts();
-    Logger.info('Finished contact refresh, shouldRefresh $refreshedItems');
+    Logger().info('Finished contact refresh, shouldRefresh $refreshedItems');
     port?.send(refreshedItems);
     return refreshedItems;
   } catch (ex, stack) {
-    Logger.error('Contacts refresh failed!', error: ex, trace: stack);
+    Logger().error('Contacts refresh failed!', error: ex, trace: stack);
     port?.send([]);
     return [];
   }

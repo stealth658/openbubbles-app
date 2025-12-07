@@ -68,7 +68,7 @@ class _ManualEntryDialogState extends OptimizedState<ManualEntryDialog> {
       return;
     }
 
-    ss.settings.guidAuthKey.value = password;
+    ss().settings.guidAuthKey.value = password;
     await saveNewServerUrl(addr, restartSocket: false, force: true, saveAdditionalSettings: ["guidAuthKey"]);
 
     try {
@@ -87,7 +87,7 @@ class _ManualEntryDialogState extends OptimizedState<ManualEntryDialog> {
       Map<String, dynamic>? data = response.data["data"];
       if (!isNullOrEmpty(data)) {
         FCMData newData = FCMData.fromMap(data!);
-        await ss.saveFCMData(newData);
+        await ss().saveFCMData(newData);
       }
 
       widget.onConnect();

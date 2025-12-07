@@ -124,9 +124,9 @@ class AttachmentDownloadController extends GetxController {
       await _file.writeAsBytes(bytes);
     }
     attachment.webUrl = response.requestOptions.path;
-    Logger.info("Finished fetching attachment");
+    Logger().info("Finished fetching attachment");
     stopwatch.stop();
-    Logger.info("Attachment downloaded in ${stopwatch.elapsedMilliseconds} ms");
+    Logger().info("Attachment downloaded in ${stopwatch.elapsedMilliseconds} ms");
 
     try {
       // Compress the attachment
@@ -158,7 +158,7 @@ class AttachmentDownloadController extends GetxController {
         await _file.writeAsBytes(attachment.bytes!.toList());
       }
     }
-    if (ss.settings.autoSave.value
+    if (ss().settings.autoSave.value
         && !kIsWeb
         && !kIsDesktop
         && !(attachment.isOutgoing ?? false)

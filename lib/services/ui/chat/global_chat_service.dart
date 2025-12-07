@@ -61,7 +61,7 @@ class _GlobalChatService extends GetxService {
         _unreadCountMap[chat.guid] = RxBool(false);
         _unreadCountMap[chat.guid]!.value = chat.hasUnreadMessage ?? false;
       } else if (currentUnreadStatus.value != chat.hasUnreadMessage) {
-        Logger.debug("Updating Chat (${chat.guid}) Unread Status from ${currentUnreadStatus.value} to ${chat.hasUnreadMessage}");
+        Logger().debug("Updating Chat (${chat.guid}) Unread Status from ${currentUnreadStatus.value} to ${chat.hasUnreadMessage}");
         _unreadCountMap[chat.guid]!.value = chat.hasUnreadMessage ?? false;
       }
     }
@@ -76,7 +76,7 @@ class _GlobalChatService extends GetxService {
         _muteTypeMap[chat.guid] = RxnString();
         _muteTypeMap[chat.guid]!.value = chat.muteType;
       } else if (currentMuteStatus.value != chat.muteType) {
-        Logger.debug("Updating Chat (${chat.guid}) Mute Type from ${currentMuteStatus.value} to ${chat.muteType}");
+        Logger().debug("Updating Chat (${chat.guid}) Mute Type from ${currentMuteStatus.value} to ${chat.muteType}");
         _muteTypeMap[chat.guid]!.value = chat.muteType;
       }
     }

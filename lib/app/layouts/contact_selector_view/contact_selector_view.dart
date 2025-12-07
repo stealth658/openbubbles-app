@@ -65,7 +65,7 @@ class ContactSelectorViewState extends OptimizedState<ContactSelectorView> {
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
-        systemNavigationBarColor: ss.settings.immersiveMode.value
+        systemNavigationBarColor: ss().settings.immersiveMode.value
             ? Colors.transparent
             : context.theme.colorScheme.background, // navigation bar color
         systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
@@ -73,7 +73,7 @@ class ContactSelectorViewState extends OptimizedState<ContactSelectorView> {
         statusBarIconBrightness: context.theme.colorScheme.brightness.opposite,
       ),
       child: Scaffold(
-        backgroundColor: ss.settings.windowEffect.value != WindowEffect.disabled
+        backgroundColor: ss().settings.windowEffect.value != WindowEffect.disabled
             ? Colors.transparent
             : context.theme.colorScheme.background,
         appBar: PreferredSize(
@@ -88,7 +88,7 @@ class ContactSelectorViewState extends OptimizedState<ContactSelectorView> {
                 surfaceTintColor: context.theme.colorScheme.primary,
                 leading: buildBackButton(context),
                 backgroundColor: Colors.transparent,
-                centerTitle: ss.settings.skin.value == Skins.iOS,
+                centerTitle: ss().settings.skin.value == Skins.iOS,
                 title: Text(
                   "Select a Contact",
                   style: context.theme.textTheme.titleLarge,
@@ -152,7 +152,7 @@ class ContactSelectorViewState extends OptimizedState<ContactSelectorView> {
                                     );
                                   }
                                   final contact = filteredContacts[index];
-                                  final hideInfo = ss.settings.redactedMode.value && ss.settings.hideContactInfo.value;
+                                  final hideInfo = ss().settings.redactedMode.value && ss().settings.hideContactInfo.value;
                                   String _title = contact.displayName;
                                   if (hideInfo) {
                                     _title = "Contact";
@@ -168,7 +168,7 @@ class ContactSelectorViewState extends OptimizedState<ContactSelectorView> {
                                       child: ListTile(
                                           mouseCursor: MouseCursor.defer,
                                           enableFeedback: true,
-                                          dense: ss.settings.denseChatTiles.value,
+                                          dense: ss().settings.denseChatTiles.value,
                                           minVerticalPadding: 10,
                                           horizontalTitleGap: 10,
                                           title: RichText(

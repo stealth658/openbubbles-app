@@ -174,7 +174,7 @@ class CustomDetailsMenuActionWidget extends StatelessWidget {
             style: context.theme.textTheme.bodyLarge!.copyWith(color: color),
           ),
           trailing: Icon(
-            ss.settings.skin.value == Skins.iOS ? iosIcon : nonIosIcon,
+            ss().settings.skin.value == Skins.iOS ? iosIcon : nonIosIcon,
             color: color,
           ),
         ),

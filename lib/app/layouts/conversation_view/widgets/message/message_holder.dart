@@ -59,13 +59,13 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
   Message? get newerMessage => controller.newMessage;
   Message? get replyTo => message.threadOriginatorGuid == null
       ? null
-      : ss.settings.repliesToPrevious.value
+      : ss().settings.repliesToPrevious.value
       ? (service.struct.getPreviousReply(message.threadOriginatorGuid!, message.normalizedThreadPart, message.guid!) ?? service.struct.getThreadOriginator(message.threadOriginatorGuid!))
       : service.struct.getThreadOriginator(message.threadOriginatorGuid!);
   Chat get chat => widget.cvController.chat;
   MessagesService get service => ms(widget.cvController.chat.guid);
-  bool get canSwipeToReply => ss.settings.enablePrivateAPI.value
-      && ss.isMinBigSurSync
+  bool get canSwipeToReply => ss().settings.enablePrivateAPI.value
+      && ss().isMinBigSurSync
       && chat.isIMessage
       && !widget.isReplyThread
       && !message.guid!.startsWith("temp")
@@ -116,7 +116,7 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
 
   List<Color> getBubbleColors() {
     List<Color> bubbleColors = [context.theme.colorScheme.properSurface, context.theme.colorScheme.properSurface];
-    if (ss.settings.colorfulBubbles.value && !message.isFromMe!) {
+    if (ss().settings.colorfulBubbles.value && !message.isFromMe!) {
       if (message.handle?.color == null) {
         bubbleColors = toColorGradient(message.handle?.address);
       } else {
@@ -227,8 +227,8 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                           // add previous edits if needed
                           if (e.isEdited)
                             Padding(
-                              padding: showAvatar || ss.settings.alwaysShowAvatars.value
-                                  ? EdgeInsets.only(left: 35.0 * ss.settings.avatarScale.value) : EdgeInsets.zero,
+                              padding: showAvatar || ss().settings.alwaysShowAvatars.value
+                                  ? EdgeInsets.only(left: 35.0 * ss().settings.avatarScale.value) : EdgeInsets.zero,
                               child: Obx(() => AnimatedSize(
                                 duration: const Duration(milliseconds: 250),
                                 alignment: Alignment.bottomCenter,
@@ -266,7 +266,7 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                               && replyTo != null
                               && getActiveMwc(replyTo!.guid!) != null)
                             Padding(
-                              padding: EdgeInsets.only(left: (showAvatar || ss.settings.alwaysShowAvatars.value) && replyTo!.isFromMe! ? 35 : 0),
+                              padding: EdgeInsets.only(left: (showAvatar || ss().settings.alwaysShowAvatars.value) && replyTo!.isFromMe! ? 35 : 0),
                               child: DecoratedBox(
                                 decoration: replyTo!.isFromMe == message.isFromMe ? ReplyLineDecoration(
                                   isFromMe: message.isFromMe!,
@@ -281,7 +281,7 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                   child: ReplyBubble(
                                     parentController: getActiveMwc(replyTo!.guid!)!,
                                     part: replyTo!.guid! == message.threadOriginatorGuid ? message.normalizedThreadPart : 0,
-                                    showAvatar: (chat.isGroup || ss.settings.alwaysShowAvatars.value || !iOS) && !replyTo!.isFromMe!,
+                                    showAvatar: (chat.isGroup || ss().settings.alwaysShowAvatars.value || !iOS) && !replyTo!.isFromMe!,
                                     cvController: widget.cvController,
                                   ),
                                 ),
@@ -293,8 +293,8 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                               && showSender
                               && e.part == (messageParts.firstWhereOrNull((e) => !e.isUnsent)?.part))
                             Padding(
-                              padding: showAvatar || ss.settings.alwaysShowAvatars.value
-                                  ? EdgeInsets.only(left: 35.0 * ss.settings.avatarScale.value) : EdgeInsets.zero,
+                              padding: showAvatar || ss().settings.alwaysShowAvatars.value
+                                  ? EdgeInsets.only(left: 35.0 * ss().settings.avatarScale.value) : EdgeInsets.zero,
                               child: MessageSender(olderMessage: olderMessage, message: message),
                             ),
                           // add a box to account for height of reactions
@@ -306,7 +306,7 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                               && replyTo != null
                               && getActiveMwc(replyTo!.guid!) != null)
                             Padding(
-                              padding: showAvatar || ss.settings.alwaysShowAvatars.value
+                              padding: showAvatar || ss().settings.alwaysShowAvatars.value
                                   ? const EdgeInsets.only(left: 45.0, right: 10) : const EdgeInsets.symmetric(horizontal: 10),
                               child: DecoratedBox(
                                 decoration: BoxDecoration(
@@ -316,7 +316,7 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                 child: ReplyBubble(
                                   parentController: getActiveMwc(replyTo!.guid!)!,
                                   part: replyTo!.guid! == message.threadOriginatorGuid ? message.normalizedThreadPart : 0,
-                                  showAvatar: (chat.isGroup || ss.settings.alwaysShowAvatars.value || !iOS)
+                                  showAvatar: (chat.isGroup || ss().settings.alwaysShowAvatars.value || !iOS)
                                       && !replyTo!.isFromMe!,
                                   cvController: widget.cvController,
                                 ),
@@ -328,7 +328,7 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                               // avatar, if needed
                               if (message.showTail(newerMessage)
                                   && e.part == controller.parts.length - 1
-                                  && (showAvatar || ss.settings.alwaysShowAvatars.value)
+                                  && (showAvatar || ss().settings.alwaysShowAvatars.value)
                                   && !message.isFromMe! && !message.isGroupEvent)
                                 Padding(
                                   padding: const EdgeInsets.only(left: 5.0),
@@ -340,8 +340,8 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                   ),
                                 ),
                               Padding(
-                                padding: (showAvatar || ss.settings.alwaysShowAvatars.value) && !(message.isGroupEvent || e.isUnsent)
-                                    ? EdgeInsets.only(left: 35.0 * ss.settings.avatarScale.value) : EdgeInsets.zero,
+                                padding: (showAvatar || ss().settings.alwaysShowAvatars.value) && !(message.isGroupEvent || e.isUnsent)
+                                    ? EdgeInsets.only(left: 35.0 * ss().settings.avatarScale.value) : EdgeInsets.zero,
                                 child: DecoratedBox(
                                   decoration: iOS && !widget.isReplyThread && ((index == 0 && message.threadOriginatorGuid != null && olderMessage != null)
                                       || (index == messageParts.length - 1 && service.struct.threads(message.guid!, index).isNotEmpty && newerMessage != null))
@@ -542,8 +542,8 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                                                                 maxLines: 14,
                                                                                 minLines: 1,
                                                                                 autofocus: !(kIsDesktop || kIsWeb),
-                                                                                enableIMEPersonalizedLearning: !ss.settings.incognitoKeyboard.value,
-                                                                                textInputAction: ss.settings.sendWithReturn.value && !kIsWeb && !kIsDesktop
+                                                                                enableIMEPersonalizedLearning: !ss().settings.incognitoKeyboard.value,
+                                                                                textInputAction: ss().settings.sendWithReturn.value && !kIsWeb && !kIsDesktop
                                                                                     ? TextInputAction.send
                                                                                     : TextInputAction.newline,
                                                                                 cursorColor: context.theme.extension<BubbleText>()!.bubbleText.color,
@@ -694,8 +694,8 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                           ),
                           // message properties (replies, edits, effect)
                           Padding(
-                            padding: showAvatar || ss.settings.alwaysShowAvatars.value
-                                ? EdgeInsets.only(left: 35.0 * ss.settings.avatarScale.value) : EdgeInsets.zero,
+                            padding: showAvatar || ss().settings.alwaysShowAvatars.value
+                                ? EdgeInsets.only(left: 35.0 * ss().settings.avatarScale.value) : EdgeInsets.zero,
                             child: MessageProperties(
                               globalKey: keys.length > index ? keys[index] : null,
                               parentController: controller,

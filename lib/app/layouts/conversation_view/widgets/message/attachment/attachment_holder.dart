@@ -95,7 +95,7 @@ class _AttachmentHolderState extends CustomState<AttachmentHolder, void, Message
   @override
   Widget build(BuildContext context) {
     final bool showTail = message.showTail(newerMessage) && part.part == controller.parts.length - 1;
-    final bool hideAttachments = ss.settings.redactedMode.value && ss.settings.hideAttachments.value;
+    final bool hideAttachments = ss().settings.redactedMode.value && ss().settings.hideAttachments.value;
     return ColorFiltered(
       colorFilter: ColorFilter.mode(context.theme.colorScheme.tertiaryContainer.withValues(alpha: 0.5), selected ? BlendMode.srcOver : BlendMode.dstOver),
       child: Material(
@@ -248,7 +248,7 @@ class _AttachmentHolderState extends CustomState<AttachmentHolder, void, Message
                             );
                           } else if (content is PlatformFile) {
                             final PlatformFile _content = content;
-                            if (attachment.mimeStart == "image" && !ss.settings.highPerfMode.value) {
+                            if (attachment.mimeStart == "image" && !ss().settings.highPerfMode.value) {
                               return OpenContainer(
                                 tappable: false,
                                 openColor: Colors.black,
@@ -299,7 +299,7 @@ class _AttachmentHolderState extends CustomState<AttachmentHolder, void, Message
                                   );
                                 }
                               );
-                            } else if ((attachment.mimeStart == "video" || attachment.mimeType == "audio/mp4") && !ss.settings.highPerfMode.value && !isSnap) {
+                            } else if ((attachment.mimeStart == "video" || attachment.mimeType == "audio/mp4") && !ss().settings.highPerfMode.value && !isSnap) {
                               return VideoPlayer(
                                 attachment: attachment,
                                 file: _content,

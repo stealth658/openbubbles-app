@@ -61,7 +61,7 @@ class MessagesViewState extends OptimizedState<MessagesView> {
 
   AutoScrollController get scrollController => controller.scrollController;
 
-  bool get showSmartReplies => ss.settings.smartReply.value && !kIsWeb && !kIsDesktop;
+  bool get showSmartReplies => ss().settings.smartReply.value && !kIsWeb && !kIsDesktop;
 
   Chat get chat => controller.chat;
 
@@ -116,7 +116,7 @@ class MessagesViewState extends OptimizedState<MessagesView> {
         updateReplies();
       }
       initialized = true;
-      if (ss.settings.scrollToLastUnread.value && chat.lastReadMessageGuid != null) {
+      if (ss().settings.scrollToLastUnread.value && chat.lastReadMessageGuid != null) {
         Future.delayed(const Duration(milliseconds: 100), () {
           if (getActiveMwc(chat.lastReadMessageGuid!)?.built ?? false) return;
           internalSmartReplies['scroll-last-read'] = _buildReply("Jump to oldest unread", onTap: () async {
@@ -144,14 +144,14 @@ class MessagesViewState extends OptimizedState<MessagesView> {
   }
 
   void getFocusState() {
-    if (!ss.isMinMontereySync) return;
+    if (!ss().isMinMontereySync) return;
     final recipient = chat.participants.firstOrNull;
     if (recipient != null) {
       http.handleFocusState(recipient.address).then((response) {
         final status = response.data['data']['status'];
         controller.recipientNotifsSilenced.value = status != "none";
       }).catchError((error, stack) async {
-        Logger.error('Failed to get focus state!', error: error, trace: stack);
+        Logger().error('Failed to get focus state!', error: error, trace: stack);
       });
     }
   }
@@ -190,13 +190,13 @@ class MessagesViewState extends OptimizedState<MessagesView> {
         _addMessageToSmartReply(message);
       });
     }
-    Logger.info("Getting smart replies...");
+    Logger().info("Getting smart replies...");
     SmartReplySuggestionResult results = await smartReply.suggestReplies();
 
     if (results.status == SmartReplySuggestionResultStatus.success) {
-      Logger.info("Smart Replies found: ${results.suggestions.length}");
+      Logger().info("Smart Replies found: ${results.suggestions.length}");
       smartReplies.value = results.suggestions.map((e) => _buildReply(e)).toList();
-      Logger.debug(smartReplies.toString());
+      Logger().debug(smartReplies.toString());
     } else {
       smartReplies.clear();
     }
@@ -217,7 +217,7 @@ class MessagesViewState extends OptimizedState<MessagesView> {
 
     // Start loading the next chunk of messages
     noMoreMessages = !(await messageService.loadChunk(_messages.length, controller, limit: limit).catchError((e, stack) {
-      Logger.error("Failed to fetch message chunk!", error: e, trace: stack);
+      Logger().error("Failed to fetch message chunk!", error: e, trace: stack);
       return true;
     }));
 
@@ -260,18 +260,18 @@ class MessagesViewState extends OptimizedState<MessagesView> {
       }
     }
 
-    if (insertIndex == 0 && !message.isFromMe! && ss.settings.receiveSoundPath.value != null) {
+    if (insertIndex == 0 && !message.isFromMe! && ss().settings.receiveSoundPath.value != null) {
       if (kIsDesktop && (cm.getChatController(chat.guid)?.isActive ?? false)) {
         Player player = Player();
         player.stream.completed
             .firstWhere((completed) => completed)
             .then((_) async => Future.delayed(const Duration(milliseconds: 500), () async => await player.dispose()));
-        await player.setVolume(ss.settings.soundVolume.value.toDouble());
-        await player.open(Media(ss.settings.receiveSoundPath.value!));
+        await player.setVolume(ss().settings.soundVolume.value.toDouble());
+        await player.open(Media(ss().settings.receiveSoundPath.value!));
       } else if (cm.isChatActive(chat.guid)) {
         PlayerController controller = PlayerController();
         await controller
-            .preparePlayer(path: ss.settings.receiveSoundPath.value!, volume: ss.settings.soundVolume.value / 100)
+            .preparePlayer(path: ss().settings.receiveSoundPath.value!, volume: ss().settings.soundVolume.value / 100)
             .then((_) => controller.startPlayer());
       }
     }
@@ -396,17 +396,17 @@ class MessagesViewState extends OptimizedState<MessagesView> {
       child: GestureDetector(
           behavior: HitTestBehavior.deferToChild,
           onHorizontalDragUpdate: (details) {
-            if (ss.settings.skin.value != Skins.Samsung && !kIsWeb && !kIsDesktop) {
+            if (ss().settings.skin.value != Skins.Samsung && !kIsWeb && !kIsDesktop) {
               controller.timestampOffset.value += details.delta.dx * 0.3;
             }
           },
           onHorizontalDragEnd: (details) {
-            if (ss.settings.skin.value != Skins.Samsung) {
+            if (ss().settings.skin.value != Skins.Samsung) {
               controller.timestampOffset.value = 0;
             }
           },
           onHorizontalDragCancel: () {
-            if (ss.settings.skin.value != Skins.Samsung) {
+            if (ss().settings.skin.value != Skins.Samsung) {
               controller.timestampOffset.value = 0;
             }
           },
@@ -502,7 +502,7 @@ class MessagesViewState extends OptimizedState<MessagesView> {
                             child: Obx(() => Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: <Widget>[
-                                    if (controller.showTypingIndicator.value && ss.settings.alwaysShowAvatars.value && iOS)
+                                    if (controller.showTypingIndicator.value && ss().settings.alwaysShowAvatars.value && iOS)
                                       Padding(
                                         padding: const EdgeInsets.only(left: 10.0),
                                         child: ContactAvatarWidget(
@@ -657,7 +657,7 @@ class Loader extends StatelessWidget {
         ),
         Padding(
           padding: const EdgeInsets.all(16.0),
-          child: ss.settings.skin.value == Skins.iOS
+          child: ss().settings.skin.value == Skins.iOS
               ? Theme(
                   data: ThemeData(
                     cupertinoOverrideTheme: const CupertinoThemeData(brightness: Brightness.dark),

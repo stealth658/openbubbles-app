@@ -1,3 +1,5 @@
+import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
+
 import '../../pages/misc/misc_panel.dart';
 import '../../pages/scheduling/message_reminders_panel.dart';
 import '../../pages/scheduling/scheduled_messages_panel.dart';
@@ -70,18 +72,18 @@ List<Widget> buildSettingItemList({
     if (!kIsWeb && (!iOS || kIsDesktop))
       SearchableSettingItem(
         title:
-        ss.settings.redactedMode.value && ss.settings.hideContactInfo.value
+        ss().settings.redactedMode.value && ss().settings.hideContactInfo.value
             ? "User Name"
-            : ss.settings.userName.value,
+            : ss().settings.userName.value,
         child: SettingsSection(
           backgroundColor: tileColor,
           children: [
             SettingsTile(
               backgroundColor: tileColor,
-              title: ss.settings.redactedMode.value &&
-                  ss.settings.hideContactInfo.value
+              title: ss().settings.redactedMode.value &&
+                  ss().settings.hideContactInfo.value
                   ? "User Name"
-                  : ss.settings.userName.value,
+                  : ss().settings.userName.value,
               subtitle: "Tap to view more details",
               onTap: () {
                 ns.pushAndRemoveSettingsUntil(
@@ -147,8 +149,8 @@ List<Widget> buildSettingItemList({
             material: material,
           ),
 
-          if (ss.serverDetailsSync().item4 >= 205) const SettingsDivider(),
-          if (ss.serverDetailsSync().item4 >= 205)
+          if (ss().serverDetailsSync().item4 >= 205) const SettingsDivider(),
+          if (ss().serverDetailsSync().item4 >= 205)
             SearchableSettingItem(
                 title: "Scheduled Messages",
                 searchTags: ["Scheduled Messages"],
@@ -240,7 +242,7 @@ List<Widget> buildSettingItemList({
               },
               trailing: Row(mainAxisSize: MainAxisSize.min, children: [
                 Text(
-                  "${ss.settings.skin.value.toString().split(".").last}  |  ${AdaptiveTheme.of(context).mode.toString().split(".").last.capitalizeFirst!}",
+                  "${ss().settings.skin.value.toString().split(".").last}  |  ${AdaptiveTheme.of(context).mode.toString().split(".").last.capitalizeFirst!}",
                   style: context.theme.textTheme.bodyMedium!.apply(
                       color: context.theme.colorScheme.outline
                           .withValues(alpha: 0.85)),
@@ -828,10 +830,10 @@ List<Widget> buildSettingItemList({
                   }
                 }).catchError((err, stack) {
                   if (err is Response) {
-                    Logger.error(err.data["error"]["message"].toString(),
+                    Logger().error(err.data["error"]["message"].toString(),
                         error: err, trace: stack);
                   } else {
-                    Logger.error("Failed to create contact!",
+                    Logger().error("Failed to create contact!",
                         error: err, trace: stack);
                   }
 
@@ -991,7 +993,7 @@ List<Widget> buildSettingItemList({
                                   context.theme.colorScheme.primary)),
                           onPressed: () async {
                             final dir =
-                            Directory("${fs.appDocDir.path}/attachments");
+                            Directory("${fs().appDocDir.path}/attachments");
                             await dir.delete(recursive: true);
                             showSnackbar(
                                 "Success", "Deleted cached attachments");
@@ -1050,15 +1052,15 @@ List<Widget> buildSettingItemList({
                                   color:
                                   context.theme.colorScheme.primary)),
                           onPressed: () async {
-                            fs.deleteDB();
+                            fs().deleteDB();
                             socket.forgetConnection();
-                            ss.settings = Settings();
-                            await ss.settings.saveAsync();
+                            ss().settings = Settings();
+                            await ss().settings.saveAsync();
 
-                            await ss.prefs.clear();
-                            await ss.prefs
+                            await prefs().i.clear();
+                            await ss().prefs
                                 .setString("selected-dark", "OLED Dark");
-                            await ss.prefs
+                            await ss().prefs
                                 .setString("selected-light", "Bright White");
                             Database.themes.putMany(ts.defaultThemes);
 
@@ -1069,7 +1071,7 @@ List<Widget> buildSettingItemList({
                                 await mcs.invokeMethod("firebase-delete-token");
                               }
                             } catch (e, s) {
-                              Logger.error(
+                              Logger().error(
                                   "Failed to delete Firebase FCM token",
                                   error: e,
                                   trace: s);

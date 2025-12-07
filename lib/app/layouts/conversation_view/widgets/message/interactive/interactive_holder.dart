@@ -100,7 +100,7 @@ class _InteractiveHolderState extends CustomState<InteractiveHolder, void, Messa
                     child: Center(
                       heightFactor: 1,
                       widthFactor: 1,
-                      child: ss.settings.redactedMode.value && ss.settings.hideAttachments.value ? const Padding(
+                      child: ss().settings.redactedMode.value && ss().settings.hideAttachments.value ? const Padding(
                         padding: EdgeInsets.all(15),
                         child: Text("Interactive Message")
                       ) : Opacity(
@@ -111,7 +111,7 @@ class _InteractiveHolderState extends CustomState<InteractiveHolder, void, Messa
                               switch (message.interactiveText) {
                                 case "Handwritten Message":
                                 case "Digital Touch Message":
-                                  if (ss.settings.enablePrivateAPI.value && ss.isMinBigSurSync && ss.serverDetailsSync().item4 >= 226) {
+                                  if (ss().settings.enablePrivateAPI.value && ss().isMinBigSurSync && ss().serverDetailsSync().item4 >= 226) {
                                     return EmbeddedMedia(
                                       message: message,
                                       parentController: controller,

@@ -8,6 +8,7 @@ import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:bluebubbles/app/components/custom/custom_error_box.dart';
 import 'package:bluebubbles/helpers/backend/startup_tasks.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
+import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
 import 'package:bluebubbles/services/network/http_overrides.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/utils/window_effects.dart';
@@ -76,16 +77,16 @@ Future<Null> initApp(bool bubble, List<String> arguments) async {
     StackTrace? stacktrace;
 
     FlutterError.onError = (details) {
-      Logger.error("Rendering Error: ${details.exceptionAsString()}", error: details.exception, trace: details.stack);
+      Logger().error("Rendering Error: ${details.exceptionAsString()}", error: details.exception, trace: details.stack);
     };
 
     try {
       // Once all the services are initialized, we need to perform some
       // startup tasks to ensure that the app has the information it needs.
       StartupTasks.onStartup().then((_) {
-        Logger.info("Startup tasks completed");
+        Logger().info("Startup tasks completed");
       }).catchError((e, s) {
-        Logger.error("Failed to complete startup tasks!", error: e, trace: s);
+        Logger().error("Failed to complete startup tasks!", error: e, trace: s);
       });
 
       /* ----- DATE FORMATTING INITIALIZATION ----- */
@@ -95,7 +96,7 @@ Future<Null> initApp(bool bubble, List<String> arguments) async {
       MediaKit.ensureInitialized();
 
       /* ----- SPLASH SCREEN INITIALIZATION ----- */
-      if (!ss.settings.finishedSetup.value && !kIsWeb && !kIsDesktop) {
+      if (!ss().settings.finishedSetup.value && !kIsWeb && !kIsDesktop) {
         runApp(MaterialApp(
             home: SplashScreen(shouldNavigate: false),
             theme: ThemeData(
@@ -126,14 +127,14 @@ Future<Null> initApp(bool bubble, List<String> arguments) async {
       if (kIsDesktop) {
         /* ----- WINDOW INITIALIZATION ----- */
         await windowManager.ensureInitialized();
-        await windowManager.setPreventClose(ss.settings.closeToTray.value);
+        await windowManager.setPreventClose(ss().settings.closeToTray.value);
         await windowManager.setTitle('BlueBubbles');
         await Window.initialize();
         if (Platform.isWindows) {
           await Window.hideWindowControls();
         } else if (Platform.isLinux) {
           await windowManager
-              .setTitleBarStyle(ss.settings.useCustomTitleBar.value ? TitleBarStyle.hidden : TitleBarStyle.normal);
+              .setTitleBarStyle(ss().settings.useCustomTitleBar.value ? TitleBarStyle.hidden : TitleBarStyle.normal);
         }
         windowManager.addListener(DesktopWindowListener.instance);
         doWhenWindowReady(() async {
@@ -141,25 +142,25 @@ Future<Null> initApp(bool bubble, List<String> arguments) async {
           Display primary = await ScreenRetriever.instance.getPrimaryDisplay();
 
           Size size = await windowManager.getSize();
-          double width = ss.prefs.getDouble("window-width") ?? size.width;
-          double height = ss.prefs.getDouble("window-height") ?? size.height;
+          double width = prefs().i.getDouble("window-width") ?? size.width;
+          double height = prefs().i.getDouble("window-height") ?? size.height;
 
           width = width.clamp(300, max(300, primary.size.width));
           height = height.clamp(300, max(300, primary.size.height));
           await windowManager.setSize(Size(width, height));
-          await ss.prefs.setDouble("window-width", width);
-          await ss.prefs.setDouble("window-height", height);
+          await prefs().i.setDouble("window-width", width);
+          await prefs().i.setDouble("window-height", height);
 
           await windowManager.setAlignment(Alignment.center);
           Offset offset = await windowManager.getPosition();
-          double? posX = ss.prefs.getDouble("window-x") ?? offset.dx;
-          double? posY = ss.prefs.getDouble("window-y") ?? offset.dy;
+          double? posX = prefs().i.getDouble("window-x") ?? offset.dx;
+          double? posY = prefs().i.getDouble("window-y") ?? offset.dy;
 
           posX = posX.clamp(0, max(0, primary.size.width - width));
           posY = posY.clamp(0, max(0, primary.size.height - height));
           await windowManager.setPosition(Offset(posX, posY), animate: true);
-          await ss.prefs.setDouble("window-x", posX);
-          await ss.prefs.setDouble("window-y", posY);
+          await prefs().i.setDouble("window-x", posX);
+          await prefs().i.setDouble("window-y", posY);
 
           await windowManager.setTitle('BlueBubbles');
           if (arguments.firstOrNull != "minimized") {
@@ -167,7 +168,7 @@ Future<Null> initApp(bool bubble, List<String> arguments) async {
           } else {
             await windowManager.hide();
           }
-          if (!(ss.canAuthenticate && ss.settings.shouldSecure.value)) {
+          if (!(ss().canAuthenticate && ss().settings.shouldSecure.value)) {
             chats.init();
             socket;
           }
@@ -178,9 +179,9 @@ Future<Null> initApp(bool bubble, List<String> arguments) async {
       }
 
       /* ----- EMOJI FONT INITIALIZATION ----- */
-      fs.checkFont();
+      fs().checkFont();
     } catch (e, s) {
-      Logger.error("Failure during app initialization!", error: e, trace: s);
+      Logger().error("Failure during app initialization!", error: e, trace: s);
       exception = e;
       stacktrace = s;
     }
@@ -203,7 +204,9 @@ Future<Null> initApp(bool bubble, List<String> arguments) async {
       throw Exception("$exception $stacktrace");
     }
   }, (dynamic error, StackTrace stackTrace) {
-    Logger.error("Unhandled Exception", trace: stackTrace, error: error);
+    print("Failure during app initialization: $error");
+    print(stackTrace);
+    Logger().error("Unhandled Exception", trace: stackTrace, error: error);
   });
 }
 
@@ -225,15 +228,15 @@ class DesktopWindowListener extends WindowListener {
   @override
   void onWindowResized() async {
     Size size = await windowManager.getSize();
-    await ss.prefs.setDouble("window-width", size.width);
-    await ss.prefs.setDouble("window-height", size.height);
+    await prefs().i.setDouble("window-width", size.width);
+    await prefs().i.setDouble("window-height", size.height);
   }
 
   @override
   void onWindowMoved() async {
     Offset offset = await windowManager.getPosition();
-    await ss.prefs.setDouble("window-x", offset.dx);
-    await ss.prefs.setDouble("window-y", offset.dy);
+    await prefs().i.setDouble("window-x", offset.dx);
+    await prefs().i.setDouble("window-y", offset.dy);
   }
 
   @override
@@ -324,10 +327,10 @@ class Main extends StatelessWidget {
           child: SecureApplication(
             child: Builder(
               builder: (context) {
-                if (ss.canAuthenticate && (!ls.isAlive || !StartupTasks.uiReady.isCompleted)) {
-                  if (ss.settings.shouldSecure.value) {
+                if (ss().canAuthenticate && (!ls.isAlive || !StartupTasks.uiReady.isCompleted)) {
+                  if (ss().settings.shouldSecure.value) {
                     SecureApplicationProvider.of(context, listen: false)!.lock();
-                    if (ss.settings.securityLevel.value == SecurityLevel.locked_and_secured) {
+                    if (ss().settings.securityLevel.value == SecurityLevel.locked_and_secured) {
                       SecureApplicationProvider.of(context, listen: false)!.secure();
                     }
                   }
@@ -450,14 +453,14 @@ class _HomeState extends OptimizedState<Home> with WidgetsBindingObserver, TrayL
       }
 
       ErrorWidget.builder = (FlutterErrorDetails error) {
-        Logger.error("An unexpected error occurred when rendering.", error: error.exception, trace: error.stack);
+        Logger().error("An unexpected error occurred when rendering.", error: error.exception, trace: error.stack);
         return CustomErrorWidget(
           "An unexpected error occurred when rendering.",
         );
       };
       /* ----- SERVER VERSION CHECK ----- */
-      if (kIsWeb && ss.settings.finishedSetup.value) {
-        int version = (await ss.getServerDetails()).item4;
+      if (kIsWeb && ss().settings.finishedSetup.value) {
+        int version = (await ss().getServerDetails()).item4;
         if (version < 42) {
           setState(() {
             serverCompatible = false;
@@ -475,7 +478,7 @@ class _HomeState extends OptimizedState<Home> with WidgetsBindingObserver, TrayL
       if (kIsDesktop) {
         if (Platform.isWindows) {
           /* ----- CONTACT IMAGE CACHE DELETION ----- */
-          Directory temp = Directory(join(fs.appDocDir.path, "temp"));
+          Directory temp = Directory(join(fs().appDocDir.path, "temp"));
           if (await temp.exists()) await temp.delete(recursive: true);
 
           /* ----- BADGE ICON LISTENER ----- */
@@ -521,11 +524,11 @@ class _HomeState extends OptimizedState<Home> with WidgetsBindingObserver, TrayL
         await localNotifier.setup(appName: "BlueBubbles");
       }
 
-      if (!ss.settings.finishedSetup.value) {
+      if (!ss().settings.finishedSetup.value) {
         setState(() {
           fullyLoaded = true;
         });
-      } else if ((fs.androidInfo?.version.sdkInt ?? 0) >= 33) {
+      } else if ((fs().androidInfo?.version.sdkInt ?? 0) >= 33) {
         Permission.notification.request();
       }
     });
@@ -595,7 +598,7 @@ class _HomeState extends OptimizedState<Home> with WidgetsBindingObserver, TrayL
   @override
   Widget build(BuildContext context) {
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-      systemNavigationBarColor: ss.settings.immersiveMode.value
+      systemNavigationBarColor: ss().settings.immersiveMode.value
           ? Colors.transparent
           : context.theme.colorScheme.background, // navigation bar color
       systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
@@ -605,7 +608,7 @@ class _HomeState extends OptimizedState<Home> with WidgetsBindingObserver, TrayL
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
-        systemNavigationBarColor: ss.settings.immersiveMode.value
+        systemNavigationBarColor: ss().settings.immersiveMode.value
             ? Colors.transparent
             : context.theme.colorScheme.background, // navigation bar color
         systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
@@ -626,7 +629,7 @@ class _HomeState extends OptimizedState<Home> with WidgetsBindingObserver, TrayL
               backgroundColor: context.theme.colorScheme.background.themeOpacity(context),
               body: Builder(
                 builder: (BuildContext context) {
-                  if (ss.settings.finishedSetup.value) {
+                  if (ss().settings.finishedSetup.value) {
                     if (!serverCompatible && kIsWeb) {
                       return const FailureToStart(
                         otherTitle: "Server version too low, please upgrade!",

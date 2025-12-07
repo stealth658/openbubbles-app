@@ -40,7 +40,7 @@ class _ReplyBubbleState extends CustomState<ReplyBubble, void, MessageWidgetCont
 
   Color getBubbleColor() {
     Color bubbleColor = context.theme.colorScheme.properSurface;
-    if (ss.settings.colorfulBubbles.value && !message.isFromMe!) {
+    if (ss().settings.colorfulBubbles.value && !message.isFromMe!) {
       if (message.handle?.color == null) {
         bubbleColor = toColorGradient(message.handle?.address).first;
       } else {
@@ -54,7 +54,7 @@ class _ReplyBubbleState extends CustomState<ReplyBubble, void, MessageWidgetCont
   Widget build(BuildContext context) {
     if (!iOS) {
       String text = MessageHelper.getNotificationText(message);
-      if (ss.settings.redactedMode.value && ss.settings.hideMessageContent.value) {
+      if (ss().settings.redactedMode.value && ss().settings.hideMessageContent.value) {
         text = faker.lorem.words(text.split(" ").length).join(" ");
       }
       return MouseRegion(

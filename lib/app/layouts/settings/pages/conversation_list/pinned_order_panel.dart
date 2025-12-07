@@ -14,19 +14,19 @@ import 'package:get/get.dart';
 class PinnedOrderPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final Rx<Color> _backgroundColor = (kIsDesktop && ss.settings.windowEffect.value == WindowEffect.disabled
+    final Rx<Color> _backgroundColor = (kIsDesktop && ss().settings.windowEffect.value == WindowEffect.disabled
             ? Colors.transparent
             : context.theme.colorScheme.background)
         .obs;
     final ScrollController scrollController = ScrollController();
 
     if (kIsDesktop) {
-      ss.settings.windowEffect.listen((WindowEffect effect) => _backgroundColor.value =
+      ss().settings.windowEffect.listen((WindowEffect effect) => _backgroundColor.value =
           effect != WindowEffect.disabled ? Colors.transparent : context.theme.colorScheme.background);
     }
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
-        systemNavigationBarColor: ss.settings.immersiveMode.value
+        systemNavigationBarColor: ss().settings.immersiveMode.value
             ? Colors.transparent
             : context.theme.colorScheme.background, // navigation bar color
         systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
@@ -51,7 +51,7 @@ class PinnedOrderPanel extends StatelessWidget {
                   surfaceTintColor: context.theme.colorScheme.primary,
                   leading: buildBackButton(context),
                   backgroundColor: _backgroundColor.value,
-                  centerTitle: ss.settings.skin.value == Skins.iOS,
+                  centerTitle: ss().settings.skin.value == Skins.iOS,
                   title: Text(
                     "Pinned Chat Order",
                     style: context.theme.textTheme.titleLarge,

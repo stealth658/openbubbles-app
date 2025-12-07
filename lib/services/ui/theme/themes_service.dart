@@ -4,6 +4,7 @@ import 'package:bluebubbles/helpers/types/constants.dart';
 import 'package:bluebubbles/helpers/ui/theme_helpers.dart';
 import 'package:bluebubbles/app/components/custom/custom_bouncing_scroll_physics.dart';
 import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:collection/collection.dart';
 import 'package:dynamic_color/dynamic_color.dart';
@@ -157,10 +158,10 @@ class ThemesService extends GetxService {
             .flattened,
       ];
 
-  Skins get skin => ss.settings.skin.value;
+  Skins get skin => ss().settings.skin.value;
 
   ScrollPhysics get scrollPhysics {
-    if (ss.settings.skin.value == Skins.iOS) {
+    if (ss().settings.skin.value == Skins.iOS) {
       return const AlwaysScrollableScrollPhysics(
         parent: CustomBouncingScrollPhysics(),
       );
@@ -171,7 +172,7 @@ class ThemesService extends GetxService {
     }
   }
 
-  bool get isFullMonet => ss.settings.monetTheming.value == Monet.full;
+  bool get isFullMonet => ss().settings.monetTheming.value == Monet.full;
 
   bool inDarkMode(BuildContext context) => (AdaptiveTheme.of(context).mode == AdaptiveThemeMode.dark ||
       (AdaptiveTheme.of(context).mode == AdaptiveThemeMode.system &&
@@ -226,26 +227,26 @@ class ThemesService extends GetxService {
 
   Future<ThemeStruct> revertToPreviousDarkTheme() async {
     List<ThemeStruct> allThemes = ThemeStruct.getThemes();
-    final darkName = ss.prefs.getString("previous-dark");
+    final darkName = prefs().i.getString("previous-dark");
     ThemeStruct? previous = allThemes.firstWhereOrNull((e) => e.name == darkName);
 
     previous ??= defaultThemes.firstWhere((element) => element.name == "OLED Dark");
 
     // Remove the previous flags
-    await ss.prefs.remove("previous-dark");
+    await prefs().i.remove("previous-dark");
 
     return previous;
   }
 
   Future<ThemeStruct> revertToPreviousLightTheme() async {
     List<ThemeStruct> allThemes = ThemeStruct.getThemes();
-    final lightName = ss.prefs.getString("previous-light");
+    final lightName = prefs().i.getString("previous-light");
     ThemeStruct? previous = allThemes.firstWhereOrNull((e) => e.name == lightName);
 
     previous ??= defaultThemes.firstWhere((element) => element.name == "Bright White");
 
     // Remove the previous flags
-    await ss.prefs.remove("previous-light");
+    await prefs().i.remove("previous-light");
 
     return previous;
   }
@@ -253,14 +254,14 @@ class ThemesService extends GetxService {
   Future<void> changeTheme(BuildContext context, {ThemeStruct? light, ThemeStruct? dark}) async {
     light?.save();
     dark?.save();
-    if (light != null) await ss.prefs.setString("selected-light", light.name);
-    if (dark != null) await ss.prefs.setString("selected-dark", dark.name);
+    if (light != null) await prefs().i.setString("selected-light", light.name);
+    if (dark != null) await prefs().i.setString("selected-dark", dark.name);
 
     _loadTheme(context);
   }
 
   Tuple2<ThemeData, ThemeData> _applyMonet(ThemeData light, ThemeData dark) {
-    if (ss.settings.monetTheming.value == Monet.harmonize && monetPalette != null) {
+    if (ss().settings.monetTheming.value == Monet.harmonize && monetPalette != null) {
       light = light.copyWith(
         colorScheme: light.colorScheme.copyWith(
           primary: Color(monetPalette!.primary.get(40)),
@@ -406,7 +407,7 @@ class ThemesService extends GetxService {
   }
 
   Tuple2<ThemeData, ThemeData> _applyWindowsAccent(ThemeData light, ThemeData dark) {
-    if (desktopAccentColor == null || !ss.settings.useDesktopAccent.value) {
+    if (desktopAccentColor == null || !ss().settings.useDesktopAccent.value) {
       return Tuple2(light, dark);
     }
 

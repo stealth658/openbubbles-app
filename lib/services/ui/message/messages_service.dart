@@ -59,7 +59,7 @@ class MessagesService extends GetxController {
           ..link(Message_.chat, Chat_.id.equals(chat.id!))
           ..order(Message_.id, flags: Order.descending)).watch(triggerImmediately: true);
         countSub = countQuery.listen((event) async {
-          if (!ss.settings.finishedSetup.value) return;
+          if (!ss().settings.finishedSetup.value) return;
           final newCount = event.count();
           if (!isFetching && newCount > currentCount && currentCount != 0) {
             event.limit = newCount - currentCount;

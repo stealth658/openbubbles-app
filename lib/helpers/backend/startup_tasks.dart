@@ -5,6 +5,8 @@ import 'dart:io';
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/database.dart';
+import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
+import 'package:bluebubbles/services/isolates/global_isolate.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:flutter/foundation.dart';
@@ -14,6 +16,7 @@ import 'package:app_install_date/app_install_date.dart';
 import 'package:path/path.dart';
 import 'package:tuple/tuple.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:get_it/get_it.dart';
 
 class StartupTasks {
   static final Completer<void> uiReady = Completer<void>();
@@ -26,18 +29,41 @@ class StartupTasks {
     debugPrint("Initializing startup services...");
 
     // First, initialize the filesystem service as it's used by other necessary services
-    await fs.init();
+    GetIt.I.registerSingletonAsync<FilesystemService>(() async {
+      final fsService = FilesystemService();
+      await fsService.init();
+      return fsService;
+    });
+
+    // The logger requires the filesystem service to be initialized first
+    await GetIt.I.isReady<FilesystemService>();
+
+    GetIt.I.registerSingletonAsync<SharedPreferencesService>(() async {
+      final prefsService = SharedPreferencesService();
+      await prefsService.init();
+      return prefsService;
+    });
+    await GetIt.I.isReady<SharedPreferencesService>();
+
+    // Setup the settings service
+    GetIt.I.registerSingletonAsync<SettingsService>(() async {
+      final settingsService = SettingsService();
+      await settingsService.init();
+      return settingsService;
+    });
+    await GetIt.I.isReady<SettingsService>();
 
     // Initialize the logger so we can start logging things immediately
-    await Logger.init();
-    Logger.debug("Initializing startup services...");
+    GetIt.I.registerSingletonAsync<BaseLogger>(() async {
+      final logService = BaseLogger();
+      await logService.init();
+      return logService;
+    });
+    await GetIt.I.isReady<BaseLogger>();
 
     // Check if another instance is running (Linux Only).
     // Automatically handled on Windows (I think)
     await StartupTasks.checkInstanceLock();
-
-    // Setup the settings service
-    await ss.init();
 
     // The next thing we need to do is initialize the database.
     // If the database is not initialized, we cannot do anything.
@@ -45,7 +71,10 @@ class StartupTasks {
 
     // Load FCM data into settings from the database
     // We only need to do this for the main startup
-    ss.getFcmData();
+    ss().getFcmData();
+
+    // Register the global isolate
+    GetIt.I.registerSingleton<GlobalIsolate>(GlobalIsolate());
 
     // We then have to initialize all the services that the app will use.
     // Order matters here as some services may rely on others. For instance,
@@ -72,10 +101,38 @@ class StartupTasks {
 
   static Future<void> initIsolateServices() async {
     debugPrint("Initializing isolate services...");
-    await fs.init(headless: true);
-    await Logger.init();
-    Logger.debug("Initializing isolate services...");
-    await ss.init(headless: true);
+
+    GetIt.I.registerSingletonAsync<FilesystemService>(() async {
+      final fsService = FilesystemService();
+      await fsService.init(headless: true);
+      return fsService;
+    });
+
+    // The logger requires the filesystem service to be initialized first
+    await GetIt.I.isReady<FilesystemService>();
+
+    GetIt.I.registerSingletonAsync<SharedPreferencesService>(() async {
+      final prefsService = SharedPreferencesService();
+      await prefsService.init();
+      return prefsService;
+    });
+    await GetIt.I.isReady<SharedPreferencesService>();
+
+    GetIt.I.registerSingletonAsync<SettingsService>(() async {
+      final settingsService = SettingsService();
+      await settingsService.init(headless: true);
+      return settingsService;
+    });
+    await GetIt.I.isReady<SettingsService>();
+
+    // Initialize the logger so we can start logging things immediately
+    GetIt.I.registerSingletonAsync<BaseLogger>(() async {
+      final logService = BaseLogger();
+      await logService.init();
+      return logService;
+    });
+    await GetIt.I.isReady<BaseLogger>();
+
     await Database.init();
     await mcs.init(headless: true);
     await ls.init(headless: true);
@@ -83,15 +140,29 @@ class StartupTasks {
 
   static Future<void> initIncrementalSyncServices() async {
     debugPrint("Initializing incremental sync services...");
-    await fs.init();
-    await Logger.init();
-    Logger.debug("Initializing incremental sync services...");
-    await ss.init();
+    await fs().init();
+    await Logger().init();
+    Logger().debug("Initializing incremental sync services...");
+
+    GetIt.I.registerSingletonAsync<SharedPreferencesService>(() async {
+      final prefsService = SharedPreferencesService();
+      await prefsService.init();
+      return prefsService;
+    });
+    await GetIt.I.isReady<SharedPreferencesService>();
+    
+    GetIt.I.registerSingletonAsync<SettingsService>(() async {
+      final settingsService = SettingsService();
+      await settingsService.init();
+      return settingsService;
+    });
+    await GetIt.I.isReady<SettingsService>();
+
     await Database.init();
   }
 
   static Future<void> onStartup() async {
-    if (!ss.settings.finishedSetup.value) return;
+    if (!ss().settings.finishedSetup.value) return;
 
     if (!kIsDesktop) {
       chats.init();
@@ -101,15 +172,15 @@ class StartupTasks {
     // Fetch server details for the rest of the app.
     // We only need to fetch it on startup since the metadata shouldn't change.
     // Don't await - let this happen in background
-    ss.getServerDetails(refresh: true).catchError((e, s) {
-      Logger.warn("Failed to fetch server details on startup!", error: e, trace: s);
+    ss().getServerDetails(refresh: true).catchError((e, s) {
+      Logger().warn("Failed to fetch server details on startup!", error: e, trace: s);
       return const Tuple4(0, 0, "", 0); // Return default tuple on error
     });
 
     // Only register FCM device on startup
     // Don't await - let this happen in background
     fcm.registerDevice().catchError((e, s) {
-      Logger.warn("Failed to register FCM device on startup!", error: e, trace: s);
+      Logger().warn("Failed to register FCM device on startup!", error: e, trace: s);
       return null; // Return null on error
     });
 
@@ -117,15 +188,15 @@ class StartupTasks {
     // code has a chance to run and we don't block the UI thread.
     Future.delayed(const Duration(seconds: 30), () {
       try {
-        ss.checkServerUpdate();
+        ss().checkServerUpdate();
       } catch (ex, stack) {
-        Logger.warn("Failed to check for server update!", error: ex, trace: stack);
+        Logger().warn("Failed to check for server update!", error: ex, trace: stack);
       }
 
       try {
-        ss.checkClientUpdate();
+        ss().checkClientUpdate();
       } catch (ex, stack) {
-        Logger.warn("Failed to check for client update!", error: ex, trace: stack);
+        Logger().warn("Failed to check for client update!", error: ex, trace: stack);
       }
     });
 
@@ -139,10 +210,10 @@ class StartupTasks {
 
   static Future<void> checkInstanceLock() async {
     if (!kIsDesktop || !Platform.isLinux) return;
-    Logger.debug("Starting process with PID $pid");
+    Logger().debug("Starting process with PID $pid");
 
-    final lockFile = File(join(fs.appDocDir.path, 'bluebubbles.lck'));
-    final instanceFile = File(join(fs.appDocDir.path, '.instance'));
+    final lockFile = File(join(fs().appDocDir.path, 'bluebubbles.lck'));
+    final instanceFile = File(join(fs().appDocDir.path, '.instance'));
     onExit(() {
       if (lockFile.existsSync()) lockFile.deleteSync();
     });
@@ -154,18 +225,18 @@ class StartupTasks {
       instanceFile.createSync();
     }
 
-    Logger.debug("Lockfile at ${lockFile.path}");
+    Logger().debug("Lockfile at ${lockFile.path}");
     String _pid = lockFile.readAsStringSync();
     String ps = Process.runSync('ps', ['-p', _pid]).stdout;
     if (kReleaseMode && "$pid" != _pid && ps.endsWith('bluebubbles\n')) {
-      Logger.debug("Another instance is running. Sending foreground signal");
+      Logger().debug("Another instance is running. Sending foreground signal");
       instanceFile.openSync(mode: FileMode.write).closeSync();
       exit(0);
     }
 
     lockFile.writeAsStringSync("$pid");
     instanceFile.watch(events: FileSystemEvent.modify).listen((event) async {
-      Logger.debug("Got Signal to go to foreground");
+      Logger().debug("Got Signal to go to foreground");
       doWhenWindowReady(() async {
         await windowManager.show();
         List<Tuple2<String, String>?> widAndNames = await (await Process.start('wmctrl', ['-pl']))
@@ -190,11 +261,11 @@ class StartupTasks {
 
 Future<void> reviewFlow() async {
   if (!ls.isAlive) return;
-  Logger.info('Checking if we should request a review');
+  Logger().info('Checking if we should request a review');
 
   try {
     DateTime sinceDate = await AppInstallDate().installDate;
-    int lastReviewRequest = ss.settings.lastReviewRequestTimestamp.value;
+    int lastReviewRequest = ss().settings.lastReviewRequestTimestamp.value;
     if (lastReviewRequest > 0) {
       sinceDate = DateTime.fromMillisecondsSinceEpoch(lastReviewRequest);
     }
@@ -206,19 +277,19 @@ Future<void> reviewFlow() async {
     // And if the user has not been asked for a review ever.
     // If the user has already been asked, ask again after 90 days
     if ((lastReviewRequest == 0 && days >= 30) || (lastReviewRequest > 0 && days >= 90)) {
-      ss.settings.lastReviewRequestTimestamp.value = now.millisecondsSinceEpoch;
-      await ss.settings.saveOne("lastReviewRequestTimestamp");
+      ss().settings.lastReviewRequestTimestamp.value = now.millisecondsSinceEpoch;
+      await ss().settings.saveOne("lastReviewRequestTimestamp");
       await requestReview();
     } else {
-      Logger.info('Not requesting review, days since install/last request: $days');
+      Logger().info('Not requesting review, days since install/last request: $days');
     }
   } catch (e, st) {
-    Logger.warn("Failed to request app review", error: e, trace: st);
+    Logger().warn("Failed to request app review", error: e, trace: st);
   }
 }
 
 Future<void> requestReview() async {
-  Logger.info('Requesting in app review!');
+  Logger().info('Requesting in app review!');
   final InAppReview inAppReview = InAppReview.instance;
   if (await inAppReview.isAvailable()) {
     await inAppReview.requestReview();

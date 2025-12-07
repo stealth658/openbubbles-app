@@ -75,7 +75,7 @@ class CupertinoHeader extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 10.0),
-                      if (ss.settings.moveChatCreatorToHeader.value)
+                      if (ss().settings.moveChatCreatorToHeader.value)
                         ClipOval(
                           child: Material(
                             color: context.theme.colorScheme.properSurface, // button color
@@ -93,9 +93,9 @@ class CupertinoHeader extends StatelessWidget {
                             ),
                           ),
                         ),
-                      if (ss.settings.moveChatCreatorToHeader.value && ss.settings.cameraFAB.value && !kIsWeb && !kIsDesktop)
+                      if (ss().settings.moveChatCreatorToHeader.value && ss().settings.cameraFAB.value && !kIsWeb && !kIsDesktop)
                         const SizedBox(width: 10.0),
-                      if (ss.settings.moveChatCreatorToHeader.value && ss.settings.cameraFAB.value && !kIsWeb && !kIsDesktop)
+                      if (ss().settings.moveChatCreatorToHeader.value && ss().settings.cameraFAB.value && !kIsWeb && !kIsDesktop)
                         ClipOval(
                           child: Material(
                             color: context.theme.colorScheme.properSurface, // button color
@@ -108,7 +108,7 @@ class CupertinoHeader extends StatelessWidget {
                                 onTap: () => controller.openCamera(context)),
                           ),
                         ),
-                      if (ss.settings.moveChatCreatorToHeader.value) const SizedBox(width: 10.0),
+                      if (ss().settings.moveChatCreatorToHeader.value) const SizedBox(width: 10.0),
                       const Material(
                         color: Colors.transparent,
                         shape: CircleBorder(),

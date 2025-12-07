@@ -52,7 +52,7 @@ class CreateNewThemeDialog extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Icon(
-                  ss.settings.skin.value == Skins.iOS
+                  ss().settings.skin.value == Skins.iOS
                       ? CupertinoIcons.info
                       : Icons.info_outline,
                   size: 20,

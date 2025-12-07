@@ -57,7 +57,7 @@ class NotificationsService extends GetxService {
   static const maxChatCount = 2;
   static const maxLines = 4;
 
-  bool get hideContent => ss.settings.hideTextPreviews.value;
+  bool get hideContent => ss().settings.hideTextPreviews.value;
 
   Future<void> init() async {
     if (!kIsWeb && !kIsDesktop) {
@@ -108,7 +108,7 @@ class NotificationsService extends GetxService {
       final countQuery =
           (Database.messages.query()..order(Message_.id, flags: Order.descending)).watch(triggerImmediately: true);
       countSub = countQuery.listen((event) {
-        if (!ss.settings.finishedSetup.value) return;
+        if (!ss().settings.finishedSetup.value) return;
         final newCount = event.count();
         final activeChatFetching = cm.activeChat != null ? ms(cm.activeChat!.chat.guid).isFetching : false;
         if (ls.isAlive &&
@@ -285,7 +285,7 @@ class NotificationsService extends GetxService {
       Uint8List? _avatar = await clip(avatar, size: 256, circle: true);
       if (_avatar != null) {
         // Create a temp file with the avatar
-        path = join(fs.appDocDir.path, "temp", "${randomString(8)}.png");
+        path = join(fs().appDocDir.path, "temp", "${randomString(8)}.png");
         await File(path).create(recursive: true);
         await File(path).writeAsBytes(_avatar);
       }
@@ -340,10 +340,10 @@ class NotificationsService extends GetxService {
 
   Future<void> showDesktopNotif(Message message, String text, Chat chat, String guid, String title, String contactName,
       bool isGroup, bool isReaction) async {
-    if (kIsDesktop && !ss.settings.desktopNotifications.value) return;
-    List<int> selectedIndices = ss.settings.selectedActionIndices;
-    List<String> _actions = ss.settings.actionList;
-    final papi = ss.settings.enablePrivateAPI.value;
+    if (kIsDesktop && !ss().settings.desktopNotifications.value) return;
+    List<int> selectedIndices = ss().settings.selectedActionIndices;
+    List<String> _actions = ss().settings.actionList;
+    final papi = ss().settings.enablePrivateAPI.value;
 
     List<String> actions = _actions
         .whereIndexed((i, e) => selectedIndices.contains(i))
@@ -374,7 +374,7 @@ class NotificationsService extends GetxService {
     Uint8List avatar = await avatarAsBytes(chat: chat, quality: 256);
 
     // Create a temp file with the avatar
-    String path = join(fs.appDocDir.path, "temp", "${randomString(8)}.png");
+    String path = join(fs().appDocDir.path, "temp", "${randomString(8)}.png");
     await File(path).create(recursive: true);
     await File(path).writeAsBytes(avatar);
 
@@ -436,11 +436,11 @@ class NotificationsService extends GetxService {
                 ? [LocalNotificationAction(text: "Mark ${notificationCounts[guid]!} Messages Read")]
                 : []
             : nActions,
-        hasInput: ss.settings.showReplyField.value,
+        hasInput: ss().settings.showReplyField.value,
         inputPlaceholder: "Type a reply...",
         inputButtonText: "Reply",
         systemSound: LocalNotificationSound.sms,
-        soundOption: ss.settings.desktopNotificationSoundPath.value != null
+        soundOption: ss().settings.desktopNotificationSoundPath.value != null
             ? LocalNotificationSoundOption.silent
             : LocalNotificationSoundOption.defaultOption,
       );
@@ -476,7 +476,7 @@ class NotificationsService extends GetxService {
         if (actions[index] == "Mark Read" || multiple) {
           chat.toggleHasUnread(false);
           EventDispatcher().emit('refresh', null);
-        } else if (ss.settings.enablePrivateAPI.value) {
+        } else if (ss().settings.enablePrivateAPI.value) {
           String reaction = ReactionTypes.emojiToReaction[actions[index]]!;
           Message _message = Message(
             associatedMessageGuid: message.guid,
@@ -558,7 +558,7 @@ class NotificationsService extends GetxService {
         duration: LocalNotificationDuration.short,
         actions: showMarkRead ? [LocalNotificationAction(text: "Mark Read")] : [],
         systemSound: LocalNotificationSound.sms,
-        soundOption: ss.settings.desktopNotificationSoundPath.value != null
+        soundOption: ss().settings.desktopNotificationSoundPath.value != null
             ? LocalNotificationSoundOption.silent
             : LocalNotificationSoundOption.defaultOption,
       );
@@ -624,12 +624,12 @@ class NotificationsService extends GetxService {
   }
 
   Future<void> playDesktopNotificationSound() async {
-    if (ss.settings.desktopNotificationSoundPath.value != null) {
+    if (ss().settings.desktopNotificationSoundPath.value != null) {
       if (desktopNotificationPlayer.state.playing) {
         await desktopNotificationPlayer.stop();
       }
-      await desktopNotificationPlayer.setVolume(ss.settings.desktopNotificationSoundVolume.value.toDouble());
-      await desktopNotificationPlayer.open(Media(ss.settings.desktopNotificationSoundPath.value!));
+      await desktopNotificationPlayer.setVolume(ss().settings.desktopNotificationSoundVolume.value.toDouble());
+      await desktopNotificationPlayer.open(Media(ss().settings.desktopNotificationSoundPath.value!));
     }
   }
 
@@ -656,7 +656,7 @@ class NotificationsService extends GetxService {
       duration: LocalNotificationDuration.short,
       actions: showMarkRead ? [LocalNotificationAction(text: "Mark All Read")] : [],
       systemSound: LocalNotificationSound.sms,
-      soundOption: ss.settings.desktopNotificationSoundPath.value != null
+      soundOption: ss().settings.desktopNotificationSoundPath.value != null
           ? LocalNotificationSoundOption.silent
           : LocalNotificationSoundOption.defaultOption,
     );

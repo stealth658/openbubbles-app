@@ -29,7 +29,7 @@ class NavigatorService extends GetxService {
   double widthChatListLeft(BuildContext context) => isTabletMode(context) ? _widthChatListLeft ?? 0 : 0;
 
   bool isTabletMode(BuildContext context) => (!context.isPhone || context.width / context.height > 0.8) &&
-      ss.settings.tabletMode.value && context.width > 600;
+      ss().settings.tabletMode.value && context.width > 600;
 
   /// grab the available screen width, returning the split screen width if applicable
   /// this should *always* be used in place of context.width or similar
@@ -87,7 +87,7 @@ class NavigatorService extends GetxService {
       {bool closeActiveChat = true, PageRoute? customRoute}) async {
     if (Get.keys.containsKey(2) && isTabletMode(context)) {
       if (closeActiveChat && cm.activeChat != null) {
-        Logger.debug("Closing active chat: ${cm.activeChat!.chat.guid}", tag: "NavigatorService");
+        Logger().debug("Closing active chat: ${cm.activeChat!.chat.guid}", tag: "NavigatorService");
         cvc(cm.activeChat!.chat).close();
       }
 

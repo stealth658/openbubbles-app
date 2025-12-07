@@ -132,7 +132,7 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                   backgroundColor: tileColor,
                   children: [
                     Obx(() {
-                      bool redact = ss.settings.redactedMode.value;
+                      bool redact = ss().settings.redactedMode.value;
                       return Container(
                           child: Padding(
                         padding: const EdgeInsets.only(bottom: 8.0, left: 15, top: 8.0, right: 15),
@@ -190,7 +190,7 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                                   recognizer: TapGestureRecognizer()
                                     ..onTap = () {
                                       Clipboard.setData(ClipboardData(text: http.origin));
-                                      if (!Platform.isAndroid || (fs.androidInfo?.version.sdkInt ?? 0) < 33) {
+                                      if (!Platform.isAndroid || (fs().androidInfo?.version.sdkInt ?? 0) < 33) {
                                         showSnackbar("Copied", "Server address copied to clipboard!");
                                       }
                                     }),
@@ -199,11 +199,11 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                                     text: "Server URL has a bad certificate!",
                                     style: TextStyle(color: getIndicatorColor(SocketState.disconnected))),
                               const TextSpan(text: "\n\n"),
-                              if (!ss.fcmData.isNull)
+                              if (!ss().fcmData.isNull)
                                 TextSpan(
                                     text:
-                                        "Firebase Database: ${isNullOrEmptyString(ss.fcmData.firebaseURL) ? "Firestore" : "Realtime"}"),
-                              if (!ss.fcmData.isNull) const TextSpan(text: "\n\n"),
+                                        "Firebase Database: ${isNullOrEmptyString(ss().fcmData.firebaseURL) ? "Firestore" : "Realtime"}"),
+                              if (!ss().fcmData.isNull) const TextSpan(text: "\n\n"),
                               if (hasBadCert) const TextSpan(text: "\n\n"),
                               TextSpan(
                                   text:
@@ -293,7 +293,7 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                             const SettingsDivider(),
                           ],
                         ))),
-                    if (!ss.fcmData.isNull)
+                    if (!ss().fcmData.isNull)
                       SettingsTile(
                         title: "Show QR Code",
                         subtitle: "Generate QR Code to screenshot or sync other devices",
@@ -304,14 +304,14 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                         ),
                         onTap: () {
                           List<dynamic> json = [
-                            ss.settings.guidAuthKey.value,
-                            ss.settings.serverAddress.value,
-                            ss.fcmData.projectID,
-                            ss.fcmData.storageBucket,
-                            ss.fcmData.apiKey,
-                            ss.fcmData.firebaseURL,
-                            ss.fcmData.clientID,
-                            ss.fcmData.applicationID,
+                            ss().settings.guidAuthKey.value,
+                            ss().settings.serverAddress.value,
+                            ss().fcmData.projectID,
+                            ss().fcmData.storageBucket,
+                            ss().fcmData.apiKey,
+                            ss().fcmData.firebaseURL,
+                            ss().fcmData.clientID,
+                            ss().fcmData.applicationID,
                           ];
                           String qrtext = jsonEncode(json);
                           showDialog(
@@ -503,11 +503,11 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                                 applicationID: fcmData[7],
                               );
 
-                              ss.settings.guidAuthKey.value = fcmData[0];
+                              ss().settings.guidAuthKey.value = fcmData[0];
 
                               // This will restart the socket & foreground service
                               await saveNewServerUrl(fcmData[1]);
-                              await ss.saveFCMData(data);
+                              await ss().saveFCMData(data);
                             }
                           },
                   ),
@@ -569,13 +569,13 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                     const SettingsDivider(),
                   if (Platform.isAndroid)
                     Obx(() => SettingsSwitch(
-                          initialVal: ss.settings.syncContactsAutomatically.value,
+                          initialVal: ss().settings.syncContactsAutomatically.value,
                           title: "Auto-Sync Contacts",
                           subtitle: "Automatically re-upload contacts to server when changes are detected",
                           backgroundColor: tileColor,
                           onChanged: (bool val) async {
-                            ss.settings.syncContactsAutomatically.value = val;
-                            ss.saveSettings();
+                            ss().settings.syncContactsAutomatically.value = val;
+                            ss().saveSettings();
                           },
                           leading: const SettingsLeadingIcon(
                             iosIcon: CupertinoIcons.person_2,
@@ -589,13 +589,13 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                     SettingsTile(
                       leading: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                         Obx(() => Material(
-                            shape: ss.settings.skin.value == Skins.Samsung
+                            shape: ss().settings.skin.value == Skins.Samsung
                                 ? SquircleBorder(
                                     side: BorderSide(color: context.theme.colorScheme.outline.withValues(alpha: 0.5), width: 1.0),
                                   )
                                 : null,
                             color: Colors.transparent,
-                            borderRadius: ss.settings.skin.value == Skins.iOS ? BorderRadius.circular(6) : null,
+                            borderRadius: ss().settings.skin.value == Skins.iOS ? BorderRadius.circular(6) : null,
                             child: SizedBox(
                                 width: 31,
                                 height: 31,
@@ -648,10 +648,10 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                     const SettingsDivider(),
                   if (!kIsWeb)
                     Obx(() => SettingsSwitch(
-                          initialVal: ss.settings.localhostPort.value != null,
+                          initialVal: ss().settings.localhostPort.value != null,
                           title: "Detect Localhost Address",
-                          subtitle: ss.settings.localhostPort.value != null
-                              ? "Configured Port: ${ss.settings.localhostPort.value}"
+                          subtitle: ss().settings.localhostPort.value != null
+                              ? "Configured Port: ${ss().settings.localhostPort.value}"
                               : "Look up localhost address for a faster direct connection",
                           backgroundColor: tileColor,
                           leading: const SettingsLeadingIcon(
@@ -683,7 +683,7 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                                               return;
                                             }
                                             Get.back();
-                                            ss.settings.localhostPort.value = portController.text;
+                                            ss().settings.localhostPort.value = portController.text;
                                           },
                                         ),
                                       ],
@@ -700,11 +700,11 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                                     );
                                   });
                             } else {
-                              ss.settings.localhostPort.value = null;
+                              ss().settings.localhostPort.value = null;
                             }
 
-                            await ss.settings.saveOne('localhostPort');
-                            if (ss.settings.localhostPort.value == null) {
+                            await ss().settings.saveOne('localhostPort');
+                            if (ss().settings.localhostPort.value == null) {
                               http.originOverride = null;
                             } else {
                               NetworkTasks.detectLocalhost(createSnackbar: true);
@@ -714,14 +714,14 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                   if (!kIsWeb)
                     const SettingsDivider(),
                   if (!kIsWeb)
-                    Obx(() => ss.settings.localhostPort.value != null
+                    Obx(() => ss().settings.localhostPort.value != null
                         ? SettingsSwitch(
-                            initialVal: ss.settings.useLocalIpv6.value,
+                            initialVal: ss().settings.useLocalIpv6.value,
                             title: "Use IPv6",
                             subtitle: "Do not enable this unless your environment supports IPv6",
                             isThreeLine: true,
                             onChanged: (bool val) {
-                              ss.settings.useLocalIpv6.value = val;
+                              ss().settings.useLocalIpv6.value = val;
                               NetworkTasks.detectLocalhost(createSnackbar: true);
                             },
                           )
@@ -766,7 +766,7 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                                 return;
                               }
 
-                              File logFile = File("${fs.appDocDir.path}/attachments/main.log");
+                              File logFile = File("${fs().appDocDir.path}/attachments/main.log");
 
                               if (await logFile.exists()) {
                                 await logFile.delete();
@@ -834,7 +834,7 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                                 ))))),
                     const SettingsDivider(),
                     Obx(() => AnimatedSizeAndFade.showHide(
-                          show: ss.settings.enablePrivateAPI.value && (controller.serverVersionCode.value ?? 0) >= 41,
+                          show: ss().settings.enablePrivateAPI.value && (controller.serverVersionCode.value ?? 0) >= 41,
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -921,16 +921,16 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                                 await mcs.invokeMethod(
                                     "set-next-restart", {"value": DateTime.now().toUtc().millisecondsSinceEpoch});
                               } catch (e, s) {
-                                Logger.error("Failed to update Firebase Database!", error: e, trace: s);
+                                Logger().error("Failed to update Firebase Database!", error: e, trace: s);
                                 showSnackbar("Error", "Something went wrong when updating Firebase Database!");
                               }
                             } else {
-                              if (!isNullOrEmpty(ss.fcmData.firebaseURL)) {
-                                var db = FirebaseDatabase(databaseURL: ss.fcmData.firebaseURL);
+                              if (!isNullOrEmpty(ss().fcmData.firebaseURL)) {
+                                var db = FirebaseDatabase(databaseURL: ss().fcmData.firebaseURL);
                                 var ref = db.reference().child('config').child('nextRestart');
                                 await ref.set(DateTime.now().toUtc().millisecondsSinceEpoch);
                               } else {
-                                await http.setRestartDateCF(ss.fcmData.projectID!);
+                                await http.setRestartDateCF(ss().fcmData.projectID!);
                               }
                             }
                           } finally {
@@ -967,7 +967,7 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                                 onTap: () async {
                                   if (socket.state.value != SocketState.connected) return;
 
-                                  await ss.checkServerUpdate();
+                                  await ss().checkServerUpdate();
                                 },
                               ),
                             ],

@@ -383,7 +383,7 @@ class Message {
       try {
         attributedBody = (json['attributedBody'] as List).map((a) => AttributedBody.fromMap(a!.cast<String, Object>())).toList();
       } catch (e, stack) {
-        Logger.error('Failed to parse attributed body!', error: e, trace: stack);
+        Logger().error('Failed to parse attributed body!', error: e, trace: stack);
       }
     }
 
@@ -402,14 +402,14 @@ class Message {
     try {
       msi = (json['messageSummaryInfo'] as List? ?? []).map((e) => MessageSummaryInfo.fromJson(e!.cast<String, Object>())).toList();
     } catch (e, stack) {
-      Logger.error('Failed to parse summary info!', error: e, trace: stack);
+      Logger().error('Failed to parse summary info!', error: e, trace: stack);
     }
 
     PayloadData? payloadData;
     try {
       payloadData = json['payloadData'] == null ? null : PayloadData.fromJson(json['payloadData']);
     } catch (e, s) {
-      Logger.error('Failed to parse payload data!', error: e, trace: s);
+      Logger().error('Failed to parse payload data!', error: e, trace: s);
     }
 
     return Message(
@@ -592,7 +592,7 @@ class Message {
     try {
       Database.messages.put(existing, mode: PutMode.update);
     } catch (ex, stack) {
-      Logger.error('Failed to replace message! This is likely due to a unique constraint being violated.', error: ex, trace: stack);
+      Logger().error('Failed to replace message! This is likely due to a unique constraint being violated.', error: ex, trace: stack);
     }
     return existing;
   }
@@ -747,7 +747,7 @@ class Message {
 
   String? get interactiveMediaPath {
     final extension = balloonBundleId!.contains("com.apple.Digital") ? ".mov" : balloonBundleId!.contains("com.apple.Handwriting") ? ".png" : null;
-    return "${fs.appDocDir.path}/messages/$guid/embedded-media/$balloonBundleId$extension";
+    return "${fs().appDocDir.path}/messages/$guid/embedded-media/$balloonBundleId$extension";
   }
 
   bool get isGroupEvent => groupTitle != null || (itemType ?? 0) > 0 || (groupActionType ?? 0) > 0;

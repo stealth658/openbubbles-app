@@ -39,7 +39,7 @@ class SpellCheckTextEditingController extends TextEditingController {
   SpellCheckTextEditingController({super.text, this.focusNode}) {
     assert(focusNode != null || !(kIsDesktop || kIsWeb));
     _languageCheckService =
-        DebounceLangToolService(LangToolService(LanguageToolClient(language: ss.settings.spellcheckLanguage.value)),
+        DebounceLangToolService(LangToolService(LanguageToolClient(language: ss().settings.spellcheckLanguage.value)),
             const Duration(milliseconds: 500));
     _processMistakes(text);
   }
@@ -74,7 +74,7 @@ class SpellCheckTextEditingController extends TextEditingController {
     String newText = newValue.text;
     int newOffset = newValue.selection.start;
 
-    if (ss.settings.replaceEmoticonsWithEmoji.value) {
+    if (ss().settings.replaceEmoticonsWithEmoji.value) {
       List<(int, int)> offsetsAndDifferences;
       (newText, offsetsAndDifferences) = replaceEmoticons(newText);
 
@@ -172,7 +172,7 @@ class SpellCheckTextEditingController extends TextEditingController {
   }
 
   Future<void> _processMistakes(String newText) async {
-    if (!ss.settings.spellcheck.value || newText.isEmpty) {
+    if (!ss().settings.spellcheck.value || newText.isEmpty) {
       _mistakes.clear();
       _mistakeTooltip?.remove();
       _mistakeTooltip = null;

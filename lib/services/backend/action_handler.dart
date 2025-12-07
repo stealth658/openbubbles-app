@@ -39,7 +39,7 @@ class ActionHandler extends GetxService {
 
     final List<Message> messages = <Message>[];
 
-    if (!(await ss.isMinBigSur) && r == null) {
+    if (!(await ss().isMinBigSur) && r == null) {
       // Split URL messages on OS X to prevent message matching glitches
       String mainText = m.text!;
       String? secondaryText;
@@ -86,18 +86,18 @@ class ActionHandler extends GetxService {
     // the API response.
     final existingReplacementMessage = Message.findOne(guid: replacement.guid);
     if (existingReplacementMessage != null) {
-      Logger.debug("Found existing message with GUID ${replacement.guid}...", tag: "MessageStatus");
+      Logger().debug("Found existing message with GUID ${replacement.guid}...", tag: "MessageStatus");
 
       if (replacement.isNewerThan(existingReplacementMessage)) {
-        Logger.debug("Replacing existing message with newer message (GUID: ${replacement.guid})...", tag: "MessageStatus");
+        Logger().debug("Replacing existing message with newer message (GUID: ${replacement.guid})...", tag: "MessageStatus");
         await Message.replaceMessage(replacement.guid, replacement);
       } else {
-        Logger.debug("Existing message with GUID ${replacement.guid} is newer than the replacement...", tag: "MessageStatus");
+        Logger().debug("Existing message with GUID ${replacement.guid} is newer than the replacement...", tag: "MessageStatus");
       }
       
       // Delete the temp message if it exists
       if (existingGuid != replacement.guid) {
-        Logger.debug("Deleting temp message with GUID $existingGuid...", tag: "MessageStatus");
+        Logger().debug("Deleting temp message with GUID $existingGuid...", tag: "MessageStatus");
         final existingTempMessage = Message.findOne(guid: existingGuid);
         if (existingTempMessage != null) {
           Message.delete(existingTempMessage.guid!);
@@ -109,10 +109,10 @@ class ActionHandler extends GetxService {
     } else {
       try {
         // If we didn't find a matching message with the replacement's GUID, replace the existing message.
-      Logger.debug("Replacing message with GUID $existingGuid with ${replacement.guid}...", tag: "MessageStatus");
+      Logger().debug("Replacing message with GUID $existingGuid with ${replacement.guid}...", tag: "MessageStatus");
       await Message.replaceMessage(existingGuid, replacement);
       } catch (ex) {
-        Logger.warn("Unable to find & replace message with GUID $existingGuid...", tag: "MessageStatus", error: ex);
+        Logger().warn("Unable to find & replace message with GUID $existingGuid...", tag: "MessageStatus", error: ex);
       }
     }
   }
@@ -123,12 +123,12 @@ class ActionHandler extends GetxService {
     // the API response.
     final existingReplacementMessage = Attachment.findOne(replacement.guid!);
     if (existingReplacementMessage != null) {
-      Logger.debug("Replacing existing attachment with GUID ${replacement.guid}...", tag: "AttachmentStatus");
+      Logger().debug("Replacing existing attachment with GUID ${replacement.guid}...", tag: "AttachmentStatus");
       await Attachment.replaceAttachment(replacement.guid, replacement);
       
       // Delete the temp message if it exists
       if (existingGuid != replacement.guid) {
-        Logger.debug("Deleting temp attachment with GUID $existingGuid...", tag: "AttachmentStatus");
+        Logger().debug("Deleting temp attachment with GUID $existingGuid...", tag: "AttachmentStatus");
         final existingTempMessage = Attachment.findOne(existingGuid);
         if (existingTempMessage != null) {
           Attachment.delete(existingTempMessage.guid!);
@@ -136,10 +136,10 @@ class ActionHandler extends GetxService {
       }
     } else {
       try {
-        Logger.debug("Replacing original attachment with GUID $existingGuid with ${replacement.guid}...", tag: "AttachmentStatus");
+        Logger().debug("Replacing original attachment with GUID $existingGuid with ${replacement.guid}...", tag: "AttachmentStatus");
         await Attachment.replaceAttachment(existingGuid, replacement);
       } catch (ex) {
-        Logger.warn("Unable to find & replace attachment with GUID $existingGuid...", error: ex, tag: "AttachmentStatus");
+        Logger().warn("Unable to find & replace attachment with GUID $existingGuid...", error: ex, tag: "AttachmentStatus");
       }
     }
   }
@@ -152,8 +152,8 @@ class ActionHandler extends GetxService {
         m.guid!,
         m.text!,
         subject: m.subject,
-        method: (ss.settings.enablePrivateAPI.value
-            && ss.settings.privateAPISend.value)
+        method: (ss().settings.enablePrivateAPI.value
+            && ss().settings.privateAPISend.value)
             || (m.subject?.isNotEmpty ?? false)
             || m.threadOriginatorGuid != null
             || m.expressiveSendStyleId != null
@@ -161,18 +161,18 @@ class ActionHandler extends GetxService {
         selectedMessageGuid: m.threadOriginatorGuid,
         effectId: m.expressiveSendStyleId,
         partIndex: int.tryParse(m.threadOriginatorPart?.split(":").firstOrNull ?? ""),
-        ddScan: !ss.isMinSonomaSync && m.text!.hasUrl,
+        ddScan: !ss().isMinSonomaSync && m.text!.hasUrl,
       ).then((response) async {
         final newMessage = Message.fromMap(response.data['data']);
         try {
           await matchMessageWithExisting(c, m.guid!, newMessage, existing: m);
         } catch (ex) {
-          Logger.warn("Failed to find message match for ${m.guid} -> ${newMessage.guid}!", error: ex, tag: "MessageStatus");
+          Logger().warn("Failed to find message match for ${m.guid} -> ${newMessage.guid}!", error: ex, tag: "MessageStatus");
         }
 
         completer.complete();
       }).catchError((error, stack) async {
-        Logger.error('Failed to send message!', error: error, trace: stack);
+        Logger().error('Failed to send message!', error: error, trace: stack);
 
         final tempGuid = m.guid;
         m = handleSendError(error, m);
@@ -189,11 +189,11 @@ class ActionHandler extends GetxService {
         try {
           await matchMessageWithExisting(c, m.guid!, newMessage, existing: m);
         } catch (ex) {
-          Logger.warn("Failed to find message match for ${m.guid} -> ${newMessage.guid}!", error: ex, tag: "MessageStatus");
+          Logger().warn("Failed to find message match for ${m.guid} -> ${newMessage.guid}!", error: ex, tag: "MessageStatus");
         }
         completer.complete();
       }).catchError((error, stack) async {
-        Logger.error('Failed to send message!', error: error, trace: stack);
+        Logger().error('Failed to send message!', error: error, trace: stack);
 
         final tempGuid = m.guid;
         m = handleSendError(error, m);
@@ -226,17 +226,17 @@ class ActionHandler extends GetxService {
       selectedMessageGuid: m.threadOriginatorGuid,
       effectId: m.expressiveSendStyleId,
       partIndex: int.tryParse(m.threadOriginatorPart?.split(":").firstOrNull ?? ""),
-      ddScan: !ss.isMinSonomaSync && parts.any((e) => e["text"].toString().hasUrl)
+      ddScan: !ss().isMinSonomaSync && parts.any((e) => e["text"].toString().hasUrl)
     ).then((response) async {
       final newMessage = Message.fromMap(response.data['data']);
       try {
         await matchMessageWithExisting(c, m.guid!, newMessage, existing: m);
       } catch (ex) {
-        Logger.warn("Failed to find message match for ${m.guid} -> ${newMessage.guid}!", error: ex, tag: "MessageStatus");
+        Logger().warn("Failed to find message match for ${m.guid} -> ${newMessage.guid}!", error: ex, tag: "MessageStatus");
       }
       completer.complete();
     }).catchError((error, stack) async {
-      Logger.error('Failed to send message!', error: error, trace: stack);
+      Logger().error('Failed to send message!', error: error, trace: stack);
 
       final tempGuid = m.guid;
       m = handleSendError(error, m);
@@ -257,7 +257,7 @@ class ActionHandler extends GetxService {
     attachmentProgress.add(progress);
     // Save the attachment to storage and DB
     if (!kIsWeb) {
-      String pathName = "${fs.appDocDir.path}/attachments/${attachment.guid}/${attachment.transferName}";
+      String pathName = "${fs().appDocDir.path}/attachments/${attachment.guid}/${attachment.transferName}";
       final file = await File(pathName).create(recursive: true);
       if (attachment.mimeType == "image/gif") {
         attachment.bytes = await fixSpeedyGifs(attachment.bytes!);
@@ -278,8 +278,8 @@ class ActionHandler extends GetxService {
       attachment.guid!,
       PlatformFile(name: attachment.transferName!, bytes: attachment.bytes, path: kIsWeb ? null : attachment.path, size: attachment.totalBytes ?? 0),
       onSendProgress: (count, total) => progress.item2.value = count / attachment.bytes!.length,
-      method: (ss.settings.enablePrivateAPI.value
-          && ss.settings.privateAPIAttachmentSend.value)
+      method: (ss().settings.enablePrivateAPI.value
+          && ss().settings.privateAPIAttachmentSend.value)
           || (m.subject?.isNotEmpty ?? false)
           || m.threadOriginatorGuid != null
           || m.expressiveSendStyleId != null
@@ -301,7 +301,7 @@ class ActionHandler extends GetxService {
             ms(c.guid).updateMessage(newMessage);
           })
           .catchError((e, stack) {
-            Logger.warn("Failed to replace attachment ${a.guid}!", error: e, tag: "AttachmentStatus");
+            Logger().warn("Failed to replace attachment ${a.guid}!", error: e, tag: "AttachmentStatus");
           }
         );
       }
@@ -309,14 +309,14 @@ class ActionHandler extends GetxService {
       try {
         await matchMessageWithExisting(c, m.guid!, newMessage, existing: m);
       } catch (e) {
-        Logger.warn("Failed to find message match for ${m.guid} -> ${newMessage.guid}!", error: e, tag: "MessageStatus");
+        Logger().warn("Failed to find message match for ${m.guid} -> ${newMessage.guid}!", error: e, tag: "MessageStatus");
       }
       attachmentProgress.removeWhere((e) => e.item1 == m.guid || e.item2 >= 1);
 
       completer.complete();
     }).catchError((error, stack) async {
       latestCancelToken = null;
-      Logger.error('Failed to send message!', error: error, trace: stack);
+      Logger().error('Failed to send message!', error: error, trace: stack);
 
       final tempGuid = m.guid;
       m = handleSendError(error, m);
@@ -342,7 +342,7 @@ class ActionHandler extends GetxService {
     }
     // should have been handled by the sanity check
     if (tempGuid != null) return;
-    Logger.info("New message: [${m.text}] - for chat [${c.guid}]", tag: "ActionHandler");
+    Logger().info("New message: [${m.text}] - for chat [${c.guid}]", tag: "ActionHandler");
     // Gets the chat from the db or server (if new)
     c = m.isParticipantEvent ? await handleNewOrUpdatedChat(c) : kIsWeb ? c : (Chat.findOne(guid: c.guid) ?? await handleNewOrUpdatedChat(c));
     // Get the message handle
@@ -351,10 +351,10 @@ class ActionHandler extends GetxService {
     // Display notification if needed and save everything to DB
     bool shouldNotify = shouldNotifyForNewMessageGuid(m.guid!);
     if (!shouldNotify) {
-      Logger.info("Not notifying for already handled new message with GUID ${m.guid}...", tag: "ActionHandler");
+      Logger().info("Not notifying for already handled new message with GUID ${m.guid}...", tag: "ActionHandler");
     }
 
-    if ((!ls.isAlive || ss.settings.endpointUnifiedPush.value != "" || (cm.activeChat == null && Get.rawRoute?.settings.name != "/")) && shouldNotify) {
+    if ((!ls.isAlive || ss().settings.endpointUnifiedPush.value != "" || (cm.activeChat == null && Get.rawRoute?.settings.name != "/")) && shouldNotify) {
       await MessageHelper.handleNotification(m, c);
     }
     await c.addMessage(m);
@@ -368,7 +368,7 @@ class ActionHandler extends GetxService {
         return await handleNewMessage(c, m, tempGuid, checkExisting: false);
       }
     }
-    Logger.info("Updated message: [${m.text}] ${m.getLastUpdate().toLowerCase()} - for chat [${c.guid}]", tag: "ActionHandler");
+    Logger().info("Updated message: [${m.text}] ${m.getLastUpdate().toLowerCase()} - for chat [${c.guid}]", tag: "ActionHandler");
 
     // update any attachments
     for (Attachment? a in m.attachments) {
@@ -379,7 +379,7 @@ class ActionHandler extends GetxService {
           ms(c.guid).updateMessage(m);
         })
         .catchError((e, stack) {
-          Logger.warn("Failed to replace attachment ${a.guid}!", error: e, trace: stack, tag: "AttachmentStatus");
+          Logger().warn("Failed to replace attachment ${a.guid}!", error: e, trace: stack, tag: "AttachmentStatus");
         }
       );
     }
@@ -409,7 +409,7 @@ class ActionHandler extends GetxService {
   }
 
   Future<void> handleIncomingFaceTimeCall(Map<String, dynamic> data) async {
-    Logger.info("Handling incoming FaceTime call");
+    Logger().info("Handling incoming FaceTime call");
     await cs.init();
     final callUuid = data["uuid"];
     String? address = data["handle"]?["address"];
@@ -436,7 +436,7 @@ class ActionHandler extends GetxService {
   }
 
   Future<void> handleIncomingFaceTimeCallLegacy(Map<String, dynamic> data) async {
-    Logger.info("Handling incoming FaceTime call (legacy)");
+    Logger().info("Handling incoming FaceTime call (legacy)");
     await cs.init();
     String? address = data["caller"];
     String? caller = address;
@@ -453,7 +453,7 @@ class ActionHandler extends GetxService {
   }
 
   Future<void> handleEvent(String event, Map<String, dynamic> data, String source, {bool useQueue = true}) async {
-    Logger.info("Received $event from $source");
+    Logger().info("Received $event from $source");
     switch (event) {
       case "new-message":
         if (!isNullOrEmpty(data)) {
@@ -511,15 +511,15 @@ class ActionHandler extends GetxService {
         }
         return;
       case "incoming-facetime":
-        Logger.info("Received legacy incoming FaceTime call");
+        Logger().info("Received legacy incoming FaceTime call");
         await handleIncomingFaceTimeCallLegacy(data);
         return;
       case "ft-call-status-changed":
-        Logger.info("Received FaceTime call status change");
+        Logger().info("Received FaceTime call status change");
         await handleFaceTimeStatusChange(data);
         return;
       case "imessage-aliases-removed":
-        Logger.info("Alias(es) removed ${data["aliases"]}");
+        Logger().info("Alias(es) removed ${data["aliases"]}");
         await notif.createAliasesRemovedNotification((data["aliases"] as List).cast<String>());
         return;
       default:

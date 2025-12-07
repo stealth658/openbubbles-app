@@ -7,6 +7,7 @@ import 'package:bluebubbles/app/layouts/settings/widgets/content/next_button.dar
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/types/constants.dart';
+import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -86,13 +87,13 @@ class _NotificationProvidersState extends OptimizedState<NotificationProvidersPa
                   },
                   leading: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                         Obx(() => Material(
-                            shape: ss.settings.skin.value == Skins.Samsung
+                            shape: ss().settings.skin.value == Skins.Samsung
                                 ? SquircleBorder(
                                     side: BorderSide(color: context.theme.colorScheme.outline.withValues(alpha: 0.5), width: 1.0),
                                   )
                                 : null,
                             color: Colors.transparent,
-                            borderRadius: ss.settings.skin.value == Skins.iOS ? BorderRadius.circular(6) : null,
+                            borderRadius: ss().settings.skin.value == Skins.iOS ? BorderRadius.circular(6) : null,
                             child: SizedBox(
                                 width: 31,
                                 height: 31,
@@ -122,11 +123,11 @@ class _NotificationProvidersState extends OptimizedState<NotificationProvidersPa
                 if (Platform.isAndroid)
                   Obx(() => SettingsSwitch(
                     onChanged: (bool val) async {
-                      ss.settings.keepAppAlive.value = val;
-                      await ss.saveSettings(ss.settings);
+                      ss().settings.keepAppAlive.value = val;
+                      await ss().saveSettings(ss().settings);
 
                       // Save the custom headers to prefs
-                      await ss.prefs.setString('customHeaders', jsonEncode(http.headers));
+                      await prefs().i.setString('customHeaders', jsonEncode(http.headers));
 
                       // We don't need to start the service here because it will be started
                       // when the app is inactive.
@@ -134,7 +135,7 @@ class _NotificationProvidersState extends OptimizedState<NotificationProvidersPa
                         await mcs.invokeMethod("stop-foreground-service");
                       }
                     },
-                    initialVal: ss.settings.keepAppAlive.value,
+                    initialVal: ss().settings.keepAppAlive.value,
                     title: "Background Service",
                     subtitle:
                         "Keep an always-open socket connection to the server for notifications",

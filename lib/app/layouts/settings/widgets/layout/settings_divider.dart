@@ -16,7 +16,7 @@ class SettingsDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (ss.settings.skin.value == Skins.iOS) {
+    if (ss().settings.skin.value == Skins.iOS) {
       return Padding(
         padding: padding,
         child: Divider(

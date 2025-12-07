@@ -228,7 +228,7 @@ class _BackupRestorePanelState extends OptimizedState<BackupRestorePanel> {
                                             content: const Text("Are you sure you want to replace this backup with your current Settings?"),
                                             onNo: () => Navigator.of(_context).pop(),
                                             onYes: () async {
-                                              Map<String, dynamic> json = ss.settings.toMap();
+                                              Map<String, dynamic> json = ss().settings.toMap();
                                               json["description"] = item["description"];
                                               json["timestamp"] = DateTime.now().millisecondsSinceEpoch;
                                               Response response = await http.setSettings(item["name"], json);
@@ -283,7 +283,7 @@ class _BackupRestorePanelState extends OptimizedState<BackupRestorePanel> {
                                           Settings.updateFromMap(item);
                                           showSnackbar("Success", "Settings restored successfully");
                                         } catch (e, s) {
-                                          Logger.error("Failed to restore settings backup!", error: e, trace: s);
+                                          Logger().error("Failed to restore settings backup!", error: e, trace: s);
                                           showSnackbar("Error", "Failed to restore settings backup! Error: ${e.toString()}");
                                         }
                                       }
@@ -342,8 +342,8 @@ class _BackupRestorePanelState extends OptimizedState<BackupRestorePanel> {
                         mouseCursor: SystemMouseCursors.click,
                         title: Text("Create New", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
                         leading: Container(
-                          width: 40 * ss.settings.avatarScale.value,
-                          height: 40 * ss.settings.avatarScale.value,
+                          width: 40 * ss().settings.avatarScale.value,
+                          height: 40 * ss().settings.avatarScale.value,
                           decoration: BoxDecoration(
                             color: !iOS ? null : context.theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
                             shape: BoxShape.circle,
@@ -387,7 +387,7 @@ class _BackupRestorePanelState extends OptimizedState<BackupRestorePanel> {
                             } else {
                               Navigator.of(_context).pop();
                             }
-                            Map<String, dynamic> json = ss.settings.toMap();
+                            Map<String, dynamic> json = ss().settings.toMap();
                             if (desc.isNotEmpty) {
                               json["description"] = desc;
                             }
@@ -556,8 +556,8 @@ class _BackupRestorePanelState extends OptimizedState<BackupRestorePanel> {
                         mouseCursor: SystemMouseCursors.click,
                         title: Text("Restore Local", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
                         leading: Container(
-                          width: 40 * ss.settings.avatarScale.value,
-                          height: 40 * ss.settings.avatarScale.value,
+                          width: 40 * ss().settings.avatarScale.value,
+                          height: 40 * ss().settings.avatarScale.value,
                           decoration: BoxDecoration(
                               color: !iOS ? null : context.theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
                               shape: BoxShape.circle,
@@ -586,7 +586,7 @@ class _BackupRestorePanelState extends OptimizedState<BackupRestorePanel> {
                                     Settings.updateFromMap(json);
                                     showSnackbar("Success", "Settings restored successfully");
                                   } catch (e, s) {
-                                    Logger.error("Failed to restore settings backup!", error: e, trace: s);
+                                    Logger().error("Failed to restore settings backup!", error: e, trace: s);
                                     showSnackbar("Error", "Failed to restore settings backup! Error: ${e.toString()}");
                                   }
                                 }
@@ -719,7 +719,7 @@ class _BackupRestorePanelState extends OptimizedState<BackupRestorePanel> {
                                             object.save();
                                             showSnackbar("Success", "Theme restored successfully");
                                           } catch (e, s) {
-                                            Logger.error("Failed to restore theme backup!", error: e, trace: s);
+                                            Logger().error("Failed to restore theme backup!", error: e, trace: s);
                                             showSnackbar("Error", "Failed to restore theme backup! Error: ${e.toString()}");
                                           }
                                         }
@@ -777,8 +777,8 @@ class _BackupRestorePanelState extends OptimizedState<BackupRestorePanel> {
                         mouseCursor: SystemMouseCursors.click,
                         title: Text("Create New", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
                         leading: Container(
-                          width: 40 * ss.settings.avatarScale.value,
-                          height: 40 * ss.settings.avatarScale.value,
+                          width: 40 * ss().settings.avatarScale.value,
+                          height: 40 * ss().settings.avatarScale.value,
                           decoration: BoxDecoration(
                             color: !iOS ? null : context.theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
                             shape: BoxShape.circle,
@@ -888,8 +888,8 @@ class _BackupRestorePanelState extends OptimizedState<BackupRestorePanel> {
                         mouseCursor: SystemMouseCursors.click,
                         title: Text("Restore Local", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
                         leading: Container(
-                          width: 40 * ss.settings.avatarScale.value,
-                          height: 40 * ss.settings.avatarScale.value,
+                          width: 40 * ss().settings.avatarScale.value,
+                          height: 40 * ss().settings.avatarScale.value,
                           decoration: BoxDecoration(
                               color: !iOS ? null : context.theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
                               shape: BoxShape.circle,
@@ -925,7 +925,7 @@ class _BackupRestorePanelState extends OptimizedState<BackupRestorePanel> {
                                       }
                                       showSnackbar("Success", "Theming restored successfully");
                                     } catch (e, s) {
-                                      Logger.error("Failed to restore theme backup!", error: e, trace: s);
+                                      Logger().error("Failed to restore theme backup!", error: e, trace: s);
                                       showSnackbar("Error", "Failed to restore theme backup! Error: ${e.toString()}");
                                     }
                                   }

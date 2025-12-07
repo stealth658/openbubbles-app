@@ -83,10 +83,10 @@ class ConversationTileController extends StatefulController {
   
   void onSelected() {
     onSelect?.call(!isSelected);
-    if (ss.settings.skin.value == Skins.Material) {
+    if (ss().settings.skin.value == Skins.Material) {
       updateWidgets<MaterialConversationTile>(null);
     }
-    if (ss.settings.skin.value == Skins.Samsung) {
+    if (ss().settings.skin.value == Skins.Samsung) {
       updateWidgets<SamsungConversationTile>(null);
     }
   }
@@ -270,7 +270,7 @@ class _ChatTitleState extends CustomState<ChatTitle, void, ConversationTileContr
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final hideInfo = ss.settings.redactedMode.value && ss.settings.hideContactInfo.value;
+      final hideInfo = ss().settings.redactedMode.value && ss().settings.hideContactInfo.value;
       String _title = title;
       if (hideInfo) {
         _title = controller.chat.isGroup ? controller.chat.fakeName : controller.chat.participants[0].fakeName;
@@ -407,8 +407,8 @@ class _ChatSubtitleState extends CustomState<ChatSubtitle, void, ConversationTil
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final hideContent = ss.settings.redactedMode.value && ss.settings.hideMessageContent.value;
-      final hideContacts = ss.settings.redactedMode.value && ss.settings.hideContactInfo.value;
+      final hideContent = ss().settings.redactedMode.value && ss().settings.hideMessageContent.value;
+      final hideContacts = ss().settings.redactedMode.value && ss().settings.hideContactInfo.value;
       String _subtitle = hideContent ? fakeText : hideContacts && !kIsWeb ? MessageHelper.getNotificationText(Message.findOne(guid: cachedLatestMessageGuid!)!) : subtitle;
 
       return RichText(
@@ -419,7 +419,7 @@ class _ChatSubtitleState extends CustomState<ChatSubtitle, void, ConversationTil
           ),
         ),
         overflow: TextOverflow.ellipsis,
-        maxLines: ss.settings.denseChatTiles.value ? 1 : material ? 3 : 2,
+        maxLines: ss().settings.denseChatTiles.value ? 1 : material ? 3 : 2,
       );
     });
   }

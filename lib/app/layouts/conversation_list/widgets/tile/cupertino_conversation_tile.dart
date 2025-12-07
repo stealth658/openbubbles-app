@@ -54,10 +54,10 @@ class _CupertinoConversationTileState extends CustomState<CupertinoConversationT
         child: Obx(() => ListTile(
             mouseCursor: MouseCursor.defer,
             enableFeedback: true,
-            dense: ss.settings.denseChatTiles.value,
+            dense: ss().settings.denseChatTiles.value,
             contentPadding: const EdgeInsets.only(left: 0),
-            visualDensity: ss.settings.denseChatTiles.value ? VisualDensity.compact : null,
-            minVerticalPadding: ss.settings.denseChatTiles.value ? 7.5 : 10,
+            visualDensity: ss().settings.denseChatTiles.value ? VisualDensity.compact : null,
+            minVerticalPadding: ss().settings.denseChatTiles.value ? 7.5 : 10,
             horizontalTitleGap: 10,
             title: Row(
               children: [
@@ -164,7 +164,7 @@ class _CupertinoTrailingState extends CustomState<CupertinoTrailing, void, Conve
             return query.findFirst();
           });
           if (message != null &&
-              ss.settings.statusIndicatorsOnChats.value &&
+              ss().settings.statusIndicatorsOnChats.value &&
               (message.dateDelivered != cachedLatestMessage?.dateDelivered || message.dateRead != cachedLatestMessage?.dateRead)) {
             setState(() {});
           }
@@ -210,7 +210,7 @@ class _CupertinoTrailingState extends CustomState<CupertinoTrailing, void, Conve
         children: <Widget>[
           Obx(() {
             String indicatorText = "";
-            if (ss.settings.statusIndicatorsOnChats.value && (cachedLatestMessage?.isFromMe ?? false) && !controller.chat.isGroup) {
+            if (ss().settings.statusIndicatorsOnChats.value && (cachedLatestMessage?.isFromMe ?? false) && !controller.chat.isGroup) {
               Indicator show = cachedLatestMessage?.indicatorToShow ?? Indicator.NONE;
               if (show != Indicator.NONE) {
                 indicatorText = show.name.toLowerCase().capitalizeFirst!;

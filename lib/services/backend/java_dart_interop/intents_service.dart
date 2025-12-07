@@ -35,7 +35,7 @@ class IntentsService extends GetxService {
     sub = ReceiveIntent.receivedIntentStream.listen((Intent? intent) {
       handleIntent(intent);
     }, onError: (err) {
-      Logger.error("Failed to get intent!", error: err);
+      Logger().error("Failed to get intent!", error: err);
     });
   }
 
@@ -158,10 +158,10 @@ class IntentsService extends GetxService {
   }
 
   Future<void> openChat(String? guid, {String? text, List<PlatformFile> attachments = const []}) async {
-    Logger.info("Handling open chat intent with guid: $guid", tag: "IntentsService");
+    Logger().info("Handling open chat intent with guid: $guid", tag: "IntentsService");
 
     if (guid == null) {
-      Logger.debug("Opening new chat creator..", tag: "IntentsService");
+      Logger().debug("Opening new chat creator..", tag: "IntentsService");
       await StartupTasks.waitForUI();
       ns.pushAndRemoveUntil(
         Get.context!,
@@ -172,12 +172,12 @@ class IntentsService extends GetxService {
         (route) => route.isFirst,
       );
     } else if (guid == "-1") {
-      Logger.debug("Popping all routes...", tag: "IntentsService");
+      Logger().debug("Popping all routes...", tag: "IntentsService");
       if (cm.activeChat != null) {
         Navigator.of(Get.context!).popUntil((route) => route.isFirst);
       }
     } else if (guid == "-2") {
-      Logger.debug("Opening server management panel...", tag: "IntentsService");
+      Logger().debug("Opening server management panel...", tag: "IntentsService");
       Navigator.of(Get.context!).push(
         ThemeSwitcher.buildPageRoute(
           builder: (BuildContext context) {
@@ -186,7 +186,7 @@ class IntentsService extends GetxService {
         ),
       );
     } else if (guid.contains("scheduled")) {
-      Logger.debug("Opening scheduled messages panel...", tag: "IntentsService");
+      Logger().debug("Opening scheduled messages panel...", tag: "IntentsService");
       Navigator.of(Get.context!).push(
         ThemeSwitcher.buildPageRoute(
           builder: (BuildContext context) {
@@ -195,15 +195,15 @@ class IntentsService extends GetxService {
         ),
       );
     } else {
-      Logger.debug("Opening existing chat (Attachments: ${attachments.length}; Text: ${text?.shorten(10) ?? 'N/A'})", tag: "IntentsService");
+      Logger().debug("Opening existing chat (Attachments: ${attachments.length}; Text: ${text?.shorten(10) ?? 'N/A'})", tag: "IntentsService");
       final chat = Chat.findOne(guid: guid);
       if (chat == null) {
-        Logger.debug("Chat not found with guid: $guid", tag: "IntentsService");
+        Logger().debug("Chat not found with guid: $guid", tag: "IntentsService");
         return;
       }
 
       bool chatIsOpen = cm.activeChat?.chat.guid == guid;
-      Logger.debug("Chat is active: $chatIsOpen", tag: "IntentsService");
+      Logger().debug("Chat is active: $chatIsOpen", tag: "IntentsService");
 
       setPickedAttachments() {
         if (attachments.isNotEmpty) {
@@ -216,7 +216,7 @@ class IntentsService extends GetxService {
       }
 
       if (!chatIsOpen) {
-        Logger.debug("Navigating to conversation view...", tag: "IntentsService");
+        Logger().debug("Navigating to conversation view...", tag: "IntentsService");
         await StartupTasks.waitForUI();
         await Future.delayed(const Duration(seconds: 1));
         await ns.pushAndRemoveUntil(
@@ -228,7 +228,7 @@ class IntentsService extends GetxService {
           (route) => route.isFirst,
         );
       } else {
-        Logger.debug("Chat is already open, not navigating", tag: "IntentsService");
+        Logger().debug("Chat is already open, not navigating", tag: "IntentsService");
         setPickedAttachments();
       }
     }

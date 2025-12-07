@@ -1,6 +1,7 @@
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/material.dart';
@@ -29,7 +30,7 @@ class _AdvancedThemingTileState extends OptimizedState<AdvancedThemingTile> {
           color: widget.tuple.item1.value,
           child: Container(
             decoration: widget.tuple.item1.value.computeDifference(ts.inDarkMode(context)
-                || ss.settings.skin.value == Skins.Samsung
+                || ss().settings.skin.value == Skins.Samsung
                 ? context.theme.colorScheme.background : context.theme.colorScheme.properSurface) < 15 ? BoxDecoration(
               border: Border.all(width: 0.5, color: context.theme.colorScheme.outline),
               borderRadius: BorderRadius.circular(20)
@@ -44,14 +45,14 @@ class _AdvancedThemingTileState extends OptimizedState<AdvancedThemingTile> {
                     map["data"]["colorScheme"][widget.tuple.item1.key] = result.value;
                     widget.currentTheme.data = ThemeStruct.fromMap(map).data;
                     widget.currentTheme.save();
-                    if (widget.currentTheme.name == ss.prefs.getString("selected-dark")) {
+                    if (widget.currentTheme.name == prefs().i.getString("selected-dark")) {
                       await ts.changeTheme(_context, dark: widget.currentTheme);
-                    } else if (widget.currentTheme.name == ss.prefs.getString("selected-light")) {
+                    } else if (widget.currentTheme.name == prefs().i.getString("selected-light")) {
                       await ts.changeTheme(_context, light: widget.currentTheme);
                     }
                   }
                 } else {
-                  if (ss.settings.monetTheming.value != Monet.none) {
+                  if (ss().settings.monetTheming.value != Monet.none) {
                     showSnackbar('Notice', "Turn off Material You to start customizing!");
                   } else {
                     showSnackbar('Notice', "Create a new theme to start customizing!");
@@ -67,14 +68,14 @@ class _AdvancedThemingTileState extends OptimizedState<AdvancedThemingTile> {
                     map["data"]["colorScheme"][widget.tuple.item2!.key] = result.value;
                     widget.currentTheme.data = ThemeStruct.fromMap(map).data;
                     widget.currentTheme.save();
-                    if (widget.currentTheme.name == ss.prefs.getString("selected-dark")) {
+                    if (widget.currentTheme.name == prefs().i.getString("selected-dark")) {
                       await ts.changeTheme(_context, dark: widget.currentTheme);
-                    } else if (widget.currentTheme.name == ss.prefs.getString("selected-light")) {
+                    } else if (widget.currentTheme.name == prefs().i.getString("selected-light")) {
                       await ts.changeTheme(_context, light: widget.currentTheme);
                     }
                   }
                 } else {
-                  if (ss.settings.monetTheming.value != Monet.none) {
+                  if (ss().settings.monetTheming.value != Monet.none) {
                     showSnackbar('Notice', "Turn off Material You to start customizing!");
                   } else {
                     showSnackbar('Notice', "Create a new theme to start customizing!");

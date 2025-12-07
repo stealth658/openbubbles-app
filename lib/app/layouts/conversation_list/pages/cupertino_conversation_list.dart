@@ -8,6 +8,7 @@ import 'package:bluebubbles/app/layouts/conversation_list/widgets/conversation_l
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/header/cupertino_header.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/app/wrappers/scrollbar_wrapper.dart';
+import 'package:bluebubbles/services/isolates/test_isolate.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -30,16 +31,20 @@ class CupertinoConversationListState extends OptimizedState<CupertinoConversatio
 
   bool get showUnknown => widget.parentController.showUnknownSenders;
 
-  Color get backgroundColor => ss.settings.windowEffect.value == WindowEffect.disabled ? context.theme.colorScheme.background : Colors.transparent;
+  Color get backgroundColor => ss().settings.windowEffect.value == WindowEffect.disabled ? context.theme.colorScheme.background : Colors.transparent;
 
   ConversationListController get controller => widget.parentController;
 
   @override
   void initState() {
     super.initState();
+
+    print("YESYESYES");
+    TestIsolate.testReturnInput();
+
     // update widget when background color changes
     if (kIsDesktop) {
-      ss.settings.windowEffect.listen((WindowEffect effect) {
+      ss().settings.windowEffect.listen((WindowEffect effect) {
         setState(() {});
       });
     }
@@ -48,9 +53,9 @@ class CupertinoConversationListState extends OptimizedState<CupertinoConversatio
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: ss.settings.windowEffect.value != WindowEffect.disabled ? Colors.transparent : context.theme.colorScheme.background,
+      backgroundColor: ss().settings.windowEffect.value != WindowEffect.disabled ? Colors.transparent : context.theme.colorScheme.background,
       extendBodyBehindAppBar: !showArchived && !showUnknown,
-      floatingActionButton: Obx(() => !ss.settings.moveChatCreatorToHeader.value && !showArchived && !showUnknown
+      floatingActionButton: Obx(() => !ss().settings.moveChatCreatorToHeader.value && !showArchived && !showUnknown
           ? ConversationListFAB(parentController: controller)
           : const SizedBox.shrink()),
       appBar: showArchived || showUnknown
@@ -82,9 +87,9 @@ class CupertinoConversationListState extends OptimizedState<CupertinoConversatio
                       }
 
                       int rowCount = context.mediaQuery.orientation == Orientation.portrait || kIsDesktop
-                          ? ss.settings.pinRowsPortrait.value
-                          : ss.settings.pinRowsLandscape.value;
-                      int colCount = kIsDesktop ? ss.settings.pinColumnsLandscape.value : ss.settings.pinColumnsPortrait.value;
+                          ? ss().settings.pinRowsPortrait.value
+                          : ss().settings.pinRowsLandscape.value;
+                      int colCount = kIsDesktop ? ss().settings.pinColumnsLandscape.value : ss().settings.pinColumnsPortrait.value;
                       int pinCount = _chats.length;
                       int usedRowCount = min((pinCount / colCount).ceil(), rowCount);
                       int maxOnPage = rowCount * colCount;
@@ -237,7 +242,7 @@ class CupertinoConversationListState extends OptimizedState<CupertinoConversatio
                               chat: chat,
                               controller: controller,
                             );
-                            final separator = Obx(() => !ss.settings.hideDividers.value
+                            final separator = Obx(() => !ss().settings.hideDividers.value
                                 ? Padding(
                                     padding: const EdgeInsets.only(left: 20),
                                     child: Divider(

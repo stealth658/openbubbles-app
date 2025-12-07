@@ -27,7 +27,7 @@ void hideFaceTimeOverlay(String callUuid) {
 /// Shows a FaceTime overlay with the given [callUuid], [caller], [chatIcon], and [isAudio]
 /// Saves the overlay route in [faceTimeOverlays]
 Future<void> showFaceTimeOverlay(String callUuid, String caller, Uint8List? chatIcon, bool isAudio) async {
-  if (ss.settings.redactedMode.value && ss.settings.hideContactInfo.value) {
+  if (ss().settings.redactedMode.value && ss().settings.hideContactInfo.value) {
     if (chatIcon != null) chatIcon = null;
     caller = faker.person.name();
   }
@@ -63,7 +63,7 @@ Future<void> showFaceTimeOverlay(String callUuid, String caller, Uint8List? chat
               child: Column(
                 children: [
                   Icon(
-                    ss.settings.skin.value == Skins.iOS ? CupertinoIcons.phone : Icons.call_outlined,
+                    ss().settings.skin.value == Skins.iOS ? CupertinoIcons.phone : Icons.call_outlined,
                     color: Colors.green,
                   ),
                   const Text(
@@ -87,7 +87,7 @@ Future<void> showFaceTimeOverlay(String callUuid, String caller, Uint8List? chat
               child: Column(
                 children: [
                   Icon(
-                    ss.settings.skin.value == Skins.iOS ? CupertinoIcons.phone_down : Icons.call_end_outlined,
+                    ss().settings.skin.value == Skins.iOS ? CupertinoIcons.phone_down : Icons.call_end_outlined,
                     color: Colors.red,
                   ),
                   const Text(

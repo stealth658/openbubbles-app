@@ -33,24 +33,24 @@ class _AvatarCropState extends OptimizedState<AvatarCrop> {
       case CropFailure(:final cause, :final stackTrace):
         Get.back();
         showSnackbar("Error", "Failed to crop image");
-        Logger.debug("Failed to crop image");
-        Logger.error(cause);
-        Logger.error(stackTrace);
+        Logger().debug("Failed to crop image");
+        Logger().error(cause);
+        Logger().error(stackTrace);
         return;
     }
 
-    String appDocPath = fs.appDocDir.path;
+    String appDocPath = fs().appDocDir.path;
     if (widget.index == null && widget.chat == null) {
       File file = File("$appDocPath/avatars/you/avatar-${croppedData.length}.jpg");
       if (!(await file.exists())) {
         await file.create(recursive: true);
       }
-      if (ss.settings.userAvatarPath.value != null) {
-        await File(ss.settings.userAvatarPath.value!).delete();
+      if (ss().settings.userAvatarPath.value != null) {
+        await File(ss().settings.userAvatarPath.value!).delete();
       }
       await file.writeAsBytes(croppedData);
-      ss.settings.userAvatarPath.value = file.path;
-      await ss.settings.saveOne("userAvatarPath");
+      ss().settings.userAvatarPath.value = file.path;
+      await ss().settings.saveOne("userAvatarPath");
       Get.back();
       Navigator.of(context).pop();
       showSnackbar("Notice", "User avatar saved successfully");
@@ -89,7 +89,7 @@ class _AvatarCropState extends OptimizedState<AvatarCrop> {
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
-        systemNavigationBarColor: ss.settings.immersiveMode.value ? Colors.transparent : context.theme.colorScheme.background, // navigation bar color
+        systemNavigationBarColor: ss().settings.immersiveMode.value ? Colors.transparent : context.theme.colorScheme.background, // navigation bar color
         systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
         statusBarColor: Colors.transparent, // status bar color
         statusBarIconBrightness: context.theme.colorScheme.brightness.opposite,

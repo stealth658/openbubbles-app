@@ -138,7 +138,7 @@ class _ConversationDetailsState extends OptimizedState<ConversationDetails> with
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
-        systemNavigationBarColor: ss.settings.immersiveMode.value ? Colors.transparent : context.theme.colorScheme.background, // navigation bar color
+        systemNavigationBarColor: ss().settings.immersiveMode.value ? Colors.transparent : context.theme.colorScheme.background, // navigation bar color
         systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
         statusBarColor: Colors.transparent, // status bar color
         statusBarIconBrightness: context.theme.colorScheme.brightness.opposite,
@@ -150,10 +150,10 @@ class _ConversationDetailsState extends OptimizedState<ConversationDetails> with
           colorScheme: context.theme.colorScheme.copyWith(
             primary: context.theme.colorScheme.bubble(context, chat.isIMessage),
             onPrimary: context.theme.colorScheme.onBubble(context, chat.isIMessage),
-            surface: ss.settings.monetTheming.value == Monet.full
+            surface: ss().settings.monetTheming.value == Monet.full
                 ? null
                 : (context.theme.extensions[BubbleColors] as BubbleColors?)?.receivedBubbleColor,
-            onSurface: ss.settings.monetTheming.value == Monet.full
+            onSurface: ss().settings.monetTheming.value == Monet.full
                 ? null
                 : (context.theme.extensions[BubbleColors] as BubbleColors?)?.onReceivedBubbleColor,
           ),
@@ -208,8 +208,8 @@ class _ConversationDetailsState extends OptimizedState<ConversationDetails> with
                     mouseCursor: MouseCursor.defer,
                     title: Text("Add ${iOS ? "Member" : "people"}", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
                     leading: Container(
-                      width: 40 * ss.settings.avatarScale.value,
-                      height: 40 * ss.settings.avatarScale.value,
+                      width: 40 * ss().settings.avatarScale.value,
+                      height: 40 * ss().settings.avatarScale.value,
                       decoration: BoxDecoration(
                         color: !iOS ? null : context.theme.colorScheme.properSurface,
                         shape: BoxShape.circle,
@@ -227,7 +227,7 @@ class _ConversationDetailsState extends OptimizedState<ConversationDetails> with
                   );
 
                   if (index > clippedParticipants.length) {
-                    if (ss.settings.enablePrivateAPI.value && chat.isIMessage && chat.isGroup && shouldShowMore) {
+                    if (ss().settings.enablePrivateAPI.value && chat.isIMessage && chat.isGroup && shouldShowMore) {
                       return addMember;
                     } else {
                       return const SizedBox.shrink();
@@ -247,8 +247,8 @@ class _ConversationDetailsState extends OptimizedState<ConversationDetails> with
                           style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary),
                         ),
                         leading: Container(
-                          width: 40 * ss.settings.avatarScale.value,
-                          height: 40 * ss.settings.avatarScale.value,
+                          width: 40 * ss().settings.avatarScale.value,
+                          height: 40 * ss().settings.avatarScale.value,
                           decoration: BoxDecoration(
                               color: !iOS ? null : context.theme.colorScheme.properSurface,
                               shape: BoxShape.circle,
@@ -261,7 +261,7 @@ class _ConversationDetailsState extends OptimizedState<ConversationDetails> with
                           ),
                         ),
                       );
-                    } else if (ss.settings.enablePrivateAPI.value && chat.isIMessage && chat.isGroup) {
+                    } else if (ss().settings.enablePrivateAPI.value && chat.isIMessage && chat.isGroup) {
                       return addMember;
                     } else {
                       return const SizedBox.shrink();
@@ -273,12 +273,12 @@ class _ConversationDetailsState extends OptimizedState<ConversationDetails> with
                     handle: chat.participants[index],
                     chat: chat,
                     canBeRemoved: chat.isGroup
-                        && ss.settings.enablePrivateAPI.value
+                        && ss().settings.enablePrivateAPI.value
                         && chat.isIMessage,
                   );
                 }, childCount: clippedParticipants.length + 2),
               ),
-            if (chat.participants.length > 2 && ss.settings.enablePrivateAPI.value && ss.serverDetailsSync().item4 >= 226)
+            if (chat.participants.length > 2 && ss().settings.enablePrivateAPI.value && ss().serverDetailsSync().item4 >= 226)
               SliverToBoxAdapter(
                 child: Builder(
                   builder: (context) {
@@ -286,8 +286,8 @@ class _ConversationDetailsState extends OptimizedState<ConversationDetails> with
                       mouseCursor: MouseCursor.defer,
                       title: Text("Leave ${iOS ? "Chat" : "chat"}", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.error)),
                       leading: Container(
-                        width: 40 * ss.settings.avatarScale.value,
-                        height: 40 * ss.settings.avatarScale.value,
+                        width: 40 * ss().settings.avatarScale.value,
+                        height: 40 * ss().settings.avatarScale.value,
                         decoration: BoxDecoration(
                           color: !iOS ? null : context.theme.colorScheme.properSurface,
                           shape: BoxShape.circle,

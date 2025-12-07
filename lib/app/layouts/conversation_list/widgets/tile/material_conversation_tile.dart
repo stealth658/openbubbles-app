@@ -52,9 +52,9 @@ class _MaterialConversationTileState extends CustomState<MaterialConversationTil
         ),
         child: ListTile(
           mouseCursor: MouseCursor.defer,
-          dense: ss.settings.denseChatTiles.value,
-          visualDensity: ss.settings.denseChatTiles.value ? VisualDensity.compact : null,
-          minVerticalPadding: ss.settings.denseChatTiles.value ? 7.5 : 10,
+          dense: ss().settings.denseChatTiles.value,
+          visualDensity: ss().settings.denseChatTiles.value ? VisualDensity.compact : null,
+          minVerticalPadding: ss().settings.denseChatTiles.value ? 7.5 : 10,
           title: Obx(() => ChatTitle(
                 parentController: controller,
                 style: context.theme.textTheme.bodyLarge!
@@ -166,7 +166,7 @@ class _MaterialTrailingState extends CustomState<MaterialTrailing, void, Convers
             return query.findFirst();
           });
           if (message != null &&
-              ss.settings.statusIndicatorsOnChats.value &&
+              ss().settings.statusIndicatorsOnChats.value &&
               (message.dateDelivered != cachedLatestMessage?.dateDelivered || message.dateRead != cachedLatestMessage?.dateRead)) {
             setState(() {});
           }
@@ -210,7 +210,7 @@ class _MaterialTrailingState extends CustomState<MaterialTrailing, void, Convers
         final muteType = GlobalChatService.muteState(controller.chat.guid).value;
 
         String indicatorText = "";
-        if (ss.settings.statusIndicatorsOnChats.value && (cachedLatestMessage?.isFromMe ?? false) && !controller.chat.isGroup) {
+        if (ss().settings.statusIndicatorsOnChats.value && (cachedLatestMessage?.isFromMe ?? false) && !controller.chat.isGroup) {
           Indicator show = cachedLatestMessage?.indicatorToShow ?? Indicator.NONE;
           if (show != Indicator.NONE) {
             indicatorText = show.name.toLowerCase().capitalizeFirst!;

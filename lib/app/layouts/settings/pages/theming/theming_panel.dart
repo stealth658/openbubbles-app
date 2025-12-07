@@ -1,6 +1,7 @@
 import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/content/next_button.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
+import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
 import 'package:bluebubbles/utils/window_effects.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/theming/avatar/custom_avatar_color_panel.dart';
@@ -37,7 +38,7 @@ class ThemingPanelController extends StatefulController {
       updateObx(() async {
         modes.value = await FlutterDisplayMode.supported;
         refreshRates.value = modes.map((e) => e.refreshRate.round()).toSet().toList();
-        currentMode.value = (await ss.settings.getDisplayMode()).refreshRate.round();
+        currentMode.value = (await ss().settings.getDisplayMode()).refreshRate.round();
       });
     }
   }
@@ -103,9 +104,9 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                       child: Text("Avatar Scale Factor", style: context.theme.textTheme.bodyLarge),
                     ),
                     Obx(() => SettingsSlider(
-                        startingVal: ss.settings.avatarScale.value.toDouble(),
+                        startingVal: ss().settings.avatarScale.value.toDouble(),
                         update: (double val) {
-                          ss.settings.avatarScale.value = val;
+                          ss().settings.avatarScale.value = val;
                         },
                         onChangeEnd: (double val) {
                           saveSettings();
@@ -125,11 +126,11 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                   backgroundColor: tileColor,
                   children: [
                     Obx(() => SettingsOptions<Skins>(
-                          initial: ss.settings.skin.value,
+                          initial: ss().settings.skin.value,
                           onChanged: (val) async {
                             if (val == null) return;
                             await cm.setAllInactive();
-                            ss.settings.skin.value = val;
+                            ss().settings.skin.value = val;
                             saveSettings();
                             setState(() {});
                             eventDispatcher.emit('theme-update', null);
@@ -144,12 +145,12 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                     if (!kIsDesktop)
                       Obx(() => SettingsSwitch(
                             onChanged: (bool val) {
-                              ss.settings.tabletMode.value = val;
+                              ss().settings.tabletMode.value = val;
                               saveSettings();
                               // update the conversation view UI
                               eventDispatcher.emit('split-refresh', null);
                             },
-                            initialVal: ss.settings.tabletMode.value,
+                            initialVal: ss().settings.tabletMode.value,
                             title: "Tablet Mode",
                             backgroundColor: tileColor,
                             subtitle: "Enables tablet mode (split view) depending on screen width",
@@ -159,7 +160,7 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                     if (!kIsWeb && !kIsDesktop)
                       Obx(() => SettingsSwitch(
                             onChanged: (bool val) {
-                              ss.settings.immersiveMode.value = val;
+                              ss().settings.immersiveMode.value = val;
                               saveSettings();
                               if (val) {
                                 SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
@@ -169,7 +170,7 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                               }
                               eventDispatcher.emit('theme-update', null);
                             },
-                            initialVal: ss.settings.immersiveMode.value,
+                            initialVal: ss().settings.immersiveMode.value,
                             title: "Immersive Mode",
                             backgroundColor: tileColor,
                             subtitle:
@@ -193,50 +194,50 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                   SettingsSection(backgroundColor: tileColor, children: [
                     Obx(
                       () => SettingsOptions<WindowEffect>(
-                        initial: ss.settings.windowEffect.value,
+                        initial: ss().settings.windowEffect.value,
                         options: WindowEffects.effects,
                         textProcessing: (WindowEffect effect) => effect.toString().substring("WindowEffect.".length),
                         onChanged: (WindowEffect? effect) async {
-                          bool defaultOpacityLight = ss.settings.windowEffectCustomOpacityLight.value ==
+                          bool defaultOpacityLight = ss().settings.windowEffectCustomOpacityLight.value ==
                               WindowEffects.defaultOpacity(dark: false);
-                          bool defaultOpacityDark = ss.settings.windowEffectCustomOpacityDark.value ==
+                          bool defaultOpacityDark = ss().settings.windowEffectCustomOpacityDark.value ==
                               WindowEffects.defaultOpacity(dark: true);
                           effect ??= WindowEffect.disabled;
-                          ss.settings.windowEffect.value = effect;
+                          ss().settings.windowEffect.value = effect;
                           if (defaultOpacityLight) {
-                            ss.settings.windowEffectCustomOpacityLight.value =
+                            ss().settings.windowEffectCustomOpacityLight.value =
                                 WindowEffects.defaultOpacity(dark: false);
                           }
                           if (defaultOpacityDark) {
-                            ss.settings.windowEffectCustomOpacityDark.value = WindowEffects.defaultOpacity(dark: true);
+                            ss().settings.windowEffectCustomOpacityDark.value = WindowEffects.defaultOpacity(dark: true);
                           }
-                          await ss.prefs.setString('window-effect', effect.toString());
+                          await prefs().i.setString('window-effect', effect.toString());
                           await WindowEffects.setEffect(color: context.theme.colorScheme.background);
                           saveSettings();
                         },
                         title: "Window Effect",
                         subtitle:
-                            "${WindowEffects.descriptions[ss.settings.windowEffect.value]}\n\nOperating System Version: ${Platform.operatingSystemVersion}\nBuild number: ${parsedWindowsVersion()}${parsedWindowsVersion() < 22000 && ss.settings.windowEffect.value == WindowEffect.acrylic ? "\n\n⚠️ This effect causes window movement lag on Windows 10" : ""}",
+                            "${WindowEffects.descriptions[ss().settings.windowEffect.value]}\n\nOperating System Version: ${Platform.operatingSystemVersion}\nBuild number: ${parsedWindowsVersion()}${parsedWindowsVersion() < 22000 && ss().settings.windowEffect.value == WindowEffect.acrylic ? "\n\n⚠️ This effect causes window movement lag on Windows 10" : ""}",
                         secondaryColor: headerColor,
                         capitalize: true,
                       ),
                     ),
-                    if (ss.settings.skin.value == Skins.iOS)
+                    if (ss().settings.skin.value == Skins.iOS)
                       Obx(() => SettingsSubtitle(
                             unlimitedSpace: true,
                             subtitle:
-                                "${WindowEffects.descriptions[ss.settings.windowEffect.value]}\n\nOperating System Version: ${Platform.operatingSystemVersion}\nBuild number: ${parsedWindowsVersion()}${parsedWindowsVersion() < 22000 && ss.settings.windowEffect.value == WindowEffect.acrylic ? "\n\n⚠️ This effect causes window movement lag on Windows 10" : ""}",
+                                "${WindowEffects.descriptions[ss().settings.windowEffect.value]}\n\nOperating System Version: ${Platform.operatingSystemVersion}\nBuild number: ${parsedWindowsVersion()}${parsedWindowsVersion() < 22000 && ss().settings.windowEffect.value == WindowEffect.acrylic ? "\n\n⚠️ This effect causes window movement lag on Windows 10" : ""}",
                           )),
                     Obx(() {
                       if (WindowEffects.dependsOnColor() &&
                           !WindowEffects.isDark(color: context.theme.colorScheme.background)) {
                         return SettingsTile(
                           title: "Background Opacity (Light)",
-                          trailing: ss.settings.windowEffectCustomOpacityLight.value !=
+                          trailing: ss().settings.windowEffectCustomOpacityLight.value !=
                                   WindowEffects.defaultOpacity(dark: false)
                               ? ElevatedButton(
                                   onPressed: () {
-                                    ss.settings.windowEffectCustomOpacityLight.value =
+                                    ss().settings.windowEffectCustomOpacityLight.value =
                                         WindowEffects.defaultOpacity(dark: false);
                                     saveSettings();
                                   },
@@ -251,12 +252,12 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                       if (WindowEffects.dependsOnColor() &&
                           !WindowEffects.isDark(color: context.theme.colorScheme.background)) {
                         return SettingsSlider(
-                          startingVal: ss.settings.windowEffectCustomOpacityLight.value,
+                          startingVal: ss().settings.windowEffectCustomOpacityLight.value,
                           max: 1,
                           min: 0,
                           divisions: 100,
                           formatValue: (value) => value.toStringAsFixed(2),
-                          update: (value) => ss.settings.windowEffectCustomOpacityLight.value = value,
+                          update: (value) => ss().settings.windowEffectCustomOpacityLight.value = value,
                           onChangeEnd: (value) {
                             saveSettings();
                           },
@@ -269,11 +270,11 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                           WindowEffects.isDark(color: context.theme.colorScheme.background)) {
                         return SettingsTile(
                           title: "Background Opacity (Dark)",
-                          trailing: ss.settings.windowEffectCustomOpacityDark.value !=
+                          trailing: ss().settings.windowEffectCustomOpacityDark.value !=
                                   WindowEffects.defaultOpacity(dark: true)
                               ? ElevatedButton(
                                   onPressed: () {
-                                    ss.settings.windowEffectCustomOpacityDark.value =
+                                    ss().settings.windowEffectCustomOpacityDark.value =
                                         WindowEffects.defaultOpacity(dark: true);
                                     saveSettings();
                                   },
@@ -288,12 +289,12 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                       if (WindowEffects.dependsOnColor() &&
                           WindowEffects.isDark(color: context.theme.colorScheme.background)) {
                         return SettingsSlider(
-                          startingVal: ss.settings.windowEffectCustomOpacityDark.value,
+                          startingVal: ss().settings.windowEffectCustomOpacityDark.value,
                           max: 1,
                           min: 0,
                           divisions: 100,
                           formatValue: (value) => value.toStringAsFixed(2),
-                          update: (value) => ss.settings.windowEffectCustomOpacityDark.value = value,
+                          update: (value) => ss().settings.windowEffectCustomOpacityDark.value = value,
                           onChangeEnd: (value) {
                             saveSettings();
                           },
@@ -308,14 +309,14 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                   children: [
                     if (kIsDesktop)
                       Obx(() => SettingsSwitch(
-                            initialVal: ss.settings.useDesktopAccent.value,
+                            initialVal: ss().settings.useDesktopAccent.value,
                             backgroundColor: tileColor,
                             title:
                                 "Use ${Platform.isWindows ? "Windows" : Platform.isLinux ? "Linux" : "MacOS"} Accent Color",
                             subtitle:
                                 "Apply the ${Platform.isWindows ? "Windows" : Platform.isLinux ? "Linux" : "MacOS"} accent color to your theme",
                             onChanged: (value) async {
-                              ss.settings.useDesktopAccent.value = value;
+                              ss().settings.useDesktopAccent.value = value;
                               saveSettings();
                               await ts.refreshDesktopAccent(context);
                             },
@@ -343,18 +344,18 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                           showMonetDialog(context);
                         },
                         child: SettingsOptions<Monet>(
-                          initial: ss.settings.monetTheming.value,
+                          initial: ss().settings.monetTheming.value,
                           onChanged: (val) async {
                             // disable colors from music
                             final currentTheme = ThemeStruct.getLightTheme();
                             if (currentTheme.name == "Music Theme ☀" || currentTheme.name == "Music Theme 🌙") {
-                              ss.settings.colorsFromMedia.value = false;
-                              ss.saveSettings(ss.settings);
+                              ss().settings.colorsFromMedia.value = false;
+                              ss().saveSettings(ss().settings);
                               ThemeStruct previousDark = await ts.revertToPreviousDarkTheme();
                               ThemeStruct previousLight = await ts.revertToPreviousLightTheme();
                               await ts.changeTheme(context, light: previousLight, dark: previousDark);
                             }
-                            ss.settings.monetTheming.value = val ?? Monet.none;
+                            ss().settings.monetTheming.value = val ?? Monet.none;
                             saveSettings();
                             await ts.refreshMonet(context);
                           },
@@ -377,17 +378,17 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                               try {
                                 await mcs.invokeMethod("start-notification-listener");
                                 // disable monet theming if music theme enabled
-                                ss.settings.monetTheming.value = Monet.none;
+                                ss().settings.monetTheming.value = Monet.none;
                                 saveSettings();
                                 var allThemes = ThemeStruct.getThemes();
                                 var currentLight = ThemeStruct.getLightTheme();
                                 var currentDark = ThemeStruct.getDarkTheme();
-                                await ss.prefs.setString("previous-light", currentLight.name);
-                                await ss.prefs.setString("previous-dark", currentDark.name);
+                                await prefs().i.setString("previous-light", currentLight.name);
+                                await prefs().i.setString("previous-dark", currentDark.name);
                                 await ts.changeTheme(context,
                                     light: allThemes.firstWhere((element) => element.name == "Music Theme ☀"),
                                     dark: allThemes.firstWhere((element) => element.name == "Music Theme 🌙"));
-                                ss.settings.colorsFromMedia.value = val;
+                                ss().settings.colorsFromMedia.value = val;
                                 saveSettings();
                               } catch (e) {
                                 showSnackbar("Error",
@@ -395,18 +396,18 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                               }
                             } else {
                               var allThemes = ThemeStruct.getThemes();
-                              final lightName = ss.prefs.getString("previous-light");
-                              final darkName = ss.prefs.getString("previous-dark");
+                              final lightName = prefs().i.getString("previous-light");
+                              final darkName = prefs().i.getString("previous-dark");
                               var previousLight = allThemes.firstWhere((e) => e.name == lightName);
                               var previousDark = allThemes.firstWhere((e) => e.name == darkName);
-                              await ss.prefs.remove("previous-light");
-                              await ss.prefs.remove("previous-dark");
+                              await prefs().i.remove("previous-light");
+                              await prefs().i.remove("previous-dark");
                               await ts.changeTheme(context, light: previousLight, dark: previousDark);
-                              ss.settings.colorsFromMedia.value = val;
+                              ss().settings.colorsFromMedia.value = val;
                               saveSettings();
                             }
                           },
-                          initialVal: ss.settings.colorsFromMedia.value,
+                          initialVal: ss().settings.colorsFromMedia.value,
                           title: "Colors from Media",
                           backgroundColor: tileColor,
                           subtitle: "Pull app colors from currently playing media",
@@ -421,10 +422,10 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                     if (!kIsWeb && !kIsDesktop) const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     Obx(() => SettingsSwitch(
                           onChanged: (bool val) {
-                            ss.settings.colorfulAvatars.value = val;
+                            ss().settings.colorfulAvatars.value = val;
                             saveSettings();
                           },
-                          initialVal: ss.settings.colorfulAvatars.value,
+                          initialVal: ss().settings.colorfulAvatars.value,
                           title: "Colorful Avatars",
                           backgroundColor: tileColor,
                           subtitle: "Gives letter avatars a splash of color",
@@ -432,10 +433,10 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                     const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     Obx(() => SettingsSwitch(
                           onChanged: (bool val) {
-                            ss.settings.colorfulBubbles.value = val;
+                            ss().settings.colorfulBubbles.value = val;
                             saveSettings();
                           },
-                          initialVal: ss.settings.colorfulBubbles.value,
+                          initialVal: ss().settings.colorfulBubbles.value,
                           title: "Colorful Bubbles",
                           backgroundColor: tileColor,
                           subtitle: "Gives received message bubbles a splash of color",
@@ -488,8 +489,8 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                                 onChanged: (val) async {
                                   if (val == null) return;
                                   controller.currentMode.value = val;
-                                  ss.settings.refreshRate.value = controller.currentMode.value;
-                                  ss.saveSettings(null, true);
+                                  ss().settings.refreshRate.value = controller.currentMode.value;
+                                  ss().saveSettings(null, true);
                                 },
                                 options: controller.refreshRates,
                                 textProcessing: (val) => val == 0 ? "Auto" : "$val Hz",
@@ -507,7 +508,7 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                   backgroundColor: tileColor,
                   children: [
                     Obx(() {
-                      if (!fs.fontExistsOnDisk.value) {
+                      if (!fs().fontExistsOnDisk.value) {
                         return SettingsTile(
                           onTap: () async {
                             if (kIsWeb) {
@@ -516,7 +517,7 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                                     .pickFiles(withData: true, type: FileType.custom, allowedExtensions: ["ttf"]);
                                 if (res == null || res.files.isEmpty || res.files.first.bytes == null) return;
 
-                                final txn = fs.webDb.transaction("BBStore", idbModeReadWrite);
+                                final txn = fs().webDb.transaction("BBStore", idbModeReadWrite);
                                 final store = txn.objectStore("BBStore");
                                 await store.put(res.files.first.bytes!, "iosFont");
                                 await txn.completed;
@@ -527,7 +528,7 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                                   Future<ByteData>.value(cachedFontBytes),
                                 );
                                 await fontLoader.load();
-                                fs.fontExistsOnDisk.value = true;
+                                fs().fontExistsOnDisk.value = true;
                                 return showSnackbar("Notice", "Font loaded");
                               } catch (_) {
                                 return showSnackbar("Error",
@@ -604,7 +605,7 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                                 }
                               },
                             ).catchError((err, stack) {
-                              Logger.error("Failed to fetch font!", error: err, trace: stack);
+                              Logger().error("Failed to fetch font!", error: err, trace: stack);
                               showSnackbar("Error", "Failed to fetch font! Error: ${err.toString()}");
                               return Response(requestOptions: RequestOptions(path: ''));
                             });
@@ -613,10 +614,10 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                             if (response.statusCode == 200) {
                               try {
                                 final Uint8List data = response.data;
-                                final file = File("${fs.appDocDir.path}/font/apple.ttf");
+                                final file = File("${fs().appDocDir.path}/font/apple.ttf");
                                 await file.create(recursive: true);
                                 await file.writeAsBytes(data);
-                                fs.fontExistsOnDisk.value = true;
+                                fs().fontExistsOnDisk.value = true;
                                 final fontLoader = FontLoader("Apple Color Emoji");
                                 final cachedFontBytes = ByteData.view(data.buffer);
                                 fontLoader.addFont(
@@ -625,7 +626,7 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                                 await fontLoader.load();
                                 showSnackbar("Notice", "Font loaded");
                               } catch (e, stack) {
-                                Logger.error("Failed to load font!", error: e, trace: stack);
+                                Logger().error("Failed to load font!", error: e, trace: stack);
                                 showSnackbar("Error", "Failed to load font! Error: ${e.toString()}");
                               }
                             } else {
@@ -642,19 +643,19 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                       }
                     }),
                     Obx(() {
-                      if (fs.fontExistsOnDisk.value) {
+                      if (fs().fontExistsOnDisk.value) {
                         return SettingsTile(
                           onTap: () async {
                             if (kIsWeb) {
-                              final txn = fs.webDb.transaction("BBStore", idbModeReadWrite);
+                              final txn = fs().webDb.transaction("BBStore", idbModeReadWrite);
                               final store = txn.objectStore("BBStore");
                               await store.delete("iosFont");
                               await txn.completed;
                             } else {
-                              final file = File("${fs.appDocDir.path}/font/apple.ttf");
+                              final file = File("${fs().appDocDir.path}/font/apple.ttf");
                               await file.delete();
                             }
-                            fs.fontExistsOnDisk.value = false;
+                            fs().fontExistsOnDisk.value = false;
                             showSnackbar("Notice", "Font removed, restart the app for changes to take effect");
                           },
                           title: "Delete ${kIsWeb ? "" : "iOS "}Emoji Font",
@@ -674,7 +675,7 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
   }
 
   void saveSettings() {
-    ss.saveSettings();
+    ss().saveSettings();
   }
 
   void showMonetDialog(BuildContext context) {

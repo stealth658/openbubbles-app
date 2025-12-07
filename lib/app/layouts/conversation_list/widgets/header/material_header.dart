@@ -29,7 +29,7 @@ class _MaterialHeaderState extends CustomState<MaterialHeader, void, Conversatio
         Obx(() => Container(
               height: controller.selectedChats.isEmpty ? 100 : null,
               width: ns.width(context),
-              color: ss.settings.windowEffect.value == WindowEffect.disabled ? context.theme.colorScheme.properSurface : Colors.transparent,
+              color: ss().settings.windowEffect.value == WindowEffect.disabled ? context.theme.colorScheme.properSurface : Colors.transparent,
             )),
         AnimatedSwitcher(
           duration: const Duration(milliseconds: 500),
@@ -40,7 +40,7 @@ class _MaterialHeaderState extends CustomState<MaterialHeader, void, Conversatio
                       return Container(
                         decoration: BoxDecoration(
                           color: !ns.isAvatarOnly(context) && !showArchived && !showUnknown ? context.theme.colorScheme.properSurface
-                              .withValues(alpha: ss.settings.windowEffect.value == WindowEffect.disabled ? 1 : 0.7) : Colors.transparent,
+                              .withValues(alpha: ss().settings.windowEffect.value == WindowEffect.disabled ? 1 : 0.7) : Colors.transparent,
                         ),
                         child: Padding(
                               padding: const EdgeInsets.only(left: 5.0, top: 5.0, bottom: 5.0),

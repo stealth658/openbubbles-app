@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:collection/collection.dart';
@@ -51,7 +52,7 @@ class Database {
       // ignore: deprecated_member_use_from_same_package
       themeObjects = store.box<ThemeObject>();
 
-      if (!ss.settings.finishedSetup.value) {
+      if (!ss().settings.finishedSetup.value) {
         Database.attachments.removeAll();
         Database.chats.removeAll();
         Database.contacts.removeAll();
@@ -63,26 +64,26 @@ class Database {
         themeObjects.removeAll();
       }
     } catch (e, s) {
-      Logger.error("Failed to setup ObjectBox boxes!", error: e, trace: s);
+      Logger().error("Failed to setup ObjectBox boxes!", error: e, trace: s);
     }
 
     try {
       if (Database.themes.isEmpty()) {
-        await ss.prefs.setString("selected-dark", "OLED Dark");
-        await ss.prefs.setString("selected-light", "Bright White");
+        await prefs().i.setString("selected-dark", "OLED Dark");
+        await prefs().i.setString("selected-light", "Bright White");
         Database.themes.putMany(ts.defaultThemes);
       }
     } catch (e, s) {
-      Logger.error("Failed to seed themes!", error: e, trace: s);
+      Logger().error("Failed to seed themes!", error: e, trace: s);
     }
 
     try {
       _performDatabaseMigrations();
 
       // So long as migrations succeed, we can update the database version
-      await ss.prefs.setInt('dbVersion', version);
+      await prefs().i.setInt('dbVersion', version);
     } catch (e, s) {
-      Logger.error("Failed to perform database migrations!", error: e, trace: s);
+      Logger().error("Failed to perform database migrations!", error: e, trace: s);
     }
 
     initComplete.complete();
@@ -93,79 +94,79 @@ class Database {
   }
 
   static Future<void> _initDatabaseMobile({bool? storeOpenStatus}) async {
-    Directory objectBoxDirectory = Directory(join(fs.appDocDir.path, 'objectbox'));
+    Directory objectBoxDirectory = Directory(join(fs().appDocDir.path, 'objectbox'));
     final isStoreOpen = storeOpenStatus ?? Store.isOpen(objectBoxDirectory.path);
 
     try {
       if (isStoreOpen) {
-        Logger.info("Attempting to attach to an existing ObjectBox store...");
+        Logger().info("Attempting to attach to an existing ObjectBox store...");
         store = Store.attach(getObjectBoxModel(), objectBoxDirectory.path);
-        Logger.info("Successfully attached to an existing ObjectBox store");
+        Logger().info("Successfully attached to an existing ObjectBox store");
       } else {
-        Logger.info("Opening new ObjectBox store from path: ${objectBoxDirectory.path}");
+        Logger().info("Opening new ObjectBox store from path: ${objectBoxDirectory.path}");
         store = await openStore(directory: objectBoxDirectory.path);
       }
     } catch (e, s) {
-      Logger.error("Failed to open ObjectBox store!", error: e, trace: s);
+      Logger().error("Failed to open ObjectBox store!", error: e, trace: s);
 
       if (e.toString().contains("another store is still open using the same path")) {
-        Logger.info("Retrying to attach to an existing ObjectBox store");
+        Logger().info("Retrying to attach to an existing ObjectBox store");
         await _initDatabaseMobile(storeOpenStatus: true);
       }
     }
   }
 
   static Future<void> _initDatabaseDesktop() async {
-    Directory objectBoxDirectory = Directory(join(fs.appDocDir.path, 'objectbox'));
+    Directory objectBoxDirectory = Directory(join(fs().appDocDir.path, 'objectbox'));
 
     try {
       objectBoxDirectory.createSync(recursive: true);
-      if (ss.prefs.getBool('use-custom-path') == true && ss.prefs.getString('custom-path') != null) {
-        Directory oldCustom = Directory(join(ss.prefs.getString('custom-path')!, 'objectbox'));
+      if (prefs().i.getBool('use-custom-path') == true && prefs().i.getString('custom-path') != null) {
+        Directory oldCustom = Directory(join(prefs().i.getString('custom-path')!, 'objectbox'));
         if (oldCustom.existsSync()) {
-          Logger.info("Detected prior use of custom path option. Migrating...");
+          Logger().info("Detected prior use of custom path option. Migrating...");
           await copyPath(oldCustom.path, objectBoxDirectory.path);
         }
-        await ss.prefs.remove('use-custom-path');
-        await ss.prefs.remove('custom-path');
+        await prefs().i.remove('use-custom-path');
+        await prefs().i.remove('custom-path');
       }
 
-      Logger.info("Opening ObjectBox store from path: ${objectBoxDirectory.path}");
+      Logger().info("Opening ObjectBox store from path: ${objectBoxDirectory.path}");
       store = await openStore(directory: objectBoxDirectory.path);
     } catch (e, s) {
       if (Platform.isLinux) {
-        Logger.debug("Another instance is probably running. Sending foreground signal");
-        final instanceFile = File(join(fs.appDocDir.path, '.instance'));
+        Logger().debug("Another instance is probably running. Sending foreground signal");
+        final instanceFile = File(join(fs().appDocDir.path, '.instance'));
         instanceFile.openSync(mode: FileMode.write).closeSync();
         exit(0);
       }
 
-      Logger.error("Failed to initialize desktop database!", error: e, trace: s);
+      Logger().error("Failed to initialize desktop database!", error: e, trace: s);
     }
   }
 
   static void _performDatabaseMigrations({int? versionOverride}) {
-    int version = versionOverride ?? ss.prefs.getInt('dbVersion') ?? (ss.settings.finishedSetup.value ? 1 : Database.version);
+    int version = versionOverride ?? prefs().i.getInt('dbVersion') ?? (ss().settings.finishedSetup.value ? 1 : Database.version);
     if (version <= Database.version) return;
 
     final Stopwatch s = Stopwatch();
     s.start();
 
     int nextVersion = version;
-    Logger.debug("Performing database migration from version $version to ${Database.version}", tag: "DB-Migration");
+    Logger().debug("Performing database migration from version $version to ${Database.version}", tag: "DB-Migration");
     switch (Database.version) {
       // Version 2 changed handleId to match the server side ROWID, rather than client side ROWID
       case 2:
-        Logger.info("Fetching all messages and handles...", tag: "DB-Migration");
+        Logger().info("Fetching all messages and handles...", tag: "DB-Migration");
         final messages = Database.messages.getAll();
         if (messages.isNotEmpty) {
           final handles = Database.handles.getAll();
-          Logger.info("Replacing handleIds for messages...", tag: "DB-Migration");
+          Logger().info("Replacing handleIds for messages...", tag: "DB-Migration");
           for (Message m in messages) {
             if (m.isFromMe! || m.handleId == 0 || m.handleId == null) continue;
             m.handleId = handles.firstWhereOrNull((e) => e.id == m.handleId)?.originalROWID ?? m.handleId;
           }
-          Logger.info("Final save...", tag: "DB-Migration");
+          Logger().info("Final save...", tag: "DB-Migration");
           Database.messages.putMany(messages);
         }
 
@@ -173,9 +174,9 @@ class Database {
       // Version 3 modifies chat typing indicators and read receipts values to follow global setting initially
       case 3:
         final chats = Database.chats.getAll();
-        final papi = ss.settings.enablePrivateAPI.value;
-        final typeGlobal = ss.settings.privateSendTypingIndicators.value;
-        final readGlobal = ss.settings.privateMarkChatAsRead.value;
+        final papi = ss().settings.enablePrivateAPI.value;
+        final typeGlobal = ss().settings.privateSendTypingIndicators.value;
+        final readGlobal = ss().settings.privateMarkChatAsRead.value;
         for (Chat c in chats) {
           if (papi && readGlobal && !(c.autoSendReadReceipts ?? true)) {
             // dont do anything
@@ -193,8 +194,8 @@ class Database {
         nextVersion = 3;
       // Version 4 saves FCM Data to the shared preferences for use in Tasker integration
       case 4:
-        ss.getFcmData();
-        ss.fcmData.save();
+        ss().getFcmData();
+        ss().fcmData.save();
         nextVersion = 4;
       case 5:
         // Find the Bright White theme and reset it back to the default (new colors)
@@ -217,7 +218,7 @@ class Database {
     }
 
     s.stop();
-    Logger.info("Completed database migration in ${s.elapsedMilliseconds}ms", tag: "DB-Migration");
+    Logger().info("Completed database migration in ${s.elapsedMilliseconds}ms", tag: "DB-Migration");
   }
 
   /// Wrapper for store.runInTransaction

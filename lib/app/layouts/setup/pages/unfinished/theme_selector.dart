@@ -21,7 +21,7 @@ class ThemeSelectorController extends GetxController {
       AdaptiveTheme.of(Get.context!).setThemeMode(AdaptiveThemeMode.values[selectedTheme.value - 1]);
     });
     ever(selectedSkin, (_) {
-      ss.settings.skin.value = Skins.values[selectedSkin.value - 1];
+      ss().settings.skin.value = Skins.values[selectedSkin.value - 1];
       setMessagesView();
       update();
     });
@@ -164,7 +164,7 @@ class ThemeSelector extends StatelessWidget {
       builder: (_) {
         return AnnotatedRegion<SystemUiOverlayStyle>(
           value: SystemUiOverlayStyle(
-            systemNavigationBarColor: ss.settings.immersiveMode.value ? Colors.transparent : context.theme.colorScheme.background, // navigation bar color
+            systemNavigationBarColor: ss().settings.immersiveMode.value ? Colors.transparent : context.theme.colorScheme.background, // navigation bar color
             systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
             statusBarColor: Colors.transparent, // status bar color
             statusBarIconBrightness: context.theme.colorScheme.brightness.opposite,

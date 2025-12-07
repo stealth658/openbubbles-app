@@ -13,6 +13,7 @@ import 'package:bluebubbles/app/layouts/conversation_view/pages/conversation_vie
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/app/wrappers/tablet_mode_wrapper.dart';
 import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
@@ -41,10 +42,10 @@ class ConversationListController extends StatefulController {
   ConversationListController({required this.showArchivedChats, required this.showUnknownSenders});
 
   void updateSelectedChats() {
-    if (ss.settings.skin.value == Skins.Material) {
+    if (ss().settings.skin.value == Skins.Material) {
       updateWidgets<MaterialHeader>(null);
       updateMaterialFAB();
-    } else if (ss.settings.skin.value == Skins.Samsung) {
+    } else if (ss().settings.skin.value == Skins.Samsung) {
       updateWidgets<SamsungFooter>(null);
       updateWidgets<ExpandedHeaderText>(null);
     }
@@ -124,16 +125,16 @@ class _ConversationListState extends CustomState<ConversationList, void, Convers
             ? "Unknown"
             : "Messages";
 
-    if (!ss.settings.reachedConversationList.value) {
+    if (!ss().settings.reachedConversationList.value) {
       Timer.periodic(const Duration(seconds: 1), (Timer t) {
         bool notInSettings = ns.isTabletMode(context)
             ? !Get.keys.containsKey(3) || Get.keys[3]?.currentContext == null
             : Get.rawRoute?.settings.name == "/";
         // This only runs once
         if (notInSettings) {
-          ss.settings.reachedConversationList.value = true;
-          ss.saveSettings();
-          ss.getServerDetails(refresh: true);
+          ss().settings.reachedConversationList.value = true;
+          ss().saveSettings();
+          ss().getServerDetails(refresh: true);
           t.cancel();
         }
       });
@@ -141,9 +142,9 @@ class _ConversationListState extends CustomState<ConversationList, void, Convers
 
     // Extra safety check to make sure Android doesn't open the last chat when opening the app
     if (kIsDesktop || kIsWeb) {
-      if (ss.prefs.getString('lastOpenedChat') != null &&
+      if (prefs().i.getString('lastOpenedChat') != null &&
           showAltLayoutContextless &&
-          cm.activeChat?.chat.guid != ss.prefs.getString('lastOpenedChat') &&
+          cm.activeChat?.chat.guid != prefs().i.getString('lastOpenedChat') &&
           !ls.isBubble) {
         WidgetsBinding.instance.addPostFrameCallback((_) async {
           if (kIsWeb) {
@@ -153,8 +154,8 @@ class _ConversationListState extends CustomState<ConversationList, void, Convers
             context,
             ConversationView(
                 chat: kIsWeb
-                    ? (await Chat.findOneWeb(guid: ss.prefs.getString('lastOpenedChat')))!
-                    : Chat.findOne(guid: ss.prefs.getString('lastOpenedChat'))!),
+                    ? (await Chat.findOneWeb(guid: prefs().i.getString('lastOpenedChat')))!
+                    : Chat.findOne(guid: prefs().i.getString('lastOpenedChat'))!),
             (route) => route.isFirst,
           );
         });
@@ -174,7 +175,7 @@ class _ConversationListState extends CustomState<ConversationList, void, Convers
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
-        systemNavigationBarColor: ss.settings.immersiveMode.value ? Colors.transparent : context.theme.colorScheme.background, // navigation bar color
+        systemNavigationBarColor: ss().settings.immersiveMode.value ? Colors.transparent : context.theme.colorScheme.background, // navigation bar color
         systemNavigationBarIconBrightness: brightness,
         statusBarColor: Colors.transparent, // status bar color
         statusBarIconBrightness: brightness.opposite,

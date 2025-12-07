@@ -15,7 +15,7 @@ import 'package:network_tools/network_tools.dart'
 
 class NetworkTasks {
   static Future<void> onConnect() async {
-    if (ss.settings.finishedSetup.value) {
+    if (ss().settings.finishedSetup.value) {
       
       // Separate functionality for android vs. other
       if (!Platform.isAndroid) {
@@ -29,7 +29,7 @@ class NetworkTasks {
       }
 
       // scan if server is on localhost
-      if (!kIsWeb && ss.settings.localhostPort.value != null) {
+      if (!kIsWeb && ss().settings.localhostPort.value != null) {
         detectLocalhost();
       }
 
@@ -47,7 +47,7 @@ class NetworkTasks {
   }
 
   static Future<void> detectLocalhost({bool createSnackbar = false}) async {
-    if (ss.settings.localhostPort.value == null || kIsWeb) {
+    if (ss().settings.localhostPort.value == null || kIsWeb) {
       http.originOverride = null;
       return;
     }
@@ -65,10 +65,10 @@ class NetworkTasks {
         List<String> localIpv4s = ((response.data?['data']?['local_ipv4s'] ?? []) as List).cast<String>();
         List<String> localIpv6s = ((response.data?['data']?['local_ipv6s'] ?? []) as List).cast<String>();
         String? address;
-        if (ss.settings.useLocalIpv6.value) {
+        if (ss().settings.useLocalIpv6.value) {
           for (String ip in localIpv6s) {
             for (String scheme in schemes) {
-              String addr = "$scheme://[$ip]:${ss.settings.localhostPort.value!}";
+              String addr = "$scheme://[$ip]:${ss().settings.localhostPort.value!}";
               try {
                 Response response = await http.ping(customUrl: addr);
                 if (response.data.toString().contains("pong")) {
@@ -76,7 +76,7 @@ class NetworkTasks {
                   break;
                 }
               } catch (ex) {
-                Logger.debug('Failed to connect to localhost addres: $addr');
+                Logger().debug('Failed to connect to localhost addres: $addr');
               }
             }
             if (address != null) break;
@@ -85,7 +85,7 @@ class NetworkTasks {
         if (address == null) {
           for (String ip in localIpv4s) {
             for (String scheme in schemes) {
-              String addr = "$scheme://$ip:${ss.settings.localhostPort.value!}";
+              String addr = "$scheme://$ip:${ss().settings.localhostPort.value!}";
               try {
                 final response = await http.ping(customUrl: addr);
                 if (response.data.toString().contains("pong")) {
@@ -93,7 +93,7 @@ class NetworkTasks {
                   break;
                 }
               } catch (ex) {
-                Logger.debug('Failed to connect to localhost addres: $addr');
+                Logger().debug('Failed to connect to localhost addres: $addr');
               }
             }
             if (address != null) break;
@@ -101,7 +101,7 @@ class NetworkTasks {
         }
 
         if (address != null) {
-          Logger.debug('Localhost Detected. Connected to $address');
+          Logger().debug('Localhost Detected. Connected to $address');
           if (createSnackbar) {
             showSnackbar('Localhost Detected', 'Connected to $address');
           }
@@ -120,14 +120,14 @@ class NetworkTasks {
     // to vendor information. That info is used to display metadata about an ActiveHost found
     // on the network via a port scan. We don't want that API call to happen on first-boot, nor
     // do we need it to.
-    await configureNetworkTools(fs.appDocDir.path, enableDebugging: kDebugMode);
+    await configureNetworkTools(fs().appDocDir.path, enableDebugging: kDebugMode);
 
-    Logger.debug("Falling back to port scanning");
+    Logger().debug("Falling back to port scanning");
     final wifiIP = await NetworkInfo().getWifiIP();
     if (wifiIP != null) {
       final stream = HostScannerService.instance.scanDevicesForSinglePort(
         wifiIP.substring(0, wifiIP.lastIndexOf('.')),
-        int.parse(ss.settings.localhostPort.value!),
+        int.parse(ss().settings.localhostPort.value!),
       );
       Set<ActiveHost> hosts = {};
       stream.listen((host) {
@@ -136,7 +136,7 @@ class NetworkTasks {
         String? address;
         for (ActiveHost h in hosts) {
           for (String scheme in schemes) {
-            String addr = "$scheme://${h.address}:${ss.settings.localhostPort.value!}";
+            String addr = "$scheme://${h.address}:${ss().settings.localhostPort.value!}";
             try {
               Response response = await http.ping(customUrl: addr);
               if (response.data.toString().contains("pong")) {
@@ -144,7 +144,7 @@ class NetworkTasks {
                 break;
               }
             } catch (ex) {
-              Logger.debug('Failed to connect to localhost addres: $addr');
+              Logger().debug('Failed to connect to localhost addres: $addr');
             }
           }
           if (address != null) break;

@@ -291,7 +291,7 @@ class Chat {
   bool? hasUnreadMessage;
   String? title;
   String get properTitle {
-    if (ss.settings.redactedMode.value && ss.settings.hideContactInfo.value) {
+    if (ss().settings.redactedMode.value && ss().settings.hideContactInfo.value) {
       return getTitle();
     }
     title ??= getTitle();
@@ -561,14 +561,14 @@ class Chat {
   /// Return whether or not the notification should be muted
   bool shouldMuteNotification(Message? message) {
     /// Filter unknown senders & sender doesn't have a contact, then don't notify
-    if (ss.settings.filterUnknownSenders.value &&
+    if (ss().settings.filterUnknownSenders.value &&
         participants.length == 1 &&
         participants.first.contact == null) {
       return true;
 
       /// Check if global text detection is on and notify accordingly
-    } else if (ss.settings.globalTextDetection.value.isNotEmpty) {
-      List<String> text = ss.settings.globalTextDetection.value.split(",");
+    } else if (ss().settings.globalTextDetection.value.isNotEmpty) {
+      List<String> text = ss().settings.globalTextDetection.value.split(",");
       for (String s in text) {
         if (message?.text?.toLowerCase().contains(s.toLowerCase()) ?? false) {
           return false;
@@ -606,7 +606,7 @@ class Chat {
     }
 
     /// If reaction and notify reactions off, then don't notify, otherwise notify
-    return !ss.settings.notifyReactions.value &&
+    return !ss().settings.notifyReactions.value &&
         ReactionTypes.toList().contains(message?.associatedMessageType ?? "");
   }
 
@@ -676,7 +676,7 @@ class Chat {
           }
         );
       }
-      if (privateMark && ss.settings.enablePrivateAPI.value && (autoSendReadReceipts ?? ss.settings.privateMarkChatAsRead.value)) {
+      if (privateMark && ss().settings.enablePrivateAPI.value && (autoSendReadReceipts ?? ss().settings.privateMarkChatAsRead.value)) {
         if (!hasUnread) {
           http.markChatRead(guid);
         } else if (hasUnread) {
@@ -709,7 +709,7 @@ class Chat {
     } catch (ex, stacktrace) {
       newMessage = Message.findOne(guid: message.guid);
       if (newMessage == null) {
-        Logger.error("Failed to add message (GUID: ${message.guid}) to chat (GUID: $guid)", error: ex, trace: stacktrace);
+        Logger().error("Failed to add message (GUID: ${message.guid}) to chat (GUID: $guid)", error: ex, trace: stacktrace);
       }
     }
     // Save any attachments
@@ -730,7 +730,7 @@ class Chat {
           save(updateDateDeleted: true);
           await chats.addChat(this);
         }
-        if (isArchived! && !_latestMessage!.isFromMe! && ss.settings.unarchiveOnNewMessage.value) {
+        if (isArchived! && !_latestMessage!.isFromMe! && ss().settings.unarchiveOnNewMessage.value) {
           toggleArchived(false);
         }
       }
@@ -894,7 +894,7 @@ class Chat {
     if (id == null) return this;
     this.autoSendReadReceipts = autoSendReadReceipts;
     save(updateAutoSendReadReceipts: true);
-    if (autoSendReadReceipts ?? ss.settings.privateMarkChatAsRead.value) {
+    if (autoSendReadReceipts ?? ss().settings.privateMarkChatAsRead.value) {
       http.markChatRead(guid);
     }
     return this;
@@ -904,7 +904,7 @@ class Chat {
     if (id == null) return this;
     this.autoSendTypingIndicators = autoSendTypingIndicators;
     save(updateAutoSendTypingIndicators: true);
-    if (!(autoSendTypingIndicators ?? ss.settings.privateSendTypingIndicators.value)) {
+    if (!(autoSendTypingIndicators ?? ss().settings.privateSendTypingIndicators.value)) {
       socket.sendMessage("stopped-typing", {"chatGuid": guid});
     }
     return this;
@@ -1029,7 +1029,7 @@ class Chat {
   static Future<void> getIcon(Chat c, {bool force = false}) async {
     if (!force && c.lockChatIcon) return;
     final response = await http.getChatIcon(c.guid).catchError((err, stack) async {
-      Logger.error("Failed to get chat icon for chat ${c.getTitle()}", error: err, trace: stack);
+      Logger().error("Failed to get chat icon for chat ${c.getTitle()}", error: err, trace: stack);
       return Response(statusCode: 500, requestOptions: RequestOptions(path: ""));
     });
     if (response.statusCode != 200 || isNullOrEmpty(response.data)) {
@@ -1039,8 +1039,8 @@ class Chat {
         c.save(updateCustomAvatarPath: true);
       }
     } else {
-      Logger.debug("Got chat icon for chat ${c.getTitle()}");
-      File file = File("${fs.appDocDir.path}/avatars/${c.guid.characters.where((char) => char.isAlphabetOnly || char.isNumericOnly).join()}/avatar-${response.data.length}.jpg");
+      Logger().debug("Got chat icon for chat ${c.getTitle()}");
+      File file = File("${fs().appDocDir.path}/avatars/${c.guid.characters.where((char) => char.isAlphabetOnly || char.isNumericOnly).join()}/avatar-${response.data.length}.jpg");
       if (!(await file.exists())) {
         await file.create(recursive: true);
       }

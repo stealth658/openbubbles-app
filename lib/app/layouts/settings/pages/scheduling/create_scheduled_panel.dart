@@ -148,8 +148,8 @@ class _CreateScheduledMessageState extends OptimizedState<CreateScheduledMessage
             final message = ScheduledMessage.fromJson(data);
             Navigator.of(context).pop(message);
           } else {
-            Logger.error("Scheduled message error: ${response.statusCode}");
-            Logger.error(response.data);
+            Logger().error("Scheduled message error: ${response.statusCode}");
+            Logger().error(response.data);
             showSnackbar("Error", "Something went wrong!");
           }
         },
@@ -206,8 +206,8 @@ class _CreateScheduledMessageState extends OptimizedState<CreateScheduledMessage
                     keyboardType: TextInputType.multiline,
                     maxLines: 14,
                     minLines: 1,
-                    selectionControls: ss.settings.skin.value == Skins.iOS ? cupertinoTextSelectionControls : materialTextSelectionControls,
-                    enableIMEPersonalizedLearning: !ss.settings.incognitoKeyboard.value,
+                    selectionControls: ss().settings.skin.value == Skins.iOS ? cupertinoTextSelectionControls : materialTextSelectionControls,
+                    enableIMEPersonalizedLearning: !ss().settings.incognitoKeyboard.value,
                     textInputAction: TextInputAction.newline,
                     cursorColor: context.theme.colorScheme.primary,
                     cursorHeight: context.theme.extension<BubbleText>()!.bubbleText.fontSize! * 1.25,

@@ -23,7 +23,7 @@ class SendButton extends StatefulWidget {
 class SendButtonState extends OptimizedState<SendButton> with SingleTickerProviderStateMixin {
   late final controller = AnimationController(
       vsync: this,
-      duration: Duration(seconds: ss.settings.sendDelay.value),
+      duration: Duration(seconds: ss().settings.sendDelay.value),
       animationBehavior: AnimationBehavior.preserve);
 
   Color get baseColor => iOS ? context.theme.colorScheme.primary : context.theme.colorScheme.properSurface;
@@ -95,7 +95,7 @@ class SendButtonState extends OptimizedState<SendButton> with SingleTickerProvid
         onPressed: () {
           if (controller.isAnimating) {
             controller.reset();
-          } else if (ss.settings.sendDelay.value != 0) {
+          } else if (ss().settings.sendDelay.value != 0) {
             controller.forward();
           } else {
             HapticFeedback.lightImpact();

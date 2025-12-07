@@ -78,9 +78,9 @@ class MessageHelper {
       // Every 50 messages synced, who a message
       index += 1;
       if (index % 50 == 0) {
-        Logger.info('Saved $index of ${messages.length} messages', tag: "BulkIngest");
+        Logger().info('Saved $index of ${messages.length} messages', tag: "BulkIngest");
       } else if (index == messages.length) {
-        Logger.info('Saved ${messages.length} messages', tag: "BulkIngest");
+        Logger().info('Saved ${messages.length} messages', tag: "BulkIngest");
       }
     }
 
@@ -100,7 +100,7 @@ class MessageHelper {
     // if the chat is active
     if (ls.isAlive && cm.isChatActive(chat.guid)) return;
     // if app is alive, on chat list, but notifying on chat list is disabled
-    if (ls.isAlive && cm.activeChat == null && Get.rawRoute?.settings.name == "/" && !ss.settings.notifyOnChatList.value) return;
+    if (ls.isAlive && cm.activeChat == null && Get.rawRoute?.settings.name == "/" && !ss().settings.notifyOnChatList.value) return;
     await notif.createNotification(chat, message);
   }
 
@@ -128,8 +128,8 @@ class MessageHelper {
     }
     if (messages.isEmpty) return;
 
-    List<int> selectedIndices = ss.settings.selectedActionIndices;
-    List<String> _actions = ss.settings.actionList;
+    List<int> selectedIndices = ss().settings.selectedActionIndices;
+    List<String> _actions = ss().settings.actionList;
     List<String> actions = _actions.whereIndexed((i, e) => selectedIndices.contains(i)).toList();
     bool showMarkRead = actions.contains("Mark Read");
     await notif.showSummaryNotifDesktop(messages.length, chats, showMarkRead);
@@ -215,7 +215,7 @@ class MessageHelper {
       // if we can't fetch the associated message for some reason
       // (or none of the above conditions about it are true)
       // then we should fallback to unparsed reaction messages
-      Logger.info("Couldn't fetch associated message for message: ${message.guid}");
+      Logger().info("Couldn't fetch associated message for message: ${message.guid}");
       return "$sender ${message.text}";
     } else {
       // It's all other message types
@@ -290,7 +290,7 @@ class MessageHelper {
   }
 
   static List<TextSpan> buildEmojiText(String text, TextStyle style, {TapGestureRecognizer? recognizer}) {
-    if (!fs.fontExistsOnDisk.value) {
+    if (!fs().fontExistsOnDisk.value) {
       return [
         TextSpan(
           text: text,

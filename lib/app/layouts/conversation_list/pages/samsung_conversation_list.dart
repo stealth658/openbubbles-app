@@ -28,8 +28,8 @@ class _SamsungConversationListState extends OptimizedState<SamsungConversationLi
   bool get showArchived => widget.parentController.showArchivedChats;
   bool get showUnknown => widget.parentController.showUnknownSenders;
   Color get backgroundColor =>
-      ss.settings.windowEffect.value == WindowEffect.disabled ? headerColor : Colors.transparent;
-  Color get _tileColor => ss.settings.windowEffect.value == WindowEffect.disabled ? tileColor : Colors.transparent;
+      ss().settings.windowEffect.value == WindowEffect.disabled ? headerColor : Colors.transparent;
+  Color get _tileColor => ss().settings.windowEffect.value == WindowEffect.disabled ? tileColor : Colors.transparent;
   ConversationListController get controller => widget.parentController;
 
   @override
@@ -37,7 +37,7 @@ class _SamsungConversationListState extends OptimizedState<SamsungConversationLi
     super.initState();
     // update widget when background color changes
     if (kIsDesktop) {
-      ss.settings.windowEffect.listen((WindowEffect effect) {
+      ss().settings.windowEffect.listen((WindowEffect effect) {
         setState(() {});
       });
     }

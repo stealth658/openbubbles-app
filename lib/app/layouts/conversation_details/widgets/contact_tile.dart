@@ -29,13 +29,13 @@ class ContactTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool redactedMode = ss.settings.redactedMode.value;
-    final bool hideInfo = redactedMode && ss.settings.hideContactInfo.value;
+    final bool redactedMode = ss().settings.redactedMode.value;
+    final bool hideInfo = redactedMode && ss().settings.hideContactInfo.value;
     final bool isEmail = handle.address.isEmail;
     final child = InkWell(
       onLongPress: () {
         Clipboard.setData(ClipboardData(text: handle.address));
-        if (!Platform.isAndroid || (fs.androidInfo?.version.sdkInt ?? 0) < 33) {
+        if (!Platform.isAndroid || (fs().androidInfo?.version.sdkInt ?? 0) < 33) {
           showSnackbar("Copied", "Address copied to clipboard!");
         }
       },
@@ -82,16 +82,16 @@ class ContactTile extends StatelessWidget {
                   child: TextButton(
                     style: TextButton.styleFrom(
                       shape: const CircleBorder(),
-                      backgroundColor: ss.settings.skin.value != Skins.iOS ? null : context.theme.colorScheme.secondary,
+                      backgroundColor: ss().settings.skin.value != Skins.iOS ? null : context.theme.colorScheme.secondary,
                     ),
                     onLongPress: () => showAddressPicker(contact, handle, context, isEmail: true, isLongPressed: true),
                     onPressed: () => showAddressPicker(contact, handle, isEmail: true, context),
                     child: Icon(
-                        ss.settings.skin.value == Skins.iOS ? CupertinoIcons.mail : Icons.email,
-                        color: ss.settings.skin.value != Skins.iOS
+                        ss().settings.skin.value == Skins.iOS ? CupertinoIcons.mail : Icons.email,
+                        color: ss().settings.skin.value != Skins.iOS
                             ? context.theme.colorScheme.onBackground
                             : context.theme.colorScheme.onSecondary,
-                        size: ss.settings.skin.value != Skins.iOS ? 25 : 20
+                        size: ss().settings.skin.value != Skins.iOS ? 25 : 20
                     ),
                   ),
                 ),
@@ -101,18 +101,18 @@ class ContactTile extends StatelessWidget {
                   child: TextButton(
                     style: TextButton.styleFrom(
                       shape: const CircleBorder(),
-                      backgroundColor: ss.settings.skin.value != Skins.iOS ? null : context.theme.colorScheme.secondary,
+                      backgroundColor: ss().settings.skin.value != Skins.iOS ? null : context.theme.colorScheme.secondary,
                     ),
                     onLongPress: () => showAddressPicker(contact, handle, context, isLongPressed: true),
                     onPressed: () => showAddressPicker(contact, handle, context),
                     child: Icon(
-                        ss.settings.skin.value == Skins.iOS
+                        ss().settings.skin.value == Skins.iOS
                             ? CupertinoIcons.phone
                             : Icons.call,
-                        color: ss.settings.skin.value != Skins.iOS
+                        color: ss().settings.skin.value != Skins.iOS
                             ? context.theme.colorScheme.onBackground
                             : context.theme.colorScheme.onSecondary,
-                        size: ss.settings.skin.value != Skins.iOS ? 25 : 20
+                        size: ss().settings.skin.value != Skins.iOS ? 25 : 20
                     ),
                   ),
                 ),
@@ -122,18 +122,18 @@ class ContactTile extends StatelessWidget {
                   child: TextButton(
                     style: TextButton.styleFrom(
                       shape: const CircleBorder(),
-                      backgroundColor: ss.settings.skin.value != Skins.iOS ? null : context.theme.colorScheme.secondary,
+                      backgroundColor: ss().settings.skin.value != Skins.iOS ? null : context.theme.colorScheme.secondary,
                     ),
                     onLongPress: () => showAddressPicker(contact, handle, context, isLongPressed: true, video: true),
                     onPressed: () => showAddressPicker(contact, handle, context, video: true),
                     child: Icon(
-                        ss.settings.skin.value == Skins.iOS
+                        ss().settings.skin.value == Skins.iOS
                             ? CupertinoIcons.video_camera
                             : Icons.video_call_outlined,
-                        color: ss.settings.skin.value != Skins.iOS
+                        color: ss().settings.skin.value != Skins.iOS
                             ? context.theme.colorScheme.onBackground
                             : context.theme.colorScheme.onSecondary,
-                        size: ss.settings.skin.value != Skins.iOS ? 25 : 20
+                        size: ss().settings.skin.value != Skins.iOS ? 25 : 20
                     ),
                   ),
                 ),
@@ -151,7 +151,7 @@ class ContactTile extends StatelessWidget {
           SlidableAction(
             label: 'Remove',
             backgroundColor: Colors.red,
-            icon: ss.settings.skin.value == Skins.iOS ? CupertinoIcons.trash : Icons.delete_outlined,
+            icon: ss().settings.skin.value == Skins.iOS ? CupertinoIcons.trash : Icons.delete_outlined,
             onPressed: (_) async {
               showDialog(
                 context: context,
@@ -172,10 +172,10 @@ class ContactTile extends StatelessWidget {
 
               http.chatParticipant("remove", chat.guid, handle.address).then((response) async {
                 Get.back();
-                Logger.info("Removed participant ${handle.address}");
+                Logger().info("Removed participant ${handle.address}");
                 showSnackbar("Notice", "Removed participant from chat!");
               }).catchError((err, stack) {
-                Logger.error("Failed to remove participant ${handle.address}", error: err, trace: stack);
+                Logger().error("Failed to remove participant ${handle.address}", error: err, trace: stack);
                 late final String error;
                 if (err is Response) {
                   error = err.data["error"]["message"].toString();

@@ -104,7 +104,7 @@ class _ContactCardState extends OptimizedState<ContactCard> with AutomaticKeepAl
                 ..setAttribute("download", widget.file.name)
                 ..click();
             } else {
-              await OpenFilex.open("${fs.appDocDir.path}/attachments/${widget.attachment.guid!}/${basename(widget.file.path!)}", type: widget.attachment.mimeType);
+              await OpenFilex.open("${fs().appDocDir.path}/attachments/${widget.attachment.guid!}/${basename(widget.file.path!)}", type: widget.attachment.mimeType);
             }
           },
           child: Padding(

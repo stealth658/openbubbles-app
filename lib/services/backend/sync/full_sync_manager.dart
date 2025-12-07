@@ -41,7 +41,7 @@ class FullSyncManager extends SyncManager {
     }
     addToOutput('Full sync is starting...');
     addToOutput("Reloading your contacts...");
-    await ss.getServerDetails(refresh: true);
+    await ss().getServerDetails(refresh: true);
     await cs.refreshContacts();
 
     addToOutput('Fetching chats from the server...');
@@ -130,8 +130,8 @@ class FullSyncManager extends SyncManager {
             }
           } catch (ex, stack) {
             addToOutput('Failed to sync chat messages! Error: ${ex.toString()}', level: LogLevel.ERROR);
-            Logger.debug("StackTrace: $stack", tag: tag);
-            Logger.debug('Error: ${ex.toString()}', tag: tag);
+            Logger().debug("StackTrace: $stack", tag: tag);
+            Logger().debug('Error: ${ex.toString()}', tag: tag);
           }
 
           // If we're supposed to be stopping, break out

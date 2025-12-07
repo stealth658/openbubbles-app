@@ -23,24 +23,24 @@ class _MessageOptionsOrderPanelState extends OptimizedState<MessageOptionsOrderP
   void initState() {
     super.initState();
 
-    actionList.value = ss.settings.detailsMenuActions.platformSupportedActions;
+    actionList.value = ss().settings.detailsMenuActions.platformSupportedActions;
   }
 
   @override
   Widget build(BuildContext context) {
     final Rx<Color> _backgroundColor =
-        (kIsDesktop && ss.settings.windowEffect.value != WindowEffect.disabled ? Colors.transparent : context.theme.colorScheme.background).obs;
+        (kIsDesktop && ss().settings.windowEffect.value != WindowEffect.disabled ? Colors.transparent : context.theme.colorScheme.background).obs;
 
     final Color tileColor = (ts.inDarkMode(context) ? context.theme.colorScheme.properSurface : context.theme.colorScheme.background)
-        .withAlpha(ss.settings.windowEffect.value != WindowEffect.disabled ? 100 : 255);
+        .withAlpha(ss().settings.windowEffect.value != WindowEffect.disabled ? 100 : 255);
 
     if (kIsDesktop) {
-      ss.settings.windowEffect.listen((WindowEffect effect) =>
+      ss().settings.windowEffect.listen((WindowEffect effect) =>
           _backgroundColor.value = effect != WindowEffect.disabled ? Colors.transparent : context.theme.colorScheme.background);
     }
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
-        systemNavigationBarColor: ss.settings.immersiveMode.value ? Colors.transparent : context.theme.colorScheme.background, // navigation bar color
+        systemNavigationBarColor: ss().settings.immersiveMode.value ? Colors.transparent : context.theme.colorScheme.background, // navigation bar color
         systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
         statusBarColor: Colors.transparent, // status bar color
         statusBarIconBrightness: context.theme.colorScheme.brightness.opposite,
@@ -62,7 +62,7 @@ class _MessageOptionsOrderPanelState extends OptimizedState<MessageOptionsOrderP
                   surfaceTintColor: context.theme.colorScheme.primary,
                   leading: buildBackButton(context),
                   backgroundColor: _backgroundColor.value,
-                  centerTitle: ss.settings.skin.value == Skins.iOS,
+                  centerTitle: ss().settings.skin.value == Skins.iOS,
                   title: Text(
                     "Message Options Order",
                     style: context.theme.textTheme.titleLarge,
@@ -72,7 +72,7 @@ class _MessageOptionsOrderPanelState extends OptimizedState<MessageOptionsOrderP
                       child: Text("Reset", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
                       onPressed: () {
                         actionList.value = DetailsMenuAction.values.platformSupportedActions;
-                        ss.settings.resetDetailsMenuActions();
+                        ss().settings.resetDetailsMenuActions();
                       },
                     ),
                   ],
@@ -90,7 +90,7 @@ class _MessageOptionsOrderPanelState extends OptimizedState<MessageOptionsOrderP
                   if (start == end) return;
                   actionList.insert(end, actionList.elementAt(start));
                   actionList.removeAt(start + (end < start ? 1 : 0));
-                  ss.settings.setDetailsMenuActions(actionList.toList());
+                  ss().settings.setDetailsMenuActions(actionList.toList());
                 },
                 buildDefaultDragHandles: false,
                 itemBuilder: (context, index) {

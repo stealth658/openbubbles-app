@@ -25,7 +25,7 @@ class MaterialHeader extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Rx<Color> _backgroundColor = context.theme.colorScheme.background.withValues(alpha: (kIsDesktop && ss.settings.windowEffect.value != WindowEffect.disabled) ? 0.4 : 1).obs;
+    final Rx<Color> _backgroundColor = context.theme.colorScheme.background.withValues(alpha: (kIsDesktop && ss().settings.windowEffect.value != WindowEffect.disabled) ? 0.4 : 1).obs;
 
     return Stack(
           children: [Obx(() => AppBar(
@@ -109,7 +109,7 @@ class MaterialHeader extends StatelessWidget implements PreferredSizeWidget {
           padding: EdgeInsets.only(top: kIsDesktop ? 20 : 0),
           child: PopupMenuButton<int>(
             color: context.theme.colorScheme.properSurface,
-            shape: ss.settings.skin.value != Skins.Material ? const RoundedRectangleBorder(
+            shape: ss().settings.skin.value != Skins.Material ? const RoundedRectangleBorder(
               borderRadius: BorderRadius.all(
                 Radius.circular(20.0),
               ),
@@ -319,7 +319,7 @@ class _ChatIconAndTitleState extends CustomState<_ChatIconAndTitle, void, Conver
 
   @override
   Widget build(BuildContext context) {
-    final hideInfo = ss.settings.redactedMode.value && ss.settings.hideContactInfo.value;
+    final hideInfo = ss().settings.redactedMode.value && ss().settings.hideContactInfo.value;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [

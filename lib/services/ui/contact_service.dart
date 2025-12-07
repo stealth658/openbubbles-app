@@ -41,7 +41,7 @@ class ContactsService extends GetxService {
 
   Future<bool> canAccessContacts() async {
     if (kIsWeb || kIsDesktop) {
-      int versionCode = (await ss.getServerDetails()).item4;
+      int versionCode = (await ss().getServerDetails()).item4;
       return versionCode >= 42;
     } else {
       return (await Permission.contacts.status).isGranted;
@@ -52,7 +52,7 @@ class ContactsService extends GetxService {
     if (!(await hasContactAccess)) return [];
 
     // Check if the user is on v1.5.2 or newer
-    int serverVersion = (await ss.getServerDetails()).item4;
+    int serverVersion = (await ss().getServerDetails()).item4;
     // 100(major) + 21(minor) + 1(bug)
     bool isMin1_5_2 = serverVersion >= 207; // Server: v1.5.2
 
@@ -136,7 +136,7 @@ class ContactsService extends GetxService {
     }
 
     final endTime = DateTime.now().millisecondsSinceEpoch;
-    Logger.debug("Contact refresh took ${endTime - startTime} ms");
+    Logger().debug("Contact refresh took ${endTime - startTime} ms");
 
     // only return contacts if things changed (or on web)
     return changedIds;
@@ -149,7 +149,7 @@ class ContactsService extends GetxService {
     if (kIsWeb || kIsDesktop) {
       _contacts.addAll(await fetchNetworkContacts());
       int endTime = DateTime.now().millisecondsSinceEpoch;
-      Logger.debug("Contacts fetched in ${endTime - startTime} ms");
+      Logger().debug("Contacts fetched in ${endTime - startTime} ms");
     } else {
       _contacts.addAll((await FastContacts.getAllContacts(
               fields: List<ContactField>.from(ContactField.values)
@@ -177,7 +177,7 @@ class ContactsService extends GetxService {
               )));
 
       int endTime = DateTime.now().millisecondsSinceEpoch;
-      Logger.debug("Contacts fetched in ${endTime - startTime} ms");
+      Logger().debug("Contacts fetched in ${endTime - startTime} ms");
 
       // get avatars
       startTime = DateTime.now().millisecondsSinceEpoch;
@@ -186,7 +186,7 @@ class ContactsService extends GetxService {
       }
 
       endTime = DateTime.now().millisecondsSinceEpoch;
-      Logger.debug("Avatars fetched in ${endTime - startTime} ms");
+      Logger().debug("Avatars fetched in ${endTime - startTime} ms");
     }
 
     return _contacts;
@@ -198,14 +198,14 @@ class ContactsService extends GetxService {
     try {
       avatar = await FastContacts.getContactImage(id, size: ContactImageSize.fullSize);
     } catch (e) {
-      Logger.warn("Failed to get full size avatar for ID, $id!", error: e);
+      Logger().warn("Failed to get full size avatar for ID, $id!", error: e);
     }
 
     if (avatar == null) {
       try {
         avatar = await FastContacts.getContactImage(id);
       } catch (e) {
-        Logger.warn("Failed to get small size avatar for ID, $id!", error: e);
+        Logger().warn("Failed to get small size avatar for ID, $id!", error: e);
       }
     }
 

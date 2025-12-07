@@ -59,7 +59,7 @@ class Chat {
   bool? hasUnreadMessage;
   String? title;
   String get properTitle {
-    if (ss.settings.redactedMode.value && ss.settings.hideContactInfo.value) {
+    if (ss().settings.redactedMode.value && ss().settings.hideContactInfo.value) {
       return getTitle();
     }
     title ??= getTitle();
@@ -229,12 +229,12 @@ class Chat {
   }
 
   bool shouldMuteNotification(Message? message) {
-    if (ss.settings.filterUnknownSenders.value &&
+    if (ss().settings.filterUnknownSenders.value &&
         participants.length == 1 &&
         participants[0].contact == null) {
       return true;
-    } else if (ss.settings.globalTextDetection.value.isNotEmpty) {
-      List<String> text = ss.settings.globalTextDetection.value.split(",");
+    } else if (ss().settings.globalTextDetection.value.isNotEmpty) {
+      List<String> text = ss().settings.globalTextDetection.value.split(",");
       for (String s in text) {
         if (message?.text?.toLowerCase().contains(s.toLowerCase()) ?? false) {
           return false;
@@ -265,7 +265,7 @@ class Chat {
       }
       return true;
     }
-    return !ss.settings.notifyReactions.value &&
+    return !ss().settings.notifyReactions.value &&
         ReactionTypes.toList().contains(message?.associatedMessageType ?? "");
   }
 
@@ -285,7 +285,7 @@ class Chat {
     }
 
     try {
-      if (privateMark && ss.settings.enablePrivateAPI.value && ss.settings.privateMarkChatAsRead.value) {
+      if (privateMark && ss().settings.enablePrivateAPI.value && ss().settings.privateMarkChatAsRead.value) {
         if (!hasUnread && autoSendReadReceipts!) {
           http.markChatRead(guid);
         } else if (hasUnread) {
@@ -307,7 +307,7 @@ class Chat {
     } catch (ex, stacktrace) {
       newMessage = Message.findOne(guid: message.guid);
       if (newMessage == null) {
-        Logger.error("Failed to add message (GUID: ${message.guid}) to chat (GUID: $guid)", error: ex, trace: stacktrace);
+        Logger().error("Failed to add message (GUID: ${message.guid}) to chat (GUID: $guid)", error: ex, trace: stacktrace);
       }
     }
     bool isNewer = false;
@@ -450,7 +450,7 @@ class Chat {
     if (id == null) return this;
     this.autoSendReadReceipts = autoSendReadReceipts;
     save(updateAutoSendReadReceipts: true);
-    if (autoSendReadReceipts ?? ss.settings.privateMarkChatAsRead.value) {
+    if (autoSendReadReceipts ?? ss().settings.privateMarkChatAsRead.value) {
       http.markChatRead(guid);
     }
     return this;
@@ -460,7 +460,7 @@ class Chat {
     if (id == null) return this;
     this.autoSendTypingIndicators = autoSendTypingIndicators;
     save(updateAutoSendTypingIndicators: true);
-    if (!(autoSendTypingIndicators ?? ss.settings.privateSendTypingIndicators.value)) {
+    if (!(autoSendTypingIndicators ?? ss().settings.privateSendTypingIndicators.value)) {
       socket.sendMessage("stopped-typing", {"chatGuid": guid});
     }
     return this;

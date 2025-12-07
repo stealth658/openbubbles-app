@@ -36,7 +36,7 @@ class SlideToReply extends StatelessWidget {
           child: Offstage(
             offstage: kIsWeb && width == 0,
             child: Icon(
-              ss.settings.skin.value == Skins.iOS ? CupertinoIcons.reply : Icons.reply,
+              ss().settings.skin.value == Skins.iOS ? CupertinoIcons.reply : Icons.reply,
               size: min(replyThreshold, width) * (width >= replyThreshold ? 0.5 : 0.4),
               color: context.theme.colorScheme.properOnSurface,
             ),

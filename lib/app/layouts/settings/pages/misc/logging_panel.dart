@@ -27,7 +27,7 @@ class _LoggingPanel extends State<LoggingPanel> {
 
   void loadLogs([bool errorOnly = false]) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Logger.getLogs(maxLines: 500).then((value) {
+      Logger().getLogs(maxLines: 500).then((value) {
         _logs.clear();
 
         if (errorOnly) {
@@ -69,20 +69,20 @@ class _LoggingPanel extends State<LoggingPanel> {
   @override
   Widget build(BuildContext context) {
     final Rx<Color> _backgroundColor =
-        (kIsDesktop && ss.settings.windowEffect.value == WindowEffect.disabled
+        (kIsDesktop && ss().settings.windowEffect.value == WindowEffect.disabled
                 ? Colors.transparent
                 : context.theme.colorScheme.background)
             .obs;
 
     if (kIsDesktop) {
-      ss.settings.windowEffect.listen((WindowEffect effect) =>
+      ss().settings.windowEffect.listen((WindowEffect effect) =>
           _backgroundColor.value = effect != WindowEffect.disabled
               ? Colors.transparent
               : context.theme.colorScheme.background);
     }
     return AnnotatedRegion<SystemUiOverlayStyle>(
         value: SystemUiOverlayStyle(
-          systemNavigationBarColor: ss.settings.immersiveMode.value
+          systemNavigationBarColor: ss().settings.immersiveMode.value
               ? Colors.transparent
               : context.theme.colorScheme.background, // navigation bar color
           systemNavigationBarIconBrightness:
@@ -110,7 +110,7 @@ class _LoggingPanel extends State<LoggingPanel> {
                     surfaceTintColor: context.theme.colorScheme.primary,
                     leading: buildBackButton(context),
                     backgroundColor: _backgroundColor.value,
-                    centerTitle: ss.settings.skin.value == Skins.iOS,
+                    centerTitle: ss().settings.skin.value == Skins.iOS,
                     title: Text(
                       "Logs",
                       style: context.theme.textTheme.titleLarge,

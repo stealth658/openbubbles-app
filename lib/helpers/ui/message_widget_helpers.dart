@@ -83,13 +83,13 @@ Future<List<InlineSpan>> buildEnrichedMessageSpans(BuildContext context, Message
   final linkIndexMatches = <Tuple3<String, List<int>, List?>>[];
   final controller = cvc(message.chat.target ?? cm.activeChat!.chat);
   if (!isNullOrEmpty(part.text)) {
-    if (!kIsWeb && !kIsDesktop && ss.settings.smartReply.value) {
+    if (!kIsWeb && !kIsDesktop && ss().settings.smartReply.value) {
       if (controller.mlKitParsedText["${message.guid!}-${part.part}"] == null) {
         try {
           controller.mlKitParsedText["${message.guid!}-${part.part}"] = await GoogleMlKit.nlp.entityExtractor(EntityExtractorLanguage.english)
               .annotateText(part.text!);
         } catch (ex, stack) {
-          Logger.warn('Failed to extract entities using mlkit!', error: ex, trace: stack);
+          Logger().warn('Failed to extract entities using mlkit!', error: ex, trace: stack);
         }
       }
       final entities = controller.mlKitParsedText["${message.guid!}-${part.part}"] ?? [];

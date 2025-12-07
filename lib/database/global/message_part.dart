@@ -23,7 +23,7 @@ class MessagePart {
   late final String fakeSubject = faker.lorem.words(subject?.split(" ").length ?? 0).join(" ");
   String? get displaySubject {
     if (subject == null) return null;
-    if (ss.settings.redactedMode.value && ss.settings.hideMessageContent.value) {
+    if (ss().settings.redactedMode.value && ss().settings.hideMessageContent.value) {
       return fakeSubject;
     }
     return subject;
@@ -32,7 +32,7 @@ class MessagePart {
   late final String fakeText = faker.lorem.words(text?.split(" ").length ?? 0).join(" ");
   String? get displayText {
     if (text == null) return null;
-    if (ss.settings.redactedMode.value && ss.settings.hideMessageContent.value) {
+    if (ss().settings.redactedMode.value && ss().settings.hideMessageContent.value) {
       return fakeText;
     }
     return text;

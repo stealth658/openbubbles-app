@@ -39,7 +39,7 @@ void sendEffectAction(
   Future<void> Function({String? effect}) sendMessage,
   List<Mentionable> mentionables,
 ) {
-  if (!ss.settings.enablePrivateAPI.value) return;
+  if (!ss().settings.enablePrivateAPI.value) return;
   String typeSelected = "bubble";
   final bubbleEffects = ["slam", "loud", "gentle", "invisible ink"];
   final screenEffects = ["echo", "spotlight", "balloons", "confetti", "love", "lasers", "fireworks", "celebration"];
@@ -128,7 +128,7 @@ void sendEffectAction(
               },
               child: AnnotatedRegion<SystemUiOverlayStyle>(
                 value: SystemUiOverlayStyle(
-                  systemNavigationBarColor: ss.settings.immersiveMode.value ? Colors.transparent : context.theme.colorScheme.background,
+                  systemNavigationBarColor: ss().settings.immersiveMode.value ? Colors.transparent : context.theme.colorScheme.background,
                   // navigation bar color
                   systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
                   statusBarColor: Colors.transparent,
@@ -136,7 +136,7 @@ void sendEffectAction(
                   statusBarIconBrightness: context.theme.colorScheme.brightness.opposite,
                 ),
                 child: Scaffold(
-                  backgroundColor: kIsDesktop && ss.settings.windowEffect.value != WindowEffect.disabled
+                  backgroundColor: kIsDesktop && ss().settings.windowEffect.value != WindowEffect.disabled
                       ? context.theme.colorScheme.properSurface.withValues(alpha: 0.9)
                       : Colors.transparent,
                   body: Stack(
@@ -144,8 +144,8 @@ void sendEffectAction(
                     children: [
                       BackdropFilter(
                         filter: ImageFilter.blur(
-                            sigmaX: kIsDesktop && ss.settings.windowEffect.value != WindowEffect.disabled ? 0 : 30,
-                            sigmaY: kIsDesktop && ss.settings.windowEffect.value != WindowEffect.disabled ? 0 : 30),
+                            sigmaX: kIsDesktop && ss().settings.windowEffect.value != WindowEffect.disabled ? 0 : 30,
+                            sigmaY: kIsDesktop && ss().settings.windowEffect.value != WindowEffect.disabled ? 0 : 30),
                         child: Container(
                           color: context.theme.colorScheme.properSurface.withValues(alpha: 0.3),
                         ),
@@ -347,10 +347,10 @@ void sendEffectAction(
                                         colorScheme: context.theme.colorScheme.copyWith(
                                           primary: context.theme.colorScheme.bubble(context, true),
                                           onPrimary: context.theme.colorScheme.onBubble(context, true),
-                                          surface: ss.settings.monetTheming.value == Monet.full
+                                          surface: ss().settings.monetTheming.value == Monet.full
                                               ? null
                                               : (context.theme.extensions[BubbleColors] as BubbleColors?)?.receivedBubbleColor,
-                                          onSurface: ss.settings.monetTheming.value == Monet.full
+                                          onSurface: ss().settings.monetTheming.value == Monet.full
                                               ? null
                                               : (context.theme.extensions[BubbleColors] as BubbleColors?)?.onReceivedBubbleColor,
                                         ),

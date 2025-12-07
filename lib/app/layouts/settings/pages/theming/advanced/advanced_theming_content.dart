@@ -9,6 +9,7 @@ import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/app/wrappers/scrollbar_wrapper.dart';
 import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
@@ -68,7 +69,7 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
 
   @override
   Widget build(BuildContext context) {
-    editable = !currentTheme.isPreset && ss.settings.monetTheming.value == Monet.none;
+    editable = !currentTheme.isPreset && ss().settings.monetTheming.value == Monet.none;
     final length = currentTheme
         .colors(widget.isDarkMode, returnMaterialYou: false).keys
         .where((e) => e != "outline").length ~/ 2 + 1;
@@ -174,28 +175,28 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
 
                     if (value.name == "Music Theme ☀" || value.name == "Music Theme 🌙") {
                       // disable monet theming if music theme enabled
-                      ss.settings.monetTheming.value = Monet.none;
-                      ss.saveSettings(ss.settings);
+                      ss().settings.monetTheming.value = Monet.none;
+                      ss().saveSettings(ss().settings);
                       await mcs.invokeMethod("request-notification-listener-permission");
                       try {
                         await mcs.invokeMethod("start-notification-listener");
-                        ss.settings.colorsFromMedia.value = true;
-                        ss.saveSettings(ss.settings);
+                        ss().settings.colorsFromMedia.value = true;
+                        ss().saveSettings(ss().settings);
                       } catch (e) {
                         showSnackbar("Error", "Something went wrong, please ensure you granted the permission correctly!");
                         return;
                       }
                     } else {
-                      ss.settings.colorsFromMedia.value = false;
-                      ss.saveSettings(ss.settings);
+                      ss().settings.colorsFromMedia.value = false;
+                      ss().saveSettings(ss().settings);
                     }
 
                     if (value.name == "Music Theme ☀" || value.name == "Music Theme 🌙") {
                       var allThemes = ThemeStruct.getThemes();
                       var currentLight = ThemeStruct.getLightTheme();
                       var currentDark = ThemeStruct.getDarkTheme();
-                      await ss.prefs.setString("previous-light", currentLight.name);
-                      await ss.prefs.setString("previous-dark", currentDark.name);
+                      await prefs().i.setString("previous-light", currentLight.name);
+                      await prefs().i.setString("previous-dark", currentDark.name);
                       await ts.changeTheme(
                           context,
                           light: allThemes.firstWhere((element) => element.name == "Music Theme ☀"),
@@ -296,7 +297,7 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
                   subtitle: "Tap to edit the base color\nLong press to edit the color for elements displayed on top of the base color\nDouble tap to learn how the colors are used",
                   unlimitedSpace: true,
                 ),
-                if (ss.settings.monetTheming.value != Monet.none || ss.settings.useDesktopAccent.value)
+                if (ss().settings.monetTheming.value != Monet.none || ss().settings.useDesktopAccent.value)
                   Padding(
                     padding: const EdgeInsets.only(left: 20.0, right: 20.0, bottom: 15.0),
                     child: Row(
@@ -372,9 +373,9 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
                     map["data"]["textTheme"]["font"] = value;
                     currentTheme.data = ThemeStruct.fromMap(map).data;
                     currentTheme.save();
-                    if (currentTheme.name == ss.prefs.getString("selected-dark")) {
+                    if (currentTheme.name == prefs().i.getString("selected-dark")) {
                       await ts.changeTheme(context, dark: currentTheme);
-                    } else if (currentTheme.name == ss.prefs.getString("selected-light")) {
+                    } else if (currentTheme.name == prefs().i.getString("selected-light")) {
                       await ts.changeTheme(context, light: currentTheme);
                     }
                   },
@@ -413,9 +414,9 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
                       }
                       currentTheme.data = ThemeStruct.fromMap(map).data;
                       currentTheme.save();
-                      if (currentTheme.name == ss.prefs.getString("selected-dark")) {
+                      if (currentTheme.name == prefs().i.getString("selected-dark")) {
                         await ts.changeTheme(context, dark: currentTheme);
-                      } else if (currentTheme.name == ss.prefs.getString("selected-light")) {
+                      } else if (currentTheme.name == prefs().i.getString("selected-light")) {
                         await ts.changeTheme(context, light: currentTheme);
                       }
                     },
@@ -442,9 +443,9 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
                     map["data"]["textTheme"][currentTheme.textSizes.keys.toList()[index]]['fontSize'] = ThemeStruct.defaultTextSizes.values.toList()[index] * val;
                     currentTheme.data = ThemeStruct.fromMap(map).data;
                     currentTheme.save();
-                    if (currentTheme.name == ss.prefs.getString("selected-dark")) {
+                    if (currentTheme.name == prefs().i.getString("selected-dark")) {
                       await ts.changeTheme(context, dark: currentTheme);
-                    } else if (currentTheme.name == ss.prefs.getString("selected-light")) {
+                    } else if (currentTheme.name == prefs().i.getString("selected-light")) {
                       await ts.changeTheme(context, light: currentTheme);
                     }
                   },

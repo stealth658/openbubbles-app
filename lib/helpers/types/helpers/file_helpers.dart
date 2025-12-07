@@ -15,8 +15,8 @@ Size getGifDimensions(Uint8List bytes) {
   hexString += hex.encode(bytes.sublist(8, 9));
   int height = int.parse(hexString, radix: 16);
 
-  Logger.debug("Decoded GIF width: $width");
-  Logger.debug("Decoded GIF height: $height");
+  Logger().debug("Decoded GIF width: $width");
+  Logger().debug("Decoded GIF height: $height");
   Size size = Size(width.toDouble(), height.toDouble());
   return size;
 }

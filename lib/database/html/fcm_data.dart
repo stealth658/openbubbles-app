@@ -1,4 +1,4 @@
-import 'package:bluebubbles/services/services.dart';
+import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
 
 class FCMData {
   int? id;
@@ -36,33 +36,33 @@ class FCMData {
   FCMData save() {
     if (isNull) return this;
     Future.delayed(Duration.zero, () async {
-      await ss.prefs.setString('projectID', projectID!);
-      await ss.prefs.setString('storageBucket', storageBucket!);
-      await ss.prefs.setString('apiKey', apiKey!);
-      if (firebaseURL != null) await ss.prefs.setString('firebaseURL', firebaseURL!);
-      await ss.prefs.setString('clientID', clientID!);
-      await ss.prefs.setString('applicationID', applicationID!);
+      await prefs().i.setString('projectID', projectID!);
+      await prefs().i.setString('storageBucket', storageBucket!);
+      await prefs().i.setString('apiKey', apiKey!);
+      if (firebaseURL != null) await prefs().i.setString('firebaseURL', firebaseURL!);
+      await prefs().i.setString('clientID', clientID!);
+      await prefs().i.setString('applicationID', applicationID!);
     });
     return this;
   }
 
   static void deleteFcmData() async {
-    await ss.prefs.remove('projectID');
-    await ss.prefs.remove('storageBucket');
-    await ss.prefs.remove('apiKey');
-    await ss.prefs.remove('firebaseURL');
-    await ss.prefs.remove('clientID');
-    await ss.prefs.remove('applicationID');
+    await prefs().i.remove('projectID');
+    await prefs().i.remove('storageBucket');
+    await prefs().i.remove('apiKey');
+    await prefs().i.remove('firebaseURL');
+    await prefs().i.remove('clientID');
+    await prefs().i.remove('applicationID');
   }
 
   static FCMData getFCM() {
     return FCMData(
-      projectID: ss.prefs.getString('projectID'),
-      storageBucket: ss.prefs.getString('storageBucket'),
-      apiKey: ss.prefs.getString('apiKey'),
-      firebaseURL: ss.prefs.getString('firebaseURL'),
-      clientID: ss.prefs.getString('clientID'),
-      applicationID: ss.prefs.getString('applicationID'),
+      projectID: prefs().i.getString('projectID'),
+      storageBucket: prefs().i.getString('storageBucket'),
+      apiKey: prefs().i.getString('apiKey'),
+      firebaseURL: prefs().i.getString('firebaseURL'),
+      clientID: prefs().i.getString('clientID'),
+      applicationID: prefs().i.getString('applicationID'),
     );
   }
 

@@ -122,7 +122,7 @@ class _MediaGalleryCardState extends OptimizedState<MediaGalleryCard> with Autom
       duration = tempController.value.duration;
     } catch (_) {
       // If an error occurs, set the thumbnail to the cached no preview image
-      videoPreview = fs.noVideoPreviewIcon;
+      videoPreview = fs().noVideoPreviewIcon;
 
       if (attachment.metadata?['thumbnail_status'] != 'error') {
         attachment.metadata ??= {};
@@ -138,7 +138,7 @@ class _MediaGalleryCardState extends OptimizedState<MediaGalleryCard> with Autom
   Widget build(BuildContext context) {
     super.build(context);
 
-    final bool hideAttachments = ss.settings.redactedMode.value && ss.settings.hideAttachments.value;
+    final bool hideAttachments = ss().settings.redactedMode.value && ss().settings.hideAttachments.value;
 
     late Widget child;
     bool addPadding = true;
@@ -169,7 +169,7 @@ class _MediaGalleryCardState extends OptimizedState<MediaGalleryCard> with Autom
               style: Theme.of(context).textTheme.bodyLarge,
             ),
             const SizedBox(height: 5),
-            Icon(ss.settings.skin.value == Skins.iOS
+            Icon(ss().settings.skin.value == Skins.iOS
                 ? CupertinoIcons.cloud_download
                 : Icons.cloud_download,
               size: 28.0,
@@ -273,7 +273,7 @@ class ImageDisplay extends StatelessWidget {
                   ),
                 if (!(attachment.message.target?.isFromMe ?? true)
                     && attachment.message.target?.handle != null
-                    && ss.settings.skin.value == Skins.iOS)
+                    && ss().settings.skin.value == Skins.iOS)
                   Positioned(
                     top: 10,
                     right: 10,

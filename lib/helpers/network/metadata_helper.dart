@@ -40,7 +40,7 @@ class MetadataHelper {
     try {
       data = await MetadataFetch.extract(url);
     } catch (ex, stack) {
-      Logger.error('An error occurred while fetching URL Preview Metadata!', error: ex, trace: stack);
+      Logger().error('An error occurred while fetching URL Preview Metadata!', error: ex, trace: stack);
     }
 
     // If the everything in the metadata is null or empty, try to manually parse
@@ -119,7 +119,7 @@ class MetadataHelper {
       meta.description = ex.message;
     } catch (ex, stack) {
       meta.title = ex.toString();
-      Logger.error('Failed to manually get metadata!', error: ex, trace: stack);
+      Logger().error('Failed to manually get metadata!', error: ex, trace: stack);
     }
 
     return meta;
