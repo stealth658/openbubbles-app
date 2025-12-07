@@ -51,7 +51,6 @@ class ThemingPanel extends CustomStateful<ThemingPanelController> {
 }
 
 class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelController> {
-
   @override
   Widget build(BuildContext context) {
     return Obx(
@@ -82,12 +81,12 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                       title: "App Theme",
                       secondaryColor: headerColor,
                     ),
-                    if (!kIsWeb)
-                      const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
+                    if (!kIsWeb) const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     if (!kIsWeb)
                       SettingsTile(
                         title: "Advanced Theming",
-                        subtitle: "Customize app colors and font sizes with custom themes\n${ThemeStruct.getLightTheme().name}   |   ${ThemeStruct.getDarkTheme().name}",
+                        subtitle:
+                            "Customize app colors and font sizes with custom themes\n${ThemeStruct.getLightTheme().name}   |   ${ThemeStruct.getDarkTheme().name}",
                         trailing: const NextButton(),
                         isThreeLine: true,
                         onTap: () async {
@@ -115,8 +114,7 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                         backgroundColor: tileColor,
                         min: 0.8,
                         max: 1.2,
-                        divisions: 4
-                    )),
+                        divisions: 4)),
                   ],
                 ),
                 SettingsHeader(
@@ -127,60 +125,61 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                   backgroundColor: tileColor,
                   children: [
                     Obx(() => SettingsOptions<Skins>(
-                      initial: ss.settings.skin.value,
-                      onChanged: (val) async {
-                        if (val == null) return;
-                        await cm.setAllInactive();
-                        ss.settings.skin.value = val;
-                        saveSettings();
-                        setState(() {});
-                        eventDispatcher.emit('theme-update', null);
-                      },
-                      options: Skins.values,
-                      textProcessing: (val) => val.name,
-                      capitalize: false,
-                      title: "App Skin",
-                      secondaryColor: headerColor,
-                    )),
-                    if (!kIsDesktop)
-                      const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
+                          initial: ss.settings.skin.value,
+                          onChanged: (val) async {
+                            if (val == null) return;
+                            await cm.setAllInactive();
+                            ss.settings.skin.value = val;
+                            saveSettings();
+                            setState(() {});
+                            eventDispatcher.emit('theme-update', null);
+                          },
+                          options: Skins.values,
+                          textProcessing: (val) => val.name,
+                          capitalize: false,
+                          title: "App Skin",
+                          secondaryColor: headerColor,
+                        )),
+                    if (!kIsDesktop) const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     if (!kIsDesktop)
                       Obx(() => SettingsSwitch(
-                        onChanged: (bool val) {
-                          ss.settings.tabletMode.value = val;
-                          saveSettings();
-                          // update the conversation view UI
-                          eventDispatcher.emit('split-refresh', null);
-                        },
-                        initialVal: ss.settings.tabletMode.value,
-                        title: "Tablet Mode",
-                        backgroundColor: tileColor,
-                        subtitle: "Enables tablet mode (split view) depending on screen width",
-                        isThreeLine: true,
-                      )),
-                    if (!kIsWeb && !kIsDesktop)
-                      const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
+                            onChanged: (bool val) {
+                              ss.settings.tabletMode.value = val;
+                              saveSettings();
+                              // update the conversation view UI
+                              eventDispatcher.emit('split-refresh', null);
+                            },
+                            initialVal: ss.settings.tabletMode.value,
+                            title: "Tablet Mode",
+                            backgroundColor: tileColor,
+                            subtitle: "Enables tablet mode (split view) depending on screen width",
+                            isThreeLine: true,
+                          )),
+                    if (!kIsWeb && !kIsDesktop) const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     if (!kIsWeb && !kIsDesktop)
                       Obx(() => SettingsSwitch(
-                        onChanged: (bool val) {
-                          ss.settings.immersiveMode.value = val;
-                          saveSettings();
-                          if (val) {
-                            SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-                          } else {
-                            SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: [SystemUiOverlay.bottom, SystemUiOverlay.top]);
-                          }
-                          eventDispatcher.emit('theme-update', null);
-                        },
-                        initialVal: ss.settings.immersiveMode.value,
-                        title: "Immersive Mode",
-                        backgroundColor: tileColor,
-                        subtitle: "Makes the bottom navigation bar transparent. This option is best used with gesture navigation.",
-                        isThreeLine: true,
-                      )),
+                            onChanged: (bool val) {
+                              ss.settings.immersiveMode.value = val;
+                              saveSettings();
+                              if (val) {
+                                SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+                              } else {
+                                SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
+                                    overlays: [SystemUiOverlay.bottom, SystemUiOverlay.top]);
+                              }
+                              eventDispatcher.emit('theme-update', null);
+                            },
+                            initialVal: ss.settings.immersiveMode.value,
+                            title: "Immersive Mode",
+                            backgroundColor: tileColor,
+                            subtitle:
+                                "Makes the bottom navigation bar transparent. This option is best used with gesture navigation.",
+                            isThreeLine: true,
+                          )),
                     if (!kIsWeb && !kIsDesktop)
                       const SettingsSubtitle(
-                        subtitle: "Note: This option may cause slight choppiness in some animations due to an Android limitation.",
+                        subtitle:
+                            "Note: This option may cause slight choppiness in some animations due to an Android limitation.",
                       ),
                   ],
                 ),
@@ -191,131 +190,144 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                     text: "Window Effect",
                   ),
                 if (kIsDesktop && Platform.isWindows)
-                  SettingsSection(
-                    backgroundColor: tileColor,
-                    children: [
-                      Obx(() => SettingsOptions<WindowEffect>(
-                          initial: ss.settings.windowEffect.value,
-                          options: WindowEffects.effects,
-                          textProcessing: (WindowEffect effect) => effect.toString().substring("WindowEffect.".length),
-                          onChanged: (WindowEffect? effect) async {
-                            bool defaultOpacityLight = ss.settings.windowEffectCustomOpacityLight.value == WindowEffects.defaultOpacity(dark: false);
-                            bool defaultOpacityDark = ss.settings.windowEffectCustomOpacityDark.value == WindowEffects.defaultOpacity(dark: true);
-                            effect ??= WindowEffect.disabled;
-                            ss.settings.windowEffect.value = effect;
-                            if (defaultOpacityLight) {
-                              ss.settings.windowEffectCustomOpacityLight.value = WindowEffects.defaultOpacity(dark: false);
-                            }
-                            if (defaultOpacityDark) {
-                              ss.settings.windowEffectCustomOpacityDark.value = WindowEffects.defaultOpacity(dark: true);
-                            }
-                            await ss.prefs.setString('window-effect', effect.toString());
-                            await WindowEffects.setEffect(color: context.theme.colorScheme.background);
+                  SettingsSection(backgroundColor: tileColor, children: [
+                    Obx(
+                      () => SettingsOptions<WindowEffect>(
+                        initial: ss.settings.windowEffect.value,
+                        options: WindowEffects.effects,
+                        textProcessing: (WindowEffect effect) => effect.toString().substring("WindowEffect.".length),
+                        onChanged: (WindowEffect? effect) async {
+                          bool defaultOpacityLight = ss.settings.windowEffectCustomOpacityLight.value ==
+                              WindowEffects.defaultOpacity(dark: false);
+                          bool defaultOpacityDark = ss.settings.windowEffectCustomOpacityDark.value ==
+                              WindowEffects.defaultOpacity(dark: true);
+                          effect ??= WindowEffect.disabled;
+                          ss.settings.windowEffect.value = effect;
+                          if (defaultOpacityLight) {
+                            ss.settings.windowEffectCustomOpacityLight.value =
+                                WindowEffects.defaultOpacity(dark: false);
+                          }
+                          if (defaultOpacityDark) {
+                            ss.settings.windowEffectCustomOpacityDark.value = WindowEffects.defaultOpacity(dark: true);
+                          }
+                          await ss.prefs.setString('window-effect', effect.toString());
+                          await WindowEffects.setEffect(color: context.theme.colorScheme.background);
+                          saveSettings();
+                        },
+                        title: "Window Effect",
+                        subtitle:
+                            "${WindowEffects.descriptions[ss.settings.windowEffect.value]}\n\nOperating System Version: ${Platform.operatingSystemVersion}\nBuild number: ${parsedWindowsVersion()}${parsedWindowsVersion() < 22000 && ss.settings.windowEffect.value == WindowEffect.acrylic ? "\n\n⚠️ This effect causes window movement lag on Windows 10" : ""}",
+                        secondaryColor: headerColor,
+                        capitalize: true,
+                      ),
+                    ),
+                    if (ss.settings.skin.value == Skins.iOS)
+                      Obx(() => SettingsSubtitle(
+                            unlimitedSpace: true,
+                            subtitle:
+                                "${WindowEffects.descriptions[ss.settings.windowEffect.value]}\n\nOperating System Version: ${Platform.operatingSystemVersion}\nBuild number: ${parsedWindowsVersion()}${parsedWindowsVersion() < 22000 && ss.settings.windowEffect.value == WindowEffect.acrylic ? "\n\n⚠️ This effect causes window movement lag on Windows 10" : ""}",
+                          )),
+                    Obx(() {
+                      if (WindowEffects.dependsOnColor() &&
+                          !WindowEffects.isDark(color: context.theme.colorScheme.background)) {
+                        return SettingsTile(
+                          title: "Background Opacity (Light)",
+                          trailing: ss.settings.windowEffectCustomOpacityLight.value !=
+                                  WindowEffects.defaultOpacity(dark: false)
+                              ? ElevatedButton(
+                                  onPressed: () {
+                                    ss.settings.windowEffectCustomOpacityLight.value =
+                                        WindowEffects.defaultOpacity(dark: false);
+                                    saveSettings();
+                                  },
+                                  child: const Text("Reset to Default"),
+                                )
+                              : null,
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    }),
+                    Obx(() {
+                      if (WindowEffects.dependsOnColor() &&
+                          !WindowEffects.isDark(color: context.theme.colorScheme.background)) {
+                        return SettingsSlider(
+                          startingVal: ss.settings.windowEffectCustomOpacityLight.value,
+                          max: 1,
+                          min: 0,
+                          divisions: 100,
+                          formatValue: (value) => value.toStringAsFixed(2),
+                          update: (value) => ss.settings.windowEffectCustomOpacityLight.value = value,
+                          onChangeEnd: (value) {
                             saveSettings();
                           },
-                          title: "Window Effect",
-                          subtitle: "${WindowEffects.descriptions[ss.settings.windowEffect.value]}\n\nOperating System Version: ${Platform.operatingSystemVersion}\nBuild number: ${parsedWindowsVersion()}${parsedWindowsVersion() < 22000 && ss.settings.windowEffect.value == WindowEffect.acrylic ? "\n\n⚠️ This effect causes window movement lag on Windows 10" : ""}",
-                          secondaryColor: headerColor,
-                          capitalize: true,
-                        ),
-                      ),
-                      if (ss.settings.skin.value == Skins.iOS)
-                        Obx(() => SettingsSubtitle(
-                              unlimitedSpace: true,
-                              subtitle: "${WindowEffects.descriptions[ss.settings.windowEffect.value]}\n\nOperating System Version: ${Platform.operatingSystemVersion}\nBuild number: ${parsedWindowsVersion()}${parsedWindowsVersion() < 22000 && ss.settings.windowEffect.value == WindowEffect.acrylic ? "\n\n⚠️ This effect causes window movement lag on Windows 10" : ""}",
-                        )),
-                      Obx(() {
-                        if (WindowEffects.dependsOnColor() && !WindowEffects.isDark(color: context.theme.colorScheme.background)) {
-                          return SettingsTile(
-                            title: "Background Opacity (Light)",
-                            trailing: ss.settings.windowEffectCustomOpacityLight.value != WindowEffects.defaultOpacity(dark: false) ? ElevatedButton(
-                              onPressed: () {
-                                ss.settings.windowEffectCustomOpacityLight.value = WindowEffects.defaultOpacity(dark: false);
-                                saveSettings();
-                              },
-                              child: const Text("Reset to Default"),
-                            ) : null,
-                          );
-                        }
-                        return const SizedBox.shrink();
-                      }),
-                      Obx(() {
-                        if (WindowEffects.dependsOnColor() && !WindowEffects.isDark(color: context.theme.colorScheme.background)) {
-                          return SettingsSlider(
-                            startingVal: ss.settings.windowEffectCustomOpacityLight.value,
-                            max: 1,
-                            min: 0,
-                            divisions: 100,
-                            formatValue: (value) => value.toStringAsFixed(2),
-                            update: (value) => ss.settings.windowEffectCustomOpacityLight.value = value,
-                            onChangeEnd: (value) {
-                              saveSettings();
-                            },
-                          );
-                        }
-                        return const SizedBox.shrink();
-                      }),
-                      Obx(() {
-                        if (WindowEffects.dependsOnColor() && WindowEffects.isDark(color: context.theme.colorScheme.background)) {
-                          return SettingsTile(
-                            title: "Background Opacity (Dark)",
-                            trailing: ss.settings.windowEffectCustomOpacityDark.value != WindowEffects.defaultOpacity(dark: true) ? ElevatedButton(
-                              onPressed: () {
-                                ss.settings.windowEffectCustomOpacityDark.value = WindowEffects.defaultOpacity(dark: true);
-                                saveSettings();
-                              },
-                              child: const Text("Reset to Default"),
-                            ) : null,
-                          );
-                        }
-                        return const SizedBox.shrink();
-                      }),
-                      Obx(() {
-                        if (WindowEffects.dependsOnColor() && WindowEffects.isDark(color: context.theme.colorScheme.background)) {
-                          return SettingsSlider(
-                            startingVal: ss.settings.windowEffectCustomOpacityDark.value,
-                            max: 1,
-                            min: 0,
-                            divisions: 100,
-                            formatValue: (value) => value.toStringAsFixed(2),
-                            update: (value) => ss.settings.windowEffectCustomOpacityDark.value = value,
-                            onChangeEnd: (value) {
-                              saveSettings();
-                            },
-                          );
-                        }
-                        return const SizedBox.shrink();
-                      }),
-                    ]
-                  ),
-                SettingsHeader(
-                    iosSubtitle: iosSubtitle,
-                    materialSubtitle: materialSubtitle,
-                    text: "Colors"),
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    }),
+                    Obx(() {
+                      if (WindowEffects.dependsOnColor() &&
+                          WindowEffects.isDark(color: context.theme.colorScheme.background)) {
+                        return SettingsTile(
+                          title: "Background Opacity (Dark)",
+                          trailing: ss.settings.windowEffectCustomOpacityDark.value !=
+                                  WindowEffects.defaultOpacity(dark: true)
+                              ? ElevatedButton(
+                                  onPressed: () {
+                                    ss.settings.windowEffectCustomOpacityDark.value =
+                                        WindowEffects.defaultOpacity(dark: true);
+                                    saveSettings();
+                                  },
+                                  child: const Text("Reset to Default"),
+                                )
+                              : null,
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    }),
+                    Obx(() {
+                      if (WindowEffects.dependsOnColor() &&
+                          WindowEffects.isDark(color: context.theme.colorScheme.background)) {
+                        return SettingsSlider(
+                          startingVal: ss.settings.windowEffectCustomOpacityDark.value,
+                          max: 1,
+                          min: 0,
+                          divisions: 100,
+                          formatValue: (value) => value.toStringAsFixed(2),
+                          update: (value) => ss.settings.windowEffectCustomOpacityDark.value = value,
+                          onChangeEnd: (value) {
+                            saveSettings();
+                          },
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    }),
+                  ]),
+                SettingsHeader(iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Colors"),
                 SettingsSection(
                   backgroundColor: tileColor,
                   children: [
                     if (kIsDesktop)
                       Obx(() => SettingsSwitch(
-                        initialVal: ss.settings.useDesktopAccent.value,
-                        backgroundColor: tileColor,
-                        title: "Use ${Platform.isWindows ? "Windows" : Platform.isLinux ? "Linux" : "MacOS"} Accent Color",
-                        subtitle: "Apply the ${Platform.isWindows ? "Windows" : Platform.isLinux ? "Linux" : "MacOS"} accent color to your theme",
-                        onChanged: (value) async {
-                          ss.settings.useDesktopAccent.value = value;
-                          saveSettings();
-                          await ts.refreshDesktopAccent(context);
-                        },
-                      )),
-                    if (kIsDesktop)
-                      const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
+                            initialVal: ss.settings.useDesktopAccent.value,
+                            backgroundColor: tileColor,
+                            title:
+                                "Use ${Platform.isWindows ? "Windows" : Platform.isLinux ? "Linux" : "MacOS"} Accent Color",
+                            subtitle:
+                                "Apply the ${Platform.isWindows ? "Windows" : Platform.isLinux ? "Linux" : "MacOS"} accent color to your theme",
+                            onChanged: (value) async {
+                              ss.settings.useDesktopAccent.value = value;
+                              saveSettings();
+                              await ts.refreshDesktopAccent(context);
+                            },
+                          )),
+                    if (kIsDesktop) const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     if (!kIsWeb && !kIsDesktop && ts.monetPalette != null)
                       Obx(() {
                         if (iOS) {
                           return SettingsTile(
                             title: "Material You",
                             subtitle:
-                            "Use Android 12's Monet engine to provide wallpaper-based coloring to your theme. Tap for more info.",
+                                "Use Android 12's Monet engine to provide wallpaper-based coloring to your theme. Tap for more info.",
                             onTap: () {
                               showMonetDialog(context);
                             },
@@ -335,8 +347,7 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                           onChanged: (val) async {
                             // disable colors from music
                             final currentTheme = ThemeStruct.getLightTheme();
-                            if (currentTheme.name == "Music Theme ☀" ||
-                                currentTheme.name == "Music Theme 🌙") {
+                            if (currentTheme.name == "Music Theme ☀" || currentTheme.name == "Music Theme 🌙") {
                               ss.settings.colorsFromMedia.value = false;
                               ss.saveSettings(ss.settings);
                               ThemeStruct previousDark = await ts.revertToPreviousDarkTheme();
@@ -351,14 +362,15 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                           textProcessing: (val) => val.toString().split(".").last,
                           title: "Material You",
                           subtitle:
-                          "Use Android 12's Monet engine to provide wallpaper-based coloring to your theme. Tap for more info.",
+                              "Use Android 12's Monet engine to provide wallpaper-based coloring to your theme. Tap for more info.",
                           secondaryColor: headerColor,
                         ),
                       ),
                     if (!kIsWeb && !kIsDesktop && ts.monetPalette != null)
                       const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     if (!kIsWeb && !kIsDesktop)
-                      Obx(() => SettingsSwitch(
+                      Obx(
+                        () => SettingsSwitch(
                           onChanged: (bool val) async {
                             if (val) {
                               await mcs.invokeMethod("request-notification-listener-permission");
@@ -372,16 +384,14 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                                 var currentDark = ThemeStruct.getDarkTheme();
                                 await ss.prefs.setString("previous-light", currentLight.name);
                                 await ss.prefs.setString("previous-dark", currentDark.name);
-                                await ts.changeTheme(
-                                    context,
+                                await ts.changeTheme(context,
                                     light: allThemes.firstWhere((element) => element.name == "Music Theme ☀"),
-                                    dark: allThemes.firstWhere((element) => element.name == "Music Theme 🌙")
-                                );
+                                    dark: allThemes.firstWhere((element) => element.name == "Music Theme 🌙"));
                                 ss.settings.colorsFromMedia.value = val;
                                 saveSettings();
                               } catch (e) {
-                                showSnackbar(
-                                    "Error", "Something went wrong, please ensure you granted the permission correctly!");
+                                showSnackbar("Error",
+                                    "Something went wrong, please ensure you granted the permission correctly!");
                               }
                             } else {
                               var allThemes = ThemeStruct.getThemes();
@@ -399,40 +409,38 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                           initialVal: ss.settings.colorsFromMedia.value,
                           title: "Colors from Media",
                           backgroundColor: tileColor,
-                          subtitle:
-                          "Pull app colors from currently playing media",
+                          subtitle: "Pull app colors from currently playing media",
                         ),
                       ),
                     if (!kIsWeb && !kIsDesktop)
                       const SettingsSubtitle(
                         unlimitedSpace: true,
-                        subtitle: "Note: Requires full notification access. Enabling this option will set a custom Music Theme as the selected theme. Media art with mostly blacks or whites may not produce any change in theming.",
+                        subtitle:
+                            "Note: Requires full notification access. Enabling this option will set a custom Music Theme as the selected theme. Media art with mostly blacks or whites may not produce any change in theming.",
                       ),
-                    if (!kIsWeb && !kIsDesktop)
-                      const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
+                    if (!kIsWeb && !kIsDesktop) const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     Obx(() => SettingsSwitch(
-                      onChanged: (bool val) {
-                        ss.settings.colorfulAvatars.value = val;
-                        saveSettings();
-                      },
-                      initialVal: ss.settings.colorfulAvatars.value,
-                      title: "Colorful Avatars",
-                      backgroundColor: tileColor,
-                      subtitle: "Gives letter avatars a splash of color",
-                    )),
+                          onChanged: (bool val) {
+                            ss.settings.colorfulAvatars.value = val;
+                            saveSettings();
+                          },
+                          initialVal: ss.settings.colorfulAvatars.value,
+                          title: "Colorful Avatars",
+                          backgroundColor: tileColor,
+                          subtitle: "Gives letter avatars a splash of color",
+                        )),
                     const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     Obx(() => SettingsSwitch(
-                      onChanged: (bool val) {
-                        ss.settings.colorfulBubbles.value = val;
-                        saveSettings();
-                      },
-                      initialVal: ss.settings.colorfulBubbles.value,
-                      title: "Colorful Bubbles",
-                      backgroundColor: tileColor,
-                      subtitle: "Gives received message bubbles a splash of color",
-                    )),
-                    if (!kIsWeb)
-                      const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
+                          onChanged: (bool val) {
+                            ss.settings.colorfulBubbles.value = val;
+                            saveSettings();
+                          },
+                          initialVal: ss.settings.colorfulBubbles.value,
+                          title: "Colorful Bubbles",
+                          backgroundColor: tileColor,
+                          subtitle: "Gives received message bubbles a splash of color",
+                        )),
+                    if (!kIsWeb) const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     if (!kIsWeb)
                       SettingsTile(
                         title: "Custom Avatar Colors",
@@ -445,8 +453,7 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                         },
                         subtitle: "Customize the color for different avatars",
                       ),
-                    if (!kIsWeb)
-                      const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
+                    if (!kIsWeb) const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     if (!kIsWeb)
                       SettingsTile(
                         title: "Custom Avatars",
@@ -465,9 +472,7 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                   Obx(() {
                     if (controller.refreshRates.length > 2) {
                       return SettingsHeader(
-                          iosSubtitle: iosSubtitle,
-                          materialSubtitle: materialSubtitle,
-                          text: "Refresh Rate");
+                          iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Refresh Rate");
                     } else {
                       return const SizedBox.shrink();
                     }
@@ -479,182 +484,187 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                         backgroundColor: tileColor,
                         children: [
                           Obx(() => SettingsOptions<int>(
-                            initial: controller.currentMode.value,
-                            onChanged: (val) async {
-                              if (val == null) return;
-                              controller.currentMode.value = val;
-                              ss.settings.refreshRate.value = controller.currentMode.value;
-                              ss.saveSettings(null, true);
-                            },
-                            options: controller.refreshRates,
-                            textProcessing: (val) => val == 0 ? "Auto" : "$val Hz",
-                            title: "Display",
-                            secondaryColor: headerColor,
-                          )),
+                                initial: controller.currentMode.value,
+                                onChanged: (val) async {
+                                  if (val == null) return;
+                                  controller.currentMode.value = val;
+                                  ss.settings.refreshRate.value = controller.currentMode.value;
+                                  ss.saveSettings(null, true);
+                                },
+                                options: controller.refreshRates,
+                                textProcessing: (val) => val == 0 ? "Auto" : "$val Hz",
+                                title: "Display",
+                                secondaryColor: headerColor,
+                              )),
                         ],
                       );
                     } else {
                       return const SizedBox.shrink();
                     }
                   }),
-                SettingsHeader(
-                    iosSubtitle: iosSubtitle,
-                    materialSubtitle: materialSubtitle,
-                    text: "Text and Font"),
-                  SettingsSection(
-                    backgroundColor: tileColor,
-                    children: [
-                      Obx(() {
-                        if (!fs.fontExistsOnDisk.value) {
-                          return SettingsTile(
-                            onTap: () async {
-                              if (kIsWeb) {
-                                try {
-                                  final res = await FilePicker.platform.pickFiles(withData: true, type: FileType.custom, allowedExtensions: ["ttf"]);
-                                  if (res == null || res.files.isEmpty || res.files.first.bytes == null) return;
+                SettingsHeader(iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Text and Font"),
+                SettingsSection(
+                  backgroundColor: tileColor,
+                  children: [
+                    Obx(() {
+                      if (!fs.fontExistsOnDisk.value) {
+                        return SettingsTile(
+                          onTap: () async {
+                            if (kIsWeb) {
+                              try {
+                                final res = await FilePicker.platform
+                                    .pickFiles(withData: true, type: FileType.custom, allowedExtensions: ["ttf"]);
+                                if (res == null || res.files.isEmpty || res.files.first.bytes == null) return;
 
-                                  final txn = fs.webDb.transaction("BBStore", idbModeReadWrite);
-                                  final store = txn.objectStore("BBStore");
-                                  await store.put(res.files.first.bytes!, "iosFont");
-                                  await txn.completed;
-
-                                  final fontLoader = FontLoader("Apple Color Emoji");
-                                  final cachedFontBytes = ByteData.view(res.files.first.bytes!.buffer);
-                                  fontLoader.addFont(
-                                    Future<ByteData>.value(cachedFontBytes),
-                                  );
-                                  await fontLoader.load();
-                                  fs.fontExistsOnDisk.value = true;
-                                  return showSnackbar("Notice", "Font loaded");
-                                } catch (_) {
-                                  return showSnackbar("Error", "Failed to load font file. Please make sure it is a valid ttf and under 50mb.");
-                                }
-                              }
-
-                              showDialog(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  backgroundColor: context.theme.colorScheme.properSurface,
-                                  title: Text("Downloading font file...", style: context.theme.textTheme.titleLarge),
-                                  content: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: <Widget>[
-                                        Obx(
-                                              () => Text(
-                                              '${controller.progress.value != null && controller.totalSize.value != null ? (controller.progress.value! * controller.totalSize.value! / 1000).getFriendlySize(withSuffix: false) : ""} / ${((controller.totalSize.value ?? 0).toDouble() / 1000).getFriendlySize()} (${((controller.progress.value ?? 0) * 100).floor()}%)',
-                                              style: context.theme.textTheme.bodyLarge),
-                                        ),
-                                        const SizedBox(height: 10.0),
-                                        Obx(
-                                              () => ClipRRect(
-                                            borderRadius: BorderRadius.circular(20),
-                                            child: LinearProgressIndicator(
-                                              backgroundColor: context.theme.colorScheme.outline,
-                                              valueColor: AlwaysStoppedAnimation<Color>(context.theme.colorScheme.primary),
-                                              value: controller.progress.value,
-                                              minHeight: 5,
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(
-                                          height: 15.0,
-                                        ),
-                                        Obx(() => Text(
-                                          controller.progress.value == 1 ? "Download Complete!" : "You can close this dialog. The font will continue to download in the background.",
-                                          textAlign: TextAlign.center,
-                                          style: context.theme.textTheme.bodyLarge,
-                                        )),
-                                      ]),
-                                  actions: [
-                                    Obx(() => controller.downloadingFont.value
-                                        ? Container(height: 0, width: 0)
-                                        : TextButton(
-                                      child: Text("Close", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
-                                      onPressed: () async {
-                                        Get.closeAllSnackbars();
-                                        Get.back();
-                                        Future.delayed(const Duration(milliseconds: 400), ()
-                                        {
-                                          controller.progress.value = null;
-                                          controller.totalSize.value = null;
-                                        });
-                                      },
-                                    ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                              final response = await http.downloadFromUrl(
-                                "https://github.com/BlueBubblesApp/bluebubbles-fonts/releases/latest/download/AppleColorEmoji.ttf",
-                                progress: (current, total) {
-                                  if (current <= total) {
-                                    controller.downloadingFont.value = true;
-                                    controller.progress.value = current / total;
-                                    controller.totalSize.value = total;
-                                  }
-                                },
-                              ).catchError((err, stack) {
-                                Logger.error("Failed to fetch font!", error: err, trace: stack);
-                                showSnackbar("Error", "Failed to fetch font! Error: ${err.toString()}");
-                                return Response(requestOptions: RequestOptions(path: ''));
-                              });
-                              Get.back();
-                              controller.downloadingFont.value = false;
-                              if (response.statusCode == 200) {
-                                try {
-                                  final Uint8List data = response.data;
-                                  final file = File("${fs.appDocDir.path}/font/apple.ttf");
-                                  await file.create(recursive: true);
-                                  await file.writeAsBytes(data);
-                                  fs.fontExistsOnDisk.value = true;
-                                  final fontLoader = FontLoader("Apple Color Emoji");
-                                  final cachedFontBytes = ByteData.view(data.buffer);
-                                  fontLoader.addFont(
-                                    Future<ByteData>.value(cachedFontBytes),
-                                  );
-                                  await fontLoader.load();
-                                  showSnackbar("Notice", "Font loaded");
-                                } catch (e, stack) {
-                                  Logger.error("Failed to load font!", error: e, trace: stack);
-                                  showSnackbar("Error", "Failed to load font! Error: ${e.toString()}");
-                                }
-                              } else {
-                                showSnackbar("Error", "Failed to fetch font");
-                              }
-                            },
-                            title:
-                            kIsWeb ? "Upload Font File" : "Download${controller.downloadingFont.value ? "ing" : ""} iOS Emoji Font${controller.downloadingFont.value ? " (${controller.progress.value != null && controller.totalSize.value != null ? (controller.progress.value! * controller.totalSize.value! / 1000).getFriendlySize(withSuffix: false) : ""} / ${((controller.totalSize.value ?? 0).toDouble() / 1000).getFriendlySize()}) (${((controller.progress.value ?? 0) * 100).floor()}%)" : ""}",
-                            subtitle: kIsWeb ? "Upload your ttf emoji file into BlueBubbles" : null,
-                          );
-                        } else {
-                          return const SizedBox.shrink();
-                        }
-                      }),
-                      Obx(() {
-                        if (fs.fontExistsOnDisk.value) {
-                          return SettingsTile(
-                            onTap: () async {
-                              if (kIsWeb) {
                                 final txn = fs.webDb.transaction("BBStore", idbModeReadWrite);
                                 final store = txn.objectStore("BBStore");
-                                await store.delete("iosFont");
+                                await store.put(res.files.first.bytes!, "iosFont");
                                 await txn.completed;
-                              } else {
-                                final file = File("${fs.appDocDir.path}/font/apple.ttf");
-                                await file.delete();
+
+                                final fontLoader = FontLoader("Apple Color Emoji");
+                                final cachedFontBytes = ByteData.view(res.files.first.bytes!.buffer);
+                                fontLoader.addFont(
+                                  Future<ByteData>.value(cachedFontBytes),
+                                );
+                                await fontLoader.load();
+                                fs.fontExistsOnDisk.value = true;
+                                return showSnackbar("Notice", "Font loaded");
+                              } catch (_) {
+                                return showSnackbar("Error",
+                                    "Failed to load font file. Please make sure it is a valid ttf and under 50mb.");
                               }
-                              fs.fontExistsOnDisk.value = false;
-                              showSnackbar("Notice", "Font removed, restart the app for changes to take effect");
-                            },
-                            title: "Delete ${kIsWeb ? "" : "iOS "}Emoji Font",
-                          );
-                        } else {
-                          return const SizedBox.shrink();
-                        }
-                      }),
-                    ],
-                  ),
+                            }
+
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                backgroundColor: context.theme.colorScheme.properSurface,
+                                title: Text("Downloading font file...", style: context.theme.textTheme.titleLarge),
+                                content: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: <Widget>[
+                                      Obx(
+                                        () => Text(
+                                            '${controller.progress.value != null && controller.totalSize.value != null ? (controller.progress.value! * controller.totalSize.value! / 1000).getFriendlySize(withSuffix: false) : ""} / ${((controller.totalSize.value ?? 0).toDouble() / 1000).getFriendlySize()} (${((controller.progress.value ?? 0) * 100).floor()}%)',
+                                            style: context.theme.textTheme.bodyLarge),
+                                      ),
+                                      const SizedBox(height: 10.0),
+                                      Obx(
+                                        () => ClipRRect(
+                                          borderRadius: BorderRadius.circular(20),
+                                          child: LinearProgressIndicator(
+                                            backgroundColor: context.theme.colorScheme.outline,
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(context.theme.colorScheme.primary),
+                                            value: controller.progress.value,
+                                            minHeight: 5,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(
+                                        height: 15.0,
+                                      ),
+                                      Obx(() => Text(
+                                            controller.progress.value == 1
+                                                ? "Download Complete!"
+                                                : "You can close this dialog. The font will continue to download in the background.",
+                                            textAlign: TextAlign.center,
+                                            style: context.theme.textTheme.bodyLarge,
+                                          )),
+                                    ]),
+                                actions: [
+                                  Obx(
+                                    () => controller.downloadingFont.value
+                                        ? Container(height: 0, width: 0)
+                                        : TextButton(
+                                            child: Text("Close",
+                                                style: context.theme.textTheme.bodyLarge!
+                                                    .copyWith(color: context.theme.colorScheme.primary)),
+                                            onPressed: () async {
+                                              Get.closeAllSnackbars();
+                                              Get.back();
+                                              Future.delayed(const Duration(milliseconds: 400), () {
+                                                controller.progress.value = null;
+                                                controller.totalSize.value = null;
+                                              });
+                                            },
+                                          ),
+                                  ),
+                                ],
+                              ),
+                            );
+                            final response = await http.downloadFromUrl(
+                              "https://github.com/BlueBubblesApp/bluebubbles-fonts/releases/latest/download/AppleColorEmoji.ttf",
+                              progress: (current, total) {
+                                if (current <= total) {
+                                  controller.downloadingFont.value = true;
+                                  controller.progress.value = current / total;
+                                  controller.totalSize.value = total;
+                                }
+                              },
+                            ).catchError((err, stack) {
+                              Logger.error("Failed to fetch font!", error: err, trace: stack);
+                              showSnackbar("Error", "Failed to fetch font! Error: ${err.toString()}");
+                              return Response(requestOptions: RequestOptions(path: ''));
+                            });
+                            Get.back();
+                            controller.downloadingFont.value = false;
+                            if (response.statusCode == 200) {
+                              try {
+                                final Uint8List data = response.data;
+                                final file = File("${fs.appDocDir.path}/font/apple.ttf");
+                                await file.create(recursive: true);
+                                await file.writeAsBytes(data);
+                                fs.fontExistsOnDisk.value = true;
+                                final fontLoader = FontLoader("Apple Color Emoji");
+                                final cachedFontBytes = ByteData.view(data.buffer);
+                                fontLoader.addFont(
+                                  Future<ByteData>.value(cachedFontBytes),
+                                );
+                                await fontLoader.load();
+                                showSnackbar("Notice", "Font loaded");
+                              } catch (e, stack) {
+                                Logger.error("Failed to load font!", error: e, trace: stack);
+                                showSnackbar("Error", "Failed to load font! Error: ${e.toString()}");
+                              }
+                            } else {
+                              showSnackbar("Error", "Failed to fetch font");
+                            }
+                          },
+                          title: kIsWeb
+                              ? "Upload Font File"
+                              : "Download${controller.downloadingFont.value ? "ing" : ""} iOS Emoji Font${controller.downloadingFont.value ? " (${controller.progress.value != null && controller.totalSize.value != null ? (controller.progress.value! * controller.totalSize.value! / 1000).getFriendlySize(withSuffix: false) : ""} / ${((controller.totalSize.value ?? 0).toDouble() / 1000).getFriendlySize()}) (${((controller.progress.value ?? 0) * 100).floor()}%)" : ""}",
+                          subtitle: kIsWeb ? "Upload your ttf emoji file into BlueBubbles" : null,
+                        );
+                      } else {
+                        return const SizedBox.shrink();
+                      }
+                    }),
+                    Obx(() {
+                      if (fs.fontExistsOnDisk.value) {
+                        return SettingsTile(
+                          onTap: () async {
+                            if (kIsWeb) {
+                              final txn = fs.webDb.transaction("BBStore", idbModeReadWrite);
+                              final store = txn.objectStore("BBStore");
+                              await store.delete("iosFont");
+                              await txn.completed;
+                            } else {
+                              final file = File("${fs.appDocDir.path}/font/apple.ttf");
+                              await file.delete();
+                            }
+                            fs.fontExistsOnDisk.value = false;
+                            showSnackbar("Notice", "Font removed, restart the app for changes to take effect");
+                          },
+                          title: "Delete ${kIsWeb ? "" : "iOS "}Emoji Font",
+                        );
+                      } else {
+                        return const SizedBox.shrink();
+                      }
+                    }),
+                  ],
+                ),
               ],
             ),
           ),
@@ -669,22 +679,22 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
 
   void showMonetDialog(BuildContext context) {
     showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text("Monet Theming Info", style: context.theme.textTheme.titleLarge),
-        backgroundColor: context.theme.colorScheme.properSurface,
-        content: Text(
-            "Harmonize - Overwrites primary color and blends remainder of colors with the current theme colors\r\n"
+        context: context,
+        builder: (context) => AlertDialog(
+              title: Text("Monet Theming Info", style: context.theme.textTheme.titleLarge),
+              backgroundColor: context.theme.colorScheme.properSurface,
+              content: Text(
+                "Harmonize - Overwrites primary color and blends remainder of colors with the current theme colors\r\n"
                 "Full - Overwrites primary, background, and accent colors, along with other minor colors.\r\n",
-          style: context.theme.textTheme.bodyLarge,
-        ),
-        actions: [
-          TextButton(
-              child: Text("OK", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
-              onPressed: () => Navigator.of(context).pop(),
-          ),
-        ],
-      )
-    );
+                style: context.theme.textTheme.bodyLarge,
+              ),
+              actions: [
+                TextButton(
+                  child: Text("OK",
+                      style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ],
+            ));
   }
 }

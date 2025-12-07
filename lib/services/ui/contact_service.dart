@@ -15,6 +15,7 @@ ContactsService cs = Get.isRegistered<ContactsService>() ? Get.find<ContactsServ
 
 class ContactsService extends GetxService {
   final tag = "ContactsService";
+
   /// The master list of contact objects
   List<Contact> contacts = [];
 
@@ -151,21 +152,29 @@ class ContactsService extends GetxService {
       Logger.debug("Contacts fetched in ${endTime - startTime} ms");
     } else {
       _contacts.addAll((await FastContacts.getAllContacts(
-        fields: List<ContactField>.from(ContactField.values)
-          ..removeWhere((e) => [ContactField.company, ContactField.department, ContactField.jobDescription, ContactField.emailLabels, ContactField.phoneLabels].contains(e))
-      )).map((e) => Contact(
-        displayName: e.displayName,
-        emails: e.emails.map((e) => e.address).toList(),
-        phones: e.phones.map((e) => e.number).toList(),
-        structuredName: e.structuredName == null ? null : StructuredName(
-          namePrefix: e.structuredName!.namePrefix,
-          givenName: e.structuredName!.givenName,
-          middleName: e.structuredName!.middleName,
-          familyName: e.structuredName!.familyName,
-          nameSuffix: e.structuredName!.nameSuffix,
-        ),
-        id: e.id,
-      )));
+              fields: List<ContactField>.from(ContactField.values)
+                ..removeWhere((e) => [
+                      ContactField.company,
+                      ContactField.department,
+                      ContactField.jobDescription,
+                      ContactField.emailLabels,
+                      ContactField.phoneLabels
+                    ].contains(e))))
+          .map((e) => Contact(
+                displayName: e.displayName,
+                emails: e.emails.map((e) => e.address).toList(),
+                phones: e.phones.map((e) => e.number).toList(),
+                structuredName: e.structuredName == null
+                    ? null
+                    : StructuredName(
+                        namePrefix: e.structuredName!.namePrefix,
+                        givenName: e.structuredName!.givenName,
+                        middleName: e.structuredName!.middleName,
+                        familyName: e.structuredName!.familyName,
+                        nameSuffix: e.structuredName!.nameSuffix,
+                      ),
+                id: e.id,
+              )));
 
       int endTime = DateTime.now().millisecondsSinceEpoch;
       Logger.debug("Contacts fetched in ${endTime - startTime} ms");
@@ -280,9 +289,7 @@ class ContactsService extends GetxService {
   }
 
   Contact? getContact(String address) {
-    final tempHandle = Handle(
-      address: address
-    );
+    final tempHandle = Handle(address: address);
     return matchHandleToContact(tempHandle);
   }
 
@@ -360,7 +367,8 @@ class ContactsService extends GetxService {
                 String? formatA = a.contains("@") ? a.toLowerCase() : await formatPhoneNumber(cleansePhoneNumber(a));
                 if (formatA.isEmpty) continue;
                 for (String _a in _addresses) {
-                  String? _formatA = _a.contains("@") ? _a.toLowerCase() : await formatPhoneNumber(cleansePhoneNumber(_a));
+                  String? _formatA =
+                      _a.contains("@") ? _a.toLowerCase() : await formatPhoneNumber(cleansePhoneNumber(_a));
                   if (formatA == _formatA) {
                     match = true;
                     break;
@@ -392,7 +400,7 @@ class ContactsService extends GetxService {
             if (emails.isEmpty && phones.isEmpty) {
               logger?.call("Contact has no saved addresses: $displayName");
             }
-            
+
             networkContacts.add(Contact(
               id: (map['id'] ?? (phones.isNotEmpty ? phones : emails)).toString(),
               displayName: displayName,

@@ -39,13 +39,16 @@ class SettingsService extends GetxService {
     prefs = await SharedPreferences.getInstance();
     settings = Settings.getSettings();
     if (!headless && !kIsWeb && !kIsDesktop) {
-      // refresh rate
+      // Parallelize independent operations
       try {
-        _canAuthenticate = await LocalAuthentication().isDeviceSupported();
-        final mode = await settings.getDisplayMode();
-        if (mode != DisplayMode.auto) {
-          FlutterDisplayMode.setPreferredMode(mode);
-        }
+        await Future.wait([
+          LocalAuthentication().isDeviceSupported().then((value) => _canAuthenticate = value),
+          settings.getDisplayMode().then((mode) {
+            if (mode != DisplayMode.auto) {
+              FlutterDisplayMode.setPreferredMode(mode);
+            }
+          }),
+        ]);
       } catch (_) {}
       // system appearance
       if (settings.immersiveMode.value) {
@@ -58,14 +61,17 @@ class SettingsService extends GetxService {
         if (settings.allowUpsideDownRotation.value) DeviceOrientation.portraitDown,
       ]);
     }
-    // launch at startup
+    // launch at startup - defer this so it doesn't block startup
     if (kIsDesktop) {
-      if (Platform.isWindows) {
-        try {
-          _canAuthenticate = await LocalAuthentication().isDeviceSupported();
-        } catch (_) {}
-      }
-      ss.settings.launchAtStartup.value = await setupLaunchAtStartup(ss.settings.launchAtStartup.value, ss.settings.launchAtStartupMinimized.value);
+      Future.microtask(() async {
+        if (Platform.isWindows) {
+          try {
+            _canAuthenticate = await LocalAuthentication().isDeviceSupported();
+          } catch (_) {}
+        }
+        ss.settings.launchAtStartup.value =
+            await setupLaunchAtStartup(ss.settings.launchAtStartup.value, ss.settings.launchAtStartupMinimized.value);
+      });
     }
 
     initCompleted.complete();
@@ -280,8 +286,11 @@ class SettingsService extends GetxService {
     }
   }
 
-  Tuple4<int, int, String, int> serverDetailsSync() => Tuple4(prefs.getInt("macos-version") ?? 11, prefs.getInt("macos-minor-version") ?? 0,
-      prefs.getString("server-version") ?? "0.0.0", prefs.getInt("server-version-code") ?? 0);
+  Tuple4<int, int, String, int> serverDetailsSync() => Tuple4(
+      prefs.getInt("macos-version") ?? 11,
+      prefs.getInt("macos-minor-version") ?? 0,
+      prefs.getString("server-version") ?? "0.0.0",
+      prefs.getInt("server-version-code") ?? 0);
 
   Future<bool> get isMinSierra async {
     final val = await getServerDetails();
@@ -373,7 +382,8 @@ class SettingsService extends GetxService {
               const SizedBox(
                 height: 15.0,
               ),
-              Text(available ? "Updates available:" : "Your server is up-to-date!", style: context.theme.textTheme.bodyLarge),
+              Text(available ? "Updates available:" : "Your server is up-to-date!",
+                  style: context.theme.textTheme.bodyLarge),
               const SizedBox(
                 height: 15.0,
               ),
@@ -385,14 +395,16 @@ class SettingsService extends GetxService {
           ),
           actions: [
             TextButton(
-              child: Text("OK", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+              child: Text("OK",
+                  style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
               onPressed: () async {
                 await prefs.setString("server-update-check", metadata['version']);
                 Navigator.of(context).pop();
               },
             ),
             TextButton(
-              child: Text("Install", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+              child: Text("Install",
+                  style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
               onPressed: () async {
                 await prefs.setString("server-update-check", metadata['version']);
                 http.installUpdate();
@@ -410,12 +422,15 @@ class SettingsService extends GetxService {
     if (kIsDesktop) return; // todo
     final github = GitHub();
     final stream = github.repositories.listReleases(RepositorySlug('bluebubblesapp', 'bluebubbles-app'));
-    final release = await stream.firstWhere((element) => !(element.isDraft ?? false) && !(element.isPrerelease ?? false) && element.tagName != null);
+    final release = await stream.firstWhere(
+        (element) => !(element.isDraft ?? false) && !(element.isPrerelease ?? false) && element.tagName != null);
     final version = release.tagName!.split("+").first.replaceAll("v", "");
     final code = release.tagName!.split("+").last.split('-').first;
     final isDesktopRelease = release.tagName!.split('+').last.contains('desktop');
     final buildNumber = fs.packageInfo.buildNumber.lastChars(min(4, fs.packageInfo.buildNumber.length));
-    if (int.parse(code) <= int.parse(buildNumber) || prefs.getString("client-update-check") == code || (Platform.isAndroid && isDesktopRelease)) return;
+    if (int.parse(code) <= int.parse(buildNumber) ||
+        prefs.getString("client-update-check") == code ||
+        (Platform.isAndroid && isDesktopRelease)) return;
     showDialog(
       context: Get.context!,
       builder: (context) => AlertDialog(
@@ -439,13 +454,15 @@ class SettingsService extends GetxService {
         actions: [
           if (release.htmlUrl != null)
             TextButton(
-              child: Text("Download", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+              child: Text("Download",
+                  style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
               onPressed: () async {
                 await launchUrl(Uri.parse(release.htmlUrl!), mode: LaunchMode.externalApplication);
               },
             ),
           TextButton(
-            child: Text("OK", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+            child: Text("OK",
+                style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
             onPressed: () async {
               await prefs.setString("client-update-check", code);
               Navigator.of(context).pop();

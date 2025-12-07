@@ -113,47 +113,49 @@ class ThemesService extends GetxService {
   ]);
 
   List<ThemeStruct> get defaultThemes => [
-    ThemeStruct(name: "OLED Dark", themeData: oledDarkTheme),
-    ThemeStruct(name: "Bright White", themeData: whiteLightTheme),
-    ThemeStruct(name: "Nord Theme", themeData: nordDarkTheme),
-    ThemeStruct(name: "Music Theme ☀", themeData: whiteLightTheme),
-    ThemeStruct(name: "Music Theme 🌙", themeData: oledDarkTheme),
-    ...FlexScheme.values
-        .where((e) => e != FlexScheme.custom)
-        .map((e) => [
-      ThemeStruct(
-        name: "${e.name.split(RegExp(r"(?=[A-Z])")).join(" ").capitalize} ☀",
-        themeData: FlexThemeData.light(scheme: e, surfaceMode: FlexSurfaceMode.highSurfaceLowScaffold, blendLevel: 40).copyWith(
-            textTheme: Typography.englishLike2021.merge(Typography.blackMountainView),
-            splashFactory: InkSparkle.splashFactory,
-            extensions: [
-              BubbleText(
-                bubbleText: Typography.englishLike2021.bodyMedium!.copyWith(
-                  fontSize: 15,
-                  height: Typography.englishLike2021.bodyMedium!.height! * 0.85,
-                ),
-              ),
-            ]
-        ),
-      ),
-      ThemeStruct(
-        name: "${e.name.split(RegExp(r"(?=[A-Z])")).join(" ").capitalize} 🌙",
-        themeData: FlexThemeData.dark(scheme: e, surfaceMode: FlexSurfaceMode.highSurfaceLowScaffold, blendLevel: 40)
-            .copyWith(
-            textTheme: Typography.englishLike2021.merge(Typography.whiteMountainView),
-            splashFactory: InkSparkle.splashFactory,
-            extensions: [
-              BubbleText(
-                bubbleText: Typography.englishLike2021.bodyMedium!.copyWith(
-                  fontSize: 15,
-                  height: Typography.englishLike2021.bodyMedium!.height! * 0.85,
-                ),
-              ),
-            ]
-        ),
-      ),
-    ]).flattened,
-  ];
+        ThemeStruct(name: "OLED Dark", themeData: oledDarkTheme),
+        ThemeStruct(name: "Bright White", themeData: whiteLightTheme),
+        ThemeStruct(name: "Nord Theme", themeData: nordDarkTheme),
+        ThemeStruct(name: "Music Theme ☀", themeData: whiteLightTheme),
+        ThemeStruct(name: "Music Theme 🌙", themeData: oledDarkTheme),
+        ...FlexScheme.values
+            .where((e) => e != FlexScheme.custom)
+            .map((e) => [
+                  ThemeStruct(
+                    name: "${e.name.split(RegExp(r"(?=[A-Z])")).join(" ").capitalize} ☀",
+                    themeData: FlexThemeData.light(
+                            scheme: e, surfaceMode: FlexSurfaceMode.highSurfaceLowScaffold, blendLevel: 40)
+                        .copyWith(
+                            textTheme: Typography.englishLike2021.merge(Typography.blackMountainView),
+                            splashFactory: InkSparkle.splashFactory,
+                            extensions: [
+                          BubbleText(
+                            bubbleText: Typography.englishLike2021.bodyMedium!.copyWith(
+                              fontSize: 15,
+                              height: Typography.englishLike2021.bodyMedium!.height! * 0.85,
+                            ),
+                          ),
+                        ]),
+                  ),
+                  ThemeStruct(
+                    name: "${e.name.split(RegExp(r"(?=[A-Z])")).join(" ").capitalize} 🌙",
+                    themeData: FlexThemeData.dark(
+                            scheme: e, surfaceMode: FlexSurfaceMode.highSurfaceLowScaffold, blendLevel: 40)
+                        .copyWith(
+                            textTheme: Typography.englishLike2021.merge(Typography.whiteMountainView),
+                            splashFactory: InkSparkle.splashFactory,
+                            extensions: [
+                          BubbleText(
+                            bubbleText: Typography.englishLike2021.bodyMedium!.copyWith(
+                              fontSize: 15,
+                              height: Typography.englishLike2021.bodyMedium!.height! * 0.85,
+                            ),
+                          ),
+                        ]),
+                  ),
+                ])
+            .flattened,
+      ];
 
   Skins get skin => ss.settings.skin.value;
 
@@ -171,10 +173,9 @@ class ThemesService extends GetxService {
 
   bool get isFullMonet => ss.settings.monetTheming.value == Monet.full;
 
-  bool inDarkMode(BuildContext context) =>
-      (AdaptiveTheme.of(context).mode == AdaptiveThemeMode.dark ||
-        (AdaptiveTheme.of(context).mode == AdaptiveThemeMode.system &&
-            PlatformDispatcher.instance.platformBrightness == Brightness.dark));
+  bool inDarkMode(BuildContext context) => (AdaptiveTheme.of(context).mode == AdaptiveThemeMode.dark ||
+      (AdaptiveTheme.of(context).mode == AdaptiveThemeMode.system &&
+          PlatformDispatcher.instance.platformBrightness == Brightness.dark));
 
   bool isGradientBg(BuildContext context) {
     if (inDarkMode(context)) {
@@ -199,12 +200,8 @@ class ThemesService extends GetxService {
     final lightTheme = ThemeStruct.getThemes().firstWhere((e) => e.name == "Music Theme ☀");
     final lightScheme = await ColorScheme.fromImageProvider(provider: MemoryImage(art), brightness: Brightness.light);
     final darkScheme = await ColorScheme.fromImageProvider(provider: MemoryImage(art), brightness: Brightness.dark);
-    lightTheme.data = lightTheme.data.copyWith(
-      colorScheme: lightScheme
-    );
-    darkTheme.data = darkTheme.data.copyWith(
-      colorScheme: darkScheme
-    );
+    lightTheme.data = lightTheme.data.copyWith(colorScheme: lightScheme);
+    darkTheme.data = darkTheme.data.copyWith(colorScheme: darkScheme);
     changeTheme(Get.context!, light: lightTheme, dark: darkTheme);
   }
 
@@ -222,7 +219,7 @@ class ThemesService extends GetxService {
       dark: dark,
     );
   }
-  
+
   Tuple2 getStructsFromData(ThemeData light, ThemeData dark) {
     return Platform.isWindows ? _applyWindowsAccent(light, dark) : _applyMonet(light, dark);
   }
@@ -272,12 +269,15 @@ class ThemesService extends GetxService {
           onPrimaryContainer: Color(monetPalette!.primary.get(10)),
           secondary: light.colorScheme.secondary.harmonizeWith(Color(monetPalette!.secondary.get(40))),
           onSecondary: light.colorScheme.onSecondary.harmonizeWith(Color(monetPalette!.secondary.get(100))),
-          secondaryContainer: light.colorScheme.secondaryContainer.harmonizeWith(Color(monetPalette!.secondary.get(90))),
-          onSecondaryContainer: light.colorScheme.onSecondaryContainer.harmonizeWith(Color(monetPalette!.secondary.get(10))),
+          secondaryContainer:
+              light.colorScheme.secondaryContainer.harmonizeWith(Color(monetPalette!.secondary.get(90))),
+          onSecondaryContainer:
+              light.colorScheme.onSecondaryContainer.harmonizeWith(Color(monetPalette!.secondary.get(10))),
           tertiary: light.colorScheme.tertiary.harmonizeWith(Color(monetPalette!.tertiary.get(40))),
           onTertiary: light.colorScheme.onTertiary.harmonizeWith(Color(monetPalette!.tertiary.get(100))),
           tertiaryContainer: light.colorScheme.tertiaryContainer.harmonizeWith(Color(monetPalette!.tertiary.get(90))),
-          onTertiaryContainer: light.colorScheme.onTertiaryContainer.harmonizeWith(Color(monetPalette!.tertiary.get(10))),
+          onTertiaryContainer:
+              light.colorScheme.onTertiaryContainer.harmonizeWith(Color(monetPalette!.tertiary.get(10))),
           error: light.colorScheme.error.harmonizeWith(Color(monetPalette!.error.get(40))),
           onError: light.colorScheme.onError.harmonizeWith(Color(monetPalette!.error.get(100))),
           errorContainer: light.colorScheme.errorContainer.harmonizeWith(Color(monetPalette!.error.get(90))),
@@ -287,7 +287,8 @@ class ThemesService extends GetxService {
           surface: light.colorScheme.surface.harmonizeWith(Color(monetPalette!.neutral.get(99))),
           onSurface: light.colorScheme.onSurface.harmonizeWith(Color(monetPalette!.neutral.get(10))),
           surfaceVariant: light.colorScheme.surfaceVariant.harmonizeWith(Color(monetPalette!.neutralVariant.get(90))),
-          onSurfaceVariant: light.colorScheme.onSurfaceVariant.harmonizeWith(Color(monetPalette!.neutralVariant.get(30))),
+          onSurfaceVariant:
+              light.colorScheme.onSurfaceVariant.harmonizeWith(Color(monetPalette!.neutralVariant.get(30))),
           outline: light.colorScheme.outline.harmonizeWith(Color(monetPalette!.neutralVariant.get(50))),
           outlineVariant: light.colorScheme.outlineVariant.harmonizeWith(Color(monetPalette!.neutralVariant.get(80))),
           shadow: light.colorScheme.shadow.harmonizeWith(Color(monetPalette!.neutral.get(0))),
@@ -306,11 +307,13 @@ class ThemesService extends GetxService {
           secondary: dark.colorScheme.secondary.harmonizeWith(Color(monetPalette!.secondary.get(80))),
           onSecondary: dark.colorScheme.onSecondary.harmonizeWith(Color(monetPalette!.secondary.get(20))),
           secondaryContainer: dark.colorScheme.secondaryContainer.harmonizeWith(Color(monetPalette!.secondary.get(30))),
-          onSecondaryContainer: dark.colorScheme.onSecondaryContainer.harmonizeWith(Color(monetPalette!.secondary.get(90))),
+          onSecondaryContainer:
+              dark.colorScheme.onSecondaryContainer.harmonizeWith(Color(monetPalette!.secondary.get(90))),
           tertiary: dark.colorScheme.tertiary.harmonizeWith(Color(monetPalette!.tertiary.get(80))),
           onTertiary: dark.colorScheme.onTertiary.harmonizeWith(Color(monetPalette!.tertiary.get(20))),
           tertiaryContainer: dark.colorScheme.tertiaryContainer.harmonizeWith(Color(monetPalette!.tertiary.get(30))),
-          onTertiaryContainer: dark.colorScheme.onTertiaryContainer.harmonizeWith(Color(monetPalette!.tertiary.get(90))),
+          onTertiaryContainer:
+              dark.colorScheme.onTertiaryContainer.harmonizeWith(Color(monetPalette!.tertiary.get(90))),
           error: dark.colorScheme.error.harmonizeWith(Color(monetPalette!.error.get(80))),
           onError: dark.colorScheme.onError.harmonizeWith(Color(monetPalette!.error.get(20))),
           errorContainer: dark.colorScheme.errorContainer.harmonizeWith(Color(monetPalette!.error.get(30))),
@@ -320,7 +323,8 @@ class ThemesService extends GetxService {
           surface: dark.colorScheme.surface.harmonizeWith(Color(monetPalette!.neutral.get(10))),
           onSurface: dark.colorScheme.onSurface.harmonizeWith(Color(monetPalette!.neutral.get(90))),
           surfaceVariant: dark.colorScheme.surfaceVariant.harmonizeWith(Color(monetPalette!.neutralVariant.get(30))),
-          onSurfaceVariant: dark.colorScheme.onSurfaceVariant.harmonizeWith(Color(monetPalette!.neutralVariant.get(80))),
+          onSurfaceVariant:
+              dark.colorScheme.onSurfaceVariant.harmonizeWith(Color(monetPalette!.neutralVariant.get(80))),
           outline: dark.colorScheme.outline.harmonizeWith(Color(monetPalette!.neutralVariant.get(60))),
           outlineVariant: dark.colorScheme.outlineVariant.harmonizeWith(Color(monetPalette!.neutralVariant.get(30))),
           shadow: dark.colorScheme.shadow.harmonizeWith(Color(monetPalette!.neutral.get(0))),

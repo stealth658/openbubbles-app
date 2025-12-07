@@ -16,7 +16,6 @@ import 'package:tuple/tuple.dart';
 import 'package:window_manager/window_manager.dart';
 
 class StartupTasks {
-
   static final Completer<void> uiReady = Completer<void>();
 
   static Future<void> waitForUI() async {
@@ -25,7 +24,7 @@ class StartupTasks {
 
   static Future<void> initStartupServices({bool isBubble = false}) async {
     debugPrint("Initializing startup services...");
-    
+
     // First, initialize the filesystem service as it's used by other necessary services
     await fs.init();
 
@@ -47,22 +46,28 @@ class StartupTasks {
     // Load FCM data into settings from the database
     // We only need to do this for the main startup
     ss.getFcmData();
-    
+
     // We then have to initialize all the services that the app will use.
     // Order matters here as some services may rely on others. For instance,
     // The MethodChannel service needs the database to be initialized to handle events.
     // The Lifecycle service needs the MethodChannel service to be initialized to send events.
-    await mcs.init();
-    await ls.init(isBubble: isBubble);
-    await ts.init();
-    
-    if (!kIsWeb) {
-      await cs.init();
-      GlobalChatService;
-    }
 
-    await notif.init();
-    await intents.init();
+    // Parallelize independent services for faster startup
+    await Future.wait([
+      mcs.init(),
+      ls.init(isBubble: isBubble),
+      ts.init(),
+      notif.init(),
+      intents.init(),
+    ]);
+
+    if (!kIsWeb) {
+      GlobalChatService;
+      // Defer contacts loading - not needed immediately on startup
+      Future.microtask(() async {
+        await cs.init();
+      });
+    }
   }
 
   static Future<void> initIsolateServices() async {
@@ -95,10 +100,18 @@ class StartupTasks {
 
     // Fetch server details for the rest of the app.
     // We only need to fetch it on startup since the metadata shouldn't change.
-    await ss.getServerDetails(refresh: true);
+    // Don't await - let this happen in background
+    ss.getServerDetails(refresh: true).catchError((e, s) {
+      Logger.warn("Failed to fetch server details on startup!", error: e, trace: s);
+      return const Tuple4(0, 0, "", 0); // Return default tuple on error
+    });
 
     // Only register FCM device on startup
-    await fcm.registerDevice();
+    // Don't await - let this happen in background
+    fcm.registerDevice().catchError((e, s) {
+      Logger.warn("Failed to register FCM device on startup!", error: e, trace: s);
+      return null; // Return null on error
+    });
 
     // We don't need to check for updates immediately, so delay it so other
     // code has a chance to run and we don't block the UI thread.
@@ -200,7 +213,7 @@ Future<void> reviewFlow() async {
       Logger.info('Not requesting review, days since install/last request: $days');
     }
   } catch (e, st) {
-      Logger.warn("Failed to request app review", error: e, trace: st);
+    Logger.warn("Failed to request app review", error: e, trace: st);
   }
 }
 

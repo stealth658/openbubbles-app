@@ -25,7 +25,8 @@ import 'package:universal_html/html.dart' hide File, Platform, Navigator;
 import 'package:universal_io/io.dart';
 import 'package:window_manager/window_manager.dart';
 
-NotificationsService notif = Get.isRegistered<NotificationsService>() ? Get.find<NotificationsService>() : Get.put(NotificationsService());
+NotificationsService notif =
+    Get.isRegistered<NotificationsService>() ? Get.find<NotificationsService>() : Get.put(NotificationsService());
 
 class NotificationsService extends GetxService {
   static const String NEW_MESSAGE_CHANNEL = "com.bluebubbles.new_messages";
@@ -61,7 +62,8 @@ class NotificationsService extends GetxService {
   Future<void> init() async {
     if (!kIsWeb && !kIsDesktop) {
       const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('ic_stat_icon');
-      const InitializationSettings initializationSettings = InitializationSettings(android: initializationSettingsAndroid);
+      const InitializationSettings initializationSettings =
+          InitializationSettings(android: initializationSettingsAndroid);
       await flnp.initialize(initializationSettings, onDidReceiveNotificationResponse: (NotificationResponse? response) {
         if (response?.payload != null) {
           intents.openChat(response!.payload);
@@ -71,42 +73,49 @@ class NotificationsService extends GetxService {
       if (details != null && details.didNotificationLaunchApp && details.notificationResponse?.payload != null) {
         intents.openChat(details.notificationResponse!.payload!);
       }
-      // create notif channels
-      createNotificationChannel(
-        NEW_MESSAGE_CHANNEL,
-        "New Messages",
-        "Displays all received new messages",
-      );
-      createNotificationChannel(
-        ERROR_CHANNEL,
-        "Errors",
-        "Displays message send failures, connection failures, and more",
-      );
-      createNotificationChannel(
-        REMINDER_CHANNEL,
-        "Message Reminders",
-        "Displays message reminders set through the app",
-      );
-      createNotificationChannel(
-        FACETIME_CHANNEL,
-        "Incoming FaceTimes",
-        "Displays incoming FaceTimes detected by the server",
-      );
-      createNotificationChannel(
-        FOREGROUND_SERVICE_CHANNEL,
-        "Foreground Service",
-        "Allows BlueBubbles to stay open in the background for notifications if FCM is not being used",
-      );
+      // Defer notification channel creation - not critical for immediate startup
+      Future.microtask(() {
+        createNotificationChannel(
+          NEW_MESSAGE_CHANNEL,
+          "New Messages",
+          "Displays all received new messages",
+        );
+        createNotificationChannel(
+          ERROR_CHANNEL,
+          "Errors",
+          "Displays message send failures, connection failures, and more",
+        );
+        createNotificationChannel(
+          REMINDER_CHANNEL,
+          "Message Reminders",
+          "Displays message reminders set through the app",
+        );
+        createNotificationChannel(
+          FACETIME_CHANNEL,
+          "Incoming FaceTimes",
+          "Displays incoming FaceTimes detected by the server",
+        );
+        createNotificationChannel(
+          FOREGROUND_SERVICE_CHANNEL,
+          "Foreground Service",
+          "Allows BlueBubbles to stay open in the background for notifications if FCM is not being used",
+        );
+      });
     }
 
     // watch for new messages and handle the notification
     if (!kIsWeb) {
-      final countQuery = (Database.messages.query()..order(Message_.id, flags: Order.descending)).watch(triggerImmediately: true);
+      final countQuery =
+          (Database.messages.query()..order(Message_.id, flags: Order.descending)).watch(triggerImmediately: true);
       countSub = countQuery.listen((event) {
         if (!ss.settings.finishedSetup.value) return;
         final newCount = event.count();
         final activeChatFetching = cm.activeChat != null ? ms(cm.activeChat!.chat.guid).isFetching : false;
-        if (ls.isAlive && (!sync.isIncrementalSyncing.value && !kIsDesktop) && !activeChatFetching && newCount > currentCount && currentCount != 0) {
+        if (ls.isAlive &&
+            (!sync.isIncrementalSyncing.value && !kIsDesktop) &&
+            !activeChatFetching &&
+            newCount > currentCount &&
+            currentCount != 0) {
           event.limit = newCount - currentCount;
           final messages = event.find();
           event.limit = 0;
@@ -149,7 +158,8 @@ class NotificationsService extends GetxService {
     });
   }
 
-  Future<void> createReminder(Chat? chat, Message? message, DateTime time, {String? chatTitle, String? messageText}) async {
+  Future<void> createReminder(Chat? chat, Message? message, DateTime time,
+      {String? chatTitle, String? messageText}) async {
     await flnp.zonedSchedule(
       Random().nextInt(9998) + 50000,
       chatTitle ?? 'Reminder: ${chat!.getTitle()}',
@@ -184,7 +194,8 @@ class NotificationsService extends GetxService {
     Uint8List contactIcon = message.isFromMe!
         ? personIcon
         : await avatarAsBytes(
-            participantsOverride: !chat.isGroup ? null : chat.participants.where((e) => e.address == message.handle!.address).toList(),
+            participantsOverride:
+                !chat.isGroup ? null : chat.participants.where((e) => e.address == message.handle!.address).toList(),
             chat: chat,
             quality: 256);
     if (chatIcon.isEmpty) {
@@ -195,12 +206,14 @@ class NotificationsService extends GetxService {
     }
 
     if (kIsWeb && Notification.permission == "granted") {
-      final notif = Notification(title, body: text, icon: "data:image/png;base64,${base64Encode(chatIcon)}", tag: message.guid);
+      final notif =
+          Notification(title, body: text, icon: "data:image/png;base64,${base64Encode(chatIcon)}", tag: message.guid);
       notif.onClick.listen((event) async {
         await intents.openChat(guid);
       });
     } else if (kIsDesktop) {
-      _lock.synchronized(() async => await showDesktopNotif(message, text, chat, guid, title, contactName, isGroup, isReaction));
+      _lock.synchronized(
+          () async => await showDesktopNotif(message, text, chat, guid, title, contactName, isGroup, isReaction));
     } else {
       await mcs.invokeMethod("create-incoming-message-notification", {
         "channel_id": NEW_MESSAGE_CHANNEL,
@@ -219,14 +232,16 @@ class NotificationsService extends GetxService {
     }
   }
 
-  Future<void> createIncomingFaceTimeNotification(String? callUuid, String caller, Uint8List? chatIcon, bool isAudio) async {
+  Future<void> createIncomingFaceTimeNotification(
+      String? callUuid, String caller, Uint8List? chatIcon, bool isAudio) async {
     // Set some notification defaults
     String title = caller;
     String text = "${callUuid == null ? "Incoming" : "Answer"} FaceTime ${isAudio ? 'Audio' : 'Video'} Call";
     chatIcon ??= (await rootBundle.load("assets/images/person64.png")).buffer.asUint8List();
 
     if (kIsWeb && Notification.permission == "granted") {
-      final notif = Notification(title, body: text, icon: "data:image/png;base64,${base64Encode(chatIcon)}", tag: callUuid);
+      final notif =
+          Notification(title, body: text, icon: "data:image/png;base64,${base64Encode(chatIcon)}", tag: callUuid);
       if (callUuid != null) {
         notif.onClick.listen((event) async {
           await intents.answerFaceTime(callUuid);
@@ -238,7 +253,8 @@ class NotificationsService extends GetxService {
       final numeric = callUuid?.numericOnly();
       await mcs.invokeMethod("create-incoming-facetime-notification", {
         "channel_id": FACETIME_CHANNEL,
-        "notification_id": numeric != null ? int.parse(numeric.substring(0, min(8, numeric.length))) : Random().nextInt(9998) + 1,
+        "notification_id":
+            numeric != null ? int.parse(numeric.substring(0, min(8, numeric.length))) : Random().nextInt(9998) + 1,
         "title": title,
         "body": text,
         "caller_avatar": chatIcon,
@@ -253,17 +269,13 @@ class NotificationsService extends GetxService {
       await clearDesktopFaceTimeNotif(callUuid);
     } else if (!kIsWeb) {
       final numeric = callUuid.numericOnly();
-      mcs.invokeMethod(
-        "delete-notification",
-        {
-          "notification_id": int.parse(numeric.substring(0, min(8, numeric.length))),
-          "tag": NEW_FACETIME_TAG
-        }
-      );
+      mcs.invokeMethod("delete-notification",
+          {"notification_id": int.parse(numeric.substring(0, min(8, numeric.length))), "tag": NEW_FACETIME_TAG});
     }
   }
 
-  Future<void> showPersistentDesktopFaceTimeNotif(String? callUuid, String caller, Uint8List? avatar, bool isAudio) async {
+  Future<void> showPersistentDesktopFaceTimeNotif(
+      String? callUuid, String caller, Uint8List? avatar, bool isAudio) async {
     List<String> actions = ["Answer", "Ignore"];
     List<LocalNotificationAction> nActions = actions.map((String a) => LocalNotificationAction(text: a)).toList();
     LocalNotification? toast;
@@ -326,7 +338,8 @@ class NotificationsService extends GetxService {
     facetimeNotifications.remove(callerUuid);
   }
 
-  Future<void> showDesktopNotif(Message message, String text, Chat chat, String guid, String title, String contactName, bool isGroup, bool isReaction) async {
+  Future<void> showDesktopNotif(Message message, String text, Chat chat, String guid, String title, String contactName,
+      bool isGroup, bool isReaction) async {
     if (kIsDesktop && !ss.settings.desktopNotifications.value) return;
     List<int> selectedIndices = ss.settings.selectedActionIndices;
     List<String> _actions = ss.settings.actionList;
@@ -375,11 +388,15 @@ class NotificationsService extends GetxService {
       Contact? contact = message.handle != null ? cs.getContact(message.handle!.address) : null;
       sender = contact?.displayName.split(" ")[0];
     }
-    int newLines = (((sender == null ? 0 : "$sender: ".length) + text.length) / charsPerLineEst).ceil() + re.allMatches(text).length;
+    int newLines = (((sender == null ? 0 : "$sender: ".length) + text.length) / charsPerLineEst).ceil() +
+        re.allMatches(text).length;
     String body = "";
     int count = 0;
     for (LocalNotification _toast in notifications[guid]!) {
-      if (newLines + ((_toast.body ?? "").length ~/ charsPerLineEst).ceil() + re.allMatches("${_toast.body}\n").length <= maxLines) {
+      if (newLines +
+              ((_toast.body ?? "").length ~/ charsPerLineEst).ceil() +
+              re.allMatches("${_toast.body}\n").length <=
+          maxLines) {
         if (isGroup && count == 0 && notifications[guid]!.isNotEmpty && _toast.title.length > "$title: ".length) {
           String name = _toast.title.substring("$title: ".length).split(" ")[0];
           body += "$name: ";
@@ -423,7 +440,9 @@ class NotificationsService extends GetxService {
         inputPlaceholder: "Type a reply...",
         inputButtonText: "Reply",
         systemSound: LocalNotificationSound.sms,
-        soundOption: ss.settings.desktopNotificationSoundPath.value != null ? LocalNotificationSoundOption.silent : LocalNotificationSoundOption.defaultOption,
+        soundOption: ss.settings.desktopNotificationSoundPath.value != null
+            ? LocalNotificationSoundOption.silent
+            : LocalNotificationSoundOption.defaultOption,
       );
       notifications[guid]!.add(toast);
 
@@ -539,7 +558,9 @@ class NotificationsService extends GetxService {
         duration: LocalNotificationDuration.short,
         actions: showMarkRead ? [LocalNotificationAction(text: "Mark Read")] : [],
         systemSound: LocalNotificationSound.sms,
-        soundOption: ss.settings.desktopNotificationSoundPath.value != null ? LocalNotificationSoundOption.silent : LocalNotificationSoundOption.defaultOption,
+        soundOption: ss.settings.desktopNotificationSoundPath.value != null
+            ? LocalNotificationSoundOption.silent
+            : LocalNotificationSoundOption.defaultOption,
       );
       notifications[guid]!.add(toast);
 
@@ -635,7 +656,9 @@ class NotificationsService extends GetxService {
       duration: LocalNotificationDuration.short,
       actions: showMarkRead ? [LocalNotificationAction(text: "Mark All Read")] : [],
       systemSound: LocalNotificationSound.sms,
-      soundOption: ss.settings.desktopNotificationSoundPath.value != null ? LocalNotificationSoundOption.silent : LocalNotificationSoundOption.defaultOption,
+      soundOption: ss.settings.desktopNotificationSoundPath.value != null
+          ? LocalNotificationSoundOption.silent
+          : LocalNotificationSoundOption.defaultOption,
     );
 
     allToast!.onClick = () async {
@@ -714,7 +737,9 @@ class NotificationsService extends GetxService {
   Future<void> createAliasesRemovedNotification(List<String> aliases) async {
     const title = "iMessage alias deregistered!";
     const notifId = -3;
-    final text = aliases.length == 1 ? "${aliases[0]} has been deregistered!" : "The following aliases have been deregistered:\n${aliases.join("\n")}";
+    final text = aliases.length == 1
+        ? "${aliases[0]} has been deregistered!"
+        : "The following aliases have been deregistered:\n${aliases.join("\n")}";
 
     if (kIsDesktop) {
       if (aliasesToast?.body == text) {
@@ -737,31 +762,28 @@ class NotificationsService extends GetxService {
 
       await aliasesToast!.show();
     } else {
-        final notifs = await flnp.getActiveNotifications();
+      final notifs = await flnp.getActiveNotifications();
 
-        //Already have this notification
-        if (notifs.firstWhereOrNull((n) => n.id == notifId && n.body == text) != null) {
-          return;
-        }
+      //Already have this notification
+      if (notifs.firstWhereOrNull((n) => n.id == notifId && n.body == text) != null) {
+        return;
+      }
 
-        await flnp.show(
-          notifId,
-          title,
-          text,
-          NotificationDetails(
-            android: AndroidNotificationDetails(
-              ERROR_CHANNEL,
-              'Errors',
+      await flnp.show(
+        notifId,
+        title,
+        text,
+        NotificationDetails(
+          android: AndroidNotificationDetails(ERROR_CHANNEL, 'Errors',
               channelDescription: 'Displays message send failures, connection failures, and more',
               priority: Priority.max,
               importance: Importance.max,
               color: HexColor("4990de"),
               ongoing: false,
               onlyAlertOnce: false,
-              styleInformation: const BigTextStyleInformation('')
-            ),
-          ),
-        );
+              styleInformation: const BigTextStyleInformation('')),
+        ),
+      );
     }
   }
 
@@ -805,7 +827,7 @@ class NotificationsService extends GetxService {
       return;
     }
     await flnp.show(
-      (chat.id!  + 75000) * (scheduled ? -1 : 1),
+      (chat.id! + 75000) * (scheduled ? -1 : 1),
       title,
       subtitle,
       NotificationDetails(
