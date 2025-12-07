@@ -1217,10 +1217,10 @@ class HttpService extends GetxService {
     if (response.statusCode == 200) {
       try {
         final Uint8List data = response.data;
-        final file = File("${fs.appDocDir.path}/font/apple.ttf");
+        final file = File("${fs().appDocDir.path}/font/apple.ttf");
         await file.create(recursive: true);
         await file.writeAsBytes(data);
-        fs.fontExistsOnDisk.value = true;
+        fs().fontExistsOnDisk.value = true;
         final fontLoader = FontLoader("Apple Color Emoji");
         final cachedFontBytes = ByteData.view(data.buffer);
         fontLoader.addFont(
@@ -1229,7 +1229,7 @@ class HttpService extends GetxService {
         await fontLoader.load();
         showSnackbar("Notice", "Font loaded");
       } catch (e, stack) {
-        Logger.error("Failed to load font!", error: e, trace: stack);
+        Logger().error("Failed to load font!", error: e, trace: stack);
         showSnackbar("Error", "Failed to load font! Error: ${e.toString()}");
       }
     }

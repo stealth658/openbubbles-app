@@ -409,7 +409,7 @@ class SpellCheckTextEditingController extends TextEditingController {
   }
 
   List<InlineSpan> buildAppleEmojiTextSpans({required String text, required TextStyle? style}) {
-    if (!fs.fontExistsOnDisk.value) return [TextSpan(text: text, style: style)];
+    if (!fs().fontExistsOnDisk.value) return [TextSpan(text: text, style: style)];
 
     final emojiMatches = emojiRegex.allMatches(text);
     if (emojiMatches.isEmpty) return [TextSpan(text: text, style: style)];
