@@ -242,6 +242,10 @@
             <meta-data
                 android:name="io.flutter.embedding.android.EnableImpeller"
                 android:value="false" />
+
+            <meta-data
+                android:name="io.flutter.embedding.android.DisableMergedPlatformUIThread"
+                android:value="true" />
         </activity>
 
         <activity
