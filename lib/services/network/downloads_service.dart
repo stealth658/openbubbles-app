@@ -11,7 +11,8 @@ import 'package:path/path.dart';
 import 'package:universal_io/io.dart';
 
 /// Get an instance of our [AttachmentDownloadService]
-AttachmentDownloadService attachmentDownloader = Get.isRegistered<AttachmentDownloadService>()
+// ignore: non_constant_identifier_names
+AttachmentDownloadService AttachmentDownloader = Get.isRegistered<AttachmentDownloadService>()
     ? Get.find<AttachmentDownloadService>() : Get.put(AttachmentDownloadService());
 
 class AttachmentDownloadService extends GetxService {
@@ -88,7 +89,7 @@ class AttachmentDownloadController extends GetxController {
 
   @override
   void onInit() {
-    attachmentDownloader._addToQueue(this);
+    AttachmentDownloader._addToQueue(this);
     super.onInit();
   }
 
@@ -96,7 +97,7 @@ class AttachmentDownloadController extends GetxController {
     if (attachment.guid == null || attachment.guid!.contains("temp")) return;
     isFetching = true;
     stopwatch.start();
-    var response = await http.downloadAttachment(attachment.guid!,
+    var response = await HttpSvc.downloadAttachment(attachment.guid!,
         onReceiveProgress: (count, total) => setProgress(kIsWeb ? (count / total) : (count / attachment.totalBytes!))).catchError((err) async {
       if (!kIsWeb) {
         File file = File(attachment.path);
@@ -109,7 +110,7 @@ class AttachmentDownloadController extends GetxController {
       }
 
       error.value = true;
-      attachmentDownloader._removeFromQueue(this);
+      AttachmentDownloader._removeFromQueue(this);
       return Response(requestOptions: RequestOptions(path: ''));
     });
     if (response.statusCode != 200) return;
@@ -124,9 +125,9 @@ class AttachmentDownloadController extends GetxController {
       await _file.writeAsBytes(bytes);
     }
     attachment.webUrl = response.requestOptions.path;
-    Logger().info("Finished fetching attachment");
+    Logger.info("Finished fetching attachment");
     stopwatch.stop();
-    Logger().info("Attachment downloaded in ${stopwatch.elapsedMilliseconds} ms");
+    Logger.info("Attachment downloaded in ${stopwatch.elapsedMilliseconds} ms");
 
     try {
       // Compress the attachment
@@ -139,7 +140,7 @@ class AttachmentDownloadController extends GetxController {
     }
 
     // Finish the downloader
-    attachmentDownloader._removeFromQueue(this);
+    AttachmentDownloader._removeFromQueue(this);
     attachment.bytes = bytes;
     // Add attachment to sink based on if we got data
 
@@ -158,7 +159,7 @@ class AttachmentDownloadController extends GetxController {
         await _file.writeAsBytes(attachment.bytes!.toList());
       }
     }
-    if (ss().settings.autoSave.value
+    if (SettingsSvc.settings.autoSave.value
         && !kIsWeb
         && !kIsDesktop
         && !(attachment.isOutgoing ?? false)

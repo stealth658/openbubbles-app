@@ -64,20 +64,20 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                 children: [
                   Obx(() => SettingsSwitch(
                         onChanged: (bool val) {
-                          ss().settings.showDeliveryTimestamps.value = val;
+                          SettingsSvc.settings.showDeliveryTimestamps.value = val;
                           saveSettings();
                         },
-                        initialVal: ss().settings.showDeliveryTimestamps.value,
+                        initialVal: SettingsSvc.settings.showDeliveryTimestamps.value,
                         title: "Show Delivery Timestamps",
                         backgroundColor: tileColor,
                       )),
                   const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                   Obx(() => SettingsSwitch(
                         onChanged: (bool val) {
-                          ss().settings.recipientAsPlaceholder.value = val;
+                          SettingsSvc.settings.recipientAsPlaceholder.value = val;
                           saveSettings();
                         },
-                        initialVal: ss().settings.recipientAsPlaceholder.value,
+                        initialVal: SettingsSvc.settings.recipientAsPlaceholder.value,
                         title: "Show Chat Name as Placeholder",
                         subtitle: "Changes the default hint text in the message box to display the recipient name",
                         backgroundColor: tileColor,
@@ -86,10 +86,10 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                   const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                   Obx(() => SettingsSwitch(
                         onChanged: (bool val) {
-                          ss().settings.alwaysShowAvatars.value = val;
+                          SettingsSvc.settings.alwaysShowAvatars.value = val;
                           saveSettings();
                         },
-                        initialVal: ss().settings.alwaysShowAvatars.value,
+                        initialVal: SettingsSvc.settings.alwaysShowAvatars.value,
                         title: "Show Avatars in DM Chats",
                         subtitle: "Shows contact avatars in direct messages rather than just in group messages",
                         backgroundColor: tileColor,
@@ -100,10 +100,10 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                   if (!kIsWeb && !kIsDesktop)
                     Obx(() => SettingsSwitch(
                           onChanged: (bool val) {
-                            ss().settings.smartReply.value = val;
+                            SettingsSvc.settings.smartReply.value = val;
                             saveSettings();
                           },
-                          initialVal: ss().settings.smartReply.value,
+                          initialVal: SettingsSvc.settings.smartReply.value,
                           title: "Smart Suggestions",
                           subtitle:
                               "Shows smart reply suggestions above the message text field and detects various interactive content in message text",
@@ -113,10 +113,10 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                   const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                   Obx(() => SettingsSwitch(
                         onChanged: (bool val) {
-                          ss().settings.repliesToPrevious.value = val;
+                          SettingsSvc.settings.repliesToPrevious.value = val;
                           saveSettings();
                         },
-                        initialVal: ss().settings.repliesToPrevious.value,
+                        initialVal: SettingsSvc.settings.repliesToPrevious.value,
                         title: "Show Replies To Previous Message",
                         subtitle: "Shows replies to the previous message in the thread rather than the original",
                         backgroundColor: tileColor,
@@ -128,9 +128,9 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                     SettingsTile(
                       title: "Message Options Order",
                       subtitle:
-                      "Set the order for the options when ${ss().settings.doubleTapForDetails.value ? "double-tapping" : "pressing and holding"} a message",
+                      "Set the order for the options when ${SettingsSvc.settings.doubleTapForDetails.value ? "double-tapping" : "pressing and holding"} a message",
                       onTap: () {
-                        ns.pushSettings(
+                        NavigationSvc.pushSettings(
                           context,
                           MessageOptionsOrderPanel(),
                         );
@@ -157,7 +157,7 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                               : Icon(Icons.check, color: context.theme.colorScheme.outline)),
                       onTap: () async {
                         gettingIcons.value = true;
-                        for (Chat c in chats.chats.where((c) => c.isGroup)) {
+                        for (Chat c in ChatsSvc.chats.where((c) => c.isGroup)) {
                           await Chat.getIcon(c, force: true);
                         }
                         gettingIcons.value = false;
@@ -166,17 +166,17 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                     ),
                   if (!kIsWeb)
                     const SettingsSubtitle(
-                      subtitle: "Note: Overrides any custom avatars set for group chats.",
+                      subtitle: "Note: Overrides any custom avatars set for group ChatSvc.",
                     ),
                   if (!kIsWeb)
                     const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                   if (!kIsWeb)
                     Obx(() => SettingsSwitch(
                           onChanged: (bool val) {
-                            ss().settings.scrollToLastUnread.value = val;
+                            SettingsSvc.settings.scrollToLastUnread.value = val;
                             saveSettings();
                           },
-                          initialVal: ss().settings.scrollToLastUnread.value,
+                          initialVal: SettingsSvc.settings.scrollToLastUnread.value,
                           title: "Store Last Read Message",
                           subtitle: "Remembers the last opened message and allows automatically scrolling back to it if out of view",
                           backgroundColor: tileColor,
@@ -184,10 +184,10 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                         )),
                   Obx(() => SettingsSwitch(
                       onChanged: (bool val) {
-                        ss().settings.hideNamesForReactions.value = val;
-                        ss().settings.saveOne("hideNamesForReactions");
+                        SettingsSvc.settings.hideNamesForReactions.value = val;
+                        SettingsSvc.settings.saveOne("hideNamesForReactions");
                       },
-                      initialVal: ss().settings.hideNamesForReactions.value,
+                      initialVal: SettingsSvc.settings.hideNamesForReactions.value,
                       title: "Hide Names in Reaction Details",
                       subtitle: "Enable this to hide names under participant avatars when you view a message's reactions",
                       backgroundColor: tileColor,
@@ -206,38 +206,38 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                     backgroundColor: tileColor,
                     children: [
                       SettingsTile(
-                        title: "${ss().settings.sendSoundPath.value == null ? "Add" : "Change"} Send Sound",
-                        subtitle: ss().settings.sendSoundPath.value != null
-                            ? basename(ss().settings.sendSoundPath.value!).substring("send-".length)
+                        title: "${SettingsSvc.settings.sendSoundPath.value == null ? "Add" : "Change"} Send Sound",
+                        subtitle: SettingsSvc.settings.sendSoundPath.value != null
+                            ? basename(SettingsSvc.settings.sendSoundPath.value!).substring("send-".length)
                             : "Adds a sound to be played when sending a message",
                         onTap: () async {
                           FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.audio, withData: true);
                           if (result != null) {
                             PlatformFile platformFile = result.files.first;
-                            String path = "${fs().appDocDir.path}/sounds/${"send-"}${platformFile.name}";
+                            String path = "${FilesystemSvc.appDocDir.path}/sounds/${"send-"}${platformFile.name}";
                             await File(path).create(recursive: true);
                             await File(path).writeAsBytes(platformFile.bytes!);
-                            ss().settings.sendSoundPath.value = path;
-                            ss().saveSettings();
+                            SettingsSvc.settings.sendSoundPath.value = path;
+                            SettingsSvc.saveSettings();
                           }
                         },
-                        trailing: (ss().settings.sendSoundPath.value == null)
+                        trailing: (SettingsSvc.settings.sendSoundPath.value == null)
                             ? const SizedBox.shrink()
                             : Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   IconButton(
                                       icon: playingSendSound.value
-                                          ? Icon(ss().settings.skin.value == Skins.iOS ? CupertinoIcons.stop : Icons.stop_outlined)
-                                          : Icon(ss().settings.skin.value == Skins.iOS ? CupertinoIcons.play : Icons.play_arrow_outlined),
+                                          ? Icon(SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.stop : Icons.stop_outlined)
+                                          : Icon(SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.play : Icons.play_arrow_outlined),
                                       onPressed: () async {
                                         if (sendPlayer is Player) {
                                           final Player _sendPlayer = sendPlayer as Player;
                                           if (playingSendSound.value) {
                                             await _sendPlayer.stop();
                                           } else {
-                                            await _sendPlayer.setVolume(ss().settings.soundVolume.value.toDouble());
-                                            await _sendPlayer.open(Media(ss().settings.sendSoundPath.value!));
+                                            await _sendPlayer.setVolume(SettingsSvc.settings.soundVolume.value.toDouble());
+                                            await _sendPlayer.open(Media(SettingsSvc.settings.sendSoundPath.value!));
                                           }
                                         } else if (sendPlayer is aw.PlayerController) {
                                           final aw.PlayerController _sendPlayer = sendPlayer as aw.PlayerController;
@@ -245,7 +245,7 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                                             await _sendPlayer.pausePlayer();
                                           } else {
                                             if (!sendPrepared) {
-                                              await _sendPlayer.preparePlayer(path: ss().settings.sendSoundPath.value!, volume: ss().settings.soundVolume.value.toDouble() / 100);
+                                              await _sendPlayer.preparePlayer(path: SettingsSvc.settings.sendSoundPath.value!, volume: SettingsSvc.settings.soundVolume.value.toDouble() / 100);
                                               sendPrepared = true;
                                             }
                                             _sendPlayer.setFinishMode(finishMode: aw.FinishMode.pause);
@@ -254,14 +254,14 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                                         }
                                       }),
                                   IconButton(
-                                    icon: Icon(ss().settings.skin.value == Skins.iOS ? CupertinoIcons.trash : Icons.delete_outline),
+                                    icon: Icon(SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.trash : Icons.delete_outline),
                                     onPressed: () async {
-                                      File file = File(ss().settings.sendSoundPath.value!);
+                                      File file = File(SettingsSvc.settings.sendSoundPath.value!);
                                       if (await file.exists()) {
                                         await file.delete();
                                       }
-                                      ss().settings.sendSoundPath.value = null;
-                                      ss().saveSettings();
+                                      SettingsSvc.settings.sendSoundPath.value = null;
+                                      SettingsSvc.saveSettings();
                                     },
                                   ),
                                 ],
@@ -269,38 +269,38 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                       ),
                       const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                       SettingsTile(
-                        title: "${ss().settings.receiveSoundPath.value == null ? "Add" : "Change"} Receive Sound",
-                        subtitle: ss().settings.receiveSoundPath.value != null
-                            ? basename(ss().settings.receiveSoundPath.value!).substring("receive-".length)
+                        title: "${SettingsSvc.settings.receiveSoundPath.value == null ? "Add" : "Change"} Receive Sound",
+                        subtitle: SettingsSvc.settings.receiveSoundPath.value != null
+                            ? basename(SettingsSvc.settings.receiveSoundPath.value!).substring("receive-".length)
                             : "Adds a sound to be played when receiving a message",
                         onTap: () async {
                           FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.audio, withData: true);
                           if (result != null) {
                             PlatformFile platformFile = result.files.first;
-                            String path = "${fs().appDocDir.path}/sounds/${"receive-"}${platformFile.name}";
+                            String path = "${FilesystemSvc.appDocDir.path}/sounds/${"receive-"}${platformFile.name}";
                             await File(path).create(recursive: true);
                             await File(path).writeAsBytes(platformFile.bytes!);
-                            ss().settings.receiveSoundPath.value = path;
-                            ss().saveSettings();
+                            SettingsSvc.settings.receiveSoundPath.value = path;
+                            SettingsSvc.saveSettings();
                           }
                         },
-                        trailing: (ss().settings.receiveSoundPath.value == null)
+                        trailing: (SettingsSvc.settings.receiveSoundPath.value == null)
                             ? const SizedBox.shrink()
                             : Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   IconButton(
                                       icon: playingReceiveSound.value
-                                          ? Icon(ss().settings.skin.value == Skins.iOS ? CupertinoIcons.stop : Icons.stop_outlined)
-                                          : Icon(ss().settings.skin.value == Skins.iOS ? CupertinoIcons.play : Icons.play_arrow_outlined),
+                                          ? Icon(SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.stop : Icons.stop_outlined)
+                                          : Icon(SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.play : Icons.play_arrow_outlined),
                                       onPressed: () async {
                                         if (receivePlayer is Player) {
                                           final Player _receivePlayer = receivePlayer as Player;
                                           if (playingReceiveSound.value) {
                                             await _receivePlayer.stop();
                                           } else {
-                                            await _receivePlayer.setVolume(ss().settings.soundVolume.value.toDouble());
-                                            await _receivePlayer.open(Media(ss().settings.receiveSoundPath.value!));
+                                            await _receivePlayer.setVolume(SettingsSvc.settings.soundVolume.value.toDouble());
+                                            await _receivePlayer.open(Media(SettingsSvc.settings.receiveSoundPath.value!));
                                           }
                                         } else if (receivePlayer is aw.PlayerController) {
                                           final aw.PlayerController _receivePlayer = receivePlayer as aw.PlayerController;
@@ -308,7 +308,7 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                                             await _receivePlayer.pausePlayer();
                                           } else {
                                             if (!receivePrepared) {
-                                              await _receivePlayer.preparePlayer(path: ss().settings.receiveSoundPath.value!, volume: ss().settings.soundVolume.value / 100);
+                                              await _receivePlayer.preparePlayer(path: SettingsSvc.settings.receiveSoundPath.value!, volume: SettingsSvc.settings.soundVolume.value / 100);
                                               receivePrepared = true;
                                             }
                                             _receivePlayer.setFinishMode(finishMode: aw.FinishMode.pause);
@@ -317,14 +317,14 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                                         }
                                       }),
                                   IconButton(
-                                    icon: Icon(ss().settings.skin.value == Skins.iOS ? CupertinoIcons.trash : Icons.delete_outline),
+                                    icon: Icon(SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.trash : Icons.delete_outline),
                                     onPressed: () async {
-                                      File file = File(ss().settings.receiveSoundPath.value!);
+                                      File file = File(SettingsSvc.settings.receiveSoundPath.value!);
                                       if (await file.exists()) {
                                         await file.delete();
                                       }
-                                      ss().settings.receiveSoundPath.value = null;
-                                      ss().saveSettings();
+                                      SettingsSvc.settings.receiveSoundPath.value = null;
+                                      SettingsSvc.saveSettings();
                                     },
                                   ),
                                 ],
@@ -336,12 +336,12 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                         subtitle: "Controls the volume of the send and receive sounds",
                       ),
                       Obx(() => SettingsSlider(
-                        startingVal: ss().settings.soundVolume.value.toDouble(),
+                        startingVal: SettingsSvc.settings.soundVolume.value.toDouble(),
                         min: 0,
                         max: 100,
                         divisions: 100,
                         formatValue: (val) => "${val.toInt()}",
-                        update: (val) => ss().settings.soundVolume.value = val.toInt(),
+                        update: (val) => SettingsSvc.settings.soundVolume.value = val.toInt(),
                       )),
                     ],
                   ),
@@ -357,10 +357,10 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                   if (!kIsWeb && !kIsDesktop)
                     Obx(() => SettingsSwitch(
                           onChanged: (bool val) {
-                            ss().settings.autoOpenKeyboard.value = val;
+                            SettingsSvc.settings.autoOpenKeyboard.value = val;
                             saveSettings();
                           },
-                          initialVal: ss().settings.autoOpenKeyboard.value,
+                          initialVal: SettingsSvc.settings.autoOpenKeyboard.value,
                           title: "Auto-open Keyboard",
                           subtitle: "Automatically open the keyboard when entering a chat",
                           backgroundColor: tileColor,
@@ -370,10 +370,10 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                   if (!kIsWeb && !kIsDesktop)
                     Obx(() => SettingsSwitch(
                           onChanged: (bool val) {
-                            ss().settings.swipeToCloseKeyboard.value = val;
+                            SettingsSvc.settings.swipeToCloseKeyboard.value = val;
                             saveSettings();
                           },
-                          initialVal: ss().settings.swipeToCloseKeyboard.value,
+                          initialVal: SettingsSvc.settings.swipeToCloseKeyboard.value,
                           title: "Swipe Message Box to Close Keyboard",
                           subtitle: "Swipe down on the message box to hide the keyboard",
                           backgroundColor: tileColor,
@@ -383,10 +383,10 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                   if (!kIsWeb && !kIsDesktop)
                     Obx(() => SettingsSwitch(
                           onChanged: (bool val) {
-                            ss().settings.swipeToOpenKeyboard.value = val;
+                            SettingsSvc.settings.swipeToOpenKeyboard.value = val;
                             saveSettings();
                           },
-                          initialVal: ss().settings.swipeToOpenKeyboard.value,
+                          initialVal: SettingsSvc.settings.swipeToOpenKeyboard.value,
                           title: "Swipe Message Box to Open Keyboard",
                           subtitle: "Swipe up on the message box to show the keyboard",
                           backgroundColor: tileColor,
@@ -396,10 +396,10 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                   if (!kIsWeb && !kIsDesktop)
                     Obx(() => SettingsSwitch(
                           onChanged: (bool val) {
-                            ss().settings.hideKeyboardOnScroll.value = val;
+                            SettingsSvc.settings.hideKeyboardOnScroll.value = val;
                             saveSettings();
                           },
-                          initialVal: ss().settings.hideKeyboardOnScroll.value,
+                          initialVal: SettingsSvc.settings.hideKeyboardOnScroll.value,
                           title: "Hide Keyboard When Scrolling",
                           backgroundColor: tileColor,
                         )),
@@ -408,10 +408,10 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                   if (!kIsWeb && !kIsDesktop)
                     Obx(() => SettingsSwitch(
                           onChanged: (bool val) {
-                            ss().settings.openKeyboardOnSTB.value = val;
+                            SettingsSvc.settings.openKeyboardOnSTB.value = val;
                             saveSettings();
                           },
-                          initialVal: ss().settings.openKeyboardOnSTB.value,
+                          initialVal: SettingsSvc.settings.openKeyboardOnSTB.value,
                           title: "Open Keyboard After Tapping Scroll To Bottom",
                           backgroundColor: tileColor,
                         )),
@@ -419,13 +419,13 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                     const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                   Obx(() => SettingsSwitch(
                         onChanged: (bool val) {
-                          ss().settings.doubleTapForDetails.value = val;
-                          if (val && ss().settings.enableQuickTapback.value) {
-                            ss().settings.enableQuickTapback.value = false;
+                          SettingsSvc.settings.doubleTapForDetails.value = val;
+                          if (val && SettingsSvc.settings.enableQuickTapback.value) {
+                            SettingsSvc.settings.enableQuickTapback.value = false;
                           }
                           saveSettings();
                         },
-                        initialVal: ss().settings.doubleTapForDetails.value,
+                        initialVal: SettingsSvc.settings.doubleTapForDetails.value,
                         title: "Double-${kIsWeb || kIsDesktop ? "Click" : "Tap"} Message for Details",
                         subtitle: "Opens the message details popup when double ${kIsWeb || kIsDesktop ? "click" : "tapp"}ing a message",
                         backgroundColor: tileColor,
@@ -436,20 +436,20 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                   if (!kIsDesktop && !kIsWeb)
                     Obx(() => SettingsSwitch(
                           onChanged: (bool val) {
-                            ss().settings.sendWithReturn.value = val;
+                            SettingsSvc.settings.sendWithReturn.value = val;
                             saveSettings();
                           },
-                          initialVal: ss().settings.sendWithReturn.value,
+                          initialVal: SettingsSvc.settings.sendWithReturn.value,
                           title: "Send Message with Enter",
                           backgroundColor: tileColor,
                         )),
                   const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                   Obx(() => SettingsSwitch(
                         onChanged: (bool val) {
-                          ss().settings.scrollToBottomOnSend.value = val;
+                          SettingsSvc.settings.scrollToBottomOnSend.value = val;
                           saveSettings();
                         },
-                        initialVal: ss().settings.scrollToBottomOnSend.value,
+                        initialVal: SettingsSvc.settings.scrollToBottomOnSend.value,
                         title: "Scroll To Bottom When Sending Messages",
                         subtitle: "Scroll to the most recent messages in the chat when sending a new text",
                         backgroundColor: tileColor,
@@ -464,7 +464,7 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
   }
 
   void saveSettings() {
-    ss().saveSettings();
+    SettingsSvc.saveSettings();
   }
 
   @override

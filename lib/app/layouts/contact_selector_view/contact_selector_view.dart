@@ -45,7 +45,7 @@ class ContactSelectorViewState extends OptimizedState<ContactSelectorView> {
       _debounce = Timer(const Duration(milliseconds: 250), () async {
         final searchContacts = await SchedulerBinding.instance.scheduleTask(() async {
           final query = slugify(searchController.text, delimiter: "");
-          return cs.contacts.filter((element) =>
+          return ContactsSvc.contacts.filter((element) =>
               slugify(element.displayName, delimiter: "").contains(query) || element.hasMatchingAddress(query));
         }, Priority.animation);
 
@@ -57,7 +57,7 @@ class ContactSelectorViewState extends OptimizedState<ContactSelectorView> {
     });
 
     setState(() {
-      filteredContacts = List<Contact>.from(cs.contacts);
+      filteredContacts = List<Contact>.from(ContactsSvc.contacts);
     });
   }
 
@@ -65,7 +65,7 @@ class ContactSelectorViewState extends OptimizedState<ContactSelectorView> {
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
-        systemNavigationBarColor: ss().settings.immersiveMode.value
+        systemNavigationBarColor: SettingsSvc.settings.immersiveMode.value
             ? Colors.transparent
             : context.theme.colorScheme.background, // navigation bar color
         systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
@@ -73,11 +73,11 @@ class ContactSelectorViewState extends OptimizedState<ContactSelectorView> {
         statusBarIconBrightness: context.theme.colorScheme.brightness.opposite,
       ),
       child: Scaffold(
-        backgroundColor: ss().settings.windowEffect.value != WindowEffect.disabled
+        backgroundColor: SettingsSvc.settings.windowEffect.value != WindowEffect.disabled
             ? Colors.transparent
             : context.theme.colorScheme.background,
         appBar: PreferredSize(
-            preferredSize: Size(ns.width(context), kIsDesktop ? 90 : 50),
+            preferredSize: Size(NavigationSvc.width(context), kIsDesktop ? 90 : 50),
             child: AppBar(
                 systemOverlayStyle: context.theme.colorScheme.brightness == Brightness.dark
                     ? SystemUiOverlayStyle.light
@@ -88,7 +88,7 @@ class ContactSelectorViewState extends OptimizedState<ContactSelectorView> {
                 surfaceTintColor: context.theme.colorScheme.primary,
                 leading: buildBackButton(context),
                 backgroundColor: Colors.transparent,
-                centerTitle: ss().settings.skin.value == Skins.iOS,
+                centerTitle: SettingsSvc.settings.skin.value == Skins.iOS,
                 title: Text(
                   "Select a Contact",
                   style: context.theme.textTheme.titleLarge,
@@ -152,7 +152,7 @@ class ContactSelectorViewState extends OptimizedState<ContactSelectorView> {
                                     );
                                   }
                                   final contact = filteredContacts[index];
-                                  final hideInfo = ss().settings.redactedMode.value && ss().settings.hideContactInfo.value;
+                                  final hideInfo = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
                                   String _title = contact.displayName;
                                   if (hideInfo) {
                                     _title = "Contact";
@@ -168,7 +168,7 @@ class ContactSelectorViewState extends OptimizedState<ContactSelectorView> {
                                       child: ListTile(
                                           mouseCursor: MouseCursor.defer,
                                           enableFeedback: true,
-                                          dense: ss().settings.denseChatTiles.value,
+                                          dense: SettingsSvc.settings.denseChatTiles.value,
                                           minVerticalPadding: 10,
                                           horizontalTitleGap: 10,
                                           title: RichText(

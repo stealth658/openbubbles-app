@@ -28,33 +28,33 @@ class _MaterialHeaderState extends CustomState<MaterialHeader, void, Conversatio
       children: [
         Obx(() => Container(
               height: controller.selectedChats.isEmpty ? 100 : null,
-              width: ns.width(context),
-              color: ss().settings.windowEffect.value == WindowEffect.disabled ? context.theme.colorScheme.properSurface : Colors.transparent,
+              width: NavigationSvc.width(context),
+              color: SettingsSvc.settings.windowEffect.value == WindowEffect.disabled ? context.theme.colorScheme.properSurface : Colors.transparent,
             )),
         AnimatedSwitcher(
           duration: const Duration(milliseconds: 500),
           child: controller.selectedChats.isEmpty
               ? SafeArea(
                   child: Obx(() {
-                      ns.listener.value;
+                      NavigationSvc.listener.value;
                       return Container(
                         decoration: BoxDecoration(
-                          color: !ns.isAvatarOnly(context) && !showArchived && !showUnknown ? context.theme.colorScheme.properSurface
-                              .withValues(alpha: ss().settings.windowEffect.value == WindowEffect.disabled ? 1 : 0.7) : Colors.transparent,
+                          color: !NavigationSvc.isAvatarOnly(context) && !showArchived && !showUnknown ? context.theme.colorScheme.properSurface
+                              .withValues(alpha: SettingsSvc.settings.windowEffect.value == WindowEffect.disabled ? 1 : 0.7) : Colors.transparent,
                         ),
                         child: Padding(
                               padding: const EdgeInsets.only(left: 5.0, top: 5.0, bottom: 5.0),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.start,
                                 children: [
-                                  if (ns.isAvatarOnly(context))
+                                  if (NavigationSvc.isAvatarOnly(context))
                                     Material(
                                       color: Colors.transparent,
                                       shape: const CircleBorder(),
                                       clipBehavior: Clip.antiAlias,
                                       child: OverflowMenu(extraItems: true, controller: controller),
                                     ),
-                                  if (!ns.isAvatarOnly(context))
+                                  if (!NavigationSvc.isAvatarOnly(context))
                                     Padding(
                                       padding: const EdgeInsets.only(left: 18, right: 20),
                                       child: (!showArchived && !showUnknown)
@@ -74,8 +74,8 @@ class _MaterialHeaderState extends CustomState<MaterialHeader, void, Conversatio
                                               ),
                                             ),
                                     ),
-                                  if (!ns.isAvatarOnly(context)) HeaderText(controller: controller, fontSize: 20),
-                                  if (!ns.isAvatarOnly(context) && !showArchived && !showUnknown)
+                                  if (!NavigationSvc.isAvatarOnly(context)) HeaderText(controller: controller, fontSize: 20),
+                                  if (!NavigationSvc.isAvatarOnly(context) && !showArchived && !showUnknown)
                                     Expanded(
                                       child: Row(
                                         mainAxisAlignment: MainAxisAlignment.end,
@@ -94,7 +94,7 @@ class _MaterialHeaderState extends CustomState<MaterialHeader, void, Conversatio
                                             padding: const EdgeInsets.only(left: 2),
                                             child: IconButton(
                                             onPressed: () async {
-                                              ns.pushLeft(
+                                              NavigationSvc.pushLeft(
                                                 context,
                                                 SearchView(),
                                               );
@@ -207,7 +207,7 @@ class _MaterialHeaderState extends CustomState<MaterialHeader, void, Conversatio
                             IconButton(
                               onPressed: () {
                                 for (Chat element in controller.selectedChats) {
-                                  chats.removeChat(element);
+                                  ChatsSvc.removeChat(element);
                                   Chat.softDelete(element);
                                 }
                                 controller.clearSelectedChats();

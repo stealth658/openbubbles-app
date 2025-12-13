@@ -50,20 +50,20 @@ class _SendAnimationState
     final replyGuid = tuple.item4;
     final part = tuple.item5;
     final effectId = tuple.item6;
-    if (ss().settings.scrollToBottomOnSend.value) {
+    if (SettingsSvc.settings.scrollToBottomOnSend.value) {
       await controller.scrollToBottom();
     }
-    if (ss().settings.sendSoundPath.value != null && !(isNullOrEmptyString(text) && isNullOrEmptyString(subject) && controller.pickedAttachments.isEmpty)) {
+    if (SettingsSvc.settings.sendSoundPath.value != null && !(isNullOrEmptyString(text) && isNullOrEmptyString(subject) && controller.pickedAttachments.isEmpty)) {
       if (kIsDesktop) {
         Player player = Player();
-        await player.setVolume(ss().settings.soundVolume.value.toDouble());
-        await player.open(Media(ss().settings.sendSoundPath.value!));
+        await player.setVolume(SettingsSvc.settings.soundVolume.value.toDouble());
+        await player.open(Media(SettingsSvc.settings.sendSoundPath.value!));
         player.stream.completed
             .firstWhere((completed) => completed)
             .then((_) async => Future.delayed(const Duration(milliseconds: 450), () async => await player.dispose()));
       } else {
         PlayerController controller = PlayerController();
-        controller.preparePlayer(path: ss().settings.sendSoundPath.value!, volume: ss().settings.soundVolume.value / 100).then((_) => controller.startPlayer());
+        controller.preparePlayer(path: SettingsSvc.settings.sendSoundPath.value!, volume: SettingsSvc.settings.soundVolume.value / 100).then((_) => controller.startPlayer());
       }
     }
     for (int i = 0; i < attachments.length; i++) {
@@ -175,11 +175,11 @@ class _SendAnimationState
 
   @override
   Widget build(BuildContext context) {
-    final typicalWidth = message?.isBigEmoji ?? false ? ns.width(context) : ns.width(context) * MessageWidgetController.maxBubbleSizeFactor - 40;
+    final typicalWidth = message?.isBigEmoji ?? false ? NavigationSvc.width(context) : NavigationSvc.width(context) * MessageWidgetController.maxBubbleSizeFactor - 40;
     const duration = 450;
     const curve = Curves.easeInOut;
     const buttonSize = 88;
-    final messageBoxSize = ns.width(context) - buttonSize;
+    final messageBoxSize = NavigationSvc.width(context) - buttonSize;
     return AnimatedPositioned(
       duration: Duration(milliseconds: message != null ? duration : 0),
       bottom: message != null ? textFieldSize + focusInfoSize + 17.5 + (controller.showTypingIndicator.value ? 50 : 0) + (!iOS ? 15 : 0) : 0,

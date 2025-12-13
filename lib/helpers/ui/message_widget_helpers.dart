@@ -45,10 +45,10 @@ List<InlineSpan> buildMessageSpans(BuildContext context, MessagePart part, Messa
           if (kIsDesktop || kIsWeb) return;
           final handle = cm.activeChat!.chat.participants.firstWhereOrNull((e) => e.address == part.mentions[i].mentionedAddress);
           if (handle?.contact == null && handle != null) {
-            await mcs.invokeMethod("open-contact-form", {'address': handle.address, 'address_type': handle.address.isEmail ? 'email' : 'phone'});
+            await MethodChannelSvc.invokeMethod("open-contact-form", {'address': handle.address, 'address_type': handle.address.isEmail ? 'email' : 'phone'});
           } else if (handle?.contact != null) {
             try {
-              await mcs.invokeMethod("view-contact-form", {'id': handle!.contact!.id});
+              await MethodChannelSvc.invokeMethod("view-contact-form", {'id': handle!.contact!.id});
             } catch (_) {
               showSnackbar("Error", "Failed to find contact on device!");
             }
@@ -83,13 +83,13 @@ Future<List<InlineSpan>> buildEnrichedMessageSpans(BuildContext context, Message
   final linkIndexMatches = <Tuple3<String, List<int>, List?>>[];
   final controller = cvc(message.chat.target ?? cm.activeChat!.chat);
   if (!isNullOrEmpty(part.text)) {
-    if (!kIsWeb && !kIsDesktop && ss().settings.smartReply.value) {
+    if (!kIsWeb && !kIsDesktop && SettingsSvc.settings.smartReply.value) {
       if (controller.mlKitParsedText["${message.guid!}-${part.part}"] == null) {
         try {
           controller.mlKitParsedText["${message.guid!}-${part.part}"] = await GoogleMlKit.nlp.entityExtractor(EntityExtractorLanguage.english)
               .annotateText(part.text!);
         } catch (ex, stack) {
-          Logger().warn('Failed to extract entities using mlkit!', error: ex, trace: stack);
+          Logger.warn('Failed to extract entities using mlkit!', error: ex, trace: stack);
         }
       }
       final entities = controller.mlKitParsedText["${message.guid!}-${part.part}"] ?? [];
@@ -171,10 +171,10 @@ Future<List<InlineSpan>> buildEnrichedMessageSpans(BuildContext context, Message
             if (kIsDesktop || kIsWeb) return;
             final handle = cm.activeChat!.chat.participants.firstWhereOrNull((e) => e.address == data!.first);
             if (handle?.contact == null && handle != null) {
-              await mcs.invokeMethod("open-contact-form", {'address': handle.address, 'address_type': handle.address.isEmail ? 'email' : 'phone'});
+              await MethodChannelSvc.invokeMethod("open-contact-form", {'address': handle.address, 'address_type': handle.address.isEmail ? 'email' : 'phone'});
             } else if (handle?.contact != null) {
               try {
-                await mcs.invokeMethod("view-contact-form", {'id': handle!.contact!.id});
+                await MethodChannelSvc.invokeMethod("view-contact-form", {'id': handle!.contact!.id});
               } catch (_) {
                 showSnackbar("Error", "Failed to find contact on device!");
               }
@@ -200,7 +200,7 @@ Future<List<InlineSpan>> buildEnrichedMessageSpans(BuildContext context, Message
                 } else if (type == "email") {
                   await launchUrl(Uri(scheme: "mailto", path: text));
                 } else if (type == "date") {
-                  await mcs.invokeMethod("open-calendar", {"date": data!.first});
+                  await MethodChannelSvc.invokeMethod("open-calendar", {"date": data!.first});
                 } else if (type == "tracking") {
                   final TrackingCarrier c = data!.first;
                   final String number = data.last;

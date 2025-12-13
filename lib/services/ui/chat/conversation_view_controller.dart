@@ -1,11 +1,11 @@
 import 'dart:async';
-import 'dart:isolate';
 
 import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:bluebubbles/app/components/custom_text_editing_controllers.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/database/models.dart';
-import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
+import 'package:bluebubbles/services/backend/interfaces/image_interface.dart';
+import 'package:bluebubbles/services/backend/interfaces/prefs_interface.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -106,7 +106,7 @@ class ConversationViewController extends StatefulController with GetSingleTicker
     scrollController.addListener(() {
       if (!scrollController.hasClients) return;
       if (keyboardOpen
-          && ss().settings.hideKeyboardOnScroll.value
+          && SettingsSvc.settings.hideKeyboardOnScroll.value
           && scrollController.offset > _keyboardOffset + 100) {
         focusNode.unfocus();
         subjectFocusNode.unfocus();
@@ -165,7 +165,7 @@ class ConversationViewController extends StatefulController with GetSingleTicker
       );
     }
 
-    if (ss().settings.openKeyboardOnSTB.value) {
+    if (SettingsSvc.settings.openKeyboardOnSTB.value) {
       focusNode.requestFocus();
     }
   }
@@ -193,11 +193,7 @@ class ConversationViewController extends StatefulController with GetSingleTicker
     // If it's an image, compress the image when loading it
     if (kIsWeb || file.path == null) {
       if (attachment.mimeType?.contains("image/tif") ?? false) {
-        final receivePort = ReceivePort();
-        await Isolate.spawn(unsupportedToPngIsolate, IsolateData(file, receivePort.sendPort));
-        // Get the processed image from the isolate.
-        final image = await receivePort.first as Uint8List?;
-        tmpData = image;
+        tmpData = await ImageInterface.convertToPng(file);
       } else {
         tmpData = file.bytes;
       }
@@ -235,22 +231,21 @@ class ConversationViewController extends StatefulController with GetSingleTicker
   }
 
   Future<void> saveReplyToMessageState() async {
-    if (replyToMessage != null) {
-      await prefs().i.setString('replyToMessage_${chat.guid}', replyToMessage!.item1.guid!);
-      await prefs().i.setInt('replyToMessagePart_${chat.guid}', replyToMessage!.item2);
-    } else {
-      await prefs().i.remove('replyToMessage_${chat.guid}');
-      await prefs().i.remove('replyToMessagePart_${chat.guid}');
-    }
+    await PrefsInterface.saveReplyToMessageState(
+      chat.guid,
+      replyToMessage?.item1.guid,
+      replyToMessage?.item2,
+    );
   }
 
   Future<void> loadReplyToMessageState() async {
-    final replyToMessageGuid = prefs().i.getString('replyToMessage_${chat.guid}');
-    final replyToMessagePart = prefs().i.getInt('replyToMessagePart_${chat.guid}');
-    if (replyToMessageGuid != null && replyToMessagePart != null) {
-      final message = Message.findOne(guid: replyToMessageGuid);
+    final data = await PrefsInterface.loadReplyToMessageState(chat.guid);
+    if (data != null) {
+      final messageGuid = data['messageGuid'] as String;
+      final messagePart = data['messagePart'] as int;
+      final message = Message.findOne(guid: messageGuid);
       if (message != null) {
-        replyToMessage = Tuple2(message, replyToMessagePart);
+        replyToMessage = Tuple2(message, messagePart);
       }
     }
   }

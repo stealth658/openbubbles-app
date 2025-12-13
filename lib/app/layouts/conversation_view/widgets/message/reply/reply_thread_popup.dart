@@ -53,10 +53,10 @@ void _buildThreadView(List<Message> _messages, int? originatorPart, Conversation
                 colorScheme: context.theme.colorScheme.copyWith(
                   primary: context.theme.colorScheme.bubble(context, true),
                   onPrimary: context.theme.colorScheme.onBubble(context, true),
-                  surface: ss().settings.monetTheming.value == Monet.full
+                  surface: SettingsSvc.settings.monetTheming.value == Monet.full
                       ? null
                       : (context.theme.extensions[BubbleColors] as BubbleColors?)?.receivedBubbleColor,
-                  onSurface: ss().settings.monetTheming.value == Monet.full
+                  onSurface: SettingsSvc.settings.monetTheming.value == Monet.full
                       ? null
                       : (context.theme.extensions[BubbleColors] as BubbleColors?)?.onReceivedBubbleColor,
                 ),
@@ -68,7 +68,7 @@ void _buildThreadView(List<Message> _messages, int? originatorPart, Conversation
                   },
                   child: AnnotatedRegion<SystemUiOverlayStyle>(
                     value: SystemUiOverlayStyle(
-                      systemNavigationBarColor: ss().settings.immersiveMode.value ? Colors.transparent : context.theme.colorScheme.background,
+                      systemNavigationBarColor: SettingsSvc.settings.immersiveMode.value ? Colors.transparent : context.theme.colorScheme.background,
                       // navigation bar color
                       systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
                       statusBarColor: Colors.transparent,
@@ -76,7 +76,7 @@ void _buildThreadView(List<Message> _messages, int? originatorPart, Conversation
                       statusBarIconBrightness: context.theme.colorScheme.brightness.opposite,
                     ),
                     child: Scaffold(
-                      backgroundColor: kIsDesktop && ss().settings.windowEffect.value != WindowEffect.disabled
+                      backgroundColor: kIsDesktop && SettingsSvc.settings.windowEffect.value != WindowEffect.disabled
                           ? context.theme.colorScheme.properSurface.withValues(alpha: 0.9)
                           : Colors.transparent,
                       body: Stack(
@@ -84,8 +84,8 @@ void _buildThreadView(List<Message> _messages, int? originatorPart, Conversation
                         children: [
                           BackdropFilter(
                             filter: ImageFilter.blur(
-                                sigmaX: kIsDesktop && ss().settings.windowEffect.value != WindowEffect.disabled ? 0 : 30,
-                                sigmaY: kIsDesktop && ss().settings.windowEffect.value != WindowEffect.disabled ? 0 : 30),
+                                sigmaX: kIsDesktop && SettingsSvc.settings.windowEffect.value != WindowEffect.disabled ? 0 : 30,
+                                sigmaY: kIsDesktop && SettingsSvc.settings.windowEffect.value != WindowEffect.disabled ? 0 : 30),
                             child: Container(
                               color: context.theme.colorScheme.properSurface.withValues(alpha: 0.3),
                             ),
@@ -101,11 +101,11 @@ void _buildThreadView(List<Message> _messages, int? originatorPart, Conversation
                                       children: _messages.mapIndexed((index, e) => GestureDetector(
                                         onTap: () {
                                           Navigator.of(context).pop();
-                                          if (originatorPart == null && ss().settings.skin.value == Skins.iOS) {
+                                          if (originatorPart == null && SettingsSvc.settings.skin.value == Skins.iOS) {
                                             // pop twice to remove convo details page
                                             Navigator.of(context).pop();
                                           }
-                                          ms(cvController.chat.guid).jumpToMessage.call(e.guid!);
+                                          MessagesSvc(cvController.chat.guid).jumpToMessage.call(e.guid!);
                                         },
                                         child: AbsorbPointer(
                                           absorbing: true,

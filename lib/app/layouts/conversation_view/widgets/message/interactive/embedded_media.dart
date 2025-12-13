@@ -52,7 +52,7 @@ class _EmbeddedMediaState extends CustomState<EmbeddedMedia, void, MessageWidget
     } else {
       content = Rx<Tuple2<int, int>>(const Tuple2(0, 0));
       setState(() {});
-      http.embeddedMedia(message.guid!, onReceiveProgress: (current, total) {
+      HttpSvc.embeddedMedia(message.guid!, onReceiveProgress: (current, total) {
         if (content is Rx) {
           (content as Rx<Tuple2<int, int>>).value = Tuple2(current, total);
         }

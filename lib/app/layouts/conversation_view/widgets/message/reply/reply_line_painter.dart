@@ -62,13 +62,13 @@ class ReplyLinePainter extends BoxPainter {
         path.lineTo(_offset.dx + size.width - 35, _offset.dy + (size.height / 2 - radius).clamp(0, double.infinity));
         final x = _offset.dx + size.width - 35 - radius;
         path.arcToPoint(Offset(x, _offset.dy + size.height / 2), clockwise: true, radius: Radius.circular(radius));
-        path.lineTo(min(x, _offset.dx + ns.width(context) * MessageWidgetController.maxBubbleSizeFactor), _offset.dy + size.height / 2);
+        path.lineTo(min(x, _offset.dx + NavigationSvc.width(context) * MessageWidgetController.maxBubbleSizeFactor), _offset.dy + size.height / 2);
       } else {
         path.moveTo(_offset.dx, _offset.dy);
         path.lineTo(_offset.dx, _offset.dy + (size.height / 2 - radius).clamp(0, double.infinity));
         final x = _offset.dx + radius;
         path.arcToPoint(Offset(x, _offset.dy + size.height / 2), clockwise: false, radius: Radius.circular(radius));
-        path.lineTo(max(x, _offset.dx + size.width - ns.width(context) * MessageWidgetController.maxBubbleSizeFactor - 30), _offset.dy + size.height / 2);
+        path.lineTo(max(x, _offset.dx + size.width - NavigationSvc.width(context) * MessageWidgetController.maxBubbleSizeFactor - 30), _offset.dy + size.height / 2);
       }
     }
     if (connectLower) {
@@ -77,13 +77,13 @@ class ReplyLinePainter extends BoxPainter {
         path.lineTo(_offset.dx + size.width - 35, _offset.dy + size.height - (size.height / 2 - radius).clamp(0, double.infinity));
         final x = _offset.dx + size.width - 35 - radius;
         path.arcToPoint(Offset(x, _offset.dy + size.height / 2), clockwise: false, radius: Radius.circular(radius));
-        path.lineTo((_offset.dx + ns.width(context) * MessageWidgetController.maxBubbleSizeFactor).clamp(0, x), _offset.dy + size.height / 2);
+        path.lineTo((_offset.dx + NavigationSvc.width(context) * MessageWidgetController.maxBubbleSizeFactor).clamp(0, x), _offset.dy + size.height / 2);
       } else {
         path.moveTo(_offset.dx, _offset.dy + size.height);
         path.lineTo(_offset.dx, _offset.dy + size.height - (size.height / 2 - radius).clamp(0, double.infinity));
         final x = _offset.dx + radius;
         path.arcToPoint(Offset(x, _offset.dy + size.height / 2), clockwise: true, radius: Radius.circular(radius));
-        path.lineTo((_offset.dx + size.width - ns.width(context) * MessageWidgetController.maxBubbleSizeFactor - 30).clamp(x, double.infinity), _offset.dy + size.height / 2);
+        path.lineTo((_offset.dx + size.width - NavigationSvc.width(context) * MessageWidgetController.maxBubbleSizeFactor - 30).clamp(x, double.infinity), _offset.dy + size.height / 2);
       }
     }
 

@@ -28,7 +28,7 @@ class _MessageRemindersPanelState extends OptimizedState<MessageRemindersPanel> 
   }
 
   void getExistingMessages() async {
-    final _pending = await notif.flnp.pendingNotificationRequests();
+    final _pending = await NotificationsSvc.flnp.pendingNotificationRequests();
     setState(() {
       scheduled = _pending;
       fetching = false;
@@ -39,7 +39,7 @@ class _MessageRemindersPanelState extends OptimizedState<MessageRemindersPanel> 
     setState(() {
       scheduled.removeWhere((element) => element.id == item.id);
     });
-    notif.flnp.cancel(item.id);
+    NotificationsSvc.flnp.cancel(item.id);
   }
 
   @override
@@ -106,7 +106,7 @@ class _MessageRemindersPanelState extends OptimizedState<MessageRemindersPanel> 
                                 return;
                               }
                               deleteMessage(item);
-                              await notif.createReminder(null, null, finalDate,
+                              await NotificationsSvc.createReminder(null, null, finalDate,
                                   chatTitle: item.title, messageText: item.body);
                               showSnackbar("Notice", "Scheduled reminder for ${buildDate(finalDate)}");
                               getExistingMessages();

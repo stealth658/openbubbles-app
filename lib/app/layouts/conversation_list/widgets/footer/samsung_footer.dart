@@ -85,7 +85,7 @@ class _SamsungFooterState extends CustomState<SamsungFooter, void, ConversationL
           IconButton(
             onPressed: () {
               for (Chat element in controller.selectedChats) {
-                chats.removeChat(element);
+                ChatsSvc.removeChat(element);
                 Chat.softDelete(element);
               }
               controller.clearSelectedChats();

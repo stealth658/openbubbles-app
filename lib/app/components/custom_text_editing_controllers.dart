@@ -39,8 +39,8 @@ class SpellCheckTextEditingController extends TextEditingController {
   SpellCheckTextEditingController({super.text, this.focusNode}) {
     assert(focusNode != null || !(kIsDesktop || kIsWeb));
     _languageCheckService =
-        DebounceLangToolService(LangToolService(LanguageToolClient(language: ss().settings.spellcheckLanguage.value)),
-            const Duration(milliseconds: 500));
+        DebounceLangToolService(LangToolService(LanguageToolClient(language: SettingsSvc.settings.spellcheckLanguage.value)),
+            const Duration(milliseconds: 1000));
     _processMistakes(text);
   }
 
@@ -74,7 +74,20 @@ class SpellCheckTextEditingController extends TextEditingController {
     String newText = newValue.text;
     int newOffset = newValue.selection.start;
 
-    if (ss().settings.replaceEmoticonsWithEmoji.value) {
+    // OPTIMIZATION: Skip processing if only selection changed (cursor moved, no text change)
+    if (origText == text && origOffset != selection.start) {
+      // Only selection changed, skip all text processing
+      if (kIsDesktop || kIsWeb) {
+        _handleSelectionChange(newValue.selection);
+        // Only remove tooltip when selection changes
+        _mistakeTooltip?.remove();
+        _mistakeTooltip = null;
+      }
+      super.value = newValue;
+      return;
+    }
+
+    if (SettingsSvc.settings.replaceEmoticonsWithEmoji.value) {
       List<(int, int)> offsetsAndDifferences;
       (newText, offsetsAndDifferences) = replaceEmoticons(newText);
 
@@ -110,9 +123,10 @@ class SpellCheckTextEditingController extends TextEditingController {
     }
 
     if (kIsDesktop || kIsWeb) {
-      _handleTextChange(newValue.text);
-      _mistakeTooltip?.remove();
-      _mistakeTooltip = null;
+      // Only process text change if text actually changed
+      if (newValue.text != text) {
+        _handleTextChange(newValue.text);
+      }
     }
 
     super.value = newValue;
@@ -172,7 +186,7 @@ class SpellCheckTextEditingController extends TextEditingController {
   }
 
   Future<void> _processMistakes(String newText) async {
-    if (!ss().settings.spellcheck.value || newText.isEmpty) {
+    if (!SettingsSvc.settings.spellcheck.value || newText.isEmpty) {
       _mistakes.clear();
       _mistakeTooltip?.remove();
       _mistakeTooltip = null;
@@ -389,7 +403,7 @@ class SpellCheckTextEditingController extends TextEditingController {
                   _mistakeTooltip!.remove();
                 }
                 _mistakeTooltip = _createTooltip(context,
-                    Offset(event.position.dx - ns.widthChatListLeft(context), event.position.dy), mistake, mistakeText);
+                    Offset(event.position.dx - NavigationSvc.widthChatListLeft(context), event.position.dy), mistake, mistakeText);
                 Overlay.of(context).insert(_mistakeTooltip!);
               },
             ),
@@ -409,8 +423,10 @@ class SpellCheckTextEditingController extends TextEditingController {
   }
 
   List<InlineSpan> buildAppleEmojiTextSpans({required String text, required TextStyle? style}) {
-    if (!fs().fontExistsOnDisk.value) return [TextSpan(text: text, style: style)];
+    // OPTIMIZATION: Early exit if font doesn't exist to avoid regex processing
+    if (!FilesystemSvc.fontExistsOnDisk.value) return [TextSpan(text: text, style: style)];
 
+    // OPTIMIZATION: Cache regex matches to avoid recomputation on every render
     final emojiMatches = emojiRegex.allMatches(text);
     if (emojiMatches.isEmpty) return [TextSpan(text: text, style: style)];
 

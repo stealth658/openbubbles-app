@@ -24,15 +24,15 @@ class LogLevelSelectorState extends State<LogLevelSelector> {
   Widget build(BuildContext context) {
     return Obx(() {
       return SettingsOptions<Level>(
-        initial: ss().settings.logLevel.value,
+        initial: SettingsSvc.settings.logLevel.value,
         onChanged: (val) async {
           if (val == null) return;
 
           // Change the log level
-          Logger().currentLevel = val;
+          Logger.currentLevel = val;
 
-          ss().settings.logLevel.value = val;
-          ss().settings.saveOne("logLevel");
+          SettingsSvc.settings.logLevel.value = val;
+          SettingsSvc.settings.saveOne("logLevel");
         },
         options: Level.values.where((testLevel) => levelWhitelist.contains(testLevel)).toList(),
         textProcessing: (val) => val.name,

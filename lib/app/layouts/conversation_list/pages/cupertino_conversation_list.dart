@@ -8,7 +8,6 @@ import 'package:bluebubbles/app/layouts/conversation_list/widgets/conversation_l
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/header/cupertino_header.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/app/wrappers/scrollbar_wrapper.dart';
-import 'package:bluebubbles/services/isolates/test_isolate.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -31,7 +30,7 @@ class CupertinoConversationListState extends OptimizedState<CupertinoConversatio
 
   bool get showUnknown => widget.parentController.showUnknownSenders;
 
-  Color get backgroundColor => ss().settings.windowEffect.value == WindowEffect.disabled ? context.theme.colorScheme.background : Colors.transparent;
+  Color get backgroundColor => SettingsSvc.settings.windowEffect.value == WindowEffect.disabled ? context.theme.colorScheme.background : Colors.transparent;
 
   ConversationListController get controller => widget.parentController;
 
@@ -39,12 +38,9 @@ class CupertinoConversationListState extends OptimizedState<CupertinoConversatio
   void initState() {
     super.initState();
 
-    print("YESYESYES");
-    TestIsolate.testReturnInput();
-
     // update widget when background color changes
     if (kIsDesktop) {
-      ss().settings.windowEffect.listen((WindowEffect effect) {
+      SettingsSvc.settings.windowEffect.listen((WindowEffect effect) {
         setState(() {});
       });
     }
@@ -53,9 +49,9 @@ class CupertinoConversationListState extends OptimizedState<CupertinoConversatio
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: ss().settings.windowEffect.value != WindowEffect.disabled ? Colors.transparent : context.theme.colorScheme.background,
+      backgroundColor: SettingsSvc.settings.windowEffect.value != WindowEffect.disabled ? Colors.transparent : context.theme.colorScheme.background,
       extendBodyBehindAppBar: !showArchived && !showUnknown,
-      floatingActionButton: Obx(() => !ss().settings.moveChatCreatorToHeader.value && !showArchived && !showUnknown
+      floatingActionButton: Obx(() => !SettingsSvc.settings.moveChatCreatorToHeader.value && !showArchived && !showUnknown
           ? ConversationListFAB(parentController: controller)
           : const SizedBox.shrink()),
       appBar: showArchived || showUnknown
@@ -75,21 +71,21 @@ class CupertinoConversationListState extends OptimizedState<CupertinoConversatio
             controller: controller.iosScrollController,
             child: Obx(() => CustomScrollView(
                   controller: controller.iosScrollController,
-                  physics: ts.scrollPhysics,
+                  physics: ThemeSvc.scrollPhysics,
                   slivers: <Widget>[
                     if (!showArchived && !showUnknown) CupertinoHeader(controller: controller),
                     Obx(() {
-                      ns.listener.value;
-                      final _chats = chats.chats.archivedHelper(showArchived).unknownSendersHelper(showUnknown).bigPinHelper(true);
+                      NavigationSvc.listener.value;
+                      final _chats = ChatsSvc.chats.archivedHelper(showArchived).unknownSendersHelper(showUnknown).bigPinHelper(true);
 
                       if (_chats.isEmpty) {
                         return const SliverToBoxAdapter(child: SizedBox.shrink());
                       }
 
                       int rowCount = context.mediaQuery.orientation == Orientation.portrait || kIsDesktop
-                          ? ss().settings.pinRowsPortrait.value
-                          : ss().settings.pinRowsLandscape.value;
-                      int colCount = kIsDesktop ? ss().settings.pinColumnsLandscape.value : ss().settings.pinColumnsPortrait.value;
+                          ? SettingsSvc.settings.pinRowsPortrait.value
+                          : SettingsSvc.settings.pinRowsLandscape.value;
+                      int colCount = kIsDesktop ? SettingsSvc.settings.pinColumnsLandscape.value : SettingsSvc.settings.pinColumnsPortrait.value;
                       int pinCount = _chats.length;
                       int usedRowCount = min((pinCount / colCount).ceil(), rowCount);
                       int maxOnPage = rowCount * colCount;
@@ -107,7 +103,7 @@ class CupertinoConversationListState extends OptimizedState<CupertinoConversatio
                             TextStyle style = context.theme.textTheme.bodyMedium!;
                             double height = usedRowCount * (maxWidth * 1.15 + 10 + style.height! * style.fontSize! * 2);
                             // avatar only
-                            if (ns.isAvatarOnly(context)) {
+                            if (NavigationSvc.isAvatarOnly(context)) {
                               return Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
@@ -202,9 +198,9 @@ class CupertinoConversationListState extends OptimizedState<CupertinoConversatio
                       );
                     }),
                     Obx(() {
-                      final _chats = chats.chats.archivedHelper(showArchived).unknownSendersHelper(showUnknown).bigPinHelper(false);
+                      final _chats = ChatsSvc.chats.archivedHelper(showArchived).unknownSendersHelper(showUnknown).bigPinHelper(false);
 
-                      if (!chats.loadedChatBatch.value || _chats.isEmpty) {
+                      if (!ChatsSvc.loadedChatBatch.value || _chats.isEmpty) {
                         return SliverToBoxAdapter(
                           child: Center(
                             child: Padding(
@@ -214,8 +210,8 @@ class CupertinoConversationListState extends OptimizedState<CupertinoConversatio
                                   Padding(
                                     padding: const EdgeInsets.all(8.0),
                                     child: Text(
-                                      !chats.loadedChatBatch.value
-                                          ? "Loading chats..."
+                                      !ChatsSvc.loadedChatBatch.value
+                                          ? "Loading ChatSvc..."
                                           : showArchived
                                               ? "You have no archived chats"
                                               : showUnknown
@@ -225,7 +221,7 @@ class CupertinoConversationListState extends OptimizedState<CupertinoConversatio
                                       textAlign: TextAlign.center,
                                     ),
                                   ),
-                                  if (!chats.loadedChatBatch.value) buildProgressIndicator(context, size: 15),
+                                  if (!ChatsSvc.loadedChatBatch.value) buildProgressIndicator(context, size: 15),
                                 ],
                               ),
                             ),
@@ -236,13 +232,13 @@ class CupertinoConversationListState extends OptimizedState<CupertinoConversatio
                       return SliverList(
                         delegate: SliverChildBuilderDelegate(
                           (context, index) {
-                            final chat = chats.chats.firstWhere((e) => e.guid == _chats[index].guid);
+                            final chat = ChatsSvc.chats.firstWhere((e) => e.guid == _chats[index].guid);
                             final child = ConversationTile(
                               key: Key(chat.guid.toString()),
                               chat: chat,
                               controller: controller,
                             );
-                            final separator = Obx(() => !ss().settings.hideDividers.value
+                            final separator = Obx(() => !SettingsSvc.settings.hideDividers.value
                                 ? Padding(
                                     padding: const EdgeInsets.only(left: 20),
                                     child: Divider(

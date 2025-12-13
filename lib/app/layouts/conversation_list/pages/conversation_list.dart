@@ -42,10 +42,10 @@ class ConversationListController extends StatefulController {
   ConversationListController({required this.showArchivedChats, required this.showUnknownSenders});
 
   void updateSelectedChats() {
-    if (ss().settings.skin.value == Skins.Material) {
+    if (SettingsSvc.settings.skin.value == Skins.Material) {
       updateWidgets<MaterialHeader>(null);
       updateMaterialFAB();
-    } else if (ss().settings.skin.value == Skins.Samsung) {
+    } else if (SettingsSvc.settings.skin.value == Skins.Samsung) {
       updateWidgets<SamsungFooter>(null);
       updateWidgets<ExpandedHeaderText>(null);
     }
@@ -89,7 +89,7 @@ class ConversationListController extends StatefulController {
   }
 
   void openNewChatCreator(BuildContext context, {List<PlatformFile>? existing}) async {
-    ns.pushAndRemoveUntil(
+    NavigationSvc.pushAndRemoveUntil(
       context,
       ChatCreator(initialAttachments: existing ?? []),
       (route) => route.isFirst,
@@ -116,6 +116,9 @@ class ConversationList extends CustomStateful<ConversationListController> {
 }
 
 class _ConversationListState extends CustomState<ConversationList, void, ConversationListController> {
+  
+  Timer? _initTimer;
+  
   @override
   void initState() {
     super.initState();
@@ -125,16 +128,21 @@ class _ConversationListState extends CustomState<ConversationList, void, Convers
             ? "Unknown"
             : "Messages";
 
-    if (!ss().settings.reachedConversationList.value) {
-      Timer.periodic(const Duration(seconds: 1), (Timer t) {
-        bool notInSettings = ns.isTabletMode(context)
+    if (!SettingsSvc.settings.reachedConversationList.value) {
+      _initTimer = Timer.periodic(const Duration(seconds: 1), (Timer t) {
+        if (!mounted) {
+          t.cancel();
+          return;
+        }
+
+        bool notInSettings = NavigationSvc.isTabletMode(context)
             ? !Get.keys.containsKey(3) || Get.keys[3]?.currentContext == null
             : Get.rawRoute?.settings.name == "/";
         // This only runs once
         if (notInSettings) {
-          ss().settings.reachedConversationList.value = true;
-          ss().saveSettings();
-          ss().getServerDetails(refresh: true);
+          SettingsSvc.settings.reachedConversationList.value = true;
+          SettingsSvc.saveSettings();
+          SettingsSvc.getServerDetails(refresh: true);
           t.cancel();
         }
       });
@@ -142,20 +150,20 @@ class _ConversationListState extends CustomState<ConversationList, void, Convers
 
     // Extra safety check to make sure Android doesn't open the last chat when opening the app
     if (kIsDesktop || kIsWeb) {
-      if (prefs().i.getString('lastOpenedChat') != null &&
+      if (PrefsSvc.i.getString('lastOpenedChat') != null &&
           showAltLayoutContextless &&
-          cm.activeChat?.chat.guid != prefs().i.getString('lastOpenedChat') &&
-          !ls.isBubble) {
+          cm.activeChat?.chat.guid != PrefsSvc.i.getString('lastOpenedChat') &&
+          !LifecycleSvc.isBubble) {
         WidgetsBinding.instance.addPostFrameCallback((_) async {
           if (kIsWeb) {
-            await chats.loadedAllChats.future;
+            await ChatsSvc.loadedAllChats.future;
           }
-          ns.pushAndRemoveUntil(
+          NavigationSvc.pushAndRemoveUntil(
             context,
             ConversationView(
                 chat: kIsWeb
-                    ? (await Chat.findOneWeb(guid: prefs().i.getString('lastOpenedChat')))!
-                    : Chat.findOne(guid: prefs().i.getString('lastOpenedChat'))!),
+                    ? (await Chat.findOneWeb(guid: PrefsSvc.i.getString('lastOpenedChat')))!
+                    : Chat.findOne(guid: PrefsSvc.i.getString('lastOpenedChat'))!),
             (route) => route.isFirst,
           );
         });
@@ -164,7 +172,15 @@ class _ConversationListState extends CustomState<ConversationList, void, Convers
   }
 
   @override
+  void dispose() {
+    _initTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    print(SettingsSvc.settings.finishedSetup.value);
+    print(PrefsSvc.i.getBool('finishedSetup'));
     final child = ThemeSwitcher(
       iOSSkin: CupertinoConversationList(parentController: controller),
       materialSkin: MaterialConversationList(parentController: controller),
@@ -175,7 +191,7 @@ class _ConversationListState extends CustomState<ConversationList, void, Convers
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
-        systemNavigationBarColor: ss().settings.immersiveMode.value ? Colors.transparent : context.theme.colorScheme.background, // navigation bar color
+        systemNavigationBarColor: SettingsSvc.settings.immersiveMode.value ? Colors.transparent : context.theme.colorScheme.background, // navigation bar color
         systemNavigationBarIconBrightness: brightness,
         statusBarColor: Colors.transparent, // status bar color
         statusBarIconBrightness: brightness.opposite,
@@ -189,7 +205,7 @@ class _ConversationListState extends CustomState<ConversationList, void, Convers
         left: !showAltLayout
             ? child
             : LayoutBuilder(builder: (context, constraints) {
-                ns.maxWidthLeft = constraints.maxWidth;
+                NavigationSvc.maxWidthLeft = constraints.maxWidth;
                 return PopScope(
                   canPop: false,
                   onPopInvoked: (_) async {
@@ -236,7 +252,7 @@ class _ConversationListState extends CustomState<ConversationList, void, Convers
               }),
         right: LayoutBuilder(
           builder: (context, constraints) {
-            ns.maxWidthRight = constraints.maxWidth;
+            NavigationSvc.maxWidthRight = constraints.maxWidth;
             return PopScope(
               canPop: false,
               onPopInvoked: (_) async {

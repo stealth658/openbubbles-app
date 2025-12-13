@@ -25,7 +25,7 @@ class RedactedModeTile extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                ss().settings.redactedMode.value ? "Enabled" : "Disabled",
+                SettingsSvc.settings.redactedMode.value ? "Enabled" : "Disabled",
                 style: context.theme.textTheme.bodyMedium!.apply(
                   color: context.theme.colorScheme.outline
                       .withValues(alpha: 0.85),
@@ -36,7 +36,7 @@ class RedactedModeTile extends StatelessWidget {
             ],
           ),
           onTap: () async {
-            ns.pushAndRemoveSettingsUntil(
+            NavigationSvc.pushAndRemoveSettingsUntil(
               context,
               RedactedModePanel(),
               (Route route) => route.isFirst,
@@ -45,7 +45,7 @@ class RedactedModeTile extends StatelessWidget {
           leading: SettingsLeadingIcon(
             iosIcon: CupertinoIcons.wand_stars,
             materialIcon: Icons.auto_fix_high,
-            containerColor: ss().settings.redactedMode.value
+            containerColor: SettingsSvc.settings.redactedMode.value
                 ? Colors.green
                 : Colors.redAccent,
           ),

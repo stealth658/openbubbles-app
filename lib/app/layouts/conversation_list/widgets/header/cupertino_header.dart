@@ -36,22 +36,22 @@ class CupertinoHeader extends StatelessWidget {
             bottom: 5,
           ),
           child: Obx(() {
-            ns.listener.value;
+            NavigationSvc.listener.value;
             return Row(
-              mainAxisAlignment: ns.isAvatarOnly(context) ? MainAxisAlignment.center : MainAxisAlignment.spaceBetween,
+              mainAxisAlignment: NavigationSvc.isAvatarOnly(context) ? MainAxisAlignment.center : MainAxisAlignment.spaceBetween,
               children: <Widget>[
-                if (!ns.isAvatarOnly(context))
+                if (!NavigationSvc.isAvatarOnly(context))
                   Expanded(
                     child: HeaderText(controller: controller),
                   ),
-                if (ns.isAvatarOnly(context))
+                if (NavigationSvc.isAvatarOnly(context))
                   Material(
                     color: Colors.transparent,
                     shape: const CircleBorder(),
                     clipBehavior: Clip.antiAlias,
                     child: OverflowMenu(extraItems: true, controller: controller),
                   ),
-                if (!ns.isAvatarOnly(context))
+                if (!NavigationSvc.isAvatarOnly(context))
                   Row(
                     mainAxisSize: MainAxisSize.max,
                     crossAxisAlignment: CrossAxisAlignment.center,
@@ -68,14 +68,14 @@ class CupertinoHeader extends StatelessWidget {
                             child: InkWell(
                               child: Icon(CupertinoIcons.search, color: context.theme.colorScheme.properOnSurface, size: 18),
                               onTap: () {
-                                ns.pushLeft(context, SearchView());
+                                NavigationSvc.pushLeft(context, SearchView());
                               },
                             ),
                           ),
                         ),
                       ),
                       const SizedBox(width: 10.0),
-                      if (ss().settings.moveChatCreatorToHeader.value)
+                      if (SettingsSvc.settings.moveChatCreatorToHeader.value)
                         ClipOval(
                           child: Material(
                             color: context.theme.colorScheme.properSurface, // button color
@@ -93,9 +93,9 @@ class CupertinoHeader extends StatelessWidget {
                             ),
                           ),
                         ),
-                      if (ss().settings.moveChatCreatorToHeader.value && ss().settings.cameraFAB.value && !kIsWeb && !kIsDesktop)
+                      if (SettingsSvc.settings.moveChatCreatorToHeader.value && SettingsSvc.settings.cameraFAB.value && !kIsWeb && !kIsDesktop)
                         const SizedBox(width: 10.0),
-                      if (ss().settings.moveChatCreatorToHeader.value && ss().settings.cameraFAB.value && !kIsWeb && !kIsDesktop)
+                      if (SettingsSvc.settings.moveChatCreatorToHeader.value && SettingsSvc.settings.cameraFAB.value && !kIsWeb && !kIsDesktop)
                         ClipOval(
                           child: Material(
                             color: context.theme.colorScheme.properSurface, // button color
@@ -108,7 +108,7 @@ class CupertinoHeader extends StatelessWidget {
                                 onTap: () => controller.openCamera(context)),
                           ),
                         ),
-                      if (ss().settings.moveChatCreatorToHeader.value) const SizedBox(width: 10.0),
+                      if (SettingsSvc.settings.moveChatCreatorToHeader.value) const SizedBox(width: 10.0),
                       const Material(
                         color: Colors.transparent,
                         shape: CircleBorder(),
@@ -147,9 +147,9 @@ class CupertinoMiniHeader extends StatelessWidget {
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
             child: Obx(() {
-              ns.listener.value;
+              NavigationSvc.listener.value;
               return Container(
-                width: ns.width(context),
+                width: NavigationSvc.width(context),
                 height: (topMargin - 20).clamp(kIsDesktop ? 65 : 40, double.infinity),
                 color: context.theme.colorScheme.properSurface.withValues(alpha: 0.5),
                 alignment: Alignment.bottomCenter,

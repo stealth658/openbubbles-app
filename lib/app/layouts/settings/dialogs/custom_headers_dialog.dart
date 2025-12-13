@@ -8,11 +8,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 Future<bool> showCustomHeadersDialog(BuildContext context) async {
-  RxInt headers = ss().settings.customHeaders.length.clamp(0, 100).obs;
+  RxInt headers = SettingsSvc.settings.customHeaders.length.clamp(0, 100).obs;
   List<TextEditingController> keyControllers = [];
   List<TextEditingController> valueControllers = [];
-  if (ss().settings.customHeaders.isNotEmpty) {
-    ss().settings.customHeaders.forEach((key, value) {
+  if (SettingsSvc.settings.customHeaders.isNotEmpty) {
+    SettingsSvc.settings.customHeaders.forEach((key, value) {
       keyControllers.add(TextEditingController(text: key));
       valueControllers.add(TextEditingController(text: value));
     });
@@ -41,7 +41,7 @@ Future<bool> showCustomHeadersDialog(BuildContext context) async {
                     return ListView.builder(
                     shrinkWrap: true,
                     itemCount: headers.value,
-                    findChildIndexCallback: (key) => findChildIndexByKey(ss().settings.customHeaders.keys.toList(), key, (item) => item),
+                    findChildIndexCallback: (key) => findChildIndexByKey(SettingsSvc.settings.customHeaders.keys.toList(), key, (item) => item),
                     itemBuilder: (context, index) {
                       return Row(
                           key: ValueKey(index),
@@ -127,10 +127,10 @@ Future<bool> showCustomHeadersDialog(BuildContext context) async {
                 }
               });
 
-              ss().settings.customHeaders.value = map;
-              await ss().settings.saveOne('customHeaders');
-              await prefs().i.setString('customHeaders', jsonEncode(http.headers));
-              http.onInit();
+              SettingsSvc.settings.customHeaders.value = map;
+              await SettingsSvc.settings.saveOne('customHeaders');
+              await PrefsSvc.i.setString('customHeaders', jsonEncode(HttpSvc.headers));
+              HttpSvc.updateHeaders();
               Navigator.of(context).pop(true);
             }
         ),

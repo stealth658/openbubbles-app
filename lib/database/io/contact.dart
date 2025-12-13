@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/services/backend/interfaces/contact_interface.dart';
 import 'package:collection/collection.dart';
 import 'package:dice_bear/dice_bear.dart';
 import 'package:flutter/foundation.dart';
@@ -77,6 +78,17 @@ class Contact {
     return this;
   }
 
+  Future<Contact> saveAsync() async {
+    if (kIsWeb) return this;
+
+    final result = await ContactInterface.saveContactAsync(
+      contactData: toMap(),
+    );
+
+    dbId = result['dbId'];
+    return this;
+  }
+
   static Contact? findOne({String? id, String? address}) {
     if (kIsWeb) return null;
     if (id != null) {
@@ -94,6 +106,18 @@ class Contact {
       return result;
     }
     return null;
+  }
+
+  static Future<Contact?> findOneAsync({String? id, String? address}) async {
+    if (kIsWeb) return null;
+
+    final result = await ContactInterface.findOneContactAsync(
+      id: id,
+      address: address,
+    );
+
+    if (result == null) return null;
+    return Contact.fromMap(result);
   }
 
   bool hasMatchingAddress(String search) {

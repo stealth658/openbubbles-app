@@ -32,12 +32,12 @@ class ThemeStruct {
     this.gradientBg = false,
     this.googleFont = 'Default',
     ThemeData? themeData,
-  }) : data = themeData ?? ts.whiteLightTheme {
+  }) : data = themeData ?? ThemesService.whiteLightTheme {
     if (googleFont.isEmpty) googleFont = 'Default';
   }
 
   bool get isPreset =>
-      ts.defaultThemes.map((e) => e.name).contains(name);
+      ThemesService.defaultThemes.map((e) => e.name).contains(name);
 
   ThemeStruct save({bool updateIfNotAbsent = true}) {
     return this;
@@ -49,12 +49,12 @@ class ThemeStruct {
 
   static ThemeStruct getLightTheme() {
     // ignore: argument_type_not_assignable, return_of_invalid_type, invalid_assignment, for_in_of_invalid_element_type
-    return ts.defaultThemes[1];
+    return ThemesService.defaultThemes[1];
   }
 
   static ThemeStruct getDarkTheme() {
     // ignore: argument_type_not_assignable, return_of_invalid_type, invalid_assignment, for_in_of_invalid_element_type
-    return ts.defaultThemes[0];
+    return ThemesService.defaultThemes[0];
   }
 
   static ThemeStruct? findOne(String name) {
@@ -63,7 +63,7 @@ class ThemeStruct {
 
   static List<ThemeStruct> getThemes() {
     // ignore: argument_type_not_assignable, return_of_invalid_type, invalid_assignment, for_in_of_invalid_element_type
-    return ts.defaultThemes;
+    return ThemesService.defaultThemes;
   }
 
   Map<String, dynamic> toMap() => {
@@ -247,7 +247,7 @@ class ThemeStruct {
   Map<String, Color> colors(bool dark, {bool returnMaterialYou = true}) {
     ThemeData finalData = data;
     if (returnMaterialYou) {
-      final tuple = ts.getStructsFromData(data, data);
+      final tuple = ThemeSvc.getStructsFromData(data, data);
       if (dark) {
         finalData = tuple.item2;
       } else {

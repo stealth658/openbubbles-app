@@ -38,7 +38,7 @@ class _AttachmentHolderState extends CustomState<AttachmentHolder, void, Message
   Message get message => controller.message;
   Message? get newerMessage => controller.newMessage;
   Attachment get attachment => message.attachments.firstWhereOrNull((e) => e?.id == part.attachments.first.id)
-      ?? ms(controller.cvController?.chat.guid ?? cm.activeChat!.chat.guid).struct.attachments.firstWhereOrNull((e) => e.id == part.attachments.first.id)
+      ?? MessagesSvc(controller.cvController?.chat.guid ?? cm.activeChat!.chat.guid).struct.attachments.firstWhereOrNull((e) => e.id == part.attachments.first.id)
       ?? part.attachments.first;
   String? get audioTranscript => getAudioTranscriptsFromAttributedBody(message.attributedBody)[part.part];
   late dynamic content;
@@ -74,7 +74,7 @@ class _AttachmentHolderState extends CustomState<AttachmentHolder, void, Message
     if (content is Attachment && message.error == 0 && !message.guid!.contains("temp") && await as.canAutoDownload()) {
       if (mounted) {
         setState(() {
-          content = attachmentDownloader.startDownload(content, onComplete: onComplete);
+          content = AttachmentDownloader.startDownload(content, onComplete: onComplete);
         });
       }
     }
@@ -95,7 +95,7 @@ class _AttachmentHolderState extends CustomState<AttachmentHolder, void, Message
   @override
   Widget build(BuildContext context) {
     final bool showTail = message.showTail(newerMessage) && part.part == controller.parts.length - 1;
-    final bool hideAttachments = ss().settings.redactedMode.value && ss().settings.hideAttachments.value;
+    final bool hideAttachments = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideAttachments.value;
     return ColorFiltered(
       colorFilter: ColorFilter.mode(context.theme.colorScheme.tertiaryContainer.withValues(alpha: 0.5), selected ? BlendMode.srcOver : BlendMode.dstOver),
       child: Material(
@@ -104,14 +104,14 @@ class _AttachmentHolderState extends CustomState<AttachmentHolder, void, Message
           onTap: content is PlatformFile ? null : () async {
             if (content is Attachment && message.error == 0 && !message.guid!.contains("temp")) {
               setState(() {
-                content = attachmentDownloader.startDownload(content, onComplete: onComplete);
+                content = AttachmentDownloader.startDownload(content, onComplete: onComplete);
               });
             } else if (content is AttachmentDownloadController) {
               final AttachmentDownloadController _content = content;
               if (!_content.error.value) return;
               Get.delete<AttachmentDownloadController>(tag: _content.attachment.guid);
               setState(() {
-                content = attachmentDownloader.startDownload(_content.attachment, onComplete: onComplete);
+                content = AttachmentDownloader.startDownload(_content.attachment, onComplete: onComplete);
               });
             }
           },
@@ -119,7 +119,7 @@ class _AttachmentHolderState extends CustomState<AttachmentHolder, void, Message
             color: context.theme.colorScheme.properSurface,
             child: ConstrainedBox(
               constraints: BoxConstraints(
-                maxWidth: ns.width(context) * 0.5,
+                maxWidth: NavigationSvc.width(context) * 0.5,
                 maxHeight: context.height * 0.6,
                 minHeight: 40,
                 minWidth: 100,
@@ -248,7 +248,7 @@ class _AttachmentHolderState extends CustomState<AttachmentHolder, void, Message
                             );
                           } else if (content is PlatformFile) {
                             final PlatformFile _content = content;
-                            if (attachment.mimeStart == "image" && !ss().settings.highPerfMode.value) {
+                            if (attachment.mimeStart == "image" && !SettingsSvc.settings.highPerfMode.value) {
                               return OpenContainer(
                                 tappable: false,
                                 openColor: Colors.black,
@@ -283,7 +283,7 @@ class _AttachmentHolderState extends CustomState<AttachmentHolder, void, Message
                                       color: context.theme.colorScheme.properSurface,
                                       child: ConstrainedBox(
                                         constraints: BoxConstraints(
-                                          maxWidth: ns.width(context) * 0.5,
+                                          maxWidth: NavigationSvc.width(context) * 0.5,
                                           maxHeight: context.height * 0.6,
                                           minHeight: 40,
                                           minWidth: 100,
@@ -299,7 +299,7 @@ class _AttachmentHolderState extends CustomState<AttachmentHolder, void, Message
                                   );
                                 }
                               );
-                            } else if ((attachment.mimeStart == "video" || attachment.mimeType == "audio/mp4") && !ss().settings.highPerfMode.value && !isSnap) {
+                            } else if ((attachment.mimeStart == "video" || attachment.mimeType == "audio/mp4") && !SettingsSvc.settings.highPerfMode.value && !isSnap) {
                               return VideoPlayer(
                                 attachment: attachment,
                                 file: _content,

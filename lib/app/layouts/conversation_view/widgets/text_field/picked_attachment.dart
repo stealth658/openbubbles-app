@@ -46,7 +46,7 @@ class _PickedAttachmentState extends OptimizedState<PickedAttachment> with Autom
       try {
         image = await as.getVideoThumbnail(file.path!, useCachedFile: false);
       } catch (ex) {
-        image = fs().noVideoPreviewIcon;
+        image = FilesystemSvc.noVideoPreviewIcon;
       }
       setState(() {});
     } else if (mimeType == "image/heic"

@@ -5,16 +5,20 @@ import 'package:bluebubbles/helpers/types/constants.dart';
 import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
+import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:collection/collection.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart' hide Response;
 
-MessagesService ms(String chatGuid) => Get.isRegistered<MessagesService>(tag: chatGuid)
-    ? Get.find<MessagesService>(tag: chatGuid) : Get.put(MessagesService(chatGuid), tag: chatGuid);
+// ignore: non_constant_identifier_names
+MessagesService MessagesSvc(String chatGuid) => Get.isRegistered<MessagesService>(tag: chatGuid)
+    ? Get.find<MessagesService>(tag: chatGuid)
+    : Get.put(MessagesService(chatGuid), tag: chatGuid);
 
-String? lastReloadedChat() => Get.isRegistered<String>(tag: 'lastReloadedChat') ? Get.find<String>(tag: 'lastReloadedChat') : null;
+String? lastReloadedChat() =>
+    Get.isRegistered<String>(tag: 'lastReloadedChat') ? Get.find<String>(tag: 'lastReloadedChat') : null;
 
 class MessagesService extends GetxController {
   static final Map<String, Size> cachedBubbleSizes = {};
@@ -34,16 +38,15 @@ class MessagesService extends GetxController {
   bool _init = false;
   String? method;
 
-  Message? get mostRecentSent => (struct.messages.where((e) => e.isFromMe!).toList()
-      ..sort(Message.sort)).firstOrNull;
+  Message? get mostRecentSent => (struct.messages.where((e) => e.isFromMe!).toList()..sort(Message.sort)).firstOrNull;
 
-  Message? get mostRecent => (struct.messages.toList()
-    ..sort(Message.sort)).firstOrNull;
+  Message? get mostRecent => (struct.messages.toList()..sort(Message.sort)).firstOrNull;
 
-  Message? get mostRecentReceived => (struct.messages.where((e) => !e.isFromMe!).toList()
-    ..sort(Message.sort)).firstOrNull;
+  Message? get mostRecentReceived =>
+      (struct.messages.where((e) => !e.isFromMe!).toList()..sort(Message.sort)).firstOrNull;
 
-  void init(Chat c, Function(Message) onNewMessage, Function(Message, {String? oldGuid}) onUpdatedMessage, Function(Message) onDeletedMessage, Function(String) jumpToMessageFunc) {
+  void init(Chat c, Function(Message) onNewMessage, Function(Message, {String? oldGuid}) onUpdatedMessage,
+      Function(Message) onDeletedMessage, Function(String) jumpToMessageFunc) {
     chat = c;
     Get.put<String>(tag, tag: 'lastReloadedChat');
 
@@ -56,10 +59,11 @@ class MessagesService extends GetxController {
     if (!_init) {
       if (chat.id != null) {
         final countQuery = (Database.messages.query(Message_.dateDeleted.isNull())
-          ..link(Message_.chat, Chat_.id.equals(chat.id!))
-          ..order(Message_.id, flags: Order.descending)).watch(triggerImmediately: true);
+              ..link(Message_.chat, Chat_.id.equals(chat.id!))
+              ..order(Message_.id, flags: Order.descending))
+            .watch(triggerImmediately: true);
         countSub = countQuery.listen((event) async {
-          if (!ss().settings.finishedSetup.value) return;
+          if (!SettingsSvc.settings.finishedSetup.value) return;
           final newCount = event.count();
           if (!isFetching && newCount > currentCount && currentCount != 0) {
             event.limit = newCount - currentCount;
@@ -146,12 +150,41 @@ class MessagesService extends GetxController {
     removeFunc.call(toRemove);
   }
 
+  void _updateMessageControllersWithReactions(List<Message> messages) {
+    // Update each message widget controller with its loaded reactions
+    for (Message message in messages) {
+      final mwc = getActiveMwc(message.guid!);
+      if (mwc != null && message.associatedMessages.isNotEmpty) {
+        // Update the controller with each reaction
+        for (Message reaction in message.associatedMessages) {
+          mwc.updateAssociatedMessage(reaction);
+        }
+      }
+    }
+  }
+
   Future<bool> loadChunk(int offset, ConversationViewController controller, {int limit = 25}) async {
+    final chunkStopwatch = Stopwatch()..start();
     isFetching = true;
     List<Message> _messages = [];
     offset = offset + struct.reactions.length;
     try {
-      _messages = await Chat.getMessagesAsync(chat, offset: offset, limit: limit);
+      Logger.debug("[loadChunk] START: Loading messages from offset $offset with limit $limit");
+      final getMessagesStopwatch = Stopwatch()..start();
+      _messages = await Chat.getMessagesAsync(
+        chat,
+        offset: offset,
+        limit: limit,
+        onSupplementalDataLoaded: () {
+          // Trigger UI update when reactions/attachments are loaded
+          Logger.debug("[loadChunk] Supplemental data loaded, updating message widget controllers");
+          _updateMessageControllersWithReactions(_messages);
+        },
+      );
+      getMessagesStopwatch.stop();
+      Logger.debug(
+          "[loadChunk] getMessagesAsync took ${getMessagesStopwatch.elapsedMilliseconds}ms, total elapsed: ${chunkStopwatch.elapsedMilliseconds}ms");
+      Logger.debug("[loadChunk] Loaded ${_messages.length} messages from local DB");
       if (_messages.isEmpty) {
         // get from server and save
         final fromServer = await cm.getMessages(chat.guid, offset: offset, limit: limit);
@@ -173,8 +206,15 @@ class MessagesService extends GetxController {
       return Future.error(e, s);
     }
 
+    Logger.debug("[loadChunk] Adding messages to struct, total elapsed: ${chunkStopwatch.elapsedMilliseconds}ms");
+    final addMessagesStopwatch = Stopwatch()..start();
     struct.addMessages(_messages);
+    addMessagesStopwatch.stop();
+    Logger.debug(
+        "[loadChunk] struct.addMessages took ${addMessagesStopwatch.elapsedMilliseconds}ms, total elapsed: ${chunkStopwatch.elapsedMilliseconds}ms");
+
     // get thread originators
+    final threadOriginatorStopwatch = Stopwatch()..start();
     for (Message m in _messages.where((e) => e.threadOriginatorGuid != null)) {
       // see if the originator is already loaded
       final guid = m.threadOriginatorGuid!;
@@ -188,8 +228,13 @@ class MessagesService extends GetxController {
         struct.addThreadOriginator(threadOriginator);
       }
     }
+    threadOriginatorStopwatch.stop();
+    Logger.debug(
+        "[loadChunk] Thread originator processing took ${threadOriginatorStopwatch.elapsedMilliseconds}ms, total elapsed: ${chunkStopwatch.elapsedMilliseconds}ms");
+
     // this indicates an audio message was kept by the recipient
     // run this every time more messages are loaded just in case
+    final audioKeptStopwatch = Stopwatch()..start();
     for (Message m in struct.messages.where((e) => e.itemType == 5 && e.subject != null)) {
       final otherMessage = struct.getMessage(m.subject!);
       if (otherMessage != null) {
@@ -197,7 +242,14 @@ class MessagesService extends GetxController {
         otherMwc.audioWasKept.value = m.dateCreated;
       }
     }
+    audioKeptStopwatch.stop();
+    Logger.debug(
+        "[loadChunk] Audio kept processing took ${audioKeptStopwatch.elapsedMilliseconds}ms, total elapsed: ${chunkStopwatch.elapsedMilliseconds}ms");
+
     isFetching = false;
+    chunkStopwatch.stop();
+    Logger.debug(
+        "[loadChunk] COMPLETE: Total time ${chunkStopwatch.elapsedMilliseconds}ms for ${_messages.length} messages");
     return _messages.isNotEmpty;
   }
 
@@ -226,7 +278,7 @@ class MessagesService extends GetxController {
       _messages.sort(Message.sort);
       for (Message message in _messages) {
         if (message.handle != null) {
-          message.handle!.contactRelation.target = cs.matchHandleToContact(message.handle!);
+          message.handle!.contactRelation.target = ContactsSvc.matchHandleToContact(message.handle!);
         }
       }
       struct.addMessages(_messages);
@@ -234,17 +286,18 @@ class MessagesService extends GetxController {
     isFetching = false;
   }
 
-  static Future<List<dynamic>> getMessages({
-    bool withChats = false,
-    bool withAttachments = false,
-    bool withHandles = false,
-    bool withChatParticipants = false,
-    List<dynamic> where = const [],
-    String sort = "DESC",
-    int? before, int? after,
-    String? chatGuid,
-    int offset = 0, int limit = 100
-  }) async {
+  static Future<List<dynamic>> getMessages(
+      {bool withChats = false,
+      bool withAttachments = false,
+      bool withHandles = false,
+      bool withChatParticipants = false,
+      List<dynamic> where = const [],
+      String sort = "DESC",
+      int? before,
+      int? after,
+      String? chatGuid,
+      int offset = 0,
+      int limit = 100}) async {
     Completer<List<dynamic>> completer = Completer();
     final withQuery = <String>["attributedBody", "messageSummaryInfo", "payloadData"];
     if (withChats) withQuery.add("chat");
@@ -253,7 +306,17 @@ class MessagesService extends GetxController {
     if (withChatParticipants) withQuery.add("chat.participants");
     withQuery.add("attachment.metadata");
 
-    http.messages(withQuery: withQuery, where: where, sort: sort, before: before, after: after, chatGuid: chatGuid, offset: offset, limit: limit).then((response) {
+    HttpSvc
+        .messages(
+            withQuery: withQuery,
+            where: where,
+            sort: sort,
+            before: before,
+            after: after,
+            chatGuid: chatGuid,
+            offset: offset,
+            limit: limit)
+        .then((response) {
       if (!completer.isCompleted) completer.complete(response.data["data"]);
     }).catchError((err) {
       late final dynamic error;

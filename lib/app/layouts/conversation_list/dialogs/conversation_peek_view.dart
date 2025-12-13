@@ -81,7 +81,7 @@ class _ConversationPeekViewState extends OptimizedState<ConversationPeekView> wi
   void dispose() {
     if (!disposed) {
       cvController.close();
-      ms(widget.chat.guid).close();
+      MessagesSvc(widget.chat.guid).close();
       for (Message m in widget.messages) {
         getActiveMwc(m.guid!)?.close();
       }
@@ -94,7 +94,7 @@ class _ConversationPeekViewState extends OptimizedState<ConversationPeekView> wi
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
-        systemNavigationBarColor: ss().settings.immersiveMode.value
+        systemNavigationBarColor: SettingsSvc.settings.immersiveMode.value
             ? Colors.transparent : context.theme.colorScheme.background, // navigation bar color
         systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
         statusBarColor: Colors.transparent, // status bar color
@@ -107,10 +107,10 @@ class _ConversationPeekViewState extends OptimizedState<ConversationPeekView> wi
           colorScheme: context.theme.colorScheme.copyWith(
             primary: context.theme.colorScheme.bubble(context, widget.chat.isIMessage),
             onPrimary: context.theme.colorScheme.onBubble(context, widget.chat.isIMessage),
-            surface: ss().settings.monetTheming.value == Monet.full
+            surface: SettingsSvc.settings.monetTheming.value == Monet.full
                 ? null
                 : (context.theme.extensions[BubbleColors] as BubbleColors?)?.receivedBubbleColor,
-            onSurface: ss().settings.monetTheming.value == Monet.full
+            onSurface: SettingsSvc.settings.monetTheming.value == Monet.full
                 ? null
                 : (context.theme.extensions[BubbleColors] as BubbleColors?)?.onReceivedBubbleColor,
           ),
@@ -150,14 +150,14 @@ class _ConversationPeekViewState extends OptimizedState<ConversationPeekView> wi
                           GestureDetector(
                             onTap: () async {
                               cvController.close();
-                              ms(widget.chat.guid).close();
+                              MessagesSvc(widget.chat.guid).close();
                               for (Message m in widget.messages) {
                                 getActiveMwc(m.guid!)?.close();
                               }
                               controller.dispose();
                               disposed = true;
                               Navigator.of(context).pop();
-                              ns.pushAndRemoveUntil(
+                              NavigationSvc.pushAndRemoveUntil(
                                 Get.context!,
                                 ConversationView(
                                   chat: widget.chat,
@@ -168,7 +168,7 @@ class _ConversationPeekViewState extends OptimizedState<ConversationPeekView> wi
                             child: DeferredPointerHandler(
                               child: Container(
                                 decoration: BoxDecoration(
-                                  color: ts.inDarkMode(context) ? context.theme.colorScheme.properSurface.darkenPercent(30) : context.theme.colorScheme.background,
+                                  color: ThemeSvc.inDarkMode(context) ? context.theme.colorScheme.properSurface.darkenPercent(30) : context.theme.colorScheme.background,
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 width: min(context.width - 50, 500),
@@ -227,7 +227,7 @@ class _ConversationPeekViewState extends OptimizedState<ConversationPeekView> wi
 
   Widget buildDetailsMenu(BuildContext context) {
     double maxMenuWidth = min(max(context.width * 3 / 5, 200), context.width * 4 / 5);
-    bool ios = ss().settings.skin.value == Skins.iOS;
+    bool ios = SettingsSvc.settings.skin.value == Skins.iOS;
 
     List<Widget> allActions = [
       Material(
@@ -350,7 +350,7 @@ class _ConversationPeekViewState extends OptimizedState<ConversationPeekView> wi
                     TextButton(
                       child: Text("Yes", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
                       onPressed: () async {
-                        chats.removeChat(widget.chat);
+                        ChatsSvc.removeChat(widget.chat);
                         Chat.softDelete(widget.chat);
                         popPeekView();
                       },
@@ -382,7 +382,7 @@ class _ConversationPeekViewState extends OptimizedState<ConversationPeekView> wi
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
-          color: (ts.inDarkMode(context) ? context.theme.colorScheme.properSurface : context.theme.colorScheme.background).withAlpha(150),
+          color: (ThemeSvc.inDarkMode(context) ? context.theme.colorScheme.properSurface : context.theme.colorScheme.background).withAlpha(150),
           width: maxMenuWidth,
           child: Column(
             mainAxisSize: MainAxisSize.min,

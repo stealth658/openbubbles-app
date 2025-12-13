@@ -1,7 +1,7 @@
 import 'dart:convert';
-import 'dart:isolate';
 
 import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/services/backend/interfaces/image_interface.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
@@ -46,8 +46,8 @@ class AttachmentsService extends GetxService {
       );
     }
     if (kIsWeb || attachment.guid == null) {
-      if (attachment.bytes == null && (autoDownload ?? ss().settings.autoDownload.value)) {
-        return attachmentDownloader.startDownload(attachment, onComplete: onComplete);
+      if (attachment.bytes == null && (autoDownload ?? SettingsSvc.settings.autoDownload.value)) {
+        return AttachmentDownloader.startDownload(attachment, onComplete: onComplete);
       } else {
         return PlatformFile(
           name: attachment.transferName!,
@@ -59,16 +59,16 @@ class AttachmentsService extends GetxService {
     }
 
     final pathName = path ?? attachment.path;
-    if (attachmentDownloader.getController(attachment.guid) != null) {
-      return attachmentDownloader.getController(attachment.guid);
+    if (AttachmentDownloader.getController(attachment.guid) != null) {
+      return AttachmentDownloader.getController(attachment.guid);
     } else if (File(pathName).existsSync()) {
       return PlatformFile(
         name: attachment.transferName!,
         path: pathName,
         size: attachment.totalBytes ?? 0,
       );
-    } else if (autoDownload ?? ss().settings.autoDownload.value) {
-      return attachmentDownloader.startDownload(attachment, onComplete: onComplete);
+    } else if (autoDownload ?? SettingsSvc.settings.autoDownload.value) {
+      return AttachmentDownloader.startDownload(attachment, onComplete: onComplete);
     } else {
       return attachment;
     }
@@ -211,27 +211,27 @@ class AttachmentsService extends GetxService {
     } else {
       String? savePath;
 
-      if (ss().settings.askWhereToSave.value && !isAutoDownload) {
+      if (SettingsSvc.settings.askWhereToSave.value && !isAutoDownload) {
         savePath = await FilePicker.platform.getDirectoryPath(
-          initialDirectory: ss().settings.autoSaveDocsLocation.value,
+          initialDirectory: SettingsSvc.settings.autoSaveDocsLocation.value,
           dialogTitle: 'Choose a location to save this file',
           lockParentWindow: true,
         );
       } else {
         if (file.name.toLowerCase().endsWith(".mov")) {
-          savePath = join("/storage/emulated/0/", ss().settings.autoSavePicsLocation.value);
+          savePath = join("/storage/emulated/0/", SettingsSvc.settings.autoSavePicsLocation.value);
         } else {
           if (!isDocument) {
             try {
               if (file.path == null && file.bytes != null) {
-                await SaverGallery.saveImage(file.bytes!, quality: 100, fileName: file.name, androidRelativePath: ss().settings.autoSavePicsLocation.value, skipIfExists: false);
+                await SaverGallery.saveImage(file.bytes!, quality: 100, fileName: file.name, androidRelativePath: SettingsSvc.settings.autoSavePicsLocation.value, skipIfExists: false);
               } else {
-                await SaverGallery.saveFile(filePath: file.path!, fileName: file.name, androidRelativePath: ss().settings.autoSavePicsLocation.value, skipIfExists: false);
+                await SaverGallery.saveFile(filePath: file.path!, fileName: file.name, androidRelativePath: SettingsSvc.settings.autoSavePicsLocation.value, skipIfExists: false);
               }
               return showSnackbar('Success', 'Saved attachment to gallery!');
             } catch (_) {}
           }
-          savePath = ss().settings.autoSaveDocsLocation.value;
+          savePath = SettingsSvc.settings.autoSaveDocsLocation.value;
         }
       }
 
@@ -248,10 +248,10 @@ class AttachmentsService extends GetxService {
   Future<bool> canAutoDownload() async {
     final canSave = (await Permission.storage.request()).isGranted;
     if (!canSave) return false;
-    if (!ss().settings.autoDownload.value) {
+    if (!SettingsSvc.settings.autoDownload.value) {
       return false;
     } else {
-      if (!ss().settings.onlyWifiDownload.value) {
+      if (!SettingsSvc.settings.onlyWifiDownload.value) {
         return true;
       } else {
         List<ConnectivityResult> status = await (Connectivity().checkConnectivity());
@@ -346,7 +346,7 @@ class AttachmentsService extends GetxService {
             );
 
             if (file == null) {
-              Logger().error("Failed to compress HEIC!");
+              Logger.error("Failed to compress HEIC!");
               throw Exception();
             }
   
@@ -360,20 +360,11 @@ class AttachmentsService extends GetxService {
       if (await File("$filePath.png").exists()) {
         originalFile = File("$filePath.png");
       } else {
-        final receivePort = ReceivePort();
-        await Isolate.spawn(
-            unsupportedToPngIsolate,
-            IsolateData(
-                PlatformFile(
-                  name: randomString(8),
-                  path: originalFile.path,
-                  size: 0,
-                ),
-                receivePort.sendPort
-            ),
-        );
-        // Get the processed image from the isolate.
-        final image = await receivePort.first as Uint8List?;
+        final image = await ImageInterface.convertToPng(PlatformFile(
+          name: randomString(8),
+          path: originalFile.path,
+          size: 0,
+        ));
         if (onlyFetchData) return image;
         if (image != null) {
           final cacheFile = File("$filePath.png");
@@ -396,7 +387,7 @@ class AttachmentsService extends GetxService {
           }
           attachment.save(null);
         } catch (ex, stack) {
-          Logger().error('Failed to get GIF dimensions!', error: ex, trace: stack);
+          Logger.error('Failed to get GIF dimensions!', error: ex, trace: stack);
         }
       } else if (attachment.mimeStart == "image") {
         try {
@@ -407,7 +398,7 @@ class AttachmentsService extends GetxService {
           }
           attachment.save(null);
         } catch (ex, stack) {
-          Logger().error('Failed to get Image Properties!', error: ex, trace: stack);
+          Logger.error('Failed to get Image Properties!', error: ex, trace: stack);
         }
       }
     }
@@ -423,7 +414,7 @@ class AttachmentsService extends GetxService {
         }
         attachment.save(null);
       } catch (ex, stack) {
-        Logger().error('Failed to read EXIF data!', error: ex, trace: stack);
+        Logger.error('Failed to read EXIF data!', error: ex, trace: stack);
       }
     }
 

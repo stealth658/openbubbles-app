@@ -58,7 +58,7 @@ class _UrlPreviewState extends OptimizedState<UrlPreview> with AutomaticKeepAliv
         );
         dataOverride!.url = as.parseAppleLocationUrl(_location)?.replaceAll("\\", "").replaceAll("http:", "https:").replaceAll("/?", "/place?").replaceAll(",", "%2C");
         if (dataOverride!.url == null) return;
-        final response = await http.dio.get(dataOverride!.url!);
+        final response = await HttpSvc.dio.get(dataOverride!.url!);
         final document = parser.parse(response.data);
         final link = document.getElementsByClassName("sc-platter-cell").firstOrNull?.children.firstWhereOrNull((e) => e.localName == "a");
         final url = link?.attributes["href"];
@@ -91,7 +91,7 @@ class _UrlPreviewState extends OptimizedState<UrlPreview> with AutomaticKeepAliv
               widget.message.save();
               setState(() {});
             } else {
-              final response = await http.dio.get((data.url ?? data.originalUrl)!);
+              final response = await HttpSvc.dio.get((data.url ?? data.originalUrl)!);
               if (response.headers.value('content-type')?.startsWith("image/") ?? false) {
                 data.imageMetadata = MediaMetadata(size: const Size.square(1), url: (data.url ?? data.originalUrl)!);
                 widget.message.save();

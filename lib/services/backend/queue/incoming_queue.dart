@@ -24,7 +24,7 @@ class IncomingQueue extends Queue {
         await ah.handleUpdatedMessage(item.chat, item.message, item.tempGuid);
         break;
       default:
-        Logger().info("Unhandled queue event: ${item.type.name}");
+        Logger.info("Unhandled queue event: ${item.type.name}");
         break;
     }
   }

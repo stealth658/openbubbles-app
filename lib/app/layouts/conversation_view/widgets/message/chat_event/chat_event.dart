@@ -56,7 +56,7 @@ class ChatEvent extends StatelessWidget {
                 ),
                 backgroundColor: context.theme.colorScheme.properSurface,
                 content: SizedBox(
-                  width: ns.width(context) * 3 / 5,
+                  width: NavigationSvc.width(context) * 3 / 5,
                   height: context.height * 1 / 4,
                   child: Container(
                     padding: const EdgeInsets.all(10.0),

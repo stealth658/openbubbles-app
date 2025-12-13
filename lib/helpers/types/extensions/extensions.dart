@@ -53,7 +53,7 @@ extension EffectHelper on MessageEffect {
 /// Used when playing iMessage effects
 extension WidgetLocation on GlobalKey {
   Rect? globalPaintBounds(BuildContext context) {
-    double difference = context.width - ns.width(context);
+    double difference = context.width - NavigationSvc.width(context);
     final renderObject = currentContext?.findRenderObject();
     final translation = renderObject?.getTransformTo(null).getTranslation();
     if (translation != null && renderObject?.paintBounds != null) {
@@ -116,7 +116,7 @@ extension ChatListHelpers on RxList<Chat> {
   }
 
   RxList<Chat> unknownSendersHelper(bool unknown) {
-    if (!ss().settings.filterUnknownSenders.value) return this;
+    if (!SettingsSvc.settings.filterUnknownSenders.value) return this;
     if (unknown) {
       return where((e) => !e.isGroup && e.participants.firstOrNull?.contact == null).toList().obs;
     } else {
@@ -127,7 +127,7 @@ extension ChatListHelpers on RxList<Chat> {
 
 extension PlatformSpecificCapitalize on String {
   String get psCapitalize {
-    if (ss().settings.skin.value == Skins.iOS) {
+    if (SettingsSvc.settings.skin.value == Skins.iOS) {
       return toUpperCase();
     } else {
       return this;

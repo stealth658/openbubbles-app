@@ -44,7 +44,7 @@ abstract class SyncManager {
     setProgress(0, 1);
     error = null;
 
-    Logger().info('$name Sync is starting...', tag: 'SyncManager');
+    Logger.info('$name Sync is starting...', tag: 'SyncManager');
   }
 
   Future<void> stop() async {
@@ -80,11 +80,11 @@ abstract class SyncManager {
     output.add(Tuple2(level, log));
 
     if (level == LogLevel.ERROR) {
-      Logger().error(log, tag: "SyncManager");
+      Logger.error(log, tag: "SyncManager");
     } else if (level == LogLevel.WARN) {
-      Logger().warn(log, tag: "SyncManager");
+      Logger.warn(log, tag: "SyncManager");
     } else {
-      Logger().info(log, tag: "SyncManager");
+      Logger.info(log, tag: "SyncManager");
     }
   }
 
@@ -96,7 +96,7 @@ abstract class SyncManager {
     setProgress(1, 1);
     status.value = SyncStatus.COMPLETED_SUCCESS;
     endedAt = DateTime.now().toUtc();
-    Logger().info(
+    Logger.info(
         '$name Sync has completed. Elapsed Time: ${endedAt!.millisecondsSinceEpoch - startedAt!.millisecondsSinceEpoch} ms',
         tag: 'SyncManager');
 
@@ -112,10 +112,11 @@ abstract class SyncManager {
     error = errorMessage;
     status.value = SyncStatus.COMPLETED_ERROR;
     endedAt = DateTime.now().toUtc();
-    Logger().error(
+    Logger.error(
         '$name Sync has errored! Elapsed Time: ${endedAt!.millisecondsSinceEpoch - startedAt!.millisecondsSinceEpoch} ms',
-        tag: 'SyncManager');
-    Logger().error('$name Sync Error: $error', tag: 'SyncManager');
+        tag: 'SyncManager',
+        trace: StackTrace.current);
+    Logger.error('$name Sync Error: $error', tag: 'SyncManager');
 
     if (saveLogs) saveToDownloads();
   }

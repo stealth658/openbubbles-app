@@ -82,10 +82,10 @@ class _WelcomePageState extends OptimizedState<WelcomePage> with TickerProviderS
               colorScheme: context.theme.colorScheme.copyWith(
                 primary: context.theme.colorScheme.bubble(context, true),
                 onPrimary: context.theme.colorScheme.onBubble(context, true),
-                surface: ss().settings.monetTheming.value == Monet.full
+                surface: SettingsSvc.settings.monetTheming.value == Monet.full
                     ? null
                     : (context.theme.extensions[BubbleColors] as BubbleColors?)?.receivedBubbleColor,
-                onSurface: ss().settings.monetTheming.value == Monet.full
+                onSurface: SettingsSvc.settings.monetTheming.value == Monet.full
                     ? null
                     : (context.theme.extensions[BubbleColors] as BubbleColors?)?.onReceivedBubbleColor,
               ),
@@ -230,7 +230,7 @@ class _WelcomePageState extends OptimizedState<WelcomePage> with TickerProviderS
         child: child,
       ),
       onNextPressed: () async {
-        if ((fs().androidInfo?.version.sdkInt ?? 0) >= 33) {
+        if ((FilesystemSvc.androidInfo?.version.sdkInt ?? 0) >= 33) {
           await Permission.notification.request();
         }
         return true;

@@ -42,7 +42,7 @@ class _AttachmentPickerFileState extends OptimizedState<AttachmentPickerFile> wi
       try {
         image = await as.getVideoThumbnail(file.path, useCachedFile: false);
       } catch (ex) {
-        image = fs().noVideoPreviewIcon;
+        image = FilesystemSvc.noVideoPreviewIcon;
       }
       setState(() {});
     } else if (widget.data.mimeType == "image/heic"
@@ -63,7 +63,7 @@ class _AttachmentPickerFileState extends OptimizedState<AttachmentPickerFile> wi
 
   @override
   Widget build(BuildContext context) {
-    final hideAttachments = ss().settings.redactedMode.value && ss().settings.hideAttachments.value;
+    final hideAttachments = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideAttachments.value;
 
     super.build(context);
     return Obx(() {

@@ -19,7 +19,7 @@ class GradientBackground extends CustomStateful<ConversationViewController> {
 }
 
 class _GradientBackgroundState extends CustomState<GradientBackground, void, ConversationViewController> with WidgetsBindingObserver {
-  late final RxBool adjustBackground = RxBool(ts.isGradientBg(Get.context!));
+  late final RxBool adjustBackground = RxBool(ThemeSvc.isGradientBg(Get.context!));
 
   @override
   void initState() {
@@ -30,7 +30,7 @@ class _GradientBackgroundState extends CustomState<GradientBackground, void, Con
   @override
   void didChangePlatformBrightness() {
     super.didChangePlatformBrightness();
-    adjustBackground.value = ts.isGradientBg(Get.context!);
+    adjustBackground.value = ThemeSvc.isGradientBg(Get.context!);
   }
 
   @override
@@ -39,7 +39,7 @@ class _GradientBackgroundState extends CustomState<GradientBackground, void, Con
       return widget.child;
     }
     return MirrorAnimationBuilder<Movie>(
-      tween: ts.gradientTween.value,
+      tween: ThemeSvc.gradientTween.value,
       curve: Curves.fastOutSlowIn,
       duration: const Duration(seconds: 3),
       builder: (context, anim, child) {

@@ -61,7 +61,7 @@ class SearchViewState extends OptimizedState<SearchView> {
   bool isNotFromMe = false;
   DateTime? sinceDate;
 
-  Color get backgroundColor => ss().settings.windowEffect.value == WindowEffect.disabled
+  Color get backgroundColor => SettingsSvc.settings.windowEffect.value == WindowEffect.disabled
       ? context.theme.colorScheme.background
       : Colors.transparent;
 
@@ -257,7 +257,7 @@ class SearchViewState extends OptimizedState<SearchView> {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Icon(
-                          ss().settings.skin.value == Skins.iOS ? CupertinoIcons.info : Icons.info_outline,
+                          SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.info : Icons.info_outline,
                           size: 20,
                           color: context.theme.colorScheme.primary,
                         ),
@@ -295,7 +295,7 @@ class SearchViewState extends OptimizedState<SearchView> {
                         maxLines: 1,
                         prefix: Padding(
                           padding: const EdgeInsets.only(left: 15),
-                          child: Icon(ss().settings.skin.value == Skins.iOS ? CupertinoIcons.search : Icons.search,
+                          child: Icon(SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.search : Icons.search,
                               color: context.theme.colorScheme.outline),
                         ),
                         suffix: Padding(
@@ -308,7 +308,7 @@ class SearchViewState extends OptimizedState<SearchView> {
                                   })
                               : Padding(
                                   padding: const EdgeInsets.all(12.0),
-                                  child: ss().settings.skin.value == Skins.iOS
+                                  child: SettingsSvc.settings.skin.value == Skins.iOS
                                       ? Theme(
                                           data: ThemeData(
                                             cupertinoOverrideTheme: CupertinoThemeData(
@@ -379,11 +379,11 @@ class SearchViewState extends OptimizedState<SearchView> {
                   ),
                   if (!kIsWeb)
                     Obx(() {
-                      ns.listener.value;
+                      NavigationSvc.listener.value;
                       return Padding(
                         padding: const EdgeInsets.only(left: 15, right: 15, top: 15, bottom: 10),
                         child: ToggleButtons(
-                          constraints: BoxConstraints(minWidth: (ns.width(context) * 0.9) / 2),
+                          constraints: BoxConstraints(minWidth: (NavigationSvc.width(context) * 0.9) / 2),
                           fillColor: context.theme.colorScheme.primary.withValues(alpha: 0.2),
                           splashColor: context.theme.colorScheme.primary.withValues(alpha: 0.2),
                           children: [
@@ -445,7 +445,7 @@ class SearchViewState extends OptimizedState<SearchView> {
                     (context, index) {
                       TextStyle subtitleStyle = context.theme.textTheme.bodySmall!
                           .copyWith(color: context.theme.colorScheme.outline, height: 1.5)
-                          .apply(fontSizeFactor: ss().settings.skin.value == Skins.Material ? 1.05 : 1.0);
+                          .apply(fontSizeFactor: SettingsSvc.settings.skin.value == Skins.Material ? 1.05 : 1.0);
 
                       final chat = currentSearch!.results[index].item1;
                       final message = currentSearch!.results[index].item2;
@@ -488,7 +488,7 @@ class SearchViewState extends OptimizedState<SearchView> {
 
                       return Container(
                         decoration: BoxDecoration(
-                          border: !ss().settings.hideDividers.value
+                          border: !SettingsSvc.settings.hideDividers.value
                               ? Border(
                                   bottom: BorderSide(
                                     color: context.theme.colorScheme.background.oppositeLightenOrDarken(15),
@@ -513,7 +513,7 @@ class SearchViewState extends OptimizedState<SearchView> {
                               children: spans,
                             ),
                             overflow: TextOverflow.ellipsis,
-                            maxLines: ss().settings.denseChatTiles.value
+                            maxLines: SettingsSvc.settings.denseChatTiles.value
                                 ? 1
                                 : material
                                     ? 3
@@ -531,10 +531,10 @@ class SearchViewState extends OptimizedState<SearchView> {
                             overflow: TextOverflow.clip,
                           ),
                           onTap: () {
-                            final service = ms(chat.guid);
+                            final service = MessagesSvc(chat.guid);
                             service.method = local ? "local" : "network";
                             service.struct.addMessages([message]);
-                            ns.pushAndRemoveUntil(
+                            NavigationSvc.pushAndRemoveUntil(
                               context,
                               ConversationView(
                                 chat: chat,
@@ -684,7 +684,7 @@ class SearchViewState extends OptimizedState<SearchView> {
                                       },
                                 onPressed: () {
                                   // Push a route that allows the user to select a chat
-                                  ns.push(context, ChatSelectorView(
+                                  NavigationSvc.push(context, ChatSelectorView(
                                     onSelect: (chat) {
                                       setState(() {
                                         selectedChat = chat;
@@ -734,7 +734,7 @@ class SearchViewState extends OptimizedState<SearchView> {
                                         },
                                   onPressed: () {
                                     // Push a route that allows the user to select a chat
-                                    ns.push(
+                                    NavigationSvc.push(
                                         context,
                                         HandleSelectorView(
                                           forChat: selectedChat,

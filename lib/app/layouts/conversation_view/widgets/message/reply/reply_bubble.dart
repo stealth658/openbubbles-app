@@ -40,7 +40,7 @@ class _ReplyBubbleState extends CustomState<ReplyBubble, void, MessageWidgetCont
 
   Color getBubbleColor() {
     Color bubbleColor = context.theme.colorScheme.properSurface;
-    if (ss().settings.colorfulBubbles.value && !message.isFromMe!) {
+    if (SettingsSvc.settings.colorfulBubbles.value && !message.isFromMe!) {
       if (message.handle?.color == null) {
         bubbleColor = toColorGradient(message.handle?.address).first;
       } else {
@@ -54,19 +54,19 @@ class _ReplyBubbleState extends CustomState<ReplyBubble, void, MessageWidgetCont
   Widget build(BuildContext context) {
     if (!iOS) {
       String text = MessageHelper.getNotificationText(message);
-      if (ss().settings.redactedMode.value && ss().settings.hideMessageContent.value) {
+      if (SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideMessageContent.value) {
         text = faker.lorem.words(text.split(" ").length).join(" ");
       }
       return MouseRegion(
         cursor: SystemMouseCursors.click,
         child: ConstrainedBox(
           constraints: BoxConstraints(
-            maxWidth: ns.width(context) * MessageWidgetController.maxBubbleSizeFactor - 30,
+            maxWidth: NavigationSvc.width(context) * MessageWidgetController.maxBubbleSizeFactor - 30,
             minHeight: 30,
           ),
           child: GestureDetector(
             onTap: () {
-              showReplyThread(context, message, part, ms(controller.cvController?.chat.guid ?? cm.activeChat!.chat.guid), widget.cvController);
+              showReplyThread(context, message, part, MessagesSvc(controller.cvController?.chat.guid ?? cm.activeChat!.chat.guid), widget.cvController);
             },
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
@@ -105,7 +105,7 @@ class _ReplyBubbleState extends CustomState<ReplyBubble, void, MessageWidgetCont
               cursor: SystemMouseCursors.click,
               child: GestureDetector(
                 onTap: () {
-                  showReplyThread(context, message, part, ms(controller.cvController?.chat.guid ?? cm.activeChat!.chat.guid), widget.cvController);
+                  showReplyThread(context, message, part, MessagesSvc(controller.cvController?.chat.guid ?? cm.activeChat!.chat.guid), widget.cvController);
                 },
                 behavior: HitTestBehavior.opaque,
                 child: IgnorePointer(
@@ -129,7 +129,7 @@ class _ReplyBubbleState extends CustomState<ReplyBubble, void, MessageWidgetCont
                         ),
                         child: controller.parts.length <= widget.part ? Container(
                           constraints: BoxConstraints(
-                            maxWidth: ns.width(context) * MessageWidgetController.maxBubbleSizeFactor - 30,
+                            maxWidth: NavigationSvc.width(context) * MessageWidgetController.maxBubbleSizeFactor - 30,
                             minHeight: 30,
                           ),
                           child: CustomPaint(
@@ -158,7 +158,7 @@ class _ReplyBubbleState extends CustomState<ReplyBubble, void, MessageWidgetCont
                           ),
                         ) : part.attachments.isEmpty ? Container(
                           constraints: BoxConstraints(
-                            maxWidth: ns.width(context) * MessageWidgetController.maxBubbleSizeFactor - 30,
+                            maxWidth: NavigationSvc.width(context) * MessageWidgetController.maxBubbleSizeFactor - 30,
                             minHeight: 30,
                           ),
                           child: CustomPaint(

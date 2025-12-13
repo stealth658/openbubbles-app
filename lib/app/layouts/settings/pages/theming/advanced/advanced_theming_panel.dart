@@ -20,7 +20,7 @@ class AdvancedThemingPanel extends StatefulWidget {
 }
 
 class _AdvancedThemingPanelState extends OptimizedState<AdvancedThemingPanel> with SingleTickerProviderStateMixin {
-  int index = ts.inDarkMode(Get.context!) ? 1 : 0;
+  int index = ThemeSvc.inDarkMode(Get.context!) ? 1 : 0;
   final StreamController streamController = StreamController.broadcast();
   late final TabController controller;
   // ignore: deprecated_member_use_from_same_package
@@ -49,7 +49,7 @@ class _AdvancedThemingPanelState extends OptimizedState<AdvancedThemingPanel> wi
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
-        systemNavigationBarColor: ss().settings.immersiveMode.value ? Colors.transparent : context.theme.colorScheme.background, // navigation bar color
+        systemNavigationBarColor: SettingsSvc.settings.immersiveMode.value ? Colors.transparent : context.theme.colorScheme.background, // navigation bar color
         systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
         statusBarColor: Colors.transparent, // status bar color
         statusBarIconBrightness: context.theme.colorScheme.brightness.opposite,
@@ -57,7 +57,7 @@ class _AdvancedThemingPanelState extends OptimizedState<AdvancedThemingPanel> wi
       child: Scaffold(
         backgroundColor: material ? tileColor : headerColor,
         appBar: PreferredSize(
-          preferredSize: Size(ns.width(context), 50),
+          preferredSize: Size(NavigationSvc.width(context), 50),
           child: AppBar(
             systemOverlayStyle: context.theme.colorScheme.brightness == Brightness.dark
                 ? SystemUiOverlayStyle.light

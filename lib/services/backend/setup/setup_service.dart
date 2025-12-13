@@ -7,16 +7,16 @@ SetupService setup = Get.isRegistered<SetupService>() ? Get.find<SetupService>()
 
 class SetupService extends GetxService {
   Future<void> startSetup(int numberOfMessagesPerPage, bool skipEmptyChats, bool saveToDownloads) async {
-    sync.numberOfMessagesPerPage = numberOfMessagesPerPage;
-    sync.skipEmptyChats = skipEmptyChats;
-    sync.saveToDownloads = saveToDownloads;
-    await sync.startFullSync();
+    SyncSvc.numberOfMessagesPerPage = numberOfMessagesPerPage;
+    SyncSvc.skipEmptyChats = skipEmptyChats;
+    SyncSvc.saveToDownloads = saveToDownloads;
+    await SyncSvc.startFullSync();
     await _finishSetup();
   }
 
   Future<void> _finishSetup() async {
-    ss().settings.finishedSetup.value = true;
-    await ss().saveSettings();
+    SettingsSvc.settings.finishedSetup.value = true;
+    await SettingsSvc.saveSettings();
 
     await StartupTasks.onStartup();
     await NetworkTasks.onConnect();

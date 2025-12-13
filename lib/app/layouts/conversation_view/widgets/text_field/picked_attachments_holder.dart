@@ -146,7 +146,7 @@ class _PickedAttachmentsHolderState extends OptimizedState<PickedAttachmentsHold
                               widget.controller!.emojiMatches.clear();
                               widget.controller!.lastFocusedNode.requestFocus();
                             },
-                            child: Obx(() => ListTile(
+                            child: ListTile(
                                 mouseCursor: MouseCursor.defer,
                                 dense: true,
                                 selectedTileColor: context.theme.colorScheme.properSurface.oppositeLightenOrDarken(20),
@@ -165,7 +165,6 @@ class _PickedAttachmentsHolderState extends OptimizedState<PickedAttachmentsHold
                                     ),
                                   ],
                                 )),
-                            ),
                           ),
                         ),
                         itemCount: widget.controller!.emojiMatches.length,
@@ -213,7 +212,7 @@ class _PickedAttachmentsHolderState extends OptimizedState<PickedAttachmentsHold
                             onSecondaryTapUp: (details) {
                               selectMention(index, true);
                             },
-                            child: Obx(() => ListTile(
+                            child: ListTile(
                                 mouseCursor: MouseCursor.defer,
                                 dense: true,
                                 selectedTileColor: context.theme.colorScheme.properSurface.oppositeLightenOrDarken(20),
@@ -244,7 +243,6 @@ class _PickedAttachmentsHolderState extends OptimizedState<PickedAttachmentsHold
                                       ),
                                   ],
                                 )),
-                            ),
                           ),
                         ),
                         itemCount: widget.controller!.mentionMatches.length,

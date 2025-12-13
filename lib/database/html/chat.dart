@@ -59,7 +59,7 @@ class Chat {
   bool? hasUnreadMessage;
   String? title;
   String get properTitle {
-    if (ss().settings.redactedMode.value && ss().settings.hideContactInfo.value) {
+    if (SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value) {
       return getTitle();
     }
     title ??= getTitle();
@@ -229,12 +229,12 @@ class Chat {
   }
 
   bool shouldMuteNotification(Message? message) {
-    if (ss().settings.filterUnknownSenders.value &&
+    if (SettingsSvc.settings.filterUnknownSenders.value &&
         participants.length == 1 &&
         participants[0].contact == null) {
       return true;
-    } else if (ss().settings.globalTextDetection.value.isNotEmpty) {
-      List<String> text = ss().settings.globalTextDetection.value.split(",");
+    } else if (SettingsSvc.settings.globalTextDetection.value.isNotEmpty) {
+      List<String> text = SettingsSvc.settings.globalTextDetection.value.split(",");
       for (String s in text) {
         if (message?.text?.toLowerCase().contains(s.toLowerCase()) ?? false) {
           return false;
@@ -265,7 +265,7 @@ class Chat {
       }
       return true;
     }
-    return !ss().settings.notifyReactions.value &&
+    return !SettingsSvc.settings.notifyReactions.value &&
         ReactionTypes.toList().contains(message?.associatedMessageType ?? "");
   }
 
@@ -285,11 +285,11 @@ class Chat {
     }
 
     try {
-      if (privateMark && ss().settings.enablePrivateAPI.value && ss().settings.privateMarkChatAsRead.value) {
+      if (privateMark && SettingsSvc.settings.enablePrivateAPI.value && SettingsSvc.settings.privateMarkChatAsRead.value) {
         if (!hasUnread && autoSendReadReceipts!) {
-          http.markChatRead(guid);
+          HttpSvc.markChatRead(guid);
         } else if (hasUnread) {
-          http.markChatUnread(guid);
+          HttpSvc.markChatUnread(guid);
         }
       }
     } catch (_) {}
@@ -307,7 +307,7 @@ class Chat {
     } catch (ex, stacktrace) {
       newMessage = Message.findOne(guid: message.guid);
       if (newMessage == null) {
-        Logger().error("Failed to add message (GUID: ${message.guid}) to chat (GUID: $guid)", error: ex, trace: stacktrace);
+        Logger.error("Failed to add message (GUID: ${message.guid}) to chat (GUID: $guid)", error: ex, trace: stacktrace);
       }
     }
     bool isNewer = false;
@@ -321,7 +321,7 @@ class Chat {
         _latestMessage = message;
         dateDeleted = null;
         // ignore: argument_type_not_assignable, return_of_invalid_type, invalid_assignment, for_in_of_invalid_element_type
-        await chats.addChat(this);
+        await ChatsSvc.addChat(this);
       }
     }
 
@@ -393,7 +393,7 @@ class Chat {
 
   void webSyncParticipants() {
     // ignore: argument_type_not_assignable, return_of_invalid_type, invalid_assignment, for_in_of_invalid_element_type
-    _participants = chats.webCachedHandles.where((e) => _participants.map((e2) => e2.address).contains(e.address)).toList();
+    _participants = ChatsSvc.webCachedHandles.where((e) => _participants.map((e2) => e2.address).contains(e.address)).toList();
   }
 
   Chat addParticipant(Handle participant) {
@@ -420,8 +420,8 @@ class Chat {
     _pinIndex.value = null;
     save();
     // ignore: argument_type_not_assignable, return_of_invalid_type, invalid_assignment, for_in_of_invalid_element_type
-    chats.updateChat(this);
-    chats.sort();
+    ChatsSvc.updateChat(this);
+    ChatsSvc.sort();
     return this;
   }
 
@@ -431,8 +431,8 @@ class Chat {
     muteArgs = null;
     save();
     // ignore: argument_type_not_assignable, return_of_invalid_type, invalid_assignment, for_in_of_invalid_element_type
-    chats.updateChat(this);
-    chats.sort();
+    ChatsSvc.updateChat(this);
+    ChatsSvc.sort();
     return this;
   }
 
@@ -441,8 +441,8 @@ class Chat {
     this.isArchived = isArchived;
     save();
     // ignore: argument_type_not_assignable, return_of_invalid_type, invalid_assignment, for_in_of_invalid_element_type
-    chats.updateChat(this);
-    chats.sort();
+    ChatsSvc.updateChat(this);
+    ChatsSvc.sort();
     return this;
   }
 
@@ -450,8 +450,8 @@ class Chat {
     if (id == null) return this;
     this.autoSendReadReceipts = autoSendReadReceipts;
     save(updateAutoSendReadReceipts: true);
-    if (autoSendReadReceipts ?? ss().settings.privateMarkChatAsRead.value) {
-      http.markChatRead(guid);
+    if (autoSendReadReceipts ?? SettingsSvc.settings.privateMarkChatAsRead.value) {
+      HttpSvc.markChatRead(guid);
     }
     return this;
   }
@@ -460,17 +460,17 @@ class Chat {
     if (id == null) return this;
     this.autoSendTypingIndicators = autoSendTypingIndicators;
     save(updateAutoSendTypingIndicators: true);
-    if (!(autoSendTypingIndicators ?? ss().settings.privateSendTypingIndicators.value)) {
-      socket.sendMessage("stopped-typing", {"chatGuid": guid});
+    if (!(autoSendTypingIndicators ?? SettingsSvc.settings.privateSendTypingIndicators.value)) {
+      SocketSvc.sendMessage("stopped-typing", {"chatGuid": guid});
     }
     return this;
   }
 
   static Future<Chat?> findOneWeb({String? guid, String? chatIdentifier}) async {
     if (guid != null) {
-      return chats.chats.firstWhereOrNull((e) => e.guid == guid) as Chat;
+      return ChatsSvc.chats.firstWhereOrNull((e) => e.guid == guid) as Chat;
     } else if (chatIdentifier != null) {
-      return chats.chats.firstWhereOrNull((e) => e.chatIdentifier == chatIdentifier) as Chat;
+      return ChatsSvc.chats.firstWhereOrNull((e) => e.chatIdentifier == chatIdentifier) as Chat;
     }
     return null;
   }

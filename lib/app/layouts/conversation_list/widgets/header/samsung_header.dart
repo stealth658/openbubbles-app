@@ -16,7 +16,7 @@ class SamsungHeader extends CustomStateful<ConversationListController> {
 }
 
 class _SamsungHeaderState extends CustomState<SamsungHeader, void, ConversationListController> {
-  Color get backgroundColor => ss().settings.windowEffect.value == WindowEffect.disabled
+  Color get backgroundColor => SettingsSvc.settings.windowEffect.value == WindowEffect.disabled
       ? headerColor
       : Colors.transparent;
   bool get showArchived => controller.showArchivedChats;
@@ -25,8 +25,8 @@ class _SamsungHeaderState extends CustomState<SamsungHeader, void, ConversationL
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      ns.listener.value;
-      if (ns.isAvatarOnly(context)) {
+      NavigationSvc.listener.value;
+      if (NavigationSvc.isAvatarOnly(context)) {
         return SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.all(10.0).add(const EdgeInsets.only(top: 30)),
@@ -130,7 +130,7 @@ class _SamsungHeaderState extends CustomState<SamsungHeader, void, ConversationL
                               if (!showArchived && !showUnknown)
                                 IconButton(
                                   onPressed: () async {
-                                    ns.pushLeft(
+                                    NavigationSvc.pushLeft(
                                       context,
                                       SearchView(),
                                     );
@@ -179,7 +179,7 @@ class _ExpandedHeaderTextState extends CustomState<ExpandedHeaderText, void, Con
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final unreadChats = GlobalChatService.unreadCount.value;
+      final unreadChats = GlobalChatSvc.unreadCount.value;
       return Text(
           controller.selectedChats.isNotEmpty
               ? "${controller.selectedChats.length} selected"

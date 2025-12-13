@@ -42,7 +42,7 @@ class _ChatInfoState extends OptimizedState<ChatInfo> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (ss().settings.enablePrivateAPI.value && chat.isIMessage)
+                if (SettingsSvc.settings.enablePrivateAPI.value && chat.isIMessage)
                   Text(
                       "Local - Changes only apply to this device.\nPrivate API - Changes will apply to everyone's devices.",
                       style: context.theme.textTheme.bodyLarge),
@@ -68,7 +68,7 @@ class _ChatInfoState extends OptimizedState<ChatInfo> {
 
   void updatePhoto() async {
     bool? papi = false;
-    if (ss().settings.enablePrivateAPI.value && chat.isIMessage && chat.isGroup) {
+    if (SettingsSvc.settings.enablePrivateAPI.value && chat.isIMessage && chat.isGroup) {
       papi = await showMethodDialog("Group Icon Update Method");
     }
     if (papi == null) return;
@@ -81,10 +81,10 @@ class _ChatInfoState extends OptimizedState<ChatInfo> {
       chat.customAvatarPath = result;
     }
     if (papi &&
-        ss().settings.enablePrivateAPI.value &&
+        SettingsSvc.settings.enablePrivateAPI.value &&
         result != null &&
-        (await ss().isMinBigSur) &&
-        ss().serverDetailsSync().item4 >= 226) {
+        (await SettingsSvc.isMinBigSur) &&
+        SettingsSvc.serverDetailsSync().item4 >= 226) {
       showDialog(
           context: context,
           builder: (BuildContext context) {
@@ -105,7 +105,7 @@ class _ChatInfoState extends OptimizedState<ChatInfo> {
               ),
             );
           });
-      final response = await http.setChatIcon(chat.guid, chat.customAvatarPath!);
+      final response = await HttpSvc.setChatIcon(chat.guid, chat.customAvatarPath!);
       if (response.statusCode == 200) {
         Navigator.of(context, rootNavigator: true).pop();
         showSnackbar("Notice", "Updated group photo successfully!");
@@ -118,7 +118,7 @@ class _ChatInfoState extends OptimizedState<ChatInfo> {
 
   void deletePhoto() async {
     bool? papi = false;
-    if (ss().settings.enablePrivateAPI.value && chat.isIMessage && chat.isGroup) {
+    if (SettingsSvc.settings.enablePrivateAPI.value && chat.isIMessage && chat.isGroup) {
       papi = await showMethodDialog("Group Icon Deletion Method");
     }
     if (papi == null) return;
@@ -128,8 +128,8 @@ class _ChatInfoState extends OptimizedState<ChatInfo> {
     } catch (_) {}
     chat.customAvatarPath = null;
     chat.save(updateCustomAvatarPath: true);
-    if (papi && ss().settings.enablePrivateAPI.value && (await ss().isMinBigSur) && ss().serverDetailsSync().item4 >= 226) {
-      final response = await http.deleteChatIcon(chat.guid);
+    if (papi && SettingsSvc.settings.enablePrivateAPI.value && (await SettingsSvc.isMinBigSur) && SettingsSvc.serverDetailsSync().item4 >= 226) {
+      final response = await HttpSvc.deleteChatIcon(chat.guid);
       if (response.statusCode == 200) {
         showSnackbar("Notice", "Deleted group photo successfully!");
       } else {
@@ -140,7 +140,7 @@ class _ChatInfoState extends OptimizedState<ChatInfo> {
 
   @override
   Widget build(BuildContext context) {
-    final hideInfo = ss().settings.redactedMode.value && ss().settings.hideContactInfo.value;
+    final hideInfo = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
     String _title = chat.properTitle;
     if (hideInfo) {
       _title = chat.isGroup ? chat.fakeName : chat.participants[0].fakeName;
@@ -242,7 +242,7 @@ class _ChatInfoState extends OptimizedState<ChatInfo> {
                 mouseCursor: MouseCursor.defer,
                 onTap: () async {
                   bool? papi = false;
-                  if (ss().settings.enablePrivateAPI.value && chat.isIMessage) {
+                  if (SettingsSvc.settings.enablePrivateAPI.value && chat.isIMessage) {
                     papi = await showMethodDialog("Group Name Update Method");
                   }
                   if (papi == null) return;
@@ -315,7 +315,7 @@ class _ChatInfoState extends OptimizedState<ChatInfo> {
               ),
               onPressed: () async {
                 bool? papi = false;
-                if (ss().settings.enablePrivateAPI.value && chat.isIMessage) {
+                if (SettingsSvc.settings.enablePrivateAPI.value && chat.isIMessage) {
                   papi = await showMethodDialog("Group Name Update Method");
                 }
                 if (papi == null) return;
@@ -377,11 +377,11 @@ class InfoButton extends StatelessWidget {
             final contact = chat.participants.first.contact;
             final handle = chat.participants.first;
             if (contact == null) {
-              await mcs.invokeMethod("open-contact-form",
+              await MethodChannelSvc.invokeMethod("open-contact-form",
                   {'address': handle.address, 'address_type': handle.address.isEmail ? 'email' : 'phone'});
             } else {
               try {
-                await mcs.invokeMethod("view-contact-form", {'id': contact.id});
+                await MethodChannelSvc.invokeMethod("view-contact-form", {'id': contact.id});
               } catch (_) {
                 showSnackbar("Error", "Failed to find contact on device!");
               }

@@ -24,7 +24,7 @@ class _LiveLoggingPanel extends State<LiveLoggingPanel> {
   @override
   void initState() {
     super.initState();
-    Logger().enableLiveLogging();
+    Logger.enableLiveLogging();
 
     scrollController.addListener(() {
       // Check if the user has scrolled up.
@@ -35,7 +35,7 @@ class _LiveLoggingPanel extends State<LiveLoggingPanel> {
       }
     });
 
-    Logger().logStream.stream.listen((event) {
+    Logger.logStream.stream.listen((event) {
       if (_shouldAutoScroll) {
         _scrollToBottom();
       }
@@ -50,7 +50,7 @@ class _LiveLoggingPanel extends State<LiveLoggingPanel> {
   @override
   void dispose() {
     scrollController.dispose();
-    Logger().disableLiveLogging();
+    Logger.disableLiveLogging();
     super.dispose();
   }
 
@@ -65,20 +65,20 @@ class _LiveLoggingPanel extends State<LiveLoggingPanel> {
   @override
   Widget build(BuildContext context) {
     final Rx<Color> _backgroundColor =
-        (kIsDesktop && ss().settings.windowEffect.value == WindowEffect.disabled
+        (kIsDesktop && SettingsSvc.settings.windowEffect.value == WindowEffect.disabled
                 ? Colors.transparent
                 : context.theme.colorScheme.background)
             .obs;
 
     if (kIsDesktop) {
-      ss().settings.windowEffect.listen((WindowEffect effect) =>
+      SettingsSvc.settings.windowEffect.listen((WindowEffect effect) =>
           _backgroundColor.value = effect != WindowEffect.disabled
               ? Colors.transparent
               : context.theme.colorScheme.background);
     }
     return AnnotatedRegion<SystemUiOverlayStyle>(
         value: SystemUiOverlayStyle(
-          systemNavigationBarColor: ss().settings.immersiveMode.value
+          systemNavigationBarColor: SettingsSvc.settings.immersiveMode.value
               ? Colors.transparent
               : context.theme.colorScheme.background, // navigation bar color
           systemNavigationBarIconBrightness:
@@ -91,7 +91,7 @@ class _LiveLoggingPanel extends State<LiveLoggingPanel> {
           () => Scaffold(
             backgroundColor: _backgroundColor.value,
             appBar: PreferredSize(
-              preferredSize: Size(ns.width(context), 80),
+              preferredSize: Size(NavigationSvc.width(context), 80),
               child: ClipRRect(
                 child: BackdropFilter(
                   child: AppBar(
@@ -106,7 +106,7 @@ class _LiveLoggingPanel extends State<LiveLoggingPanel> {
                     surfaceTintColor: context.theme.colorScheme.primary,
                     leading: buildBackButton(context),
                     backgroundColor: _backgroundColor.value,
-                    centerTitle: ss().settings.skin.value == Skins.iOS,
+                    centerTitle: SettingsSvc.settings.skin.value == Skins.iOS,
                     title: Text(
                       "Live Logging",
                       style: context.theme.textTheme.titleLarge,
@@ -123,9 +123,9 @@ class _LiveLoggingPanel extends State<LiveLoggingPanel> {
                                 onTap: () {
                                   isPaused.toggle();
                                   if (isPaused.value) {
-                                    Logger().disableLiveLogging();
+                                    Logger.disableLiveLogging();
                                   } else {
-                                    Logger().enableLiveLogging();
+                                    Logger.enableLiveLogging();
                                   }
                                 },
                               ),
@@ -154,7 +154,7 @@ class _LiveLoggingPanel extends State<LiveLoggingPanel> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 10.0),
                 child: StreamBuilder<String>(
-                  stream: Logger().logStream.stream,
+                  stream: Logger.logStream.stream,
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(child: Text('Waiting for logs...'));

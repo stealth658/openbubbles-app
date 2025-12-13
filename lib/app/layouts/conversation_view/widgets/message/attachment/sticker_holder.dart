@@ -38,7 +38,7 @@ class _StickerHolderState extends OptimizedState<StickerHolder> with AutomaticKe
 
         final pathName = attachment.path;
         if (await FileSystemEntity.type(pathName) == FileSystemEntityType.notFound) {
-          attachmentDownloader.startDownload(attachment, onComplete: (_) async {
+          AttachmentDownloader.startDownload(attachment, onComplete: (_) async {
             await checkImage(msg, attachment);
           });
         } else {
@@ -86,12 +86,12 @@ class _StickerHolderState extends OptimizedState<StickerHolder> with AutomaticKe
         opacity: _visible ? 1.0 : 0.25,
         child: ConstrainedBox(
           constraints: BoxConstraints(
-            maxWidth: ns.width(context) * 0.6,
+            maxWidth: NavigationSvc.width(context) * 0.6,
             maxHeight: 100,
           ),
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            physics: ts.scrollPhysics,
+            physics: ThemeSvc.scrollPhysics,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               mainAxisSize: MainAxisSize.min,

@@ -30,7 +30,7 @@ class CreateNewThemeDialog extends StatelessWidget {
             } else {
               Navigator.of(kIsDesktop ? context : _context).pop();
               ThemeData finalData = currentTheme.data;
-              final tuple = ts.getStructsFromData(finalData, finalData);
+              final tuple = ThemeSvc.getStructsFromData(finalData, finalData);
               if (isDarkMode) {
                 finalData = tuple.item2;
               } else {
@@ -52,7 +52,7 @@ class CreateNewThemeDialog extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Icon(
-                  ss().settings.skin.value == Skins.iOS
+                  SettingsSvc.settings.skin.value == Skins.iOS
                       ? CupertinoIcons.info
                       : Icons.info_outline,
                   size: 20,

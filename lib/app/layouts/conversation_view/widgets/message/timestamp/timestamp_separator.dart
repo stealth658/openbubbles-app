@@ -20,11 +20,11 @@ class TimestampSeparator extends StatelessWidget {
   }
 
   Tuple2<String?, String>? buildTimeStamp() {
-    if (ss().settings.skin.value == Skins.Samsung && message.dateCreated?.day != olderMessage?.dateCreated?.day) {
+    if (SettingsSvc.settings.skin.value == Skins.Samsung && message.dateCreated?.day != olderMessage?.dateCreated?.day) {
       return Tuple2(null, buildSeparatorDateSamsung(message.dateCreated!));
-    } else if (ss().settings.skin.value != Skins.Samsung && withinTimeThreshold(message, olderMessage)) {
+    } else if (SettingsSvc.settings.skin.value != Skins.Samsung && withinTimeThreshold(message, olderMessage)) {
       final time = message.dateCreated!;
-      if (ss().settings.skin.value == Skins.iOS) {
+      if (SettingsSvc.settings.skin.value == Skins.iOS) {
         return Tuple2(time.isToday() ? "Today" : buildDate(time), buildTime(time));
       } else {
         return Tuple2(time.isToday() ? "Today" : buildSeparatorDateMaterial(time), buildTime(time));

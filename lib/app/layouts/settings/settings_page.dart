@@ -46,8 +46,7 @@ class _SettingsPageState extends OptimizedState<SettingsPage> {
         material: material,
         iosSubtitle: iosSubtitle,
         materialSubtitle: materialSubtitle,
-        ss: ss,
-        ns: ns,
+        ns: NavigationSvc,
         progress: progress,
         totalSize: totalSize,
         uploadingContacts: uploadingContacts,
@@ -62,7 +61,7 @@ class _SettingsPageState extends OptimizedState<SettingsPage> {
 
     if (showAltLayoutContextless) {
       WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-        ns.pushAndRemoveSettingsUntil(
+        NavigationSvc.pushAndRemoveSettingsUntil(
           context,
           widget.initialPage ?? ServerManagementPanel(),
           (route) => route.isFirst,
@@ -70,7 +69,7 @@ class _SettingsPageState extends OptimizedState<SettingsPage> {
       });
     } else if (widget.initialPage != null) {
       WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-        ns.pushSettings(
+        NavigationSvc.pushSettings(
           context,
           widget.initialPage!,
         );
@@ -85,7 +84,7 @@ class _SettingsPageState extends OptimizedState<SettingsPage> {
       onTap: () => FocusScope.of(context).unfocus(),
       child: AnnotatedRegion<SystemUiOverlayStyle>(
         value: SystemUiOverlayStyle(
-          systemNavigationBarColor: ss().settings.immersiveMode.value
+          systemNavigationBarColor: SettingsSvc.settings.immersiveMode.value
               ? Colors.transparent
               : context.theme.colorScheme.background, // navigation bar color
           systemNavigationBarIconBrightness:
@@ -248,7 +247,7 @@ class _SettingsPageState extends OptimizedState<SettingsPage> {
                       ],
                     ),
                     right: LayoutBuilder(builder: (context, constraints) {
-                      ns.maxWidthSettings = constraints.maxWidth;
+                      NavigationSvc.maxWidthSettings = constraints.maxWidth;
                       return PopScope(
                         canPop: false,
                         onPopInvoked: (_) async {
@@ -272,7 +271,7 @@ class _SettingsPageState extends OptimizedState<SettingsPage> {
                                 name: "initial",
                                 child: Scaffold(
                                     backgroundColor:
-                                        ss().settings.skin.value != Skins.iOS
+                                        SettingsSvc.settings.skin.value != Skins.iOS
                                             ? tileColor
                                             : headerColor,
                                     body: Center(

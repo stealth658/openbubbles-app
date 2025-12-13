@@ -14,19 +14,19 @@ import 'package:get/get.dart';
 class PinnedOrderPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final Rx<Color> _backgroundColor = (kIsDesktop && ss().settings.windowEffect.value == WindowEffect.disabled
+    final Rx<Color> _backgroundColor = (kIsDesktop && SettingsSvc.settings.windowEffect.value == WindowEffect.disabled
             ? Colors.transparent
             : context.theme.colorScheme.background)
         .obs;
     final ScrollController scrollController = ScrollController();
 
     if (kIsDesktop) {
-      ss().settings.windowEffect.listen((WindowEffect effect) => _backgroundColor.value =
+      SettingsSvc.settings.windowEffect.listen((WindowEffect effect) => _backgroundColor.value =
           effect != WindowEffect.disabled ? Colors.transparent : context.theme.colorScheme.background);
     }
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
-        systemNavigationBarColor: ss().settings.immersiveMode.value
+        systemNavigationBarColor: SettingsSvc.settings.immersiveMode.value
             ? Colors.transparent
             : context.theme.colorScheme.background, // navigation bar color
         systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
@@ -37,7 +37,7 @@ class PinnedOrderPanel extends StatelessWidget {
         () => Scaffold(
           backgroundColor: _backgroundColor.value,
           appBar: PreferredSize(
-            preferredSize: Size(ns.width(context), 80),
+            preferredSize: Size(NavigationSvc.width(context), 80),
             child: ClipRRect(
               child: BackdropFilter(
                 child: AppBar(
@@ -51,7 +51,7 @@ class PinnedOrderPanel extends StatelessWidget {
                   surfaceTintColor: context.theme.colorScheme.primary,
                   leading: buildBackButton(context),
                   backgroundColor: _backgroundColor.value,
-                  centerTitle: ss().settings.skin.value == Skins.iOS,
+                  centerTitle: SettingsSvc.settings.skin.value == Skins.iOS,
                   title: Text(
                     "Pinned Chat Order",
                     style: context.theme.textTheme.titleLarge,
@@ -62,7 +62,7 @@ class PinnedOrderPanel extends StatelessWidget {
                             style:
                                 context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
                         onPressed: () {
-                          chats.removePinIndices();
+                          ChatsSvc.removePinIndices();
                         }),
                   ],
                 ),
@@ -80,7 +80,7 @@ class PinnedOrderPanel extends StatelessWidget {
                 mainAxisSize: MainAxisSize.max,
                 children: <Widget>[
                   Obx(() {
-                    if (!chats.loadedChatBatch.value) {
+                    if (!ChatsSvc.loadedChatBatch.value) {
                       return Center(
                         child: Padding(
                           padding: const EdgeInsets.only(top: 50.0),
@@ -89,7 +89,7 @@ class PinnedOrderPanel extends StatelessWidget {
                               Padding(
                                 padding: const EdgeInsets.all(8.0),
                                 child: Text(
-                                  "Loading chats...",
+                                  "Loading ChatSvc...",
                                   style: context.theme.textTheme.labelLarge,
                                 ),
                               ),
@@ -99,7 +99,7 @@ class PinnedOrderPanel extends StatelessWidget {
                         ),
                       );
                     }
-                    if (chats.hasChats.value && chats.chats.bigPinHelper(true).isEmpty) {
+                    if (ChatsSvc.hasChats.value && ChatsSvc.chats.bigPinHelper(true).isEmpty) {
                       return Center(
                         child: Padding(
                           padding: const EdgeInsets.only(top: 50.0),
@@ -114,7 +114,7 @@ class PinnedOrderPanel extends StatelessWidget {
                     return ReorderableListView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      onReorder: chats.updateChatPinIndex,
+                      onReorder: ChatsSvc.updateChatPinIndex,
                       header: Padding(
                         padding: const EdgeInsets.all(13.0),
                         child: Text("Set the order of pinned chats by dragging the chat tile to the desired location.",
@@ -122,12 +122,12 @@ class PinnedOrderPanel extends StatelessWidget {
                       ),
                       itemBuilder: (context, index) {
                         return ReorderableDragStartListener(
-                          key: Key(chats.chats.bigPinHelper(true)[index].guid.toString()),
+                          key: Key(ChatsSvc.chats.bigPinHelper(true)[index].guid.toString()),
                           index: index,
                           child: AbsorbPointer(
                             absorbing: true,
                             child: ConversationTile(
-                              chat: chats.chats.bigPinHelper(true)[index],
+                              chat: ChatsSvc.chats.bigPinHelper(true)[index],
                               controller: Get.put(
                                   ConversationListController(showUnknownSenders: true, showArchivedChats: true),
                                   tag: "pinned-order-panel"),
@@ -137,7 +137,7 @@ class PinnedOrderPanel extends StatelessWidget {
                           ),
                         );
                       },
-                      itemCount: chats.chats.bigPinHelper(true).length,
+                      itemCount: ChatsSvc.chats.bigPinHelper(true).length,
                     );
                   }),
                 ],

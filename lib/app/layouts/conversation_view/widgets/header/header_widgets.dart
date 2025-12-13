@@ -28,7 +28,7 @@ class ManualMarkState extends OptimizedState<ManualMark> {
 
   @override
   Widget build(BuildContext context) {
-    final manualMark = ss().settings.enablePrivateAPI.value && ss().settings.privateManualMarkAsRead.value && !(chat.autoSendReadReceipts ?? false);
+    final manualMark = SettingsSvc.settings.enablePrivateAPI.value && SettingsSvc.settings.privateManualMarkAsRead.value && !(chat.autoSendReadReceipts ?? false);
     return Obx(() {
       if (!manualMark && !widget.controller.inSelectMode.value) return const SizedBox.shrink();
       return Row(
@@ -52,7 +52,7 @@ class ManualMarkState extends OptimizedState<ManualMark> {
             onPressed: () async {
               if (widget.controller.inSelectMode.value) {
                 for (Message m in widget.controller.selected) {
-                  ms(chat.guid).removeMessage(m);
+                  MessagesSvc(chat.guid).removeMessage(m);
                   Message.softDelete(m.guid!);
                 }
                 widget.controller.inSelectMode.value = false;
@@ -64,9 +64,9 @@ class ManualMarkState extends OptimizedState<ManualMark> {
                 marking = true;
               });
               if (!marked) {
-                await http.markChatRead(chat.guid);
+                await HttpSvc.markChatRead(chat.guid);
               } else {
-                await http.markChatUnread(chat.guid);
+                await HttpSvc.markChatUnread(chat.guid);
               }
               setState(() {
                 marking = false;
@@ -108,7 +108,7 @@ class ManualMarkState extends OptimizedState<ManualMark> {
                 }
                 widget.controller.inSelectMode.value = false;
                 widget.controller.selected.clear();
-                ns.pushAndRemoveUntil(
+                NavigationSvc.pushAndRemoveUntil(
                   context,
                   ChatCreator(
                     initialText: text,
@@ -127,7 +127,7 @@ class ManualMarkState extends OptimizedState<ManualMark> {
 class ConnectionIndicator extends StatelessWidget {
   const ConnectionIndicator();
 
-  bool get noniOS => ss().settings.skin.value != Skins.iOS;
+  bool get noniOS => SettingsSvc.settings.skin.value != Skins.iOS;
 
   @override
   Widget build(BuildContext context) {
@@ -139,8 +139,8 @@ class ConnectionIndicator extends StatelessWidget {
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
-              color: getIndicatorColor(socket.state.value).withValues(alpha: 0.4),
-              spreadRadius: socket.state.value != SocketState.connected && (ls.isAlive || kIsDesktop)
+              color: getIndicatorColor(SocketSvc.state.value).withValues(alpha: 0.4),
+              spreadRadius: SocketSvc.state.value != SocketState.connected && (LifecycleSvc.isAlive || kIsDesktop)
                   ? max(MediaQuery.of(context).viewPadding.top, 40).clamp(0, noniOS ? 30 : double.infinity).toDouble()
                   : 0,
               blurRadius: max(MediaQuery.of(context).viewPadding.top, 40).clamp(0, noniOS ? 30 : double.infinity).toDouble(),

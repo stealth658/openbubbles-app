@@ -105,6 +105,10 @@ class SyncSettings extends StatelessWidget {
             final numberOfMessagesPerPage = controller.numberToDownload.clamp(1, double.infinity).toInt();
             final skipEmptyChats = controller.skipEmptyChats;
             final saveToDownloads = controller.saveToDownloads;
+            
+            // Init the full sync first so when we go to the next page,
+            // the manager is already created (since we don't await)
+            SyncSvc.initFullSync();
             setup.startSetup(numberOfMessagesPerPage, skipEmptyChats, saveToDownloads);
 
             controller.pageController.nextPage(
@@ -157,7 +161,7 @@ class _NumberOfMessagesTextState extends CustomState<NumberOfMessagesText, int, 
           child: Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              "We will now download the first ${controller.numberToDownload == 0 ? "message" : "${controller.numberToDownload.toString().split(".").first} messages"} for each of your chats.\nYou can see more messages by simply scrolling up in the chat.",
+              "We will now download the first ${controller.numberToDownload == 0 ? "message" : "${controller.numberToDownload.toString().split(".").first} messages"} for each of your ChatSvc.\nYou can see more messages by simply scrolling up in the chat.",
               style: context.theme.textTheme.bodyLarge!.apply(
                 fontSizeDelta: 1.5,
                 color: context.theme.colorScheme.outline,

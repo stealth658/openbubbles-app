@@ -65,7 +65,7 @@ Future<String?> googleOAuth(BuildContext context) async {
           throw Exception("No access token!");
         }
       } catch (e, stack) {
-        Logger().error("Failed to sign in with Google (Android/Web)", error: e, trace: stack);
+        Logger.error("Failed to sign in with Google (Android/Web)", error: e, trace: stack);
         return null;
       }
     }
@@ -77,8 +77,8 @@ Future<String?> googleOAuth(BuildContext context) async {
       scope: defaultScopes.join(' '),
     );
     try {
-      final width = prefs().i.getDouble('window-width')?.toInt();
-      final height = prefs().i.getDouble('window-height')?.toInt();
+      final width = PrefsSvc.i.getDouble('window-width')?.toInt();
+      final height = PrefsSvc.i.getDouble('window-height')?.toInt();
       final result = await DesktopWebviewAuth.signIn(
         args,
         width: width != null ? (width * 0.9).ceil() : null,
@@ -91,7 +91,7 @@ Future<String?> googleOAuth(BuildContext context) async {
         throw Exception("No access token!");
       }
     } catch (e, stack) {
-      Logger().error("Failed to sign in with Google (Desktop)", error: e, trace: stack);
+      Logger.error("Failed to sign in with Google (Desktop)", error: e, trace: stack);
       return null;
     }
   }
@@ -102,7 +102,7 @@ Future<List<Map>> fetchFirebaseProjects(String token) async {
   List<Map> usableProjects = [];
   try {
     // query firebase projects
-    final response = await http.getFirebaseProjects(token);
+    final response = await HttpSvc.getFirebaseProjects(token);
     final projects = response.data['results'];
     List<Object> errors = [];
     // find projects with RTDB or cloud firestore
@@ -110,7 +110,7 @@ Future<List<Map>> fetchFirebaseProjects(String token) async {
       for (Map e in projects) {
         if (e['resources']['realtimeDatabaseInstance'] != null) {
           try {
-            final serverUrlResponse = await http.getServerUrlRTDB(e['resources']['realtimeDatabaseInstance'], token);
+            final serverUrlResponse = await HttpSvc.getServerUrlRTDB(e['resources']['realtimeDatabaseInstance'], token);
             e['serverUrl'] = serverUrlResponse.data['serverUrl'];
             usableProjects.add(e);
           } catch (ex) {
@@ -118,7 +118,7 @@ Future<List<Map>> fetchFirebaseProjects(String token) async {
           }
         } else {
           try {
-            final serverUrlResponse = await http.getServerUrlCF(e['projectId'], token);
+            final serverUrlResponse = await HttpSvc.getServerUrlCF(e['projectId'], token);
             e['serverUrl'] = serverUrlResponse.data['fields']['serverUrl']['stringValue'];
             usableProjects.add(e);
           } catch (ex) {

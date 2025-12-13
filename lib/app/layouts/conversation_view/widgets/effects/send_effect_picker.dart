@@ -39,7 +39,7 @@ void sendEffectAction(
   Future<void> Function({String? effect}) sendMessage,
   List<Mentionable> mentionables,
 ) {
-  if (!ss().settings.enablePrivateAPI.value) return;
+  if (!SettingsSvc.settings.enablePrivateAPI.value) return;
   String typeSelected = "bubble";
   final bubbleEffects = ["slam", "loud", "gentle", "invisible ink"];
   final screenEffects = ["echo", "spotlight", "balloons", "confetti", "love", "lasers", "fireworks", "celebration"];
@@ -108,13 +108,13 @@ void sendEffectAction(
   message.generateTempGuid();
   final GlobalKey key = GlobalKey();
   Control animController = Control.stop;
-  final FireworkController fireworkController = FireworkController(vsync: provider, windowSize: Size(ns.width(context), context.height));
-  final CelebrationController celebrationController = CelebrationController(vsync: provider, windowSize: Size(ns.width(context), context.height));
+  final FireworkController fireworkController = FireworkController(vsync: provider, windowSize: Size(NavigationSvc.width(context), context.height));
+  final CelebrationController celebrationController = CelebrationController(vsync: provider, windowSize: Size(NavigationSvc.width(context), context.height));
   final ConfettiController confettiController = ConfettiController(duration: const Duration(seconds: 1));
-  final BalloonController balloonController = BalloonController(vsync: provider, windowSize: Size(ns.width(context), context.height));
-  final LoveController loveController = LoveController(vsync: provider, windowSize: Size(ns.width(context), context.height));
-  final SpotlightController spotlightController = SpotlightController(vsync: provider, windowSize: Size(ns.width(context), context.height));
-  final LaserController laserController = LaserController(vsync: provider, windowSize: Size(ns.width(context), context.height));
+  final BalloonController balloonController = BalloonController(vsync: provider, windowSize: Size(NavigationSvc.width(context), context.height));
+  final LoveController loveController = LoveController(vsync: provider, windowSize: Size(NavigationSvc.width(context), context.height));
+  final SpotlightController spotlightController = SpotlightController(vsync: provider, windowSize: Size(NavigationSvc.width(context), context.height));
+  final LaserController laserController = LaserController(vsync: provider, windowSize: Size(NavigationSvc.width(context), context.height));
   Navigator.push(
     context,
     PageRouteBuilder(
@@ -128,7 +128,7 @@ void sendEffectAction(
               },
               child: AnnotatedRegion<SystemUiOverlayStyle>(
                 value: SystemUiOverlayStyle(
-                  systemNavigationBarColor: ss().settings.immersiveMode.value ? Colors.transparent : context.theme.colorScheme.background,
+                  systemNavigationBarColor: SettingsSvc.settings.immersiveMode.value ? Colors.transparent : context.theme.colorScheme.background,
                   // navigation bar color
                   systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
                   statusBarColor: Colors.transparent,
@@ -136,7 +136,7 @@ void sendEffectAction(
                   statusBarIconBrightness: context.theme.colorScheme.brightness.opposite,
                 ),
                 child: Scaffold(
-                  backgroundColor: kIsDesktop && ss().settings.windowEffect.value != WindowEffect.disabled
+                  backgroundColor: kIsDesktop && SettingsSvc.settings.windowEffect.value != WindowEffect.disabled
                       ? context.theme.colorScheme.properSurface.withValues(alpha: 0.9)
                       : Colors.transparent,
                   body: Stack(
@@ -144,8 +144,8 @@ void sendEffectAction(
                     children: [
                       BackdropFilter(
                         filter: ImageFilter.blur(
-                            sigmaX: kIsDesktop && ss().settings.windowEffect.value != WindowEffect.disabled ? 0 : 30,
-                            sigmaY: kIsDesktop && ss().settings.windowEffect.value != WindowEffect.disabled ? 0 : 30),
+                            sigmaX: kIsDesktop && SettingsSvc.settings.windowEffect.value != WindowEffect.disabled ? 0 : 30,
+                            sigmaY: kIsDesktop && SettingsSvc.settings.windowEffect.value != WindowEffect.disabled ? 0 : 30),
                         child: Container(
                           color: context.theme.colorScheme.properSurface.withValues(alpha: 0.3),
                         ),
@@ -182,7 +182,7 @@ void sendEffectAction(
                                     padding: const EdgeInsets.symmetric(vertical: 20.0),
                                     child: Container(
                                       height: 50,
-                                      width: ns.width(context) / 2,
+                                      width: NavigationSvc.width(context) / 2,
                                       child: CupertinoSlidingSegmentedControl<String>(
                                         children: {
                                           "bubble": const Text("Bubble"),
@@ -206,7 +206,7 @@ void sendEffectAction(
                                       child: ConstrainedBox(
                                           constraints: BoxConstraints(
                                             maxHeight: 250,
-                                            maxWidth: ns.width(context),
+                                            maxWidth: NavigationSvc.width(context),
                                           ),
                                           child: SingleChildScrollView(
                                             child: Wrap(
@@ -226,7 +226,7 @@ void sendEffectAction(
                                                       });
                                                     },
                                                     child: Container(
-                                                      width: ns.width(context) / 3,
+                                                      width: NavigationSvc.width(context) / 3,
                                                       height: 50,
                                                       decoration: BoxDecoration(
                                                         color: CupertinoColors.tertiarySystemFill,
@@ -257,7 +257,7 @@ void sendEffectAction(
                                       child: ConstrainedBox(
                                         constraints: BoxConstraints(
                                           maxHeight: 350,
-                                          maxWidth: ns.width(context),
+                                          maxWidth: NavigationSvc.width(context),
                                         ),
                                         child: SingleChildScrollView(
                                           child: Wrap(
@@ -271,37 +271,37 @@ void sendEffectAction(
                                                       screenSelected = screenEffects[index];
                                                     });
                                                     if (screenSelected == "fireworks" && !fireworkController.isPlaying) {
-                                                      fireworkController.windowSize = Size(ns.width(context), context.height);
+                                                      fireworkController.windowSize = Size(NavigationSvc.width(context), context.height);
                                                       fireworkController.start();
                                                       await Future.delayed(const Duration(seconds: 1));
                                                       fireworkController.stop();
                                                     } else if (screenSelected == "celebration" && !celebrationController.isPlaying) {
-                                                      celebrationController.windowSize = Size(ns.width(context), context.height);
+                                                      celebrationController.windowSize = Size(NavigationSvc.width(context), context.height);
                                                       celebrationController.start();
                                                       await Future.delayed(const Duration(seconds: 1));
                                                       celebrationController.stop();
                                                     } else if (screenSelected == "balloons" && !balloonController.isPlaying) {
-                                                      balloonController.windowSize = Size(ns.width(context), context.height);
+                                                      balloonController.windowSize = Size(NavigationSvc.width(context), context.height);
                                                       balloonController.start();
                                                       await Future.delayed(const Duration(seconds: 1));
                                                       balloonController.stop();
                                                     } else if (screenSelected == "love" && !loveController.isPlaying) {
                                                       if (key.globalPaintBounds(context) != null) {
-                                                        loveController.windowSize = Size(ns.width(context), context.height);
+                                                        loveController.windowSize = Size(NavigationSvc.width(context), context.height);
                                                         loveController.start(Point((key.globalPaintBounds(context)!.left + key.globalPaintBounds(context)!.right) / 2, (key.globalPaintBounds(context)!.top + key.globalPaintBounds(context)!.bottom) / 2));
                                                         await Future.delayed(const Duration(seconds: 1));
                                                         loveController.stop();
                                                       }
                                                     } else if (screenSelected == "spotlight" && !spotlightController.isPlaying) {
                                                       if (key.globalPaintBounds(context) != null) {
-                                                        spotlightController.windowSize = Size(ns.width(context), context.height);
+                                                        spotlightController.windowSize = Size(NavigationSvc.width(context), context.height);
                                                         spotlightController.start(key.globalPaintBounds(context)!);
                                                         await Future.delayed(const Duration(seconds: 1));
                                                         spotlightController.stop();
                                                       }
                                                     } else if (screenSelected == "lasers" && !laserController.isPlaying) {
                                                       if (key.globalPaintBounds(context) != null) {
-                                                        laserController.windowSize = Size(ns.width(context), context.height);
+                                                        laserController.windowSize = Size(NavigationSvc.width(context), context.height);
                                                         laserController.start(key.globalPaintBounds(context)!);
                                                         await Future.delayed(const Duration(seconds: 1));
                                                         laserController.stop();
@@ -311,7 +311,7 @@ void sendEffectAction(
                                                     }
                                                   },
                                                   child: Container(
-                                                    width: ns.width(context) / 3,
+                                                    width: NavigationSvc.width(context) / 3,
                                                     height: 50,
                                                     decoration: BoxDecoration(
                                                       color: CupertinoColors.tertiarySystemFill,
@@ -347,10 +347,10 @@ void sendEffectAction(
                                         colorScheme: context.theme.colorScheme.copyWith(
                                           primary: context.theme.colorScheme.bubble(context, true),
                                           onPrimary: context.theme.colorScheme.onBubble(context, true),
-                                          surface: ss().settings.monetTheming.value == Monet.full
+                                          surface: SettingsSvc.settings.monetTheming.value == Monet.full
                                               ? null
                                               : (context.theme.extensions[BubbleColors] as BubbleColors?)?.receivedBubbleColor,
-                                          onSurface: ss().settings.monetTheming.value == Monet.full
+                                          onSurface: SettingsSvc.settings.monetTheming.value == Monet.full
                                               ? null
                                               : (context.theme.extensions[BubbleColors] as BubbleColors?)?.onReceivedBubbleColor,
                                         ),
@@ -375,7 +375,7 @@ void sendEffectAction(
                                                 ),
                                                 child: Container(
                                                   constraints: BoxConstraints(
-                                                    maxWidth: ns.width(context) * MessageWidgetController.maxBubbleSizeFactor - 40,
+                                                    maxWidth: NavigationSvc.width(context) * MessageWidgetController.maxBubbleSizeFactor - 40,
                                                     minHeight: 40,
                                                   ),
                                                   padding:

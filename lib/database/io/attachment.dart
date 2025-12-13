@@ -4,6 +4,7 @@ import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/objectbox.g.dart';
 import 'package:bluebubbles/database/io/message.dart';
+import 'package:bluebubbles/services/backend/interfaces/attachment_interface.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
@@ -115,6 +116,18 @@ class Attachment {
     return this;
   }
 
+  Future<Attachment> saveAsync(Message? message) async {
+    if (kIsWeb) return this;
+
+    final result = await AttachmentInterface.saveAttachmentAsync(
+      attachmentData: toMap(),
+      messageData: message?.toMap(),
+    );
+
+    id = result['ROWID'];
+    return this;
+  }
+
   /// Save many attachments at once. [map] is used to establish a link between
   /// the message and its attachments.
   static void bulkSave(Map<Message, List<Attachment>> map) {
@@ -139,6 +152,16 @@ class Attachment {
         }
       } on UniqueViolationException catch (_) {}
     });
+  }
+
+  static Future<void> bulkSaveAsync(Map<Message, List<Attachment>> map) async {
+    // Convert the map to serializable format
+    Map<Map<String, dynamic>, List<Map<String, dynamic>>> mapData = {};
+    for (var entry in map.entries) {
+      mapData[entry.key.toMap()] = entry.value.map((e) => e.toMap()).toList();
+    }
+
+    await AttachmentInterface.bulkSaveAttachmentsAsync(mapData: mapData);
   }
 
   /// replaces a temporary attachment with the new one from the server
@@ -171,7 +194,7 @@ class Attachment {
     existing.save(null);
 
     // change the directory path
-    String appDocPath = fs().appDocDir.path;
+    String appDocPath = FilesystemSvc.appDocDir.path;
     String pathName = "$appDocPath/attachments/$oldGuid";
     Directory directory = Directory(pathName);
 
@@ -187,6 +210,50 @@ class Attachment {
     return newAttachment;
   }
 
+  /// replaces a temporary attachment with the new one from the server (async version)
+  /// Note: This must be called from the main thread to access cm/cvc services
+  static Future<Attachment> replaceAttachmentAsync(String? oldGuid, Attachment newAttachment) async {
+    if (kIsWeb) return newAttachment;
+    
+    Attachment? existing = Attachment.findOne(oldGuid!);
+    if (existing == null) {
+      return Future.error("Old GUID ($oldGuid) does not exist!");
+    }
+
+    // Handle cm/cvc services on main thread BEFORE calling isolate
+    if (cm.activeChat != null) {
+      final data = cvc(cm.activeChat!.chat).imageData[oldGuid];
+      if (data != null) {
+        cvc(cm.activeChat!.chat).imageData.remove(oldGuid);
+        cvc(cm.activeChat!.chat).imageData[newAttachment.guid!] = data;
+      }
+    }
+
+    // Call the isolate-safe database operations
+    final result = await AttachmentInterface.replaceAttachmentAsync(
+      oldGuid: oldGuid,
+      newAttachmentData: newAttachment.toMap(),
+    );
+
+    // Handle file system operations on main thread AFTER isolate call
+    String appDocPath = FilesystemSvc.appDocDir.path;
+    String pathName = "$appDocPath/attachments/$oldGuid";
+    Directory directory = Directory(pathName);
+
+    if (directory.existsSync()) {
+      await directory.rename("$appDocPath/attachments/${newAttachment.guid}");
+    }
+
+    // Update newAttachment with values from result
+    final updatedAttachment = Attachment.fromMap(result);
+    newAttachment.id = updatedAttachment.id;
+    newAttachment.width = updatedAttachment.width;
+    newAttachment.height = updatedAttachment.height;
+    newAttachment.metadata = updatedAttachment.metadata;
+    
+    return newAttachment;
+  }
+
   /// find an attachment by its guid
   static Attachment? findOne(String guid) {
     if (kIsWeb) return null;
@@ -197,11 +264,30 @@ class Attachment {
     return result;
   }
 
+  static Future<Attachment?> findOneAsync(String guid) async {
+    if (kIsWeb) return null;
+
+    final result = await AttachmentInterface.findOneAttachmentAsync(guid: guid);
+
+    if (result == null) return null;
+    return Attachment.fromMap(result);
+  }
+
   /// Find all attachments matching a specified condition, or all attachments
   /// if no condition is provided
   static List<Attachment> find({Condition<Attachment>? cond}) {
     final query = Database.attachments.query(cond).build();
     return query.find();
+  }
+
+  static Future<List<Attachment>> findAsync({Condition<Attachment>? cond}) async {
+    if (kIsWeb) return [];
+
+    // Note: For now, we don't serialize conditions for cross-isolate communication
+    // This will return all attachments. Future enhancement can add condition serialization.
+    final result = await AttachmentInterface.findAttachmentsAsync();
+
+    return result.map((e) => Attachment.fromMap(e)).toList();
   }
 
   /// Delete an attachment and remove all instances of that attachment in the DB
@@ -217,6 +303,12 @@ class Attachment {
     });
   }
 
+  static Future<void> deleteAsync(String guid) async {
+    if (kIsWeb) return;
+
+    await AttachmentInterface.deleteAttachmentAsync(guid: guid);
+  }
+
   String getFriendlySize({decimals = 2}) {
     return (totalBytes ?? 0.0).toDouble().getFriendlySize();
   }
@@ -227,7 +319,7 @@ class Attachment {
 
   String? get mimeStart => mimeType?.split("/").first;
 
-  static String get baseDirectory => "${fs().appDocDir.path}/attachments";
+  static String get baseDirectory => "${FilesystemSvc.appDocDir.path}/attachments";
 
   String get directory => "$baseDirectory/$guid";
 

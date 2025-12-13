@@ -43,7 +43,7 @@ class _FullscreenVideoState extends OptimizedState<FullscreenVideo> with Automat
 
   bool hasListener = false;
   bool hasDisposed = false;
-  final RxBool muted = ss().settings.startVideosMutedFullscreen.value.obs;
+  final RxBool muted = SettingsSvc.settings.startVideosMutedFullscreen.value.obs;
   final RxBool showPlayPauseOverlay = true.obs;
   final RxDouble aspectRatio = 1.0.obs;
 
@@ -264,20 +264,20 @@ class _FullscreenVideoState extends OptimizedState<FullscreenVideo> with Automat
                                     clipBehavior: Clip.antiAlias,
                                     child: Padding(
                                       padding: EdgeInsets.only(
-                                        left: ss().settings.skin.value == Skins.iOS && !videoController.player.state.playing ? 17 : 10,
-                                        top: ss().settings.skin.value == Skins.iOS ? 13 : 10,
+                                        left: SettingsSvc.settings.skin.value == Skins.iOS && !videoController.player.state.playing ? 17 : 10,
+                                        top: SettingsSvc.settings.skin.value == Skins.iOS ? 13 : 10,
                                         right: 10,
                                         bottom: 10,
                                       ),
                                       child: Obx(
                                         () => videoController.player.state.playing
                                             ? Icon(
-                                                ss().settings.skin.value == Skins.iOS ? CupertinoIcons.pause : Icons.pause,
+                                                SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.pause : Icons.pause,
                                                 color: context.iconColor,
                                                 size: 45,
                                               )
                                             : Icon(
-                                                ss().settings.skin.value == Skins.iOS ? CupertinoIcons.play : Icons.play_arrow,
+                                                SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.play : Icons.play_arrow,
                                                 color: context.iconColor,
                                                 size: 45,
                                               ),

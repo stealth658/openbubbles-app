@@ -122,7 +122,7 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
                                       if (!triedConnecting[index].value) {
                                         Future(() async {
                                           try {
-                                            await http.dio.get(usableProjects[index]['serverUrl']);
+                                            await HttpSvc.dio.get(usableProjects[index]['serverUrl']);
                                             reachable[index].value = true;
                                           } catch (e) {
                                             reachable[index].value = false;
@@ -264,7 +264,7 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
                 onPressed: () async {
                   token = await googleOAuth(context);
                   if (token != null) {
-                    final response = await http.getGoogleInfo(token!);
+                    final response = await HttpSvc.getGoogleInfo(token!);
                     setState(() {
                       googleName = response.data['name'];
                       googlePicture = response.data['picture'];
@@ -516,8 +516,8 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
                                     minimumSize: WidgetStateProperty.all(const Size(30, 30)),
                                   ),
                                   onPressed: () async {
-                                    ss().settings.customHeaders.value = {};
-                                    http.onInit();
+                                    SettingsSvc.settings.customHeaders.value = {};
+                                    HttpSvc.updateHeaders();
                                     connect(urlController.text, passwordController.text);
                                   },
                                   onLongPress: () async {
@@ -548,8 +548,11 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
     );
   }
 
-  void goToNextPage() {
+  Future<void> goToNextPage() async {
     if (kIsWeb) {
+      // Init the full sync first so when we go to the next page,
+      // the manager is already created (since we don't await)
+      SyncSvc.initFullSync();
       setup.startSetup(25, true, false);
     }
 
@@ -653,7 +656,7 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
       return;
     }
 
-    ss().settings.guidAuthKey.value = password;
+    SettingsSvc.settings.guidAuthKey.value = password;
     await saveNewServerUrl(addr, saveAdditionalSettings: ["guidAuthKey"]);
 
     // Request data from the API
@@ -679,7 +682,7 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
     );
 
     dio.Response? serverResponse;
-    await http.serverInfo().then((response) {
+    await HttpSvc.serverInfo().then((response) {
       serverResponse = response;
     }).catchError((err) {
       if (err is dio.Response) {
@@ -687,7 +690,7 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
       }
     });
     dio.Response? fcmResponse;
-    await http.fcmClient().then((response) {
+    await HttpSvc.fcmClient().then((response) {
       fcmResponse = response;
     }).catchError((err) {
       if (err is dio.Response) {
@@ -699,12 +702,12 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
     SystemChannels.textInput.invokeMethod('TextInput.hide');
     // Unauthorized request
     if (serverResponse?.statusCode == 401) {
-      socket.forgetConnection();
+      SocketSvc.forgetConnection();
       return controller.updateConnectError("Authentication failed. Incorrect password!");
     }
     // Server didn't even respond
     if (serverResponse?.statusCode != 200) {
-      socket.forgetConnection();
+      SocketSvc.forgetConnection();
       return controller.updateConnectError(
           "Failed to connect to $addr! Please ensure your Server's URL is accessible from your device.");
     }
@@ -716,7 +719,7 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
     } else {
       try {
         FCMData fcmData = FCMData.fromMap(data["data"]);
-        await ss().saveFCMData(fcmData);
+        await SettingsSvc.saveFCMData(fcmData);
       } catch (_) {
         if (Platform.isAndroid) {
           showDialog(
@@ -747,7 +750,7 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
           );
         }
       }
-      socket.restartSocket();
+      SocketSvc.restartSocket();
       goToNextPage();
     }
   }

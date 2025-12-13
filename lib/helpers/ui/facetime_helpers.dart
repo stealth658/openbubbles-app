@@ -17,7 +17,7 @@ Map<String, Route> faceTimeOverlays = {}; // Map from call uuid to overlay route
 /// Hides the FaceTime overlay with the given [callUuid]
 /// Also calls [NotificationsService.clearFaceTimeNotification] to clear the notification
 void hideFaceTimeOverlay(String callUuid) {
-  notif.clearFaceTimeNotification(callUuid);
+  NotificationsSvc.clearFaceTimeNotification(callUuid);
   if (faceTimeOverlays.containsKey(callUuid)) {
     Get.removeRoute(faceTimeOverlays[callUuid]!);
     faceTimeOverlays.remove(callUuid);
@@ -27,7 +27,7 @@ void hideFaceTimeOverlay(String callUuid) {
 /// Shows a FaceTime overlay with the given [callUuid], [caller], [chatIcon], and [isAudio]
 /// Saves the overlay route in [faceTimeOverlays]
 Future<void> showFaceTimeOverlay(String callUuid, String caller, Uint8List? chatIcon, bool isAudio) async {
-  if (ss().settings.redactedMode.value && ss().settings.hideContactInfo.value) {
+  if (SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value) {
     if (chatIcon != null) chatIcon = null;
     caller = faker.person.name();
   }
@@ -63,7 +63,7 @@ Future<void> showFaceTimeOverlay(String callUuid, String caller, Uint8List? chat
               child: Column(
                 children: [
                   Icon(
-                    ss().settings.skin.value == Skins.iOS ? CupertinoIcons.phone : Icons.call_outlined,
+                    SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.phone : Icons.call_outlined,
                     color: Colors.green,
                   ),
                   const Text(
@@ -72,7 +72,7 @@ Future<void> showFaceTimeOverlay(String callUuid, String caller, Uint8List? chat
                 ],
               ),
               onPressed: () async {
-                await intents.answerFaceTime(callUuid);
+                await IntentsSvc.answerFaceTime(callUuid);
               },
             ),
             const SizedBox(width: 16.0),
@@ -87,7 +87,7 @@ Future<void> showFaceTimeOverlay(String callUuid, String caller, Uint8List? chat
               child: Column(
                 children: [
                   Icon(
-                    ss().settings.skin.value == Skins.iOS ? CupertinoIcons.phone_down : Icons.call_end_outlined,
+                    SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.phone_down : Icons.call_end_outlined,
                     color: Colors.red,
                   ),
                   const Text(

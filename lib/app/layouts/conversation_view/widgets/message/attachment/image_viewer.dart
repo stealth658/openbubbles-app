@@ -74,8 +74,8 @@ class _ImageViewerState extends OptimizedState<ImageViewer> with AutomaticKeepAl
     }
     if (data == null) {
       return SizedBox(
-        width: min((attachment.width?.toDouble() ?? ns.width(context) * 0.5), ns.width(context) * 0.5),
-        height: min((attachment.height?.toDouble() ?? ns.width(context) * 0.5 / attachment.aspectRatio), ns.width(context) * 0.5 / attachment.aspectRatio),
+        width: min((attachment.width?.toDouble() ?? NavigationSvc.width(context) * 0.5), NavigationSvc.width(context) * 0.5),
+        height: min((attachment.height?.toDouble() ?? NavigationSvc.width(context) * 0.5 / attachment.aspectRatio), NavigationSvc.width(context) * 0.5 / attachment.aspectRatio),
       );
     }
     return Image.memory(
@@ -83,8 +83,8 @@ class _ImageViewerState extends OptimizedState<ImageViewer> with AutomaticKeepAl
       // prevents the image widget from "refreshing" when the provider changes
       gaplessPlayback: true,
       filterQuality: FilterQuality.none,
-      cacheWidth: (min((attachment.width ?? 0), ns.width(context) * 0.5) * Get.pixelRatio / 2).round().abs().nonZero,
-      cacheHeight: (min((attachment.height ?? 0), ns.width(context) * 0.5 / attachment.aspectRatio) * Get.pixelRatio / 2).round().abs().nonZero,
+      cacheWidth: (min((attachment.width ?? 0), NavigationSvc.width(context) * 0.5) * Get.pixelRatio / 2).round().abs().nonZero,
+      cacheHeight: (min((attachment.height ?? 0), NavigationSvc.width(context) * 0.5 / attachment.aspectRatio) * Get.pixelRatio / 2).round().abs().nonZero,
       fit: BoxFit.cover,
       frameBuilder: (context, w, frame, wasSyncLoaded) {
         return AnimatedCrossFade(
@@ -109,8 +109,8 @@ class _ImageViewerState extends OptimizedState<ImageViewer> with AutomaticKeepAl
             ),
           ),
           firstChild: SizedBox(
-            width: min((attachment.width?.toDouble() ?? ns.width(context) * 0.5), ns.width(context) * 0.5),
-            height: min((attachment.height?.toDouble() ?? ns.width(context) * 0.5 / attachment.aspectRatio), ns.width(context) * 0.5 / attachment.aspectRatio),
+            width: min((attachment.width?.toDouble() ?? NavigationSvc.width(context) * 0.5), NavigationSvc.width(context) * 0.5),
+            height: min((attachment.height?.toDouble() ?? NavigationSvc.width(context) * 0.5 / attachment.aspectRatio), NavigationSvc.width(context) * 0.5 / attachment.aspectRatio),
           )
         );
       },

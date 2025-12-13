@@ -119,9 +119,9 @@ class _AudioPlayerState extends OptimizedState<AudioPlayer>
                 visualDensity: VisualDensity.compact,
               ),
               (controller?.maxDuration ?? 0) == 0
-                  ? SizedBox(width: ns.width(context) * 0.25)
+                  ? SizedBox(width: NavigationSvc.width(context) * 0.25)
                   : AudioFileWaveforms(
-                      size: Size(ns.width(context) * 0.20, 40),
+                      size: Size(NavigationSvc.width(context) * 0.20, 40),
                       playerController: controller!,
                       padding: EdgeInsets.zero,
                       playerWaveStyle: PlayerWaveStyle(

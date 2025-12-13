@@ -25,7 +25,7 @@ class MaterialHeader extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Rx<Color> _backgroundColor = context.theme.colorScheme.background.withValues(alpha: (kIsDesktop && ss().settings.windowEffect.value != WindowEffect.disabled) ? 0.4 : 1).obs;
+    final Rx<Color> _backgroundColor = context.theme.colorScheme.background.withValues(alpha: (kIsDesktop && SettingsSvc.settings.windowEffect.value != WindowEffect.disabled) ? 0.4 : 1).obs;
 
     return Stack(
           children: [Obx(() => AppBar(
@@ -46,7 +46,7 @@ class MaterialHeader extends StatelessWidget implements PreferredSizeWidget {
               controller.selected.clear();
               return true;
             }
-            if (ls.isBubble) {
+            if (LifecycleSvc.isBubble) {
               SystemNavigator.pop();
               return true;
             }
@@ -71,10 +71,10 @@ class MaterialHeader extends StatelessWidget implements PreferredSizeWidget {
             final handle = controller.chat.participants.first;
             final contact = handle.contact;
             if (contact == null) {
-              await mcs.invokeMethod("open-contact-form", {'address': handle.address, 'address_type': handle.address.isEmail ? 'email' : 'phone'});
+              await MethodChannelSvc.invokeMethod("open-contact-form", {'address': handle.address, 'address_type': handle.address.isEmail ? 'email' : 'phone'});
             } else {
               try {
-                await mcs.invokeMethod("view-contact-form", {'id': contact.id});
+                await MethodChannelSvc.invokeMethod("view-contact-form", {'id': contact.id});
               } catch (_) {
                 showSnackbar("Error", "Failed to find contact on device!");
               }
@@ -109,7 +109,7 @@ class MaterialHeader extends StatelessWidget implements PreferredSizeWidget {
           padding: EdgeInsets.only(top: kIsDesktop ? 20 : 0),
           child: PopupMenuButton<int>(
             color: context.theme.colorScheme.properSurface,
-            shape: ss().settings.skin.value != Skins.Material ? const RoundedRectangleBorder(
+            shape: SettingsSvc.settings.skin.value != Skins.Material ? const RoundedRectangleBorder(
               borderRadius: BorderRadius.all(
                 Radius.circular(20.0),
               ),
@@ -157,7 +157,7 @@ class MaterialHeader extends StatelessWidget implements PreferredSizeWidget {
                         TextButton(
                           child: Text("Yes", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
                           onPressed: () async {
-                            chats.removeChat(controller.chat);
+                            ChatsSvc.removeChat(controller.chat);
                             Chat.softDelete(controller.chat);
                             if (Get.isSnackbarOpen) {
                               Get.closeAllSnackbars();
@@ -182,7 +182,7 @@ class MaterialHeader extends StatelessWidget implements PreferredSizeWidget {
                     style: context.textTheme.bodyLarge!.apply(color: context.theme.colorScheme.properOnSurface),
                   ),
                 ),
-                if (!ls.isBubble)
+                if (!LifecycleSvc.isBubble)
                   PopupMenuItem(
                     value: 1,
                     child: Text(
@@ -190,7 +190,7 @@ class MaterialHeader extends StatelessWidget implements PreferredSizeWidget {
                       style: context.textTheme.bodyLarge!.apply(color: context.theme.colorScheme.properOnSurface),
                     ),
                   ),
-                if (!ls.isBubble)
+                if (!LifecycleSvc.isBubble)
                   PopupMenuItem(
                     value: 2,
                     child: Text(
@@ -319,7 +319,7 @@ class _ChatIconAndTitleState extends CustomState<_ChatIconAndTitle, void, Conver
 
   @override
   Widget build(BuildContext context) {
-    final hideInfo = ss().settings.redactedMode.value && ss().settings.hideContactInfo.value;
+    final hideInfo = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [

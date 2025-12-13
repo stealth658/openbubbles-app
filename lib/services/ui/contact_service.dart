@@ -10,10 +10,13 @@ import 'package:fast_contacts/fast_contacts.dart' hide Contact, StructuredName;
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:get_it/get_it.dart';
 
-ContactsService cs = Get.isRegistered<ContactsService>() ? Get.find<ContactsService>() : Get.put(ContactsService());
 
-class ContactsService extends GetxService {
+// ignore: non_constant_identifier_names
+ContactsService get ContactsSvc => GetIt.I<ContactsService>();
+
+class ContactsService {
   final tag = "ContactsService";
 
   /// The master list of contact objects
@@ -41,7 +44,7 @@ class ContactsService extends GetxService {
 
   Future<bool> canAccessContacts() async {
     if (kIsWeb || kIsDesktop) {
-      int versionCode = (await ss().getServerDetails()).item4;
+      int versionCode = (await SettingsSvc.getServerDetails()).item4;
       return versionCode >= 42;
     } else {
       return (await Permission.contacts.status).isGranted;
@@ -52,7 +55,7 @@ class ContactsService extends GetxService {
     if (!(await hasContactAccess)) return [];
 
     // Check if the user is on v1.5.2 or newer
-    int serverVersion = (await ss().getServerDetails()).item4;
+    int serverVersion = (await SettingsSvc.getServerDetails()).item4;
     // 100(major) + 21(minor) + 1(bug)
     bool isMin1_5_2 = serverVersion >= 207; // Server: v1.5.2
 
@@ -88,7 +91,7 @@ class ContactsService extends GetxService {
     // load stored handles
     final List<Handle> handles = [];
     if (kIsWeb) {
-      handles.addAll(chats.webCachedHandles);
+      handles.addAll(ChatsSvc.webCachedHandles);
     } else {
       handles.addAll(Database.handles.getAll());
     }
@@ -124,19 +127,19 @@ class ContactsService extends GetxService {
       }
     }
     if (!kIsWeb) {
-      Handle.bulkSave(handles, matchOnOriginalROWID: isMin1_5_2);
+      await Handle.bulkSaveAsync(handles, matchOnOriginalROWID: isMin1_5_2);
     } else {
       // dummy to make the full contacts UI refresh happen on web
       changedIds.last.add(handles.length);
       contacts = _contacts;
-      for (Chat c in chats.chats) {
+      for (Chat c in ChatsSvc.chats) {
         c.webSyncParticipants();
       }
-      chats.chats.refresh();
+      ChatsSvc.chats.refresh();
     }
 
     final endTime = DateTime.now().millisecondsSinceEpoch;
-    Logger().debug("Contact refresh took ${endTime - startTime} ms");
+    Logger.debug("Contact refresh took ${endTime - startTime} ms");
 
     // only return contacts if things changed (or on web)
     return changedIds;
@@ -149,7 +152,7 @@ class ContactsService extends GetxService {
     if (kIsWeb || kIsDesktop) {
       _contacts.addAll(await fetchNetworkContacts());
       int endTime = DateTime.now().millisecondsSinceEpoch;
-      Logger().debug("Contacts fetched in ${endTime - startTime} ms");
+      Logger.debug("Contacts fetched in ${endTime - startTime} ms");
     } else {
       _contacts.addAll((await FastContacts.getAllContacts(
               fields: List<ContactField>.from(ContactField.values)
@@ -177,7 +180,7 @@ class ContactsService extends GetxService {
               )));
 
       int endTime = DateTime.now().millisecondsSinceEpoch;
-      Logger().debug("Contacts fetched in ${endTime - startTime} ms");
+      Logger.debug("Contacts fetched in ${endTime - startTime} ms");
 
       // get avatars
       startTime = DateTime.now().millisecondsSinceEpoch;
@@ -186,7 +189,7 @@ class ContactsService extends GetxService {
       }
 
       endTime = DateTime.now().millisecondsSinceEpoch;
-      Logger().debug("Avatars fetched in ${endTime - startTime} ms");
+      Logger.debug("Avatars fetched in ${endTime - startTime} ms");
     }
 
     return _contacts;
@@ -198,14 +201,14 @@ class ContactsService extends GetxService {
     try {
       avatar = await FastContacts.getContactImage(id, size: ContactImageSize.fullSize);
     } catch (e) {
-      Logger().warn("Failed to get full size avatar for ID, $id!", error: e);
+      Logger.warn("Failed to get full size avatar for ID, $id!", error: e);
     }
 
     if (avatar == null) {
       try {
         avatar = await FastContacts.getContactImage(id);
       } catch (e) {
-        Logger().warn("Failed to get small size avatar for ID, $id!", error: e);
+        Logger.warn("Failed to get small size avatar for ID, $id!", error: e);
       }
     }
 
@@ -299,7 +302,7 @@ class ContactsService extends GetxService {
     if (kIsWeb) {
       logger?.call("Fetching contacts (no avatars)...");
       try {
-        final response = await http.contacts();
+        final response = await HttpSvc.contacts();
 
         if (response.statusCode == 200 && !isNullOrEmpty(response.data['data'])) {
           logger?.call("Found contacts!");
@@ -324,7 +327,7 @@ class ContactsService extends GetxService {
         logger?.call("Got exception: $e");
         logger?.call(s.toString());
       }
-      final handlesToSearch = List<Handle>.from(chats.webCachedHandles);
+      final handlesToSearch = List<Handle>.from(ChatsSvc.webCachedHandles);
       for (Contact c in contacts) {
         final handles = matchContactToHandles(c, handlesToSearch);
         final addressesAndServices = handles.map((e) => e.uniqueAddressAndService).toList();
@@ -343,7 +346,7 @@ class ContactsService extends GetxService {
     logger?.call("Fetching contacts (with avatars)...");
     try {
       if (kIsWeb) {
-        final response = await http.contacts(withAvatars: true);
+        final response = await HttpSvc.contacts(withAvatars: true);
 
         if (!isNullOrEmpty(response.data['data'])) {
           logger?.call("Found contacts!");
@@ -386,7 +389,7 @@ class ContactsService extends GetxService {
         }
         logger?.call("Finished contacts sync (with avatars)");
       } else {
-        final response = await http.contacts(withAvatars: true);
+        final response = await HttpSvc.contacts(withAvatars: true);
 
         if (response.statusCode == 200 && !isNullOrEmpty(response.data['data'])) {
           logger?.call("Found contacts!");

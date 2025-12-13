@@ -199,7 +199,7 @@ class BulkSyncMessages extends AsyncTask<List<dynamic>, List<Message>> {
         try {
           Database.messages.put(m);
         } catch (e, stack) {
-          Logger().error("Failed to put messages into database during bulk sync!", error: e, trace: stack);
+          Logger.error("Failed to put messages into database during bulk sync!", error: e, trace: stack);
         }
       }
       return syncedMessages;
@@ -280,7 +280,7 @@ class SyncLastMessages extends AsyncTask<List<dynamic>, List<Chat>> {
       final chatQuery = Database.chats.query(Chat_.guid.oneOf(inputGuids)).build();
       List<Chat> existingChats = chatQuery.find();
 
-      // Pull the latest message for all of the chats.
+      // Pull the latest message for all of the ChatSvc.
       List<int> chatIds = existingChats.map((e) => e.id!).toList();
       List<Chat> updatedChats = [];
       for (int i in chatIds) {

@@ -13,8 +13,10 @@ import 'package:get/get.dart';
 import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
 import 'package:socket_io_client/socket_io_client.dart';
 import 'websocket_adapter.dart';
+import 'package:get_it/get_it.dart';
 
-SocketService socket = Get.isRegistered<SocketService>() ? Get.find<SocketService>() : Get.put(SocketService());
+// ignore: non_constant_identifier_names
+SocketService get SocketSvc => GetIt.I<SocketService>();
 
 enum SocketState {
   connected,
@@ -23,51 +25,42 @@ enum SocketState {
   connecting,
 }
 
-class SocketService extends GetxService {
+class SocketService {
   final Rx<SocketState> state = SocketState.connecting.obs;
   SocketState _lastState = SocketState.connecting;
   RxString lastError = "".obs;
   Timer? _reconnectTimer;
-  late Socket socket;
+  Socket? socket;
 
   InternetConnection? internetConnection;
   StreamSubscription<InternetStatus>? internetConnectionListener;
 
-  String get serverAddress => http.origin;
-  String get password => ss().settings.guidAuthKey.value;
+  String get serverAddress => HttpSvc.origin;
+  String get password => SettingsSvc.settings.guidAuthKey.value;
 
-  @override
-  void onInit() {
-    super.onInit();
-
-    Logger().debug("Initializing socket service...");
+  void init() {
+    Logger.debug("Initializing socket service...");
     startSocket();
 
     if (!kIsDesktop || !Platform.isWindows) {
       Connectivity().onConnectivityChanged.listen((event) {
         if (!event.contains(ConnectivityResult.wifi) &&
             !event.contains(ConnectivityResult.ethernet) &&
-            http.originOverride != null) {
-          Logger().info("Detected switch off wifi, removing localhost address...");
-          http.originOverride = null;
+            HttpSvc.originOverride != null) {
+          Logger.info("Detected switch off wifi, removing localhost address...");
+          HttpSvc.originOverride = null;
         }
       });
     }
 
-    Logger().debug("Initialized socket service");
-  }
-
-  @override
-  void onClose() {
-    closeSocket();
-    super.onClose();
+    Logger.debug("Initialized socket service");
   }
 
   void startSocket() {
     OptionBuilder options = OptionBuilder()
         .setQuery({"guid": password})
         .setTransports(['websocket', 'polling'])
-        .setExtraHeaders(http.headers)
+        .setExtraHeaders(HttpSvc.headers)
         // WebsocketAdapter allows socket io client
         // to trust user certificates on Android
         .setHttpClientAdapter(WebsocketAdapter())
@@ -78,36 +71,36 @@ class SocketService extends GetxService {
     // placed here so that [socket] is still initialized
     if (isNullOrEmpty(serverAddress)) return;
 
-    socket.onConnect((data) => handleStatusUpdate(SocketState.connected, data));
-    socket.onReconnect((data) => handleStatusUpdate(SocketState.connected, data));
+    socket?.onConnect((data) => handleStatusUpdate(SocketState.connected, data));
+    socket?.onReconnect((data) => handleStatusUpdate(SocketState.connected, data));
 
-    socket.onReconnectAttempt((data) => handleStatusUpdate(SocketState.connecting, data));
+    socket?.onReconnectAttempt((data) => handleStatusUpdate(SocketState.connecting, data));
 
-    socket.onDisconnect((data) => handleStatusUpdate(SocketState.disconnected, data));
+    socket?.onDisconnect((data) => handleStatusUpdate(SocketState.disconnected, data));
 
-    socket.onConnectError((data) => handleStatusUpdate(SocketState.error, data));
-    socket.onReconnectError((data) => handleStatusUpdate(SocketState.error, data));
-    socket.onReconnectFailed((data) => handleStatusUpdate(SocketState.error, data));
-    socket.onError((data) => handleStatusUpdate(SocketState.error, data));
+    socket?.onConnectError((data) => handleStatusUpdate(SocketState.error, data));
+    socket?.onReconnectError((data) => handleStatusUpdate(SocketState.error, data));
+    socket?.onReconnectFailed((data) => handleStatusUpdate(SocketState.error, data));
+    socket?.onError((data) => handleStatusUpdate(SocketState.error, data));
 
     // custom events
     // only listen to these events from socket on web/desktop (FCM handles on Android)
     if (kIsWeb || kIsDesktop) {
-      socket.on("group-name-change", (data) => ah.handleEvent("group-name-change", data, 'DartSocket'));
-      socket.on("participant-removed", (data) => ah.handleEvent("participant-removed", data, 'DartSocket'));
-      socket.on("participant-added", (data) => ah.handleEvent("participant-added", data, 'DartSocket'));
-      socket.on("participant-left", (data) => ah.handleEvent("participant-left", data, 'DartSocket'));
-      socket.on("incoming-facetime", (data) => ah.handleEvent("incoming-facetime", jsonDecode(data), 'DartSocket'));
+      socket?.on("group-name-change", (data) => ah.handleEvent("group-name-change", data, 'DartSocket'));
+      socket?.on("participant-removed", (data) => ah.handleEvent("participant-removed", data, 'DartSocket'));
+      socket?.on("participant-added", (data) => ah.handleEvent("participant-added", data, 'DartSocket'));
+      socket?.on("participant-left", (data) => ah.handleEvent("participant-left", data, 'DartSocket'));
+      socket?.on("incoming-facetime", (data) => ah.handleEvent("incoming-facetime", jsonDecode(data), 'DartSocket'));
     }
 
-    socket.on("ft-call-status-changed", (data) => ah.handleEvent("ft-call-status-changed", data, 'DartSocket'));
-    socket.on("new-message", (data) => ah.handleEvent("new-message", data, 'DartSocket'));
-    socket.on("updated-message", (data) => ah.handleEvent("updated-message", data, 'DartSocket'));
-    socket.on("typing-indicator", (data) => ah.handleEvent("typing-indicator", data, 'DartSocket'));
-    socket.on("chat-read-status-changed", (data) => ah.handleEvent("chat-read-status-changed", data, 'DartSocket'));
-    socket.on("imessage-aliases-removed", (data) => ah.handleEvent("imessage-aliases-removed", data, 'DartSocket'));
+    socket?.on("ft-call-status-changed", (data) => ah.handleEvent("ft-call-status-changed", data, 'DartSocket'));
+    socket?.on("new-message", (data) => ah.handleEvent("new-message", data, 'DartSocket'));
+    socket?.on("updated-message", (data) => ah.handleEvent("updated-message", data, 'DartSocket'));
+    socket?.on("typing-indicator", (data) => ah.handleEvent("typing-indicator", data, 'DartSocket'));
+    socket?.on("chat-read-status-changed", (data) => ah.handleEvent("chat-read-status-changed", data, 'DartSocket'));
+    socket?.on("imessage-aliases-removed", (data) => ah.handleEvent("imessage-aliases-removed", data, 'DartSocket'));
 
-    socket.connect();
+    socket?.connect();
 
     if (kIsDesktop && Platform.isWindows) {
       internetConnection = InternetConnection.createInstance(
@@ -121,12 +114,12 @@ class SocketService extends GetxService {
       );
 
       internetConnectionListener = internetConnection!.onStatusChange.listen((InternetStatus status) {
-        Logger().info("Internet status changed: $status");
+        Logger.info("Internet status changed: $status");
         switch (status) {
           case InternetStatus.connected:
-            socket.connect();
+            socket?.connect();
           case InternetStatus.disconnected:
-            socket.disconnect();
+            socket?.disconnect();
         }
       });
     }
@@ -134,20 +127,20 @@ class SocketService extends GetxService {
 
   void disconnect() {
     if (isNullOrEmpty(serverAddress)) return;
-    socket.disconnect();
+    socket?.disconnect();
     state.value = SocketState.disconnected;
   }
 
   void reconnect() {
     if (state.value == SocketState.connected || isNullOrEmpty(serverAddress)) return;
     state.value = SocketState.connecting;
-    socket.connect();
+    socket?.connect();
   }
 
   void closeSocket() {
     if (isNullOrEmpty(serverAddress)) return;
     internetConnectionListener?.cancel();
-    socket.dispose();
+    socket?.dispose();
     state.value = SocketState.disconnected;
   }
 
@@ -158,14 +151,14 @@ class SocketService extends GetxService {
 
   void forgetConnection() {
     closeSocket();
-    ss().settings.guidAuthKey.value = "";
+    SettingsSvc.settings.guidAuthKey.value = "";
     clearServerUrl(saveAdditionalSettings: ["guidAuthKey"]);
   }
 
   Future<Map<String, dynamic>> sendMessage(String event, Map<String, dynamic> message) {
     Completer<Map<String, dynamic>> completer = Completer();
 
-    socket.emitWithAck(event, message, ack: (response) {
+    socket?.emitWithAck(event, message, ack: (response) {
       if (response['encrypted'] == true) {
         response['data'] = jsonDecode(decryptAESCryptoJS(response['data'], password));
       }
@@ -188,15 +181,15 @@ class SocketService extends GetxService {
         _reconnectTimer?.cancel();
         _reconnectTimer = null;
         NetworkTasks.onConnect();
-        notif.clearSocketError();
+        NotificationsSvc.clearSocketError();
       case SocketState.disconnected:
-        Logger().info("Disconnected from socket...");
+        Logger.info("Disconnected from socket?...");
         state.value = SocketState.disconnected;
       case SocketState.connecting:
-        Logger().info("Connecting to socket...");
+        Logger.info("Connecting to socket?...");
         state.value = SocketState.connecting;
       case SocketState.error:
-        Logger().info("Socket connect error, fetching new URL...");
+        Logger.info("Socket connect error, fetching new URL...");
 
         if (data is SocketException) {
           handleSocketException(data);
@@ -211,8 +204,8 @@ class SocketService extends GetxService {
 
           if (state.value == SocketState.connected) return;
 
-          if (!ss().settings.keepAppAlive.value) {
-            notif.createSocketError();
+          if (!SettingsSvc.settings.keepAppAlive.value) {
+            NotificationsSvc.createSocketError();
           }
         });
     }

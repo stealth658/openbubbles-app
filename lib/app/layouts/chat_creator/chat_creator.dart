@@ -70,7 +70,7 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
   Timer? _debounce;
   Completer<void>? createCompleter;
 
-  bool canCreateGroupChats = ss().canCreateGroupChatSync();
+  bool canCreateGroupChats = SettingsSvc.canCreateGroupChatSync();
 
   @override
   void initState() {
@@ -130,12 +130,12 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
         contacts = query.find().toSet().toList();
         filteredContacts = List<Contact>.from(contacts);
       }
-      if (chats.loadedAllChats.isCompleted) {
-        existingChats = chats.chats;
+      if (ChatsSvc.loadedAllChats.isCompleted) {
+        existingChats = ChatsSvc.chats;
         filteredChats = List<Chat>.from(existingChats.where((e) => e.isIMessage));
       } else {
-        chats.loadedAllChats.future.then((_) {
-          existingChats = chats.chats;
+        ChatsSvc.loadedAllChats.future.then((_) {
+          existingChats = ChatsSvc.chats;
           setState(() {
             filteredChats = List<Chat>.from(existingChats.where((e) => e.isIMessage));
           });
@@ -153,7 +153,7 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
   void addSelected(SelectedContact c) async {
     selectedContacts.add(c);
     try {
-      final response = await http.handleiMessageState(c.address);
+      final response = await HttpSvc.handleiMessageState(c.address);
       c.iMessage.value = response.data["data"]["available"];
     } catch (_) {}
     addressController.text = "";
@@ -260,7 +260,7 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
     if (checkDeleted && existingChat?.dateDeleted != null) {
       Chat.unDelete(existingChat!);
       // ignore: argument_type_not_assignable, return_of_invalid_type, invalid_assignment, for_in_of_invalid_element_type
-      await chats.addChat(existingChat);
+      await ChatsSvc.addChat(existingChat);
     }
     return existingChat;
   }
@@ -287,7 +287,7 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
-        systemNavigationBarColor: ss().settings.immersiveMode.value
+        systemNavigationBarColor: SettingsSvc.settings.immersiveMode.value
             ? Colors.transparent
             : context.theme.colorScheme.background, // navigation bar color
         systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
@@ -295,11 +295,11 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
         statusBarIconBrightness: context.theme.colorScheme.brightness.opposite,
       ),
       child: Scaffold(
-        backgroundColor: ss().settings.windowEffect.value != WindowEffect.disabled
+        backgroundColor: SettingsSvc.settings.windowEffect.value != WindowEffect.disabled
             ? Colors.transparent
             : context.theme.colorScheme.background,
         appBar: PreferredSize(
-          preferredSize: Size(ns.width(context), kIsDesktop ? 90 : 50),
+          preferredSize: Size(NavigationSvc.width(context), kIsDesktop ? 90 : 50),
           child: AppBar(
             systemOverlayStyle: context.theme.colorScheme.brightness == Brightness.dark
                 ? SystemUiOverlayStyle.light
@@ -310,7 +310,7 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
             surfaceTintColor: context.theme.colorScheme.primary,
             leading: buildBackButton(context),
             backgroundColor: Colors.transparent,
-            centerTitle: ss().settings.skin.value == Skins.iOS,
+            centerTitle: SettingsSvc.settings.skin.value == Skins.iOS,
             title: Text(
               "New Conversation",
               style: context.theme.textTheme.titleLarge,
@@ -432,7 +432,7 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
                               ),
                             ),
                             ConstrainedBox(
-                              constraints: BoxConstraints(maxWidth: ns.width(context) - 50),
+                              constraints: BoxConstraints(maxWidth: NavigationSvc.width(context) - 50),
                               child: Focus(
                                 onKeyEvent: (node, event) {
                                   if (event is KeyDownEvent) {
@@ -460,7 +460,7 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
                                   selectionControls:
                                       iOS ? cupertinoTextSelectionControls : materialTextSelectionControls,
                                   autofocus: kIsWeb || kIsDesktop,
-                                  enableIMEPersonalizedLearning: !ss().settings.incognitoKeyboard.value,
+                                  enableIMEPersonalizedLearning: !SettingsSvc.settings.incognitoKeyboard.value,
                                   textInputAction: TextInputAction.done,
                                   cursorColor: context.theme.colorScheme.primary,
                                   cursorHeight: context.theme.textTheme.bodyMedium!.fontSize! * 1.25,
@@ -487,7 +487,7 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 15.0).add(const EdgeInsets.only(bottom: 5.0)),
                 child: ToggleButtons(
-                  constraints: BoxConstraints(minWidth: (ns.width(context) - 35) / 2),
+                  constraints: BoxConstraints(minWidth: (NavigationSvc.width(context) - 35) / 2),
                   fillColor: context.theme.colorScheme.bubble(context, iMessage).withValues(alpha: 0.2),
                   splashColor: context.theme.colorScheme.bubble(context, iMessage).withValues(alpha: 0.2),
                   children: [
@@ -545,10 +545,10 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
                     colorScheme: context.theme.colorScheme.copyWith(
                       primary: context.theme.colorScheme.bubble(context, iMessage),
                       onPrimary: context.theme.colorScheme.onBubble(context, iMessage),
-                      surface: ss().settings.monetTheming.value == Monet.full
+                      surface: SettingsSvc.settings.monetTheming.value == Monet.full
                           ? null
                           : (context.theme.extensions[BubbleColors] as BubbleColors?)?.receivedBubbleColor,
-                      onSurface: ss().settings.monetTheming.value == Monet.full
+                      onSurface: SettingsSvc.settings.monetTheming.value == Monet.full
                           ? null
                           : (context.theme.extensions[BubbleColors] as BubbleColors?)?.onReceivedBubbleColor,
                     ),
@@ -570,7 +570,7 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
                                           Padding(
                                             padding: const EdgeInsets.all(8.0),
                                             child: Text(
-                                              "Loading existing chats...",
+                                              "Loading existing ChatSvc...",
                                               style: context.theme.textTheme.labelLarge,
                                             ),
                                           ),
@@ -580,7 +580,7 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
                                     }
                                     final chat = filteredChats[index];
                                     final hideInfo =
-                                        ss().settings.redactedMode.value && ss().settings.hideContactInfo.value;
+                                        SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
                                     String _title = chat.properTitle;
                                     if (hideInfo) {
                                       _title =
@@ -615,7 +615,7 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
                                     );
                                   },
                                       childCount: filteredChats.length
-                                          .clamp(chats.loadedAllChats.isCompleted ? 0 : 1, double.infinity)
+                                          .clamp(ChatsSvc.loadedAllChats.isCompleted ? 0 : 1, double.infinity)
                                           .toInt()),
                                 ),
                                 SliverList(
@@ -625,7 +625,7 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
                                       contact.phones = getUniqueNumbers(contact.phones);
                                       contact.emails = getUniqueEmails(contact.emails);
                                       final hideInfo =
-                                          ss().settings.redactedMode.value && ss().settings.hideContactInfo.value;
+                                          SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
                                       return Column(
                                         key: ValueKey(contact.id),
                                         mainAxisSize: MainAxisSize.min,
@@ -690,10 +690,10 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
                     colorScheme: context.theme.colorScheme.copyWith(
                       primary: context.theme.colorScheme.bubble(context, iMessage),
                       onPrimary: context.theme.colorScheme.onBubble(context, iMessage),
-                      surface: ss().settings.monetTheming.value == Monet.full
+                      surface: SettingsSvc.settings.monetTheming.value == Monet.full
                           ? null
                           : (context.theme.extensions[BubbleColors] as BubbleColors?)?.receivedBubbleColor,
-                      onSurface: ss().settings.monetTheming.value == Monet.full
+                      onSurface: SettingsSvc.settings.monetTheming.value == Monet.full
                           ? null
                           : (context.theme.extensions[BubbleColors] as BubbleColors?)?.onReceivedBubbleColor,
                     ),
@@ -722,7 +722,7 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
                           if (chat != null) {
                             // if we don't error, then the chat exists
                             try {
-                              await http.singleChat(chat.guid);
+                              await HttpSvc.singleChat(chat.guid);
                               existsOnServer = true;
                             } catch (_) {}
                           }
@@ -755,7 +755,7 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
                               fakeController.value!.subjectTextController.clear();
                             }
 
-                            ns.pushAndRemoveUntil(
+                            NavigationSvc.pushAndRemoveUntil(
                               Get.context!,
                               ConversationView(chat: chat, fromChatCreator: true, onInit: sendInitialMessage),
                               (route) => route.isFirst,
@@ -775,7 +775,7 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
                             if (!(createCompleter?.isCompleted ?? true)) return;
                             // hard delete a chat that exists on BB but not on the server to make way for the proper server data
                             if (chat != null) {
-                              chats.removeChat(chat);
+                              ChatsSvc.removeChat(chat);
                               Chat.deleteChat(chat);
                             }
                             createCompleter = Completer();
@@ -803,7 +803,7 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
                                     ),
                                   );
                                 });
-                            http.createChat(participants, textController.text, method).then((response) async {
+                            HttpSvc.createChat(participants, textController.text, method).then((response) async {
                               // Load the chat data and save it to the DB
                               Chat newChat = Chat.fromMap(response.data["data"]);
                               newChat = newChat.save();
@@ -818,13 +818,13 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
                               // Update the chat in the chat list.
                               // If it wasn't existing, add it.
                               newChat = saved;
-                              bool updated = chats.updateChat(newChat);
+                              bool updated = ChatsSvc.updateChat(newChat);
                               if (!updated) {
-                                await chats.addChat(newChat);
+                                await ChatsSvc.addChat(newChat);
                               }
 
                               // Fetch the last message for the chat and save it.
-                              final messageRes = await http.chatMessages(newChat.guid, limit: 1);
+                              final messageRes = await HttpSvc.chatMessages(newChat.guid, limit: 1);
                               if (messageRes.data["data"].length > 0) {
                                 final messages =
                                     (messageRes.data["data"] as List<dynamic>).map((e) => Message.fromMap(e)).toList();
@@ -833,7 +833,7 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
 
                               // Force close the message service for the chat so it can be reloaded.
                               // If this isn't done, new messages will not show.
-                              ms(newChat.guid).close(force: true);
+                              MessagesSvc(newChat.guid).close(force: true);
                               cvc(newChat).close();
 
                               // Let awaiters know we completed
@@ -841,7 +841,7 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
 
                               // Navigate to the new chat
                               Navigator.of(context).pop();
-                              ns.pushAndRemoveUntil(
+                              NavigationSvc.pushAndRemoveUntil(
                                 Get.context!,
                                 ConversationView(chat: newChat),
                                 (route) => route.isFirst,

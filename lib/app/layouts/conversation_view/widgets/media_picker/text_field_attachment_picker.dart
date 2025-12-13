@@ -302,7 +302,7 @@ class _AttachmentPickerState extends OptimizedState<AttachmentPicker> {
                                   context,
                                   barrierDismissible: false,
                                   constraints: BoxConstraints(
-                                      minHeight: 480, minWidth: ns.width(context) - 70, maxWidth: ns.width(context) - 70),
+                                      minHeight: 480, minWidth: NavigationSvc.width(context) - 70, maxWidth: NavigationSvc.width(context) - 70),
                                 ));
                                 if (result) {
                                   final control = HandSignatureControl();

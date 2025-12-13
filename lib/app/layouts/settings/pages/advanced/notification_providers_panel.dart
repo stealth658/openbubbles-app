@@ -80,20 +80,20 @@ class _NotificationProvidersState extends OptimizedState<NotificationProvidersPa
                   title: "Google Firebase (FCM)",
                   subtitle: "Receive notifications using Google Services",
                   onTap: () async {
-                    ns.pushSettings(
+                    NavigationSvc.pushSettings(
                       context,
                       FirebasePanel(),
                     );
                   },
                   leading: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                         Obx(() => Material(
-                            shape: ss().settings.skin.value == Skins.Samsung
+                            shape: SettingsSvc.settings.skin.value == Skins.Samsung
                                 ? SquircleBorder(
                                     side: BorderSide(color: context.theme.colorScheme.outline.withValues(alpha: 0.5), width: 1.0),
                                   )
                                 : null,
                             color: Colors.transparent,
-                            borderRadius: ss().settings.skin.value == Skins.iOS ? BorderRadius.circular(6) : null,
+                            borderRadius: SettingsSvc.settings.skin.value == Skins.iOS ? BorderRadius.circular(6) : null,
                             child: SizedBox(
                                 width: 31,
                                 height: 31,
@@ -123,19 +123,19 @@ class _NotificationProvidersState extends OptimizedState<NotificationProvidersPa
                 if (Platform.isAndroid)
                   Obx(() => SettingsSwitch(
                     onChanged: (bool val) async {
-                      ss().settings.keepAppAlive.value = val;
-                      await ss().saveSettings(ss().settings);
+                      SettingsSvc.settings.keepAppAlive.value = val;
+                      await SettingsSvc.saveSettings(SettingsSvc.settings);
 
                       // Save the custom headers to prefs
-                      await prefs().i.setString('customHeaders', jsonEncode(http.headers));
+                      await PrefsSvc.i.setString('customHeaders', jsonEncode(HttpSvc.headers));
 
                       // We don't need to start the service here because it will be started
                       // when the app is inactive.
                       if (!val) {
-                        await mcs.invokeMethod("stop-foreground-service");
+                        await MethodChannelSvc.invokeMethod("stop-foreground-service");
                       }
                     },
-                    initialVal: ss().settings.keepAppAlive.value,
+                    initialVal: SettingsSvc.settings.keepAppAlive.value,
                     title: "Background Service",
                     subtitle:
                         "Keep an always-open socket connection to the server for notifications",
@@ -152,7 +152,7 @@ class _NotificationProvidersState extends OptimizedState<NotificationProvidersPa
                   title: "Unified Push",
                   subtitle: "Receive notifications using a custom distributor",
                   onTap: () async {
-                    ns.pushSettings(
+                    NavigationSvc.pushSettings(
                       context,
                       UnifiedPushPanel(),
                     );

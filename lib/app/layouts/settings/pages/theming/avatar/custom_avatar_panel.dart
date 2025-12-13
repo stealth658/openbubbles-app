@@ -29,7 +29,7 @@ class _CustomAvatarPanelState extends OptimizedState<CustomAvatarPanel> {
       headerColor: headerColor,
       bodySlivers: [
         Obx(() {
-          if (!chats.loadedChatBatch.value) {
+          if (!ChatsSvc.loadedChatBatch.value) {
             return SliverToBoxAdapter(
               child: Center(
                 child: Padding(
@@ -39,7 +39,7 @@ class _CustomAvatarPanelState extends OptimizedState<CustomAvatarPanel> {
                       Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: Text(
-                          "Loading chats...",
+                          "Loading ChatSvc...",
                           style: context.theme.textTheme.labelLarge,
                         ),
                       ),
@@ -50,7 +50,7 @@ class _CustomAvatarPanelState extends OptimizedState<CustomAvatarPanel> {
               ),
             );
           }
-          if (chats.loadedChatBatch.value && chats.chats.isEmpty) {
+          if (ChatsSvc.loadedChatBatch.value && ChatsSvc.chats.isEmpty) {
             return SliverToBoxAdapter(
               child: Center(
                 child: Padding(
@@ -69,15 +69,15 @@ class _CustomAvatarPanelState extends OptimizedState<CustomAvatarPanel> {
                   (context, index) {
                 return ConversationTile(
                   key: Key(
-                      chats.chats[index].guid.toString()),
-                  chat: chats.chats[index],
+                      ChatsSvc.chats[index].guid.toString()),
+                  chat: ChatsSvc.chats[index],
                   controller: Get.put(
                     ConversationListController(showUnknownSenders: true, showArchivedChats: true),
                     tag: "custom-avatar-panel"
                   ),
                   inSelectMode: true,
                   onSelect: (_) {
-                    if (chats.chats[index].customAvatarPath != null) {
+                    if (ChatsSvc.chats[index].customAvatarPath != null) {
                       showDialog(
                         context: context,
                         builder: (BuildContext context) {
@@ -104,17 +104,17 @@ class _CustomAvatarPanelState extends OptimizedState<CustomAvatarPanel> {
                                 TextButton(
                                     child: Text("Reset", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
                                     onPressed: () {
-                                      File file = File(chats.chats[index].customAvatarPath!);
+                                      File file = File(ChatsSvc.chats[index].customAvatarPath!);
                                       file.delete();
-                                      chats.chats[index].customAvatarPath = null;
-                                      chats.chats[index].save(updateCustomAvatarPath: true);
+                                      ChatsSvc.chats[index].customAvatarPath = null;
+                                      ChatsSvc.chats[index].save(updateCustomAvatarPath: true);
                                       Navigator.of(context, rootNavigator: true).pop();
                                     }),
                                 TextButton(
                                     child: Text("Set New", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
                                     onPressed: () {
                                       Navigator.of(context).pop();
-                                      ns.pushSettings(
+                                      NavigationSvc.pushSettings(
                                         context,
                                         AvatarCrop(index: index),
                                       );
@@ -123,7 +123,7 @@ class _CustomAvatarPanelState extends OptimizedState<CustomAvatarPanel> {
                         },
                       );
                     } else {
-                      ns.pushSettings(
+                      NavigationSvc.pushSettings(
                         context,
                         AvatarCrop(index: index),
                       );
@@ -131,7 +131,7 @@ class _CustomAvatarPanelState extends OptimizedState<CustomAvatarPanel> {
                   },
                 );
               },
-              childCount: chats.chats.length,
+              childCount: ChatsSvc.chats.length,
             ),
           );
         }),

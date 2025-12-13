@@ -33,38 +33,38 @@ class _AvatarCropState extends OptimizedState<AvatarCrop> {
       case CropFailure(:final cause, :final stackTrace):
         Navigator.of(context, rootNavigator: true).pop();
         showSnackbar("Error", "Failed to crop image");
-        Logger().debug("Failed to crop image");
-        Logger().error(cause);
-        Logger().error(stackTrace);
+        Logger.debug("Failed to crop image");
+        Logger.error(cause);
+        Logger.error(stackTrace);
         return;
     }
 
-    String appDocPath = fs().appDocDir.path;
+    String appDocPath = FilesystemSvc.appDocDir.path;
     if (widget.index == null && widget.chat == null) {
       File file = File("$appDocPath/avatars/you/avatar-${croppedData.length}.jpg");
       if (!(await file.exists())) {
         await file.create(recursive: true);
       }
-      if (ss().settings.userAvatarPath.value != null) {
-        await File(ss().settings.userAvatarPath.value!).delete();
+      if (SettingsSvc.settings.userAvatarPath.value != null) {
+        await File(SettingsSvc.settings.userAvatarPath.value!).delete();
       }
       await file.writeAsBytes(croppedData);
-      ss().settings.userAvatarPath.value = file.path;
-      await ss().settings.saveOne("userAvatarPath");
+      SettingsSvc.settings.userAvatarPath.value = file.path;
+      await SettingsSvc.settings.saveOne("userAvatarPath");
       Navigator.of(context, rootNavigator: true).pop();
       Navigator.of(context).pop();
       showSnackbar("Notice", "User avatar saved successfully");
     } else if (widget.index != null) {
-      File file = File("$appDocPath/avatars/${chats.chats[widget.index!].guid.characters.where((char) => char.isAlphabetOnly || char.isNumericOnly).join()}/avatar-${croppedData.length}.jpg");
+      File file = File("$appDocPath/avatars/${ChatsSvc.chats[widget.index!].guid.characters.where((char) => char.isAlphabetOnly || char.isNumericOnly).join()}/avatar-${croppedData.length}.jpg");
       if (!(await file.exists())) {
         await file.create(recursive: true);
       }
-      if (chats.chats[widget.index!].customAvatarPath != null) {
-        await File(chats.chats[widget.index!].customAvatarPath!).delete();
+      if (ChatsSvc.chats[widget.index!].customAvatarPath != null) {
+        await File(ChatsSvc.chats[widget.index!].customAvatarPath!).delete();
       }
       await file.writeAsBytes(croppedData);
-      chats.chats[widget.index!].customAvatarPath = file.path;
-      chats.chats[widget.index!].save(updateCustomAvatarPath: true);
+      ChatsSvc.chats[widget.index!].customAvatarPath = file.path;
+      ChatsSvc.chats[widget.index!].save(updateCustomAvatarPath: true);
       Navigator.of(context, rootNavigator: true).pop();
       Navigator.of(context).pop();
       showSnackbar("Notice", "Custom chat avatar saved successfully");
@@ -89,7 +89,7 @@ class _AvatarCropState extends OptimizedState<AvatarCrop> {
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
-        systemNavigationBarColor: ss().settings.immersiveMode.value ? Colors.transparent : context.theme.colorScheme.background, // navigation bar color
+        systemNavigationBarColor: SettingsSvc.settings.immersiveMode.value ? Colors.transparent : context.theme.colorScheme.background, // navigation bar color
         systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
         statusBarColor: Colors.transparent, // status bar color
         statusBarIconBrightness: context.theme.colorScheme.brightness.opposite,
@@ -97,7 +97,7 @@ class _AvatarCropState extends OptimizedState<AvatarCrop> {
       child: Scaffold(
           backgroundColor: context.theme.colorScheme.background,
           appBar: PreferredSize(
-            preferredSize: Size(ns.width(context), kIsDesktop ? 80 : 50),
+            preferredSize: Size(NavigationSvc.width(context), kIsDesktop ? 80 : 50),
             child: AppBar(
               systemOverlayStyle: context.theme.colorScheme.brightness == Brightness.dark
                   ? SystemUiOverlayStyle.light

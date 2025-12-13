@@ -66,14 +66,14 @@ class _OauthPanelState extends OptimizedState<OauthPanel> {
       return;
     }
 
-    String oldPassword = ss().settings.guidAuthKey.value;
-    String oldAddr = ss().settings.serverAddress.value;
+    String oldPassword = SettingsSvc.settings.guidAuthKey.value;
+    String oldAddr = SettingsSvc.settings.serverAddress.value;
 
-    ss().settings.serverAddress.value = addr;
-    ss().settings.guidAuthKey.value = password;
+    SettingsSvc.settings.serverAddress.value = addr;
+    SettingsSvc.settings.guidAuthKey.value = password;
 
     dio.Response? serverResponse;
-    await http.ping().then((response) {
+    await HttpSvc.ping().then((response) {
       serverResponse = response;
     }).catchError((err) {
       serverResponse = err;
@@ -81,16 +81,16 @@ class _OauthPanelState extends OptimizedState<OauthPanel> {
 
     if (serverResponse?.statusCode == 401) {
       error = "Authentication failed. Incorrect password!";
-      ss().settings.serverAddress.value = oldAddr;
-      ss().settings.guidAuthKey.value = oldPassword;
-      await ss().settings.saveMany(["serverAddress", "guidAuthKey"]);
+      SettingsSvc.settings.serverAddress.value = oldAddr;
+      SettingsSvc.settings.guidAuthKey.value = oldPassword;
+      await SettingsSvc.settings.saveMany(["serverAddress", "guidAuthKey"]);
       return setState(() {});
     }
     if (serverResponse?.statusCode != 200) {
       error = "Failed to connect to $addr! Please ensure your Server's URL is accessible from your device.";
-      ss().settings.serverAddress.value = oldAddr;
-      ss().settings.guidAuthKey.value = oldPassword;
-      await ss().settings.saveMany(["serverAddress", "guidAuthKey"]);
+      SettingsSvc.settings.serverAddress.value = oldAddr;
+      SettingsSvc.settings.guidAuthKey.value = oldPassword;
+      await SettingsSvc.settings.saveMany(["serverAddress", "guidAuthKey"]);
       return setState(() {});
     }
 
@@ -100,7 +100,7 @@ class _OauthPanelState extends OptimizedState<OauthPanel> {
     await saveNewServerUrl(addr, restartSocket: false, force: true, saveAdditionalSettings: ["guidAuthKey"]);
 
     try {
-      socket.restartSocket();
+      SocketSvc.restartSocket();
     } catch (e) {
       error = e.toString();
       if (mounted) setState(() {});
@@ -109,7 +109,7 @@ class _OauthPanelState extends OptimizedState<OauthPanel> {
 
   @override
   Widget build(BuildContext context) {
-    Size buttonSize = Size(ns.width(context) * 2 / 3, 36);
+    Size buttonSize = Size(NavigationSvc.width(context) * 2 / 3, 36);
 
     return SettingsScaffold(
       title: 'Sign-In With Google',
@@ -206,7 +206,7 @@ class _OauthPanelState extends OptimizedState<OauthPanel> {
                                         if (!triedConnecting[index].value) {
                                           Future(() async {
                                             try {
-                                              await http.dio.get(usableProjects[index]['serverUrl']);
+                                              await HttpSvc.dio.get(usableProjects[index]['serverUrl']);
                                               reachable[index].value = true;
                                             } catch (e) {
                                               reachable[index].value = false;
@@ -337,7 +337,7 @@ class _OauthPanelState extends OptimizedState<OauthPanel> {
                   onPressed: () async {
                     token = await googleOAuth(context);
                     if (token != null) {
-                      final response = await http.getGoogleInfo(token!);
+                      final response = await HttpSvc.getGoogleInfo(token!);
                       setState(() {
                         googleName = response.data['name'];
                         googlePicture = response.data['picture'];

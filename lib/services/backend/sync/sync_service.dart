@@ -1,23 +1,20 @@
 import 'dart:async';
-import 'dart:isolate';
 
-import 'package:bluebubbles/helpers/backend/startup_tasks.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/services/network/http_overrides.dart';
+import 'package:bluebubbles/services/backend/interfaces/contact_interface.dart';
+import 'package:bluebubbles/services/backend/interfaces/prefs_interface.dart';
+import 'package:bluebubbles/services/backend/interfaces/sync_interface.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/services/services.dart';
-import 'package:collection/collection.dart';
-import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/widgets.dart';
-import 'package:flutter_isolate/flutter_isolate.dart';
 import 'package:get/get.dart' hide Response;
-import 'package:universal_io/io.dart';
+import 'package:get_it/get_it.dart';
 
-SyncService sync = Get.isRegistered<SyncService>() ? Get.find<SyncService>() : Get.put(SyncService());
+// ignore: non_constant_identifier_names
+SyncService get SyncSvc => GetIt.I<SyncService>();
 
-class SyncService extends GetxService {
+class SyncService {
   int numberOfMessagesPerPage = 25;
   bool skipEmptyChats = true;
   bool saveToDownloads = false;
@@ -26,17 +23,24 @@ class SyncService extends GetxService {
   FullSyncManager? _manager;
   FullSyncManager? get fullSyncManager => _manager;
 
-  Future<void> startFullSync() async {
-    // Set the last sync date (for incremental, even though this isn't incremental)
-    // We won't try an incremental sync until the last (full) sync date is set
-    ss().settings.lastIncrementalSync.value = DateTime.now().millisecondsSinceEpoch;
-    await ss().saveSettings();
-
+  void initFullSync() {
     _manager = FullSyncManager(
         messageCount: numberOfMessagesPerPage.toInt(),
         skipEmptyChats: skipEmptyChats,
         saveLogs: saveToDownloads
     );
+  }
+  
+  Future<void> startFullSync() async {
+    if (_manager == null) {
+      initFullSync();
+    }
+
+    // Set the last sync date (for incremental, even though this isn't incremental)
+    // We won't try an incremental sync until the last (full) sync date is set
+    SettingsSvc.settings.lastIncrementalSync.value = DateTime.now().millisecondsSinceEpoch;
+    await SettingsSvc.saveSettings();
+    await PrefsInterface.syncSettings();
     await _manager!.start();
   }
 
@@ -45,87 +49,36 @@ class SyncService extends GetxService {
 
     final contacts = <Contact>[];
     List<List<int>> result = [];
-    if (kIsWeb || kIsDesktop) {
-      result = await incrementalSyncIsolate.call(null);
+    
+    try {
+      // Use the GlobalIsolate to perform the sync
+      result = await SyncInterface.performIncrementalSync();
+      
       if (result.isNotEmpty && (result.first.isNotEmpty || result.last.isNotEmpty)) {
-        contacts.addAll(cs.contacts);
-      }
-    } else {
-      final completer = Completer<List<List<int>>>();
-      final port = RawReceivePort();
-      port.handler = (List<List<int>> response) {
-        port.close();
-        completer.complete(response);
-      };
-
-      FlutterIsolate? isolate;
-      try {
-        isolate = await FlutterIsolate.spawn(incrementalSyncIsolate, [port.sendPort, http.originOverride]);
-      } catch (e, stack) {
-        Logger().error('Got error when opening isolate!', error: e, trace: stack);
-        port.close();
-      }
-      result = await completer.future;
-      if (result.isNotEmpty && (result.first.isNotEmpty || result.last.isNotEmpty)) {
-        contacts.addAll(Contact.getContacts());
-        // auto upload contacts if requested
-        if (ss().settings.syncContactsAutomatically.value) {
-          Logger().debug("Contact changes detected, uploading to server...");
+        contacts.addAll(kIsWeb || kIsDesktop ? ContactsSvc.contacts : Contact.getContacts());
+        
+        // Auto upload contacts if requested
+        if (SettingsSvc.settings.syncContactsAutomatically.value) {
+          Logger.debug("Contact changes detected, uploading to server...");
           final _contacts = <Map<String, dynamic>>[];
           for (Contact c in contacts) {
             var map = c.toMap();
             _contacts.add(map);
           }
-          http.createContact(_contacts).catchError((err, stack) {
-            if (err is Response) {
-              Logger().error(err.data["error"]["message"].toString(), error: err, trace: stack);
-            } else {
-              Logger().error("Failed to create contacts!", error: err, trace: stack);
-            }
-            return Response(requestOptions: RequestOptions(path: ''));
-          });
+          
+          try {
+            await ContactInterface.uploadContacts(_contacts);
+          } catch (err, stack) {
+            Logger.error("Failed to upload contacts!", error: err, trace: stack);
+          }
         }
       }
-      isolate?.kill();
+    } catch (e, stack) {
+      Logger.error('Incremental sync failed!', error: e, trace: stack);
     }
-    cs.completeContactsRefresh(contacts, reloadUI: result);
+    
+    ContactsSvc.completeContactsRefresh(contacts, reloadUI: result);
 
     isIncrementalSyncing.value = false;
-  }
-}
-
-@pragma('vm:entry-point')
-Future<List<List<int>>> incrementalSyncIsolate(List? items) async {
-  final SendPort? port = items?.firstOrNull;
-  final String? address = items?.lastOrNull;
-  try {
-    if (!kIsWeb && !kIsDesktop) {
-      WidgetsFlutterBinding.ensureInitialized();
-      HttpOverrides.global = BadCertOverride();
-
-      await StartupTasks.initIncrementalSyncServices();
-
-      http.originOverride = address;
-    }
-
-    int syncStart = ss().settings.lastIncrementalSync.value;
-    int startRowId = ss().settings.lastIncrementalSyncRowId.value;
-    final incrementalSyncManager = IncrementalSyncManager(
-      startTimestamp: syncStart, startRowId: startRowId, saveMarker: true);
-    await incrementalSyncManager.start();
-    chats.sort();
-  } catch (ex, s) {
-    Logger().error('Incremental sync failed!', error: ex, trace: s);
-  }
-  Logger().info('Starting contact refresh');
-  try {
-    final refreshedItems = await cs.refreshContacts();
-    Logger().info('Finished contact refresh, shouldRefresh $refreshedItems');
-    port?.send(refreshedItems);
-    return refreshedItems;
-  } catch (ex, stack) {
-    Logger().error('Contacts refresh failed!', error: ex, trace: stack);
-    port?.send([]);
-    return [];
   }
 }

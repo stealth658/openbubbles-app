@@ -122,7 +122,7 @@ class _ConversationDetailsState extends OptimizedState<ConversationDetails> with
     });
   }
 
-  void fetchLinks() {
+  Future<void> fetchLinks() async {
     final query = (Database.messages.query(Message_.dateDeleted.isNull()
       & Message_.dbPayloadData.notNull()
       & Message_.balloonBundleId.contains("URLBalloonProvider"))
@@ -130,7 +130,7 @@ class _ConversationDetailsState extends OptimizedState<ConversationDetails> with
       ..order(Message_.dateCreated, flags: Order.descending))
         .build();
     query.limit = 20;
-    links = query.find();
+    links = await query.findAsync();
     query.close();
   }
 
@@ -138,7 +138,7 @@ class _ConversationDetailsState extends OptimizedState<ConversationDetails> with
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
-        systemNavigationBarColor: ss().settings.immersiveMode.value ? Colors.transparent : context.theme.colorScheme.background, // navigation bar color
+        systemNavigationBarColor: SettingsSvc.settings.immersiveMode.value ? Colors.transparent : context.theme.colorScheme.background, // navigation bar color
         systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
         statusBarColor: Colors.transparent, // status bar color
         statusBarIconBrightness: context.theme.colorScheme.brightness.opposite,
@@ -150,10 +150,10 @@ class _ConversationDetailsState extends OptimizedState<ConversationDetails> with
           colorScheme: context.theme.colorScheme.copyWith(
             primary: context.theme.colorScheme.bubble(context, chat.isIMessage),
             onPrimary: context.theme.colorScheme.onBubble(context, chat.isIMessage),
-            surface: ss().settings.monetTheming.value == Monet.full
+            surface: SettingsSvc.settings.monetTheming.value == Monet.full
                 ? null
                 : (context.theme.extensions[BubbleColors] as BubbleColors?)?.receivedBubbleColor,
-            onSurface: ss().settings.monetTheming.value == Monet.full
+            onSurface: SettingsSvc.settings.monetTheming.value == Monet.full
                 ? null
                 : (context.theme.extensions[BubbleColors] as BubbleColors?)?.onReceivedBubbleColor,
           ),
@@ -208,8 +208,8 @@ class _ConversationDetailsState extends OptimizedState<ConversationDetails> with
                     mouseCursor: MouseCursor.defer,
                     title: Text("Add ${iOS ? "Member" : "people"}", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
                     leading: Container(
-                      width: 40 * ss().settings.avatarScale.value,
-                      height: 40 * ss().settings.avatarScale.value,
+                      width: 40 * SettingsSvc.settings.avatarScale.value,
+                      height: 40 * SettingsSvc.settings.avatarScale.value,
                       decoration: BoxDecoration(
                         color: !iOS ? null : context.theme.colorScheme.properSurface,
                         shape: BoxShape.circle,
@@ -227,7 +227,7 @@ class _ConversationDetailsState extends OptimizedState<ConversationDetails> with
                   );
 
                   if (index > clippedParticipants.length) {
-                    if (ss().settings.enablePrivateAPI.value && chat.isIMessage && chat.isGroup && shouldShowMore) {
+                    if (SettingsSvc.settings.enablePrivateAPI.value && chat.isIMessage && chat.isGroup && shouldShowMore) {
                       return addMember;
                     } else {
                       return const SizedBox.shrink();
@@ -247,8 +247,8 @@ class _ConversationDetailsState extends OptimizedState<ConversationDetails> with
                           style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary),
                         ),
                         leading: Container(
-                          width: 40 * ss().settings.avatarScale.value,
-                          height: 40 * ss().settings.avatarScale.value,
+                          width: 40 * SettingsSvc.settings.avatarScale.value,
+                          height: 40 * SettingsSvc.settings.avatarScale.value,
                           decoration: BoxDecoration(
                               color: !iOS ? null : context.theme.colorScheme.properSurface,
                               shape: BoxShape.circle,
@@ -261,7 +261,7 @@ class _ConversationDetailsState extends OptimizedState<ConversationDetails> with
                           ),
                         ),
                       );
-                    } else if (ss().settings.enablePrivateAPI.value && chat.isIMessage && chat.isGroup) {
+                    } else if (SettingsSvc.settings.enablePrivateAPI.value && chat.isIMessage && chat.isGroup) {
                       return addMember;
                     } else {
                       return const SizedBox.shrink();
@@ -273,12 +273,12 @@ class _ConversationDetailsState extends OptimizedState<ConversationDetails> with
                     handle: chat.participants[index],
                     chat: chat,
                     canBeRemoved: chat.isGroup
-                        && ss().settings.enablePrivateAPI.value
+                        && SettingsSvc.settings.enablePrivateAPI.value
                         && chat.isIMessage,
                   );
                 }, childCount: clippedParticipants.length + 2),
               ),
-            if (chat.participants.length > 2 && ss().settings.enablePrivateAPI.value && ss().serverDetailsSync().item4 >= 226)
+            if (chat.participants.length > 2 && SettingsSvc.settings.enablePrivateAPI.value && SettingsSvc.serverDetailsSync().item4 >= 226)
               SliverToBoxAdapter(
                 child: Builder(
                   builder: (context) {
@@ -286,8 +286,8 @@ class _ConversationDetailsState extends OptimizedState<ConversationDetails> with
                       mouseCursor: MouseCursor.defer,
                       title: Text("Leave ${iOS ? "Chat" : "chat"}", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.error)),
                       leading: Container(
-                        width: 40 * ss().settings.avatarScale.value,
-                        height: 40 * ss().settings.avatarScale.value,
+                        width: 40 * SettingsSvc.settings.avatarScale.value,
+                        height: 40 * SettingsSvc.settings.avatarScale.value,
                         decoration: BoxDecoration(
                           color: !iOS ? null : context.theme.colorScheme.properSurface,
                           shape: BoxShape.circle,
@@ -321,7 +321,7 @@ class _ConversationDetailsState extends OptimizedState<ConversationDetails> with
                             );
                           }
                         );
-                        final response = await http.leaveChat(chat.guid);
+                        final response = await HttpSvc.leaveChat(chat.guid);
                         if (response.statusCode == 200) {
                           Navigator.of(context, rootNavigator: true).pop();
                           showSnackbar("Notice", "Left chat successfully!");
@@ -350,7 +350,7 @@ class _ConversationDetailsState extends OptimizedState<ConversationDetails> with
                 padding: const EdgeInsets.all(10),
                 sliver: SliverGrid(
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: max(2, ns.width(context) ~/ 200),
+                    crossAxisCount: max(2, NavigationSvc.width(context) ~/ 200),
                     mainAxisSpacing: 10,
                     crossAxisSpacing: 10
                   ),
@@ -423,7 +423,7 @@ class _ConversationDetailsState extends OptimizedState<ConversationDetails> with
                 padding: const EdgeInsets.all(10),
                 sliver: SliverToBoxAdapter(
                   child: MasonryGridView.count(
-                    crossAxisCount: max(2, ns.width(context) ~/ 200),
+                    crossAxisCount: max(2, NavigationSvc.width(context) ~/ 200),
                     mainAxisSpacing: 10,
                     crossAxisSpacing: 10,
                     shrinkWrap: true,
@@ -471,7 +471,7 @@ class _ConversationDetailsState extends OptimizedState<ConversationDetails> with
                 padding: const EdgeInsets.all(10),
                 sliver: SliverToBoxAdapter(
                   child: MasonryGridView.count(
-                    crossAxisCount: max(2, ns.width(context) ~/ 200),
+                    crossAxisCount: max(2, NavigationSvc.width(context) ~/ 200),
                     mainAxisSpacing: 10,
                     crossAxisSpacing: 10,
                     shrinkWrap: true,
@@ -523,7 +523,7 @@ class _ConversationDetailsState extends OptimizedState<ConversationDetails> with
                 padding: const EdgeInsets.all(10),
                 sliver: SliverGrid(
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: max(2, ns.width(context) ~/ 200),
+                    crossAxisCount: max(2, NavigationSvc.width(context) ~/ 200),
                     mainAxisSpacing: 10,
                     crossAxisSpacing: 10,
                     childAspectRatio: 1.75,

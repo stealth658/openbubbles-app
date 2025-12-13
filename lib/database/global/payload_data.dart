@@ -131,7 +131,7 @@ class MediaMetadata {
     } else if (json["size"] is Size) {
       size = json['size'];
     } else {
-      Logger().warn("Failed to parse media metadata size: ${json["size"].toString()}");
+      Logger.warn("Failed to parse media metadata size: ${json["size"].toString()}");
     }
 
     return MediaMetadata(

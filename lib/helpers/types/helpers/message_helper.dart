@@ -4,6 +4,7 @@ import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
+import 'package:bluebubbles/services/backend/interfaces/message_interface.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
@@ -13,79 +14,41 @@ import 'package:get/get.dart';
 class MessageHelper {
   static Future<List<Message>> bulkAddMessages(Chat? chat, List<dynamic> messages,
       {bool checkForLatestMessageText = true, Function(int progress, int length)? onProgress}) async {
-    // Create master list for all the messages and a chat cache
-    List<Message> _messages = <Message>[];
-    Map<String, Chat> chats = <String, Chat>{};
+    // Convert messages to map format for the interface
+    final messagesData = messages.map((item) => item as Map<String, dynamic>).toList();
+    final chatData = chat?.toMap();
 
-    // Add the chat in the cache and save it if it hasn't been saved yet
-    if (chat?.guid != null) {
-      chats[chat!.guid] = chat;
-      if (chat.id == null) {
-        chat = chat.save();
-      }
+    // Track progress on the UI thread
+    int processedCount = 0;
+    final totalCount = messages.length;
+    
+    // Report initial progress
+    if (onProgress != null) {
+      onProgress(processedCount, totalCount);
     }
 
-    // Iterate over each message to parse it
-    int index = 0;
-    for (dynamic item in messages) {
-      if (onProgress != null) {
-        onProgress(_messages.length, messages.length);
-      }
-
-      // Pull the chats out of the message, if there isnt a default
-      Chat? msgChat = chat;
-      if (msgChat == null) {
-        List<Chat> msgChats = (item['chats'] as List? ?? []).map((e) => Chat.fromMap(e)).toList();
-        msgChat = msgChats.isNotEmpty ? msgChats.first : null;
-
-        // If there is a cached chat, get it. Otherwise, save the new one
-        if (msgChat != null && chats.containsKey(msgChat.guid)) {
-          msgChat = chats[msgChat.guid];
-        } else if (msgChat?.guid != null) {
-          msgChat!.save();
-          chats[msgChat.guid] = msgChat;
-        }
-      }
-
-      // If we can't get a chat from the data, skip the message
-      if (msgChat == null) continue;
-
-      Message message = Message.fromMap(item);
-      Message? existing = Message.findOne(guid: message.guid);
-      await msgChat.addMessage(
-        message,
-        changeUnreadStatus: false,
-        checkForMessageText: checkForLatestMessageText,
+    // Offload the heavy work to the isolate via the interface
+    // This processes messages in batches, handles DB operations, etc.
+    Logger.info('Starting bulk add of $totalCount messages via isolate', tag: "BulkIngest");
+    
+    try {
+      final results = await MessageInterface.bulkAddMessages(
+        chatData: chatData,
+        messagesData: messagesData,
+        checkForLatestMessageText: checkForLatestMessageText,
       );
-
-      // Artificial await to prevent lag
-      await Future.delayed(const Duration(milliseconds: 10));
-
-      if (existing != null) {
-        message = existing;
+      
+      // Report completion
+      if (onProgress != null) {
+        onProgress(totalCount, totalCount);
       }
-
-      // Create the attachments
-      List<dynamic> attachments = item['attachments'];
-      for (dynamic attachmentItem in attachments) {
-        Attachment file = Attachment.fromMap(attachmentItem);
-        file.save(message);
-      }
-
-      // Add message to the "master list"
-      _messages.add(message);
-
-      // Every 50 messages synced, who a message
-      index += 1;
-      if (index % 50 == 0) {
-        Logger().info('Saved $index of ${messages.length} messages', tag: "BulkIngest");
-      } else if (index == messages.length) {
-        Logger().info('Saved ${messages.length} messages', tag: "BulkIngest");
-      }
+      
+      Logger.info('Completed bulk add of ${results.length} messages', tag: "BulkIngest");
+      return results;
+    } catch (ex, stacktrace) {
+      Logger.error('Failed to bulk add messages', error: ex, trace: stacktrace, tag: "BulkIngest");
+      rethrow;
     }
-
-    // Return all the synced messages
-    return _messages;
   }
 
   static Future<void> handleNotification(Message message, Chat chat, {bool findExisting = true}) async {
@@ -98,10 +61,10 @@ class MessageHelper {
     // if needing to mute
     if (chat.shouldMuteNotification(message)) return;
     // if the chat is active
-    if (ls.isAlive && cm.isChatActive(chat.guid)) return;
+    if (LifecycleSvc.isAlive && cm.isChatActive(chat.guid)) return;
     // if app is alive, on chat list, but notifying on chat list is disabled
-    if (ls.isAlive && cm.activeChat == null && Get.rawRoute?.settings.name == "/" && !ss().settings.notifyOnChatList.value) return;
-    await notif.createNotification(chat, message);
+    if (LifecycleSvc.isAlive && cm.activeChat == null && Get.rawRoute?.settings.name == "/" && !SettingsSvc.settings.notifyOnChatList.value) return;
+    await NotificationsSvc.createNotification(chat, message);
   }
 
   static String getNotificationText(Message message, {bool withSender = false}) {
@@ -184,7 +147,7 @@ class MessageHelper {
       // if we can't fetch the associated message for some reason
       // (or none of the above conditions about it are true)
       // then we should fallback to unparsed reaction messages
-      Logger().info("Couldn't fetch associated message for message: ${message.guid}");
+      Logger.info("Couldn't fetch associated message for message: ${message.guid}");
       return "$sender ${message.text}";
     } else {
       // It's all other message types
@@ -259,7 +222,7 @@ class MessageHelper {
   }
 
   static List<TextSpan> buildEmojiText(String text, TextStyle style, {TapGestureRecognizer? recognizer}) {
-    if (!fs().fontExistsOnDisk.value) {
+    if (!FilesystemSvc.fontExistsOnDisk.value) {
       return [
         TextSpan(
           text: text,

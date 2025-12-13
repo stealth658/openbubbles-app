@@ -35,7 +35,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart' hide Response;
 import 'package:in_app_review/in_app_review.dart';
 import 'package:universal_io/io.dart';
@@ -51,7 +50,6 @@ List<Widget> buildSettingItemList({
   required bool material,
   required TextStyle iosSubtitle,
   required TextStyle materialSubtitle,
-  required dynamic ss,
   required dynamic ns,
   required RxnDouble progress,
   required RxnInt totalSize,
@@ -72,18 +70,18 @@ List<Widget> buildSettingItemList({
     if (!kIsWeb && (!iOS || kIsDesktop))
       SearchableSettingItem(
         title:
-        ss().settings.redactedMode.value && ss().settings.hideContactInfo.value
+        SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value
             ? "User Name"
-            : ss().settings.userName.value,
+            : SettingsSvc.settings.userName.value,
         child: SettingsSection(
           backgroundColor: tileColor,
           children: [
             SettingsTile(
               backgroundColor: tileColor,
-              title: ss().settings.redactedMode.value &&
-                  ss().settings.hideContactInfo.value
+              title: SettingsSvc.settings.redactedMode.value &&
+                  SettingsSvc.settings.hideContactInfo.value
                   ? "User Name"
-                  : ss().settings.userName.value,
+                  : SettingsSvc.settings.userName.value,
               subtitle: "Tap to view more details",
               onTap: () {
                 ns.pushAndRemoveSettingsUntil(
@@ -149,8 +147,8 @@ List<Widget> buildSettingItemList({
             material: material,
           ),
 
-          if (ss().serverDetailsSync().item4 >= 205) const SettingsDivider(),
-          if (ss().serverDetailsSync().item4 >= 205)
+          if (SettingsSvc.serverDetailsSync().item4 >= 205) const SettingsDivider(),
+          if (SettingsSvc.serverDetailsSync().item4 >= 205)
             SearchableSettingItem(
                 title: "Scheduled Messages",
                 searchTags: ["Scheduled Messages"],
@@ -242,7 +240,7 @@ List<Widget> buildSettingItemList({
               },
               trailing: Row(mainAxisSize: MainAxisSize.min, children: [
                 Text(
-                  "${ss().settings.skin.value.toString().split(".").last}  |  ${AdaptiveTheme.of(context).mode.toString().split(".").last.capitalizeFirst!}",
+                  "${SettingsSvc.settings.skin.value.toString().split(".").last}  |  ${AdaptiveTheme.of(context).mode.toString().split(".").last.capitalizeFirst!}",
                   style: context.theme.textTheme.bodyMedium!.apply(
                       color: context.theme.colorScheme.outline
                           .withValues(alpha: 0.85)),
@@ -815,11 +813,11 @@ List<Widget> buildSettingItemList({
                 );
 
                 final contacts = <Map<String, dynamic>>[];
-                for (Contact c in cs.contacts) {
+                for (Contact c in ContactsSvc.contacts) {
                   var map = c.toMap();
                   contacts.add(map);
                 }
-                http.createContact(contacts, onSendProgress: (count, total) {
+                HttpSvc.createContact(contacts, onSendProgress: (count, total) {
                   uploadingContacts.value = true;
                   progress.value = count / total;
                   totalSize.value = total;
@@ -830,10 +828,10 @@ List<Widget> buildSettingItemList({
                   }
                 }).catchError((err, stack) {
                   if (err is Response) {
-                    Logger().error(err.data["error"]["message"].toString(),
+                    Logger.error(err.data["error"]["message"].toString(),
                         error: err, trace: stack);
                   } else {
-                    Logger().error("Failed to create contact!",
+                    Logger.error("Failed to create contact!",
                         error: err, trace: stack);
                   }
 
@@ -993,7 +991,7 @@ List<Widget> buildSettingItemList({
                                   context.theme.colorScheme.primary)),
                           onPressed: () async {
                             final dir =
-                            Directory("${fs().appDocDir.path}/attachments");
+                            Directory("${FilesystemSvc.appDocDir.path}/attachments");
                             await dir.delete(recursive: true);
                             showSnackbar(
                                 "Success", "Deleted cached attachments");
@@ -1052,26 +1050,26 @@ List<Widget> buildSettingItemList({
                                   color:
                                   context.theme.colorScheme.primary)),
                           onPressed: () async {
-                            fs().deleteDB();
-                            socket.forgetConnection();
-                            ss().settings = Settings();
-                            await ss().settings.saveAsync();
+                            FilesystemSvc.deleteDB();
+                            SocketSvc.forgetConnection();
+                            SettingsSvc.settings = Settings();
+                            await SettingsSvc.settings.saveAsync();
 
-                            await prefs().i.clear();
-                            await ss().prefs
+                            await PrefsSvc.i.clear();
+                            await PrefsSvc.i
                                 .setString("selected-dark", "OLED Dark");
-                            await ss().prefs
+                            await PrefsSvc.i
                                 .setString("selected-light", "Bright White");
-                            Database.themes.putMany(ts.defaultThemes);
+                            Database.themes.putMany(ThemesService.defaultThemes);
 
                             await FCMData.deleteFcmData();
 
                             try {
-                              if (fcm.token != null) {
-                                await mcs.invokeMethod("firebase-delete-token");
+                              if (fcm().token != null) {
+                                await MethodChannelSvc.invokeMethod("firebase-delete-token");
                               }
                             } catch (e, s) {
-                              Logger().error(
+                              Logger.error(
                                   "Failed to delete Firebase FCM token",
                                   error: e,
                                   trace: s);

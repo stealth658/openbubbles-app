@@ -49,10 +49,10 @@ class _TabletModeWrapperState extends OptimizedState<TabletModeWrapper> {
   @override
   void initState() {
     super.initState();
-    _ratio = RxDouble((prefs().i.getDouble('splitRatio') ?? widget.initialRatio).clamp(widget.minRatio, widget.maxRatio));
+    _ratio = RxDouble((PrefsSvc.i.getDouble('splitRatio') ?? widget.initialRatio).clamp(widget.minRatio, widget.maxRatio));
     eventDispatcher.stream.listen((event) {
       if (event.item1 == 'split-refresh') {
-        _ratio.value = prefs().i.getDouble('splitRatio') ?? _ratio.value;
+        _ratio.value = PrefsSvc.i.getDouble('splitRatio') ?? _ratio.value;
         setState(() {});
       } else if (event.item1 == 'override-split') {
         _ratio.value = event.item2;
@@ -60,7 +60,7 @@ class _TabletModeWrapperState extends OptimizedState<TabletModeWrapper> {
       }
     });
     debounce<double>(_ratio, (val) async {
-      await prefs().i.setDouble('splitRatio', val);
+      await PrefsSvc.i.setDouble('splitRatio', val);
       eventDispatcher.emit('split-refresh', null);
     });
   }
@@ -119,7 +119,7 @@ class _TabletModeWrapperState extends OptimizedState<TabletModeWrapper> {
                     ),
                     onPanUpdate: (DragUpdateDetails details) {
                       _ratio.value = (_ratio.value + (details.delta.dx / _maxWidth!)).clamp(widget.minRatio, widget.maxRatio);
-                      ns.listener.refresh();
+                      NavigationSvc.listener.refresh();
                     },
                   ),
                 ) : Container(

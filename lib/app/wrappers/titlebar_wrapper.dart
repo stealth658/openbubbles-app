@@ -20,26 +20,26 @@ class TitleBarWrapper extends StatelessWidget {
       return Stack(
         children: <Widget>[
           child,
-          if (ss().settings.showConnectionIndicator.value) const ConnectionIndicator(),
+          if (SettingsSvc.settings.showConnectionIndicator.value) const ConnectionIndicator(),
         ],
       );
     }
 
-    return Obx(() => (ss().settings.useCustomTitleBar.value && Platform.isLinux) || (kIsDesktop && !Platform.isLinux) ? WindowBorder(
+    return Obx(() => (SettingsSvc.settings.useCustomTitleBar.value && Platform.isLinux) || (kIsDesktop && !Platform.isLinux) ? WindowBorder(
         color: Colors.transparent,
         width: 0,
         child: Stack(
           children: <Widget>[
             child,
             const TitleBar(),
-            if (ss().settings.showConnectionIndicator.value)
+            if (SettingsSvc.settings.showConnectionIndicator.value)
               const ConnectionIndicator(),
           ]
         ),
       ) : Stack(
         children: <Widget>[
           child,
-          if (ss().settings.showConnectionIndicator.value)
+          if (SettingsSvc.settings.showConnectionIndicator.value)
             const ConnectionIndicator(),
         ],
       ),
@@ -86,7 +86,7 @@ class WindowButtons extends StatelessWidget {
       children: [
         MinimizeWindowButton(
           colors: buttonColors,
-          onPressed: () async => ss().settings.minimizeToTray.value ? await windowManager.hide() : await windowManager.minimize(),
+          onPressed: () async => SettingsSvc.settings.minimizeToTray.value ? await windowManager.hide() : await windowManager.minimize(),
           animate: true,
         ),
         MaximizeWindowButton(

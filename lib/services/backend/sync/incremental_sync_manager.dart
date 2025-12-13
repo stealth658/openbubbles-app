@@ -47,7 +47,7 @@ class IncrementalSyncManager extends SyncManager {
 
   // The default extra fields to fetch with the messages
   List<String> defaultWithQuery = [
-    "chats", "chats.participants", "attachments", "attributedBody", "messageSummaryInfo", "payloadData"];
+    "chats", "ChatSvc.participants", "attachments", "attributedBody", "messageSummaryInfo", "payloadData"];
 
   IncrementalSyncManager({
       this.startRowId,
@@ -89,7 +89,7 @@ class IncrementalSyncManager extends SyncManager {
     // Check the server version and sync differently based on the version.
     // This is due to bugs in certain server versions as well as new features
     // in server versions to make the sync more efficient.
-    int serverVersion = (await ss().getServerDetails()).item4;
+    int serverVersion = (await SettingsSvc.getServerDetails()).item4;
     bool isMin_1_2_0 = serverVersion >= 142; // Server: v1.2.0 (1 * 100 + 2 * 21 + 0)
     bool isMin_1_6_0 = serverVersion >= 226; // Server: v1.6.0 (1 * 100 + 6 * 21 + 0)
 
@@ -120,7 +120,7 @@ class IncrementalSyncManager extends SyncManager {
     // Query the API for messages.
     // This endpoint will return the total messages that match the query in v1.6.0+
     addToOutput('Fetching messages...');
-    dio.Response<dynamic> messagesRes = await http.messages(
+    dio.Response<dynamic> messagesRes = await HttpSvc.messages(
       where: buildRowIdWhereArgs(startRowId!, endRowId),
       limit: batchSize,
       offset: 0,
@@ -147,7 +147,7 @@ class IncrementalSyncManager extends SyncManager {
     }
 
     // Hit API endpoint to check for updated messages
-    dio.Response<dynamic> uMessageCountRes = await http.messageCount(
+    dio.Response<dynamic> uMessageCountRes = await HttpSvc.messageCount(
       after: DateTime.fromMillisecondsSinceEpoch(startTimestamp!),
     );
 
@@ -169,7 +169,7 @@ class IncrementalSyncManager extends SyncManager {
     // the messages have a null text, we can still account for them when we fetch.
 
     // Hit API endpoint to check for updated messages
-    dio.Response<dynamic> uMessageCountRes = await http.messageCount(
+    dio.Response<dynamic> uMessageCountRes = await HttpSvc.messageCount(
       after: DateTime.fromMillisecondsSinceEpoch(startTimestamp!),
     );
 
@@ -201,13 +201,13 @@ class IncrementalSyncManager extends SyncManager {
 
       // Fetch the pages differently depending on the parameters.
       if (useRowId) {
-        messagesResponse = await http.messages(
+        messagesResponse = await HttpSvc.messages(
             where: buildRowIdWhereArgs(startRowId!, endRowId),
             offset: i * batchSize,
             limit: batchSize,
             withQuery: defaultWithQuery);
       } else {
-        messagesResponse = await http.messages(
+        messagesResponse = await HttpSvc.messages(
             after: startTimestamp,
             before: endTimestamp,
             offset: i * batchSize,
@@ -315,24 +315,24 @@ class IncrementalSyncManager extends SyncManager {
       // If we have a start timestamp, use the time that our sync started.
       // Otherwise, use the last timestamp we got from the API
       if (startTimestamp != null) {
-        ss().settings.lastIncrementalSync.value = syncStartedAt;
+        SettingsSvc.settings.lastIncrementalSync.value = syncStartedAt;
       } else if (lastSyncedTimestamp != null) {
-        ss().settings.lastIncrementalSync.value = lastSyncedTimestamp!;
+        SettingsSvc.settings.lastIncrementalSync.value = lastSyncedTimestamp!;
       }
 
       // The lastRowId should always get set, even when sycing using timestamps
       if (lastSyncedRowId != null) {
-        ss().settings.lastIncrementalSyncRowId.value = lastSyncedRowId!;
+        SettingsSvc.settings.lastIncrementalSyncRowId.value = lastSyncedRowId!;
       }
 
-      await ss().saveSettings();
+      await SettingsSvc.saveSettings();
     }
 
     // Call this first so listeners can react before any
     // "heavier" calls are made
     await super.complete();
 
-    if (ss().settings.showIncrementalSync.value) {
+    if (SettingsSvc.settings.showIncrementalSync.value) {
       showSnackbar('Success', '🔄 Incremental sync complete 🔄');
     }
 

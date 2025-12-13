@@ -14,10 +14,10 @@ Future<bool> saveNewServerUrl(
   }
 ) async {
   String sanitized = sanitizeServerAddress(address: newServerUrl)!;
-  if (force || sanitized != ss().settings.serverAddress.value) {
-    ss().settings.serverAddress.value = sanitized;
+  if (force || sanitized != SettingsSvc.settings.serverAddress.value) {
+    SettingsSvc.settings.serverAddress.value = sanitized;
 
-    await ss().settings.saveMany(["serverAddress", ...saveAdditionalSettings]);
+    await SettingsSvc.settings.saveMany(["serverAddress", ...saveAdditionalSettings]);
 
     // Don't await because we don't care about the result
     if (tryRestartForegroundService) {
@@ -26,10 +26,10 @@ Future<bool> saveNewServerUrl(
     
     try {
       if (restartSocket) {
-        socket.restartSocket();
+        SocketSvc.restartSocket();
       }
     } catch (e, stack) {
-      Logger().error("Failed to restart socket!", error: e, trace: stack);
+      Logger.error("Failed to restart socket!", error: e, trace: stack);
     }
 
     return true;
@@ -44,8 +44,8 @@ Future<void> clearServerUrl(
     List<String> saveAdditionalSettings = const []
   }
 ) async {
-  ss().settings.serverAddress.value = "";
-  await ss().settings.saveMany(["serverAddress", ...saveAdditionalSettings]);
+  SettingsSvc.settings.serverAddress.value = "";
+  await SettingsSvc.settings.saveMany(["serverAddress", ...saveAdditionalSettings]);
 
   // Don't await because we don't care about the result
   if (tryRestartForegroundService) {

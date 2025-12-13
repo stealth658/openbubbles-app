@@ -45,7 +45,7 @@ class ChatSelectorViewState extends OptimizedState<ChatSelectorView> {
       _debounce = Timer(const Duration(milliseconds: 250), () async {
         final searchChats = await SchedulerBinding.instance.scheduleTask(() async {
           final query = slugify(searchController.text, delimiter: "");
-          return chats.chats.filter((element) => slugify(element.getTitle(), delimiter: "").contains(query));
+          return ChatsSvc.chats.filter((element) => slugify(element.getTitle(), delimiter: "").contains(query));
         }, Priority.animation);
 
         _debounce = null;
@@ -56,14 +56,14 @@ class ChatSelectorViewState extends OptimizedState<ChatSelectorView> {
     });
 
     updateObx(() {
-      if (chats.loadedAllChats.isCompleted) {
+      if (ChatsSvc.loadedAllChats.isCompleted) {
         setState(() {
-          filteredChats = List<Chat>.from(chats.chats);
+          filteredChats = List<Chat>.from(ChatsSvc.chats);
         });
       } else {
-        chats.loadedAllChats.future.then((_) {
+        ChatsSvc.loadedAllChats.future.then((_) {
           setState(() {
-            filteredChats = List<Chat>.from(chats.chats);
+            filteredChats = List<Chat>.from(ChatsSvc.chats);
           });
         });
       }
@@ -74,7 +74,7 @@ class ChatSelectorViewState extends OptimizedState<ChatSelectorView> {
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
-        systemNavigationBarColor: ss().settings.immersiveMode.value
+        systemNavigationBarColor: SettingsSvc.settings.immersiveMode.value
             ? Colors.transparent
             : context.theme.colorScheme.background, // navigation bar color
         systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
@@ -82,11 +82,11 @@ class ChatSelectorViewState extends OptimizedState<ChatSelectorView> {
         statusBarIconBrightness: context.theme.colorScheme.brightness.opposite,
       ),
       child: Scaffold(
-        backgroundColor: ss().settings.windowEffect.value != WindowEffect.disabled
+        backgroundColor: SettingsSvc.settings.windowEffect.value != WindowEffect.disabled
             ? Colors.transparent
             : context.theme.colorScheme.background,
         appBar: PreferredSize(
-            preferredSize: Size(ns.width(context), kIsDesktop ? 90 : 50),
+            preferredSize: Size(NavigationSvc.width(context), kIsDesktop ? 90 : 50),
             child: AppBar(
                 systemOverlayStyle: context.theme.colorScheme.brightness == Brightness.dark
                     ? SystemUiOverlayStyle.light
@@ -97,7 +97,7 @@ class ChatSelectorViewState extends OptimizedState<ChatSelectorView> {
                 surfaceTintColor: context.theme.colorScheme.primary,
                 leading: buildBackButton(context),
                 backgroundColor: Colors.transparent,
-                centerTitle: ss().settings.skin.value == Skins.iOS,
+                centerTitle: SettingsSvc.settings.skin.value == Skins.iOS,
                 title: Text(
                   "Select a Chat",
                   style: context.theme.textTheme.titleLarge,
@@ -152,7 +152,7 @@ class ChatSelectorViewState extends OptimizedState<ChatSelectorView> {
                                         Padding(
                                           padding: const EdgeInsets.all(8.0),
                                           child: Text(
-                                            "Loading chats...",
+                                            "Loading ChatSvc...",
                                             style: context.theme.textTheme.labelLarge,
                                           ),
                                         ),
@@ -161,7 +161,7 @@ class ChatSelectorViewState extends OptimizedState<ChatSelectorView> {
                                     );
                                   }
                                   final chat = filteredChats[index];
-                                  final hideInfo = ss().settings.redactedMode.value && ss().settings.hideContactInfo.value;
+                                  final hideInfo = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
                                   String _title = chat.properTitle;
                                   if (hideInfo) {
                                     _title =
@@ -190,7 +190,7 @@ class ChatSelectorViewState extends OptimizedState<ChatSelectorView> {
                                   );
                                 },
                                     childCount: filteredChats.length
-                                        .clamp(chats.loadedAllChats.isCompleted ? 0 : 1, double.infinity)
+                                        .clamp(ChatsSvc.loadedAllChats.isCompleted ? 0 : 1, double.infinity)
                                         .toInt()),
                               )
                             ],

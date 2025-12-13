@@ -112,15 +112,15 @@ class BubbleText extends ThemeExtension<BubbleText> {
 /// theming values
 mixin ThemeHelpers<T extends StatefulWidget> on State<T> {
   // Samsung theme should always use the background color as the "header" color
-  bool get reverseMapping => ss().settings.skin.value == Skins.Material && ts.inDarkMode(context);
+  bool get reverseMapping => SettingsSvc.settings.skin.value == Skins.Material && ThemeSvc.inDarkMode(context);
 
   /// iOS skin [ListTile] subtitle [TextStyle]s
   TextStyle get iosSubtitle => context.theme.textTheme.labelLarge!.copyWith(
-      color: ts.inDarkMode(context)
-          ? (ss().settings.windowEffect.value != WindowEffect.disabled
+      color: ThemeSvc.inDarkMode(context)
+          ? (SettingsSvc.settings.windowEffect.value != WindowEffect.disabled
               ? context.theme.colorScheme.properOnSurface
               : context.theme.colorScheme.onBackground)
-          : (ss().settings.windowEffect.value != WindowEffect.disabled
+          : (SettingsSvc.settings.windowEffect.value != WindowEffect.disabled
               ? context.theme.colorScheme.onBackground
               : context.theme.colorScheme.properOnSurface),
       fontWeight: FontWeight.w300);
@@ -129,12 +129,12 @@ mixin ThemeHelpers<T extends StatefulWidget> on State<T> {
   TextStyle get materialSubtitle =>
       context.theme.textTheme.labelLarge!.copyWith(color: context.theme.colorScheme.primary, fontWeight: FontWeight.bold);
 
-  Color get _headerColor => (ts.inDarkMode(context)
+  Color get _headerColor => (ThemeSvc.inDarkMode(context)
       ? context.theme.colorScheme.background
-      : context.theme.colorScheme.properSurface).withAlpha(ss().settings.windowEffect.value != WindowEffect.disabled ? 20 : 255);
+      : context.theme.colorScheme.properSurface).withAlpha(SettingsSvc.settings.windowEffect.value != WindowEffect.disabled ? 20 : 255);
 
-  Color get _tileColor => (ts.inDarkMode(context) ? context.theme.colorScheme.properSurface : context.theme.colorScheme.background)
-      .withAlpha(ss().settings.windowEffect.value != WindowEffect.disabled ? 100 : 255);
+  Color get _tileColor => (ThemeSvc.inDarkMode(context) ? context.theme.colorScheme.properSurface : context.theme.colorScheme.background)
+      .withAlpha(SettingsSvc.settings.windowEffect.value != WindowEffect.disabled ? 100 : 255);
 
   /// Header / background color on settings pages
   Color get headerColor => reverseMapping ? _tileColor : _headerColor;
@@ -144,19 +144,19 @@ mixin ThemeHelpers<T extends StatefulWidget> on State<T> {
 
   /// Whether or not to use tablet mode
   bool get showAltLayout =>
-      ss().settings.tabletMode.value && (!context.isPhone || context.width / context.height > 0.8) && context.width > 600 && !ls.isBubble;
+      SettingsSvc.settings.tabletMode.value && (!context.isPhone || context.width / context.height > 0.8) && context.width > 600 && !LifecycleSvc.isBubble;
 
   bool get showAltLayoutContextless =>
-      ss().settings.tabletMode.value &&
+      SettingsSvc.settings.tabletMode.value &&
       (!Get.context!.isPhone || Get.context!.width / Get.context!.height > 0.8) &&
       Get.context!.width > 600 &&
-      !ls.isBubble;
+      !LifecycleSvc.isBubble;
 
-  bool get iOS => ss().settings.skin.value == Skins.iOS;
+  bool get iOS => SettingsSvc.settings.skin.value == Skins.iOS;
 
-  bool get material => ss().settings.skin.value == Skins.Material;
+  bool get material => SettingsSvc.settings.skin.value == Skins.Material;
 
-  bool get samsung => ss().settings.skin.value == Skins.Samsung;
+  bool get samsung => SettingsSvc.settings.skin.value == Skins.Samsung;
 
   Brightness get brightness => context.theme.colorScheme.brightness;
 }
@@ -175,13 +175,13 @@ extension ColorSchemeHelpers on ColorScheme {
 
   Color get onSmsBubble => iMessageBubble == primary ? onPrimaryContainer : onPrimary;
 
-  Color bubble(BuildContext context, bool iMessage) => ss().settings.monetTheming.value != Monet.none
+  Color bubble(BuildContext context, bool iMessage) => SettingsSvc.settings.monetTheming.value != Monet.none
       ? (iMessage ? iMessageBubble : smsBubble)
       : iMessage
           ? (context.theme.extensions[BubbleColors] as BubbleColors?)?.iMessageBubbleColor ?? iMessageBubble
           : (context.theme.extensions[BubbleColors] as BubbleColors?)?.smsBubbleColor ?? smsBubble;
 
-  Color onBubble(BuildContext context, bool iMessage) => ss().settings.monetTheming.value != Monet.none
+  Color onBubble(BuildContext context, bool iMessage) => SettingsSvc.settings.monetTheming.value != Monet.none
       ? (iMessage ? oniMessageBubble : onSmsBubble)
       : iMessage
           ? (context.theme.extensions[BubbleColors] as BubbleColors?)?.oniMessageBubbleColor ?? oniMessageBubble
@@ -221,7 +221,7 @@ extension ColorHelpers on Color {
 
   Color themeLightenOrDarken(BuildContext context, [double percent = 10]) {
     if (percent == 0) return this;
-    if (!ts.inDarkMode(context)) {
+    if (!ThemeSvc.inDarkMode(context)) {
       return darkenPercent(percent);
     } else {
       return lightenPercent(percent);
@@ -229,12 +229,12 @@ extension ColorHelpers on Color {
   }
 
   Color themeOpacity(BuildContext context) {
-    if (ss().settings.windowEffect.value == WindowEffect.disabled) return withValues(alpha: 1.0.obs.value);
+    if (SettingsSvc.settings.windowEffect.value == WindowEffect.disabled) return withValues(alpha: 1.0.obs.value);
     if (!WindowEffects.dependsOnColor()) return withValues(alpha: 0.0.obs.value);
-    if (!ts.inDarkMode(context)) {
-      return withValues(alpha: ss().settings.windowEffectCustomOpacityLight.value);
+    if (!ThemeSvc.inDarkMode(context)) {
+      return withValues(alpha: SettingsSvc.settings.windowEffectCustomOpacityLight.value);
     } else {
-      return withValues(alpha: ss().settings.windowEffectCustomOpacityDark.value);
+      return withValues(alpha: SettingsSvc.settings.windowEffectCustomOpacityDark.value);
     }
   }
 

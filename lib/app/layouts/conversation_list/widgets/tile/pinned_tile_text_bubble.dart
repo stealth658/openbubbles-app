@@ -112,7 +112,7 @@ class PinnedTileTextBubbleState extends CustomState<PinnedTileTextBubble, void, 
       context.theme.colorScheme.bubble(context, chat.isIMessage)
     ];
     if (lastMessage == null) return bubbleColors;
-    if (!ss().settings.colorfulAvatars.value && ss().settings.colorfulBubbles.value && !lastMessage!.isFromMe!) {
+    if (!SettingsSvc.settings.colorfulAvatars.value && SettingsSvc.settings.colorfulBubbles.value && !lastMessage!.isFromMe!) {
       if (lastMessage!.handle?.color == null) {
         bubbleColors = toColorGradient(lastMessage!.handle?.address);
       } else {
@@ -128,10 +128,10 @@ class PinnedTileTextBubbleState extends CustomState<PinnedTileTextBubble, void, 
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final hideInfo = ss().settings.redactedMode.value && ss().settings.hideMessageContent.value;
+      final hideInfo = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideMessageContent.value;
       String _subtitle = hideInfo ? fakeText : subtitle;
 
-      final unread = GlobalChatService.unreadState(controller.chat.guid).value;
+      final unread = GlobalChatSvc.unreadState(controller.chat.guid).value;
       if (!unread || lastMessage?.associatedMessageGuid != null || lastMessage!.isFromMe! || isNullOrEmpty(_subtitle)) {
         return const SizedBox.shrink();
       }
@@ -194,7 +194,7 @@ class PinnedTileTextBubbleState extends CustomState<PinnedTileTextBubble, void, 
                             fontSize: (size / 10).clamp(context.theme.textTheme.bodySmall!.fontSize!, double.infinity),
                             color: context.theme.colorScheme
                                 .onBubble(context, chat.isIMessage)
-                                .withValues(alpha: ss().settings.colorfulBubbles.value ? 1 : 0.85)),
+                                .withValues(alpha: SettingsSvc.settings.colorfulBubbles.value ? 1 : 0.85)),
                       ),
                     ),
                   ),

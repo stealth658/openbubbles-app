@@ -42,7 +42,7 @@ class HandleSyncManager extends SyncManager {
     }
 
     // Check if the user is on v1.5.2 or newer
-    int serverVersion = (await ss().getServerDetails()).item4;
+    int serverVersion = (await SettingsSvc.getServerDetails()).item4;
     // 100(major) + 21(minor) + 1(bug)
     bool isMin1_5_2 = serverVersion >= 207; // Server: v1.5.2
     if (!isMin1_5_2) {
@@ -91,7 +91,7 @@ class HandleSyncManager extends SyncManager {
       }
 
       addToOutput("Streaming handles from server...");
-      bool hasContactAccess = await cs.hasContactAccess;
+      bool hasContactAccess = await ContactsSvc.hasContactAccess;
       await for (final handleEvent in streamHandlePages(totalHandles)) {
         double handleProgress = handleEvent.item1;
         List<Handle> serverHandles = handleEvent.item2;
@@ -111,12 +111,12 @@ class HandleSyncManager extends SyncManager {
           }
 
           if (hasContactAccess) {
-            h.contactRelation.target ??= cs.matchHandleToContact(h);
+            h.contactRelation.target ??= ContactsSvc.matchHandleToContact(h);
           }
         }
 
         // Save the new handles to the DB
-        List<Handle> handles = Handle.bulkSave(serverHandles, matchOnOriginalROWID: true);
+        List<Handle> handles = await Handle.bulkSaveAsync(serverHandles, matchOnOriginalROWID: true);
         handlesSynced += handles.length;
 
         // Save the new handles to a cache
@@ -162,7 +162,7 @@ class HandleSyncManager extends SyncManager {
   }
 
   Future<int?> getHandleCount() async {
-    Response handleCountResponse = await http.handleCount();
+    Response handleCountResponse = await HttpSvc.handleCount();
     Map<String, dynamic> res = handleCountResponse.data;
     if (handleCountResponse.statusCode == 200) {
       return res["data"]["total"];
@@ -240,7 +240,7 @@ class HandleSyncManager extends SyncManager {
     for (int i = 0; i < batches; i++) {
       // Fetch the handles and throw an error if we don't get back a good response.
       // Throwing an error should cancel the sync
-      Response handlePage = await http.handles(offset: i * countPerBatch, limit: countPerBatch);
+      Response handlePage = await HttpSvc.handles(offset: i * countPerBatch, limit: countPerBatch);
       dynamic data = handlePage.data;
       if (handlePage.statusCode != 200) {
         throw HandleRequestException(
@@ -265,8 +265,8 @@ class HandleSyncManager extends SyncManager {
     rebuildRelationships(newHandles);
     addToOutput("Successfully synced $handlesSynced handle(s)!");
     addToOutput("Reloading your chats...");
-    Get.reload<ChatsService>(force: true);
-    await chats.init(force: true);
+    ChatsSvc.reset();
+    await ChatsSvc.init(force: true);
     await super.complete();
   }
 }

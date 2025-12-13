@@ -30,7 +30,7 @@ class _ScheduledMessagesPanelState extends OptimizedState<ScheduledMessagesPanel
   }
 
   void getExistingMessages() async {
-    final response = await http.getScheduled().catchError((_) {
+    final response = await HttpSvc.getScheduled().catchError((_) {
       setState(() {
         fetching = null;
       });
@@ -45,12 +45,12 @@ class _ScheduledMessagesPanelState extends OptimizedState<ScheduledMessagesPanel
   }
 
   void deleteMessage(ScheduledMessage item) async {
-    final response = await http.deleteScheduled(item.id);
+    final response = await HttpSvc.deleteScheduled(item.id);
     if (response.statusCode == 200) {
       scheduled.remove(item);
       setState(() {});
     } else {
-      Logger().error(response.data);
+      Logger.error(response.data);
       showSnackbar("Error", "Something went wrong!");
     }
   }
@@ -75,7 +75,7 @@ class _ScheduledMessagesPanelState extends OptimizedState<ScheduledMessagesPanel
           size: 25
         ),
         onPressed: () async {
-          final result = await ns.pushSettings(
+          final result = await NavigationSvc.pushSettings(
             context,
             CreateScheduledMessage(),
           );
@@ -150,7 +150,7 @@ class _ScheduledMessagesPanelState extends OptimizedState<ScheduledMessagesPanel
                       findChildIndexCallback: (key) => findChildIndexByKey(oneTime, key, (item) => item.id.toString()),
                       itemBuilder: (context, index) {
                         final item = oneTime[index];
-                        final chat = chats.chats.firstWhereOrNull((e) => e.guid == item.payload.chatGuid);
+                        final chat = ChatsSvc.chats.firstWhereOrNull((e) => e.guid == item.payload.chatGuid);
                         return ListTile(
                           key: ValueKey(item.id.toString()),
                           mouseCursor: SystemMouseCursors.click,
@@ -161,7 +161,7 @@ class _ScheduledMessagesPanelState extends OptimizedState<ScheduledMessagesPanel
                             onPressed: () => deleteMessage(item),
                           ),
                           onTap: () async {
-                            final result = await ns.pushSettings(
+                            final result = await NavigationSvc.pushSettings(
                               context,
                               CreateScheduledMessage(existing: item),
                             );
@@ -196,7 +196,7 @@ class _ScheduledMessagesPanelState extends OptimizedState<ScheduledMessagesPanel
                       findChildIndexCallback: (key) => findChildIndexByKey(recurring, key, (item) => item.id.toString()),
                       itemBuilder: (context, index) {
                         final item = recurring[index];
-                        final chat = chats.chats.firstWhereOrNull((e) => e.guid == item.payload.chatGuid);
+                        final chat = ChatsSvc.chats.firstWhereOrNull((e) => e.guid == item.payload.chatGuid);
                         return ListTile(
                           key: ValueKey(item.id.toString()),
                           mouseCursor: SystemMouseCursors.click,
@@ -208,7 +208,7 @@ class _ScheduledMessagesPanelState extends OptimizedState<ScheduledMessagesPanel
                             onPressed: () => deleteMessage(item),
                           ),
                           onTap: () async {
-                            final result = await ns.pushSettings(
+                            final result = await NavigationSvc.pushSettings(
                               context,
                               CreateScheduledMessage(existing: item),
                             );
@@ -241,7 +241,7 @@ class _ScheduledMessagesPanelState extends OptimizedState<ScheduledMessagesPanel
                     findChildIndexCallback: (key) => findChildIndexByKey(oneTimeCompleted, key, (item) => item.id.toString()),
                     itemBuilder: (context, index) {
                       final item = oneTimeCompleted[index];
-                      final chat = chats.chats.firstWhereOrNull((e) => e.guid == item.payload.chatGuid);
+                      final chat = ChatsSvc.chats.firstWhereOrNull((e) => e.guid == item.payload.chatGuid);
                       return ListTile(
                         key: ValueKey(item.id.toString()),
                         title: Text(item.payload.message),

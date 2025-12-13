@@ -75,7 +75,7 @@ class _TextBubbleState extends CustomState<TextBubble, void, MessageWidgetContro
   List<Color> getBubbleColors() {
     if (selected && !iOS) return [context.theme.colorScheme.tertiaryContainer, context.theme.colorScheme.tertiaryContainer];
     List<Color> bubbleColors = [context.theme.colorScheme.properSurface, context.theme.colorScheme.properSurface];
-    if (ss().settings.colorfulBubbles.value && !message.isFromMe!) {
+    if (SettingsSvc.settings.colorfulBubbles.value && !message.isFromMe!) {
       if (message.handle?.color == null) {
         bubbleColors = toColorGradient(message.handle?.address);
       } else {
@@ -92,7 +92,7 @@ class _TextBubbleState extends CustomState<TextBubble, void, MessageWidgetContro
   Widget build(BuildContext context) {
     return Container(
       constraints: BoxConstraints(
-        maxWidth: message.isBigEmoji ? ns.width(context) : ns.width(context) * MessageWidgetController.maxBubbleSizeFactor - 40,
+        maxWidth: message.isBigEmoji ? NavigationSvc.width(context) : NavigationSvc.width(context) * MessageWidgetController.maxBubbleSizeFactor - 40,
         minHeight: 40,
       ),
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15)
@@ -117,7 +117,7 @@ class _TextBubbleState extends CustomState<TextBubble, void, MessageWidgetContro
           part,
           message,
           colorOverride: selected ? context.theme.colorScheme.onTertiaryContainer
-              : ss().settings.colorfulBubbles.value && !message.isFromMe!
+              : SettingsSvc.settings.colorfulBubbles.value && !message.isFromMe!
               ? getBubbleColors().first.oppositeLightenOrDarken(75) : null,
           hideBodyText: widget.subjectOnly,
         ),
@@ -126,7 +126,7 @@ class _TextBubbleState extends CustomState<TextBubble, void, MessageWidgetContro
           part,
           message,
           colorOverride: selected ? context.theme.colorScheme.onTertiaryContainer
-              : ss().settings.colorfulBubbles.value && !message.isFromMe!
+              : SettingsSvc.settings.colorfulBubbles.value && !message.isFromMe!
               ? getBubbleColors().first.oppositeLightenOrDarken(75) : null,
           hideBodyText: widget.subjectOnly,
         ),

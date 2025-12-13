@@ -9,7 +9,7 @@ import 'package:universal_io/io.dart';
 class BackgroundIsolate {
   static void initialize() {
     CallbackHandle callbackHandle = PluginUtilities.getCallbackHandle(backgroundIsolateEntrypoint)!;
-    prefs().i.setInt("backgroundCallbackHandle", callbackHandle.toRawHandle());
+    PrefsSvc.i.setInt("backgroundCallbackHandle", callbackHandle.toRawHandle());
   }
 }
 
@@ -20,5 +20,5 @@ backgroundIsolateEntrypoint() async {
   WidgetsFlutterBinding.ensureInitialized();
   HttpOverrides.global = BadCertOverride();
 
-  await StartupTasks.initIsolateServices();
+  await StartupTasks.initBackgroundIsolate();
 }

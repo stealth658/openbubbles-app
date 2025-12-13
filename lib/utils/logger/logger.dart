@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:isolate';
 
 import 'package:archive/archive_io.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -15,7 +16,7 @@ import 'package:logger/logger.dart' as LoggerFactory;
 import 'outputs/debug_console_output.dart';
 
 // ignore: non_constant_identifier_names
-BaseLogger Logger() => GetIt.I<BaseLogger>();
+BaseLogger get Logger => GetIt.I<BaseLogger>();
 
 enum LogLevel { INFO, WARN, ERROR, DEBUG, TRACE, FATAL }
 
@@ -106,21 +107,24 @@ class BaseLogger {
   }
 
   String get logDir {
-    return join(fs().appDocDir.path, 'logs');
+    return join(FilesystemSvc.appDocDir.path, 'logs');
   }
 
   LoggerFactory.Logger get logger {
     return _logger;
   }
 
+  String _isolateName = "Main";
+
   Future<void> init() async {
     _logger = createLogger();
+    _isolateName = Isolate.current.debugName ?? "Main";
 
-    if (ss().initCompleted.isCompleted) {
-      currentLevel = ss().settings.logLevel.value;
+    if (SettingsSvc.initCompleted.isCompleted) {
+      currentLevel = SettingsSvc.settings.logLevel.value;
     } else {
-      ss().initCompleted.future.then((_) {
-        currentLevel = ss().settings.logLevel.value;
+      SettingsSvc.initCompleted.future.then((_) {
+        currentLevel = SettingsSvc.settings.logLevel.value;
       });
     }
 
@@ -162,8 +166,8 @@ class BaseLogger {
     _showColors = null;
     _excludeBoxes = null;
 
-    if (ss().initCompleted.isCompleted) {
-      _currentLevel = ss().settings.logLevel.value;
+    if (SettingsSvc.initCompleted.isCompleted) {
+      _currentLevel = SettingsSvc.settings.logLevel.value;
     }
 
     _logger = createLogger();
@@ -184,10 +188,10 @@ class BaseLogger {
   }
 
   String compressLogs() {
-    final Directory logDir = Directory(Logger().logDir);
+    final Directory logDir = Directory(Logger.logDir);
     final date = DateTime.now().toIso8601String().split('T').first;
     final File zippedLogFile =
-        File("${fs().appDocDir.path}/bluebubbles-logs-$date.zip");
+        File("${FilesystemSvc.appDocDir.path}/bluebubbles-logs-$date.zip");
     if (zippedLogFile.existsSync()) zippedLogFile.deleteSync();
 
     final List<FileSystemEntity> files = logDir.listSync();
@@ -206,7 +210,7 @@ class BaseLogger {
   }
 
   Future<List<String>> getLogs({maxLines = 1000}) async {
-    final Directory logDir = Directory(Logger().logDir);
+    final Directory logDir = Directory(Logger.logDir);
     if (!logDir.existsSync()) return [];
 
     final List<FileSystemEntity> files = logDir.listSync();
@@ -240,7 +244,7 @@ class BaseLogger {
   }
 
   void clearLogs() {
-    final Directory logDir = Directory(Logger().logDir);
+    final Directory logDir = Directory(Logger.logDir);
     if (!logDir.existsSync()) return;
 
     for (final file in logDir.listSync()) {
@@ -252,37 +256,37 @@ class BaseLogger {
 
   void info(dynamic log, {String? tag, Object? error, StackTrace? trace}) =>
       logger.i(
-          "${DateTime.now().toUtc().toIso8601String()} [INFO] [${tag ?? "BlueBubblesApp"}] $log",
+          "${DateTime.now().toUtc().toIso8601String()} [INFO] [$_isolateName] [${tag ?? "BlueBubblesApp"}] $log",
           error: error,
           stackTrace: trace);
 
   void warn(dynamic log, {String? tag, Object? error, StackTrace? trace}) =>
-      logger.w(
-          "${DateTime.now().toUtc().toIso8601String()} [WARN] [${tag ?? "BlueBubblesApp"}] $log",
+            logger.w(
+                "${DateTime.now().toUtc().toIso8601String()} [WARN] [$_isolateName] [${tag ?? "BlueBubblesApp"}] $log",
           error: error,
           stackTrace: trace);
 
   void debug(dynamic log, {String? tag, Object? error, StackTrace? trace}) =>
       logger.d(
-          "${DateTime.now().toUtc().toIso8601String()} [DEBUG] [${tag ?? "BlueBubblesApp"}] $log",
+          "${DateTime.now().toUtc().toIso8601String()} [DEBUG] [$_isolateName] [${tag ?? "BlueBubblesApp"}] $log",
           error: error,
           stackTrace: trace);
 
   void error(dynamic log, {String? tag, Object? error, StackTrace? trace}) =>
       logger.e(
-          "${DateTime.now().toUtc().toIso8601String()} [ERROR] [${tag ?? "BlueBubblesApp"}] $log",
+          "${DateTime.now().toUtc().toIso8601String()} [ERROR] [$_isolateName] [${tag ?? "BlueBubblesApp"}] $log",
           error: error,
           stackTrace: trace);
 
   void trace(dynamic log, {String? tag, Object? error, StackTrace? trace}) =>
       logger.t(
-          "${DateTime.now().toUtc().toIso8601String()} [TRACE] [${tag ?? "BlueBubblesApp"}] $log",
+          "${DateTime.now().toUtc().toIso8601String()} [TRACE] [$_isolateName] [${tag ?? "BlueBubblesApp"}] $log",
           error: error ?? Traceback(),
           stackTrace: trace);
 
   void fatal(dynamic log, {String? tag, Object? error, StackTrace? trace}) =>
       logger.f(
-          "${DateTime.now().toUtc().toIso8601String()} [FATAL] [${tag ?? "BlueBubblesApp"}] $log",
+          "${DateTime.now().toUtc().toIso8601String()} [FATAL] [$_isolateName] [${tag ?? "BlueBubblesApp"}] $log",
           error: error,
           stackTrace: trace);
 }

@@ -52,16 +52,16 @@ class _MaterialConversationTileState extends CustomState<MaterialConversationTil
         ),
         child: ListTile(
           mouseCursor: MouseCursor.defer,
-          dense: ss().settings.denseChatTiles.value,
-          visualDensity: ss().settings.denseChatTiles.value ? VisualDensity.compact : null,
-          minVerticalPadding: ss().settings.denseChatTiles.value ? 7.5 : 10,
+          dense: SettingsSvc.settings.denseChatTiles.value,
+          visualDensity: SettingsSvc.settings.denseChatTiles.value ? VisualDensity.compact : null,
+          minVerticalPadding: SettingsSvc.settings.denseChatTiles.value ? 7.5 : 10,
           title: Obx(() => ChatTitle(
                 parentController: controller,
                 style: context.theme.textTheme.bodyLarge!
                     .copyWith(
                       fontWeight: controller.shouldHighlight.value
                           ? FontWeight.w600
-                          : GlobalChatService.unreadState(controller.chat.guid).value
+                          : GlobalChatSvc.unreadState(controller.chat.guid).value
                               ? FontWeight.bold
                               : null,
                     )
@@ -69,7 +69,7 @@ class _MaterialConversationTileState extends CustomState<MaterialConversationTil
               )),
           subtitle: controller.subtitle ??
               Obx(() {
-                final unread = GlobalChatService.unreadState(controller.chat.guid).value;
+                final unread = GlobalChatSvc.unreadState(controller.chat.guid).value;
                 return ChatSubtitle(
                     parentController: controller,
                     style: context.theme.textTheme.bodyMedium!
@@ -89,7 +89,7 @@ class _MaterialConversationTileState extends CustomState<MaterialConversationTil
     );
 
     return Obx(() {
-      ns.listener.value;
+      NavigationSvc.listener.value;
       return AnimatedContainer(
         padding: const EdgeInsets.only(left: 10),
         clipBehavior: Clip.antiAlias,
@@ -109,7 +109,7 @@ class _MaterialConversationTileState extends CustomState<MaterialConversationTil
                           : null,
         ),
         duration: const Duration(milliseconds: 100),
-        child: ns.isAvatarOnly(context)
+        child: NavigationSvc.isAvatarOnly(context)
             ? InkWell(
                 mouseCursor: MouseCursor.defer,
                 onTap: () => controller.onTap(context),
@@ -139,7 +139,7 @@ class MaterialTrailing extends CustomStateful<ConversationTileController> {
 
 class _MaterialTrailingState extends CustomState<MaterialTrailing, void, ConversationTileController> {
   DateTime? dateCreated;
-  late final StreamSubscription sub;
+  StreamSubscription? sub;
   String? cachedLatestMessageGuid = "";
   Message? cachedLatestMessage;
 
@@ -166,7 +166,7 @@ class _MaterialTrailingState extends CustomState<MaterialTrailing, void, Convers
             return query.findFirst();
           });
           if (message != null &&
-              ss().settings.statusIndicatorsOnChats.value &&
+              SettingsSvc.settings.statusIndicatorsOnChats.value &&
               (message.dateDelivered != cachedLatestMessage?.dateDelivered || message.dateRead != cachedLatestMessage?.dateRead)) {
             setState(() {});
           }
@@ -197,7 +197,7 @@ class _MaterialTrailingState extends CustomState<MaterialTrailing, void, Convers
 
   @override
   void dispose() {
-    sub.cancel();
+    sub?.cancel();
     super.dispose();
   }
 
@@ -206,11 +206,11 @@ class _MaterialTrailingState extends CustomState<MaterialTrailing, void, Convers
     return Padding(
       padding: const EdgeInsets.only(right: 3),
       child: Obx(() {
-        final unread = GlobalChatService.unreadState(controller.chat.guid).value;
-        final muteType = GlobalChatService.muteState(controller.chat.guid).value;
+        final unread = GlobalChatSvc.unreadState(controller.chat.guid).value;
+        final muteType = GlobalChatSvc.muteState(controller.chat.guid).value;
 
         String indicatorText = "";
-        if (ss().settings.statusIndicatorsOnChats.value && (cachedLatestMessage?.isFromMe ?? false) && !controller.chat.isGroup) {
+        if (SettingsSvc.settings.statusIndicatorsOnChats.value && (cachedLatestMessage?.isFromMe ?? false) && !controller.chat.isGroup) {
           Indicator show = cachedLatestMessage?.indicatorToShow ?? Indicator.NONE;
           if (show != Indicator.NONE) {
             indicatorText = show.name.toLowerCase().capitalizeFirst!;
@@ -307,7 +307,7 @@ class _UnreadIconState extends CustomState<UnreadIcon, void, ConversationTileCon
   Widget build(BuildContext context) {
     return Obx(() => Padding(
       padding: const EdgeInsets.only(left: 5.0, right: 5.0),
-      child: (GlobalChatService.unreadState(controller.chat.guid).value)
+      child: (GlobalChatSvc.unreadState(controller.chat.guid).value)
           ? Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(35),

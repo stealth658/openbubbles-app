@@ -41,10 +41,10 @@ class BackButton extends StatelessWidget {
           },
           child: IconButton(
             icon: Obx(() => Icon(
-              ss().settings.skin.value != Skins.Material ? CupertinoIcons.back : Icons.arrow_back,
+              SettingsSvc.settings.skin.value != Skins.Material ? CupertinoIcons.back : Icons.arrow_back,
               color: color ?? context.theme.colorScheme.primary,
             )),
-            iconSize: ss().settings.skin.value != Skins.Material ? 30 : 24,
+            iconSize: SettingsSvc.settings.skin.value != Skins.Material ? 30 : 24,
             onPressed: () {
               if (kIsDesktop) return;
               final result = onPressed?.call() ?? false;
@@ -81,10 +81,10 @@ Widget buildBackButton(BuildContext context, {EdgeInsets padding = EdgeInsets.ze
           }
         },
         child: IconButton(
-          iconSize: iconSize ?? (ss().settings.skin.value != Skins.Material ? 30 : 24),
+          iconSize: iconSize ?? (SettingsSvc.settings.skin.value != Skins.Material ? 30 : 24),
           icon: skin != null
               ? Icon(skin != Skins.Material ? CupertinoIcons.back : Icons.arrow_back, color: context.theme.colorScheme.primary)
-              : Obx(() => Icon(ss().settings.skin.value != Skins.Material ? CupertinoIcons.back : Icons.arrow_back,
+              : Obx(() => Icon(SettingsSvc.settings.skin.value != Skins.Material ? CupertinoIcons.back : Icons.arrow_back,
                   color: context.theme.colorScheme.primary)),
           onPressed: () {
             if (kIsDesktop) return;
@@ -103,7 +103,7 @@ Widget buildBackButton(BuildContext context, {EdgeInsets padding = EdgeInsets.ze
 }
 
 Widget buildProgressIndicator(BuildContext context, {double size = 20, double strokeWidth = 2}) {
-  return ss().settings.skin.value == Skins.iOS
+  return SettingsSvc.settings.skin.value == Skins.iOS
       ? Theme(
           data: ThemeData(
             cupertinoOverrideTheme: CupertinoThemeData(brightness: ThemeData.estimateBrightnessForColor(context.theme.colorScheme.background)),
@@ -128,7 +128,7 @@ Widget buildProgressIndicator(BuildContext context, {double size = 20, double st
 
 Future<void> showConversationTileMenu(
     BuildContext context, ConversationTileController _this, Chat chat, Offset tapPosition, TextTheme textTheme) async {
-  bool ios = ss().settings.skin.value == Skins.iOS;
+  bool ios = SettingsSvc.settings.skin.value == Skins.iOS;
   HapticFeedback.mediumImpact();
   await showMenu(
     color: context.theme.colorScheme.properSurface,
@@ -286,7 +286,7 @@ Future<void> showConversationTileMenu(
                       TextButton(
                         child: Text("Yes", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
                         onPressed: () async {
-                          chats.removeChat(chat);
+                          ChatsSvc.removeChat(chat);
                           Chat.softDelete(chat);
                           Navigator.pop(context); //Remove AlertDialog
                         },
@@ -322,22 +322,22 @@ Future<void> showConversationTileMenu(
 
 IconData getAttachmentIcon(String mimeType) {
   if (mimeType.isEmpty) {
-    return ss().settings.skin.value == Skins.iOS ? CupertinoIcons.arrow_up_right_square : Icons.open_in_new;
+    return SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.arrow_up_right_square : Icons.open_in_new;
   }
   if (mimeType == "application/pdf") {
-    return ss().settings.skin.value == Skins.iOS ? CupertinoIcons.doc_on_doc : Icons.picture_as_pdf;
+    return SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.doc_on_doc : Icons.picture_as_pdf;
   } else if (mimeType == "application/zip") {
-    return ss().settings.skin.value == Skins.iOS ? CupertinoIcons.folder : Icons.folder;
+    return SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.folder : Icons.folder;
   } else if (mimeType.startsWith("audio")) {
-    return ss().settings.skin.value == Skins.iOS ? CupertinoIcons.music_note : Icons.music_note;
+    return SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.music_note : Icons.music_note;
   } else if (mimeType.startsWith("image")) {
-    return ss().settings.skin.value == Skins.iOS ? CupertinoIcons.photo : Icons.photo;
+    return SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.photo : Icons.photo;
   } else if (mimeType.startsWith("video")) {
-    return ss().settings.skin.value == Skins.iOS ? CupertinoIcons.videocam : Icons.videocam;
+    return SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.videocam : Icons.videocam;
   } else if (mimeType.startsWith("text")) {
-    return ss().settings.skin.value == Skins.iOS ? CupertinoIcons.doc_text : Icons.note;
+    return SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.doc_text : Icons.note;
   }
-  return ss().settings.skin.value == Skins.iOS ? CupertinoIcons.arrow_up_right_square : Icons.open_in_new;
+  return SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.arrow_up_right_square : Icons.open_in_new;
 }
 
 void showSnackbar(String title, String message, {int animationMs = 250, int durationMs = 1500, Function(GetSnackBar)? onTap, TextButton? button}) {
@@ -403,7 +403,7 @@ Future<void> paintGroupAvatar({
 }) async {
   late final ThemeData theme;
   final bool systemDark = PlatformDispatcher.instance.platformBrightness == Brightness.dark;
-  if (!ls.isAlive) {
+  if (!LifecycleSvc.isAlive) {
     if (systemDark) {
       theme = ThemeStruct.getDarkTheme().data;
     } else {
@@ -418,7 +418,7 @@ Future<void> paintGroupAvatar({
     try {
       customAvatar = await clip(await File(chat.customAvatarPath!).readAsBytes(), size: size.toInt(), circle: true);
     } catch (e, stack) {
-      Logger().warn("Failed to load/clip custom avatar!", error: e, trace: stack);
+      Logger.warn("Failed to load/clip custom avatar!", error: e, trace: stack);
     }
     if (customAvatar != null) {
       canvas.drawImage(await loadImage(customAvatar), const Offset(0, 0), Paint());
@@ -427,7 +427,7 @@ Future<void> paintGroupAvatar({
   }
 
   if (participants == null) return;
-  int maxAvatars = ss().settings.maxAvatarsInGroupWidget.value;
+  int maxAvatars = SettingsSvc.settings.maxAvatarsInGroupWidget.value;
 
   if (participants.length == 1) {
     await paintAvatar(
@@ -440,8 +440,8 @@ Future<void> paintGroupAvatar({
   }
 
   Color bgColor = theme.colorScheme.properSurface;
-  if (kIsDesktop && systemDark && ss().settings.useDesktopAccent.value) {
-    bgColor = ts.desktopAccentColor ?? bgColor;
+  if (kIsDesktop && systemDark && SettingsSvc.settings.useDesktopAccent.value) {
+    bgColor = ThemeSvc.desktopAccentColor ?? bgColor;
   }
   Paint paint = Paint()..color = bgColor;
   Offset _offset = Offset(size * 0.5, size * 0.5);
@@ -481,7 +481,7 @@ Future<void> paintGroupAvatar({
         ..layout()
         ..paint(canvas, Offset(left + realSize * 0.25, top + realSize * 0.25));
     } else {
-      Paint paint = Paint()..color = ss().settings.skin.value == Skins.Samsung ? theme.colorScheme.secondary : theme.colorScheme.background;
+      Paint paint = Paint()..color = SettingsSvc.settings.skin.value == Skins.Samsung ? theme.colorScheme.secondary : theme.colorScheme.background;
       canvas.drawCircle(Offset(left + realSize * 0.5, top + realSize * 0.5), realSize * 0.5, paint);
       await paintAvatar(
         handle: participants[index],
@@ -506,7 +506,7 @@ Future<void> paintAvatar(
     bool inGroup = false}) async {
   fontSize ??= size * 0.5;
   borderWidth ??= size * 0.05;
-  Contact? contact = handle?.contact ?? (handle != null ? cs.getContact(handle.address) : null);
+  Contact? contact = handle?.contact ?? (handle != null ? ContactsSvc.getContact(handle.address) : null);
   if (contact?.avatar != null) {
     Uint8List? contactAvatar = await clip(contact!.avatar ?? contact.avatar!, size: size.toInt(), circle: kIsDesktop || inGroup);
     if (contactAvatar != null) {
@@ -531,12 +531,12 @@ Future<void> paintAvatar(
   Paint paint = Paint();
   paint.isAntiAlias = true;
   paint.shader = ui.Gradient.linear(Offset(dx + size * 0.5, dy + size * 0.5), Offset(size.toDouble(), size.toDouble()), [
-    !ss().settings.colorfulAvatars.value
+    !SettingsSvc.settings.colorfulAvatars.value
         ? HexColor("928E8E")
         : colors.isNotEmpty
             ? colors[1]
             : HexColor("928E8E"),
-    !ss().settings.colorfulAvatars.value
+    !SettingsSvc.settings.colorfulAvatars.value
         ? HexColor("686868")
         : colors.isNotEmpty
             ? colors[0]

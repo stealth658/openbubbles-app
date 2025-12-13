@@ -71,12 +71,12 @@ class WindowEffects {
   }
 
   static double defaultOpacity({required bool dark}) {
-    WindowEffect effect = ss().settings.windowEffect.value;
+    WindowEffect effect = SettingsSvc.settings.windowEffect.value;
     return dark ? _opacities[effect]!.item1 : _opacities[effect]!.item2;
   }
 
   static bool dependsOnColor() {
-    WindowEffect effect = ss().settings.windowEffect.value;
+    WindowEffect effect = SettingsSvc.settings.windowEffect.value;
     return _dependencies[effect]!.contains(EffectDependencies.color);
   }
 
@@ -86,12 +86,12 @@ class WindowEffects {
 
   static Future<void> setEffect({required Color color}) async {
     if (!kIsDesktop || !Platform.isWindows) return;
-    WindowEffect effect = ss().settings.windowEffect.value;
-    if (!effects.contains(effect)) ss().settings.windowEffect.value = WindowEffect.disabled;
-    ss().saveSettings(ss().settings);
+    WindowEffect effect = SettingsSvc.settings.windowEffect.value;
+    if (!effects.contains(effect)) SettingsSvc.settings.windowEffect.value = WindowEffect.disabled;
+    SettingsSvc.saveSettings(SettingsSvc.settings);
 
     bool supportsTransparentAcrylic = parsedWindowsVersion() >= 22000;
-    bool addOpacity = ss().settings.windowEffect.value == WindowEffect.acrylic && !supportsTransparentAcrylic;
+    bool addOpacity = SettingsSvc.settings.windowEffect.value == WindowEffect.acrylic && !supportsTransparentAcrylic;
 
     // withOpacity uses withAlpha((255.0 * opacity).round());
     // so, the minimum nonzero alpha can be made with opacity 1 / 255

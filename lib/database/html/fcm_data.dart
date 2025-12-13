@@ -36,33 +36,33 @@ class FCMData {
   FCMData save() {
     if (isNull) return this;
     Future.delayed(Duration.zero, () async {
-      await prefs().i.setString('projectID', projectID!);
-      await prefs().i.setString('storageBucket', storageBucket!);
-      await prefs().i.setString('apiKey', apiKey!);
-      if (firebaseURL != null) await prefs().i.setString('firebaseURL', firebaseURL!);
-      await prefs().i.setString('clientID', clientID!);
-      await prefs().i.setString('applicationID', applicationID!);
+      await PrefsSvc.i.setString('projectID', projectID!);
+      await PrefsSvc.i.setString('storageBucket', storageBucket!);
+      await PrefsSvc.i.setString('apiKey', apiKey!);
+      if (firebaseURL != null) await PrefsSvc.i.setString('firebaseURL', firebaseURL!);
+      await PrefsSvc.i.setString('clientID', clientID!);
+      await PrefsSvc.i.setString('applicationID', applicationID!);
     });
     return this;
   }
 
   static void deleteFcmData() async {
-    await prefs().i.remove('projectID');
-    await prefs().i.remove('storageBucket');
-    await prefs().i.remove('apiKey');
-    await prefs().i.remove('firebaseURL');
-    await prefs().i.remove('clientID');
-    await prefs().i.remove('applicationID');
+    await PrefsSvc.i.remove('projectID');
+    await PrefsSvc.i.remove('storageBucket');
+    await PrefsSvc.i.remove('apiKey');
+    await PrefsSvc.i.remove('firebaseURL');
+    await PrefsSvc.i.remove('clientID');
+    await PrefsSvc.i.remove('applicationID');
   }
 
   static FCMData getFCM() {
     return FCMData(
-      projectID: prefs().i.getString('projectID'),
-      storageBucket: prefs().i.getString('storageBucket'),
-      apiKey: prefs().i.getString('apiKey'),
-      firebaseURL: prefs().i.getString('firebaseURL'),
-      clientID: prefs().i.getString('clientID'),
-      applicationID: prefs().i.getString('applicationID'),
+      projectID: PrefsSvc.i.getString('projectID'),
+      storageBucket: PrefsSvc.i.getString('storageBucket'),
+      apiKey: PrefsSvc.i.getString('apiKey'),
+      firebaseURL: PrefsSvc.i.getString('firebaseURL'),
+      clientID: PrefsSvc.i.getString('clientID'),
+      applicationID: PrefsSvc.i.getString('applicationID'),
     );
   }
 

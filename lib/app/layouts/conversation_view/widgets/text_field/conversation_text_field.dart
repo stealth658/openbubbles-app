@@ -59,6 +59,9 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
   // typing indicators
   String oldText = "\n";
   Timer? _debounceTyping;
+  Timer? _debounceEmojiSearch;
+  Timer? _debounceMentionSearch;
+  Timer? _debounceDraftSave;
 
   // previous text state
   TextSelection oldTextFieldSelection = const TextSelection.collapsed(offset: 0);
@@ -70,7 +73,7 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
   bool get showAttachmentPicker => controller.showAttachmentPicker;
 
   late final double emojiPickerHeight = max(256, context.height * 0.4);
-  late final emojiColumns = ns.width(context) ~/ 56; // Intentionally not responsive to prevent rebuilds when resizing
+  late final emojiColumns = NavigationSvc.width(context) ~/ 56; // Intentionally not responsive to prevent rebuilds when resizing
   RxBool get showEmojiPicker => controller.showEmojiPicker;
 
   final proxyController = TextEditingController();
@@ -90,7 +93,7 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
 
     if (controller.fromChatCreator) {
       controller.focusNode.requestFocus();
-    } else if (ss().settings.autoOpenKeyboard.value) {
+    } else if (SettingsSvc.settings.autoOpenKeyboard.value) {
       updateObx(() {
         controller.focusNode.requestFocus();
       });
@@ -156,16 +159,32 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
 
   void focusListener(bool subject) async {
     final _focusNode = subject ? controller.subjectFocusNode : controller.focusNode;
+    // OPTIMIZATION: Only call setState if state actually needs to change
     if (_focusNode.hasFocus && showAttachmentPicker) {
-      setState(() {
-        controller.showAttachmentPicker = !showAttachmentPicker;
-      });
+      controller.showAttachmentPicker = false;
+      setState(() {});
     }
   }
 
   void textListener(bool subject) {
+    // OPTIMIZATION: Debounce draft saving to avoid database writes on every keystroke
     if (!subject && controller.textController.text.trim().isNotEmpty) {
-      chat.textFieldText = controller.textController.text;
+      _debounceDraftSave?.cancel();
+      _debounceDraftSave = Timer(const Duration(milliseconds: 500), () {
+        chat.textFieldText = controller.textController.text;
+      });
+    }
+
+    // typing indicators and text change detection
+    final newText = "${controller.subjectTextController.text}\n${controller.textController.text}";
+    
+    // OPTIMIZATION: Early exit if only selection changed (cursor moved), not text content
+    if (newText == oldText) {
+      // Text unchanged, only update selection tracking for mentions
+      if (!subject) {
+        oldTextFieldSelection = controller.textController.selection;
+      }
+      return;
     }
 
     if (!subject) {
@@ -239,106 +258,138 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
       oldTextFieldSelection = controller.textController.selection;
     }
 
-    // typing indicators
-    final newText = "${controller.subjectTextController.text}\n${controller.textController.text}";
-    if (newText != oldText) {
-      _debounceTyping?.cancel();
-      oldText = newText;
-      // don't send a bunch of duplicate events for every typing change
-      if (ss().settings.enablePrivateAPI.value &&
-          (chat.autoSendTypingIndicators ?? ss().settings.privateSendTypingIndicators.value)) {
-        if (_debounceTyping == null) {
-          socket.sendMessage("started-typing", {"chatGuid": chatGuid});
-        }
-        _debounceTyping = Timer(const Duration(seconds: 3), () {
-          socket.sendMessage("stopped-typing", {"chatGuid": chatGuid});
-          _debounceTyping = null;
-        });
+    _debounceTyping?.cancel();
+    oldText = newText;
+    // don't send a bunch of duplicate events for every typing change
+    if (SettingsSvc.settings.enablePrivateAPI.value &&
+        (chat.autoSendTypingIndicators ?? SettingsSvc.settings.privateSendTypingIndicators.value)) {
+      if (_debounceTyping == null) {
+        SocketSvc.sendMessage("started-typing", {"chatGuid": chatGuid});
       }
+      _debounceTyping = Timer(const Duration(seconds: 3), () {
+        SocketSvc.sendMessage("stopped-typing", {"chatGuid": chatGuid});
+        _debounceTyping = null;
+      });
+    }
 
-      // emoji picker
-      final _controller = subject ? controller.subjectTextController : controller.textController;
-      final newEmojiText = _controller.text;
-      if (newEmojiText.contains(":")) {
-        final regExp = RegExp(r"(?<=^|[^a-zA-Z\d]):[^: \n]{2,}(?:(?=[ \n]|$)|:)", multiLine: true);
-        final matches = regExp.allMatches(newEmojiText);
-        List<Emoji> allMatches = [];
-        String emojiName = "";
-        if (matches.isNotEmpty && matches.first.start < _controller.selection.start) {
-          RegExpMatch match = matches.lastWhere((m) => m.start < _controller.selection.start);
-          if (newEmojiText[match.end - 1] == ":") {
-            // This will get handled by the text field controller
-          } else if (match.end >= _controller.selection.start) {
-            emojiName = newEmojiText.substring(match.start + 1, match.end).toLowerCase();
-            allMatches = limitGenerator(emojiQuery(emojiName), limit: 50).toSet().toList(); // Maybe make this configurable?
-          }
-          Logger().info("${allMatches.length} matches found for: $emojiName");
-        }
-        if (allMatches.isNotEmpty) {
-          controller.mentionMatches.value = [];
-          controller.mentionSelectedIndex.value = 0;
-          controller.emojiMatches.value = allMatches;
-          controller.emojiSelectedIndex.value = 0;
-          return;
-        } else {
-          controller.emojiMatches.value = [];
-          controller.emojiSelectedIndex.value = 0;
-        }
-      }
-
-      if (ss().settings.enablePrivateAPI.value && !subject && newEmojiText.contains("@")) {
-        final regExp = RegExp(r"(?<=^|[^a-zA-Z\d])@(?:[^@ \n]+|$)(?=[ \n]|$)", multiLine: true);
-        final matches = regExp.allMatches(newEmojiText);
-        List<Mentionable> allMatches = [];
-        String mentionName = "";
-        if (matches.isNotEmpty && matches.first.start < _controller.selection.start) {
-          RegExpMatch match = matches.lastWhere((m) => m.start < _controller.selection.start);
-          final text = newEmojiText.substring(match.start, match.end);
-          if (text.endsWith("@")) {
-            allMatches = controller.mentionables;
-          } else if (newEmojiText[match.end - 1] == "@") {
-            mentionName = newEmojiText.substring(match.start + 1, match.end - 1).toLowerCase();
-            allMatches = controller.mentionables
-                .where((e) =>
-            e.address.toLowerCase().startsWith(mentionName.toLowerCase()) ||
-                e.displayName.toLowerCase().startsWith(mentionName.toLowerCase()))
-                .toList();
-            allMatches.addAll(controller.mentionables
-                .where((e) =>
-            !allMatches.contains(e) &&
-                (e.address.isCaseInsensitiveContains(mentionName) ||
-                    e.displayName.isCaseInsensitiveContains(mentionName)))
-                .toList());
-          } else if (match.end >= _controller.selection.start) {
-            mentionName = newEmojiText.substring(match.start + 1, match.end).toLowerCase();
-            allMatches = controller.mentionables
-                .where((e) =>
-            e.address.toLowerCase().startsWith(mentionName.toLowerCase()) ||
-                e.displayName.toLowerCase().startsWith(mentionName.toLowerCase()))
-                .toList();
-            allMatches.addAll(controller.mentionables
-                .where((e) =>
-            !allMatches.contains(e) &&
-                (e.address.isCaseInsensitiveContains(mentionName) ||
-                    e.displayName.isCaseInsensitiveContains(mentionName)))
-                .toList());
-          }
-          Logger().info("${allMatches.length} matches found for: $mentionName");
-        }
-        if (allMatches.isNotEmpty) {
-          controller.emojiMatches.value = [];
-          controller.emojiSelectedIndex.value = 0;
-          controller.mentionMatches.value = allMatches;
-          controller.mentionSelectedIndex.value = 0;
-          return;
-        } else {
-          controller.mentionMatches.value = [];
-          controller.mentionSelectedIndex.value = 0;
-        }
-      }
-
+    // OPTIMIZATION: Only run expensive emoji/mention matching if relevant characters present
+    final _controller = subject ? controller.subjectTextController : controller.textController;
+    final newEmojiText = _controller.text;
+    
+    // Debounce emoji search to avoid running regex on every keystroke
+    if (newEmojiText.contains(":")) {
+      _debounceEmojiSearch?.cancel();
+      _debounceEmojiSearch = Timer(const Duration(milliseconds: 150), () {
+        _processEmojiMatches(subject);
+      });
+    } else {
+      _debounceEmojiSearch?.cancel();
       controller.emojiMatches.value = [];
       controller.emojiSelectedIndex.value = 0;
+    }
+
+    // Debounce mention search to avoid running regex on every keystroke
+    if (SettingsSvc.settings.enablePrivateAPI.value && !subject && newEmojiText.contains("@")) {
+      _debounceMentionSearch?.cancel();
+      _debounceMentionSearch = Timer(const Duration(milliseconds: 150), () {
+        _processMentionMatches(subject);
+      });
+    } else {
+      _debounceMentionSearch?.cancel();
+      controller.mentionMatches.value = [];
+      controller.mentionSelectedIndex.value = 0;
+    }
+  }
+
+  void _processEmojiMatches(bool subject) {
+    final _controller = subject ? controller.subjectTextController : controller.textController;
+    final newEmojiText = _controller.text;
+    
+    if (!newEmojiText.contains(":")) {
+      controller.emojiMatches.value = [];
+      controller.emojiSelectedIndex.value = 0;
+      return;
+    }
+    
+    final regExp = RegExp(r"(?<=^|[^a-zA-Z\d]):[^: \n]{2,}(?:(?=[ \n]|$)|:)", multiLine: true);
+    final matches = regExp.allMatches(newEmojiText);
+    List<Emoji> allMatches = [];
+    String emojiName = "";
+    if (matches.isNotEmpty && matches.first.start < _controller.selection.start) {
+      RegExpMatch match = matches.lastWhere((m) => m.start < _controller.selection.start);
+      if (newEmojiText[match.end - 1] == ":") {
+        // This will get handled by the text field controller
+      } else if (match.end >= _controller.selection.start) {
+        emojiName = newEmojiText.substring(match.start + 1, match.end).toLowerCase();
+        allMatches = limitGenerator(emojiQuery(emojiName), limit: 50).toSet().toList();
+      }
+      Logger.info("${allMatches.length} matches found for: $emojiName");
+    }
+    if (allMatches.isNotEmpty) {
+      controller.mentionMatches.value = [];
+      controller.mentionSelectedIndex.value = 0;
+      controller.emojiMatches.value = allMatches;
+      controller.emojiSelectedIndex.value = 0;
+    } else {
+      controller.emojiMatches.value = [];
+      controller.emojiSelectedIndex.value = 0;
+    }
+  }
+
+  void _processMentionMatches(bool subject) {
+    final _controller = subject ? controller.subjectTextController : controller.textController;
+    final newEmojiText = _controller.text;
+    
+    if (!SettingsSvc.settings.enablePrivateAPI.value || subject || !newEmojiText.contains("@")) {
+      controller.mentionMatches.value = [];
+      controller.mentionSelectedIndex.value = 0;
+      return;
+    }
+    
+    final regExp = RegExp(r"(?<=^|[^a-zA-Z\d])@(?:[^@ \n]+|$)(?=[ \n]|$)", multiLine: true);
+    final matches = regExp.allMatches(newEmojiText);
+    List<Mentionable> allMatches = [];
+    String mentionName = "";
+    if (matches.isNotEmpty && matches.first.start < _controller.selection.start) {
+      RegExpMatch match = matches.lastWhere((m) => m.start < _controller.selection.start);
+      final text = newEmojiText.substring(match.start, match.end);
+      if (text.endsWith("@")) {
+        allMatches = controller.mentionables;
+      } else if (newEmojiText[match.end - 1] == "@") {
+        mentionName = newEmojiText.substring(match.start + 1, match.end - 1).toLowerCase();
+        allMatches = controller.mentionables
+            .where((e) =>
+        e.address.toLowerCase().startsWith(mentionName.toLowerCase()) ||
+            e.displayName.toLowerCase().startsWith(mentionName.toLowerCase()))
+            .toList();
+        allMatches.addAll(controller.mentionables
+            .where((e) =>
+        !allMatches.contains(e) &&
+            (e.address.isCaseInsensitiveContains(mentionName) ||
+                e.displayName.isCaseInsensitiveContains(mentionName)))
+            .toList());
+      } else if (match.end >= _controller.selection.start) {
+        mentionName = newEmojiText.substring(match.start + 1, match.end).toLowerCase();
+        allMatches = controller.mentionables
+            .where((e) =>
+        e.address.toLowerCase().startsWith(mentionName.toLowerCase()) ||
+            e.displayName.toLowerCase().startsWith(mentionName.toLowerCase()))
+            .toList();
+        allMatches.addAll(controller.mentionables
+            .where((e) =>
+        !allMatches.contains(e) &&
+            (e.address.isCaseInsensitiveContains(mentionName) ||
+                e.displayName.isCaseInsensitiveContains(mentionName)))
+            .toList());
+      }
+      Logger.info("${allMatches.length} matches found for: $mentionName");
+    }
+    if (allMatches.isNotEmpty) {
+      controller.emojiMatches.value = [];
+      controller.emojiSelectedIndex.value = 0;
+      controller.mentionMatches.value = allMatches;
+      controller.mentionSelectedIndex.value = 0;
+    } else {
       controller.mentionMatches.value = [];
       controller.mentionSelectedIndex.value = 0;
     }
@@ -359,8 +410,12 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
     controller.textController.dispose();
     controller.subjectTextController.dispose();
     recorderController?.dispose();
-    if (chat.autoSendTypingIndicators ?? ss().settings.privateSendTypingIndicators.value) {
-      socket.sendMessage("stopped-typing", {"chatGuid": chatGuid});
+    _debounceTyping?.cancel();
+    _debounceEmojiSearch?.cancel();
+    _debounceMentionSearch?.cancel();
+    _debounceDraftSave?.cancel();
+    if (chat.autoSendTypingIndicators ?? SettingsSvc.settings.privateSendTypingIndicators.value) {
+      SocketSvc.sendMessage("stopped-typing", {"chatGuid": chatGuid});
     }
 
     super.dispose();
@@ -395,24 +450,24 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
           );
         },
       );
-      final response = await http.createScheduled(chat.guid, text, date.toUtc(), {"type": "once"});
+      final response = await HttpSvc.createScheduled(chat.guid, text, date.toUtc(), {"type": "once"});
       Navigator.of(context).pop();
       if (response.statusCode == 200 && response.data != null) {
         showSnackbar("Notice", "Message scheduled successfully for ${buildFullDate(date)}");
       } else {
-        Logger().error("Scheduled message error: ${response.statusCode}");
-        Logger().error(response.data);
+        Logger.error("Scheduled message error: ${response.statusCode}");
+        Logger.error(response.data);
         showSnackbar("Error", "Something went wrong!");
       }
     } else {
-      if (text.isEmpty && controller.subjectTextController.text.isEmpty && !ss().settings.privateAPIAttachmentSend.value) {
+      if (text.isEmpty && controller.subjectTextController.text.isEmpty && !SettingsSvc.settings.privateAPIAttachmentSend.value) {
         if (controller.replyToMessage != null) {
           return showSnackbar("Error", "Turn on Private API Attachment Send to send replies with media!");
         } else if (effect != null) {
           return showSnackbar("Error", "Turn on Private API Attachment Send to send effects with media!");
         }
       }
-      if (effect == null && ss().settings.enablePrivateAPI.value) {
+      if (effect == null && SettingsSvc.settings.enablePrivateAPI.value) {
         final cleansed = text.replaceAll("!", "").toLowerCase();
         switch (cleansed) {
           case "congratulations":
@@ -662,7 +717,7 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
                       }
                       final selectedGif = result?.media.tinyGif ?? result?.media.tinyGifTransparent;
                       if (result != null && selectedGif != null) {
-                        final response = await http.downloadFromUrl(selectedGif.url);
+                        final response = await HttpSvc.downloadFromUrl(selectedGif.url);
                         if (response.statusCode == 200) {
                           try {
                             final Uint8List data = response.data;
@@ -774,7 +829,7 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
               curve: Curves.easeIn,
               alignment: Alignment.bottomCenter,
               child: !showAttachmentPicker
-                  ? SizedBox(width: ns.width(context))
+                  ? SizedBox(width: NavigationSvc.width(context))
                   : AttachmentPicker(
                       controller: controller,
                     ),
@@ -933,7 +988,7 @@ class TextFieldComponentState extends State<TextFieldComponent> {
       isRecordingNotifier.value = recorderController?.isRecording ?? false;
     });
 
-    assert(!(subjectTextController == null && !isChatCreator && ss().settings.enablePrivateAPI.value && ss().settings.privateSubjectLine.value && chat!.isIMessage));
+    assert(!(subjectTextController == null && !isChatCreator && SettingsSvc.settings.enablePrivateAPI.value && SettingsSvc.settings.privateSubjectLine.value && chat!.isIMessage));
   }
 
   @override
@@ -943,9 +998,9 @@ class TextFieldComponentState extends State<TextFieldComponent> {
     super.dispose();
   }
 
-  bool get iOS => ss().settings.skin.value == Skins.iOS;
+  bool get iOS => SettingsSvc.settings.skin.value == Skins.iOS;
 
-  bool get samsung => ss().settings.skin.value == Skins.Samsung;
+  bool get samsung => SettingsSvc.settings.skin.value == Skins.Samsung;
 
   Chat? get chat => controller?.chat;
 
@@ -1001,7 +1056,7 @@ class TextFieldComponentState extends State<TextFieldComponent> {
                     }
                     return const SizedBox.shrink();
                   }),
-                if (!isChatCreator && ss().settings.enablePrivateAPI.value && ss().settings.privateSubjectLine.value && chat!.isIMessage)
+                if (!isChatCreator && SettingsSvc.settings.enablePrivateAPI.value && SettingsSvc.settings.privateSubjectLine.value && chat!.isIMessage)
                   TextField(
                     textCapitalization: TextCapitalization.sentences,
                     focusNode: controller!.subjectFocusNode,
@@ -1012,7 +1067,7 @@ class TextFieldComponentState extends State<TextFieldComponent> {
                     keyboardType: TextInputType.multiline,
                     maxLines: 14,
                     minLines: 1,
-                    enableIMEPersonalizedLearning: !ss().settings.incognitoKeyboard.value,
+                    enableIMEPersonalizedLearning: !SettingsSvc.settings.incognitoKeyboard.value,
                     textInputAction: TextInputAction.next,
                     cursorColor: context.theme.colorScheme.primary,
                     cursorHeight: context.theme.extension<BubbleText>()!.bubbleText.fontSize! * 1.25,
@@ -1039,7 +1094,7 @@ class TextFieldComponentState extends State<TextFieldComponent> {
                     },
                     contentInsertionConfiguration: ContentInsertionConfiguration(onContentInserted: onContentCommit),
                   ),
-                if (!isChatCreator && ss().settings.enablePrivateAPI.value && ss().settings.privateSubjectLine.value && chat!.isIMessage && iOS)
+                if (!isChatCreator && SettingsSvc.settings.enablePrivateAPI.value && SettingsSvc.settings.privateSubjectLine.value && chat!.isIMessage && iOS)
                   Divider(
                     height: 1.5,
                     thickness: 1.5,
@@ -1057,8 +1112,8 @@ class TextFieldComponentState extends State<TextFieldComponent> {
                   maxLines: 14,
                   minLines: 1,
                   autofocus: (kIsWeb || kIsDesktop) && !isChatCreator,
-                  enableIMEPersonalizedLearning: !ss().settings.incognitoKeyboard.value,
-                  textInputAction: ss().settings.sendWithReturn.value && !kIsWeb && !kIsDesktop ? TextInputAction.send : TextInputAction.newline,
+                  enableIMEPersonalizedLearning: !SettingsSvc.settings.incognitoKeyboard.value,
+                  textInputAction: SettingsSvc.settings.sendWithReturn.value && !kIsWeb && !kIsDesktop ? TextInputAction.send : TextInputAction.newline,
                   cursorColor: context.theme.colorScheme.primary,
                   cursorHeight: context.theme.extension<BubbleText>()!.bubbleText.fontSize! * 1.25,
                   decoration: InputDecoration(
@@ -1067,7 +1122,7 @@ class TextFieldComponentState extends State<TextFieldComponent> {
                     isCollapsed: true,
                     hintText: isChatCreator
                         ? "New Message"
-                        : ss().settings.recipientAsPlaceholder.value == true
+                        : SettingsSvc.settings.recipientAsPlaceholder.value == true
                             ? isRecording ? "" : chat!.getTitle()
                             : (chat!.isTextForwarding && !isRecording)
                                 ? "Text Forwarding"
@@ -1185,13 +1240,13 @@ class TextFieldComponentState extends State<TextFieldComponent> {
 
   void onContentCommit(KeyboardInsertedContent content) async {
     // Add some debugging logs
-    Logger().info("[Content Commit] Keyboard received content");
-    Logger().info("  -> Content Type: ${content.mimeType}");
-    Logger().info("  -> URI: ${content.uri}");
-    Logger().info("  -> Content Length: ${content.hasData ? content.data!.length : "null"}");
+    Logger.info("[Content Commit] Keyboard received content");
+    Logger.info("  -> Content Type: ${content.mimeType}");
+    Logger.info("  -> URI: ${content.uri}");
+    Logger.info("  -> Content Length: ${content.hasData ? content.data!.length : "null"}");
 
     // Parse the filename from the URI and read the data as a List<int>
-    String filename = fs().uriToFilename(content.uri, content.mimeType);
+    String filename = FilesystemSvc.uriToFilename(content.uri, content.mimeType);
 
     // Save the data to a location and add it to the file picker
     if (content.hasData) {
@@ -1319,10 +1374,10 @@ class TextFieldComponentState extends State<TextFieldComponent> {
     if (ev.logicalKey == LogicalKeyboardKey.arrowUp) {
       if (chat != null &&
           controller!.lastFocusedTextController.text.isEmpty &&
-          ss().settings.editLastSentMessageOnUpArrow.value &&
-          ss().isMinVenturaSync &&
-          ss().serverDetailsSync().item4 >= 148) {
-        final message = ms(chat!.guid).mostRecentSent;
+          SettingsSvc.settings.editLastSentMessageOnUpArrow.value &&
+          SettingsSvc.isMinVenturaSync &&
+          SettingsSvc.serverDetailsSync().item4 >= 148) {
+        final message = MessagesSvc(chat!.guid).mostRecentSent;
         if (message != null && !message.guid!.startsWith("temp")) {
           final parts = mwc(message).parts;
           final part = parts.filter((p) => p.text?.isNotEmpty ?? false).lastOrNull;
@@ -1396,7 +1451,7 @@ class TextFieldComponentState extends State<TextFieldComponent> {
 
         return KeyEventResult.handled;
       }
-      if (ss().settings.privateSubjectLine.value) {
+      if (SettingsSvc.settings.privateSubjectLine.value) {
         if (ev.logicalKey == LogicalKeyboardKey.tab) {
           // Tab to switch between text fields
           if (!HardwareKeyboard.instance.isShiftPressed && controller!.subjectFocusNode.hasPrimaryFocus) {
@@ -1442,7 +1497,7 @@ class TextFieldComponentState extends State<TextFieldComponent> {
     }
 
     if (kIsDesktop || kIsWeb) return KeyEventResult.ignored;
-    if (ev.physicalKey == PhysicalKeyboardKey.enter && ss().settings.sendWithReturn.value) {
+    if (ev.physicalKey == PhysicalKeyboardKey.enter && SettingsSvc.settings.sendWithReturn.value) {
       if (!isNullOrEmpty(textController.text) || !isNullOrEmpty(controller!.subjectTextController.text)) {
         sendMessage();
         controller!.focusNode.previousFocus(); // I genuinely don't know why this works

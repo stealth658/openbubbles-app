@@ -2,12 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
-import 'package:async_task/async_task.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
+import 'package:bluebubbles/services/backend/interfaces/message_interface.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -17,215 +17,6 @@ import 'package:metadata_fetch/metadata_fetch.dart';
 // ignore: unnecessary_import
 import 'package:objectbox/objectbox.dart';
 
-/// Async method to fetch attachments
-class GetMessageAttachments extends AsyncTask<List<dynamic>, Map<String, List<Attachment?>>> {
-  final List<dynamic> stuff;
-
-  GetMessageAttachments(this.stuff);
-
-  @override
-  AsyncTask<List<dynamic>, Map<String, List<Attachment?>>> instantiate(List<dynamic> parameters,
-      [Map<String, SharedData>? sharedData]) {
-    return GetMessageAttachments(parameters);
-  }
-
-  @override
-  List<dynamic> parameters() {
-    return stuff;
-  }
-
-  @override
-  FutureOr<Map<String, List<Attachment?>>> run() {
-    /// Pull args from input and create new instances of store and boxes
-    List<int> messageIds = stuff[0];
-    final Map<String, List<Attachment?>> map = {};
-    return Database.runInTransaction(TxMode.read, () {
-      /// Query the [amJoinBox] for relevant attachment IDs
-      final messages = Database.messages.getMany(messageIds);
-
-      /// Add the attachments to the map with some clever list operations
-      map.addEntries(messages.mapIndexed((index, e) => MapEntry(e!.guid!, e.dbAttachments)));
-      return map;
-    });
-  }
-}
-
-/// Async method to get chats from objectbox
-class BulkSaveNewMessages extends AsyncTask<List<dynamic>, List<Message>> {
-  final List<dynamic> params;
-
-  BulkSaveNewMessages(this.params);
-
-  @override
-  AsyncTask<List<dynamic>, List<Message>> instantiate(List<dynamic> parameters, [Map<String, SharedData>? sharedData]) {
-    return BulkSaveNewMessages(parameters);
-  }
-
-  @override
-  List<dynamic> parameters() {
-    return params;
-  }
-
-  @override
-  FutureOr<List<Message>> run() {
-    return Database.runInTransaction(TxMode.write, () {
-      // NOTE: This assumes that handles and chats will already be created and in the database
-      // 0. Create map for the messages and attachments to save
-      // 1. Check for existing attachments and save new ones
-      // 2. Fetch all inserted/existing attachments based on input
-      // 3. Create map of inserted/existing attachments
-      // 4. Check for existing messages & create list of new messages to save
-      // 5. Fetch all handles and map the old handle ROWIDs from each message to the new ones based on the original ROWID
-      // 6. Relate the attachments to the messages
-      // 7. Save all messages (and handle/attachment relationships)
-      // 8. Get the inserted messages
-      // 9. Check inserted messages for associated message GUIDs & update hasReactions flag
-      // 10. Save the updated associated messages
-      // 11. Update the associated chat's last message
-
-      /// Takes the list of messages from [params] and saves it
-      /// to the objectbox Database.
-      Chat inputChat = params[0];
-      List<Message> inputMessages = params[1];
-      List<String> inputMessageGuids = inputMessages.map((element) => element.guid!).toList();
-
-      // 0. Create map for the messages and attachments to save
-      Map<String, Attachment> attachmentsToSave = {};
-      Map<String, List<String>> messageAttachments = {};
-      for (final msg in inputMessages) {
-        for (final a in msg.attachments) {
-          if (!attachmentsToSave.containsKey(a!.guid)) {
-            attachmentsToSave[a.guid!] = a;
-          }
-
-          if (!messageAttachments.containsKey(a.guid)) {
-            messageAttachments[msg.guid!] = [];
-          }
-
-          if (!messageAttachments[msg.guid]!.contains(a.guid)) {
-            messageAttachments[msg.guid]?.add(a.guid!);
-          }
-        }
-      }
-
-      // 1. Check for existing attachments and save new ones
-      Map<String, Attachment> attachmentMap = {};
-      if (attachmentsToSave.isNotEmpty) {
-        List<String> inputAttachmentGuids = attachmentsToSave.values.map((e) => e.guid).nonNulls.toList();
-        QueryBuilder<Attachment> attachmentQuery = Database.attachments.query(Attachment_.guid.oneOf(inputAttachmentGuids));
-        List<String> existingAttachmentGuids =
-            attachmentQuery.build().find().map((e) => e.guid).nonNulls.toList();
-
-        // Insert the attachments that don't yet exist
-        List<Attachment> attachmentsToInsert = attachmentsToSave.values
-            .where((element) => !existingAttachmentGuids.contains(element.guid))
-            .nonNulls
-            .toList();
-        Database.attachments.putMany(attachmentsToInsert);
-
-        // 2. Fetch all inserted/existing attachments based on input
-        QueryBuilder<Attachment> attachmentQuery2 = Database.attachments.query(Attachment_.guid.oneOf(inputAttachmentGuids));
-        List<Attachment> attachments = attachmentQuery2.build().find().nonNulls.toList();
-
-        // 3. Create map of inserted/existing attachments
-        for (final a in attachments) {
-          attachmentMap[a.guid!] = a;
-        }
-      }
-
-      // 4. Check for existing messages & create list of new messages to save
-      QueryBuilder<Message> query = Database.messages.query(Message_.guid.oneOf(inputMessageGuids));
-      List<String> existingMessageGuids = query.build().find().map((e) => e.guid!).toList();
-      inputMessages = inputMessages.where((element) => !existingMessageGuids.contains(element.guid)).toList();
-
-      // 5. Fetch all handles and map the old handle ROWIDs from each message to the new ones based on the original ROWID
-      List<Handle> handles = Database.handles.getAll();
-
-      for (final msg in inputMessages) {
-        msg.chat.target = inputChat;
-        msg.handle = handles.firstWhereOrNull((e) => e.originalROWID == msg.handleId);
-      }
-
-      // 6. Relate the attachments to the messages
-      for (final msg in inputMessages) {
-        final relatedAttachments =
-            messageAttachments[msg.guid]?.map((e) => attachmentMap[e]).nonNulls.toList() ?? [];
-        msg.attachments = relatedAttachments;
-        msg.dbAttachments.addAll(relatedAttachments);
-      }
-
-      // 7. Save all messages (and handle/attachment relationships)
-      Database.messages.putMany(inputMessages);
-
-      // 8. Get the inserted messages
-      QueryBuilder<Message> messageQuery = Database.messages.query(Message_.guid.oneOf(inputMessageGuids));
-      List<Message> messages = messageQuery.build().find().toList();
-
-      // 9. Check inserted messages for associated message GUIDs & update hasReactions flag
-      Map<String, Message> messagesToUpdate = {};
-      for (final message in messages) {
-        // Update the handles from our cache
-        message.handle = handles.firstWhereOrNull((element) => element.originalROWID == message.handleId);
-
-        // Continue if there isn't an associated message GUID to process
-        if ((message.associatedMessageGuid ?? '').isEmpty) continue;
-
-        // Find the associated message in the DB and update the hasReactions flag
-        List<Message> associatedMessages =
-            Message.find(cond: Message_.guid.equals(message.associatedMessageGuid!)).toList();
-        if (associatedMessages.isNotEmpty) {
-          // Toggle the hasReactions flag
-          Message messageWithReaction = messagesToUpdate[associatedMessages[0].guid] ?? associatedMessages[0];
-          messageWithReaction.hasReactions = true;
-
-          // Make sure the current message has the associated message in it's list, and the hasReactions
-          // flag is set as well
-          Message reactionMessage = messagesToUpdate[message.guid!] ?? message;
-          for (var e in messageWithReaction.associatedMessages) {
-            if (e.guid == messageWithReaction.guid) {
-              e.hasReactions = true;
-              break;
-            }
-          }
-
-          // Update the cached values
-          messagesToUpdate[messageWithReaction.guid!] = messageWithReaction;
-          messagesToUpdate[reactionMessage.guid!] = reactionMessage;
-        }
-      }
-
-      // 10. Save the updated associated messages
-      if (messagesToUpdate.isNotEmpty) {
-        try {
-          Database.messages.putMany(messagesToUpdate.values.toList());
-        } catch (ex) {
-          print('Failed to put associated messages into DB: ${ex.toString()}');
-        }
-      }
-
-      // 11. Update the associated chat's last message
-      messages.sort(Message.sort);
-      bool isNewer = false;
-
-      // If the message was saved correctly, update this chat's latestMessage info,
-      // but only if the incoming message's date is newer
-      if (messages.isNotEmpty) {
-        final first = messages.first;
-        if (first.id != null || kIsWeb) {
-          isNewer = first.dateCreated!.isAfter(inputChat.latestMessage.dateCreated!);
-          if (isNewer) {
-            inputChat.latestMessage = first;
-            if (!first.isFromMe! && !cm.isChatActive(inputChat.guid)) {
-              inputChat.toggleHasUnread(true);
-            }
-          }
-        }
-      }
-
-      return messages;
-    });
-  }
-}
 
 @Entity()
 class Message {
@@ -383,7 +174,7 @@ class Message {
       try {
         attributedBody = (json['attributedBody'] as List).map((a) => AttributedBody.fromMap(a!.cast<String, Object>())).toList();
       } catch (e, stack) {
-        Logger().error('Failed to parse attributed body!', error: e, trace: stack);
+        Logger.error('Failed to parse attributed body!', error: e, trace: stack);
       }
     }
 
@@ -402,14 +193,14 @@ class Message {
     try {
       msi = (json['messageSummaryInfo'] as List? ?? []).map((e) => MessageSummaryInfo.fromJson(e!.cast<String, Object>())).toList();
     } catch (e, stack) {
-      Logger().error('Failed to parse summary info!', error: e, trace: stack);
+      Logger.error('Failed to parse summary info!', error: e, trace: stack);
     }
 
     PayloadData? payloadData;
     try {
       payloadData = json['payloadData'] == null ? null : PayloadData.fromJson(json['payloadData']);
     } catch (e, s) {
-      Logger().error('Failed to parse payload data!', error: e, trace: s);
+      Logger.error('Failed to parse payload data!', error: e, trace: s);
     }
 
     return Message(
@@ -497,104 +288,42 @@ class Message {
     return this;
   }
 
-  static Future<List<Message>> bulkSaveNewMessages(Chat chat, List<Message> messages) async {
-    if (kIsWeb) throw Exception("Web does not support saving messages!");
+  Future<Message> saveAsync({Chat? chat, bool updateIsBookmarked = false}) async {
+    if (kIsWeb) return this;
 
-    final task = BulkSaveNewMessages([chat, messages]);
-    return (await createAsyncTask<List<Message>>(task)) ?? [];
+    final result = await MessageInterface.saveMessageAsync(
+      messageData: toMap(includeObjects: true),
+      chatData: chat?.toMap(),
+      updateIsBookmarked: updateIsBookmarked,
+    );
+
+    final savedMessage = Message.fromMap(result);
+    id = savedMessage.id;
+    return this;
   }
 
-  /// Save a list of messages
-  static List<Message> bulkSave(List<Message> messages) {
-    Database.runInTransaction(TxMode.write, () {
-      /// Find existing messages and match them to the messages to save, where
-      /// possible
-      List<Message> existingMessages = Message.find(cond: Message_.guid.oneOf(messages.map((e) => e.guid!).toList()));
-      for (Message m in messages) {
-        final existingMessage = existingMessages.firstWhereOrNull((e) => e.guid == m.guid);
-        if (existingMessage != null) {
-          m.id = existingMessage.id;
-          m.text ??= existingMessage.text;
-        }
-      }
+  static Future<List<Message>> bulkSaveNewMessages(Chat chat, List<Message> messages) async {
+    if (kIsWeb) throw Exception("Web does not support saving messages!");
+    if (messages.isEmpty) return [];
 
-      /// Save the messages and update their IDs
-      /// We do this first because we might want these same messages to show up
-      /// in the next queries
-      final ids = Database.messages.putMany(messages);
-      for (int i = 0; i < messages.length; i++) {
-        messages[i].id = ids[i];
-      }
+    final result = await MessageInterface.bulkSaveNewMessages(
+      chatData: chat.toMap(),
+      messagesData: messages.map((e) => e.toMap()).toList(),
+    );
 
-      /// Find associated messages or original messages
-      List<Message> associatedMessages =
-          Message.find(cond: Message_.guid.oneOf(messages.map((e) => e.associatedMessageGuid ?? "").toList()));
-      List<Message> originalMessages =
-          Message.find(cond: Message_.associatedMessageGuid.oneOf(messages.map((e) => e.guid!).toList()));
-
-      /// Iterate thru messages and update the associated message or the original
-      /// message, and update original message handle data
-      for (Message m in messages) {
-        if (m.associatedMessageType != null && m.associatedMessageGuid != null) {
-          final associatedMessageList = associatedMessages.where((e) => e.guid == m.associatedMessageGuid);
-          for (Message am in associatedMessageList) {
-            am.hasReactions = true;
-          }
-        } else if (!m.hasReactions) {
-          final originalMessage = originalMessages.firstWhereOrNull((e) => e.associatedMessageGuid == m.guid);
-          if (originalMessage != null) {
-            m.hasReactions = true;
-          }
-        }
-      }
-      associatedMessages.removeWhere((message) {
-        Message? _message = messages.firstWhereOrNull((e) => e.guid == message.guid);
-        _message?.hasReactions = message.hasReactions;
-        return _message != null;
-      });
-      try {
-        /// Update the original messages and associated messages
-        final ids = Database.messages.putMany(messages..addAll(associatedMessages));
-        for (int i = 0; i < messages.length; i++) {
-          messages[i].id = ids[i];
-        }
-      } on UniqueViolationException catch (_) {}
-    });
-    return messages;
+    return result.map((e) => Message.fromMap(e)).toList();
   }
 
   /// Replace a temp message with the message from the server
   static Future<Message> replaceMessage(String? oldGuid, Message newMessage) async {
-    Message? existing = Message.findOne(guid: oldGuid);
-    if (existing == null) {
-      throw Exception("Cannot replace on a null existing message!!");
-    }
-
-    // We just need to update the timestamps & error
-    if (existing.guid != newMessage.guid) {
-      existing.guid = newMessage.guid;
-    }
-    if (newMessage.text != null) {
-      existing.text = newMessage.text;
-    }
+    if (kIsWeb) throw Exception("Web does not support replacing messages!");
     
-    existing._dateDelivered.value = newMessage._dateDelivered.value ?? existing._dateDelivered.value;
-    existing._isDelivered.value = newMessage._isDelivered.value;
-    existing._dateRead.value = newMessage._dateRead.value ?? existing._dateRead.value;
-    existing._dateEdited.value = newMessage._dateEdited.value ?? existing._dateEdited.value;
-    existing.attributedBody = newMessage.attributedBody.isNotEmpty ? newMessage.attributedBody : existing.attributedBody;
-    existing.messageSummaryInfo = newMessage.messageSummaryInfo.isNotEmpty ? newMessage.messageSummaryInfo : existing.messageSummaryInfo;
-    existing.payloadData = newMessage.payloadData ?? existing.payloadData;
-    existing.wasDeliveredQuietly = newMessage.wasDeliveredQuietly ? newMessage.wasDeliveredQuietly : existing.wasDeliveredQuietly;
-    existing.didNotifyRecipient = newMessage.didNotifyRecipient ? newMessage.didNotifyRecipient : existing.didNotifyRecipient;
-    existing._error.value = newMessage._error.value;
+    final result = await MessageInterface.replaceMessage(
+      oldGuid: oldGuid,
+      newMessageData: newMessage.toMap(),
+    );
 
-    try {
-      Database.messages.put(existing, mode: PutMode.update);
-    } catch (ex, stack) {
-      Logger().error('Failed to replace message! This is likely due to a unique constraint being violated.', error: ex, trace: stack);
-    }
-    return existing;
+    return Message.fromMap(result);
   }
 
   Message updateMetadata(Metadata? metadata) {
@@ -623,6 +352,19 @@ class Message {
     });
   }
 
+  Future<List<Attachment?>> fetchAttachmentsAsync() async {
+    if (kIsWeb || id == null) return [];
+    if (attachments.isNotEmpty) return attachments;
+
+    final result = await MessageInterface.fetchAttachmentsAsync(
+      messageId: id!,
+      messageGuid: guid!,
+    );
+
+    attachments = result.map((e) => Attachment.fromMap(e)).toList();
+    return attachments;
+  }
+
   /// Get the chat associated with the message
   Chat? getChat() {
     if (kIsWeb) return null;
@@ -631,18 +373,42 @@ class Message {
     });
   }
 
+  Future<Chat?> getChatAsync() async {
+    if (kIsWeb || id == null) return null;
+
+    final result = await MessageInterface.getChatAsync(
+      messageId: id!,
+      messageGuid: guid!,
+    );
+
+    if (result == null) return null;
+    return Chat.fromMap(result);
+  }
+
   /// Fetch reactions
-  Message fetchAssociatedMessages({MessagesService? service, bool shouldRefresh = false}) {
-    associatedMessages = Message.find(cond: Message_.associatedMessageGuid.equals(guid ?? ""));
-    associatedMessages = MessageHelper.normalizedAssociatedMessages(associatedMessages);
+  Future<Message> fetchAssociatedMessages({MessagesService? service, bool shouldRefresh = false}) async {
+    if (kIsWeb) return this;
+    
+    final result = await MessageInterface.fetchAssociatedMessagesAsync(
+      messageGuid: guid!,
+      messageId: id,
+      threadOriginatorGuid: threadOriginatorGuid,
+    );
+
+    final associatedMessagesData = (result['associatedMessages'] as List).cast<Map<String, dynamic>>();
+    associatedMessages = associatedMessagesData.map((e) => Message.fromMap(e)).toList();
+
+    // Check if we need to add the thread originator from the service's struct
     if (threadOriginatorGuid != null) {
       final existing = service?.struct.getMessage(threadOriginatorGuid!);
-      final threadOriginator = existing ?? Message.findOne(guid: threadOriginatorGuid);
-      threadOriginator?.handle ??= threadOriginator.getHandle();
-      if (threadOriginator != null) associatedMessages.add(threadOriginator);
-      if (existing == null && threadOriginator != null) service?.struct.addThreadOriginator(threadOriginator);
+      if (existing != null && !associatedMessages.any((m) => m.guid == threadOriginatorGuid)) {
+        associatedMessages.add(existing);
+      } else if (existing == null && associatedMessages.any((m) => m.guid == threadOriginatorGuid)) {
+        final threadOriginator = associatedMessages.firstWhere((m) => m.guid == threadOriginatorGuid);
+        service?.struct.addThreadOriginator(threadOriginator);
+      }
     }
-    associatedMessages.sort((a, b) => a.originalROWID!.compareTo(b.originalROWID!));
+    
     return this;
   }
 
@@ -671,6 +437,18 @@ class Message {
     return null;
   }
 
+  static Future<Message?> findOneAsync({String? guid, String? associatedMessageGuid}) async {
+    if (kIsWeb) return null;
+
+    final result = await MessageInterface.findOneAsync(
+      guid: guid,
+      associatedMessageGuid: associatedMessageGuid,
+    );
+
+    if (result == null) return null;
+    return Message.fromMap(result);
+  }
+
   /// Find a list of messages by the specified condition, or return all messages
   /// when no condition is specified
   static List<Message> find({Condition<Message>? cond}) {
@@ -678,24 +456,27 @@ class Message {
     return query.find();
   }
 
-  /// Delete a message and remove all instances of that message in the DB
-  static void delete(String guid) {
-    if (kIsWeb) return;
-    Database.runInTransaction(TxMode.write, () {
-      final query = Database.messages.query(Message_.guid.equals(guid)).build();
-      final result = query.findFirst();
-      query.close();
-      if (result?.id != null) {
-        Database.messages.remove(result!.id!);
-      }
-    });
+  static Future<List<Message>> findAsync({Condition<Message>? cond}) async {
+    if (kIsWeb) return [];
+
+    // Note: For now, we pass null for conditionJson since serializing ObjectBox Condition
+    // is complex. This will return all messages. Future enhancement can add condition serialization.
+    final result = await MessageInterface.findAsync(
+      conditionJson: null,
+    );
+
+    return result.map((e) => Message.fromMap(e)).toList();
   }
 
-  static void softDelete(String guid) {
+  /// Delete a message and remove all instances of that message in the DB
+  static Future<void> delete(String guid) async {
     if (kIsWeb) return;
-    Message? toDelete = Message.findOne(guid: guid);
-    toDelete?.dateDeleted = DateTime.now().toUtc();
-    toDelete?.save();
+    await MessageInterface.deleteMessage(guid: guid);
+  }
+
+  static Future<void> softDelete(String guid) async {
+    if (kIsWeb) return;
+    await MessageInterface.softDeleteMessage(guid: guid);
   }
 
   /// This is purely because some Macs incorrectly report the dateCreated time
@@ -747,7 +528,7 @@ class Message {
 
   String? get interactiveMediaPath {
     final extension = balloonBundleId!.contains("com.apple.Digital") ? ".mov" : balloonBundleId!.contains("com.apple.Handwriting") ? ".png" : null;
-    return "${fs().appDocDir.path}/messages/$guid/embedded-media/$balloonBundleId$extension";
+    return "${FilesystemSvc.appDocDir.path}/messages/$guid/embedded-media/$balloonBundleId$extension";
   }
 
   bool get isGroupEvent => groupTitle != null || (itemType ?? 0) > 0 || (groupActionType ?? 0) > 0;
@@ -937,15 +718,15 @@ class Message {
       return Size(
           attachments
               .map((e) => e!.width)
-              .fold(0, (p, e) => max(p, (e ?? ns.width(context) / 2).toDouble()) + 28),
+              .fold(0, (p, e) => max(p, (e ?? NavigationSvc.width(context) / 2).toDouble()) + 28),
           attachments
               .map((e) => e!.height)
-              .fold(0, (p, e) => max(p, (e ?? ns.width(context) / 2).toDouble())));
+              .fold(0, (p, e) => max(p, (e ?? NavigationSvc.width(context) / 2).toDouble())));
     }
     // initialize constraints for text rendering
     final fontSizeFactor = isBigEmoji ? bigEmojiScaleFactor : 1.0;
     final constraints = BoxConstraints(
-      maxWidth: maxWidthOverride ?? ns.width(context) * MessageWidgetController.maxBubbleSizeFactor - 30,
+      maxWidth: maxWidthOverride ?? NavigationSvc.width(context) * MessageWidgetController.maxBubbleSizeFactor - 30,
       minHeight: minHeightOverride ?? Theme.of(context).textTheme.bodySmall!.fontSize! * fontSizeFactor,
     );
     final renderParagraph = RichText(
@@ -964,7 +745,7 @@ class Message {
     }
     // if we have a URL preview, extend to the full width
     if (isLegacyUrlPreview) {
-      size = Size(ns.width(context) * 2 / 3 - 30, size.height);
+      size = Size(NavigationSvc.width(context) * 2 / 3 - 30, size.height);
     }
     // if we have reactions, account for the extra height they add
     if (hasReactions) {

@@ -2,9 +2,11 @@ import 'dart:async';
 import 'dart:isolate';
 import 'dart:ui';
 
+import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:flutter/services.dart';
 import 'package:bluebubbles/helpers/backend/startup_tasks.dart';
 import 'package:bluebubbles/services/isolates/isolate_actions.dart';
+import 'package:bluebubbles/services/isolates/isolate_event.dart';
 
 /// A global isolate manager for handling background tasks
 class GlobalIsolate {
@@ -13,6 +15,7 @@ class GlobalIsolate {
   SendPort? _sendPort;
   final Map<String, _RequestInfo> _pendingRequests = {};
   final StreamController<dynamic> _controller = StreamController.broadcast();
+  final Map<IsolateEvent, List<Function(dynamic)>> _eventListeners = {};
   bool _isRunning = false;
   bool _isStarting = false;
   Completer<void> _startCompleter = Completer<void>();
@@ -40,15 +43,15 @@ class GlobalIsolate {
     _isStarting = true;
 
     try {
-      final rootIsolateToken = RootIsolateToken.instance!;
-
       // Register the receive port with a name so it can be found by other isolates
       IsolateNameServer.registerPortWithName(_receivePort.sendPort, _isolatePortName);
 
-      _isolate = await Isolate.spawn(GlobalIsolate._isolateEntryPoint, [
-        _receivePort.sendPort,
-        rootIsolateToken,
-      ], debugName: 'GlobalIsolate');
+      Logger.debug('Starting GlobalIsolate...');
+      // Pass the RootIsolateToken from the main isolate so the spawned isolate can initialize BackgroundIsolateBinaryMessenger
+      final rootToken = RootIsolateToken.instance;
+      _isolate = await Isolate.spawn(GlobalIsolate._isolateEntryPoint, [_receivePort.sendPort, rootToken],
+          debugName: 'GlobalIsolate');
+      Logger.debug('GlobalIsolate started.');
 
       _isRunning = true;
 
@@ -98,6 +101,7 @@ class GlobalIsolate {
     }
 
     _pendingRequests.clear();
+    _eventListeners.clear();
     _isolate = null;
     _sendPort = null;
     _isRunning = false;
@@ -106,6 +110,45 @@ class GlobalIsolate {
     if (_startCompleter.isCompleted) {
       _startCompleter = Completer<void>();
     }
+  }
+
+  /// Closes the isolate and clears all listeners
+  void close() {
+    stop();
+  }
+
+  /// Register a listener for a specific event type
+  void addEventListener(IsolateEvent event, Function(dynamic) listener) {
+    if (!_eventListeners.containsKey(event)) {
+      _eventListeners[event] = [];
+    }
+    _eventListeners[event]!.add(listener);
+    Logger.debug('Registered listener for event: ${event.name}');
+  }
+
+  /// Remove a specific listener for an event type
+  void removeEventListener(IsolateEvent event, Function(dynamic) listener) {
+    if (_eventListeners.containsKey(event)) {
+      _eventListeners[event]!.remove(listener);
+      if (_eventListeners[event]!.isEmpty) {
+        _eventListeners.remove(event);
+      }
+      Logger.debug('Removed listener for event: ${event.name}');
+    }
+  }
+
+  /// Remove all listeners for a specific event type
+  void removeAllEventListeners(IsolateEvent event) {
+    if (_eventListeners.containsKey(event)) {
+      _eventListeners.remove(event);
+      Logger.debug('Removed all listeners for event: ${event.name}');
+    }
+  }
+
+  /// Clear all event listeners
+  void clearAllEventListeners() {
+    _eventListeners.clear();
+    Logger.debug('Cleared all event listeners');
   }
 
   /// Sends a request to the isolate and waits for a response
@@ -151,18 +194,19 @@ class GlobalIsolate {
       return;
     }
 
-    // Handle messages from interactiveCallback
-    if (message is Map<String, dynamic> && message.containsKey('action')) {
-      final action = message['action'];
-      if (action == 'start') {
-        broadcast(IsolateRequestType.startStopwatch, null);
-      } else if (action == 'stop') {
-        broadcast(IsolateRequestType.stopStopwatch, null);
-      }
-      return;
-    }
-
     if (message is Map<String, dynamic>) {
+      // Check if this is an event message
+      if (message.containsKey('event')) {
+        try {
+          final eventMessage = IsolateEventMessage.fromMap(message);
+          _handleEvent(eventMessage);
+          return;
+        } catch (e) {
+          Logger.error('Failed to parse event message: $e');
+        }
+      }
+
+      // Otherwise, treat it as a response
       final isolateResponse = IsolateResponse.fromMap(message);
       final uuid = isolateResponse.uuid;
 
@@ -185,15 +229,30 @@ class GlobalIsolate {
     }
   }
 
+  /// Handle an event from the isolate
+  void _handleEvent(IsolateEventMessage eventMessage) {
+    Logger.debug('Received event from isolate: ${eventMessage.type.name}');
+    
+    if (_eventListeners.containsKey(eventMessage.type)) {
+      final listeners = List.from(_eventListeners[eventMessage.type]!);
+      for (final listener in listeners) {
+        try {
+          listener(eventMessage.data);
+        } catch (e, stack) {
+          Logger.error('Error in event listener for ${eventMessage.type.name}: $e', trace: stack);
+        }
+      }
+    }
+  }
+
   /// The isolate entry point - should be implemented by the service using this class
   static Future<void> _isolateEntryPoint(List<dynamic> args) async {
     final SendPort sendPort = args[0];
-    final RootIsolateToken rootIsolateToken = args[1];
+    final RootIsolateToken? rootIsolateToken = args.length > 1 ? args[1] : null;
+    await StartupTasks.initGlobalIsolateServices(rootIsolateToken);
 
-    // Initialize Flutter bindings for background isolate
-    BackgroundIsolateBinaryMessenger.ensureInitialized(rootIsolateToken);
-
-    await StartupTasks.initIsolateServices();
+    // Store the send port for event emission
+    IsolateEventEmitter._setSendPort(sendPort);
 
     // Create a receiver for the isolate
     final receivePort = ReceivePort();
@@ -205,7 +264,7 @@ class GlobalIsolate {
         final String uuid = isolateRequest.uuid;
         final type = isolateRequest.type;
         final dynamic data = isolateRequest.data;
-        print('Received request: $type with data: $data');
+        print('Received request: $type');
 
         try {
           final action = IsolateActons.actions[type];
@@ -276,13 +335,76 @@ enum IsolateRequestType {
   testPrintInput,
   testThrowError,
 
-  // Goal actions
-  processAllsGoals,
-  updateGoalsProgress,
+  // App actions
+  checkForUpdate,
+  getFcmData,
 
-  // Stopwatch actions
-  startStopwatch,
-  stopStopwatch,
+  // Server actions
+  checkForServerUpdate,
+  getServerDetails,
+
+  // Image actions
+  convertImageToPng,
+
+  // Prefs actions
+  saveReplyToMessageState,
+  loadReplyToMessageState,
+  syncSettings,
+
+  // Messages actions
+  getMessages,
+
+  // Chat actions
+  clearNotificationForChat,
+  markChatReadUnread,
+  saveChat,
+  deleteChat,
+  softDeleteChat,
+  unDeleteChat,
+  addMessageToChat,
+  loadSupplementalData,
+  syncLatestMessages,
+  bulkSyncChats,
+  getMessagesAsync,
+  bulkSyncMessages,
+  getParticipantsAsync,
+  clearTranscriptAsync,
+  getChatsAsync,
+
+  // Handle actions
+  saveHandleAsync,
+  bulkSaveHandlesAsync,
+  findOneHandleAsync,
+  findHandlesAsync,
+
+  // Contact actions
+  saveContactAsync,
+  findOneContactAsync,
+
+  // Attachment actions
+  saveAttachmentAsync,
+  bulkSaveAttachmentsAsync,
+  replaceAttachmentAsync,
+  findOneAttachmentAsync,
+  findAttachmentsAsync,
+  deleteAttachmentAsync,
+
+  // Sync actions
+  performIncrementalSync,
+  uploadContacts,
+
+  // Message actions
+  bulkSaveNewMessages,
+  bulkAddMessages,
+  replaceMessage,
+  fetchAttachmentsAsync,
+  getChatAsync,
+  deleteMessage,
+  softDeleteMessage,
+  fetchAssociatedMessagesAsync,
+  saveMessageAsync,
+  findOneAsync,
+  findAsync,
 }
 
 /// Internal class to track pending requests
@@ -367,5 +489,26 @@ class IsolateResponse<T> {
       message: map['message'] as String?,
       data: map['data'] as T?,
     );
+  }
+}
+
+/// Helper class to emit events from within the isolate to the main thread
+class IsolateEventEmitter {
+  static SendPort? _sendPort;
+
+  /// Internal method to set the send port (called from isolate entry point)
+  static void _setSendPort(SendPort port) {
+    _sendPort = port;
+  }
+
+  /// Emit an event from the isolate to the main thread
+  static void emit(IsolateEvent event, dynamic data) {
+    if (_sendPort == null) {
+      Logger.warn('Cannot emit event ${event.name}: SendPort not initialized');
+      return;
+    }
+
+    final eventMessage = IsolateEventMessage(type: event, data: data);
+    _sendPort!.send(eventMessage.toMap());
   }
 }

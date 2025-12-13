@@ -39,7 +39,7 @@ class _DeliveredIndicatorState extends CustomState<DeliveredIndicator, void, Mes
     if (controller.audioWasKept.value != null) return true;
     if (widget.forceShow || message.guid!.contains("temp")) return true;
     if ((!message.isFromMe! && iOS) || (controller.parts.lastOrNull?.isUnsent ?? false)) return false;
-    final messages = ms(controller.cvController?.chat.guid ?? cm.activeChat!.chat.guid).struct.messages
+    final messages = MessagesSvc(controller.cvController?.chat.guid ?? cm.activeChat!.chat.guid).struct.messages
         .where((e) => (!iOS ? !e.isFromMe! : false) || (e.isFromMe! && (e.dateDelivered != null || e.dateRead != null)))
         .toList()..sort(Message.sort);
     final index = messages.indexWhere((e) => e.guid == message.guid);
@@ -77,7 +77,7 @@ class _DeliveredIndicatorState extends CustomState<DeliveredIndicator, void, Mes
     } else if (message.dateRead != null) {
       return buildTwoPiece("Read", buildDate(message.dateRead));
     } else if (message.dateDelivered != null) {
-      return buildTwoPiece("Delivered${message.wasDeliveredQuietly && !message.didNotifyRecipient ? " Quietly" : ""}", ss().settings.showDeliveryTimestamps.value || !iOS || widget.forceShow ? buildDate(message.dateDelivered) : null);
+      return buildTwoPiece("Delivered${message.wasDeliveredQuietly && !message.didNotifyRecipient ? " Quietly" : ""}", SettingsSvc.settings.showDeliveryTimestamps.value || !iOS || widget.forceShow ? buildDate(message.dateDelivered) : null);
     } else if (message.isDelivered) {
       return buildTwoPiece("Delivered", null);
     } else if (message.guid!.contains("temp") && !(controller.cvController?.chat ?? cm.activeChat!.chat).isGroup && !iOS) {
@@ -98,7 +98,7 @@ class _DeliveredIndicatorState extends CustomState<DeliveredIndicator, void, Mes
       child: Obx(() => shouldShow && getText().isNotEmpty ? Padding(
         padding: const EdgeInsets.symmetric(horizontal: 15).add(EdgeInsets.only(
           top: 3,
-          left: showAvatar || ss().settings.alwaysShowAvatars.value ? 35 : 0)
+          left: showAvatar || SettingsSvc.settings.alwaysShowAvatars.value ? 35 : 0)
         ),
         child: Text.rich(TextSpan(
           children: getText(),

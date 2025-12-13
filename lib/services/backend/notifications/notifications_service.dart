@@ -24,9 +24,10 @@ import 'package:timezone/timezone.dart';
 import 'package:universal_html/html.dart' hide File, Platform, Navigator;
 import 'package:universal_io/io.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:get_it/get_it.dart';
 
-NotificationsService notif =
-    Get.isRegistered<NotificationsService>() ? Get.find<NotificationsService>() : Get.put(NotificationsService());
+// ignore: non_constant_identifier_names
+NotificationsService get NotificationsSvc => GetIt.I<NotificationsService>(); 
 
 class PendingToastItem {
   final String? sender;
@@ -39,7 +40,7 @@ class PendingToastItem {
   PendingToastItem({required this.sender, required this.text, required this.isReaction, required this.isGroupEvent});
 }
 
-class NotificationsService extends GetxService {
+class NotificationsService {
   static const String NEW_MESSAGE_CHANNEL = "com.bluebubbles.new_messages";
   static const String ERROR_CHANNEL = "com.bluebubbles.errors";
   static const String REMINDER_CHANNEL = "com.bluebubbles.reminders";
@@ -67,7 +68,7 @@ class NotificationsService extends GetxService {
   static const int maxLines = 4;
   static const int charsPerLineEst = 40;
 
-  bool get hideContent => ss().settings.hideTextPreviews.value;
+  bool get hideContent => SettingsSvc.settings.hideTextPreviews.value;
 
   Future<void> init() async {
     if (!kIsWeb && !kIsDesktop) {
@@ -76,12 +77,12 @@ class NotificationsService extends GetxService {
           InitializationSettings(android: initializationSettingsAndroid);
       await flnp.initialize(initializationSettings, onDidReceiveNotificationResponse: (NotificationResponse? response) {
         if (response?.payload != null) {
-          intents.openChat(response!.payload);
+          IntentsSvc.openChat(response!.payload);
         }
       });
       final details = await flnp.getNotificationAppLaunchDetails();
       if (details != null && details.didNotificationLaunchApp && details.notificationResponse?.payload != null) {
-        intents.openChat(details.notificationResponse!.payload!);
+        IntentsSvc.openChat(details.notificationResponse!.payload!);
       }
       // Defer notification channel creation - not critical for immediate startup
       Future.microtask(() {
@@ -118,11 +119,11 @@ class NotificationsService extends GetxService {
       final countQuery =
           (Database.messages.query()..order(Message_.id, flags: Order.descending)).watch(triggerImmediately: true);
       countSub = countQuery.listen((event) {
-        if (!ss().settings.finishedSetup.value) return;
+        if (!SettingsSvc.settings.finishedSetup.value) return;
         final newCount = event.count();
-        final activeChatFetching = cm.activeChat != null ? ms(cm.activeChat!.chat.guid).isFetching : false;
-        if (ls.isAlive &&
-            (!sync.isIncrementalSyncing.value && !kIsDesktop) &&
+        final activeChatFetching = cm.activeChat != null ? MessagesSvc(cm.activeChat!.chat.guid).isFetching : false;
+        if (LifecycleSvc.isAlive &&
+            (!SyncSvc.isIncrementalSyncing.value && !kIsDesktop) &&
             !activeChatFetching &&
             newCount > currentCount &&
             currentCount != 0) {
@@ -142,22 +143,20 @@ class NotificationsService extends GetxService {
       });
     } else {
       countSub = WebListeners.newMessage.listen((tuple) {
-        final activeChatFetching = cm.activeChat != null ? ms(cm.activeChat!.chat.guid).isFetching : false;
-        if (ls.isAlive && !activeChatFetching && tuple.item2 != null) {
+        final activeChatFetching = cm.activeChat != null ? MessagesSvc(cm.activeChat!.chat.guid).isFetching : false;
+        if (LifecycleSvc.isAlive && !activeChatFetching && tuple.item2 != null) {
           MessageHelper.handleNotification(tuple.item1, tuple.item2!, findExisting: false);
         }
       });
     }
   }
 
-  @override
-  void onClose() {
+  void close() {
     countSub?.cancel();
-    super.onClose();
   }
 
   Future<void> createNotificationChannel(String channelID, String channelName, String channelDescription) async {
-    await mcs.invokeMethod("create-notification-channel", {
+    await MethodChannelSvc.invokeMethod("create-notification-channel", {
       "channel_name": channelName,
       "channel_description": channelDescription,
       "channel_id": channelID,
@@ -215,13 +214,13 @@ class NotificationsService extends GetxService {
       final notif =
           Notification(title, body: text, icon: "data:image/png;base64,${base64Encode(chatIcon)}", tag: message.guid);
       notif.onClick.listen((event) async {
-        await intents.openChat(guid);
+        await IntentsSvc.openChat(guid);
       });
     } else if (kIsDesktop) {
       _lock.synchronized(
           () => showDesktopNotif(text, chat, title, contactName, message, isReaction, message.isGroupEvent));
     } else {
-      await mcs.invokeMethod("create-incoming-message-notification", {
+      await MethodChannelSvc.invokeMethod("create-incoming-message-notification", {
         "channel_id": NEW_MESSAGE_CHANNEL,
         "chat_id": chat.id,
         "chat_guid": guid,
@@ -250,14 +249,14 @@ class NotificationsService extends GetxService {
           Notification(title, body: text, icon: "data:image/png;base64,${base64Encode(chatIcon)}", tag: callUuid);
       if (callUuid != null) {
         notif.onClick.listen((event) async {
-          await intents.answerFaceTime(callUuid);
+          await IntentsSvc.answerFaceTime(callUuid);
         });
       }
     } else if (kIsDesktop) {
       _lock.synchronized(() async => await showPersistentDesktopFaceTimeNotif(callUuid, caller, chatIcon, isAudio));
     } else {
       final numeric = callUuid?.numericOnly();
-      await mcs.invokeMethod("create-incoming-facetime-notification", {
+      await MethodChannelSvc.invokeMethod("create-incoming-facetime-notification", {
         "channel_id": FACETIME_CHANNEL,
         "notification_id":
             numeric != null ? int.parse(numeric.substring(0, min(8, numeric.length))) : Random().nextInt(9998) + 1,
@@ -275,7 +274,7 @@ class NotificationsService extends GetxService {
       await clearDesktopFaceTimeNotif(callUuid);
     } else if (!kIsWeb) {
       final numeric = callUuid.numericOnly();
-      mcs.invokeMethod("delete-notification",
+      MethodChannelSvc.invokeMethod("delete-notification",
           {"notification_id": int.parse(numeric.substring(0, min(8, numeric.length))), "tag": NEW_FACETIME_TAG});
     }
   }
@@ -291,7 +290,7 @@ class NotificationsService extends GetxService {
       Uint8List? _avatar = await clip(avatar, size: 256, circle: true);
       if (_avatar != null) {
         // Create a temp file with the avatar
-        path = join(fs().appDocDir.path, "temp", "${randomString(8)}.png");
+        path = join(FilesystemSvc.appDocDir.path, "temp", "${randomString(8)}.png");
         await File(path).create(recursive: true);
         await File(path).writeAsBytes(_avatar);
       }
@@ -316,7 +315,7 @@ class NotificationsService extends GetxService {
       toast.onClickAction = (index) async {
         if (actions[index] == "Answer") {
           await windowManager.show();
-          await intents.answerFaceTime(callUuid);
+          await IntentsSvc.answerFaceTime(callUuid);
         } else {
           hideFaceTimeOverlay(callUuid);
           await toast?.close();
@@ -346,7 +345,7 @@ class NotificationsService extends GetxService {
 
   void showDesktopNotif(
       String text, Chat chat, String title, String contactName, Message message, bool isReaction, bool isGroupEvent) {
-    if (kIsDesktop && !ss().settings.desktopNotifications.value) return;
+    if (kIsDesktop && !SettingsSvc.settings.desktopNotifications.value) return;
 
     final String guid = chat.guid;
 
@@ -371,7 +370,7 @@ class NotificationsService extends GetxService {
     if (pendingMessages[guid]?.isEmpty ?? true) return;
 
     Uint8List avatar = await avatarAsBytes(chat: chat, quality: 256);
-    String path = join(fs().appDocDir.path, "temp", "${randomString(8)}.png");
+    String path = join(FilesystemSvc.appDocDir.path, "temp", "${randomString(8)}.png");
     await File(path).create(recursive: true);
     await File(path).writeAsBytes(avatar);
 
@@ -404,9 +403,9 @@ class NotificationsService extends GetxService {
 
     final PendingToastItem lastItem = pendingMessages[guid]!.last;
 
-    final papi = ss().settings.enablePrivateAPI.value;
-    final List<int> selectedIndices = ss().settings.selectedActionIndices;
-    List<String> actions = ss().settings.actionList
+    final papi = SettingsSvc.settings.enablePrivateAPI.value;
+    final List<int> selectedIndices = SettingsSvc.settings.selectedActionIndices;
+    List<String> actions = SettingsSvc.settings.actionList
         .whereIndexed((i, e) => selectedIndices.contains(i))
         .map((action) => action == "Mark Read"
             ? action
@@ -440,11 +439,11 @@ class NotificationsService extends GetxService {
               ? [LocalNotificationAction(text: "Mark $numMessages Messages Read")]
               : []
           : nActions,
-      hasInput: ss().settings.showReplyField.value,
+      hasInput: SettingsSvc.settings.showReplyField.value,
       inputPlaceholder: "Type a reply...",
       inputButtonText: "Reply",
       systemSound: LocalNotificationSound.sms,
-      soundOption: ss().settings.desktopNotificationSoundPath.value != null
+      soundOption: SettingsSvc.settings.desktopNotificationSoundPath.value != null
           ? LocalNotificationSoundOption.silent
           : LocalNotificationSoundOption.defaultOption,
     );
@@ -476,7 +475,7 @@ class NotificationsService extends GetxService {
       if (actions[index] == "Mark Read" || multipleMessages) {
         chat.toggleHasUnread(false);
         EventDispatcher().emit('refresh', null);
-      } else if (ss().settings.enablePrivateAPI.value) {
+      } else if (SettingsSvc.settings.enablePrivateAPI.value) {
         final String reaction = ReactionTypes.emojiToReaction[actions[index]]!;
         final Message _message = Message(
           associatedMessageGuid: message.guid!,
@@ -536,7 +535,7 @@ class NotificationsService extends GetxService {
 
   Future<void> _openChat(Chat chat) async {
     if (cm.isChatActive(chat.guid) && Get.context != null) {
-      ns.pushAndRemoveUntil(
+      NavigationSvc.pushAndRemoveUntil(
         Get.context!,
         ConversationView(chat: chat),
         (route) => route.isFirst,
@@ -552,12 +551,12 @@ class NotificationsService extends GetxService {
   }
 
   Future<void> playDesktopNotificationSound() async {
-    if (ss().settings.desktopNotificationSoundPath.value != null) {
+    if (SettingsSvc.settings.desktopNotificationSoundPath.value != null) {
       if (desktopNotificationPlayer.state.playing) {
         await desktopNotificationPlayer.stop();
       }
-      await desktopNotificationPlayer.setVolume(ss().settings.desktopNotificationSoundVolume.value.toDouble());
-      await desktopNotificationPlayer.open(Media(ss().settings.desktopNotificationSoundPath.value!));
+      await desktopNotificationPlayer.setVolume(SettingsSvc.settings.desktopNotificationSoundVolume.value.toDouble());
+      await desktopNotificationPlayer.open(Media(SettingsSvc.settings.desktopNotificationSoundPath.value!));
     }
   }
 
@@ -688,7 +687,7 @@ class NotificationsService extends GetxService {
         } else {
           bool chatIsOpen = cm.activeChat?.chat.guid == chat.guid;
           if (!chatIsOpen) {
-            ns.pushAndRemoveUntil(
+            NavigationSvc.pushAndRemoveUntil(
               Get.context!,
               ConversationView(
                 chat: chat,

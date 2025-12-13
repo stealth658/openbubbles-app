@@ -65,10 +65,10 @@ class ServerManagementPanelController extends StatefulController {
 
   void getServerStats() async {
     int now = DateTime.now().toUtc().millisecondsSinceEpoch;
-    await http.ping();
+    await HttpSvc.ping();
     int later = DateTime.now().toUtc().millisecondsSinceEpoch;
     latency.value = later - now;
-    http.serverInfo().then((response) {
+    HttpSvc.serverInfo().then((response) {
       macOSVersion.value = response.data['data']['os_version'];
       serverVersion.value = response.data['data']['server_version'];
       Version version = Version.parse(serverVersion.value!);
@@ -82,10 +82,10 @@ class ServerManagementPanelController extends StatefulController {
 
       final subsequentRequests = <Future>[];
 
-      subsequentRequests.add(http.serverStatTotals().then((response) {
+      subsequentRequests.add(HttpSvc.serverStatTotals().then((response) {
         if (response.data['status'] == 200) {
           stats.addAll(response.data['data'] ?? {});
-          http.serverStatMedia().then((response) {
+          HttpSvc.serverStatMedia().then((response) {
             if (response.data['status'] == 200) {
               stats.addAll(response.data['data'] ?? {});
             }
@@ -132,7 +132,7 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                   backgroundColor: tileColor,
                   children: [
                     Obx(() {
-                      bool redact = ss().settings.redactedMode.value;
+                      bool redact = SettingsSvc.settings.redactedMode.value;
                       return Container(
                           child: Padding(
                         padding: const EdgeInsets.only(bottom: 8.0, left: 15, top: 8.0, right: 15),
@@ -158,8 +158,8 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                               const TextSpan(text: "\n\n"),
                               const TextSpan(text: "Socket Connection: "),
                               TextSpan(
-                                  text: socket.state.value.name.toUpperCase(),
-                                  style: TextStyle(color: getIndicatorColor(socket.state.value))),
+                                  text: SocketSvc.state.value.name.toUpperCase(),
+                                  style: TextStyle(color: getIndicatorColor(SocketSvc.state.value))),
                               // if (socket.lastError.value.isNotEmpty && (socket.state.value == SocketState.error || socket.state.value == SocketState.disconnected))
                               //   const TextSpan(text: "\n"),
                               // if (socket.lastError.value.isNotEmpty && (socket.state.value == SocketState.error || socket.state.value == SocketState.disconnected))
@@ -186,11 +186,11 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                                             : SocketState.disconnected))),
                               if ((controller.serverVersionCode.value ?? 0) >= 42) const TextSpan(text: "\n\n"),
                               TextSpan(
-                                  text: "Server URL: ${redact ? "Redacted" : http.origin}",
+                                  text: "Server URL: ${redact ? "Redacted" : HttpSvc.origin}",
                                   recognizer: TapGestureRecognizer()
                                     ..onTap = () {
-                                      Clipboard.setData(ClipboardData(text: http.origin));
-                                      if (!Platform.isAndroid || (fs().androidInfo?.version.sdkInt ?? 0) < 33) {
+                                      Clipboard.setData(ClipboardData(text: HttpSvc.origin));
+                                      if (!Platform.isAndroid || (FilesystemSvc.androidInfo?.version.sdkInt ?? 0) < 33) {
                                         showSnackbar("Copied", "Server address copied to clipboard!");
                                       }
                                     }),
@@ -199,11 +199,11 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                                     text: "Server URL has a bad certificate!",
                                     style: TextStyle(color: getIndicatorColor(SocketState.disconnected))),
                               const TextSpan(text: "\n\n"),
-                              if (!ss().fcmData.isNull)
+                              if (!SettingsSvc.fcmData.isNull)
                                 TextSpan(
                                     text:
-                                        "Firebase Database: ${isNullOrEmptyString(ss().fcmData.firebaseURL) ? "Firestore" : "Realtime"}"),
-                              if (!ss().fcmData.isNull) const TextSpan(text: "\n\n"),
+                                        "Firebase Database: ${isNullOrEmptyString(SettingsSvc.fcmData.firebaseURL) ? "Firestore" : "Realtime"}"),
+                              if (!SettingsSvc.fcmData.isNull) const TextSpan(text: "\n\n"),
                               if (hasBadCert) const TextSpan(text: "\n\n"),
                               TextSpan(
                                   text:
@@ -237,7 +237,7 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                                   text: "Tap to update values...", style: TextStyle(fontStyle: FontStyle.italic)),
                             ]),
                             onTap: () {
-                              if (socket.state.value != SocketState.connected) return;
+                              if (SocketSvc.state.value != SocketState.connected) return;
                               controller.opacity.value = 0.0;
                               controller.getServerStats();
                             },
@@ -293,7 +293,7 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                             const SettingsDivider(),
                           ],
                         ))),
-                    if (!ss().fcmData.isNull)
+                    if (!SettingsSvc.fcmData.isNull)
                       SettingsTile(
                         title: "Show QR Code",
                         subtitle: "Generate QR Code to screenshot or sync other devices",
@@ -304,14 +304,14 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                         ),
                         onTap: () {
                           List<dynamic> json = [
-                            ss().settings.guidAuthKey.value,
-                            ss().settings.serverAddress.value,
-                            ss().fcmData.projectID,
-                            ss().fcmData.storageBucket,
-                            ss().fcmData.apiKey,
-                            ss().fcmData.firebaseURL,
-                            ss().fcmData.clientID,
-                            ss().fcmData.applicationID,
+                            SettingsSvc.settings.guidAuthKey.value,
+                            SettingsSvc.settings.serverAddress.value,
+                            SettingsSvc.fcmData.projectID,
+                            SettingsSvc.fcmData.storageBucket,
+                            SettingsSvc.fcmData.apiKey,
+                            SettingsSvc.fcmData.firebaseURL,
+                            SettingsSvc.fcmData.clientID,
+                            SettingsSvc.fcmData.applicationID,
                           ];
                           String qrtext = jsonEncode(json);
                           showDialog(
@@ -503,11 +503,11 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                                 applicationID: fcmData[7],
                               );
 
-                              ss().settings.guidAuthKey.value = fcmData[0];
+                              SettingsSvc.settings.guidAuthKey.value = fcmData[0];
 
                               // This will restart the socket & foreground service
                               await saveNewServerUrl(fcmData[1]);
-                              await ss().saveFCMData(data);
+                              await SettingsSvc.saveFCMData(data);
                             }
                           },
                   ),
@@ -517,7 +517,7 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                     Obx(
                       () => SettingsTile(
                           title: "Manually Sync Messages",
-                          subtitle: socket.state.value == SocketState.connected
+                          subtitle: SocketSvc.state.value == SocketState.connected
                               ? "Tap to sync messages"
                               : "Disconnected, cannot sync",
                           backgroundColor: tileColor,
@@ -527,7 +527,7 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                             containerColor: Colors.yellow[700],
                           ),
                           onTap: () async {
-                            if (socket.state.value != SocketState.connected) return;
+                            if (SocketSvc.state.value != SocketState.connected) return;
                             if (manager != null) {
                               showDialog(
                                 context: context,
@@ -537,7 +537,7 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                               final date = await showTimeframePicker("How Far Back?", context, showHourPicker: false);
                               if (date == null) return;
                               try {
-                                sync.isIncrementalSyncing.value = true;
+                                SyncSvc.isIncrementalSyncing.value = true;
                                 manager = IncrementalSyncManager(startTimestamp: date.millisecondsSinceEpoch);
                                 showDialog(
                                   context: context,
@@ -547,7 +547,7 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                               } catch (_) {}
                               Navigator.of(context, rootNavigator: true).pop();
                               manager = null;
-                              sync.isIncrementalSyncing.value = false;
+                              SyncSvc.isIncrementalSyncing.value = false;
                             }
                           }),
                     ),
@@ -562,20 +562,20 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                       onTap: () async {
                         final result = await showCustomHeadersDialog(context);
                         if (result) {
-                          socket.restartSocket();
+                          SocketSvc.restartSocket();
                         }
                       }),
                   if (Platform.isAndroid)
                     const SettingsDivider(),
                   if (Platform.isAndroid)
                     Obx(() => SettingsSwitch(
-                          initialVal: ss().settings.syncContactsAutomatically.value,
+                          initialVal: SettingsSvc.settings.syncContactsAutomatically.value,
                           title: "Auto-Sync Contacts",
                           subtitle: "Automatically re-upload contacts to server when changes are detected",
                           backgroundColor: tileColor,
                           onChanged: (bool val) async {
-                            ss().settings.syncContactsAutomatically.value = val;
-                            ss().saveSettings();
+                            SettingsSvc.settings.syncContactsAutomatically.value = val;
+                            SettingsSvc.saveSettings();
                           },
                           leading: const SettingsLeadingIcon(
                             iosIcon: CupertinoIcons.person_2,
@@ -589,13 +589,13 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                     SettingsTile(
                       leading: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                         Obx(() => Material(
-                            shape: ss().settings.skin.value == Skins.Samsung
+                            shape: SettingsSvc.settings.skin.value == Skins.Samsung
                                 ? SquircleBorder(
                                     side: BorderSide(color: context.theme.colorScheme.outline.withValues(alpha: 0.5), width: 1.0),
                                   )
                                 : null,
                             color: Colors.transparent,
-                            borderRadius: ss().settings.skin.value == Skins.iOS ? BorderRadius.circular(6) : null,
+                            borderRadius: SettingsSvc.settings.skin.value == Skins.iOS ? BorderRadius.circular(6) : null,
                             child: SizedBox(
                                 width: 31,
                                 height: 31,
@@ -622,7 +622,7 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                       subtitle: "Fetch Firebase Config by Signing in with Google",
                       backgroundColor: tileColor,
                       onTap: () {
-                        ns.pushSettings(context, OauthPanel());
+                        NavigationSvc.pushSettings(context, OauthPanel());
                       },
                       trailing: ThemeSwitcher(
                         iOSSkin: const Icon(CupertinoIcons.chevron_forward),
@@ -642,16 +642,16 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                         await fdb.fetchFirebaseConfig();
                         String? newUrl = await fdb.fetchNewUrl();
                         showSnackbar("Notice", "Fetched URL: $newUrl");
-                        socket.restartSocket();
+                        SocketSvc.restartSocket();
                       }),
                   if (!kIsWeb)
                     const SettingsDivider(),
                   if (!kIsWeb)
                     Obx(() => SettingsSwitch(
-                          initialVal: ss().settings.localhostPort.value != null,
+                          initialVal: SettingsSvc.settings.localhostPort.value != null,
                           title: "Detect Localhost Address",
-                          subtitle: ss().settings.localhostPort.value != null
-                              ? "Configured Port: ${ss().settings.localhostPort.value}"
+                          subtitle: SettingsSvc.settings.localhostPort.value != null
+                              ? "Configured Port: ${SettingsSvc.settings.localhostPort.value}"
                               : "Look up localhost address for a faster direct connection",
                           backgroundColor: tileColor,
                           leading: const SettingsLeadingIcon(
@@ -683,7 +683,7 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                                               return;
                                             }
                                             Navigator.of(context, rootNavigator: true).pop();
-                                            ss().settings.localhostPort.value = portController.text;
+                                            SettingsSvc.settings.localhostPort.value = portController.text;
                                           },
                                         ),
                                       ],
@@ -700,12 +700,12 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                                     );
                                   });
                             } else {
-                              ss().settings.localhostPort.value = null;
+                              SettingsSvc.settings.localhostPort.value = null;
                             }
 
-                            await ss().settings.saveOne('localhostPort');
-                            if (ss().settings.localhostPort.value == null) {
-                              http.originOverride = null;
+                            await SettingsSvc.settings.saveOne('localhostPort');
+                            if (SettingsSvc.settings.localhostPort.value == null) {
+                              HttpSvc.originOverride = null;
                             } else {
                               NetworkTasks.detectLocalhost(createSnackbar: true);
                             }
@@ -714,14 +714,14 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                   if (!kIsWeb)
                     const SettingsDivider(),
                   if (!kIsWeb)
-                    Obx(() => ss().settings.localhostPort.value != null
+                    Obx(() => SettingsSvc.settings.localhostPort.value != null
                         ? SettingsSwitch(
-                            initialVal: ss().settings.useLocalIpv6.value,
+                            initialVal: SettingsSvc.settings.useLocalIpv6.value,
                             title: "Use IPv6",
                             subtitle: "Do not enable this unless your environment supports IPv6",
                             isThreeLine: true,
                             onChanged: (bool val) {
-                              ss().settings.useLocalIpv6.value = val;
+                              SettingsSvc.settings.useLocalIpv6.value = val;
                               NetworkTasks.detectLocalhost(createSnackbar: true);
                             },
                       leading: const SettingsLeadingIcon(iosIcon: CupertinoIcons.globe, materialIcon: Icons.network_check_outlined),
@@ -735,7 +735,7 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                     Obx(() => SettingsTile(
                           title: "Fetch${kIsWeb || kIsDesktop ? "" : " & Share"} Server Logs",
                           subtitle: controller.fetchStatus.value ??
-                              (socket.state.value == SocketState.connected
+                              (SocketSvc.state.value == SocketState.connected
                                   ? "Tap to fetch logs"
                                   : "Disconnected, cannot fetch logs"),
                           backgroundColor: tileColor,
@@ -744,11 +744,11 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                             materialIcon: Icons.article,
                           ),
                           onTap: () {
-                            if (socket.state.value != SocketState.connected) return;
+                            if (SocketSvc.state.value != SocketState.connected) return;
 
                             controller.fetchStatus.value = "Fetching logs, please wait...";
 
-                            http.serverLogs().then((response) async {
+                            HttpSvc.serverLogs().then((response) async {
                               if (kIsDesktop) {
                                 String downloadsPath = (await getDownloadsDirectory())!.path;
                                 await File(join(downloadsPath, "main.log")).writeAsString(response.data['data']);
@@ -767,7 +767,7 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                                 return;
                               }
 
-                              File logFile = File("${fs().appDocDir.path}/attachments/main.log");
+                              File logFile = File("${FilesystemSvc.appDocDir.path}/attachments/main.log");
 
                               if (await logFile.exists()) {
                                 await logFile.delete();
@@ -789,9 +789,9 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                     const SettingsDivider(),
                     Obx(() => SettingsTile(
                         title: "Restart iMessage",
-                        subtitle: controller.isRestartingMessages.value && socket.state.value == SocketState.connected
+                        subtitle: controller.isRestartingMessages.value && SocketSvc.state.value == SocketState.connected
                             ? "Restart in progress..."
-                            : socket.state.value == SocketState.connected
+                            : SocketSvc.state.value == SocketState.connected
                                 ? "Restart the iMessage app"
                                 : "Disconnected, cannot restart",
                         backgroundColor: tileColor,
@@ -801,7 +801,7 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                           containerColor: Colors.blueAccent,
                         ),
                         onTap: () async {
-                          if (socket.state.value != SocketState.connected || controller.isRestartingMessages.value) {
+                          if (SocketSvc.state.value != SocketState.connected || controller.isRestartingMessages.value) {
                             return;
                           }
 
@@ -816,7 +816,7 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                           controller.lastRestartMessages = now;
 
                           // Execute the restart
-                          http.restartImessage().then((_) {
+                          HttpSvc.restartImessage().then((_) {
                             controller.isRestartingMessages.value = false;
                           }).catchError((_) {
                             controller.isRestartingMessages.value = false;
@@ -835,16 +835,16 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                                 ))))),
                     const SettingsDivider(),
                     Obx(() => AnimatedSizeAndFade.showHide(
-                          show: ss().settings.enablePrivateAPI.value && (controller.serverVersionCode.value ?? 0) >= 41,
+                          show: SettingsSvc.settings.enablePrivateAPI.value && (controller.serverVersionCode.value ?? 0) >= 41,
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               SettingsTile(
                                   title: "Restart Private API & Services",
                                   subtitle: controller.isRestartingPrivateAPI.value &&
-                                          socket.state.value == SocketState.connected
+                                          SocketSvc.state.value == SocketState.connected
                                       ? "Restart in progress..."
-                                      : socket.state.value == SocketState.connected
+                                      : SocketSvc.state.value == SocketState.connected
                                           ? "Restart the Private API"
                                           : "Disconnected, cannot restart",
                                   backgroundColor: tileColor,
@@ -853,7 +853,7 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                                       materialIcon: Icons.gpp_maybe,
                                       containerColor: Colors.orange),
                                   onTap: () async {
-                                    if (socket.state.value != SocketState.connected ||
+                                    if (SocketSvc.state.value != SocketState.connected ||
                                         controller.isRestartingPrivateAPI.value) return;
 
                                     controller.isRestartingPrivateAPI.value = true;
@@ -867,7 +867,7 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                                     controller.lastRestartPrivateAPI = now;
 
                                     // Execute the restart
-                                    http.softRestart().then((_) {
+                                    HttpSvc.softRestart().then((_) {
                                       controller.isRestartingPrivateAPI.value = false;
                                     }).catchError((_) {
                                       controller.isRestartingPrivateAPI.value = false;
@@ -919,19 +919,19 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                           try {
                             if (Platform.isAndroid) {
                               try {
-                                await mcs.invokeMethod(
+                                await MethodChannelSvc.invokeMethod(
                                     "set-next-restart", {"value": DateTime.now().toUtc().millisecondsSinceEpoch});
                               } catch (e, s) {
-                                Logger().error("Failed to update Firebase Database!", error: e, trace: s);
+                                Logger.error("Failed to update Firebase Database!", error: e, trace: s);
                                 showSnackbar("Error", "Something went wrong when updating Firebase Database!");
                               }
                             } else {
-                              if (!isNullOrEmpty(ss().fcmData.firebaseURL)) {
-                                var db = FirebaseDatabase(databaseURL: ss().fcmData.firebaseURL);
+                              if (!isNullOrEmpty(SettingsSvc.fcmData.firebaseURL)) {
+                                var db = FirebaseDatabase(databaseURL: SettingsSvc.fcmData.firebaseURL);
                                 var ref = db.reference().child('config').child('nextRestart');
                                 await ref.set(DateTime.now().toUtc().millisecondsSinceEpoch);
                               } else {
-                                await http.setRestartDateCF(ss().fcmData.projectID!);
+                                await HttpSvc.setRestartDateCF(SettingsSvc.fcmData.projectID!);
                               }
                             }
                           } finally {
@@ -957,7 +957,7 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                               const SettingsDivider(),
                               SettingsTile(
                                 title: "Check for Server Updates",
-                                subtitle: socket.state.value == SocketState.connected
+                                subtitle: SocketSvc.state.value == SocketState.connected
                                     ? "Check for new BlueBubbles Server updates"
                                     : "Disconnected, cannot check for updates",
                                 backgroundColor: tileColor,
@@ -966,9 +966,9 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                                     materialIcon: Icons.dvr,
                                     containerColor: Colors.green),
                                 onTap: () async {
-                                  if (socket.state.value != SocketState.connected) return;
+                                  if (SocketSvc.state.value != SocketState.connected) return;
 
-                                  await ss().checkServerUpdate();
+                                  await SettingsSvc.checkServerUpdate();
                                 },
                               ),
                             ],

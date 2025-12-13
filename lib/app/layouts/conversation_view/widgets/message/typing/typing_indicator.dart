@@ -120,7 +120,7 @@ class _AnimatedDotState extends OptimizedState<AnimatedDot> with SingleTickerPro
           final amt = (math.sin(animation.value + (widget.index) * math.pi / 4).abs() * 20).clamp(1, 20).toDouble();
           return Container(
             decoration: BoxDecoration(
-              color: ts.inDarkMode(context)
+              color: ThemeSvc.inDarkMode(context)
                   ? context.theme.colorScheme.properSurface.lightenPercent(amt)
                   : context.theme.colorScheme.properSurface.darkenPercent(amt),
               shape: BoxShape.circle,

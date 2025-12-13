@@ -24,7 +24,7 @@ class MaterialConversationList extends StatefulWidget {
 class _MaterialConversationListState extends OptimizedState<MaterialConversationList> {
   bool get showArchived => widget.parentController.showArchivedChats;
   bool get showUnknown => widget.parentController.showUnknownSenders;
-  Color get backgroundColor => ss().settings.windowEffect.value == WindowEffect.disabled
+  Color get backgroundColor => SettingsSvc.settings.windowEffect.value == WindowEffect.disabled
       ? context.theme.colorScheme.background
       : Colors.transparent;
   ConversationListController get controller => widget.parentController;
@@ -34,7 +34,7 @@ class _MaterialConversationListState extends OptimizedState<MaterialConversation
     super.initState();
     // update widget when background color changes
     if (kIsDesktop) {
-      ss().settings.windowEffect.listen((WindowEffect effect) {
+      SettingsSvc.settings.windowEffect.listen((WindowEffect effect) {
         setState(() {});
       });
     }
@@ -72,9 +72,9 @@ class _MaterialConversationListState extends OptimizedState<MaterialConversation
               ? ConversationListFAB(parentController: controller)
               : const SizedBox.shrink(),
           body: Obx(() {
-            final _chats = chats.chats.archivedHelper(showArchived).unknownSendersHelper(showUnknown);
+            final _chats = ChatsSvc.chats.archivedHelper(showArchived).unknownSendersHelper(showUnknown);
 
-            if (!chats.loadedChatBatch.value || _chats.isEmpty) {
+            if (!ChatsSvc.loadedChatBatch.value || _chats.isEmpty) {
               return Center(
                 child: Padding(
                   padding: const EdgeInsets.only(top: 100),
@@ -83,8 +83,8 @@ class _MaterialConversationListState extends OptimizedState<MaterialConversation
                       Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: Text(
-                          !chats.loadedChatBatch.value
-                              ? "Loading chats..."
+                          !ChatsSvc.loadedChatBatch.value
+                              ? "Loading ChatSvc..."
                               : showArchived
                                   ? "You have no archived chats"
                                   : showUnknown
@@ -94,7 +94,7 @@ class _MaterialConversationListState extends OptimizedState<MaterialConversation
                           textAlign: TextAlign.center,
                         ),
                       ),
-                      if (!chats.loadedChatBatch.value) buildProgressIndicator(context, size: 15),
+                      if (!ChatsSvc.loadedChatBatch.value) buildProgressIndicator(context, size: 15),
                     ],
                   ),
                 ),

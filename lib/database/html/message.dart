@@ -137,7 +137,7 @@ class Message {
       try {
         attributedBody = (json['attributedBody'] as List).map((a) => AttributedBody.fromMap(a)).toList();
       } catch (e, stack) {
-        Logger().error('Failed to parse attributed body!', error: e, trace: stack);
+        Logger.error('Failed to parse attributed body!', error: e, trace: stack);
       }
     }
 
@@ -156,14 +156,14 @@ class Message {
     try {
       msi = (json['messageSummaryInfo'] as List? ?? []).map((e) => MessageSummaryInfo.fromJson(e)).toList();
     } catch (e, stack) {
-      Logger().error('Failed to parse summary info!', error: e, trace: stack);
+      Logger.error('Failed to parse summary info!', error: e, trace: stack);
     }
 
     PayloadData? payloadData;
     try {
       payloadData = json['payloadData'] == null ? null : PayloadData.fromJson(json['payloadData']);
     } catch (e, stack) {
-      Logger().error('Failed to parse payload data!', error: e, trace: stack);
+      Logger.error('Failed to parse payload data!', error: e, trace: stack);
     }
 
     return Message(
@@ -286,7 +286,7 @@ class Message {
 
   Handle? getHandle() {
     // ignore: argument_type_not_assignable, return_of_invalid_type, invalid_assignment, for_in_of_invalid_element_type
-    return chats.webCachedHandles.firstWhereOrNull((element) => element.originalROWID == handleId);
+    return ChatsSvc.webCachedHandles.firstWhereOrNull((element) => element.originalROWID == handleId);
   }
 
   static Message? findOne({String? guid, String? associatedMessageGuid}) {

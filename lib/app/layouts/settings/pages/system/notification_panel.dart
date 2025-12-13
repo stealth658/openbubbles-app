@@ -37,7 +37,7 @@ class _NotificationPanelState extends OptimizedState<NotificationPanel> with Sin
       SliverList(
         delegate: SliverChildListDelegate(
           <Widget>[
-            if (ss().settings.skin.value != Skins.Samsung)
+            if (SettingsSvc.settings.skin.value != Skins.Samsung)
               Container(
                   height: 50,
                   alignment: Alignment.bottomLeft,
@@ -53,10 +53,10 @@ class _NotificationPanelState extends OptimizedState<NotificationPanel> with Sin
               if (!kIsWeb)
                 Obx(() => SettingsSwitch(
                   onChanged: (bool val) {
-                    ss().settings.notifyOnChatList.value = val;
+                    SettingsSvc.settings.notifyOnChatList.value = val;
                     saveSettings();
                   },
-                  initialVal: ss().settings.notifyOnChatList.value,
+                  initialVal: SettingsSvc.settings.notifyOnChatList.value,
                   title: "Send Notifications on Chat List",
                   subtitle:
                   "Sends notifications for new messages while in the chat list or chat creator",
@@ -80,10 +80,10 @@ class _NotificationPanelState extends OptimizedState<NotificationPanel> with Sin
               const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
               Obx(() => SettingsSwitch(
                 onChanged: (bool val) {
-                  ss().settings.notifyReactions.value = val;
+                  SettingsSvc.settings.notifyReactions.value = val;
                   saveSettings();
                 },
-                initialVal: ss().settings.notifyReactions.value,
+                initialVal: SettingsSvc.settings.notifyReactions.value,
                 title: "Notify for Reactions",
                 subtitle: "Sends notifications for incoming reactions",
                 backgroundColor: tileColor,
@@ -92,36 +92,36 @@ class _NotificationPanelState extends OptimizedState<NotificationPanel> with Sin
               Obx(() => SettingsSwitch(
                 title: "Text Detection",
                 subtitle: "Mute all chats except when your choice of text is found in a message",
-                initialVal: ss().settings.globalTextDetection.value.isNotEmpty,
+                initialVal: SettingsSvc.settings.globalTextDetection.value.isNotEmpty,
                 onChanged: (bool val) async {
                   if (!val) {
-                    ss().settings.globalTextDetection.value = "";
+                    SettingsSvc.settings.globalTextDetection.value = "";
                     saveSettings();
                     return;
                   }
                   final TextEditingController controller = TextEditingController();
-                  controller.text = ss().settings.globalTextDetection.value;
+                  controller.text = SettingsSvc.settings.globalTextDetection.value;
                   await showDialog(
                     context: context,
                     builder: (context) => TextDetectionDialog(controller),
                   );
-                  ss().settings.globalTextDetection.value = controller.text;
+                  SettingsSvc.settings.globalTextDetection.value = controller.text;
                   saveSettings();
                 },
                 backgroundColor: tileColor,
               )),
-              Obx(() => ss().settings.globalTextDetection.value.isNotEmpty ? SettingsTile(
+              Obx(() => SettingsSvc.settings.globalTextDetection.value.isNotEmpty ? SettingsTile(
                 title: "Whitelisted Phrases",
-                subtitle: ss().settings.globalTextDetection.value,
+                subtitle: SettingsSvc.settings.globalTextDetection.value,
                 leading: Icon(iOS ? CupertinoIcons.pencil : Icons.edit_outlined),
                 onTap: () async {
                   final TextEditingController controller = TextEditingController();
-                  controller.text = ss().settings.globalTextDetection.value;
+                  controller.text = SettingsSvc.settings.globalTextDetection.value;
                   await showDialog(
                     context: context,
                     builder: (context) => TextDetectionDialog(controller),
                   );
-                  ss().settings.globalTextDetection.value = controller.text;
+                  SettingsSvc.settings.globalTextDetection.value = controller.text;
                   saveSettings();
                 },
               ) : const SizedBox.shrink())
@@ -135,10 +135,10 @@ class _NotificationPanelState extends OptimizedState<NotificationPanel> with Sin
               children: [
                 Obx(() => SettingsSwitch(
                   onChanged: (bool val) {
-                    ss().settings.hideTextPreviews.value = val;
+                    SettingsSvc.settings.hideTextPreviews.value = val;
                     saveSettings();
                   },
-                  initialVal: ss().settings.hideTextPreviews.value,
+                  initialVal: SettingsSvc.settings.hideTextPreviews.value,
                   title: "Hide Message Text",
                   subtitle: "Replaces message text with 'iMessage' in notifications",
                   backgroundColor: tileColor,
@@ -146,10 +146,10 @@ class _NotificationPanelState extends OptimizedState<NotificationPanel> with Sin
                 const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                 Obx(() => SettingsSwitch(
                   onChanged: (bool val) {
-                    ss().settings.showIncrementalSync.value = val;
+                    SettingsSvc.settings.showIncrementalSync.value = val;
                     saveSettings();
                   },
-                  initialVal: ss().settings.showIncrementalSync.value,
+                  initialVal: SettingsSvc.settings.showIncrementalSync.value,
                   title: "Notify When Incremental Sync Complete",
                   subtitle: "Show a snackbar whenever a message sync is completed",
                   backgroundColor: tileColor,
@@ -164,7 +164,7 @@ class _NotificationPanelState extends OptimizedState<NotificationPanel> with Sin
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
-        systemNavigationBarColor: ss().settings.immersiveMode.value ? Colors.transparent : context.theme.colorScheme.background, // navigation bar color
+        systemNavigationBarColor: SettingsSvc.settings.immersiveMode.value ? Colors.transparent : context.theme.colorScheme.background, // navigation bar color
         systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
         statusBarColor: Colors.transparent, // status bar color
         statusBarIconBrightness: context.theme.colorScheme.brightness.opposite,
@@ -174,7 +174,7 @@ class _NotificationPanelState extends OptimizedState<NotificationPanel> with Sin
         appBar: samsung && index.value == 0
             ? null
             : PreferredSize(
-          preferredSize: Size(ns.width(context), 50),
+          preferredSize: Size(NavigationSvc.width(context), 50),
           child: AppBar(
             systemOverlayStyle: context.theme.colorScheme.brightness == Brightness.dark
                 ? SystemUiOverlayStyle.light
@@ -198,7 +198,7 @@ class _NotificationPanelState extends OptimizedState<NotificationPanel> with Sin
           children: <Widget>[
             NotificationListener<ScrollEndNotification>(
               onNotification: (_) {
-                if (ss().settings.skin.value != Skins.Samsung || kIsWeb || kIsDesktop) return false;
+                if (SettingsSvc.settings.skin.value != Skins.Samsung || kIsWeb || kIsDesktop) return false;
                 final scrollDistance = context.height / 3 - 57;
 
                 if (controller1.offset > 0 && controller1.offset < scrollDistance) {
@@ -280,9 +280,9 @@ class _NotificationPanelState extends OptimizedState<NotificationPanel> with Sin
                             },
                           ),
                         ),
-                      if (ss().settings.skin.value != Skins.Samsung)
+                      if (SettingsSvc.settings.skin.value != Skins.Samsung)
                         ...bodySlivers,
-                      if (ss().settings.skin.value == Skins.Samsung)
+                      if (SettingsSvc.settings.skin.value == Skins.Samsung)
                         SliverToBoxAdapter(
                           child: ConstrainedBox(
                             constraints: BoxConstraints(minHeight: context.height - 50 - context.mediaQueryPadding.top - context.mediaQueryViewPadding.top),
@@ -328,7 +328,7 @@ class _NotificationPanelState extends OptimizedState<NotificationPanel> with Sin
   }
 
   void saveSettings() {
-    ss().saveSettings();
+    SettingsSvc.saveSettings();
   }
 }
 
@@ -368,7 +368,7 @@ class ChatListState extends OptimizedState<ChatList> {
       physics: ThemeSwitcher.getScrollPhysics(),
       slivers: <Widget>[
         Obx(() {
-          if (!chats.loadedChatBatch.value) {
+          if (!ChatsSvc.loadedChatBatch.value) {
             return SliverToBoxAdapter(
               child: Center(
                 child: Padding(
@@ -378,7 +378,7 @@ class ChatListState extends OptimizedState<ChatList> {
                       Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: Text(
-                          "Loading chats...",
+                          "Loading ChatSvc...",
                           style: context.theme.textTheme.labelLarge,
                         ),
                       ),
@@ -389,7 +389,7 @@ class ChatListState extends OptimizedState<ChatList> {
               ),
             );
           }
-          if (chats.loadedChatBatch.value && chats.chats.isEmpty) {
+          if (ChatsSvc.loadedChatBatch.value && ChatsSvc.chats.isEmpty) {
             return SliverToBoxAdapter(
               child: Center(
                 child: Padding(
@@ -419,20 +419,20 @@ class ChatListState extends OptimizedState<ChatList> {
                       physics: ThemeSwitcher.getScrollPhysics(),
                       shrinkWrap: true,
                       controller: _controller,
-                      findChildIndexCallback: (key) => findChildIndexByKey(chats.chats, key, (item) => item.guid),
+                      findChildIndexCallback: (key) => findChildIndexByKey(ChatsSvc.chats, key, (item) => item.guid),
                       itemBuilder: (context, index) {
                         return ConversationTile(
-                          key: Key(chats.chats[index].guid.toString()),
-                          chat: chats.chats[index],
+                          key: Key(ChatsSvc.chats[index].guid.toString()),
+                          chat: ChatsSvc.chats[index],
                           controller: Get.put(
                             ConversationListController(showUnknownSenders: true, showArchivedChats: true),
                             tag: "notification-panel"
                           ),
                           inSelectMode: true,
-                          subtitle: Text(getSubtitle(chats.chats[index]),
+                          subtitle: Text(getSubtitle(ChatsSvc.chats[index]),
                               style: context.theme.textTheme.bodySmall!.copyWith(color: context.theme.colorScheme.properOnSurface),),
                           onSelect: (_) async {
-                            final chat = chats.chats[index];
+                            final chat = ChatsSvc.chats[index];
                             await showDialog(
                               context: context,
                               builder: (context) => NotificationSettingsDialog(chat, () {
@@ -442,7 +442,7 @@ class ChatListState extends OptimizedState<ChatList> {
                           },
                         );
                       },
-                      itemCount: chats.chats.length,
+                      itemCount: ChatsSvc.chats.length,
                     ),
                   ),
                 ),

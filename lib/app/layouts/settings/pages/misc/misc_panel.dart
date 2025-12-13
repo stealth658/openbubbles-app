@@ -23,7 +23,7 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
   Widget build(BuildContext context) {
     return SettingsScaffold(
       title: "Advanced",
-      initialHeader: (!kIsWeb && !kIsDesktop) || ss().canAuthenticate ? "Security" : "Speed & Responsiveness",
+      initialHeader: (!kIsWeb && !kIsDesktop) || SettingsSvc.canAuthenticate ? "Security" : "Speed & Responsiveness",
       iosSubtitle: iosSubtitle,
       materialSubtitle: materialSubtitle,
       tileColor: tileColor,
@@ -36,7 +36,7 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                 SettingsSection(
                   backgroundColor: tileColor,
                   children: [
-                    if (ss().canAuthenticate)
+                    if (SettingsSvc.canAuthenticate)
                       Obx(() => SettingsSwitch(
                             onChanged: (bool val) async {
                               var localAuth = LocalAuthentication();
@@ -45,28 +45,28 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                                   persistAcrossBackgrounding: true,
                               );
                               if (didAuthenticate) {
-                                ss().settings.shouldSecure.value = val;
+                                SettingsSvc.settings.shouldSecure.value = val;
                                 if (val == false) {
                                   SecureApplicationProvider.of(context, listen: false)!.open();
-                                } else if (ss().settings.securityLevel.value == SecurityLevel.locked_and_secured) {
+                                } else if (SettingsSvc.settings.securityLevel.value == SecurityLevel.locked_and_secured) {
                                   SecureApplicationProvider.of(context, listen: false)!.secure();
                                 }
                                 saveSettings();
                               }
                             },
-                            initialVal: ss().settings.shouldSecure.value,
+                            initialVal: SettingsSvc.settings.shouldSecure.value,
                             title: "Secure App",
                             subtitle: "Secure app with ${kIsDesktop ? "Windows Security" : "a fingerprint or pin"}",
                             backgroundColor: tileColor,
                             leading: SettingsLeadingIcon(
                               iosIcon: CupertinoIcons.lock_fill,
                               materialIcon: Icons.lock,
-                              containerColor: (ss().settings.shouldSecure.value) ? Colors.green : Colors.redAccent
+                              containerColor: (SettingsSvc.settings.shouldSecure.value) ? Colors.green : Colors.redAccent
                             ),
                           )),
-                    if (ss().canAuthenticate)
+                    if (SettingsSvc.canAuthenticate)
                       Obx(() {
-                        if (ss().settings.shouldSecure.value) {
+                        if (SettingsSvc.settings.shouldSecure.value) {
                           return Container(
                               color: tileColor,
                               child: Padding(
@@ -108,11 +108,11 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                           return const SizedBox.shrink();
                         }
                       }),
-                    if (ss().canAuthenticate && !kIsDesktop)
+                    if (SettingsSvc.canAuthenticate && !kIsDesktop)
                       Obx(() {
-                        if (ss().settings.shouldSecure.value) {
+                        if (SettingsSvc.settings.shouldSecure.value) {
                           return SettingsOptions<SecurityLevel>(
-                            initial: ss().settings.securityLevel.value,
+                            initial: SettingsSvc.settings.securityLevel.value,
                             onChanged: (val) async {
                               var localAuth = LocalAuthentication();
                               bool didAuthenticate = await localAuth.authenticate(
@@ -121,7 +121,7 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                               );
                               if (didAuthenticate) {
                                 if (val != null) {
-                                  ss().settings.securityLevel.value = val;
+                                  SettingsSvc.settings.securityLevel.value = val;
                                   if (val == SecurityLevel.locked_and_secured) {
                                     SecureApplicationProvider.of(context, listen: false)!.secure();
                                   } else {
@@ -140,15 +140,15 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                           return const SizedBox.shrink();
                         }
                       }),
-                    if (ss().canAuthenticate && !kIsDesktop)
+                    if (SettingsSvc.canAuthenticate && !kIsDesktop)
                       const SettingsDivider(),
                     if (!kIsWeb && !kIsDesktop)
                       Obx(() => SettingsSwitch(
                             onChanged: (bool val) async {
-                              ss().settings.incognitoKeyboard.value = val;
+                              SettingsSvc.settings.incognitoKeyboard.value = val;
                               saveSettings();
                             },
-                            initialVal: ss().settings.incognitoKeyboard.value,
+                            initialVal: SettingsSvc.settings.incognitoKeyboard.value,
                             title: "Incognito Keyboard",
                             subtitle:
                                 "Disables keyboard suggestions and prevents the keyboard from learning or storing any words you type in the message text field",
@@ -161,7 +161,7 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                           )),
                   ],
                 ),
-              if (!kIsWeb && !kIsDesktop || ss().canAuthenticate)
+              if (!kIsWeb && !kIsDesktop || SettingsSvc.canAuthenticate)
                 SettingsHeader(
                     iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Speed & Responsiveness"),
               SettingsSection(
@@ -169,10 +169,10 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                 children: [
                   Obx(() => SettingsSwitch(
                         onChanged: (bool val) {
-                          ss().settings.highPerfMode.value = val;
+                          SettingsSvc.settings.highPerfMode.value = val;
                           saveSettings();
                         },
-                        initialVal: ss().settings.highPerfMode.value,
+                        initialVal: SettingsSvc.settings.highPerfMode.value,
                         title: "High Performance Mode",
                         subtitle: "Removes inline images and videos to boost performance on lower-end devices",
                         isThreeLine: true,
@@ -201,9 +201,9 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                   Obx(() {
                     if (iOS) {
                       return SettingsSlider(
-                          startingVal: ss().settings.scrollVelocity.value,
+                          startingVal: SettingsSvc.settings.scrollVelocity.value,
                           update: (double val) {
-                            ss().settings.scrollVelocity.value = double.parse(val.toStringAsFixed(2));
+                            SettingsSvc.settings.scrollVelocity.value = double.parse(val.toStringAsFixed(2));
                           },
                           onChangeEnd: (double val) {
                             saveSettings();
@@ -233,27 +233,27 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                       materialIcon: Icons.timer,
                       containerColor: Colors.red
                     ),
-                    trailing: ss().settings.apiTimeout.value != 30000 ? ElevatedButton(
+                    trailing: SettingsSvc.settings.apiTimeout.value != 30000 ? ElevatedButton(
                       onPressed: () {
-                        ss().settings.apiTimeout.value = 30000;
+                        SettingsSvc.settings.apiTimeout.value = 30000;
                         saveSettings();
                       },
                       child: const Text("Reset to Default"),
                     ) : null,
                   )),
                   Obx(() => SettingsSlider(
-                      startingVal: ss().settings.apiTimeout.value / 1000,
+                      startingVal: SettingsSvc.settings.apiTimeout.value / 1000,
                       update: (double val) {
-                        ss().settings.apiTimeout.value = val.toInt() * 1000;
+                        SettingsSvc.settings.apiTimeout.value = val.toInt() * 1000;
                       },
                       onChangeEnd: (double val) {
                         saveSettings();
-                        http.dio = Dio(BaseOptions(
+                        HttpSvc.dio = Dio(BaseOptions(
                           connectTimeout: const Duration(milliseconds: 15000),
-                          receiveTimeout: Duration(milliseconds: ss().settings.apiTimeout.value),
-                          sendTimeout: Duration(milliseconds: ss().settings.apiTimeout.value),
+                          receiveTimeout: Duration(milliseconds: SettingsSvc.settings.apiTimeout.value),
+                          sendTimeout: Duration(milliseconds: SettingsSvc.settings.apiTimeout.value),
                         ));
-                        http.dio.interceptors.add(ApiInterceptor());
+                        HttpSvc.dio.interceptors.add(ApiInterceptor());
                       },
                       backgroundColor: tileColor,
                       min: 5,
@@ -262,7 +262,7 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                   Padding(
                     padding: const EdgeInsets.all(15),
                     child: Obx(() => Text(
-                          "Note: Attachment uploads will timeout after ${ss().settings.apiTimeout.value ~/ 1000 * 12} seconds",
+                          "Note: Attachment uploads will timeout after ${SettingsSvc.settings.apiTimeout.value ~/ 1000 * 12} seconds",
                           style: context.theme.textTheme.bodySmall!
                               .copyWith(color: context.theme.colorScheme.properOnSurface),
                         )),
@@ -270,10 +270,10 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                   const SettingsDivider(padding: EdgeInsets.zero),
                   Obx(() => SettingsSwitch(
                         onChanged: (bool val) {
-                          ss().settings.cancelQueuedMessages.toggle();
+                          SettingsSvc.settings.cancelQueuedMessages.toggle();
                           saveSettings();
                         },
-                        initialVal: ss().settings.cancelQueuedMessages.value,
+                        initialVal: SettingsSvc.settings.cancelQueuedMessages.value,
                         title: "Cancel Queued Messages on Failure",
                         subtitle: "Cancel messages queued to send in a chat if one fails before them",
                         backgroundColor: tileColor,
@@ -295,10 +295,10 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                 children: [
                   Obx(() => SettingsSwitch(
                     onChanged: (bool val) {
-                      ss().settings.replaceEmoticonsWithEmoji.value = val;
+                      SettingsSvc.settings.replaceEmoticonsWithEmoji.value = val;
                       saveSettings();
                     },
-                    initialVal: ss().settings.replaceEmoticonsWithEmoji.value,
+                    initialVal: SettingsSvc.settings.replaceEmoticonsWithEmoji.value,
                     title: "Replace Emoticons with Emoji",
                     subtitle: "Replace emoticons like :), :D, etc. with their corresponding emojis",
                     backgroundColor: tileColor,
@@ -312,10 +312,10 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                   if (kIsDesktop || kIsWeb)
                     Obx(() => SettingsSwitch(
                           onChanged: (bool val) {
-                            ss().settings.spellcheck.value = val;
+                            SettingsSvc.settings.spellcheck.value = val;
                             saveSettings();
                           },
-                          initialVal: ss().settings.spellcheck.value,
+                          initialVal: SettingsSvc.settings.spellcheck.value,
                           title: "Enable Spellcheck",
                           backgroundColor: tileColor,
                           leading: const SettingsLeadingIcon(
@@ -324,14 +324,14 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                               containerColor: Colors.cyan),
                         )),
                   if (kIsDesktop || kIsWeb)
-                    Obx(() => ss().settings.spellcheck.value ? SettingsOptions<(String, String)>(
+                    Obx(() => SettingsSvc.settings.spellcheck.value ? SettingsOptions<(String, String)>(
                       useCupertino: false,
                       onChanged: (val) {
                         if (val == null) return;
-                        ss().settings.spellcheckLanguage.value = val.$2;
+                        SettingsSvc.settings.spellcheckLanguage.value = val.$2;
                         saveSettings();
                       },
-                      initial: languageNameAndCodes.firstWhereOrNull((l) => l.$2 == ss().settings.spellcheckLanguage.value) ?? ("Auto", "auto"),
+                      initial: languageNameAndCodes.firstWhereOrNull((l) => l.$2 == SettingsSvc.settings.spellcheckLanguage.value) ?? ("Auto", "auto"),
                       options: [("Auto", "auto"), ...languageNameAndCodes],
                       title: 'Spellcheck Language',
                       textProcessing: (val) => val.$1,
@@ -341,10 +341,10 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                     const SettingsDivider(),
                   Obx(() => SettingsSwitch(
                         onChanged: (bool val) {
-                          ss().settings.sendDelay.value = val ? 3 : 0;
+                          SettingsSvc.settings.sendDelay.value = val ? 3 : 0;
                           saveSettings();
                         },
-                        initialVal: !isNullOrZero(ss().settings.sendDelay.value),
+                        initialVal: !isNullOrZero(SettingsSvc.settings.sendDelay.value),
                         title: "Send Delay",
                         subtitle:
                             "Adds a delay before sending a message to prevent accidental sends. During this time, you can cancel the message.",
@@ -353,11 +353,11 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                             iosIcon: CupertinoIcons.timer, materialIcon: Icons.timer, containerColor: Colors.green),
                       )),
                   Obx(() {
-                    if (!isNullOrZero(ss().settings.sendDelay.value)) {
+                    if (!isNullOrZero(SettingsSvc.settings.sendDelay.value)) {
                       return SettingsSlider(
-                          startingVal: ss().settings.sendDelay.toDouble(),
+                          startingVal: SettingsSvc.settings.sendDelay.toDouble(),
                           update: (double val) {
-                            ss().settings.sendDelay.value = val.toInt();
+                            SettingsSvc.settings.sendDelay.value = val.toInt();
                           },
                           onChangeEnd: (double val) {
                             saveSettings();
@@ -374,10 +374,10 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                   const SettingsDivider(),
                   Obx(() => SettingsSwitch(
                         onChanged: (bool val) {
-                          ss().settings.use24HrFormat.value = val;
+                          SettingsSvc.settings.use24HrFormat.value = val;
                           saveSettings();
                         },
-                        initialVal: ss().settings.use24HrFormat.value,
+                        initialVal: SettingsSvc.settings.use24HrFormat.value,
                         title: "Use 24 Hour Format for Times",
                         backgroundColor: tileColor,
                         leading: const SettingsLeadingIcon(
@@ -389,16 +389,16 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                   if (Platform.isAndroid)
                     Obx(() => SettingsSwitch(
                           onChanged: (bool val) {
-                            ss().settings.allowUpsideDownRotation.value = val;
+                            SettingsSvc.settings.allowUpsideDownRotation.value = val;
                             saveSettings();
                             SystemChrome.setPreferredOrientations([
                               DeviceOrientation.landscapeRight,
                               DeviceOrientation.landscapeLeft,
                               DeviceOrientation.portraitUp,
-                              if (ss().settings.allowUpsideDownRotation.value) DeviceOrientation.portraitDown,
+                              if (SettingsSvc.settings.allowUpsideDownRotation.value) DeviceOrientation.portraitDown,
                             ]);
                           },
-                          initialVal: ss().settings.allowUpsideDownRotation.value,
+                          initialVal: SettingsSvc.settings.allowUpsideDownRotation.value,
                           title: "Allow Upside-Down Rotation",
                           backgroundColor: tileColor,
                           leading: const SettingsLeadingIcon(
@@ -428,9 +428,9 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                         divisions: 3,
                         max: 5,
                         min: 3,
-                        startingVal: ss().settings.maxAvatarsInGroupWidget.value.toDouble(),
+                        startingVal: SettingsSvc.settings.maxAvatarsInGroupWidget.value.toDouble(),
                         update: (double val) {
-                          ss().settings.maxAvatarsInGroupWidget.value = val.toInt();
+                          SettingsSvc.settings.maxAvatarsInGroupWidget.value = val.toInt();
                         },
                         onChangeEnd: (double val) {
                           saveSettings();
@@ -452,6 +452,6 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
   }
 
   void saveSettings() {
-    ss().saveSettings(ss().settings);
+    SettingsSvc.saveSettings(SettingsSvc.settings);
   }
 }

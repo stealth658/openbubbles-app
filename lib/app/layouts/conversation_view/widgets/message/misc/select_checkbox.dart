@@ -15,7 +15,7 @@ class SelectCheckbox extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(() => AnimatedSize(
       duration: const Duration(milliseconds: 150),
-      child: !controller.inSelectMode.value ? const SizedBox.shrink() : (ss().settings.skin.value == Skins.iOS ? InkWell(
+      child: !controller.inSelectMode.value ? const SizedBox.shrink() : (SettingsSvc.settings.skin.value == Skins.iOS ? InkWell(
         customBorder: const CircleBorder(),
         child: Container(
           decoration: BoxDecoration(

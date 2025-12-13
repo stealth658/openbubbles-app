@@ -8,14 +8,15 @@ import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
-import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:universal_html/html.dart' hide Platform;
 import 'dart:io' show Platform;
+import 'package:get_it/get_it.dart';
 
-LifecycleService ls = Get.isRegistered<LifecycleService>() ? Get.find<LifecycleService>() : Get.put(LifecycleService());
+// ignore: non_constant_identifier_names
+LifecycleService get LifecycleSvc => GetIt.I<LifecycleService>();
 
-class LifecycleService extends GetxService with WidgetsBindingObserver {
+class LifecycleService with WidgetsBindingObserver {
   bool isBubble = false;
   bool isUiThread = true;
   bool windowFocused = true;
@@ -32,32 +33,27 @@ class LifecycleService extends GetxService with WidgetsBindingObserver {
   bool get wasHidden => statesSinceLastResume.contains(AppLifecycleState.inactive) || statesSinceLastResume.contains(AppLifecycleState.detached);
   bool get hasResumed => statesSinceLastResume.contains(AppLifecycleState.resumed);
 
-  @override
-  void onInit() {
-    super.onInit();
-    WidgetsBinding.instance.addObserver(this);
-  }
-
   Future<void> init({bool headless = false, bool isBubble = false}) async {
-    Logger().debug("Initializing LifecycleService${headless ? " in headless mode" : ""}");
+    Logger.debug("Initializing LifecycleService${headless ? " in headless mode" : ""}");
+    
+    // Only add observer if we're on the UI thread
+    if (!headless) {
+      WidgetsBinding.instance.addObserver(this);
+    }
 
     isUiThread = !headless;
     this.isBubble = isBubble;
 
-    handleForegroundService(AppLifecycleState.resumed);
-
-    Logger().debug("LifecycleService initialized");
-  }
-
-  @override
-  void onClose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.onClose();
+    // Only handle foreground service on UI thread
+    if (!headless) {
+      handleForegroundService(AppLifecycleState.resumed);
+    }
+    Logger.debug("LifecycleService initialized");
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
-    Logger().debug("App State changed to $state");
+    Logger.debug("App State changed to $state");
 
     // If the current state is resume, and we've already had a resume, remove all states up to the last resume.
     if (state == AppLifecycleState.resumed && statesSinceLastResume.contains(AppLifecycleState.resumed)) {
@@ -73,9 +69,13 @@ class LifecycleService extends GetxService with WidgetsBindingObserver {
       await Database.waitForInit();
       open();
     } else if (state != AppLifecycleState.inactive) {
-      SystemChannels.textInput.invokeMethod('TextInput.hide').catchError((e, stack) {
-        Logger().error("Error caught while hiding keyboard!", error: e, trace: stack);
-      });
+      // UI-dependent: Keyboard management
+      if (isUiThread) {
+        SystemChannels.textInput.invokeMethod('TextInput.hide').catchError((e, stack) {
+          Logger.error("Error caught while hiding keyboard!", error: e, trace: stack);
+        });
+      }
+      
       if (isBubble) {
         closeBubble();
       } else {
@@ -101,28 +101,36 @@ class LifecycleService extends GetxService with WidgetsBindingObserver {
     if (Platform.isAndroid && keepAlive) {
       // We only want the foreground service to run when the app is not active
       if (state == AppLifecycleState.resumed) {
-        Logger().info(tag: "LifecycleService", "Stopping foreground service");
-        mcs.invokeMethod("stop-foreground-service");
+        Logger.info(tag: "LifecycleService", "Stopping foreground service");
+        MethodChannelSvc.invokeMethod("stop-foreground-service");
       } else if ([AppLifecycleState.paused, AppLifecycleState.detached].contains(state)) {
-        Logger().info(tag: "LifecycleService", "Starting foreground service");
-        mcs.invokeMethod("start-foreground-service");
+        Logger.info(tag: "LifecycleService", "Starting foreground service");
+        MethodChannelSvc.invokeMethod("start-foreground-service");
       }
     }
   }
 
   void open() {
-    if (!kIsDesktop || wasActiveAliveBefore != false) {
-      cm.setActiveToAlive();
+    // Only add observer if we're on the UI thread
+    if (isUiThread) {
+      WidgetsBinding.instance.addObserver(this);
     }
-    if (cm.activeChat != null) {
-      cm.activeChat!.chat.toggleHasUnread(false);
-      ConversationViewController _cvc = cvc(cm.activeChat!.chat);
-      if (!_cvc.showingOverlays && _cvc.editing.isEmpty) {
-        _cvc.lastFocusedNode.requestFocus();
+
+    // UI-dependent: Chat controller management
+    if (isUiThread) {
+      if (!kIsDesktop || wasActiveAliveBefore != false) {
+        cm.setActiveToAlive();
+      }
+      if (cm.activeChat != null) {
+        cm.activeChat!.chat.toggleHasUnread(false);
+        ConversationViewController _cvc = cvc(cm.activeChat!.chat);
+        if (!_cvc.showingOverlays && _cvc.editing.isEmpty) {
+          _cvc.lastFocusedNode.requestFocus();
+        }
       }
     }
 
-    if (http.originOverride == null) {
+    if (HttpSvc.originOverride == null) {
       NetworkTasks.detectLocalhost();
     }
     if (!kIsDesktop && !kIsWeb) {
@@ -130,10 +138,10 @@ class LifecycleService extends GetxService with WidgetsBindingObserver {
         createFakePort();
       }
       
-      socket.reconnect();
+      SocketSvc.reconnect();
     }
 
-    if (kIsDesktop) {
+    if (kIsDesktop && isUiThread) {
       windowFocused = true;
     }
   }
@@ -146,27 +154,39 @@ class LifecycleService extends GetxService with WidgetsBindingObserver {
   }
 
   void close() {
-    if (kIsDesktop) {
-      wasActiveAliveBefore = cm.activeChat?.isAlive;
+    // Only remove observer if we're on the UI thread
+    if (isUiThread) {
+      WidgetsBinding.instance.removeObserver(this);
     }
-    if (!kIsDesktop || wasActiveAliveBefore != false) {
-      cm.setActiveToDead();
+
+    // UI-dependent: Chat controller management
+    if (isUiThread) {
+      if (kIsDesktop) {
+        wasActiveAliveBefore = cm.activeChat?.isAlive;
+      }
+      if (!kIsDesktop || wasActiveAliveBefore != false) {
+        cm.setActiveToDead();
+      }
+      if (cm.activeChat != null) {
+        ConversationViewController _cvc = cvc(cm.activeChat!.chat);
+        _cvc.lastFocusedNode.unfocus();
+      }
+      if (kIsDesktop) {
+        windowFocused = false;
+      }
     }
+    
     if (!kIsDesktop && !kIsWeb) {
       IsolateNameServer.removePortNameMapping('bg_isolate');
-      socket.disconnect();
-    }
-    if (cm.activeChat != null) {
-      ConversationViewController _cvc = cvc(cm.activeChat!.chat);
-      _cvc.lastFocusedNode.unfocus();
-    }
-    if (kIsDesktop) {
-      windowFocused = false;
+      SocketSvc.disconnect();
     }
   }
 
   void closeBubble() {
-    cm.setActiveToDead();
-    socket.disconnect();
+    // UI-dependent: Chat controller management
+    if (isUiThread) {
+      cm.setActiveToDead();
+    }
+    SocketSvc.disconnect();
   }
 }

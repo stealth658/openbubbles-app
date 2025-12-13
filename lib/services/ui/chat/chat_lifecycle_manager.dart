@@ -24,7 +24,7 @@ class ChatLifecycleManager {
         });
         if (_chat != null) {
           bool shouldSort = chat.latestMessage.dateCreated != _chat.latestMessage.dateCreated;
-          chats.updateChat(_chat, shouldSort: shouldSort);
+          ChatsSvc.updateChat(_chat, shouldSort: shouldSort);
           chat = _chat.merge(chat);
         }
       });
@@ -41,12 +41,12 @@ class ChatLifecycleManager {
               h = Database.handles.get(h.id!)!;
             }
           }
-          chats.updateChat(chat, override: true);
+          ChatsSvc.updateChat(chat, override: true);
         }
       });
     } else {
       sub = WebListeners.chatUpdate.listen((_chat) {
-        chats.updateChat(_chat, shouldSort: false);
+        ChatsSvc.updateChat(_chat, shouldSort: false);
         chat = _chat.merge(chat);
       });
       sub2 = WebListeners.newMessage.listen((tuple) {
@@ -54,7 +54,7 @@ class ChatLifecycleManager {
         final _chat = tuple.item2;
         if (_chat?.guid == chat.guid &&
             (chat.latestMessage.dateCreated!.millisecondsSinceEpoch == 0 || message.dateCreated!.isAfter(chat.latestMessage.dateCreated!))) {
-          chats.updateChat(_chat!, shouldSort: true);
+          ChatsSvc.updateChat(_chat!, shouldSort: true);
           chat = _chat.merge(chat);
           chat.latestMessage = message;
         }

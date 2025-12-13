@@ -40,9 +40,9 @@ class MessageWidgetController extends StatefulController with GetSingleTickerPro
   }
 
   Message? get newMessage =>
-      newMessageGuid == null ? null : ms(cvController!.chat.guid).struct.getMessage(newMessageGuid!);
+      newMessageGuid == null ? null : MessagesSvc(cvController!.chat.guid).struct.getMessage(newMessageGuid!);
   Message? get oldMessage =>
-      oldMessageGuid == null ? null : ms(cvController!.chat.guid).struct.getMessage(oldMessageGuid!);
+      oldMessageGuid == null ? null : MessagesSvc(cvController!.chat.guid).struct.getMessage(oldMessageGuid!);
 
   @override
   void onInit() {
@@ -171,7 +171,7 @@ class MessageWidgetController extends StatefulController with GetSingleTickerPro
           text: e.isAttachment ? null : mainString.substring(e.range.first, e.range.first + e.range.last),
           attachments: e.isAttachment && (cvController?.chat != null || cm.activeChat != null)
               ? [
-                  ms(cvController?.chat.guid ?? cm.activeChat!.chat.guid)
+                  MessagesSvc(cvController?.chat.guid ?? cm.activeChat!.chat.guid)
                           .struct
                           .getAttachment(e.attributes!.attachmentGuid!) ??
                       Attachment.findOne(e.attributes!.attachmentGuid!)
@@ -197,7 +197,7 @@ class MessageWidgetController extends StatefulController with GetSingleTickerPro
     final oldGuid = message.guid;
     if (newItem.guid != oldGuid && oldGuid!.contains("temp")) {
       message = Message.merge(newItem, message);
-      ms(chat).updateMessage(message, oldGuid: oldGuid);
+      MessagesSvc(chat).updateMessage(message, oldGuid: oldGuid);
       updateWidgets<MessageHolder>(null);
       if (message.isFromMe! && message.attachments.isNotEmpty) {
         updateWidgets<AttachmentHolder>(null);
@@ -207,9 +207,9 @@ class MessageWidgetController extends StatefulController with GetSingleTickerPro
         newItem.didNotifyRecipient != message.didNotifyRecipient) {
       final edited = newItem.dateEdited != message.dateEdited;
       message = Message.merge(newItem, message);
-      ms(chat).updateMessage(message);
+      MessagesSvc(chat).updateMessage(message);
       // update the latest 2 messages in case their indicators need to go away
-      final messages = ms(chat)
+      final messages = MessagesSvc(chat)
           .struct
           .messages
           .where((e) => e.isFromMe! && (e.dateDelivered != null || e.dateRead != null))
@@ -228,7 +228,7 @@ class MessageWidgetController extends StatefulController with GetSingleTickerPro
       message = Message.merge(newItem, message);
       parts.clear();
       buildMessageParts();
-      ms(chat).updateMessage(message);
+      MessagesSvc(chat).updateMessage(message);
       updateWidgets<MessageHolder>(null);
     }
   }

@@ -116,7 +116,7 @@ class ChatSyncManager extends SyncManager {
   }
 
   Future<int?> getChatCount() async {
-    Response chatCountResponse = await http.chatCount();
+    Response chatCountResponse = await HttpSvc.chatCount();
     Map<String, dynamic> res = chatCountResponse.data;
     if (chatCountResponse.statusCode == 200) {
       return res["data"]["total"];
@@ -140,7 +140,7 @@ class ChatSyncManager extends SyncManager {
     for (int i = 0; i < batches; i++) {
       // Fetch the handles and throw an error if we don't get back a good response.
       // Throwing an error should cancel the sync
-      Response chatPage = await http.chats(
+      Response chatPage = await HttpSvc.chats(
         offset: i * countPerBatch,
         limit: countPerBatch,
         withQuery: [
@@ -164,8 +164,8 @@ class ChatSyncManager extends SyncManager {
   Future<void> complete() async {
     addToOutput("Successfully synced $chatsSynced chats(s)!");
     addToOutput("Reloading your chats...");
-    Get.reload<ChatsService>(force: true);
-    await chats.init(force: true);
+    ChatsSvc.reset();
+    await ChatsSvc.init(force: true);
     await super.complete();
   }
 }

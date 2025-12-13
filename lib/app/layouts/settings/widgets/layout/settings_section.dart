@@ -34,21 +34,21 @@ class SettingsSection extends StatelessWidget {
 
     // Always return section container
     return Padding(
-      padding: ss().settings.skin.value == Skins.iOS
+      padding: SettingsSvc.settings.skin.value == Skins.iOS
           ? const EdgeInsets.symmetric(horizontal: 20)
-          : ss().settings.skin.value == Skins.Samsung
+          : SettingsSvc.settings.skin.value == Skins.Samsung
           ? const EdgeInsets.symmetric(vertical: 5)
           : EdgeInsets.zero,
       child: ClipRRect(
-        borderRadius: ss().settings.skin.value == Skins.Samsung
+        borderRadius: SettingsSvc.settings.skin.value == Skins.Samsung
             ? BorderRadius.circular(25)
-            : ss().settings.skin.value == Skins.iOS
+            : SettingsSvc.settings.skin.value == Skins.iOS
             ? BorderRadius.circular(10)
             : BorderRadius.circular(0),
-        clipBehavior: ss().settings.skin.value != Skins.Material ? Clip.antiAlias : Clip.none,
+        clipBehavior: SettingsSvc.settings.skin.value != Skins.Material ? Clip.antiAlias : Clip.none,
         child: Container(
-          color: ss().settings.skin.value == Skins.iOS ? null : backgroundColor,
-          decoration: ss().settings.skin.value == Skins.iOS
+          color: SettingsSvc.settings.skin.value == Skins.iOS ? null : backgroundColor,
+          decoration: SettingsSvc.settings.skin.value == Skins.iOS
               ? BoxDecoration(
             color: backgroundColor,
             borderRadius: BorderRadius.circular(10),

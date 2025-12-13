@@ -43,8 +43,8 @@ class _MediaGalleryCardState extends OptimizedState<MediaGalleryCard> with Autom
     super.initState();
 
     // check active downloader otherwise check file exists
-    if (attachmentDownloader.getController(attachment.guid) != null) {
-      controller = attachmentDownloader.getController(attachment.guid);
+    if (AttachmentDownloader.getController(attachment.guid) != null) {
+      controller = AttachmentDownloader.getController(attachment.guid);
       controller!.completeFuncs.add((file) {
         setState(() {
           controller = null;
@@ -122,7 +122,7 @@ class _MediaGalleryCardState extends OptimizedState<MediaGalleryCard> with Autom
       duration = tempController.value.duration;
     } catch (_) {
       // If an error occurs, set the thumbnail to the cached no preview image
-      videoPreview = fs().noVideoPreviewIcon;
+      videoPreview = FilesystemSvc.noVideoPreviewIcon;
 
       if (attachment.metadata?['thumbnail_status'] != 'error') {
         attachment.metadata ??= {};
@@ -138,7 +138,7 @@ class _MediaGalleryCardState extends OptimizedState<MediaGalleryCard> with Autom
   Widget build(BuildContext context) {
     super.build(context);
 
-    final bool hideAttachments = ss().settings.redactedMode.value && ss().settings.hideAttachments.value;
+    final bool hideAttachments = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideAttachments.value;
 
     late Widget child;
     bool addPadding = true;
@@ -169,7 +169,7 @@ class _MediaGalleryCardState extends OptimizedState<MediaGalleryCard> with Autom
               style: Theme.of(context).textTheme.bodyLarge,
             ),
             const SizedBox(height: 5),
-            Icon(ss().settings.skin.value == Skins.iOS
+            Icon(SettingsSvc.settings.skin.value == Skins.iOS
                 ? CupertinoIcons.cloud_download
                 : Icons.cloud_download,
               size: 28.0,
@@ -249,17 +249,17 @@ class ImageDisplay extends StatelessWidget {
             openContainer();
           },
           child: SizedBox(
-            width: ns.width(context) / max(2, ns.width(context) ~/ 200),
-            height: ns.width(context) / max(2, ns.width(context) ~/ 200),
+            width: NavigationSvc.width(context) / max(2, NavigationSvc.width(context) ~/ 200),
+            height: NavigationSvc.width(context) / max(2, NavigationSvc.width(context) ~/ 200),
             child: Stack(
               children: [
                 Image.memory(
                   image,
                   fit: BoxFit.cover,
                   alignment: Alignment.center,
-                  cacheWidth: ns.width(context) ~/ max(2, ns.width(context) ~/ 200) * 2,
-                  width: ns.width(context) / max(2, ns.width(context) ~/ 200),
-                  height: ns.width(context) / max(2, ns.width(context) ~/ 200),
+                  cacheWidth: NavigationSvc.width(context) ~/ max(2, NavigationSvc.width(context) ~/ 200) * 2,
+                  width: NavigationSvc.width(context) / max(2, NavigationSvc.width(context) ~/ 200),
+                  height: NavigationSvc.width(context) / max(2, NavigationSvc.width(context) ~/ 200),
                 ),
                 if ((attachment.mimeType?.contains("video") ?? false) && duration != null)
                   Positioned(
@@ -273,7 +273,7 @@ class ImageDisplay extends StatelessWidget {
                   ),
                 if (!(attachment.message.target?.isFromMe ?? true)
                     && attachment.message.target?.handle != null
-                    && ss().settings.skin.value == Skins.iOS)
+                    && SettingsSvc.settings.skin.value == Skins.iOS)
                   Positioned(
                     top: 10,
                     right: 10,

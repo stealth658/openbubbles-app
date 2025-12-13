@@ -63,7 +63,7 @@ Future<DateTime?> showTimeframePicker(String title, BuildContext context,
     return InkWell(
         onTap: () {
           finalDate = tmpDate;
-          if (ns.isTabletMode(context)){
+          if (NavigationSvc.isTabletMode(context)){
             Get.close(1);
           } else {
             Navigator.of(context).pop();

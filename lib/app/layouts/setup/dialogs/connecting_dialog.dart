@@ -19,11 +19,11 @@ class _ConnectingDialogState extends OptimizedState<ConnectingDialog> {
   void initState() {
     super.initState();
 
-    if (socket.state.value == SocketState.connected) {
+    if (SocketSvc.state.value == SocketState.connected) {
       widget.onConnect(true);
     } else {
       // Set up a listener to wait for connect events
-      ever(socket.state, (event) {
+      ever(SocketSvc.state, (event) {
         if (event == SocketState.connected) {
           widget.onConnect(true);
         } else if (event == SocketState.error || event == SocketState.disconnected) {
@@ -36,7 +36,7 @@ class _ConnectingDialogState extends OptimizedState<ConnectingDialog> {
 
   @override
   Widget build(BuildContext context) {
-    if (socket.state.value == SocketState.error) {
+    if (SocketSvc.state.value == SocketState.error) {
       return FailedToConnectDialog(
         onDismiss: () => Navigator.of(context).pop(),
       );

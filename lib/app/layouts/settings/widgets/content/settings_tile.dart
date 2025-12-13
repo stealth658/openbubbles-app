@@ -48,7 +48,7 @@ class SettingsTile extends StatelessWidget {
             enableFeedback: true,
             minVerticalPadding: 10,
             horizontalTitleGap: 10,
-            dense: ss().settings.skin.value == Skins.iOS ? true : false,
+            dense: SettingsSvc.settings.skin.value == Skins.iOS ? true : false,
             leading: leading == null ? null : Padding(
               padding: EdgeInsets.only(bottom: isThreeLine ? 10 : 0.0, right: 5, left: 5),
               child: leading,

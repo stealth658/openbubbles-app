@@ -107,7 +107,7 @@ class HandleSelectorViewState extends OptimizedState<HandleSelectorView> {
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
-        systemNavigationBarColor: ss().settings.immersiveMode.value
+        systemNavigationBarColor: SettingsSvc.settings.immersiveMode.value
             ? Colors.transparent
             : context.theme.colorScheme.background, // navigation bar color
         systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
@@ -115,11 +115,11 @@ class HandleSelectorViewState extends OptimizedState<HandleSelectorView> {
         statusBarIconBrightness: context.theme.colorScheme.brightness.opposite,
       ),
       child: Scaffold(
-        backgroundColor: ss().settings.windowEffect.value != WindowEffect.disabled
+        backgroundColor: SettingsSvc.settings.windowEffect.value != WindowEffect.disabled
             ? Colors.transparent
             : context.theme.colorScheme.background,
         appBar: PreferredSize(
-            preferredSize: Size(ns.width(context), kIsDesktop ? 90 : 50),
+            preferredSize: Size(NavigationSvc.width(context), kIsDesktop ? 90 : 50),
             child: AppBar(
                 systemOverlayStyle: context.theme.colorScheme.brightness == Brightness.dark
                     ? SystemUiOverlayStyle.light
@@ -130,7 +130,7 @@ class HandleSelectorViewState extends OptimizedState<HandleSelectorView> {
                 surfaceTintColor: context.theme.colorScheme.primary,
                 leading: buildBackButton(context),
                 backgroundColor: Colors.transparent,
-                centerTitle: ss().settings.skin.value == Skins.iOS,
+                centerTitle: SettingsSvc.settings.skin.value == Skins.iOS,
                 title: Text(
                   "Select an Address",
                   style: context.theme.textTheme.titleLarge,
@@ -194,7 +194,7 @@ class HandleSelectorViewState extends OptimizedState<HandleSelectorView> {
                                     );
                                   }
                                   final handle = filteredHandles[index];
-                                  final hideInfo = ss().settings.redactedMode.value && ss().settings.hideContactInfo.value;
+                                  final hideInfo = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
                                   String _title = handle.displayName;
                                   if (hideInfo) {
                                     _title = handle.fakeName;
@@ -210,7 +210,7 @@ class HandleSelectorViewState extends OptimizedState<HandleSelectorView> {
                                         child: ListTile(
                                             mouseCursor: MouseCursor.defer,
                                             enableFeedback: true,
-                                            dense: ss().settings.denseChatTiles.value,
+                                            dense: SettingsSvc.settings.denseChatTiles.value,
                                             minVerticalPadding: 10,
                                             horizontalTitleGap: 10,
                                             title: RichText(

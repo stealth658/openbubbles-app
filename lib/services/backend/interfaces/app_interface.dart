@@ -1,0 +1,46 @@
+import 'package:bluebubbles/env.dart';
+import 'package:bluebubbles/services/backend/settings/settings_service.dart';
+import 'package:bluebubbles/services/backend/actions/app_actions.dart';
+import 'package:get_it/get_it.dart';
+import 'package:bluebubbles/services/isolates/global_isolate.dart';
+import 'package:github/github.dart';
+
+class AppInterface {
+  static Future<AppUpdateInfo> checkForUpdate() async {
+    late Map<String, dynamic> response;
+    if (isIsolate()) {
+      response = await AppActions.checkForUpdate();
+    } else {
+      response = await GetIt.I<GlobalIsolate>()
+          .send<Map<String, dynamic>>(IsolateRequestType.checkForUpdate);
+    }
+
+    return AppUpdateInfo(
+      available: response['available'] as bool,
+      latestRelease: response['latestRelease'] as Release,
+      isDesktopRelease: response['isDesktopRelease'] as bool,
+      version: (response['parsedVersion'] as Map<String, String>)['version']!,
+      code: (response['parsedVersion'] as Map<String, String>)['code']!,
+      buildNumber: (response['parsedVersion'] as Map<String, String>)['build']!,
+    );
+  }
+
+  static Future<FCMDataInfo> getFcmData() async {
+    late Map<String, dynamic> dataDict;
+    if (isIsolate()) {
+      dataDict = AppActions.getFcmData();
+    } else {
+      dataDict = await GetIt.I<GlobalIsolate>()
+          .send<Map<String, dynamic>>(IsolateRequestType.getFcmData);
+    }
+
+    return FCMDataInfo(
+      projectID: dataDict['projectID'] as String?,
+      storageBucket: dataDict['storageBucket'] as String?,
+      apiKey: dataDict['apiKey'] as String?,
+      firebaseURL: dataDict['firebaseURL'] as String?,
+      clientID: dataDict['clientID'] as String?,
+      applicationID: dataDict['applicationID'] as String?,
+    );
+  }
+}

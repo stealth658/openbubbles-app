@@ -38,7 +38,7 @@ class SettingsOptions<T extends Object> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (ss().settings.skin.value == Skins.iOS && useCupertino) {
+    if (SettingsSvc.settings.skin.value == Skins.iOS && useCupertino) {
       final texts = options.map((e) => Text(capitalize ? textProcessing!(e).capitalize! : textProcessing!(e), style: context.theme.textTheme.bodyLarge!.copyWith(color: e == initial ? context.theme.colorScheme.onPrimary : null)));
       final map = Map<T, Widget>.fromIterables(options, cupertinoCustomWidgets ?? texts);
       return Container(
@@ -59,7 +59,7 @@ class SettingsOptions<T extends Object> extends StatelessWidget {
       );
     }
     Color surfaceColor = context.theme.colorScheme.properSurface;
-    if (ss().settings.skin.value == Skins.Material
+    if (SettingsSvc.settings.skin.value == Skins.Material
         && surfaceColor.computeDifference(context.theme.colorScheme.background) < 15) {
       surfaceColor = context.theme.colorScheme.surfaceVariant;
     }
@@ -71,7 +71,7 @@ class SettingsOptions<T extends Object> extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: ns.width(context) * 3 / 5, minWidth: ns.width(context) / 5),
+              constraints: BoxConstraints(maxWidth: NavigationSvc.width(context) * 3 / 5, minWidth: NavigationSvc.width(context) / 5),
               child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -129,7 +129,7 @@ class SettingsOptions<T extends Object> extends StatelessWidget {
                 );
                 if (clampWidth) {
                   return ConstrainedBox(
-                    constraints: BoxConstraints(maxWidth: ns.width(context) * 2 / 5 - 47),
+                    constraints: BoxConstraints(maxWidth: NavigationSvc.width(context) * 2 / 5 - 47),
                     child: widget,
                   );
                 } else {

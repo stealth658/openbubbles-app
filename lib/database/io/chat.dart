@@ -1,11 +1,11 @@
 import 'dart:async';
 
-import 'package:async_task/async_task.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
+import 'package:bluebubbles/services/backend/interfaces/chat_interface.dart';
 import 'package:collection/collection.dart';
 import 'package:dio/dio.dart';
 import 'package:faker/faker.dart';
@@ -17,263 +17,6 @@ import 'package:metadata_fetch/metadata_fetch.dart';
 // ignore: unnecessary_import
 import 'package:objectbox/objectbox.dart';
 import 'package:universal_io/io.dart';
-
-/// Async method to get attachments from objectbox
-class GetChatAttachments extends AsyncTask<List<dynamic>, List<Attachment>> {
-  final List<dynamic> stuff;
-
-  GetChatAttachments(this.stuff);
-
-  @override
-  AsyncTask<List<dynamic>, List<Attachment>> instantiate(List<dynamic> parameters,
-      [Map<String, SharedData>? sharedData]) {
-    return GetChatAttachments(parameters);
-  }
-
-  @override
-  List<dynamic> parameters() {
-    return stuff;
-  }
-
-  @override
-  FutureOr<List<Attachment>> run() {
-    /// Pull args from input and create new instances of store and boxes
-    int chatId = stuff[0];
-    bool includeDeleted = stuff[1];
-    return Database.runInTransaction(TxMode.read, () {
-      /// Query the [Database.messageBox] for all the message IDs and order by date
-      /// descending
-      final query = (Database.messages.query(includeDeleted
-          ? Message_.dateCreated.notNull().and(Message_.dateDeleted.isNull().or(Message_.dateDeleted.notNull()))
-          : Message_.dateDeleted.isNull().and(Message_.dateCreated.notNull()))
-            ..link(Message_.chat, Chat_.id.equals(chatId))
-            ..order(Message_.dateCreated, flags: Order.descending))
-          .build();
-      final messages = query.find();
-      query.close();
-
-      final actualAttachments = <Attachment>[];
-
-      /// Match the attachments to their messages
-      for (Message m in messages) {
-        m.attachments = List<Attachment>.from(m.dbAttachments.where((element) => element.mimeType != null));
-        actualAttachments.addAll((m.attachments).map((e) => e!));
-      }
-
-      /// Remove duplicate attachments from the list, just in case
-      if (actualAttachments.isNotEmpty) {
-        final guids = actualAttachments.map((e) => e.guid).toSet();
-        actualAttachments.retainWhere((element) => guids.remove(element.guid));
-      }
-      return actualAttachments;
-    });
-  }
-}
-
-/// Async method to get messages from objectbox
-class GetMessages extends AsyncTask<List<dynamic>, List<Message>> {
-  final List<dynamic> stuff;
-
-  GetMessages(this.stuff);
-
-  @override
-  AsyncTask<List<dynamic>, List<Message>> instantiate(List<dynamic> parameters, [Map<String, SharedData>? sharedData]) {
-    return GetMessages(parameters);
-  }
-
-  @override
-  List<dynamic> parameters() {
-    return stuff;
-  }
-
-  @override
-  FutureOr<List<Message>> run() {
-    /// Pull args from input and create new instances of store and boxes
-    int chatId = stuff[0];
-    int offset = stuff[1];
-    int limit = stuff[2];
-    bool includeDeleted = stuff[3];
-    int? searchAround = stuff[4];
-    return Database.runInTransaction(TxMode.read, () {
-      /// Get the message IDs for the chat by querying the [cmJoinBox]
-      final messages = <Message>[];
-      if (searchAround == null) {
-        final query = (Database.messages.query(includeDeleted
-            ? Message_.dateCreated.notNull().and(Message_.dateDeleted.isNull().or(Message_.dateDeleted.notNull()))
-            : Message_.dateDeleted.isNull().and(Message_.dateCreated.notNull()))
-          ..link(Message_.chat, Chat_.id.equals(chatId))
-          ..order(Message_.dateCreated, flags: Order.descending))
-            .build();
-        query
-          ..limit = limit
-          ..offset = offset;
-        messages.addAll(query.find());
-        query.close();
-      } else {
-        final beforeQuery = (Database.messages.query(Message_.dateCreated.lessThan(searchAround).and(includeDeleted
-            ? Message_.dateCreated.notNull().and(Message_.dateDeleted.isNull().or(Message_.dateDeleted.notNull()))
-            : Message_.dateDeleted.isNull().and(Message_.dateCreated.notNull())))
-          ..link(Message_.chat, Chat_.id.equals(chatId))
-          ..order(Message_.dateCreated, flags: Order.descending))
-            .build();
-        beforeQuery.limit = limit;
-        final before = beforeQuery.find();
-        beforeQuery.close();
-        final afterQuery = (Database.messages.query(Message_.dateCreated.greaterThan(searchAround).and(includeDeleted
-            ? Message_.dateCreated.notNull().and(Message_.dateDeleted.isNull().or(Message_.dateDeleted.notNull()))
-            : Message_.dateDeleted.isNull().and(Message_.dateCreated.notNull())))
-          ..link(Message_.chat, Chat_.id.equals(chatId))
-          ..order(Message_.dateCreated))
-            .build();
-        afterQuery.limit = limit;
-        final after = afterQuery.find();
-        afterQuery.close();
-        messages..addAll(before)..addAll(after);
-      }
-
-      /// Fetch and match handles
-      final chat = Database.chats.get(chatId);
-      for (int i = 0; i < messages.length; i++) {
-        Message message = messages[i];
-        if (chat!.participants.isNotEmpty && !message.isFromMe! && message.handleId != null && message.handleId != 0) {
-          Handle? handle = chat.participants.firstWhereOrNull((e) => e.originalROWID == message.handleId) ?? message.getHandle();
-          if (handle == null && message.originalROWID != null) {
-            messages.remove(message);
-            i--;
-          } else {
-            message.handle = handle;
-          }
-        }
-      }
-      final messageGuids = messages.map((e) => e.guid!).toList();
-      final associatedMessagesQuery =
-          (Database.messages.query(Message_.associatedMessageGuid.oneOf(messageGuids))..order(Message_.originalROWID)).build();
-      List<Message> associatedMessages = associatedMessagesQuery.find();
-      associatedMessagesQuery.close();
-      associatedMessages = MessageHelper.normalizedAssociatedMessages(associatedMessages);
-      for (Message m in associatedMessages) {
-        if (m.associatedMessageType != "sticker") continue;
-        m.attachments = List<Attachment>.from(m.dbAttachments);
-      }
-      for (Message m in messages) {
-        m.attachments = List<Attachment>.from(m.dbAttachments);
-        m.associatedMessages = associatedMessages.where((e) => e.associatedMessageGuid == m.guid).toList();
-      }
-      return messages;
-    });
-  }
-}
-
-/// Async method to add messages to objectbox
-class AddMessages extends AsyncTask<List<dynamic>, List<Message>> {
-  final List<dynamic> stuff;
-
-  AddMessages(this.stuff);
-
-  @override
-  AsyncTask<List<dynamic>, List<Message>> instantiate(List<dynamic> parameters, [Map<String, SharedData>? sharedData]) {
-    return AddMessages(parameters);
-  }
-
-  @override
-  List<dynamic> parameters() {
-    return stuff;
-  }
-
-  @override
-  FutureOr<List<Message>> run() {
-    /// Pull args from input and create new instances of store and boxes
-    List<Message> messages = stuff[0].map((e) => Message.fromMap(e)).toList().cast<Message>();
-
-    /// Save the new messages and their attachments in a write transaction
-    final newMessages = Database.runInTransaction(TxMode.write, () {
-      List<Message> newMessages = Message.bulkSave(messages);
-      Attachment.bulkSave(
-          Map.fromIterables(newMessages, newMessages.map((e) => (e.attachments).map((e) => e!).toList())));
-      return newMessages;
-    });
-
-    /// fetch attachments and reactions in a read transaction
-    return Database.runInTransaction(TxMode.read, () {
-      final messageGuids = newMessages.map((e) => e.guid!).toList();
-
-      /// Query the [Database.messageBox] for associated messages (reactions) matching the
-      /// message IDs
-      final associatedMessagesQuery =
-          (Database.messages.query(Message_.associatedMessageGuid.oneOf(messageGuids))..order(Message_.originalROWID)).build();
-      List<Message> associatedMessages = associatedMessagesQuery.find();
-      associatedMessagesQuery.close();
-      associatedMessages = MessageHelper.normalizedAssociatedMessages(associatedMessages);
-
-      /// Assign the relevant attachments and associated messages to the original
-      /// messages
-      for (Message m in associatedMessages) {
-        if (m.associatedMessageType != "sticker") continue;
-        m.attachments = List<Attachment>.from(m.dbAttachments);
-      }
-      for (Message m in newMessages) {
-        m.attachments = List<Attachment>.from(m.dbAttachments);
-        m.associatedMessages = associatedMessages.where((e) => e.associatedMessageGuid == m.guid).toList();
-      }
-      return newMessages;
-    });
-  }
-}
-
-/// Async method to get chats from objectbox
-class GetChats extends AsyncTask<List<dynamic>, List<Chat>> {
-  final List<dynamic> stuff;
-
-  GetChats(this.stuff);
-
-  @override
-  AsyncTask<List<dynamic>, List<Chat>> instantiate(List<dynamic> parameters, [Map<String, SharedData>? sharedData]) {
-    return GetChats(parameters);
-  }
-
-  @override
-  List<dynamic> parameters() {
-    return stuff;
-  }
-
-  @override
-  FutureOr<List<Chat>> run() {
-    return Database.runInTransaction(TxMode.write, () {
-      late final QueryBuilder<Chat> queryBuilder;
-
-      // If the 3rd param is available, it's for an ID query.
-      // Otherwise, query without any criteria
-      if (stuff.length >= 3 && stuff[2] != null && stuff[2] is List) {
-        queryBuilder = Database.chats.query(Chat_.id.oneOf(stuff[2] as List<int>));
-      } else {
-        queryBuilder = Database.chats.query(Chat_.dateDeleted.isNull());
-      }
-
-      // Build the query, applying some sorting so we get data in the correct order.
-      // As well as some limit and offset parameters
-      Query<Chat> query = (queryBuilder
-            ..order(Chat_.isPinned, flags: Order.descending)
-            ..order(Chat_.dbOnlyLatestMessageDate, flags: Order.descending))
-          .build()
-        ..limit = stuff[0]
-        ..offset = stuff[1];
-
-      // Execute the query, then close the DB connection
-      final chats = query.find();
-      query.close();
-
-      /// Assign the handles to the chats, deduplicate, and get fake participants
-      /// for redacted mode
-      for (Chat c in chats) {
-        c._participants = List<Handle>.from(c.handles);
-        c._deduplicateParticipants();
-        c.title = c.getTitle();
-      }
-      return chats;
-    });
-  }
-}
-
 
 @Entity()
 class Chat {
@@ -291,12 +34,13 @@ class Chat {
   bool? hasUnreadMessage;
   String? title;
   String get properTitle {
-    if (ss().settings.redactedMode.value && ss().settings.hideContactInfo.value) {
+    if (SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value) {
       return getTitle();
     }
     title ??= getTitle();
     return title!;
   }
+
   String? displayName;
   List<Handle> _participants = [];
   List<Handle> get participants {
@@ -305,6 +49,7 @@ class Chat {
     }
     return _participants;
   }
+
   bool? autoSendReadReceipts;
   bool? autoSendTypingIndicators;
   String? textFieldText;
@@ -312,19 +57,23 @@ class Chat {
   Message? _latestMessage;
   Message get latestMessage {
     if (_latestMessage != null) return _latestMessage!;
-    _latestMessage = Chat.getMessages(this, limit: 1, getDetails: true).firstOrNull ?? Message(
-      dateCreated: DateTime.fromMillisecondsSinceEpoch(0),
-      guid: guid,
-    );
+    _latestMessage = Chat.getMessages(this, limit: 1, getDetails: true).firstOrNull ??
+        Message(
+          dateCreated: DateTime.fromMillisecondsSinceEpoch(0),
+          guid: guid,
+        );
     return _latestMessage!;
   }
+
   Message get dbLatestMessage {
-    _latestMessage = Chat.getMessages(this, limit: 1, getDetails: true).firstOrNull ?? Message(
-      dateCreated: DateTime.fromMillisecondsSinceEpoch(0),
-      guid: guid,
-    );
+    _latestMessage = Chat.getMessages(this, limit: 1, getDetails: true).firstOrNull ??
+        Message(
+          dateCreated: DateTime.fromMillisecondsSinceEpoch(0),
+          guid: guid,
+        );
     return _latestMessage!;
   }
+
   set latestMessage(Message m) => _latestMessage = m;
   @Property(uid: 526293286661780207)
   DateTime? dbOnlyLatestMessageDate;
@@ -406,7 +155,8 @@ class Chat {
       displayName: json["displayName"],
       customAvatar: json['_customAvatarPath'],
       pinnedIndex: json['_pinIndex'],
-      participants: (json['participants'] as List? ?? []).map((e) => Handle.fromMap(e!.cast<String, Object>())).toList(),
+      participants:
+          (json['participants'] as List? ?? []).map((e) => Handle.fromMap(e!.cast<String, Object>())).toList(),
       autoSendReadReceipts: json["autoSendReadReceipts"],
       autoSendTypingIndicators: json["autoSendTypingIndicators"],
       dateDeleted: parseDate(json["dateDeleted"]),
@@ -512,6 +262,53 @@ class Chat {
     return this;
   }
 
+  /// Save a chat to the DB asynchronously (non-blocking)
+  Future<Chat> saveAsync({
+    bool updateMuteType = false,
+    bool updateMuteArgs = false,
+    bool updateIsPinned = false,
+    bool updatePinIndex = false,
+    bool updateIsArchived = false,
+    bool updateHasUnreadMessage = false,
+    bool updateAutoSendReadReceipts = false,
+    bool updateAutoSendTypingIndicators = false,
+    bool updateCustomAvatarPath = false,
+    bool updateTextFieldText = false,
+    bool updateTextFieldAttachments = false,
+    bool updateDisplayName = false,
+    bool updateDateDeleted = false,
+    bool updateLockChatName = false,
+    bool updateLockChatIcon = false,
+    bool updateLastReadMessageGuid = false,
+  }) async {
+    if (kIsWeb) return this;
+
+    await ChatInterface.saveChat(
+      guid: guid,
+      chatData: toMap(),
+      updateFlags: {
+        'updateMuteType': updateMuteType,
+        'updateMuteArgs': updateMuteArgs,
+        'updateIsPinned': updateIsPinned,
+        'updatePinIndex': updatePinIndex,
+        'updateIsArchived': updateIsArchived,
+        'updateHasUnreadMessage': updateHasUnreadMessage,
+        'updateAutoSendReadReceipts': updateAutoSendReadReceipts,
+        'updateAutoSendTypingIndicators': updateAutoSendTypingIndicators,
+        'updateCustomAvatarPath': updateCustomAvatarPath,
+        'updateTextFieldText': updateTextFieldText,
+        'updateTextFieldAttachments': updateTextFieldAttachments,
+        'updateDisplayName': updateDisplayName,
+        'updateDateDeleted': updateDateDeleted,
+        'updateLockChatName': updateLockChatName,
+        'updateLockChatIcon': updateLockChatIcon,
+        'updateLastReadMessageGuid': updateLastReadMessageGuid,
+      },
+    );
+
+    return this;
+  }
+
   /// Change a chat's display name
   Chat changeName(String? name) {
     if (kIsWeb) {
@@ -536,7 +333,9 @@ class Chat {
   /// Get a chat's title
   String getChatCreatorSubtitle() {
     // generate names for group chats or DMs
-    List<String> titles = participants.map((e) => e.displayName.trim().split(isGroup && e.contact != null ? " " : String.fromCharCode(65532)).first).toList();
+    List<String> titles = participants
+        .map((e) => e.displayName.trim().split(isGroup && e.contact != null ? " " : String.fromCharCode(65532)).first)
+        .toList();
     if (titles.isEmpty) {
       if (chatIdentifier!.startsWith("urn:biz")) {
         return "Business Chat";
@@ -561,14 +360,12 @@ class Chat {
   /// Return whether or not the notification should be muted
   bool shouldMuteNotification(Message? message) {
     /// Filter unknown senders & sender doesn't have a contact, then don't notify
-    if (ss().settings.filterUnknownSenders.value &&
-        participants.length == 1 &&
-        participants.first.contact == null) {
+    if (SettingsSvc.settings.filterUnknownSenders.value && participants.length == 1 && participants.first.contact == null) {
       return true;
 
       /// Check if global text detection is on and notify accordingly
-    } else if (ss().settings.globalTextDetection.value.isNotEmpty) {
-      List<String> text = ss().settings.globalTextDetection.value.split(",");
+    } else if (SettingsSvc.settings.globalTextDetection.value.isNotEmpty) {
+      List<String> text = SettingsSvc.settings.globalTextDetection.value.split(",");
       for (String s in text) {
         if (message?.text?.toLowerCase().contains(s.toLowerCase()) ?? false) {
           return false;
@@ -606,54 +403,47 @@ class Chat {
     }
 
     /// If reaction and notify reactions off, then don't notify, otherwise notify
-    return !ss().settings.notifyReactions.value &&
+    return !SettingsSvc.settings.notifyReactions.value &&
         ReactionTypes.toList().contains(message?.associatedMessageType ?? "");
   }
 
   /// Delete a chat locally. Prefer using softDelete so the chat doesn't come back
-  static void deleteChat(Chat chat) async {
+  static Future<void> deleteChat(Chat chat) async {
     if (kIsWeb) return;
     // close the convo view page if open and wait for it to be disposed before deleting
     if (cm.activeChat?.chat.guid == chat.guid) {
-      ns.closeAllConversationView(Get.context!);
+      NavigationSvc.closeAllConversationView(Get.context!);
       await cm.setAllInactive();
       await Future.delayed(const Duration(milliseconds: 500));
     }
     List<Message> messages = Chat.getMessages(chat);
-    Database.runInTransaction(TxMode.write, () {
-      /// Remove all references of chat and its messages
-      Database.chats.remove(chat.id!);
-      Database.messages.removeMany(messages.map((e) => e.id!).toList());
-    });
+    await ChatInterface.deleteChat(
+      chatId: chat.id!,
+      messageIds: messages.map((e) => e.id!).toList(),
+    );
   }
 
-  static void softDelete(Chat chat) async {
+  static Future<void> softDelete(Chat chat) async {
     if (kIsWeb) return;
     // close the convo view page if open and wait for it to be disposed before deleting
     if (cm.activeChat?.chat.guid == chat.guid) {
-      ns.closeAllConversationView(Get.context!);
+      NavigationSvc.closeAllConversationView(Get.context!);
       await cm.setAllInactive();
       await Future.delayed(const Duration(milliseconds: 500));
     }
-    Database.runInTransaction(TxMode.write, () {
-      chat.dateDeleted = DateTime.now().toUtc();
-      chat.hasUnreadMessage = false;
-      chat.save(updateDateDeleted: true, updateHasUnreadMessage: true);
-      chat.clearTranscript();
-    });
+    await ChatInterface.softDeleteChat(chatData: chat.toMap());
+    chat.clearTranscript();
   }
 
-  static void unDelete(Chat chat) async {
+  static Future<void> unDelete(Chat chat) async {
     if (kIsWeb) return;
-    Database.runInTransaction(TxMode.write, () {
-      chat.dateDeleted = null;
-      chat.save(updateDateDeleted: true);
-    });
+    await ChatInterface.unDeleteChat(chatData: chat.toMap());
   }
 
-  Chat toggleHasUnread(bool hasUnread, {bool force = false, bool clearLocalNotifications = true, bool privateMark = true}) {
+  Chat toggleHasUnread(bool hasUnread,
+      {bool force = false, bool clearLocalNotifications = true, bool privateMark = true}) {
     if (kIsDesktop && !hasUnread) {
-      notif.clearDesktopNotificationsForChat(guid);
+      NotificationsSvc.clearDesktopNotificationsForChat(guid);
     }
 
     if (hasUnreadMessage == hasUnread && !force) return this;
@@ -667,30 +457,30 @@ class Chat {
     }
 
     try {
-      if (clearLocalNotifications && !hasUnread && !ls.isBubble) {
-        mcs.invokeMethod(
-          "delete-notification",
-          {
-            "notification_id": id,
-            "tag": NotificationsService.NEW_MESSAGE_TAG
-          }
+      if (clearLocalNotifications && !hasUnread) {
+        ChatInterface.clearNotificationForChat(
+          chatId: id!,
+          chatGuid: guid,
         );
       }
-      if (privateMark && ss().settings.enablePrivateAPI.value && (autoSendReadReceipts ?? ss().settings.privateMarkChatAsRead.value)) {
-        if (!hasUnread) {
-          http.markChatRead(guid);
-        } else if (hasUnread) {
-          http.markChatUnread(guid);
-        }
+      if (privateMark && (autoSendReadReceipts ?? SettingsSvc.settings.privateMarkChatAsRead.value)) {
+        ChatInterface.markChatReadUnread(
+          chatGuid: guid,
+          markAsRead: !hasUnread,
+          shouldMarkOnServer: true,
+        );
       }
     } catch (_) {}
 
     return this;
   }
 
-  Future<Chat> addMessage(Message message, {bool changeUnreadStatus = true, bool checkForMessageText = true, bool clearNotificationsIfFromMe = true}) async {
+  Future<Chat> addMessage(Message message,
+      {bool changeUnreadStatus = true, bool checkForMessageText = true, bool clearNotificationsIfFromMe = true}) async {
     // If this is a message preview and we don't already have metadata for this, get it
-    if (message.fullText.replaceAll("\n", " ").hasUrl && !MetadataHelper.mapIsNotEmpty(message.metadata) && !message.hasApplePayloadData) {
+    if (message.fullText.replaceAll("\n", " ").hasUrl &&
+        !MetadataHelper.mapIsNotEmpty(message.metadata) &&
+        !message.hasApplePayloadData) {
       MetadataHelper.fetchMetadata(message).then((Metadata? meta) async {
         // If the metadata is empty, don't do anything
         if (!MetadataHelper.isNotEmpty(meta)) return;
@@ -700,46 +490,48 @@ class Chat {
       });
     }
 
-    // Save the message
+    // Save the message using the interface
     Message? latest = latestMessage;
     Message? newMessage;
+    bool isNewer = false;
 
     try {
-      newMessage = message.save(chat: this);
+      final result = await ChatInterface.addMessageToChat(
+        messageData: message.toMap(),
+        chatData: toMap(),
+        latestMessageData: latest.toMap(),
+        checkForMessageText: checkForMessageText,
+      );
+
+      // Deserialize result
+      newMessage = Message.fromMap(result['message'] as Map<String, dynamic>);
+      newMessage.id = result['messageId'] as int?;
+      isNewer = result['isNewer'] as bool;
     } catch (ex, stacktrace) {
       newMessage = Message.findOne(guid: message.guid);
       if (newMessage == null) {
-        Logger().error("Failed to add message (GUID: ${message.guid}) to chat (GUID: $guid)", error: ex, trace: stacktrace);
+        Logger
+            .error("Failed to add message (GUID: ${message.guid}) to chat (GUID: $guid)", error: ex, trace: stacktrace);
       }
     }
-    // Save any attachments
-    for (Attachment? attachment in message.attachments) {
-      attachment!.save(newMessage);
-    }
-    bool isNewer = false;
 
-    // If the message was saved correctly, update this chat's latestMessage info,
-    // but only if the incoming message's date is newer
-    if ((newMessage?.id != null || kIsWeb) && checkForMessageText) {
-      isNewer = message.dateCreated!.isAfter(latest.dateCreated!)
-          || (message.guid != latest.guid && message.dateCreated == latest.dateCreated);
-      if (isNewer) {
-        _latestMessage = message;
-        if (dateDeleted != null) {
-          dateDeleted = null;
-          save(updateDateDeleted: true);
-          await chats.addChat(this);
-        }
-        if (isArchived! && !_latestMessage!.isFromMe! && ss().settings.unarchiveOnNewMessage.value) {
-          toggleArchived(false);
-        }
+    // Handle post-save operations on main thread
+    if (isNewer) {
+      _latestMessage = message;
+      if (dateDeleted != null) {
+        dateDeleted = null;
+        await saveAsync(updateDateDeleted: true);
+        await ChatsSvc.addChat(this);
+      }
+      if (isArchived! && !_latestMessage!.isFromMe! && SettingsSvc.settings.unarchiveOnNewMessage.value) {
+        toggleArchived(false);
       }
     }
 
     // Save the chat.
     // This will update the latestMessage info as well as update some
     // other fields that we want to "mimic" from the server
-    save();
+    await saveAsync();
 
     // If the incoming message was newer than the "last" one, set the unread status accordingly
     if (checkForMessageText && changeUnreadStatus && isNewer) {
@@ -747,13 +539,11 @@ class Chat {
       // If the message is not from the same chat as the current chat, mark unread
       if (message.isFromMe! || cm.isChatActive(guid)) {
         // force if the chat is active to ensure private api mark read
-        toggleHasUnread(
-          false,
-          clearLocalNotifications: clearNotificationsIfFromMe,
-          force: cm.isChatActive(guid),
-          // only private mark if the chat is active
-          privateMark: cm.isChatActive(guid)
-        );
+        toggleHasUnread(false,
+            clearLocalNotifications: clearNotificationsIfFromMe,
+            force: cm.isChatActive(guid),
+            // only private mark if the chat is active
+            privateMark: cm.isChatActive(guid));
       } else if (!cm.isChatActive(guid)) {
         toggleHasUnread(true, privateMark: false);
       }
@@ -784,13 +574,52 @@ class Chat {
   Future<List<Attachment>> getAttachmentsAsync({bool fetchDeleted = false}) async {
     if (kIsWeb || id == null) return [];
 
-    final task = GetChatAttachments([id!, fetchDeleted]);
-    return (await createAsyncTask<List<Attachment>>(task)) ?? [];
+    final stopwatch = Stopwatch()..start();
+
+    /// Query the messages for this chat using ObjectBox's async API
+    final messageQuery = (Database.messages.query(fetchDeleted
+            ? Message_.dateCreated.notNull().and(Message_.dateDeleted.isNull().or(Message_.dateDeleted.notNull()))
+            : Message_.dateDeleted.isNull().and(Message_.dateCreated.notNull()))
+          ..link(Message_.chat, Chat_.id.equals(id!))
+          ..order(Message_.dateCreated, flags: Order.descending))
+        .build();
+
+    // Execute query in worker isolate
+    final messages = await messageQuery.findAsync();
+    messageQuery.close();
+
+    if (messages.isEmpty) {
+      stopwatch.stop();
+      Logger.debug("Fetched 0 messages for chat $guid in ${stopwatch.elapsedMilliseconds} ms");
+      return [];
+    }
+
+    // Get all message IDs to query attachments
+    final messageIds = messages.map((e) => e.id!).toList();
+
+    // Query attachments linked to these messages asynchronously
+    final attachmentQuery = (Database.attachments.query(Attachment_.mimeType.notNull())
+          ..link(Attachment_.message, Message_.id.oneOf(messageIds)))
+        .build();
+
+    final attachments = await attachmentQuery.findAsync();
+    attachmentQuery.close();
+
+    // Remove duplicate attachments from the list, just in case
+    if (attachments.isNotEmpty) {
+      final guids = attachments.map((e) => e.guid).toSet();
+      attachments.retainWhere((element) => guids.remove(element.guid));
+    }
+
+    stopwatch.stop();
+    Logger.debug("Fetched ${attachments.length} attachments for chat $guid in ${stopwatch.elapsedMilliseconds} ms");
+    return attachments;
   }
 
   /// Gets messages synchronously - DO NOT use in performance-sensitive areas,
   /// otherwise prefer [getMessagesAsync]
-  static List<Message> getMessages(Chat chat, {int offset = 0, int limit = 25, bool includeDeleted = false, bool getDetails = false}) {
+  static List<Message> getMessages(Chat chat,
+      {int offset = 0, int limit = 25, bool includeDeleted = false, bool getDetails = false}) {
     if (kIsWeb || chat.id == null) return [];
     return Database.runInTransaction(TxMode.read, () {
       final query = (Database.messages.query(includeDeleted
@@ -807,7 +636,8 @@ class Chat {
       for (int i = 0; i < messages.length; i++) {
         Message message = messages[i];
         if (chat.participants.isNotEmpty && !message.isFromMe! && message.handleId != null && message.handleId != 0) {
-          Handle? handle = chat.participants.firstWhereOrNull((e) => e.originalROWID == message.handleId) ?? message.getHandle();
+          Handle? handle =
+              chat.participants.firstWhereOrNull((e) => e.originalROWID == message.handleId) ?? message.getHandle();
           if (handle == null) {
             messages.remove(message);
             i--;
@@ -834,13 +664,111 @@ class Chat {
     });
   }
 
-  /// Fetch messages asynchronously
+  /// Fetch messages asynchronously with progressive loading
+  /// Returns messages immediately, then loads reactions/attachments in background
   static Future<List<Message>> getMessagesAsync(Chat chat,
-      {int offset = 0, int limit = 25, bool includeDeleted = false, int? searchAround}) async {
+      {int offset = 0,
+      int limit = 25,
+      bool includeDeleted = false,
+      int? searchAround,
+      Function? onSupplementalDataLoaded}) async {
     if (kIsWeb || chat.id == null) return [];
 
-    final task = GetMessages([chat.id, offset, limit, includeDeleted, searchAround]);
-    return (await createAsyncTask<List<Message>>(task)) ?? [];
+    final totalStopwatch = Stopwatch()..start();
+
+    // PHASE 1: Quick message query using interface/actions pattern
+    final messagesData = await ChatInterface.getMessagesAsync(
+      chatId: chat.id!,
+      chatGuid: chat.guid,
+      participantsData: chat.participants.map((e) => e.toMap()).toList(),
+      offset: offset,
+      limit: limit,
+      includeDeleted: includeDeleted,
+      searchAround: searchAround,
+    );
+
+    final messages = messagesData.map((e) => Message.fromMap(e)).toList();
+
+    Logger.debug(
+        "[getMessagesAsync] Phase 1 - Messages only: ${totalStopwatch.elapsedMilliseconds}ms (${messages.length} messages)");
+
+    if (messages.isEmpty) {
+      return messages;
+    }
+
+    // PHASE 2: Load supplemental data in background (non-blocking)
+    final messageGuids = messages.map((e) => e.guid!).toList();
+    final messageIds = messages.map((e) => e.id!).toList();
+
+    // Don't await - let this run in background and call callback when done
+    _loadSupplementalDataAsync(messages, messageGuids, messageIds, totalStopwatch, onSupplementalDataLoaded);
+
+    totalStopwatch.stop();
+    Logger.debug("[getMessagesAsync] RETURNED (Phase 1 complete): ${totalStopwatch.elapsedMilliseconds}ms");
+
+    // Return messages immediately (reactions/attachments will be added later)
+    return messages;
+  }
+
+  /// Load reactions and attachments in background and append to messages
+  static Future<void> _loadSupplementalDataAsync(
+    List<Message> messages,
+    List<String> messageGuids,
+    List<int> messageIds,
+    Stopwatch totalStopwatch,
+    Function? onComplete,
+  ) async {
+    final supplementalStopwatch = Stopwatch()..start();
+
+    try {
+      final result = await ChatInterface.loadSupplementalData(
+        messageGuids: messageGuids,
+        messageIds: messageIds,
+      );
+
+      Logger.debug("[getMessagesAsync] Phase 2 - Supplemental query: ${supplementalStopwatch.elapsedMilliseconds}ms");
+
+      // Deserialize on main thread
+      var associatedMessages =
+          (result['reactions'] as List).map((e) => Message.fromMap(e as Map<String, dynamic>)).toList();
+      final allAttachments =
+          (result['attachments'] as List).map((e) => Attachment.fromMap(e as Map<String, dynamic>)).toList();
+
+      // Normalize reactions
+      associatedMessages = MessageHelper.normalizedAssociatedMessages(associatedMessages);
+
+      // Build attachment map
+      final attachmentMap = <int, List<Attachment>>{};
+      for (final attachment in allAttachments) {
+        final messageId = attachment.message.target?.id;
+        if (messageId != null) {
+          attachmentMap.putIfAbsent(messageId, () => []).add(attachment);
+        }
+      }
+
+      // Append attachments and reactions to original messages
+      for (Message m in associatedMessages) {
+        if (m.associatedMessageType == "sticker") {
+          m.attachments = attachmentMap[m.id] ?? [];
+        }
+      }
+
+      for (Message m in messages) {
+        m.attachments = attachmentMap[m.id] ?? [];
+        m.associatedMessages = associatedMessages.where((e) => e.associatedMessageGuid == m.guid).toList();
+      }
+
+      supplementalStopwatch.stop();
+      Logger.debug(
+          "[getMessagesAsync] Phase 2 - COMPLETE: ${supplementalStopwatch.elapsedMilliseconds}ms (${associatedMessages.length} reactions, ${allAttachments.length} attachments)");
+
+      // Notify caller that supplemental data has been loaded
+      if (onComplete != null) {
+        onComplete();
+      }
+    } catch (ex, stacktrace) {
+      Logger.error("Failed to load supplemental data for messages", error: ex, trace: stacktrace);
+    }
   }
 
   Chat getParticipants() {
@@ -850,6 +778,19 @@ class Chat {
       _participants = List<Handle>.from(handles);
     });
 
+    _deduplicateParticipants();
+    return this;
+  }
+
+  Future<Chat> getParticipantsAsync() async {
+    if (kIsWeb || id == null) return this;
+
+    final participantsData = await ChatInterface.getParticipantsAsync(
+      chatId: id!,
+      chatGuid: guid,
+    );
+
+    _participants = participantsData.map((e) => Handle.fromMap(e)).toList();
     _deduplicateParticipants();
     return this;
   }
@@ -867,8 +808,8 @@ class Chat {
     this.isPinned = isPinned;
     _pinIndex.value = null;
     save(updateIsPinned: true, updatePinIndex: true);
-    chats.updateChat(this);
-    chats.sort();
+    ChatsSvc.updateChat(this);
+    ChatsSvc.sort();
     return this;
   }
 
@@ -880,13 +821,13 @@ class Chat {
     return this;
   }
 
-  Chat toggleArchived(bool isArchived) {
+  Future<Chat> toggleArchived(bool isArchived) async {
     if (id == null) return this;
     isPinned = false;
     this.isArchived = isArchived;
-    save(updateIsPinned: true, updateIsArchived: true);
-    chats.updateChat(this);
-    chats.sort();
+    await saveAsync(updateIsPinned: true, updateIsArchived: true);
+    ChatsSvc.updateChat(this);
+    ChatsSvc.sort();
     return this;
   }
 
@@ -894,8 +835,8 @@ class Chat {
     if (id == null) return this;
     this.autoSendReadReceipts = autoSendReadReceipts;
     save(updateAutoSendReadReceipts: true);
-    if (autoSendReadReceipts ?? ss().settings.privateMarkChatAsRead.value) {
-      http.markChatRead(guid);
+    if (autoSendReadReceipts ?? SettingsSvc.settings.privateMarkChatAsRead.value) {
+      HttpSvc.markChatRead(guid);
     }
     return this;
   }
@@ -904,8 +845,8 @@ class Chat {
     if (id == null) return this;
     this.autoSendTypingIndicators = autoSendTypingIndicators;
     save(updateAutoSendTypingIndicators: true);
-    if (!(autoSendTypingIndicators ?? ss().settings.privateSendTypingIndicators.value)) {
-      socket.sendMessage("stopped-typing", {"chatGuid": guid});
+    if (!(autoSendTypingIndicators ?? SettingsSvc.settings.privateSendTypingIndicators.value)) {
+      SocketSvc.sendMessage("stopped-typing", {"chatGuid": guid});
     }
     return this;
   }
@@ -932,34 +873,61 @@ class Chat {
     return null;
   }
 
-  static Future<List<Chat>> getChats({int limit = 15, int offset = 0, List<int> ids = const []}) async {
+  static Future<List<Chat>> getChatsAsync({int limit = 15, int offset = 0, List<int> ids = const []}) async {
     if (kIsWeb) throw Exception("Use socket to get chats on Web!");
 
-    final task = GetChats([limit, offset, ids.isEmpty ? null : ids]);
-    return (await createAsyncTask<List<Chat>>(task)) ?? [];
+    final result = await ChatInterface.getChatsAsync(
+      limit: limit,
+      offset: offset,
+      ids: ids,
+    );
+
+    // Deserialize and generate titles on the main thread
+    final chats = result.map((e) => Chat.fromMap(e)).toList();
+    
+    // Generate titles on the main thread (lightweight operation)
+    for (Chat c in chats) {
+      c.title = c.getTitle();
+    }
+
+    return chats;
   }
 
   static Future<List<Chat>> syncLatestMessages(List<Chat> chats, bool toggleUnread) async {
     if (kIsWeb) throw Exception("Use socket to sync the last message on Web!");
+    if (chats.isEmpty) return chats;
 
-    final task = SyncLastMessages([chats, toggleUnread]);
-    return (await createAsyncTask<List<Chat>>(task)) ?? [];
+    final inputGuids = chats.map((e) => e.guid).toList();
+
+    final result = await ChatInterface.syncLatestMessages(
+      chatGuids: inputGuids,
+      toggleUnread: toggleUnread,
+    );
+
+    return result.map((e) => Chat.fromMap(e)).toList();
   }
 
   static Future<List<Chat>> bulkSyncChats(List<Chat> chats) async {
     if (kIsWeb) throw Exception("Web does not support saving chats!");
     if (chats.isEmpty) return [];
 
-    final task = BulkSyncChats([chats]);
-    return (await createAsyncTask<List<Chat>>(task)) ?? [];
+    final result = await ChatInterface.bulkSyncChats(
+      chatsData: chats.map((e) => e.toMap()).toList(),
+    );
+
+    return result.map((e) => Chat.fromMap(e)).toList();
   }
 
   static Future<List<Message>> bulkSyncMessages(Chat chat, List<Message> messages) async {
     if (kIsWeb) throw Exception("Web does not support saving messages!");
     if (messages.isEmpty) return [];
 
-    final task = BulkSyncMessages([chat, messages]);
-    return (await createAsyncTask<List<Message>>(task)) ?? [];
+    final result = await ChatInterface.bulkSyncMessages(
+      chatData: chat.toMap(),
+      messagesData: messages.map((e) => e.toMap()).toList(),
+    );
+
+    return result.map((e) => Message.fromMap(e)).toList();
   }
 
   void clearTranscript() {
@@ -971,6 +939,15 @@ class Chat {
       }
       Database.messages.putMany(toDelete);
     });
+  }
+
+  Future<void> clearTranscriptAsync() async {
+    if (kIsWeb || id == null) return;
+
+    await ChatInterface.clearTranscriptAsync(
+      chatId: id!,
+      chatGuid: guid,
+    );
   }
 
   bool get isTextForwarding => guid.startsWith("SMS");
@@ -1028,8 +1005,8 @@ class Chat {
 
   static Future<void> getIcon(Chat c, {bool force = false}) async {
     if (!force && c.lockChatIcon) return;
-    final response = await http.getChatIcon(c.guid).catchError((err, stack) async {
-      Logger().error("Failed to get chat icon for chat ${c.getTitle()}", error: err, trace: stack);
+    final response = await HttpSvc.getChatIcon(c.guid).catchError((err, stack) async {
+      Logger.error("Failed to get chat icon for chat ${c.getTitle()}", error: err, trace: stack);
       return Response(statusCode: 500, requestOptions: RequestOptions(path: ""));
     });
     if (response.statusCode != 200 || isNullOrEmpty(response.data)) {
@@ -1039,8 +1016,9 @@ class Chat {
         c.save(updateCustomAvatarPath: true);
       }
     } else {
-      Logger().debug("Got chat icon for chat ${c.getTitle()}");
-      File file = File("${fs().appDocDir.path}/avatars/${c.guid.characters.where((char) => char.isAlphabetOnly || char.isNumericOnly).join()}/avatar-${response.data.length}.jpg");
+      Logger.debug("Got chat icon for chat ${c.getTitle()}");
+      File file = File(
+          "${FilesystemSvc.appDocDir.path}/avatars/${c.guid.characters.where((char) => char.isAlphabetOnly || char.isNumericOnly).join()}/avatar-${response.data.length}.jpg");
       if (!(await file.exists())) {
         await file.create(recursive: true);
       }
@@ -1054,24 +1032,24 @@ class Chat {
   }
 
   Map<String, dynamic> toMap() => {
-    "ROWID": id,
-    "guid": guid,
-    "chatIdentifier": chatIdentifier,
-    "isArchived": isArchived!,
-    "muteType": muteType,
-    "muteArgs": muteArgs,
-    "isPinned": isPinned!,
-    "displayName": displayName,
-    "participants": participants.map((item) => item.toMap()).toList(),
-    "hasUnreadMessage": hasUnreadMessage!,
-    "_customAvatarPath": _customAvatarPath.value,
-    "_pinIndex": _pinIndex.value,
-    "autoSendReadReceipts": autoSendReadReceipts,
-    "autoSendTypingIndicators": autoSendTypingIndicators,
-    "dateDeleted": dateDeleted?.millisecondsSinceEpoch,
-    "style": style,
-    "lockChatName": lockChatName,
-    "lockChatIcon": lockChatIcon,
-    "lastReadMessageGuid": lastReadMessageGuid,
-  };
+        "ROWID": id,
+        "guid": guid,
+        "chatIdentifier": chatIdentifier,
+        "isArchived": isArchived!,
+        "muteType": muteType,
+        "muteArgs": muteArgs,
+        "isPinned": isPinned!,
+        "displayName": displayName,
+        "participants": participants.map((item) => item.toMap()).toList(),
+        "hasUnreadMessage": hasUnreadMessage!,
+        "_customAvatarPath": _customAvatarPath.value,
+        "_pinIndex": _pinIndex.value,
+        "autoSendReadReceipts": autoSendReadReceipts,
+        "autoSendTypingIndicators": autoSendTypingIndicators,
+        "dateDeleted": dateDeleted?.millisecondsSinceEpoch,
+        "style": style,
+        "lockChatName": lockChatName,
+        "lockChatIcon": lockChatIcon,
+        "lastReadMessageGuid": lastReadMessageGuid,
+      };
 }

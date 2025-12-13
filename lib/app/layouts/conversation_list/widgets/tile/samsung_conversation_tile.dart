@@ -44,9 +44,9 @@ class _SamsungConversationTileState extends CustomState<SamsungConversationTile,
         onLongPress: controller.onLongPress,
         child: Obx(() => ListTile(
               mouseCursor: MouseCursor.defer,
-              dense: ss().settings.denseChatTiles.value,
-              visualDensity: ss().settings.denseChatTiles.value ? VisualDensity.compact : null,
-              minVerticalPadding: ss().settings.denseChatTiles.value ? 7.5 : 10,
+              dense: SettingsSvc.settings.denseChatTiles.value,
+              visualDensity: SettingsSvc.settings.denseChatTiles.value ? VisualDensity.compact : null,
+              minVerticalPadding: SettingsSvc.settings.denseChatTiles.value ? 7.5 : 10,
               title: Obx(() => ChatTitle(
                     parentController: controller,
                     style: context.theme.textTheme.bodyLarge!.copyWith(
@@ -68,7 +68,7 @@ class _SamsungConversationTileState extends CustomState<SamsungConversationTile,
     );
 
     return Obx(() {
-      ns.listener.value;
+      NavigationSvc.listener.value;
       return AnimatedContainer(
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
@@ -83,7 +83,7 @@ class _SamsungConversationTileState extends CustomState<SamsungConversationTile,
                           : null,
         ),
         duration: const Duration(milliseconds: 100),
-        child: ns.isAvatarOnly(context)
+        child: NavigationSvc.isAvatarOnly(context)
             ? InkWell(
                 mouseCursor: MouseCursor.defer,
                 onTap: () => controller.onTap(context),
@@ -136,7 +136,7 @@ class _SamsungTrailingState extends CustomState<SamsungTrailing, void, Conversat
             return query.findFirst();
           });
           if (message != null &&
-              ss().settings.statusIndicatorsOnChats.value &&
+              SettingsSvc.settings.statusIndicatorsOnChats.value &&
               (message.dateDelivered != cachedLatestMessage?.dateDelivered || message.dateRead != cachedLatestMessage?.dateRead)) {
             setState(() {});
           }
@@ -174,11 +174,11 @@ class _SamsungTrailingState extends CustomState<SamsungTrailing, void, Conversat
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final unread = GlobalChatService.unreadState(controller.chat.guid).value;
-      final muteType = GlobalChatService.muteState(controller.chat.guid).value;
+      final unread = GlobalChatSvc.unreadState(controller.chat.guid).value;
+      final muteType = GlobalChatSvc.muteState(controller.chat.guid).value;
 
       String indicatorText = "";
-      if (ss().settings.statusIndicatorsOnChats.value && (cachedLatestMessage?.isFromMe ?? false) && !controller.chat.isGroup) {
+      if (SettingsSvc.settings.statusIndicatorsOnChats.value && (cachedLatestMessage?.isFromMe ?? false) && !controller.chat.isGroup) {
         Indicator show = cachedLatestMessage?.indicatorToShow ?? Indicator.NONE;
         if (show != Indicator.NONE) {
           indicatorText = show.name.toLowerCase().capitalizeFirst!;
@@ -245,7 +245,7 @@ class _UnreadIconState extends CustomState<UnreadIcon, void, ConversationTileCon
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final unread = GlobalChatService.unreadState(controller.chat.guid).value;
+      final unread = GlobalChatSvc.unreadState(controller.chat.guid).value;
       return (unread)
           ? Container(
               decoration: BoxDecoration(

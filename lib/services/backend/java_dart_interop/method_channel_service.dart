@@ -11,38 +11,50 @@ import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:get_it/get_it.dart';
 
-MethodChannelService mcs = Get.isRegistered<MethodChannelService>() ? Get.find<MethodChannelService>() : Get.put(MethodChannelService());
+// ignore: non_constant_identifier_names
+MethodChannelService get MethodChannelSvc => GetIt.I<MethodChannelService>();
 
-class MethodChannelService extends GetxService {
+class MethodChannelService {
   late final MethodChannel channel;
   bool background = false;
+  bool isBubble = false;
 
   // music theme
   bool isRunning = false;
   Uint8List? previousArt;
 
-  Future<void> init({bool headless = false}) async {
+  Future<void> init({bool headless = false, bool isBubble = false, BinaryMessenger? binaryMessenger}) async {
     if (kIsWeb || kIsDesktop) return;
-    Logger().debug("Initializing MethodChannelService${headless ? " in headless mode" : ""}");
+    Logger.debug("Initializing MethodChannelService${headless ? " in headless mode" : ""}");
 
     background = headless;
-    channel = const MethodChannel('com.bluebubbles.messaging');
-    channel.setMethodCallHandler(_callHandler);
-    channel.invokeMethod("ready");
+    this.isBubble = isBubble;
+    channel = MethodChannel(
+      'com.bluebubbles.messaging',
+      const StandardMethodCodec(),
+      binaryMessenger);
+
+    // Only send the ready signal if we are in the BackgroundIsolate/UI (not the GlobalIsolate)
+    if (binaryMessenger == null) {
+      channel.setMethodCallHandler(_callHandler);
+      channel.invokeMethod("ready");
+    }
+    
     if (!kIsWeb && !kIsDesktop && !headless) {
       try {
-        if (ss().settings.colorsFromMedia.value) {
-          await mcs.invokeMethod("start-notification-listener");
+        if (SettingsSvc.settings.colorsFromMedia.value) {
+          await MethodChannelSvc.invokeMethod("start-notification-listener");
         }
-        if (!ls.isBubble) {
+        if (!this.isBubble) {
           BackgroundIsolate.initialize();
         }
-        // chromeOS = await mcs.invokeMethod("check-chromeos") ?? false;
+        // chromeOS = await mcs().invokeMethod("check-chromeos") ?? false;
       } catch (_) {}
     }
 
-    Logger().debug("MethodChannelService initialized");
+    Logger.debug("MethodChannelService initialized");
   }
 
   Future<bool> _callHandler(MethodCall call) async {
@@ -60,19 +72,19 @@ class MethodChannelService extends GetxService {
         String address = arguments["server_url"];
         bool updated = await saveNewServerUrl(address, restartSocket: false);
         if (updated && !background) {
-          socket.restartSocket();
+          SocketSvc.restartSocket();
         }
         return Future.value(true);
       case "new-message":  // FCM message
         await Database.waitForInit();
-        Logger().info("Received new message from MethodChannel");
+        Logger.info("Received new message from MethodChannel");
 
         // The socket will handle this event if the app is alive and unifiedpush is not enabled
-        if (ls.isAlive && socket.socket.connected && ss().settings.endpointUnifiedPush.value == "") {
-          Logger().debug("App is alive, ignoring new message...");
+        if (LifecycleSvc.isAlive && (SocketSvc.socket?.connected ?? false) && SettingsSvc.settings.endpointUnifiedPush.value == "") {
+          Logger.debug("App is alive, ignoring new message...");
           return Future.value(true);
-        } else if (!ls.isAlive && ss().settings.keepAppAlive.value) {
-          Logger().debug("Ignoring FCM message while app is not alive, but keepAppAlive is enabled");
+        } else if (!LifecycleSvc.isAlive && SettingsSvc.settings.keepAppAlive.value) {
+          Logger.debug("Ignoring FCM message while app is not alive, but keepAppAlive is enabled");
           return Future.value(true);
         }
 
@@ -81,7 +93,7 @@ class MethodChannelService extends GetxService {
           if (!isNullOrEmpty(data)) {
             final payload = ServerPayload.fromJson(data!);
             final item = IncomingItem.fromMap(QueueType.newMessage, payload.data);
-            if (ls.isAlive && ss().settings.endpointUnifiedPush.value == "") {
+            if (LifecycleSvc.isAlive && SettingsSvc.settings.endpointUnifiedPush.value == "") {
               await inq.queue(item);
             } else {
               await ah.handleNewMessage(item.chat, item.message, item.tempGuid);
@@ -94,14 +106,14 @@ class MethodChannelService extends GetxService {
         return Future.value(true);
       case "updated-message":
         await Database.waitForInit();
-        Logger().info("Received updated message from MethodChannel");
+        Logger.info("Received updated message from MethodChannel");
 
         // The socket will handle this event if the app is alive
-        if (ls.isAlive && socket.socket.connected) {
-          Logger().debug("App is alive, ignoring updated message...");
+        if (LifecycleSvc.isAlive && (SocketSvc.socket?.connected ?? false)) {
+          Logger.debug("App is alive, ignoring updated message...");
           return Future.value(true);
-        } else if (!ls.isAlive && ss().settings.keepAppAlive.value) {
-          Logger().debug("Ignoring FCM message while app is not alive, but keepAppAlive is enabled");
+        } else if (!LifecycleSvc.isAlive && SettingsSvc.settings.keepAppAlive.value) {
+          Logger.debug("Ignoring FCM message while app is not alive, but keepAppAlive is enabled");
           return Future.value(true);
         }
 
@@ -113,19 +125,19 @@ class MethodChannelService extends GetxService {
             // Since this is an updated-message event, the message should exist in the DB.
             // So if there is no chat, we can find it from the message guid
             if (payload.data["chats"] == null || payload.data["chats"].isEmpty) {
-              Logger().warn("No chat data found, attempting to find chat from message guid...");
+              Logger.warn("No chat data found, attempting to find chat from message guid...");
               final existingMsg = Message.findOne(guid: payload.data["guid"]);
               if (existingMsg != null && existingMsg.chat.target != null) {
-                Logger().debug("Found chat from message guid, adding to payload");
+                Logger.debug("Found chat from message guid, adding to payload");
                 payload.data['chats'] = [existingMsg.chat.target!.toMap()];
               } else {
-                Logger().warn("No chat data found, and unable to find chat from message guid");
+                Logger.warn("No chat data found, and unable to find chat from message guid");
                 return Future.value(false);
               }
             }
 
             final item = IncomingItem.fromMap(QueueType.updatedMessage, payload.data);
-            if (ls.isAlive) {
+            if (LifecycleSvc.isAlive) {
               await inq.queue(item);
             } else {
               await ah.handleUpdatedMessage(item.chat, item.message, item.tempGuid);
@@ -141,14 +153,14 @@ class MethodChannelService extends GetxService {
       case "participant-added":
       case "participant-left":
         await Database.waitForInit();
-        Logger().info("Received ${call.method} from MethodChannel");
+        Logger.info("Received ${call.method} from MethodChannel");
 
         // The socket will handle this event if the app is alive
-        if (ls.isAlive && socket.socket.connected) {
-          Logger().debug("App is alive, ignoring updated message...");
+        if (LifecycleSvc.isAlive && (SocketSvc.socket?.connected ?? false)) {
+          Logger.debug("App is alive, ignoring updated message...");
           return Future.value(true);
-        } else if (!ls.isAlive && ss().settings.keepAppAlive.value) {
-          Logger().debug("Ignoring FCM message while app is not alive, but keepAppAlive is enabled");
+        } else if (!LifecycleSvc.isAlive && SettingsSvc.settings.keepAppAlive.value) {
+          Logger.debug("Ignoring FCM message while app is not alive, but keepAppAlive is enabled");
           return Future.value(true);
         }
 
@@ -166,14 +178,14 @@ class MethodChannelService extends GetxService {
         return Future.value(true);
       case "group-icon-changed":
         await Database.waitForInit();
-        Logger().info("Received group icon change from MethodChannel");
+        Logger.info("Received group icon change from MethodChannel");
 
         // The socket will handle this event if the app is alive
-        if (ls.isAlive && socket.socket.connected) {
-          Logger().debug("App is alive, ignoring updated message...");
+        if (LifecycleSvc.isAlive && (SocketSvc.socket?.connected ?? false)) {
+          Logger.debug("App is alive, ignoring updated message...");
           return Future.value(true);
-        } else if (!ls.isAlive && ss().settings.keepAppAlive.value) {
-          Logger().debug("Ignoring FCM message while app is not alive, but keepAppAlive is enabled");
+        } else if (!LifecycleSvc.isAlive && SettingsSvc.settings.keepAppAlive.value) {
+          Logger.debug("Ignoring FCM message while app is not alive, but keepAppAlive is enabled");
           return Future.value(true);
         }
 
@@ -193,14 +205,14 @@ class MethodChannelService extends GetxService {
 
         return Future.value(true);
       case "scheduled-message-error":
-        Logger().info("Received scheduled message error from FCM");
+        Logger.info("Received scheduled message error from FCM");
         try {
           Map<String, dynamic>? data = arguments;
           if (data == null) return Future.value(true);
           final payload = ServerPayload.fromJson(data);
           Chat? chat = Chat.findOne(guid: payload.data["payload"]["chatGuid"]);
           if (chat != null) {
-            await notif.createFailedToSend(chat, scheduled: true);
+            await NotificationsSvc.createFailedToSend(chat, scheduled: true);
           }
         } catch (e, s) {
           return Future.error(e, s);
@@ -209,16 +221,16 @@ class MethodChannelService extends GetxService {
         return Future.value(true);
       case "ReplyChat":
         await Database.waitForInit();
-        Logger().info("Received reply to message from Kotlin");
+        Logger.info("Received reply to message from Kotlin");
         final Map<String, dynamic>? data = arguments;
         if (data == null) return Future.value(true);
 
         // check and make sure that we aren't sending a duplicate reply
-        final recentReplyGuid = prefs().i.getString("recent-reply")?.split("/").first;
-        final recentReplyText = prefs().i.getString("recent-reply")?.split("/").last;
+        final recentReplyGuid = PrefsSvc.i.getString("recent-reply")?.split("/").first;
+        final recentReplyText = PrefsSvc.i.getString("recent-reply")?.split("/").last;
         if (recentReplyGuid == data["messageGuid"] && recentReplyText == data["text"]) return Future.value(false);
-        await prefs().i.setString("recent-reply", "${data["messageGuid"]}/${data["text"]}");
-        Logger().info("Updated recent reply cache to ${prefs().i.getString("recent-reply")}");
+        await PrefsSvc.i.setString("recent-reply", "${data["messageGuid"]}/${data["text"]}");
+        Logger.info("Updated recent reply cache to ${PrefsSvc.i.getString("recent-reply")}");
         Chat? chat = Chat.findOne(guid: data["chatGuid"]);
         if (chat == null) {
           return Future.value(false);
@@ -241,9 +253,9 @@ class MethodChannelService extends GetxService {
           return Future.value(true);
         }
       case "MarkChatRead":
-        if (ls.isAlive) return Future.value(true);
+        if (LifecycleSvc.isAlive) return Future.value(true);
         await Database.waitForInit();
-        Logger().info("Received markAsRead from Kotlin");
+        Logger.info("Received markAsRead from Kotlin");
 
         try {
           final Map<String, dynamic>? data = arguments;
@@ -261,9 +273,9 @@ class MethodChannelService extends GetxService {
 
         return Future.value(false);
       case "chat-read-status-changed":
-        if (ls.isAlive) return Future.value(true);
+        if (LifecycleSvc.isAlive) return Future.value(true);
         await Database.waitForInit();
-        Logger().info("Received chat status change from FCM");
+        Logger.info("Received chat status change from FCM");
 
         try {
           Map<String, dynamic>? data = arguments;
@@ -284,18 +296,18 @@ class MethodChannelService extends GetxService {
         }
       case "MediaColors":
         await Database.waitForInit();
-        if (!ss().settings.colorsFromMedia.value) return Future.value(true);
+        if (!SettingsSvc.settings.colorsFromMedia.value) return Future.value(true);
 
         final Uint8List art = call.arguments["albumArt"];
         if (Get.context != null && (!isRunning || art != previousArt)) {
-          ts.updateMusicTheme(Get.context!, art);
+          ThemeSvc.updateMusicTheme(Get.context!, art);
           isRunning = false;
         }
 
         return Future.value(true);
       case "incoming-facetime":
         await Database.waitForInit();
-        Logger().info("Received legacy incoming facetime from FCM");
+        Logger.info("Received legacy incoming facetime from FCM");
         try {
           Map<String, dynamic>? data = arguments;
           if (!isNullOrEmpty(data)) {
@@ -308,9 +320,9 @@ class MethodChannelService extends GetxService {
 
         return Future.value(true);
       case "ft-call-status-changed":
-        if (ls.isAlive) return Future.value(true);
+        if (LifecycleSvc.isAlive) return Future.value(true);
         await Database.waitForInit();
-        Logger().info("Received facetime call status change from FCM");
+        Logger.info("Received facetime call status change from FCM");
 
         try {
           Map<String, dynamic>? data = arguments;
@@ -324,20 +336,20 @@ class MethodChannelService extends GetxService {
 
         return Future.value(true);
       case "answer-facetime":
-        Logger().info("Answering FaceTime call");
+        Logger.info("Answering FaceTime call");
         final Map<String, dynamic>? data = arguments;
         if (data == null) return Future.value(true);
-        await intents.answerFaceTime(data["callUuid"]);
+        await IntentsSvc.answerFaceTime(data["callUuid"]);
         return Future.value(true);
       case "imessage-aliases-removed":
         Map<String, dynamic>? data = arguments;
         try {
           if (!isNullOrEmpty(data)) {
             final payload = ServerPayload.fromJson(data!);
-            Logger().info("Alias(es) removed ${payload.data["aliases"]}");
-            await notif.createAliasesRemovedNotification((payload.data["aliases"] as List).cast<String>());
+            Logger.info("Alias(es) removed ${payload.data["aliases"]}");
+            await NotificationsSvc.createAliasesRemovedNotification((payload.data["aliases"] as List).cast<String>());
           } else {
-            Logger().warn("Aliases removed data empty or null");
+            Logger.warn("Aliases removed data empty or null");
           }
         } catch (e, s) {
           return Future.error(e, s);
@@ -375,7 +387,7 @@ class MethodChannelService extends GetxService {
 
   Future<dynamic> invokeMethod(String method, [dynamic arguments]) async {
     if (kIsWeb || kIsDesktop) return;
-    Logger().info("Sending method $method to Kotlin");
+    Logger.info("Sending method $method to Kotlin");
     return await channel.invokeMethod(method, arguments);
   }
 }

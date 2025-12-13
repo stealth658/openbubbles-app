@@ -50,14 +50,14 @@ class _ContactAvatarWidgetState extends OptimizedState<ContactAvatarWidget> {
   }
 
   void onAvatarTap() async {
-    if (!ss().settings.colorfulAvatars.value && !ss().settings.colorfulBubbles.value) return;
+    if (!SettingsSvc.settings.colorfulAvatars.value && !SettingsSvc.settings.colorfulBubbles.value) return;
 
     bool didReset = false;
     final Color color = await showColorPickerDialog(
       context,
       widget.handle?.color != null ? HexColor(widget.handle!.color!) : toColorGradient(widget.handle!.address)[0],
       title: Container(
-          width: ns.width(context) - 112,
+          width: NavigationSvc.width(context) - 112,
           child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             Text('Choose a Color', style: context.theme.textTheme.titleLarge),
             TextButton(
@@ -65,7 +65,7 @@ class _ContactAvatarWidgetState extends OptimizedState<ContactAvatarWidget> {
                 didReset = true;
                 Navigator.of(context, rootNavigator: true).pop();
                 widget.handle!.color = null;
-                widget.handle!.save(updateColor: true);
+                widget.handle!.saveAsync(updateColor: true);
                 eventDispatcher.emit("refresh-avatar", [widget.handle?.address, widget.handle?.color]);
               },
               child: const Text("RESET"),
@@ -89,7 +89,7 @@ class _ContactAvatarWidgetState extends OptimizedState<ContactAvatarWidget> {
       actionButtons: const ColorPickerActionButtons(
         dialogActionButtons: true,
       ),
-      constraints: BoxConstraints(minHeight: 480, minWidth: ns.width(context) - 70, maxWidth: ns.width(context) - 70),
+      constraints: BoxConstraints(minHeight: 480, minWidth: NavigationSvc.width(context) - 70, maxWidth: NavigationSvc.width(context) - 70),
     );
 
     if (didReset) return;
@@ -103,17 +103,16 @@ class _ContactAvatarWidgetState extends OptimizedState<ContactAvatarWidget> {
       widget.handle!.color = color.toARGB32().toRadixString(16);
     }
 
-    widget.handle!.save(updateColor: true);
-
+    widget.handle!.saveAsync(updateColor: true);
     eventDispatcher.emit("refresh-avatar", [widget.handle?.address, widget.handle?.color]);
   }
 
   @override
   Widget build(BuildContext context) {
     Color tileColor =
-        ts.inDarkMode(context) ? context.theme.colorScheme.properSurface : context.theme.colorScheme.background;
+        ThemeSvc.inDarkMode(context) ? context.theme.colorScheme.properSurface : context.theme.colorScheme.background;
 
-    final size = ((widget.size ?? 40) * (widget.scaleSize ? ss().settings.avatarScale.value : 1)).roundToDouble();
+    final size = ((widget.size ?? 40) * (widget.scaleSize ? SettingsSvc.settings.avatarScale.value : 1)).roundToDouble();
     List<Color> colors = [];
     if (widget.handle?.color == null) {
       colors = toColorGradient(widget.handle?.address);
@@ -125,7 +124,7 @@ class _ContactAvatarWidgetState extends OptimizedState<ContactAvatarWidget> {
     }
 
     return Obx(() => MouseRegion(
-          cursor: !widget.editable || !ss().settings.colorfulAvatars.value || widget.handle == null
+          cursor: !widget.editable || !SettingsSvc.settings.colorfulAvatars.value || widget.handle == null
               ? MouseCursor.defer
               : SystemMouseCursors.click,
           child: GestureDetector(
@@ -133,9 +132,9 @@ class _ContactAvatarWidgetState extends OptimizedState<ContactAvatarWidget> {
                 ? null
                 : () async {
                     if (contact != null) {
-                      await mcs.invokeMethod("view-contact-form", {'id': contact!.id});
+                      await MethodChannelSvc.invokeMethod("view-contact-form", {'id': contact!.id});
                     } else {
-                      await mcs.invokeMethod("open-contact-form", {
+                      await MethodChannelSvc.invokeMethod("open-contact-form", {
                         'address': widget.handle!.address,
                         'address_type': widget.handle!.address.isEmail ? 'email' : 'phone'
                       });
@@ -152,13 +151,13 @@ class _ContactAvatarWidgetState extends OptimizedState<ContactAvatarWidget> {
                   begin: AlignmentDirectional.topStart,
                   end: AlignmentDirectional.bottomEnd,
                   colors: [
-                    !ss().settings.colorfulAvatars.value ? HexColor("928E8E") : (iOS ? colors[1] : colors[0]),
-                    !ss().settings.colorfulAvatars.value ? HexColor("686868") : colors[0]
+                    !SettingsSvc.settings.colorfulAvatars.value ? HexColor("928E8E") : (iOS ? colors[1] : colors[0]),
+                    !SettingsSvc.settings.colorfulAvatars.value ? HexColor("686868") : colors[0]
                   ],
                   stops: [0.3, 0.9],
                 ),
                 border: Border.all(
-                    color: ss().settings.skin.value == Skins.Samsung ? tileColor : context.theme.colorScheme.background,
+                    color: SettingsSvc.settings.skin.value == Skins.Samsung ? tileColor : context.theme.colorScheme.background,
                     width: widget.borderThickness,
                     strokeAlign: BorderSide.strokeAlignOutside),
                 shape: BoxShape.circle,
@@ -166,14 +165,14 @@ class _ContactAvatarWidgetState extends OptimizedState<ContactAvatarWidget> {
               clipBehavior: Clip.antiAlias,
               alignment: Alignment.center,
               child: Obx(() {
-                final hideContactInfo = ss().settings.redactedMode.value && ss().settings.hideContactInfo.value;
-                final genAvatars = ss().settings.redactedMode.value && ss().settings.generateFakeAvatars.value;
-                final iOS = ss().settings.skin.value == Skins.iOS;
+                final hideContactInfo = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
+                final genAvatars = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.generateFakeAvatars.value;
+                final iOS = SettingsSvc.settings.skin.value == Skins.iOS;
                 final avatar = contact?.avatar;
-                if (!hideContactInfo && widget.handle == null && ss().settings.userAvatarPath.value != null) {
-                  dynamic file = File(ss().settings.userAvatarPath.value!);
+                if (!hideContactInfo && widget.handle == null && SettingsSvc.settings.userAvatarPath.value != null) {
+                  dynamic file = File(SettingsSvc.settings.userAvatarPath.value!);
                   return CircleAvatar(
-                    key: ValueKey(ss().settings.userAvatarPath.value!),
+                    key: ValueKey(SettingsSvc.settings.userAvatarPath.value!),
                     radius: size / 2,
                     backgroundImage: Image.file(file).image,
                     backgroundColor: Colors.transparent,

@@ -43,12 +43,12 @@ class ThemeStruct {
     this.gradientBg = false,
     this.googleFont = 'Default',
     ThemeData? themeData,
-  }) : data = themeData ?? ts.whiteLightTheme {
+  }) : data = themeData ?? ThemesService.whiteLightTheme {
     if (googleFont.isEmpty) googleFont = 'Default';
   }
 
   bool get isPreset =>
-      ts.defaultThemes.map((e) => e.name).contains(name);
+      ThemesService.defaultThemes.map((e) => e.name).contains(name);
 
   ThemeStruct save({bool updateIfNotAbsent = true}) {
     Database.runInTransaction(TxMode.write, () {
@@ -75,23 +75,23 @@ class ThemeStruct {
   }
 
   static ThemeStruct getLightTheme() {
-    final name = prefs().i.getString("selected-light");
+    final name = PrefsSvc.i.getString("selected-light");
     final query = Database.themes.query(ThemeStruct_.name.equals(name ?? "Bright White")).build();
     query.limit = 1;
     final result = query.findFirst();
     if (result == null) {
-      return ts.defaultThemes[1];
+      return ThemesService.defaultThemes[1];
     }
     return result;
   }
 
   static ThemeStruct getDarkTheme() {
-    final name = prefs().i.getString("selected-dark");
+    final name = PrefsSvc.i.getString("selected-dark");
     final query = Database.themes.query(ThemeStruct_.name.equals(name ?? "OLED Dark")).build();
     query.limit = 1;
     final result = query.findFirst();
     if (result == null) {
-      return ts.defaultThemes[0];
+      return ThemesService.defaultThemes[0];
     }
     return result;
   }
@@ -108,10 +108,10 @@ class ThemeStruct {
   }
 
   static List<ThemeStruct> getThemes() {
-    if (kIsWeb) return ts.defaultThemes;
+    if (kIsWeb) return ThemesService.defaultThemes;
     List<ThemeStruct> allThemes = Database.themes.getAll();
     // sometimes the theme box is empty, this ensures it is never empty when queried
-    if (allThemes.isEmpty) Database.themes.putMany(ts.defaultThemes);
+    if (allThemes.isEmpty) Database.themes.putMany(ThemesService.defaultThemes);
     allThemes = Database.themes.getAll();
     return allThemes;
   }
@@ -331,7 +331,7 @@ class ThemeStruct {
   Map<String, Color> colors(bool dark, {bool returnMaterialYou = true}) {
     ThemeData finalData = data;
     if (returnMaterialYou) {
-      final tuple = ts.getStructsFromData(data, data);
+      final tuple = ThemeSvc.getStructsFromData(data, data);
       if (dark) {
         finalData = tuple.item2;
       } else {

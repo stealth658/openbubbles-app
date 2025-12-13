@@ -21,7 +21,7 @@ class ThemeSelectorController extends GetxController {
       AdaptiveTheme.of(Get.context!).setThemeMode(AdaptiveThemeMode.values[selectedTheme.value - 1]);
     });
     ever(selectedSkin, (_) {
-      ss().settings.skin.value = Skins.values[selectedSkin.value - 1];
+      SettingsSvc.settings.skin.value = Skins.values[selectedSkin.value - 1];
       setMessagesView();
       update();
     });
@@ -164,7 +164,7 @@ class ThemeSelector extends StatelessWidget {
       builder: (_) {
         return AnnotatedRegion<SystemUiOverlayStyle>(
           value: SystemUiOverlayStyle(
-            systemNavigationBarColor: ss().settings.immersiveMode.value ? Colors.transparent : context.theme.colorScheme.background, // navigation bar color
+            systemNavigationBarColor: SettingsSvc.settings.immersiveMode.value ? Colors.transparent : context.theme.colorScheme.background, // navigation bar color
             systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
             statusBarColor: Colors.transparent, // status bar color
             statusBarIconBrightness: context.theme.colorScheme.brightness.opposite,
@@ -217,9 +217,9 @@ class ThemeSelector extends StatelessWidget {
                                               width: MediaQuery.of(context).size.width,
                                               height: MediaQuery.of(context).size.height,
                                               child: Theme(
-                                                data: ts.whiteLightTheme,
+                                                data: ThemesService.whiteLightTheme,
                                                 child: Container(
-                                                  color: ts.whiteLightTheme.colorScheme.background,
+                                                  color: ThemesService.whiteLightTheme.colorScheme.background,
                                                   child: Padding(
                                                     padding: const EdgeInsets.only(bottom: 28.0),
                                                     child: Skin(
@@ -245,7 +245,7 @@ class ThemeSelector extends StatelessWidget {
                                                                           address: "You"
                                                                       ),
                                                                     ]
-                                                                ), ts.whiteLightTheme) as PreferredSizeWidget?,
+                                                                ), ThemesService.whiteLightTheme) as PreferredSizeWidget?,
                                                                 body: controller.messagesView
                                                             );
                                                           }
@@ -295,9 +295,9 @@ class ThemeSelector extends StatelessWidget {
                                               width: MediaQuery.of(context).size.width,
                                               height: MediaQuery.of(context).size.height,
                                               child: Theme(
-                                                data: ts.oledDarkTheme,
+                                                data: ThemesService.oledDarkTheme,
                                                 child: Container(
-                                                  color: ts.oledDarkTheme.colorScheme.background,
+                                                  color: ThemesService.oledDarkTheme.colorScheme.background,
                                                   child: Padding(
                                                     padding: const EdgeInsets.only(bottom: 28.0),
                                                     child: Skin(
@@ -305,7 +305,7 @@ class ThemeSelector extends StatelessWidget {
                                                       child: Builder(
                                                           builder: (context) {
                                                             return Scaffold(
-                                                                backgroundColor: ts.oledDarkTheme.colorScheme.background,
+                                                                backgroundColor: ThemesService.oledDarkTheme.colorScheme.background,
                                                                 appBar: buildConversationViewHeader(context, Chat(
                                                                     id: 69,
                                                                     guid: 'theme-selector',
@@ -324,7 +324,7 @@ class ThemeSelector extends StatelessWidget {
                                                                           address: "You"
                                                                       ),
                                                                     ]
-                                                                ), ts.oledDarkTheme) as PreferredSizeWidget?,
+                                                                ), ThemesService.oledDarkTheme) as PreferredSizeWidget?,
                                                                 body: controller.messagesView
                                                             );
                                                           }
@@ -371,7 +371,7 @@ class ThemeSelector extends StatelessWidget {
                                           Material(
                                             shape: TriangleBorder(section: Section.TOP),
                                             clipBehavior: Clip.antiAlias,
-                                            color: ts.whiteLightTheme.colorScheme.background,
+                                            color: ThemesService.whiteLightTheme.colorScheme.background,
                                             child: AbsorbPointer(
                                               absorbing: true,
                                               child: SizedBox.expand(
@@ -382,15 +382,15 @@ class ThemeSelector extends StatelessWidget {
                                                         width: MediaQuery.of(context).size.width,
                                                         height: MediaQuery.of(context).size.height,
                                                         child: Theme(
-                                                          data: ts.whiteLightTheme,
+                                                          data: ThemesService.whiteLightTheme,
                                                           child: Container(
-                                                            color: ts.whiteLightTheme.colorScheme.background,
+                                                            color: ThemesService.whiteLightTheme.colorScheme.background,
                                                             child: Padding(
                                                               padding: const EdgeInsets.only(bottom: 28.0),
                                                               child: Builder(
                                                                   builder: (context) {
                                                                     return Scaffold(
-                                                                        backgroundColor: ts.whiteLightTheme.colorScheme.background,
+                                                                        backgroundColor: ThemesService.whiteLightTheme.colorScheme.background,
                                                                         appBar: buildConversationViewHeader(context, Chat(
                                                                             id: 69,
                                                                             guid: 'theme-selector',
@@ -409,7 +409,7 @@ class ThemeSelector extends StatelessWidget {
                                                                                   address: "You"
                                                                               ),
                                                                             ]
-                                                                        ), ts.whiteLightTheme) as PreferredSizeWidget?,
+                                                                        ), ThemesService.whiteLightTheme) as PreferredSizeWidget?,
                                                                         body: controller.messagesView
                                                                     );
                                                                   }
@@ -425,7 +425,7 @@ class ThemeSelector extends StatelessWidget {
                                           Material(
                                             shape: TriangleBorder(section: Section.BOTTOM),
                                             clipBehavior: Clip.antiAlias,
-                                            color: ts.oledDarkTheme.colorScheme.background,
+                                            color: ThemesService.oledDarkTheme.colorScheme.background,
                                             child: AbsorbPointer(
                                               absorbing: true,
                                               child: SizedBox.expand(
@@ -436,15 +436,15 @@ class ThemeSelector extends StatelessWidget {
                                                         width: MediaQuery.of(context).size.width,
                                                         height: MediaQuery.of(context).size.height,
                                                         child: Theme(
-                                                          data: ts.oledDarkTheme,
+                                                          data: ThemesService.oledDarkTheme,
                                                           child: Container(
-                                                            color: ts.oledDarkTheme.colorScheme.background,
+                                                            color: ThemesService.oledDarkTheme.colorScheme.background,
                                                             child: Padding(
                                                               padding: const EdgeInsets.only(bottom: 28.0),
                                                               child: Builder(
                                                                   builder: (context) {
                                                                     return Scaffold(
-                                                                        backgroundColor: ts.oledDarkTheme.colorScheme.background,
+                                                                        backgroundColor: ThemesService.oledDarkTheme.colorScheme.background,
                                                                         appBar: buildConversationViewHeader(context, Chat(
                                                                             id: 69,
                                                                             guid: 'theme-selector',
@@ -463,7 +463,7 @@ class ThemeSelector extends StatelessWidget {
                                                                                   address: "You"
                                                                               ),
                                                                             ]
-                                                                        ), ts.oledDarkTheme) as PreferredSizeWidget?,
+                                                                        ), ThemesService.oledDarkTheme) as PreferredSizeWidget?,
                                                                         body: controller.messagesView
                                                                     );
                                                                   }

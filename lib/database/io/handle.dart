@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
+import 'package:bluebubbles/services/backend/interfaces/handle_interface.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:dice_bear/dice_bear.dart';
 import 'package:faker/faker.dart';
@@ -51,10 +52,10 @@ class Handle {
 
   Contact? get contact => kIsWeb ? webContact : contactRelation.target;
   String get displayName {
-    if (ss().settings.redactedMode.value) {
-      if (ss().settings.generateFakeContactNames.value) {
+    if (SettingsSvc.settings.redactedMode.value) {
+      if (SettingsSvc.settings.generateFakeContactNames.value) {
         return fakeName;
-      } else if (ss().settings.hideContactInfo.value) {
+      } else if (SettingsSvc.settings.hideContactInfo.value) {
         return "";
       }
     }
@@ -130,7 +131,7 @@ class Handle {
         id = existing.id;
         contactRelation.target = existing.contactRelation.target;
       } else if (existing == null && contactRelation.target == null) {
-        contactRelation.target = cs.matchHandleToContact(this);
+        contactRelation.target = ContactsSvc.matchHandleToContact(this);
       }
       if (!updateColor) {
         color = existing?.color ?? color;
@@ -139,6 +140,25 @@ class Handle {
         id = Database.handles.put(this);
       } on UniqueViolationException catch (_) {}
     });
+    return this;
+  }
+
+  /// Save a single handle asynchronously (non-blocking)
+  Future<Handle> saveAsync({bool updateColor = false, matchOnOriginalROWID = false}) async {
+    if (kIsWeb) return this;
+
+    final result = await HandleInterface.saveHandleAsync(
+      handleData: toMap(),
+      updateColor: updateColor,
+      matchOnOriginalROWID: matchOnOriginalROWID,
+    );
+
+    // Update this handle with the saved data
+    final savedHandle = Handle.fromMap(result);
+    id = savedHandle.id;
+    color = savedHandle.color;
+    contactRelation.target = savedHandle.contactRelation.target;
+
     return this;
   }
 
@@ -157,7 +177,7 @@ class Handle {
         if (existing != null) {
           h.id = existing.id;
         } else {
-          h.contactRelation.target ??= cs.matchHandleToContact(h);
+          h.contactRelation.target ??= ContactsSvc.matchHandleToContact(h);
         }
       }
 
@@ -166,6 +186,29 @@ class Handle {
         handles[i].id = insertedIds[i];
       }
     });
+
+    return handles;
+  }
+
+  /// Save a list of handles asynchronously (non-blocking)
+  static Future<List<Handle>> bulkSaveAsync(List<Handle> handles, {matchOnOriginalROWID = false}) async {
+    if (kIsWeb) return handles;
+    if (handles.isEmpty) return handles;
+
+    final result = await HandleInterface.bulkSaveHandlesAsync(
+      handlesData: handles.map((e) => e.toMap()).toList(),
+      matchOnOriginalROWID: matchOnOriginalROWID,
+    );
+
+    // Update the handles with saved data
+    final savedHandles = result.map((e) => Handle.fromMap(e)).toList();
+    for (int i = 0; i < handles.length; i++) {
+      if (i < savedHandles.length) {
+        handles[i].id = savedHandles[i].id;
+        handles[i].color = savedHandles[i].color;
+        handles[i].contactRelation.target = savedHandles[i].contactRelation.target;
+      }
+    }
 
     return handles;
   }
@@ -209,6 +252,20 @@ class Handle {
     return null;
   }
 
+  static Future<Handle?> findOneAsync({int? id, int? originalROWID, Tuple2<String, String>? addressAndService}) async {
+    if (kIsWeb || id == 0) return null;
+
+    final result = await HandleInterface.findOneHandleAsync(
+      id: id,
+      originalROWID: originalROWID,
+      address: addressAndService?.item1,
+      service: addressAndService?.item2,
+    );
+
+    if (result == null) return null;
+    return Handle.fromMap(result);
+  }
+
   static Handle merge(Handle handle1, Handle handle2) {
     handle1.id ??= handle2.id;
     handle1.originalROWID ??= handle2.originalROWID;
@@ -232,8 +289,17 @@ class Handle {
     return query.find();
   }
 
-  Map<String, dynamic> toMap({includeObjects = false}) {
+  static Future<List<Handle>> findAsync({Condition<Handle>? cond}) async {
+    if (kIsWeb) return [];
 
+    // Note: For now, we don't serialize conditions for cross-isolate communication
+    // This will return all handles. Future enhancement can add condition serialization.
+    final result = await HandleInterface.findHandlesAsync();
+
+    return result.map((e) => Handle.fromMap(e)).toList();
+  }
+
+  Map<String, dynamic> toMap({includeObjects = false}) {
     final output = {
       "ROWID": id,
       "originalROWID": originalROWID,

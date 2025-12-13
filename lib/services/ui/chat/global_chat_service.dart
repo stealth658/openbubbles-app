@@ -2,11 +2,12 @@ import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:get/get.dart';
+import 'package:get_it/get_it.dart';
 
 // ignore: library_private_types_in_public_api, non_constant_identifier_names
-_GlobalChatService GlobalChatService = Get.isRegistered<_GlobalChatService>() ? Get.find<_GlobalChatService>() : Get.put(_GlobalChatService());
+GlobalChatService get GlobalChatSvc => GetIt.I<GlobalChatService>();
 
-class _GlobalChatService extends GetxService {
+class GlobalChatService {
   final RxInt _unreadCount = 0.obs;
   final Map<String, RxBool> _unreadCountMap = <String, RxBool>{}.obs;
   final Map<String, RxnString> _muteTypeMap = <String, RxnString>{}.obs;
@@ -33,15 +34,14 @@ class _GlobalChatService extends GetxService {
     return map;
   }
 
-  @override
-  void onInit() {
-    super.onInit();
+  void init() {
     watchChats();
   }
 
   void watchChats() {
     final query = Database.chats.query().watch(triggerImmediately: true);
     query.listen((event) {
+      Logger.debug("GlobalChatService detected chat changes, updating unread and mute info...");
       final chats = event.find();
 
       // Detect changes and make updates
@@ -61,7 +61,7 @@ class _GlobalChatService extends GetxService {
         _unreadCountMap[chat.guid] = RxBool(false);
         _unreadCountMap[chat.guid]!.value = chat.hasUnreadMessage ?? false;
       } else if (currentUnreadStatus.value != chat.hasUnreadMessage) {
-        Logger().debug("Updating Chat (${chat.guid}) Unread Status from ${currentUnreadStatus.value} to ${chat.hasUnreadMessage}");
+        Logger.debug("Updating Chat (${chat.guid}) Unread Status from ${currentUnreadStatus.value} to ${chat.hasUnreadMessage}");
         _unreadCountMap[chat.guid]!.value = chat.hasUnreadMessage ?? false;
       }
     }
@@ -76,7 +76,7 @@ class _GlobalChatService extends GetxService {
         _muteTypeMap[chat.guid] = RxnString();
         _muteTypeMap[chat.guid]!.value = chat.muteType;
       } else if (currentMuteStatus.value != chat.muteType) {
-        Logger().debug("Updating Chat (${chat.guid}) Mute Type from ${currentMuteStatus.value} to ${chat.muteType}");
+        Logger.debug("Updating Chat (${chat.guid}) Mute Type from ${currentMuteStatus.value} to ${chat.muteType}");
         _muteTypeMap[chat.guid]!.value = chat.muteType;
       }
     }

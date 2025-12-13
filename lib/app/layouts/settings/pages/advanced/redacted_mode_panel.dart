@@ -85,10 +85,10 @@ class _RedactedModePanelState extends OptimizedState<RedactedModePanel> {
                   colorScheme: context.theme.colorScheme.copyWith(
                     primary: context.theme.colorScheme.bubble(context, true),
                     onPrimary: context.theme.colorScheme.onBubble(context, true),
-                    surface: ss().settings.monetTheming.value == Monet.full
+                    surface: SettingsSvc.settings.monetTheming.value == Monet.full
                         ? null
                         : (context.theme.extensions[BubbleColors] as BubbleColors?)?.receivedBubbleColor,
-                    onSurface: ss().settings.monetTheming.value == Monet.full
+                    onSurface: SettingsSvc.settings.monetTheming.value == Monet.full
                         ? null
                         : (context.theme.extensions[BubbleColors] as BubbleColors?)?.onReceivedBubbleColor,
                   ),
@@ -127,7 +127,7 @@ class _RedactedModePanelState extends OptimizedState<RedactedModePanel> {
                                     ),
                                     child: Container(
                                       constraints: BoxConstraints(
-                                        maxWidth: ns.width(context) * 0.3,
+                                        maxWidth: NavigationSvc.width(context) * 0.3,
                                         maxHeight: context.height * 0.3,
                                         minHeight: 40,
                                         minWidth: 40,
@@ -139,7 +139,7 @@ class _RedactedModePanelState extends OptimizedState<RedactedModePanel> {
                                         heightFactor: 1,
                                         child: AnimatedOpacity(
                                           duration: const Duration(milliseconds: 150),
-                                          opacity: ss().settings.redactedMode.value && ss().settings.hideAttachments.value ? 0 : 1,
+                                          opacity: SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideAttachments.value ? 0 : 1,
                                           child: ImageViewer(
                                             file: as.getContent(message.attachments.first!),
                                             attachment: message.attachments.first!,
@@ -159,7 +159,7 @@ class _RedactedModePanelState extends OptimizedState<RedactedModePanel> {
                                     ),
                                     child: Container(
                                       constraints: BoxConstraints(
-                                        maxWidth: ns.width(context) * MessageWidgetController.maxBubbleSizeFactor - 40,
+                                        maxWidth: NavigationSvc.width(context) * MessageWidgetController.maxBubbleSizeFactor - 40,
                                         minHeight: 40,
                                       ),
                                       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15).add(const EdgeInsets.only(left: 10)),
@@ -193,17 +193,17 @@ class _RedactedModePanelState extends OptimizedState<RedactedModePanel> {
                 children: [
                   Obx(() => SettingsSwitch(
                     onChanged: (bool val) {
-                      ss().settings.redactedMode.value = val;
+                      SettingsSvc.settings.redactedMode.value = val;
                       saveSettings();
                     },
-                    initialVal: ss().settings.redactedMode.value,
+                    initialVal: SettingsSvc.settings.redactedMode.value,
                     title: "Enable Redacted Mode",
                     backgroundColor: tileColor,
                   )),
                 ],
               ),
               Obx(() => AnimatedSizeAndFade.showHide(
-                show: ss().settings.redactedMode.value,
+                show: SettingsSvc.settings.redactedMode.value,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -217,10 +217,10 @@ class _RedactedModePanelState extends OptimizedState<RedactedModePanel> {
                       children: [
                         SettingsSwitch(
                           onChanged: (bool val) {
-                            ss().settings.hideMessageContent.value = val;
+                            SettingsSvc.settings.hideMessageContent.value = val;
                             saveSettings();
                           },
-                          initialVal: ss().settings.hideMessageContent.value,
+                          initialVal: SettingsSvc.settings.hideMessageContent.value,
                           title: "Hide Message Content",
                           backgroundColor: tileColor,
                           subtitle: "Replace message text with generated lorem ipsum",
@@ -228,10 +228,10 @@ class _RedactedModePanelState extends OptimizedState<RedactedModePanel> {
                         const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                         SettingsSwitch(
                           onChanged: (bool val) {
-                            ss().settings.hideAttachments.value = val;
+                            SettingsSvc.settings.hideAttachments.value = val;
                             saveSettings();
                           },
-                          initialVal: ss().settings.hideAttachments.value,
+                          initialVal: SettingsSvc.settings.hideAttachments.value,
                           title: "Hide Attachments",
                           backgroundColor: tileColor,
                           subtitle: "Replace attachments with placeholder boxes",
@@ -239,10 +239,10 @@ class _RedactedModePanelState extends OptimizedState<RedactedModePanel> {
                         const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                         SettingsSwitch(
                           onChanged: (bool val) {
-                            ss().settings.hideContactInfo.value = val;
+                            SettingsSvc.settings.hideContactInfo.value = val;
                             saveSettings();
                           },
-                          initialVal: ss().settings.hideContactInfo.value,
+                          initialVal: SettingsSvc.settings.hideContactInfo.value,
                           title: "Hide Contact Info",
                           backgroundColor: tileColor,
                           subtitle: "Replace contact info with fake names and hide contact photos",
@@ -251,10 +251,10 @@ class _RedactedModePanelState extends OptimizedState<RedactedModePanel> {
                         const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                         SettingsSwitch(
                           onChanged: (bool val) {
-                            ss().settings.generateFakeAvatars.value = val;
+                            SettingsSvc.settings.generateFakeAvatars.value = val;
                             saveSettings();
                           },
-                          initialVal: ss().settings.generateFakeAvatars.value,
+                          initialVal: SettingsSvc.settings.generateFakeAvatars.value,
                           title: "Generate Fake Avatars",
                           backgroundColor: tileColor,
                           subtitle: "Use the Dice Bear service to generate fake avatars for contacts",
@@ -274,6 +274,6 @@ class _RedactedModePanelState extends OptimizedState<RedactedModePanel> {
 
   void saveSettings() {
     placeholder.value += 1;
-    ss().saveSettings();
+    SettingsSvc.saveSettings();
   }
 }

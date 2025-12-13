@@ -27,7 +27,7 @@ void showAddParticipant(BuildContext context, Chat chat) {
                 return slugify(text, delimiter: '').toString().replaceAll('-', '');
               }
 
-              for (Contact contact in cs.contacts) {
+              for (Contact contact in ContactsSvc.contacts) {
                 for (String phone in contact.phones) {
                   String cleansed = slugText(phone);
 
@@ -129,7 +129,7 @@ void showAddParticipant(BuildContext context, Chat chat) {
                     );
                   }
               );
-              final response = await http.chatParticipant("add", chat.guid, participantController.text);
+              final response = await HttpSvc.chatParticipant("add", chat.guid, participantController.text);
               if (response.statusCode == 200) {
                 Navigator.of(context, rootNavigator: true).pop();
                 Navigator.of(context, rootNavigator: true).pop();

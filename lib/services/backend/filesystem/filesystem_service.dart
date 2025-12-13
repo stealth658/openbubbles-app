@@ -16,7 +16,8 @@ import 'package:slugify/slugify.dart';
 import 'package:universal_io/io.dart';
 import 'package:get_it/get_it.dart';
 
-FilesystemService fs() => GetIt.I<FilesystemService>();
+// ignore: non_constant_identifier_names
+FilesystemService get FilesystemSvc => GetIt.I<FilesystemService>();
 
 class FilesystemService {
   late Directory appDocDir;
@@ -80,7 +81,7 @@ class FilesystemService {
 
   void checkFont() async {
     if (!kIsWeb) {
-      final file = File("${fs().appDocDir.path}/font/apple.ttf");
+      final file = File("${appDocDir.path}/font/apple.ttf");
       final exists = await file.exists();
       if (exists) {
         final bytes = await file.readAsBytes();
@@ -122,7 +123,7 @@ class FilesystemService {
   void deleteDB() {
     if (kIsWeb) return;
     Database.reset();
-    cs.contacts.clear();
+    ContactsSvc.contacts.clear();
   }
 
   String uriToFilename(String? uri, String? mimeType) {

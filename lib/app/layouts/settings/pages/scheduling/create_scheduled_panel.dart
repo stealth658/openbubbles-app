@@ -32,7 +32,7 @@ class _CreateScheduledMessageState extends OptimizedState<CreateScheduledMessage
   final FocusNode messageNode = FocusNode();
   late final TextEditingController numberController = TextEditingController(text: widget.existing?.schedule.interval?.toString() ?? '1');
 
-  late String selectedChat = widget.existing?.payload.chatGuid ?? chats.chats.first.guid;
+  late String selectedChat = widget.existing?.payload.chatGuid ?? ChatsSvc.chats.first.guid;
   late String schedule = widget.existing?.schedule.type ?? "once";
   late String frequency = widget.existing?.schedule.intervalType ?? "daily";
   late int interval = widget.existing?.schedule.interval ?? 1;
@@ -116,7 +116,7 @@ class _CreateScheduledMessageState extends OptimizedState<CreateScheduledMessage
           );
           Response? response;
           if (widget.existing != null) {
-            response = await http.updateScheduled(widget.existing!.id, selectedChat, messageController.text, date.toUtc(), schedule == "once" ? {
+            response = await HttpSvc.updateScheduled(widget.existing!.id, selectedChat, messageController.text, date.toUtc(), schedule == "once" ? {
               "type": "once",
             } : {
               "type": "recurring",
@@ -124,7 +124,7 @@ class _CreateScheduledMessageState extends OptimizedState<CreateScheduledMessage
               "intervalType": frequency,
             });
           } else {
-            response = await http.createScheduled(selectedChat, messageController.text, date.toUtc(), schedule == "once" ? {
+            response = await HttpSvc.createScheduled(selectedChat, messageController.text, date.toUtc(), schedule == "once" ? {
               "type": "once",
             } : {
               "type": "recurring",
@@ -148,8 +148,8 @@ class _CreateScheduledMessageState extends OptimizedState<CreateScheduledMessage
             final message = ScheduledMessage.fromJson(data);
             Navigator.of(context).pop(message);
           } else {
-            Logger().error("Scheduled message error: ${response.statusCode}");
-            Logger().error(response.data);
+            Logger.error("Scheduled message error: ${response.statusCode}");
+            Logger.error(response.data);
             showSnackbar("Error", "Something went wrong!");
           }
         },
@@ -161,8 +161,8 @@ class _CreateScheduledMessageState extends OptimizedState<CreateScheduledMessage
               backgroundColor: tileColor,
               children: [
                 SettingsOptions<Chat>(
-                  initial: chats.chats.firstWhere((e) => e.guid == selectedChat),
-                  options: chats.chats,
+                  initial: ChatsSvc.chats.firstWhere((e) => e.guid == selectedChat),
+                  options: ChatsSvc.chats,
                   onChanged: (Chat? val) {
                     if (val == null) return;
                     setState(() {
@@ -206,8 +206,8 @@ class _CreateScheduledMessageState extends OptimizedState<CreateScheduledMessage
                     keyboardType: TextInputType.multiline,
                     maxLines: 14,
                     minLines: 1,
-                    selectionControls: ss().settings.skin.value == Skins.iOS ? cupertinoTextSelectionControls : materialTextSelectionControls,
-                    enableIMEPersonalizedLearning: !ss().settings.incognitoKeyboard.value,
+                    selectionControls: SettingsSvc.settings.skin.value == Skins.iOS ? cupertinoTextSelectionControls : materialTextSelectionControls,
+                    enableIMEPersonalizedLearning: !SettingsSvc.settings.incognitoKeyboard.value,
                     textInputAction: TextInputAction.newline,
                     cursorColor: context.theme.colorScheme.primary,
                     cursorHeight: context.theme.extension<BubbleText>()!.bubbleText.fontSize! * 1.25,
@@ -359,7 +359,7 @@ class _CreateScheduledMessageState extends OptimizedState<CreateScheduledMessage
                     valueListenable: messageController,
                     builder: (context, value, _) {
                       if (error != null) return Text(error, style: const TextStyle(color: Colors.red));
-                      return Text("Scheduling \"${messageController.text}\" to ${chats.chats.firstWhere((e) => e.guid == selectedChat).getTitle()}.\nScheduling $schedule${schedule == "recurring" ? " every $interval ${frequencyToText[frequency]}(s) starting" : ""} on ${buildSeparatorDateSamsung(date)} at ${buildTime(date)}.");
+                      return Text("Scheduling \"${messageController.text}\" to ${ChatsSvc.chats.firstWhere((e) => e.guid == selectedChat).getTitle()}.\nScheduling $schedule${schedule == "recurring" ? " every $interval ${frequencyToText[frequency]}(s) starting" : ""} on ${buildSeparatorDateSamsung(date)} at ${buildTime(date)}.");
                     },
                   ),
                 ),

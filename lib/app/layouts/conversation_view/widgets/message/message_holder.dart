@@ -62,16 +62,16 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
 
   Message? get replyTo => message.threadOriginatorGuid == null
       ? null
-      : ss().settings.repliesToPrevious.value
+      : SettingsSvc.settings.repliesToPrevious.value
           ? (service.struct.getPreviousReply(message.threadOriginatorGuid!, message.normalizedThreadPart, message.guid!) ?? service.struct.getThreadOriginator(message.threadOriginatorGuid!))
           : service.struct.getThreadOriginator(message.threadOriginatorGuid!);
 
   Chat get chat => widget.cvController.chat;
 
-  MessagesService get service => ms(widget.cvController.chat.guid);
+  MessagesService get service => MessagesSvc(widget.cvController.chat.guid);
 
   bool get canSwipeToReply =>
-      ss().settings.enablePrivateAPI.value && ss().isMinBigSurSync && chat.isIMessage && !widget.isReplyThread && !message.guid!.startsWith("temp") && !message.guid!.startsWith("error");
+      SettingsSvc.settings.enablePrivateAPI.value && SettingsSvc.isMinBigSurSync && chat.isIMessage && !widget.isReplyThread && !message.guid!.startsWith("temp") && !message.guid!.startsWith("error");
 
   bool get showSender =>
       !message.isGroupEvent &&
@@ -122,7 +122,7 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
 
   List<Color> getBubbleColors() {
     List<Color> bubbleColors = [context.theme.colorScheme.properSurface, context.theme.colorScheme.properSurface];
-    if (ss().settings.colorfulBubbles.value && !message.isFromMe!) {
+    if (SettingsSvc.settings.colorfulBubbles.value && !message.isFromMe!) {
       if (message.handle?.color == null) {
         bubbleColors = toColorGradient(message.handle?.address);
       } else {
@@ -161,7 +161,7 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
           ),
         ),
       );
-      final response = await http.edit(message.guid!, newEdit, "Edited to: “$newEdit”", partIndex: part);
+      final response = await HttpSvc.edit(message.guid!, newEdit, "Edited to: “$newEdit”", partIndex: part);
       if (response.statusCode == 200) {
         final updatedMessage = Message.fromMap(response.data['data']);
         ah.handleUpdatedMessage(chat, updatedMessage, null);
@@ -236,7 +236,7 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                               // add previous edits if needed
                               if (e.isEdited)
                                 Padding(
-                                  padding: showAvatar || ss().settings.alwaysShowAvatars.value ? EdgeInsets.only(left: 35.0 * ss().settings.avatarScale.value) : EdgeInsets.zero,
+                                  padding: showAvatar || SettingsSvc.settings.alwaysShowAvatars.value ? EdgeInsets.only(left: 35.0 * SettingsSvc.settings.avatarScale.value) : EdgeInsets.zero,
                                   child: Obx(() => AnimatedSize(
                                         duration: const Duration(milliseconds: 250),
                                         alignment: Alignment.bottomCenter,
@@ -263,7 +263,7 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                                       .toList(),
                                                 ),
                                               )
-                                            : Container(height: 0, constraints: BoxConstraints(maxWidth: ns.width(context) * MessageWidgetController.maxBubbleSizeFactor - 30)),
+                                            : Container(height: 0, constraints: BoxConstraints(maxWidth: NavigationSvc.width(context) * MessageWidgetController.maxBubbleSizeFactor - 30)),
                                       )),
                                 ),
                               if (iOS &&
@@ -275,7 +275,7 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                   replyTo != null &&
                                   getActiveMwc(replyTo!.guid!) != null)
                                 Padding(
-                                  padding: EdgeInsets.only(left: (showAvatar || ss().settings.alwaysShowAvatars.value) && replyTo!.isFromMe! ? 35 : 0),
+                                  padding: EdgeInsets.only(left: (showAvatar || SettingsSvc.settings.alwaysShowAvatars.value) && replyTo!.isFromMe! ? 35 : 0),
                                   child: DecoratedBox(
                                     decoration: replyTo!.isFromMe == message.isFromMe
                                         ? ReplyLineDecoration(
@@ -292,7 +292,7 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                       child: ReplyBubble(
                                         parentController: getActiveMwc(replyTo!.guid!)!,
                                         part: replyTo!.guid! == message.threadOriginatorGuid ? message.normalizedThreadPart : 0,
-                                        showAvatar: (chat.isGroup || ss().settings.alwaysShowAvatars.value || !iOS) && !replyTo!.isFromMe!,
+                                        showAvatar: (chat.isGroup || SettingsSvc.settings.alwaysShowAvatars.value || !iOS) && !replyTo!.isFromMe!,
                                         cvController: widget.cvController,
                                       ),
                                     ),
@@ -301,7 +301,7 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                               // show sender, if needed
                               if (chat.isGroup && !message.isFromMe! && showSender && e.part == (messageParts.firstWhereOrNull((e) => !e.isUnsent)?.part))
                                 Padding(
-                                  padding: showAvatar || ss().settings.alwaysShowAvatars.value ? EdgeInsets.only(left: 35.0 * ss().settings.avatarScale.value) : EdgeInsets.zero,
+                                  padding: showAvatar || SettingsSvc.settings.alwaysShowAvatars.value ? EdgeInsets.only(left: 35.0 * SettingsSvc.settings.avatarScale.value) : EdgeInsets.zero,
                                   child: MessageSender(olderMessage: olderMessage, message: message),
                                 ),
                               // add a box to account for height of reactions
@@ -314,7 +314,7 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                   replyTo != null &&
                                   getActiveMwc(replyTo!.guid!) != null)
                                 Padding(
-                                  padding: showAvatar || ss().settings.alwaysShowAvatars.value ? const EdgeInsets.only(left: 45.0, right: 10) : const EdgeInsets.symmetric(horizontal: 10),
+                                  padding: showAvatar || SettingsSvc.settings.alwaysShowAvatars.value ? const EdgeInsets.only(left: 45.0, right: 10) : const EdgeInsets.symmetric(horizontal: 10),
                                   child: DecoratedBox(
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(25),
@@ -323,7 +323,7 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                     child: ReplyBubble(
                                       parentController: getActiveMwc(replyTo!.guid!)!,
                                       part: replyTo!.guid! == message.threadOriginatorGuid ? message.normalizedThreadPart : 0,
-                                      showAvatar: (chat.isGroup || ss().settings.alwaysShowAvatars.value || !iOS) && !replyTo!.isFromMe!,
+                                      showAvatar: (chat.isGroup || SettingsSvc.settings.alwaysShowAvatars.value || !iOS) && !replyTo!.isFromMe!,
                                       cvController: widget.cvController,
                                     ),
                                   ),
@@ -334,7 +334,7 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                   // avatar, if needed
                                   if (message.showTail(newerMessage) &&
                                       e.part == controller.parts.length - 1 &&
-                                      (showAvatar || ss().settings.alwaysShowAvatars.value) &&
+                                      (showAvatar || SettingsSvc.settings.alwaysShowAvatars.value) &&
                                       !message.isFromMe! &&
                                       !message.isGroupEvent)
                                     Padding(
@@ -347,8 +347,8 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                       ),
                                     ),
                                   Padding(
-                                    padding: (showAvatar || ss().settings.alwaysShowAvatars.value) && !(message.isGroupEvent || e.isUnsent)
-                                        ? EdgeInsets.only(left: 35.0 * ss().settings.avatarScale.value)
+                                    padding: (showAvatar || SettingsSvc.settings.alwaysShowAvatars.value) && !(message.isGroupEvent || e.isUnsent)
+                                        ? EdgeInsets.only(left: 35.0 * SettingsSvc.settings.avatarScale.value)
                                         : EdgeInsets.zero,
                                     child: DecoratedBox(
                                         decoration: iOS &&
@@ -527,7 +527,7 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                                                                                   : context.theme.colorScheme.background,
                                                                                             ),
                                                                                             constraints: BoxConstraints(
-                                                                                              maxWidth: ns.width(context) * MessageWidgetController.maxBubbleSizeFactor - 40,
+                                                                                              maxWidth: NavigationSvc.width(context) * MessageWidgetController.maxBubbleSizeFactor - 40,
                                                                                               minHeight: 40,
                                                                                             ),
                                                                                             padding: const EdgeInsets.only(right: 10).add(const EdgeInsets.all(5)),
@@ -574,8 +574,8 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                                                                                 maxLines: 14,
                                                                                                 minLines: 1,
                                                                                                 autofocus: !(kIsDesktop || kIsWeb),
-                                                                                                enableIMEPersonalizedLearning: !ss().settings.incognitoKeyboard.value,
-                                                                                                textInputAction: ss().settings.sendWithReturn.value && !kIsWeb && !kIsDesktop
+                                                                                                enableIMEPersonalizedLearning: !SettingsSvc.settings.incognitoKeyboard.value,
+                                                                                                textInputAction: SettingsSvc.settings.sendWithReturn.value && !kIsWeb && !kIsDesktop
                                                                                                     ? TextInputAction.send
                                                                                                     : TextInputAction.newline,
                                                                                                 cursorColor: context.theme.extension<BubbleText>()!.bubbleText.color,
@@ -727,7 +727,7 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                               ),
                               // message properties (replies, edits, effect)
                               Padding(
-                                padding: showAvatar || ss().settings.alwaysShowAvatars.value ? EdgeInsets.only(left: 35.0 * ss().settings.avatarScale.value) : EdgeInsets.zero,
+                                padding: showAvatar || SettingsSvc.settings.alwaysShowAvatars.value ? EdgeInsets.only(left: 35.0 * SettingsSvc.settings.avatarScale.value) : EdgeInsets.zero,
                                 child: MessageProperties(globalKey: keys.length > index ? keys[index] : null, parentController: controller, part: e),
                               ),
                             ],
@@ -775,7 +775,7 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                     Attachment.delete(a.guid!);
                                     a.bytes = await File(a.path).readAsBytes();
                                   }
-                                  await notif.clearFailedToSend(chat.id!);
+                                  await NotificationsSvc.clearFailedToSend(chat.id!);
                                   // Re-send
                                   message.id = null;
                                   message.error = 0;
@@ -803,18 +803,18 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                   Message.delete(message.guid!);
                                   // Remove the message from the Bloc
                                   service.removeMessage(message);
-                                  await notif.clearFailedToSend(chat.id!);
+                                  await NotificationsSvc.clearFailedToSend(chat.id!);
                                   // Get the "new" latest info
-                                  List<Message> latest = Chat.getMessages(chat, limit: 1);
+                                  List<Message> latest = await Chat.getMessagesAsync(chat, limit: 1);
                                   chat.latestMessage = latest.first;
-                                  chat.save();
+                                  await chat.saveAsync();
                                 },
                               ),
                               TextButton(
                                 child: Text("Cancel", style: context.theme.textTheme.bodyLarge!.copyWith(color: Get.context!.theme.colorScheme.primary)),
                                 onPressed: () async {
                                   Navigator.of(context).pop();
-                                  await notif.clearFailedToSend(chat.id!);
+                                  await NotificationsSvc.clearFailedToSend(chat.id!);
                                 },
                               )
                             ],

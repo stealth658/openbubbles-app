@@ -26,24 +26,24 @@ class SettingsLeadingIcon extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Obx(() => Material(
-          shape: ss().settings.skin.value == Skins.Samsung ? SquircleBorder(
+          shape: SettingsSvc.settings.skin.value == Skins.Samsung ? SquircleBorder(
             side: BorderSide(
                 color: containerColor ?? context.theme.colorScheme.outline,
                 width: 3.0
             ),
           ) : null,
-          color: ss().settings.skin.value != Skins.Material
+          color: SettingsSvc.settings.skin.value != Skins.Material
               ? containerColor ?? context.theme.colorScheme.outline
               : Colors.transparent,
-          borderRadius: ss().settings.skin.value == Skins.iOS
+          borderRadius: SettingsSvc.settings.skin.value == Skins.iOS
               ? BorderRadius.circular(6) : null,
           child: SizedBox(
             width: boxSize ?? 30,
             height: boxSize ?? 30,
             child: Center(
-              child: Icon(ss().settings.skin.value == Skins.iOS ? iosIcon : materialIcon,
-                  color: ss().settings.skin.value != Skins.Material ? Colors.white : context.theme.colorScheme.outline,
-                  size: ss().settings.skin.value != Skins.Material ? iconSize ?? 21 : iconSizeMaterial ?? 28),
+              child: Icon(SettingsSvc.settings.skin.value == Skins.iOS ? iosIcon : materialIcon,
+                  color: SettingsSvc.settings.skin.value != Skins.Material ? Colors.white : context.theme.colorScheme.outline,
+                  size: SettingsSvc.settings.skin.value != Skins.Material ? iconSize ?? 21 : iconSizeMaterial ?? 28),
             ),
           ),
         )),

@@ -42,13 +42,13 @@ class _ScreenEffectsWidgetState extends OptimizedState<ScreenEffectsWidget> with
     super.initState();
 
     updateObx(() {
-      fireworkController = FireworkController(vsync: this, windowSize: Size(ns.width(context), context.height));
-      celebrationController = CelebrationController(vsync: this, windowSize: Size(ns.width(context), context.height));
+      fireworkController = FireworkController(vsync: this, windowSize: Size(NavigationSvc.width(context), context.height));
+      celebrationController = CelebrationController(vsync: this, windowSize: Size(NavigationSvc.width(context), context.height));
       confettiController = ConfettiController(duration: const Duration(seconds: 1));
-      balloonController = BalloonController(vsync: this, windowSize: Size(ns.width(context), context.height));
-      loveController = LoveController(vsync: this, windowSize: Size(ns.width(context), context.height));
-      spotlightController = SpotlightController(vsync: this, windowSize: Size(ns.width(context), context.height));
-      laserController = LaserController(vsync: this, windowSize: Size(ns.width(context), context.height));
+      balloonController = BalloonController(vsync: this, windowSize: Size(NavigationSvc.width(context), context.height));
+      loveController = LoveController(vsync: this, windowSize: Size(NavigationSvc.width(context), context.height));
+      spotlightController = SpotlightController(vsync: this, windowSize: Size(NavigationSvc.width(context), context.height));
+      laserController = LaserController(vsync: this, windowSize: Size(NavigationSvc.width(context), context.height));
     });
 
     eventDispatcher.stream.listen((event) async {
@@ -58,7 +58,7 @@ class _ScreenEffectsWidgetState extends OptimizedState<ScreenEffectsWidget> with
         });
         final rect = event.item2['size'];
         if (screenSelected == "fireworks" && !fireworkController.isPlaying) {
-          fireworkController.windowSize = Size(ns.width(context), context.height);
+          fireworkController.windowSize = Size(NavigationSvc.width(context), context.height);
           fireworkController.start();
           await Future.delayed(const Duration(seconds: 1));
           fireworkController.stop(onStop: () {
@@ -67,7 +67,7 @@ class _ScreenEffectsWidgetState extends OptimizedState<ScreenEffectsWidget> with
             });
           });
         } else if (screenSelected == "celebration" && !celebrationController.isPlaying) {
-          celebrationController.windowSize = Size(ns.width(context), context.height);
+          celebrationController.windowSize = Size(NavigationSvc.width(context), context.height);
           celebrationController.start();
           await Future.delayed(const Duration(seconds: 1));
           celebrationController.stop(onStop: () {
@@ -76,7 +76,7 @@ class _ScreenEffectsWidgetState extends OptimizedState<ScreenEffectsWidget> with
             });
           });
         } else if (screenSelected == "balloons" && !balloonController.isPlaying) {
-          balloonController.windowSize = Size(ns.width(context), context.height);
+          balloonController.windowSize = Size(NavigationSvc.width(context), context.height);
           balloonController.start();
           await Future.delayed(const Duration(seconds: 1));
           balloonController.stop(onStop: () {
@@ -86,7 +86,7 @@ class _ScreenEffectsWidgetState extends OptimizedState<ScreenEffectsWidget> with
           });
         } else if (screenSelected == "love" && !loveController.isPlaying) {
           if (rect != null) {
-            loveController.windowSize = Size(ns.width(context), context.height);
+            loveController.windowSize = Size(NavigationSvc.width(context), context.height);
             loveController.start(Point((rect!.left + rect!.right) / 2, (rect!.top + rect!.bottom) / 2));
             await Future.delayed(const Duration(seconds: 1));
             loveController.stop(onStop: () {
@@ -97,7 +97,7 @@ class _ScreenEffectsWidgetState extends OptimizedState<ScreenEffectsWidget> with
           }
         } else if (screenSelected == "spotlight" && !spotlightController.isPlaying) {
           if (rect != null) {
-            spotlightController.windowSize = Size(ns.width(context), context.height);
+            spotlightController.windowSize = Size(NavigationSvc.width(context), context.height);
             spotlightController.start(rect!);
             await Future.delayed(const Duration(seconds: 1));
             spotlightController.stop(onStop: () {
@@ -108,7 +108,7 @@ class _ScreenEffectsWidgetState extends OptimizedState<ScreenEffectsWidget> with
           }
         } else if (screenSelected == "lasers" && !laserController.isPlaying) {
           if (rect != null) {
-            laserController.windowSize = Size(ns.width(context), context.height);
+            laserController.windowSize = Size(NavigationSvc.width(context), context.height);
             laserController.start(rect!);
             await Future.delayed(const Duration(seconds: 1));
             laserController.stop(onStop: () {

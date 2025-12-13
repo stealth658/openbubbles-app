@@ -12,6 +12,7 @@ import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/app/wrappers/titlebar_wrapper.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
+import 'package:bluebubbles/services/backend/interfaces/message_interface.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -55,8 +56,8 @@ class SyncIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      if (!ss().settings.showSyncIndicator.value
-          || !sync.isIncrementalSyncing.value) {
+      if (!SettingsSvc.settings.showSyncIndicator.value
+          || !SyncSvc.isIncrementalSyncing.value) {
         return const SizedBox.shrink();
       }
       return buildProgressIndicator(context, size: size);
@@ -72,7 +73,7 @@ class OverflowMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      if (ss().settings.skin.value == Skins.iOS && !(kIsDesktop || kIsWeb)) {
+      if (SettingsSvc.settings.skin.value == Skins.iOS && !(kIsDesktop || kIsWeb)) {
         return CupertinoOverflowMenu(extraItems: extraItems, controller: controller);
       }
 
@@ -94,16 +95,16 @@ class MaterialOverflowMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PopupMenuButton<int>(
-      color: context.theme.colorScheme.properSurface.lightenOrDarken(ss().settings.skin.value == Skins.Samsung ? 20 : 0)
-          .withValues(alpha: ss().settings.windowEffect.value != WindowEffect.disabled ? 0.9 : 1),
-      shape: ss().settings.skin.value != Skins.Material ? const RoundedRectangleBorder(
+      color: context.theme.colorScheme.properSurface.lightenOrDarken(SettingsSvc.settings.skin.value == Skins.Samsung ? 20 : 0)
+          .withValues(alpha: SettingsSvc.settings.windowEffect.value != WindowEffect.disabled ? 0.9 : 1),
+      shape: SettingsSvc.settings.skin.value != Skins.Material ? const RoundedRectangleBorder(
         borderRadius: BorderRadius.all(
           Radius.circular(20.0),
         ),
       ) : null,
       onSelected: (int value) async {
         if (value == 0) {
-          chats.markAllAsRead();
+          ChatsSvc.markAllAsRead();
         } else if (value == 1) {
           goToArchived(context);
         } else if (value == 2) {
@@ -118,6 +119,26 @@ class MaterialOverflowMenu extends StatelessWidget {
           await goToSearch(context);
         } else if (value == 7) {
           controller?.openNewChatCreator(context);
+        } else if (value == 8) {
+          // Test Messages Isolate
+          final messages = await MessageInterface.getMessages();
+          if (context.mounted) {
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Message Isolate Test'),
+                content: Text(messages.length > 0 
+                  ? 'Successfully fetched messages from isolate!\nCount: ${messages.length}' 
+                  : 'No messages found or error occurred'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('OK'),
+                  ),
+                ],
+              ),
+            );
+          }
         }
       },
       itemBuilder: (context) {
@@ -136,7 +157,7 @@ class MaterialOverflowMenu extends StatelessWidget {
               style: context.textTheme.bodyLarge!.apply(color: context.theme.colorScheme.properOnSurface),
             ),
           ),
-          if (ss().settings.filterUnknownSenders.value)
+          if (SettingsSvc.settings.filterUnknownSenders.value)
             PopupMenuItem(
               value: 3,
               child: Text(
@@ -144,7 +165,7 @@ class MaterialOverflowMenu extends StatelessWidget {
                 style: context.textTheme.bodyLarge!.apply(color: context.theme.colorScheme.properOnSurface),
               ),
             ),
-          if (ss().isMinCatalinaSync)
+          if (SettingsSvc.isMinCatalinaSync)
             PopupMenuItem(
               value: 5,
               child: Text(
@@ -175,7 +196,7 @@ class MaterialOverflowMenu extends StatelessWidget {
                 style: context.textTheme.bodyLarge!.apply(color: context.theme.colorScheme.properOnSurface),
               ),
             ),
-          if (extraItems && ss().settings.moveChatCreatorToHeader.value)
+          if (extraItems && SettingsSvc.settings.moveChatCreatorToHeader.value)
             PopupMenuItem(
               value: 7,
               child: Text(
@@ -183,14 +204,22 @@ class MaterialOverflowMenu extends StatelessWidget {
                 style: context.textTheme.bodyLarge!.apply(color: context.theme.colorScheme.properOnSurface),
               ),
             ),
+          if (kDebugMode)
+            PopupMenuItem(
+              value: 8,
+              child: Text(
+                'Test Message Isolate',
+                style: context.textTheme.bodyLarge!.apply(color: context.theme.colorScheme.properOnSurface),
+              ),
+            ),
         ];
       },
-      icon: ss().settings.skin.value == Skins.Material ? Icon(
+      icon: SettingsSvc.settings.skin.value == Skins.Material ? Icon(
         Icons.more_vert,
         color: context.theme.colorScheme.properOnSurface,
         size: 25,
       ) : null,
-      child: ss().settings.skin.value == Skins.Material
+      child: SettingsSvc.settings.skin.value == Skins.Material
         ? null
         : ThemeSwitcher(
             iOSSkin: Container(
@@ -235,7 +264,7 @@ class CupertinoOverflowMenu extends StatelessWidget {
       ),
       itemBuilder: (context) => [
         PullDownMenuHeader(
-          title: ss().settings.userName.value,
+          title: SettingsSvc.settings.userName.value,
           icon: CupertinoIcons.chevron_right,
           leadingBuilder: (context, constraints) {
             return Container(constraints: constraints, child: ContactAvatarWidget(
@@ -246,8 +275,8 @@ class CupertinoOverflowMenu extends StatelessWidget {
                 fontSize: 16,
                 contact: Contact(
                   id: 'you',
-                  displayName: ss().settings.userName.value,
-                  emails: [ss().settings.iCloudAccount.value],
+                  displayName: SettingsSvc.settings.userName.value,
+                  emails: [SettingsSvc.settings.iCloudAccount.value],
                 ),
               )
             );
@@ -259,20 +288,20 @@ class CupertinoOverflowMenu extends StatelessWidget {
         PullDownMenuItem(
           title: 'Mark All As Read',
           icon: CupertinoIcons.check_mark_circled,
-          onTap: chats.markAllAsRead,
+          onTap: ChatsSvc.markAllAsRead,
         ),
         PullDownMenuItem(
           title: 'Archived',
           icon: CupertinoIcons.archivebox,
           onTap: () => goToArchived(context),
         ),
-        if (ss().settings.filterUnknownSenders.value)
+        if (SettingsSvc.settings.filterUnknownSenders.value)
           PullDownMenuItem(
             title: 'Unknown Senders',
             icon: CupertinoIcons.person_crop_circle_badge_xmark,
             onTap: () => goToUnknownSenders(context),
           ),
-        if (ss().isMinCatalinaSync)
+        if (SettingsSvc.isMinCatalinaSync)
           PullDownMenuItem(
             title: 'Find My',
             icon: CupertinoIcons.location,
@@ -284,7 +313,7 @@ class CupertinoOverflowMenu extends StatelessWidget {
             icon: CupertinoIcons.search,
             onTap: () => goToSearch(context),
           ),
-        if (extraItems && ss().settings.moveChatCreatorToHeader.value)
+        if (extraItems && SettingsSvc.settings.moveChatCreatorToHeader.value)
           PullDownMenuItem(
             title: 'New Chat',
             icon: CupertinoIcons.plus,
@@ -329,15 +358,15 @@ class CupertinoOverflowMenu extends StatelessWidget {
 
 
 Future<void> goToSearch(BuildContext context) async {
-  final current = ns.ratio(context);
+  final current = NavigationSvc.ratio(context);
   eventDispatcher.emit("override-split", 0.3);
-  await ns.pushLeft(context, SearchView());
+  await NavigationSvc.pushLeft(context, SearchView());
   eventDispatcher.emit("override-split", current);
 }
 
 Future<void> goToFindMy(BuildContext context) async {
   final currentChat = cm.activeChat?.chat;
-  ns.closeAllConversationView(context);
+  NavigationSvc.closeAllConversationView(context);
   await cm.setAllInactive();
   await Navigator.of(Get.context!).push(
     ThemeSwitcher.buildPageRoute(
@@ -348,8 +377,8 @@ Future<void> goToFindMy(BuildContext context) async {
   );
   if (currentChat != null) {
     await cm.setActiveChat(currentChat);
-    if (ss().settings.tabletMode.value) {
-      ns.pushAndRemoveUntil(
+    if (SettingsSvc.settings.tabletMode.value) {
+      NavigationSvc.pushAndRemoveUntil(
         context,
         ConversationView(
           chat: currentChat,
@@ -383,13 +412,13 @@ void logout(BuildContext context) {
           TextButton(
             child: Text("Yes", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
             onPressed: () async {
-              fs().deleteDB();
-              socket.forgetConnection();
-              ss().settings = Settings();
-              ss().fcmData = FCMData();
-              await prefs().i.clear();
-              await prefs().i.setString("selected-dark", "OLED Dark");
-              await prefs().i.setString("selected-light", "Bright White");
+              FilesystemSvc.deleteDB();
+              SocketSvc.forgetConnection();
+              SettingsSvc.settings = Settings();
+              SettingsSvc.fcmData = FCMData();
+              await PrefsSvc.i.clear();
+              await PrefsSvc.i.setString("selected-dark", "OLED Dark");
+              await PrefsSvc.i.setString("selected-light", "Bright White");
               Get.offAll(() => PopScope(
                 canPop: false,
                 child: TitleBarWrapper(child: SetupView()),
@@ -403,7 +432,7 @@ void logout(BuildContext context) {
 }
 
 void goToUnknownSenders(BuildContext context) {
-  ns.pushLeft(
+  NavigationSvc.pushLeft(
     context,
     ConversationList(
       showArchivedChats: false,
@@ -414,7 +443,7 @@ void goToUnknownSenders(BuildContext context) {
 
 Future<void> goToSettings(BuildContext context) async {
   final currentChat = cm.activeChat?.chat;
-  ns.closeAllConversationView(context);
+  NavigationSvc.closeAllConversationView(context);
   await cm.setAllInactive();
   await Navigator.of(Get.context!).push(
     ThemeSwitcher.buildPageRoute(
@@ -425,8 +454,8 @@ Future<void> goToSettings(BuildContext context) async {
   );
   if (currentChat != null) {
     await cm.setActiveChat(currentChat);
-    if (ss().settings.tabletMode.value) {
-        ns.pushAndRemoveUntil(
+    if (SettingsSvc.settings.tabletMode.value) {
+        NavigationSvc.pushAndRemoveUntil(
           context,
           ConversationView(
             chat: currentChat,
@@ -440,7 +469,7 @@ Future<void> goToSettings(BuildContext context) async {
 }
 
 void goToArchived(BuildContext context) {
-  ns.pushLeft(
+  NavigationSvc.pushLeft(
     context,
     ConversationList(
       showArchivedChats: true,
@@ -450,7 +479,7 @@ void goToArchived(BuildContext context) {
 }
 
 void goToProfile(BuildContext context) {
-  ns.pushLeft(
+  NavigationSvc.pushLeft(
     context,
     ProfilePanel()
   );

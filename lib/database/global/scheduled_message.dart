@@ -62,7 +62,7 @@ class Payload {
   factory Payload.fromJson(Map<String, dynamic> json) => Payload(
     chatGuid: json["chatGuid"],
     message: json["message"],
-    method: json["method"] ?? (ss().settings.privateAPISend.value ? 'private-api' : 'apple-script'),
+    method: json["method"] ?? (SettingsSvc.settings.privateAPISend.value ? 'private-api' : 'apple-script'),
   );
 
   Map<String, dynamic> toJson() => {

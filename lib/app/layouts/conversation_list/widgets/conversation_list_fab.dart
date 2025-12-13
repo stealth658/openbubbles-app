@@ -38,9 +38,9 @@ class _ConversationListFABState extends CustomState<ConversationListFAB, void, C
         });
       }
     });
-    ns.listener.stream.listen((event) {
+    NavigationSvc.listener.stream.listen((event) {
       if (!mounted) return;
-      if (ns.isAvatarOnly(context) && controller.showMaterialFABText) {
+      if (NavigationSvc.isAvatarOnly(context) && controller.showMaterialFABText) {
         setState(() {
           controller.showMaterialFABText = false;
         });
@@ -53,7 +53,7 @@ class _ConversationListFABState extends CustomState<ConversationListFAB, void, C
     final widget = Obx(() => Column(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        if (ss().settings.cameraFAB.value && iOS && !kIsWeb && !kIsDesktop)
+        if (SettingsSvc.settings.cameraFAB.value && iOS && !kIsWeb && !kIsDesktop)
           ConstrainedBox(
             constraints: const BoxConstraints(
               maxWidth: 45,
@@ -70,12 +70,12 @@ class _ConversationListFABState extends CustomState<ConversationListFAB, void, C
               backgroundColor: context.theme.colorScheme.primaryContainer,
             ),
           ),
-        if (ss().settings.cameraFAB.value && iOS && !kIsWeb && !kIsDesktop)
+        if (SettingsSvc.settings.cameraFAB.value && iOS && !kIsWeb && !kIsDesktop)
           const SizedBox(
             height: 10,
           ),
         InkWell(
-          onLongPress: iOS || !ss().settings.cameraFAB.value || kIsWeb || kIsDesktop
+          onLongPress: iOS || !SettingsSvc.settings.cameraFAB.value || kIsWeb || kIsDesktop
             ? null : () => controller.openCamera(context),
           child: FloatingActionButton(
             backgroundColor: context.theme.colorScheme.primary,
@@ -99,7 +99,7 @@ class _ConversationListFABState extends CustomState<ConversationListFAB, void, C
         duration: const Duration(milliseconds: 300),
         secondChild: const SizedBox.shrink(),
         firstChild: SizedBox(
-          width: ns.width(context),
+          width: NavigationSvc.width(context),
           height: 125,
           child: Stack(
             alignment: Alignment.bottomCenter,
@@ -126,7 +126,7 @@ class _ConversationListFABState extends CustomState<ConversationListFAB, void, C
               Positioned(
                 right: material ? 15 : 0,
                 child: InkWell(
-                  onLongPress: ss().settings.cameraFAB.value && !kIsWeb && !kIsDesktop
+                  onLongPress: SettingsSvc.settings.cameraFAB.value && !kIsWeb && !kIsDesktop
                       ? () => controller.openCamera(context) : null,
                   child: Container(
                     height: 65,

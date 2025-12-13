@@ -23,8 +23,9 @@ class FullSyncManager extends SyncManager {
   int messagesSynced = 0;
 
   bool skipEmptyChats;
+  String? origin;
 
-  FullSyncManager({int? endTimestamp, this.messageCount = 25, this.skipEmptyChats = true, bool saveLogs = false})
+  FullSyncManager({int? endTimestamp, this.messageCount = 25, this.skipEmptyChats = true, bool saveLogs = false, String? origin})
       : super("Full", saveLogs: saveLogs);
 
   @override
@@ -41,13 +42,13 @@ class FullSyncManager extends SyncManager {
     }
     addToOutput('Full sync is starting...');
     addToOutput("Reloading your contacts...");
-    await ss().getServerDetails(refresh: true);
-    await cs.refreshContacts();
+    await SettingsSvc.getServerDetails(refresh: true);
+    await ContactsSvc.refreshContacts();
 
     addToOutput('Fetching chats from the server...');
 
     // Get the total chats so we can properly fetch them all
-    Response chatCountResponse = await http.chatCount();
+    Response chatCountResponse = await HttpSvc.chatCount();
     Map<String, dynamic> res = chatCountResponse.data;
     int? totalChats;
     if (chatCountResponse.statusCode == 200) {
@@ -89,7 +90,7 @@ class FullSyncManager extends SyncManager {
                 displayName = chat.displayName;
               } else if (displayName.contains(';-;')) {
                 String addr = displayName.split(';-;')[1];
-                Contact? contact = cs.getContact(addr);
+                Contact? contact = ContactsSvc.getContact(addr);
                 if (contact != null) {
                   displayName = contact.displayName;
                 } else if (!addr.contains("@")) {
@@ -130,8 +131,8 @@ class FullSyncManager extends SyncManager {
             }
           } catch (ex, stack) {
             addToOutput('Failed to sync chat messages! Error: ${ex.toString()}', level: LogLevel.ERROR);
-            Logger().debug("StackTrace: $stack", tag: tag);
-            Logger().debug('Error: ${ex.toString()}', tag: tag);
+            Logger.debug("StackTrace: $stack", tag: tag);
+            Logger.debug('Error: ${ex.toString()}', tag: tag);
           }
 
           // If we're supposed to be stopping, break out
@@ -182,7 +183,7 @@ class FullSyncManager extends SyncManager {
     for (int i = 0; i < batches; i++) {
       // Fetch the chats and throw an error if we don't get back a good response.
       // Throwing an error should cancel the sync
-      Response chatPage = await http.chats(offset: i * countPerBatch, limit: countPerBatch, sort: kIsWeb ? "lastmessage" : null);
+      Response chatPage = await HttpSvc.chats(offset: i * countPerBatch, limit: countPerBatch, sort: kIsWeb ? "lastmessage" : null);
       dynamic data = chatPage.data;
       if (chatPage.statusCode != 200) {
         throw ChatRequestException(
@@ -211,7 +212,7 @@ class FullSyncManager extends SyncManager {
     for (int i = 0; i < batches; i++) {
       // Fetch the messages and throw an error if we don't get back a good response.
       // Throwing an error should _not_ cancel the sync
-      Response messagePage = await http.chatMessages(chatGuid,
+      Response messagePage = await HttpSvc.chatMessages(chatGuid,
           after: 0, before: endTimestamp, offset: i * countPerBatch, limit: countPerBatch, withQuery: "attachments,message.attributedBody,message.messageSummaryInfo,message.payloadData");
       dynamic data = messagePage.data;
       if (messagePage.statusCode != 200) {
@@ -231,10 +232,10 @@ class FullSyncManager extends SyncManager {
     addToOutput("Reloading your contacts...");
     // Use reset because it's after the full-sync so all the
     // handles and contacts are assumed new.
-    await cs.refreshContacts();
+    await ContactsSvc.refreshContacts();
     addToOutput("Reloading your chats...");
-    Get.reload<ChatsService>(force: true);
-    await chats.init(force: true);
+    ChatsSvc.reset();
+    await ChatsSvc.init(force: true);
     await super.complete();
   }
 }

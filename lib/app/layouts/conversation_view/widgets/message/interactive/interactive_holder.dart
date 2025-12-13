@@ -88,7 +88,7 @@ class _InteractiveHolderState extends CustomState<InteractiveHolder, void, Messa
               color: iOS ? context.theme.colorScheme.properSurface : null,
               child: ConstrainedBox(
                 constraints: BoxConstraints(
-                  maxWidth: ns.width(context) * (ns.isTabletMode(context) ? 0.5 : 0.6),
+                  maxWidth: NavigationSvc.width(context) * (NavigationSvc.isTabletMode(context) ? 0.5 : 0.6),
                   maxHeight: context.height * 0.6,
                   minHeight: 40,
                   minWidth: 40,
@@ -100,7 +100,7 @@ class _InteractiveHolderState extends CustomState<InteractiveHolder, void, Messa
                     child: Center(
                       heightFactor: 1,
                       widthFactor: 1,
-                      child: ss().settings.redactedMode.value && ss().settings.hideAttachments.value ? const Padding(
+                      child: SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideAttachments.value ? const Padding(
                         padding: EdgeInsets.all(15),
                         child: Text("Interactive Message")
                       ) : Opacity(
@@ -111,7 +111,7 @@ class _InteractiveHolderState extends CustomState<InteractiveHolder, void, Messa
                               switch (message.interactiveText) {
                                 case "Handwritten Message":
                                 case "Digital Touch Message":
-                                  if (ss().settings.enablePrivateAPI.value && ss().isMinBigSurSync && ss().serverDetailsSync().item4 >= 226) {
+                                  if (SettingsSvc.settings.enablePrivateAPI.value && SettingsSvc.isMinBigSurSync && SettingsSvc.serverDetailsSync().item4 >= 226) {
                                     return EmbeddedMedia(
                                       message: message,
                                       parentController: controller,

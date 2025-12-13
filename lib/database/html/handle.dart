@@ -27,10 +27,10 @@ class Handle {
 
   Contact? get contact => webContact;
   String get displayName {
-    if (ss().settings.redactedMode.value) {
-      if (ss().settings.generateFakeContactNames.value) {
+    if (SettingsSvc.settings.redactedMode.value) {
+      if (SettingsSvc.settings.generateFakeContactNames.value) {
         return fakeName;
-      } else if (ss().settings.hideContactInfo.value) {
+      } else if (SettingsSvc.settings.hideContactInfo.value) {
         return "";
       }
     }
@@ -115,7 +115,7 @@ class Handle {
 
   static Handle? findOne({int? id, int? originalROWID, Tuple2<String, String>? addressAndService}) {
     // ignore: argument_type_not_assignable, return_of_invalid_type, invalid_assignment, for_in_of_invalid_element_type
-    return chats.webCachedHandles.firstWhereOrNull((e) => originalROWID != null ? e.originalROWID == originalROWID : e.uniqueAddressAndService == "${addressAndService?.item1}/${addressAndService?.item2}");
+    return ChatsSvc.webCachedHandles.firstWhereOrNull((e) => originalROWID != null ? e.originalROWID == originalROWID : e.uniqueAddressAndService == "${addressAndService?.item1}/${addressAndService?.item2}");
   }
 
   static List<Handle> find() {

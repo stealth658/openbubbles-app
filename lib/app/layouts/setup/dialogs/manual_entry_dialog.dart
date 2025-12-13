@@ -68,11 +68,11 @@ class _ManualEntryDialogState extends OptimizedState<ManualEntryDialog> {
       return;
     }
 
-    ss().settings.guidAuthKey.value = password;
+    SettingsSvc.settings.guidAuthKey.value = password;
     await saveNewServerUrl(addr, restartSocket: false, force: true, saveAdditionalSettings: ["guidAuthKey"]);
 
     try {
-      socket.restartSocket();
+      SocketSvc.restartSocket();
     } catch (e) {
       error = e.toString();
       if (mounted) setState(() {});
@@ -83,11 +83,11 @@ class _ManualEntryDialogState extends OptimizedState<ManualEntryDialog> {
     // Get the FCM Client and make sure we have a valid response
     // If so, save. Let the parent widget know we've connected as long as
     // we get 200 from the API.
-    http.fcmClient().then((response) async {
+    HttpSvc.fcmClient().then((response) async {
       Map<String, dynamic>? data = response.data["data"];
       if (!isNullOrEmpty(data)) {
         FCMData newData = FCMData.fromMap(data!);
-        await ss().saveFCMData(newData);
+        await SettingsSvc.saveFCMData(newData);
       }
 
       widget.onConnect();

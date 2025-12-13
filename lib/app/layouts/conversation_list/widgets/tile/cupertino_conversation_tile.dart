@@ -54,10 +54,10 @@ class _CupertinoConversationTileState extends CustomState<CupertinoConversationT
         child: Obx(() => ListTile(
             mouseCursor: MouseCursor.defer,
             enableFeedback: true,
-            dense: ss().settings.denseChatTiles.value,
+            dense: SettingsSvc.settings.denseChatTiles.value,
             contentPadding: const EdgeInsets.only(left: 0),
-            visualDensity: ss().settings.denseChatTiles.value ? VisualDensity.compact : null,
-            minVerticalPadding: ss().settings.denseChatTiles.value ? 7.5 : 10,
+            visualDensity: SettingsSvc.settings.denseChatTiles.value ? VisualDensity.compact : null,
+            minVerticalPadding: SettingsSvc.settings.denseChatTiles.value ? 7.5 : 10,
             horizontalTitleGap: 10,
             title: Row(
               children: [
@@ -90,7 +90,7 @@ class _CupertinoConversationTileState extends CustomState<CupertinoConversationT
     );
 
     return Obx(() {
-      ns.listener.value;
+      NavigationSvc.listener.value;
       return AnimatedContainer(
         duration: const Duration(milliseconds: 100),
         decoration: BoxDecoration(
@@ -104,7 +104,7 @@ class _CupertinoConversationTileState extends CustomState<CupertinoConversationT
           borderRadius: BorderRadius.circular(
               controller.shouldHighlight.value || controller.shouldPartialHighlight.value || controller.hoverHighlight.value ? 8 : 0),
         ),
-        child: ns.isAvatarOnly(context)
+        child: NavigationSvc.isAvatarOnly(context)
             ? InkWell(
                 mouseCursor: MouseCursor.defer,
                 onTap: () => controller.onTap(context),
@@ -118,7 +118,7 @@ class _CupertinoConversationTileState extends CustomState<CupertinoConversationT
                   longPressPosition = details.globalPosition;
                 },
                 child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 10.0, horizontal: (ns.width(context) - 100) / 2).add(const EdgeInsets.only(right: 15)),
+                  padding: EdgeInsets.symmetric(vertical: 10.0, horizontal: (NavigationSvc.width(context) - 100) / 2).add(const EdgeInsets.only(right: 15)),
                   child: leading,
                 ),
               )
@@ -164,7 +164,7 @@ class _CupertinoTrailingState extends CustomState<CupertinoTrailing, void, Conve
             return query.findFirst();
           });
           if (message != null &&
-              ss().settings.statusIndicatorsOnChats.value &&
+              SettingsSvc.settings.statusIndicatorsOnChats.value &&
               (message.dateDelivered != cachedLatestMessage?.dateDelivered || message.dateRead != cachedLatestMessage?.dateRead)) {
             setState(() {});
           }
@@ -210,7 +210,7 @@ class _CupertinoTrailingState extends CustomState<CupertinoTrailing, void, Conve
         children: <Widget>[
           Obx(() {
             String indicatorText = "";
-            if (ss().settings.statusIndicatorsOnChats.value && (cachedLatestMessage?.isFromMe ?? false) && !controller.chat.isGroup) {
+            if (SettingsSvc.settings.statusIndicatorsOnChats.value && (cachedLatestMessage?.isFromMe ?? false) && !controller.chat.isGroup) {
               Indicator show = cachedLatestMessage?.indicatorToShow ?? Indicator.NONE;
               if (show != Indicator.NONE) {
                 indicatorText = show.name.toLowerCase().capitalizeFirst!;
@@ -285,7 +285,7 @@ class _UnreadIconState extends CustomState<UnreadIcon, void, ConversationTileCon
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(left: 5.0, right: 5.0),
-      child: Obx(() => GlobalChatService.unreadState(controller.chat.guid).value
+      child: Obx(() => GlobalChatSvc.unreadState(controller.chat.guid).value
           ? Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(35),

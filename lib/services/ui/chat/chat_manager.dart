@@ -16,7 +16,7 @@ class ChatManager extends GetxService {
 
   /// Same as setAllInactive but but removes lastOpenedChat from prefs on next frame
   void setAllInactiveSync({save = true, bool clearActive = true}) {
-    Logger().debug('Setting chats to inactive (save: $save, clearActive: $clearActive)');
+    Logger.debug('Setting chats to inactive (save: $save, clearActive: $clearActive)');
 
     String? skip;
     if (clearActive) {
@@ -34,42 +34,42 @@ class ChatManager extends GetxService {
 
     if (save) {
       eventDispatcher.emit("update-highlight", null);
-      Future(() async => await prefs().i.remove('lastOpenedChat'));
+      Future(() async => await PrefsSvc.i.remove('lastOpenedChat'));
     }
   }
 
   Future<void> setAllInactive() async {
-    Logger().debug('Setting all chats to inactive');
-    await prefs().i.remove('lastOpenedChat');
+    Logger.debug('Setting all chats to inactive');
+    await PrefsSvc.i.remove('lastOpenedChat');
     setAllInactiveSync(save: false);
   }
 
   Future<void> setActiveChat(Chat chat, {clearNotifications = true}) async {
-    await prefs().i.setString('lastOpenedChat', chat.guid);
+    await PrefsSvc.i.setString('lastOpenedChat', chat.guid);
     setActiveChatSync(chat, clearNotifications: clearNotifications, save: false);
   }
 
   /// Same as setActiveChat but saves lastOpenedChat to prefs on next frame
   void setActiveChatSync(Chat chat, {clearNotifications = true, save = true}) {
     eventDispatcher.emit("update-highlight", chat.guid);
-    Logger().debug('Setting active chat to ${chat.guid} (${chat.displayName})');
+    Logger.debug('Setting active chat to ${chat.guid} (${chat.displayName})');
 
     createChatController(chat, active: true);
     if (clearNotifications) {
       chat.toggleHasUnread(false, force: true);
     }
     if (save) {
-      Future(() async => await prefs().i.setString('lastOpenedChat', chat.guid));
+      Future(() async => await PrefsSvc.i.setString('lastOpenedChat', chat.guid));
     }
   }
 
   void setActiveToDead() {
-    Logger().debug('Setting active chat to dead: ${activeChat?.chat.guid}');
+    Logger.debug('Setting active chat to dead: ${activeChat?.chat.guid}');
     activeChat?.isAlive = false;
   }
 
   void setActiveToAlive() {
-    Logger().info('Setting active chat to alive: ${activeChat?.chat.guid}');
+    Logger.info('Setting active chat to alive: ${activeChat?.chat.guid}');
     eventDispatcher.emit("update-highlight", activeChat?.chat.guid);
     activeChat?.isAlive = true;
   }
@@ -106,15 +106,15 @@ class ChatManager extends GetxService {
 
   /// Fetch chat information from the server
   Future<Chat?> fetchChat(String chatGuid, {withParticipants = true, withLastMessage = false}) async {
-    Logger().info("Fetching full chat metadata from server.", tag: "Fetch-Chat");
+    Logger.info("Fetching full chat metadata from server.", tag: "Fetch-Chat");
 
     final withQuery = <String>[];
     if (withParticipants) withQuery.add("participants");
     if (withLastMessage) withQuery.add("lastmessage");
 
-    final response = await http.singleChat(chatGuid, withQuery: withQuery.join(",")).catchError((err, stack) {
+    final response = await HttpSvc.singleChat(chatGuid, withQuery: withQuery.join(",")).catchError((err, stack) {
       if (err is! Response) {
-        Logger().error("Failed to fetch chat metadata!", error: err, trace: stack, tag: "Fetch-Chat");
+        Logger.error("Failed to fetch chat metadata!", error: err, trace: stack, tag: "Fetch-Chat");
         return err;
       }
       return Response(requestOptions: RequestOptions(path: ''));
@@ -123,7 +123,7 @@ class ChatManager extends GetxService {
     if (response.statusCode == 200 && response.data["data"] != null) {
       Map<String, dynamic> chatData = response.data["data"];
 
-      Logger().info("Got updated chat metadata from server. Saving.", tag: "Fetch-Chat");
+      Logger.info("Got updated chat metadata from server. Saving.", tag: "Fetch-Chat");
       Chat updatedChat = Chat.fromMap(chatData);
       Chat? chat = Chat.findOne(guid: chatGuid);
       if (chat == null) {
@@ -138,7 +138,7 @@ class ChatManager extends GetxService {
       } else if (chat.handles.length < updatedChat.participants.length) {
         final existingAddresses = chat.participants.map((e) => e.address);
         final newHandle = updatedChat.participants.firstWhere((e) => !existingAddresses.contains(e.address));
-        final handle = Handle.findOne(addressAndService: Tuple2(newHandle.address, chat.isIMessage ? "iMessage" : "SMS")) ?? newHandle.save();
+        final handle = Handle.findOne(addressAndService: Tuple2(newHandle.address, chat.isIMessage ? "iMessage" : "SMS")) ?? await newHandle.saveAsync();
         chat.handles.add(handle);
         chat.handles.applyToDb();
       }
@@ -157,9 +157,9 @@ class ChatManager extends GetxService {
     if (withParticipants) withQuery.add("participants");
     if (withLastMessage) withQuery.add("lastmessage");
 
-    final response = await http.chats(withQuery: withQuery, offset: offset, limit: limit, sort: withLastMessage ? "lastmessage" : null).catchError((err, stack) {
+    final response = await HttpSvc.chats(withQuery: withQuery, offset: offset, limit: limit, sort: withLastMessage ? "lastmessage" : null).catchError((err, stack) {
       if (err is! Response) {
-        Logger().error("Failed to fetch chat metadata!", error: err, trace: stack, tag: "Fetch-Chat");
+        Logger.error("Failed to fetch chat metadata!", error: err, trace: stack, tag: "Fetch-Chat");
         return err;
       }
       return Response(requestOptions: RequestOptions(path: ''));
@@ -185,7 +185,7 @@ class ChatManager extends GetxService {
     if (withAttachment) withQuery.add("attachment");
     if (withHandle) withQuery.add("handle");
 
-    http.chatMessages(guid, withQuery: withQuery.join(","), offset: offset, limit: limit, sort: sort, after: after, before: before).then((response) {
+    HttpSvc.chatMessages(guid, withQuery: withQuery.join(","), offset: offset, limit: limit, sort: sort, after: after, before: before).then((response) {
       if (!completer.isCompleted) completer.complete(response.data["data"]);
     }).catchError((err) {
       late final dynamic error;

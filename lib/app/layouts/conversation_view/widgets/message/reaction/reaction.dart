@@ -89,7 +89,7 @@ class ReactionWidgetState extends OptimizedState<ReactionWidget> {
 
   @override
   Widget build(BuildContext context) {
-    if (ss().settings.skin.value != Skins.iOS) {
+    if (SettingsSvc.settings.skin.value != Skins.iOS) {
       return Container(
         width: 30,
         height: 30,
@@ -123,8 +123,8 @@ class ReactionWidgetState extends OptimizedState<ReactionWidget> {
                         colorScheme: context.theme.colorScheme.copyWith(
                           primary: context.theme.colorScheme.bubble(context, true),
                           onPrimary: context.theme.colorScheme.onBubble(context, true),
-                          surface: ss().settings.monetTheming.value == Monet.full ? null : (context.theme.extensions[BubbleColors] as BubbleColors?)?.receivedBubbleColor,
-                          onSurface: ss().settings.monetTheming.value == Monet.full ? null : (context.theme.extensions[BubbleColors] as BubbleColors?)?.onReceivedBubbleColor,
+                          surface: SettingsSvc.settings.monetTheming.value == Monet.full ? null : (context.theme.extensions[BubbleColors] as BubbleColors?)?.receivedBubbleColor,
+                          onSurface: SettingsSvc.settings.monetTheming.value == Monet.full ? null : (context.theme.extensions[BubbleColors] as BubbleColors?)?.onReceivedBubbleColor,
                         ),
                       ),
                       child: Stack(
@@ -235,7 +235,7 @@ class ReactionWidgetState extends OptimizedState<ReactionWidget> {
               return DeferPointer(
                 child: GestureDetector(
                   child: Icon(
-                    ss().settings.skin.value == Skins.iOS ? CupertinoIcons.exclamationmark_circle : Icons.error_outline,
+                    SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.exclamationmark_circle : Icons.error_outline,
                     color: context.theme.colorScheme.error,
                   ),
                   onTap: () {
@@ -256,7 +256,7 @@ class ReactionWidgetState extends OptimizedState<ReactionWidget> {
                                 // Remove the original message and notification
                                 Navigator.of(context).pop();
                                 Message.delete(reaction.guid!);
-                                await notif.clearFailedToSend(cm.activeChat!.chat.id!);
+                                await NotificationsSvc.clearFailedToSend(cm.activeChat!.chat.id!);
                                 getActiveMwc(reaction.associatedMessageGuid!)?.removeAssociatedMessage(reaction);
                                 // Re-send
                                 final selected = getActiveMwc(reaction.associatedMessageGuid!)!.message;
@@ -289,11 +289,11 @@ class ReactionWidgetState extends OptimizedState<ReactionWidget> {
                                 // Remove the message from the Bloc
                                 getActiveMwc(reaction.associatedMessageGuid!)?.removeAssociatedMessage(reaction);
                                 final chat = cm.activeChat!.chat;
-                                await notif.clearFailedToSend(chat.id!);
+                                await NotificationsSvc.clearFailedToSend(chat.id!);
                                 // Get the "new" latest info
-                                List<Message> latest = Chat.getMessages(chat, limit: 1);
+                                List<Message> latest = await Chat.getMessagesAsync(chat, limit: 1);
                                 chat.latestMessage = latest.first;
-                                chat.save();
+                                await chat.saveAsync();
                               },
                             ),
                             TextButton(
@@ -303,7 +303,7 @@ class ReactionWidgetState extends OptimizedState<ReactionWidget> {
                               ),
                               onPressed: () async {
                                 Navigator.of(context).pop();
-                                await notif.clearFailedToSend(cm.activeChat!.chat.id!);
+                                await NotificationsSvc.clearFailedToSend(cm.activeChat!.chat.id!);
                               },
                             )
                           ],

@@ -58,9 +58,9 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
           allThemes.add(newTheme);
           currentTheme = newTheme;
           if (widget.isDarkMode) {
-            await ts.changeTheme(_context, dark: currentTheme);
+            await ThemeSvc.changeTheme(_context, dark: currentTheme);
           } else {
-            await ts.changeTheme(_context, light: currentTheme);
+            await ThemeSvc.changeTheme(_context, light: currentTheme);
           }
         })
       );
@@ -69,7 +69,7 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
 
   @override
   Widget build(BuildContext context) {
-    editable = !currentTheme.isPreset && ss().settings.monetTheming.value == Monet.none;
+    editable = !currentTheme.isPreset && SettingsSvc.settings.monetTheming.value == Monet.none;
     final length = currentTheme
         .colors(widget.isDarkMode, returnMaterialYou: false).keys
         .where((e) => e != "outline").length ~/ 2 + 1;
@@ -175,29 +175,29 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
 
                     if (value.name == "Music Theme ☀" || value.name == "Music Theme 🌙") {
                       // disable monet theming if music theme enabled
-                      ss().settings.monetTheming.value = Monet.none;
-                      ss().saveSettings(ss().settings);
-                      await mcs.invokeMethod("request-notification-listener-permission");
+                      SettingsSvc.settings.monetTheming.value = Monet.none;
+                      SettingsSvc.saveSettings(SettingsSvc.settings);
+                      await MethodChannelSvc.invokeMethod("request-notification-listener-permission");
                       try {
-                        await mcs.invokeMethod("start-notification-listener");
-                        ss().settings.colorsFromMedia.value = true;
-                        ss().saveSettings(ss().settings);
+                        await MethodChannelSvc.invokeMethod("start-notification-listener");
+                        SettingsSvc.settings.colorsFromMedia.value = true;
+                        SettingsSvc.saveSettings(SettingsSvc.settings);
                       } catch (e) {
                         showSnackbar("Error", "Something went wrong, please ensure you granted the permission correctly!");
                         return;
                       }
                     } else {
-                      ss().settings.colorsFromMedia.value = false;
-                      ss().saveSettings(ss().settings);
+                      SettingsSvc.settings.colorsFromMedia.value = false;
+                      SettingsSvc.saveSettings(SettingsSvc.settings);
                     }
 
                     if (value.name == "Music Theme ☀" || value.name == "Music Theme 🌙") {
                       var allThemes = ThemeStruct.getThemes();
                       var currentLight = ThemeStruct.getLightTheme();
                       var currentDark = ThemeStruct.getDarkTheme();
-                      await prefs().i.setString("previous-light", currentLight.name);
-                      await prefs().i.setString("previous-dark", currentDark.name);
-                      await ts.changeTheme(
+                      await PrefsSvc.i.setString("previous-light", currentLight.name);
+                      await PrefsSvc.i.setString("previous-dark", currentDark.name);
+                      await ThemeSvc.changeTheme(
                           context,
                           light: allThemes.firstWhere((element) => element.name == "Music Theme ☀"),
                           dark: allThemes.firstWhere((element) => element.name == "Music Theme 🌙")
@@ -205,16 +205,16 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
                     } else if (currentTheme.name == "Music Theme ☀" ||
                         currentTheme.name == "Music Theme 🌙") {
                       if (!widget.isDarkMode) {
-                        ThemeStruct previousDark = await ts.revertToPreviousDarkTheme();
-                        await ts.changeTheme(context, light: value, dark: previousDark);
+                        ThemeStruct previousDark = await ThemeSvc.revertToPreviousDarkTheme();
+                        await ThemeSvc.changeTheme(context, light: value, dark: previousDark);
                       } else {
-                        ThemeStruct previousLight = await ts.revertToPreviousLightTheme();
-                        await ts.changeTheme(context, light: previousLight, dark: value);
+                        ThemeStruct previousLight = await ThemeSvc.revertToPreviousLightTheme();
+                        await ThemeSvc.changeTheme(context, light: previousLight, dark: value);
                       }
                     } else if (widget.isDarkMode) {
-                      await ts.changeTheme(context, dark: value);
+                      await ThemeSvc.changeTheme(context, dark: value);
                     } else {
-                      await ts.changeTheme(context, light: value);
+                      await ThemeSvc.changeTheme(context, light: value);
                     }
                     currentTheme = value;
                     editable = !currentTheme.isPreset;
@@ -228,9 +228,9 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
                     currentTheme.gradientBg = val;
                     currentTheme.save();
                     if (widget.isDarkMode) {
-                      await ts.changeTheme(context, dark: currentTheme);
+                      await ThemeSvc.changeTheme(context, dark: currentTheme);
                     } else {
-                      await ts.changeTheme(context, light: currentTheme);
+                      await ThemeSvc.changeTheme(context, light: currentTheme);
                     }
                   },
                   initialVal: currentTheme.gradientBg,
@@ -266,9 +266,9 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
                           currentTheme.data = currentTheme.data.copyWith(colorScheme: swatch);
                           currentTheme.save();
                           if (widget.isDarkMode) {
-                            await ts.changeTheme(context, dark: currentTheme);
+                            await ThemeSvc.changeTheme(context, dark: currentTheme);
                           } else {
-                            await ts.changeTheme(context, light: currentTheme);
+                            await ThemeSvc.changeTheme(context, light: currentTheme);
                           }
                         },
                         trailing: oldData == null ? null : TextButton(
@@ -282,9 +282,9 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
                             });
                             currentTheme.save();
                             if (widget.isDarkMode) {
-                              await ts.changeTheme(context, dark: currentTheme);
+                              await ThemeSvc.changeTheme(context, dark: currentTheme);
                             } else {
-                              await ts.changeTheme(context, light: currentTheme);
+                              await ThemeSvc.changeTheme(context, light: currentTheme);
                             }
                           },
                           child: Text("UNDO", style: TextStyle(color: context.theme.colorScheme.onSecondary)),
@@ -297,7 +297,7 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
                   subtitle: "Tap to edit the base color\nLong press to edit the color for elements displayed on top of the base color\nDouble tap to learn how the colors are used",
                   unlimitedSpace: true,
                 ),
-                if (ss().settings.monetTheming.value != Monet.none || ss().settings.useDesktopAccent.value)
+                if (SettingsSvc.settings.monetTheming.value != Monet.none || SettingsSvc.settings.useDesktopAccent.value)
                   Padding(
                     padding: const EdgeInsets.only(left: 20.0, right: 20.0, bottom: 15.0),
                     child: Row(
@@ -346,7 +346,7 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
               childCount: length,
             ),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: kIsDesktop ? (ns.width(context) / 150).floor() : 2,
+              crossAxisCount: kIsDesktop ? (NavigationSvc.width(context) / 150).floor() : 2,
             ),
           ),
           SliverPadding(
@@ -373,10 +373,10 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
                     map["data"]["textTheme"]["font"] = value;
                     currentTheme.data = ThemeStruct.fromMap(map).data;
                     currentTheme.save();
-                    if (currentTheme.name == prefs().i.getString("selected-dark")) {
-                      await ts.changeTheme(context, dark: currentTheme);
-                    } else if (currentTheme.name == prefs().i.getString("selected-light")) {
-                      await ts.changeTheme(context, light: currentTheme);
+                    if (currentTheme.name == PrefsSvc.i.getString("selected-dark")) {
+                      await ThemeSvc.changeTheme(context, dark: currentTheme);
+                    } else if (currentTheme.name == PrefsSvc.i.getString("selected-light")) {
+                      await ThemeSvc.changeTheme(context, light: currentTheme);
                     }
                   },
                 ),
@@ -414,10 +414,10 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
                       }
                       currentTheme.data = ThemeStruct.fromMap(map).data;
                       currentTheme.save();
-                      if (currentTheme.name == prefs().i.getString("selected-dark")) {
-                        await ts.changeTheme(context, dark: currentTheme);
-                      } else if (currentTheme.name == prefs().i.getString("selected-light")) {
-                        await ts.changeTheme(context, light: currentTheme);
+                      if (currentTheme.name == PrefsSvc.i.getString("selected-dark")) {
+                        await ThemeSvc.changeTheme(context, dark: currentTheme);
+                      } else if (currentTheme.name == PrefsSvc.i.getString("selected-light")) {
+                        await ThemeSvc.changeTheme(context, light: currentTheme);
                       }
                     },
                     backgroundColor: tileColor,
@@ -443,10 +443,10 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
                     map["data"]["textTheme"][currentTheme.textSizes.keys.toList()[index]]['fontSize'] = ThemeStruct.defaultTextSizes.values.toList()[index] * val;
                     currentTheme.data = ThemeStruct.fromMap(map).data;
                     currentTheme.save();
-                    if (currentTheme.name == prefs().i.getString("selected-dark")) {
-                      await ts.changeTheme(context, dark: currentTheme);
-                    } else if (currentTheme.name == prefs().i.getString("selected-light")) {
-                      await ts.changeTheme(context, light: currentTheme);
+                    if (currentTheme.name == PrefsSvc.i.getString("selected-dark")) {
+                      await ThemeSvc.changeTheme(context, dark: currentTheme);
+                    } else if (currentTheme.name == PrefsSvc.i.getString("selected-light")) {
+                      await ThemeSvc.changeTheme(context, light: currentTheme);
                     }
                   },
                   backgroundColor: tileColor,
@@ -475,12 +475,12 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
                     allThemes.removeWhere((element) => element == currentTheme);
                     currentTheme.delete();
                     currentTheme =
-                      await (widget.isDarkMode ? ts.revertToPreviousDarkTheme() : ts.revertToPreviousLightTheme());
+                      await (widget.isDarkMode ? ThemeSvc.revertToPreviousDarkTheme() : ThemeSvc.revertToPreviousLightTheme());
                     allThemes = ThemeStruct.getThemes();
                     if (widget.isDarkMode) {
-                      await ts.changeTheme(context, dark: currentTheme);
+                      await ThemeSvc.changeTheme(context, dark: currentTheme);
                     } else {
-                      await ts.changeTheme(context, light: currentTheme);
+                      await ThemeSvc.changeTheme(context, light: currentTheme);
                     }
                     setState(() {});
                   },

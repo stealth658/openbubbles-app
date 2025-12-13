@@ -14,30 +14,30 @@ import 'package:get/get.dart' hide Response;
 import 'package:tuple/tuple.dart';
 import 'package:universal_io/io.dart';
 import 'package:bluebubbles/database/database.dart';
+import 'package:get_it/get_it.dart';
 
-ChatsService chats = Get.isRegistered<ChatsService>() ? Get.find<ChatsService>() : Get.put(ChatsService());
+// ignore: non_constant_identifier_names
+ChatsService get ChatsSvc => GetIt.I<ChatsService>();
 
-class ChatsService extends GetxService {
+class ChatsService {
   static const batchSize = 15;
   int currentCount = 0;
-  late final StreamSubscription countSub;
+  StreamSubscription? countSub;
+  bool headless = false;
 
   final RxBool hasChats = false.obs;
   Completer<void> loadedAllChats = Completer();
   final RxBool loadedChatBatch = false.obs;
   final RxList<Chat> chats = <Chat>[].obs;
-
   final List<Handle> webCachedHandles = [];
 
-  @override
-  void onInit() {
-    super.onInit();
+  void initDbWatchers() {
     if (!kIsWeb) {
       // watch for new chats
       final countQuery = (Database.chats.query(Chat_.dateDeleted.isNull())..order(Chat_.id, flags: Order.descending))
           .watch(triggerImmediately: true);
       countSub = countQuery.listen((event) async {
-        if (!ss().settings.finishedSetup.value) return;
+        if (!SettingsSvc.settings.finishedSetup.value) return;
         final newCount = event.count();
         if (newCount > currentCount && currentCount != 0) {
           final chat = event.findFirst()!;
@@ -53,18 +53,19 @@ class ChatsService extends GetxService {
       });
     } else {
       countSub = WebListeners.newChat.listen((chat) async {
-        if (!ss().settings.finishedSetup.value) return;
+        if (!SettingsSvc.settings.finishedSetup.value) return;
         await addChat(chat);
       });
     }
   }
 
-  Future<void> init({bool force = false}) async {
-    if (!force && !ss().settings.finishedSetup.value) return;
-    Logger().info("Fetching chats...", tag: "ChatBloc");
+  Future<void> init({bool force = false, bool headless = false}) async {
+    this.headless = headless;
+    if (!force && !SettingsSvc.settings.finishedSetup.value) return;
+    Logger.info("Fetching chats...", tag: "ChatBloc");
     currentCount = Chat.count() ??
-        (await http.chatCount().catchError((err) {
-          Logger().info("Error when fetching chat count!", tag: "ChatBloc");
+        (await HttpSvc.chatCount().catchError((err) {
+          Logger.info("Error when fetching chat count!", tag: "ChatBloc");
           return Response(requestOptions: RequestOptions(path: ''));
         }))
             .data['data']['total'] ??
@@ -85,7 +86,7 @@ class ChatsService extends GetxService {
       if (kIsWeb) {
         temp = await cm.getChats(withLastMessage: true, limit: batchSize, offset: i * batchSize);
       } else {
-        temp = await Chat.getChats(limit: batchSize, offset: i * batchSize);
+        temp = await Chat.getChatsAsync(limit: batchSize, offset: i * batchSize);
       }
 
       if (kIsWeb) {
@@ -94,8 +95,10 @@ class ChatsService extends GetxService {
         webCachedHandles.retainWhere((element) => ids.remove(element.address));
       }
 
-      for (Chat c in temp) {
-        cm.createChatController(c, active: cm.activeChat?.chat.guid == c.guid);
+      if (!headless) {
+        for (Chat c in temp) {
+          cm.createChatController(c, active: cm.activeChat?.chat.guid == c.guid);
+        }
       }
       newChats.addAll(temp);
       newChats.sort(Chat.sort);
@@ -103,19 +106,7 @@ class ChatsService extends GetxService {
       loadedChatBatch.value = true;
     }
     loadedAllChats.complete();
-    Logger().info("Finished fetching chats (${chats.length}).", tag: "ChatBloc");
-    // update share targets
-    if (Platform.isAndroid) {
-      StartupTasks.waitForUI().then((_) async {
-        for (Chat c in chats.where((e) => !isNullOrEmpty(e.title)).take(4)) {
-          await mcs.invokeMethod("push-share-targets", {
-            "title": c.title,
-            "guid": c.guid,
-            "icon": await avatarAsBytes(chat: c, quality: 256),
-          });
-        }
-      });
-    }
+    Logger.info("Finished fetching chats (${chats.length}).", tag: "ChatBloc");
 
     if (kIsDesktop && Platform.isWindows) {
       /* ----- IMESSAGE:// HANDLER ----- */
@@ -130,8 +121,8 @@ class ChatsService extends GetxService {
 
         final address = uri.path;
         final handle = Handle.findOne(addressAndService: Tuple2(address, "iMessage"));
-        ns.closeSettings(Get.context!);
-        await ns.pushAndRemoveUntil(
+        NavigationSvc.closeSettings(Get.context!);
+        await NavigationSvc.pushAndRemoveUntil(
           Get.context!,
           ChatCreator(
             initialSelected: [SelectedContact(displayName: handle?.displayName ?? address, address: address)],
@@ -143,10 +134,8 @@ class ChatsService extends GetxService {
     }
   }
 
-  @override
-  void onClose() {
-    countSub.cancel();
-    super.onClose();
+  void close() {
+    countSub?.cancel();
   }
 
   void sort() {
@@ -170,7 +159,9 @@ class ChatsService extends GetxService {
 
   Future<void> addChat(Chat toAdd) async {
     chats.add(toAdd);
-    cm.createChatController(toAdd);
+    if (!headless) {
+      cm.createChatController(toAdd);
+    }
     sort();
   }
 
@@ -183,15 +174,15 @@ class ChatsService extends GetxService {
     final _chats = Database.chats.query(Chat_.hasUnreadMessage.equals(true)).build().find();
     for (Chat c in _chats) {
       c.hasUnreadMessage = false;
-      mcs.invokeMethod(
+      MethodChannelSvc.invokeMethod(
         "delete-notification",
         {
           "notification_id": c.id,
           "tag": NotificationsService.NEW_MESSAGE_TAG
         }
       );
-      if (ss().settings.enablePrivateAPI.value && ss().settings.privateMarkChatAsRead.value) {
-        http.markChatRead(c.guid);
+      if (SettingsSvc.settings.enablePrivateAPI.value && SettingsSvc.settings.privateMarkChatAsRead.value) {
+        HttpSvc.markChatRead(c.guid);
       }
     }
     Database.chats.putMany(_chats);
@@ -215,10 +206,40 @@ class ChatsService extends GetxService {
   }
 
   void removePinIndices() {
-    chats.bigPinHelper(true).where((e) => e.pinIndex != null).forEach((element) {
+    // Create a snapshot to avoid concurrent modification during iteration
+    final pinnedChats = chats.bigPinHelper(true).where((e) => e.pinIndex != null).toList();
+    for (var element in pinnedChats) {
       element.pinIndex = null;
       element.save(updatePinIndex: true);
-    });
+    }
     chats.sort(Chat.sort);
+  }
+
+  Future<void> updateShareTargets() async {
+    if (Platform.isAndroid) {
+      StartupTasks.waitForUI().then((_) async {
+        // Create a snapshot to avoid concurrent modification during iteration
+        final chatSnapshot = chats.where((e) => !isNullOrEmpty(e.title)).take(4).toList();
+        for (Chat c in chatSnapshot) {
+          await MethodChannelSvc.invokeMethod("push-share-targets", {
+            "title": c.title,
+            "guid": c.guid,
+            "icon": await avatarAsBytes(chat: c, quality: 256),
+          });
+        }
+      });
+    }
+  }
+
+  void reset() {
+    currentCount = 0;
+    hasChats.value = false;
+    chats.clear();
+    loadedAllChats = Completer();
+    loadedChatBatch.value = false;
+    webCachedHandles.clear();
+
+    countSub?.cancel();
+    initDbWatchers();
   }
 }

@@ -78,7 +78,7 @@ class CupertinoHeader extends StatelessWidget implements PreferredSizeWidget {
                                         controller.selected.clear();
                                         return;
                                       }
-                                      if (ls.isBubble) {
+                                      if (LifecycleSvc.isBubble) {
                                         SystemNavigator.pop();
                                         return;
                                       }
@@ -97,7 +97,7 @@ class CupertinoHeader extends StatelessWidget implements PreferredSizeWidget {
                                     controller.selected.clear();
                                     return;
                                   }
-                                  if (ls.isBubble) {
+                                  if (LifecycleSvc.isBubble) {
                                     SystemNavigator.pop();
                                     return;
                                   }
@@ -188,7 +188,7 @@ class CupertinoHeader extends StatelessWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize =>
       Size.fromHeight((Get.context!.orientation == Orientation.landscape && Platform.isAndroid ? 55 : 75) *
-          ss().settings.avatarScale.value);
+          SettingsSvc.settings.avatarScale.value);
 }
 
 class _UnreadIcon extends StatefulWidget {
@@ -232,7 +232,7 @@ class _UnreadIconState extends OptimizedState<_UnreadIcon> {
         ),
         const SizedBox(width: 2),
         Obx(() {
-          final _count = widget.controller.inSelectMode.value ? widget.controller.selected.length : GlobalChatService.unreadCount.value;
+          final _count = widget.controller.inSelectMode.value ? widget.controller.selected.length : GlobalChatSvc.unreadCount.value;
           if (_count == 0) return const SizedBox.shrink();
           return Padding(
               padding: const EdgeInsets.only(top: 3),
@@ -341,7 +341,7 @@ class _ChatIconAndTitleState extends CustomState<_ChatIconAndTitle, void, Conver
 
   @override
   Widget build(BuildContext context) {
-    final hideInfo = ss().settings.redactedMode.value && ss().settings.hideContactInfo.value;
+    final hideInfo = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
     String _title = title;
     if (hideInfo) {
       _title = controller.chat.isGroup ? controller.chat.fakeName : controller.chat.participants[0].fakeName;
@@ -358,7 +358,7 @@ class _ChatIconAndTitleState extends CustomState<_ChatIconAndTitle, void, Conver
       Row(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.center, children: [
         ConstrainedBox(
           constraints: BoxConstraints(
-            maxWidth: ns.width(context) / 2.5,
+            maxWidth: NavigationSvc.width(context) / 2.5,
           ),
           child: RichText(
             maxLines: 1,

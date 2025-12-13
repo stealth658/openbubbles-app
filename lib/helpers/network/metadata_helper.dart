@@ -43,7 +43,7 @@ class MetadataHelper {
     try {
       data = await MetadataFetch.extract(url);
     } catch (ex, stack) {
-      Logger().error('An error occurred while fetching URL Preview Metadata!', error: ex, trace: stack);
+      Logger.error('An error occurred while fetching URL Preview Metadata!', error: ex, trace: stack);
     }
 
     // If the everything in the metadata is null or empty, try to manually parse
@@ -116,7 +116,7 @@ class MetadataHelper {
     Metadata meta = Metadata();
 
     try {
-      final response = await http.dio.get(url, options: Options(headers: {
+      final response = await HttpSvc.dio.get(url, options: Options(headers: {
         // pretend to be a social media crawler
         "User-Agent": "Mozilla/5.0 (Windows NT 6.1; rv:6.0) Gecko/20110814 Firefox/6.0 Google (+https://developers.google.com/+/web/snippet/)"
       }));
@@ -145,7 +145,7 @@ class MetadataHelper {
       meta.description = ex.message;
     } catch (ex, stack) {
       meta.title = ex.toString();
-      Logger().error('Failed to manually get metadata!', error: ex, trace: stack);
+      Logger.error('Failed to manually get metadata!', error: ex, trace: stack);
     }
 
     return meta;

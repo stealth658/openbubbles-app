@@ -28,8 +28,8 @@ class _SamsungConversationListState extends OptimizedState<SamsungConversationLi
   bool get showArchived => widget.parentController.showArchivedChats;
   bool get showUnknown => widget.parentController.showUnknownSenders;
   Color get backgroundColor =>
-      ss().settings.windowEffect.value == WindowEffect.disabled ? headerColor : Colors.transparent;
-  Color get _tileColor => ss().settings.windowEffect.value == WindowEffect.disabled ? tileColor : Colors.transparent;
+      SettingsSvc.settings.windowEffect.value == WindowEffect.disabled ? headerColor : Colors.transparent;
+  Color get _tileColor => SettingsSvc.settings.windowEffect.value == WindowEffect.disabled ? tileColor : Colors.transparent;
   ConversationListController get controller => widget.parentController;
 
   @override
@@ -37,7 +37,7 @@ class _SamsungConversationListState extends OptimizedState<SamsungConversationLi
     super.initState();
     // update widget when background color changes
     if (kIsDesktop) {
-      ss().settings.windowEffect.listen((WindowEffect effect) {
+      SettingsSvc.settings.windowEffect.listen((WindowEffect effect) {
         setState(() {});
       });
     }
@@ -86,7 +86,7 @@ class _SamsungConversationListState extends OptimizedState<SamsungConversationLi
               showScrollbar: true,
               controller: controller.samsungScrollController,
               child: Obx(() {
-                final _chats = chats.chats
+                final _chats = ChatsSvc.chats
                     .archivedHelper(controller.showArchivedChats)
                     .unknownSendersHelper(controller.showUnknownSenders);
 
@@ -95,7 +95,7 @@ class _SamsungConversationListState extends OptimizedState<SamsungConversationLi
                   controller: controller.samsungScrollController,
                   slivers: [
                     SamsungHeader(parentController: controller),
-                    if (!chats.loadedChatBatch.value || _chats.bigPinHelper(false).isEmpty)
+                    if (!ChatsSvc.loadedChatBatch.value || _chats.bigPinHelper(false).isEmpty)
                       SliverToBoxAdapter(
                         child: Center(
                           child: Padding(
@@ -105,8 +105,8 @@ class _SamsungConversationListState extends OptimizedState<SamsungConversationLi
                                 Padding(
                                   padding: const EdgeInsets.all(8.0),
                                   child: Text(
-                                    !chats.loadedChatBatch.value
-                                        ? "Loading chats..."
+                                    !ChatsSvc.loadedChatBatch.value
+                                        ? "Loading ChatSvc..."
                                         : showArchived
                                             ? "You have no archived chats"
                                             : showUnknown
@@ -116,7 +116,7 @@ class _SamsungConversationListState extends OptimizedState<SamsungConversationLi
                                     textAlign: TextAlign.center,
                                   ),
                                 ),
-                                if (!chats.loadedChatBatch.value) buildProgressIndicator(context, size: 15),
+                                if (!ChatsSvc.loadedChatBatch.value) buildProgressIndicator(context, size: 15),
                               ],
                             ),
                           ),
