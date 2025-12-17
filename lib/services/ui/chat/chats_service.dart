@@ -20,7 +20,7 @@ import 'package:get_it/get_it.dart';
 ChatsService get ChatsSvc => GetIt.I<ChatsService>();
 
 class ChatsService {
-  static const batchSize = 15;
+  static const batchSize = 100;
   int currentCount = 0;
   StreamSubscription? countSub;
   bool headless = false;
@@ -29,6 +29,11 @@ class ChatsService {
   Completer<void> loadedAllChats = Completer();
   final RxBool loadedChatBatch = false.obs;
   final RxList<Chat> chats = <Chat>[].obs;
+  
+  /// Track individual chat updates for granular reactivity
+  /// UI components can observe specific chat GUIDs to only rebuild when that chat changes
+  final RxMap<String, int> chatUpdateTrigger = <String, int>{}.obs;
+  
   final List<Handle> webCachedHandles = [];
 
   void initDbWatchers() {
@@ -78,7 +83,6 @@ class ChatsService {
       return;
     }
 
-    final newChats = <Chat>[];
     final batches = (currentCount < batchSize) ? batchSize : (currentCount / batchSize).ceil();
 
     for (int i = 0; i < batches; i++) {
@@ -95,14 +99,18 @@ class ChatsService {
         webCachedHandles.retainWhere((element) => ids.remove(element.address));
       }
 
-      if (!headless) {
-        for (Chat c in temp) {
+      // Insert each chat at the correct position using binary search
+      // This maintains proper ordering including pinIndex which DB queries cannot handle
+      for (Chat c in temp) {
+        if (!headless) {
           cm.createChatController(c, active: cm.activeChat?.chat.guid == c.guid);
         }
+        
+        // Find correct position and insert (O(log n) + O(n) worst case)
+        // More efficient than addAll + full sort (O(n log n))
+        final insertIndex = _findInsertionIndex(c);
+        chats.insert(insertIndex, c);
       }
-      newChats.addAll(temp);
-      newChats.sort(Chat.sort);
-      chats.value = newChats;
       loadedChatBatch.value = true;
     }
     loadedAllChats.complete();
@@ -138,7 +146,49 @@ class ChatsService {
     countSub?.cancel();
   }
 
+  /// Find the correct insertion index for a chat based on pin status and latest message date
+  /// Uses binary search for O(log n) performance
+  int _findInsertionIndex(Chat chat) {
+    if (chats.isEmpty) return 0;
+    
+    int left = 0;
+    int right = chats.length;
+    
+    // Binary search for the correct position
+    while (left < right) {
+      int mid = (left + right) ~/ 2;
+      final comparison = Chat.sort(chat, chats[mid]);
+      
+      if (comparison < 0) {
+        // chat should come before chats[mid]
+        right = mid;
+      } else {
+        // chat should come after chats[mid]
+        left = mid + 1;
+      }
+    }
+    
+    return left;
+  }
+
+  /// Reposition a chat in the list based on its current state
+  /// More efficient than full sort - O(n) instead of O(n log n)
+  void _repositionChat(Chat chat) {
+    final currentIndex = chats.indexWhere((e) => e.guid == chat.guid);
+    if (currentIndex == -1) return;
+    
+    // Remove from current position
+    chats.removeAt(currentIndex);
+    
+    // Find new position and insert
+    final newIndex = _findInsertionIndex(chat);
+    chats.insert(newIndex, chat);
+  }
+
+  /// Public sort method for external callers (for backwards compatibility)
+  /// Now performs a full sort - use sparingly, prefer updateChat with repositioning
   void sort() {
+    Logger.info('[SORT] Performing full chat sort...', tag: 'ChatBloc');
     final ids = chats.map((e) => e.guid).toSet();
     chats.retainWhere((element) => ids.remove(element.guid));
     chats.sort(Chat.sort);
@@ -148,26 +198,49 @@ class ChatsService {
     final index = chats.indexWhere((e) => updated.guid == e.guid);
     if (index != -1) {
       final toUpdate = chats[index];
-      // this is so the list doesn't re-render
-      // ignore: invalid_use_of_protected_member
-      chats.value[index] = override ? updated : updated.merge(toUpdate);
-      if (shouldSort) sort();
+      final merged = override ? updated : updated.merge(toUpdate);
+      
+      // Only update if actually different to avoid unnecessary rebuilds
+      if (merged != toUpdate) {
+        chats[index] = merged;
+        
+        // Trigger granular update for this specific chat
+        chatUpdateTrigger[merged.guid] = DateTime.now().millisecondsSinceEpoch;
+        
+        if (shouldSort) {
+          // Use efficient repositioning instead of full sort
+          _repositionChat(merged);
+        }
+      }
     }
 
     return index != -1;
   }
 
   Future<void> addChat(Chat toAdd) async {
-    chats.add(toAdd);
+    // Check if chat already exists
+    final existingIndex = chats.indexWhere((e) => e.guid == toAdd.guid);
+    if (existingIndex != -1) {
+      // Update existing chat instead
+      updateChat(toAdd, shouldSort: true, override: true);
+      return;
+    }
+    
+    // Find correct insertion position and insert
+    final insertIndex = _findInsertionIndex(toAdd);
+    chats.insert(insertIndex, toAdd);
+    
     if (!headless) {
       cm.createChatController(toAdd);
     }
-    sort();
   }
 
   void removeChat(Chat toRemove) {
     final index = chats.indexWhere((e) => toRemove.guid == e.guid);
-    chats.removeAt(index);
+    if (index != -1) {
+      chats.removeAt(index);
+      chatUpdateTrigger.remove(toRemove.guid);
+    }
   }
 
   void markAllAsRead() {
@@ -235,6 +308,7 @@ class ChatsService {
     currentCount = 0;
     hasChats.value = false;
     chats.clear();
+    chatUpdateTrigger.clear();
     loadedAllChats = Completer();
     loadedChatBatch.value = false;
     webCachedHandles.clear();

@@ -1,9 +1,19 @@
 import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/services/backend/descriptors/attachment_query_descriptor.dart';
 import 'package:collection/collection.dart';
-import 'package:objectbox/objectbox.dart';
 
 class AttachmentActions {
+  static Attachment? findOne(String guid) {
+    final queryBuilder = Database.attachments.query(Attachment_.guid.equals(guid));
+    queryBuilder.link(Attachment_.message);
+    final query = queryBuilder.build();
+    query.limit = 1;
+    final result = query.findFirst();
+    query.close();
+    return result;
+  }
+
   static Future<Map<String, dynamic>> saveAttachmentAsync(Map<String, dynamic> data) async {
     final attachmentData = data['attachmentData'] as Map<String, dynamic>;
     final messageData = data['messageData'] as Map<String, dynamic>?;
@@ -11,15 +21,19 @@ class AttachmentActions {
     return Database.runInTransaction(TxMode.write, () {
       final attachment = Attachment.fromMap(attachmentData);
 
-      /// Find an existing attachment and update the attachment ID if applicable
-      Attachment? existing = Attachment.findOne(attachment.guid!);
+      /// Find an existing attachment with message relationship loaded
+      Attachment? existing = AttachmentActions.findOne(attachment.guid!);
       if (existing != null) {
         attachment.id = existing.id;
+        
+        // Always preserve the existing message relationship unless explicitly overridden
+        if (existing.message.hasValue) {
+          attachment.message.target = existing.message.target;
+        }
       }
 
       try {
-        /// store the attachment and add the link between the message and
-        /// attachment
+        /// Override with new message link if provided
         if (messageData != null) {
           final message = Message.fromMap(messageData);
           if (message.id != null) {
@@ -37,27 +51,44 @@ class AttachmentActions {
   static Future<void> bulkSaveAttachmentsAsync(Map<String, dynamic> data) async {
     final mapData = data['mapData'] as Map<Map<String, dynamic>, List<Map<String, dynamic>>>;
 
-    return Database.runInTransaction(TxMode.write, () {
-      // Convert the map from serialized data back to Message/Attachment objects
-      Map<Message, List<Attachment>> map = {};
-      for (var entry in mapData.entries) {
-        final message = Message.fromMap(entry.key);
-        final attachments = entry.value.map((e) => Attachment.fromMap(e)).toList();
-        map[message] = attachments;
-      }
+    // Convert the map from serialized data back to Message/Attachment objects
+    Map<Message, List<Attachment>> map = {};
+    for (var entry in mapData.entries) {
+      final message = Message.fromMap(entry.key);
+      final attachments = entry.value.map((e) => Attachment.fromMap(e)).toList();
+      map[message] = attachments;
+    }
 
-      /// convert List<List<Attachment>> into just List<Attachment> (flatten it)
-      final attachments = map.values.flattened.toList();
-      
-      /// find existing attachments
-      List<Attachment> existingAttachments =
-          Attachment.find(cond: Attachment_.guid.oneOf(attachments.map((e) => e.guid!).toList()));
-      
-      /// map existing attachment IDs to the attachments to save, if applicable
+    /// convert List<List<Attachment>> into just List<Attachment> (flatten it)
+    final attachments = map.values.flattened.toList();
+    
+    /// find existing attachments using query descriptor
+    final guids = attachments.map((e) => e.guid!).toList();
+    final queryDescriptor = AttachmentQueryDescriptor(
+      conditions: [
+        AttachmentQueryCondition(
+          field: AttachmentQueryField.guid,
+          operator: AttachmentQueryOperator.oneOf,
+          value: guids,
+        ),
+      ],
+    );
+    
+    List<Attachment> existingAttachments = await Attachment.findAsync(
+      queryDescriptor: queryDescriptor,
+    );
+    
+    return Database.runInTransaction(TxMode.write, () {
+      /// map existing attachment IDs and preserve message relationships
       for (Attachment a in attachments) {
         final existing = existingAttachments.firstWhereOrNull((e) => e.guid == a.guid);
         if (existing != null) {
           a.id = existing.id;
+          
+          // Preserve the existing message relationship to prevent it from being cleared by put
+          if (existing.message.hasValue && !a.message.hasValue) {
+            a.message.target = existing.message.target;
+          }
         }
       }
       
@@ -77,8 +108,8 @@ class AttachmentActions {
 
     return Database.runInTransaction(TxMode.write, () {
       final newAttachment = Attachment.fromMap(newAttachmentData);
-      
-      Attachment? existing = Attachment.findOne(oldGuid);
+
+      Attachment? existing = AttachmentActions.findOne(oldGuid);
       if (existing == null) {
         throw Exception("Old GUID ($oldGuid) does not exist!");
       }
@@ -97,7 +128,7 @@ class AttachmentActions {
       existing.bytes = newAttachment.bytes;
       existing.webUrl = newAttachment.webUrl;
       existing.hasLivePhoto = newAttachment.hasLivePhoto;
-      existing.save(null);
+      existing.saveAsync(null);
 
       // grab values from existing
       newAttachment.id = existing.id;
@@ -115,7 +146,9 @@ class AttachmentActions {
     return Database.runInTransaction(TxMode.read, () {
       final attachmentBox = Database.attachments;
 
-      final query = attachmentBox.query(Attachment_.guid.equals(guid)).build();
+      final queryBuilder = attachmentBox.query(Attachment_.guid.equals(guid));
+      queryBuilder.link(Attachment_.message);
+      final query = queryBuilder.build();
       query.limit = 1;
       final result = query.findFirst();
       query.close();
@@ -125,12 +158,21 @@ class AttachmentActions {
   }
 
   static Future<List<Map<String, dynamic>>> findAttachmentsAsync(Map<String, dynamic> data) async {
+    final queryDescriptorMap = data['queryDescriptor'] as Map<String, dynamic>?;
+    
     return Database.runInTransaction(TxMode.read, () {
       final attachmentBox = Database.attachments;
 
-      // Note: For now, we don't serialize conditions for cross-isolate communication
-      // This will return all attachments. Future enhancement can add condition serialization.
-      final query = attachmentBox.query().build();
+      // Build condition from descriptor if provided
+      final Condition<Attachment>? condition = queryDescriptorMap != null
+          ? AttachmentQueryDescriptor.fromMap(queryDescriptorMap).buildCondition()
+          : null;
+
+      final queryBuilder = condition != null 
+          ? attachmentBox.query(condition)
+          : attachmentBox.query();
+      queryBuilder.link(Attachment_.message);
+      final query = queryBuilder.build();
       final results = query.find();
       query.close();
 

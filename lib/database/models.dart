@@ -4,6 +4,8 @@ export 'package:bluebubbles/database/io/chat.dart'
     if (dart.library.html) 'package:bluebubbles/models/html/chat.dart';
 export 'package:bluebubbles/database/io/contact.dart'
   if (dart.library.html) 'package:bluebubbles/models/html/contact.dart';
+export 'package:bluebubbles/database/io/contact_v2.dart'
+  if (dart.library.html) 'package:bluebubbles/models/html/contact_v2.dart';
 export 'package:media_kit/media_kit.dart'
   if (dart.library.html) 'package:bluebubbles/models/html/media_kit.dart';
 export 'package:media_kit_video/media_kit_video.dart'

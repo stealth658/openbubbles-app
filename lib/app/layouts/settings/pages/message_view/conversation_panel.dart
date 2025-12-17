@@ -185,7 +185,7 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                   Obx(() => SettingsSwitch(
                       onChanged: (bool val) {
                         SettingsSvc.settings.hideNamesForReactions.value = val;
-                        SettingsSvc.settings.saveOne("hideNamesForReactions");
+                        SettingsSvc.settings.saveOneAsync("hideNamesForReactions");
                       },
                       initialVal: SettingsSvc.settings.hideNamesForReactions.value,
                       title: "Hide Names in Reaction Details",

@@ -152,11 +152,18 @@ class CupertinoConversationListState extends OptimizedState<CupertinoConversatio
                                           children: List.generate(
                                             index < _filledPageCount ? maxOnPage : _chats.length % maxOnPage,
                                             (_index) {
-                                              return PinnedConversationTile(
-                                                key: Key(_chats[index * maxOnPage + _index].guid.toString()),
-                                                chat: _chats[index * maxOnPage + _index],
-                                                controller: controller,
-                                              );
+                                              final pinnedChat = _chats[index * maxOnPage + _index];
+                                              // Wrap with Obx for granular reactivity
+                                              return Obx(() {
+                                                // Only rebuild this tile when THIS specific chat updates
+                                                final updateCounter = ChatsSvc.chatUpdateTrigger[pinnedChat.guid] ?? 0;
+                                                
+                                                return PinnedConversationTile(
+                                                  key: Key('${pinnedChat.guid}_$updateCounter'),
+                                                  chat: pinnedChat,
+                                                  controller: controller,
+                                                );
+                                              });
                                             },
                                           ),
                                         ),
@@ -233,11 +240,19 @@ class CupertinoConversationListState extends OptimizedState<CupertinoConversatio
                         delegate: SliverChildBuilderDelegate(
                           (context, index) {
                             final chat = ChatsSvc.chats.firstWhere((e) => e.guid == _chats[index].guid);
-                            final child = ConversationTile(
-                              key: Key(chat.guid.toString()),
-                              chat: chat,
-                              controller: controller,
-                            );
+                            
+                            // Wrap with Obx for granular reactivity
+                            final child = Obx(() {
+                              // Only rebuild this tile when THIS specific chat updates
+                              final updateCounter = ChatsSvc.chatUpdateTrigger[chat.guid] ?? 0;
+                              
+                              return ConversationTile(
+                                key: Key('${chat.guid}_$updateCounter'),
+                                chat: chat,
+                                controller: controller,
+                              );
+                            });
+                            
                             final separator = Obx(() => !SettingsSvc.settings.hideDividers.value
                                 ? Padding(
                                     padding: const EdgeInsets.only(left: 20),

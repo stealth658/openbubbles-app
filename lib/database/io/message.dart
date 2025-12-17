@@ -55,7 +55,14 @@ class Message {
   Map<String, dynamic>? metadata;
   String? threadOriginatorGuid;
   String? threadOriginatorPart;
+  
+  // IMPORTANT: Two separate attachment fields with different purposes:
+  // 1. 'attachments' - In-memory list for serialization/deserialization and UI access
+  // 2. 'dbAttachments' - ObjectBox ToMany relationship for persistent DB links
+  //    Only modify when saving/updating messages in DB transactions
+  //    Do NOT clear/modify when just querying - the relationship already exists
   List<Attachment?> attachments = [];
+  
   List<Message> associatedMessages = [];
   bool? bigEmoji;
   List<AttributedBody> attributedBody;
@@ -282,7 +289,19 @@ class Message {
 
       try {
         if (chat != null) this.chat.target = chat;
+        
+        // CRITICAL: Preserve dbAttachments ToMany relationship
+        // ObjectBox will clear ToMany relationships on put() if not explicitly preserved
+        final attachmentsToPreserve = List<Attachment>.from(dbAttachments);
+        
         id = Database.messages.put(this);
+        
+        // Restore attachments after put
+        if (attachmentsToPreserve.isNotEmpty) {
+          dbAttachments.clear();
+          dbAttachments.addAll(attachmentsToPreserve);
+          dbAttachments.applyToDb();
+        }
       } on UniqueViolationException catch (_) {}
     });
     return this;
@@ -292,13 +311,14 @@ class Message {
     if (kIsWeb) return this;
 
     final result = await MessageInterface.saveMessageAsync(
-      messageData: toMap(includeObjects: true),
+      messageData: toMap(),
       chatData: chat?.toMap(),
       updateIsBookmarked: updateIsBookmarked,
     );
 
-    final savedMessage = Message.fromMap(result);
-    id = savedMessage.id;
+    if (result != null) {
+      id = result.id;
+    }
     return this;
   }
 
@@ -306,12 +326,12 @@ class Message {
     if (kIsWeb) throw Exception("Web does not support saving messages!");
     if (messages.isEmpty) return [];
 
-    final result = await MessageInterface.bulkSaveNewMessages(
-      chatData: chat.toMap(),
-      messagesData: messages.map((e) => e.toMap()).toList(),
+    return await MessageInterface.bulkSaveNewMessages(
+      data: {
+        'chatData': chat.toMap(),
+        'messagesData': messages.map((e) => e.toMap()).toList(),
+      },
     );
-
-    return result.map((e) => Message.fromMap(e)).toList();
   }
 
   /// Replace a temp message with the message from the server
@@ -424,14 +444,28 @@ class Message {
       query.limit = 1;
       final result = query.findFirst();
       query.close();
-      result?.handle = result.getHandle();
+      if (result != null) {
+        result.handle = result.getHandle();
+        // Populate attachments field from dbAttachments for consistent behavior
+        if (result.hasAttachments) {
+          result.attachments = List<Attachment>.from(result.dbAttachments);
+        }
+      }
       return result;
     } else if (associatedMessageGuid != null) {
       final query = Database.messages.query(Message_.associatedMessageGuid.equals(associatedMessageGuid)).build();
       query.limit = 1;
       final result = query.findFirst();
       query.close();
-      result?.handle = result.getHandle();
+      if (result != null) {
+        result.handle = result.getHandle();
+
+        // Populate attachments field from dbAttachments for consistent behavior
+        if (result.hasAttachments) {
+          result.attachments = List<Attachment>.from(result.dbAttachments);
+        }
+      }
+
       return result;
     }
     return null;
@@ -445,8 +479,7 @@ class Message {
       associatedMessageGuid: associatedMessageGuid,
     );
 
-    if (result == null) return null;
-    return Message.fromMap(result);
+    return result;
   }
 
   /// Find a list of messages by the specified condition, or return all messages
@@ -461,11 +494,9 @@ class Message {
 
     // Note: For now, we pass null for conditionJson since serializing ObjectBox Condition
     // is complex. This will return all messages. Future enhancement can add condition serialization.
-    final result = await MessageInterface.findAsync(
+    return await MessageInterface.findAsync(
       conditionJson: null,
     );
-
-    return result.map((e) => Message.fromMap(e)).toList();
   }
 
   /// Delete a message and remove all instances of that message in the DB
@@ -758,7 +789,7 @@ class Message {
     return size;
   }
 
-  static Message merge(Message existing, Message newMessage) {
+  static Message merge(Message existing, Message newMessage) {    
     existing.id ??= newMessage.id;
     existing.guid ??= newMessage.guid;
   
@@ -880,6 +911,19 @@ class Message {
 
     existing.isBookmarked = newMessage.isBookmarked;
 
+    // Update attachments
+    if (existing.dbAttachments.isEmpty && newMessage.dbAttachments.isNotEmpty) {
+      existing.dbAttachments.addAll(newMessage.dbAttachments);
+    }
+
+    // IMPORTANT: Also update the attachments field for serialization/UI
+    if (existing.attachments.isEmpty && newMessage.attachments.isNotEmpty) {
+      existing.attachments = newMessage.attachments;
+    } else if (existing.attachments.isEmpty && existing.dbAttachments.isNotEmpty) {
+      // If attachments field is empty but dbAttachments has data, populate it
+      existing.attachments = List<Attachment>.from(existing.dbAttachments);
+    }
+    
     return existing;
   }
 
@@ -934,8 +978,8 @@ class Message {
     return false;
   }
 
-  Map<String, dynamic> toMap({bool includeObjects = false}) {
-    final map = {
+  Map<String, dynamic> toMap() {
+    return {
       "ROWID": id,
       "originalROWID": originalROWID,
       "guid": guid,
@@ -960,7 +1004,7 @@ class Message {
       "associatedMessagePart": associatedMessagePart,
       "associatedMessageType": associatedMessageType,
       "expressiveSendStyleId": expressiveSendStyleId,
-      "handle": handle?.toMap(includeObjects: true),
+      "handle": handle?.toMap(),
       "hasAttachments": hasAttachments,
       "hasReactions": hasReactions,
       "dateDeleted": dateDeleted?.millisecondsSinceEpoch,
@@ -972,14 +1016,10 @@ class Message {
       "wasDeliveredQuietly": wasDeliveredQuietly,
       "didNotifyRecipient": didNotifyRecipient,
       "isBookmarked": isBookmarked,
+      "attachments": (attachments).map((e) => e!.toMap()).toList(),
+      "attributedBody": attributedBody.map((e) => e.toMap()).toList(),
+      "messageSummaryInfo": messageSummaryInfo.map((e) => e.toJson()).toList(),
+      "payloadData": payloadData?.toJson(),
     };
-    if (includeObjects) {
-      map['attachments'] = (attachments).map((e) => e!.toMap()).toList();
-      map['handle'] = handle?.toMap();
-      map['attributedBody'] = attributedBody.map((e) => e.toMap()).toList();
-      map['messageSummaryInfo'] = messageSummaryInfo.map((e) => e.toJson()).toList();
-      map['payloadData'] = payloadData?.toJson();
-    }
-    return map;
   }
 }

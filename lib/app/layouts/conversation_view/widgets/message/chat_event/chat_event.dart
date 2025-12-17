@@ -25,7 +25,7 @@ class ChatEvent extends StatelessWidget {
         child: GestureDetector(
           onLongPress: () {
             const encoder = JsonEncoder.withIndent("     ");
-            Map map = message.toMap(includeObjects: true);
+            Map map = message.toMap();
             if (map["dateCreated"] is int) {
               map["dateCreated"] =
                   DateFormat("MMMM d, yyyy h:mm:ss a").format(

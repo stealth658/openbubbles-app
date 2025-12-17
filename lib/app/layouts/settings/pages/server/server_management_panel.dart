@@ -703,7 +703,7 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                               SettingsSvc.settings.localhostPort.value = null;
                             }
 
-                            await SettingsSvc.settings.saveOne('localhostPort');
+                            await SettingsSvc.settings.saveOneAsync('localhostPort');
                             if (SettingsSvc.settings.localhostPort.value == null) {
                               HttpSvc.originOverride = null;
                             } else {

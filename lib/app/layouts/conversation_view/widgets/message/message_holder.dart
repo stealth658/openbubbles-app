@@ -60,25 +60,19 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
 
   Message? get newerMessage => controller.newMessage;
 
-  Message? get replyTo => message.threadOriginatorGuid == null
-      ? null
-      : SettingsSvc.settings.repliesToPrevious.value
-          ? (service.struct.getPreviousReply(message.threadOriginatorGuid!, message.normalizedThreadPart, message.guid!) ?? service.struct.getThreadOriginator(message.threadOriginatorGuid!))
-          : service.struct.getThreadOriginator(message.threadOriginatorGuid!);
+  // Use cached value for expensive replyTo computation
+  Message? get replyTo => _cachedReplyTo;
 
   Chat get chat => widget.cvController.chat;
 
   MessagesService get service => MessagesSvc(widget.cvController.chat.guid);
 
-  bool get canSwipeToReply =>
-      SettingsSvc.settings.enablePrivateAPI.value && SettingsSvc.isMinBigSurSync && chat.isIMessage && !widget.isReplyThread && !message.guid!.startsWith("temp") && !message.guid!.startsWith("error");
-
-  bool get showSender =>
-      !message.isGroupEvent &&
-      (!message.sameSender(olderMessage) || (olderMessage?.isGroupEvent ?? false) || (olderMessage == null || !message.dateCreated!.isWithin(olderMessage!.dateCreated!, minutes: 30)));
-
+  // Use cached values for expensive computed properties
+  bool get showSender => _cachedShowSender ?? false;
+  bool get canSwipeToReply => _cachedCanSwipeToReply ?? false;
+  
   bool get showAvatar => chat.isGroup;
-
+  
   bool isEditing(int part) => message.isFromMe! && widget.cvController.editing.firstWhereOrNull((e2) => e2.item1.guid == message.guid! && e2.item2.part == part) != null;
 
   List<MessagePart> messageParts = [];
@@ -86,6 +80,12 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
   List<GlobalKey> keys = [];
   bool gaveHapticFeedback = false;
   final RxBool tapped = false.obs;
+  
+  // Cache computed values to avoid recalculating on every build
+  List<Color>? _cachedBubbleColors;
+  bool? _cachedShowSender;
+  bool? _cachedCanSwipeToReply;
+  Message? _cachedReplyTo;
 
   @override
   void initState() {
@@ -106,21 +106,47 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
       keys = List.generate(messageParts.length, (_) => GlobalKey());
     }
 
-    eventDispatcher.stream.listen((event) {
-      if (event.item1 != 'refresh-avatar') return;
-      if (event.item2[0] != message.handle?.address) return;
-      message.handle?.color = event.item2[1];
-      setState(() {});
-    });
+    // Observe handle updates from ContactServiceV2
+    if (message.handle?.id != null) {
+      ever(ContactsSvcV2.handleUpdateStatus, (_) {
+        // Check if this specific handle was updated
+        if (ContactsSvcV2.isHandleUpdated(message.handle!.id!)) {
+          _updateCachedValues();
+          if (mounted) setState(() {});
+        }
+      });
+    }
+  }
+  
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Cache computed values after context is available
+    _updateCachedValues();
+  }
+  
+  void _updateCachedValues() {
+    _cachedBubbleColors = getBubbleColors();
+    _cachedShowSender = !message.isGroupEvent &&
+        (!message.sameSender(olderMessage) || (olderMessage?.isGroupEvent ?? false) || (olderMessage == null || !message.dateCreated!.isWithin(olderMessage!.dateCreated!, minutes: 30)));
+    _cachedCanSwipeToReply = SettingsSvc.settings.enablePrivateAPI.value && SettingsSvc.isMinBigSurSync && chat.isIMessage && !widget.isReplyThread && !message.guid!.startsWith("temp") && !message.guid!.startsWith("error");
+    _cachedReplyTo = message.threadOriginatorGuid == null
+        ? null
+        : SettingsSvc.settings.repliesToPrevious.value
+            ? (service.struct.getPreviousReply(message.threadOriginatorGuid!, message.normalizedThreadPart, message.guid!) ?? service.struct.getThreadOriginator(message.threadOriginatorGuid!))
+            : service.struct.getThreadOriginator(message.threadOriginatorGuid!);
   }
 
   @override
   void updateWidget(void _) {
     messageParts = controller.parts;
+    _updateCachedValues();
     super.updateWidget(_);
   }
 
   List<Color> getBubbleColors() {
+    if (_cachedBubbleColors != null) return _cachedBubbleColors!;
+    
     List<Color> bubbleColors = [context.theme.colorScheme.properSurface, context.theme.colorScheme.properSurface];
     if (SettingsSvc.settings.colorfulBubbles.value && !message.isFromMe!) {
       if (message.handle?.color == null) {
@@ -135,6 +161,15 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
     return bubbleColors;
   }
 
+  void _handleHapticFeedback(RxDouble offset) {
+    if (!gaveHapticFeedback && offset.value.abs() >= SlideToReply.replyThreshold) {
+      HapticFeedback.lightImpact();
+      gaveHapticFeedback = true;
+    } else if (offset.value.abs() < SlideToReply.replyThreshold) {
+      gaveHapticFeedback = false;
+    }
+  }
+  
   void completeEdit(String newEdit, int part) async {
     widget.cvController.editing.removeWhere((e2) => e2.item1.guid == message.guid! && e2.item2.part == part);
     if (newEdit.isNotEmpty && newEdit != messageParts.firstWhere((element) => element.part == part).text) {
@@ -176,8 +211,15 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
   @override
   Widget build(BuildContext context) {
     controller.built = true;
-    final stickers = message.associatedMessages.where((e) => e.associatedMessageType == "sticker");
-    final reactions = message.associatedMessages.where((e) => ReactionTypes.toList().contains(e.associatedMessageType?.replaceAll("-", "")));
+    
+    // Cache associated messages filtering
+    final stickers = message.associatedMessages.where((e) => e.associatedMessageType == "sticker").toList();
+    final reactions = message.associatedMessages.where((e) => ReactionTypes.toList().contains(e.associatedMessageType?.replaceAll("-", ""))).toList();
+    
+    // Cache settings values to avoid repeated observable reads
+    final alwaysShowAvatars = SettingsSvc.settings.alwaysShowAvatars.value;
+    final avatarScale = SettingsSvc.settings.avatarScale.value;
+    
     Iterable<Message> stickersForPart(int part) {
       return stickers.where((s) => (s.associatedMessagePart ?? 0) == part);
     }
@@ -236,7 +278,7 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                               // add previous edits if needed
                               if (e.isEdited)
                                 Padding(
-                                  padding: showAvatar || SettingsSvc.settings.alwaysShowAvatars.value ? EdgeInsets.only(left: 35.0 * SettingsSvc.settings.avatarScale.value) : EdgeInsets.zero,
+                                  padding: showAvatar || alwaysShowAvatars ? EdgeInsets.only(left: 35.0 * avatarScale) : EdgeInsets.zero,
                                   child: Obx(() => AnimatedSize(
                                         duration: const Duration(milliseconds: 250),
                                         alignment: Alignment.bottomCenter,
@@ -275,7 +317,7 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                   replyTo != null &&
                                   getActiveMwc(replyTo!.guid!) != null)
                                 Padding(
-                                  padding: EdgeInsets.only(left: (showAvatar || SettingsSvc.settings.alwaysShowAvatars.value) && replyTo!.isFromMe! ? 35 : 0),
+                                  padding: EdgeInsets.only(left: (showAvatar || alwaysShowAvatars) && replyTo!.isFromMe! ? 35 : 0),
                                   child: DecoratedBox(
                                     decoration: replyTo!.isFromMe == message.isFromMe
                                         ? ReplyLineDecoration(
@@ -292,7 +334,7 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                       child: ReplyBubble(
                                         parentController: getActiveMwc(replyTo!.guid!)!,
                                         part: replyTo!.guid! == message.threadOriginatorGuid ? message.normalizedThreadPart : 0,
-                                        showAvatar: (chat.isGroup || SettingsSvc.settings.alwaysShowAvatars.value || !iOS) && !replyTo!.isFromMe!,
+                                        showAvatar: (chat.isGroup || alwaysShowAvatars || !iOS) && !replyTo!.isFromMe!,
                                         cvController: widget.cvController,
                                       ),
                                     ),
@@ -301,7 +343,7 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                               // show sender, if needed
                               if (chat.isGroup && !message.isFromMe! && showSender && e.part == (messageParts.firstWhereOrNull((e) => !e.isUnsent)?.part))
                                 Padding(
-                                  padding: showAvatar || SettingsSvc.settings.alwaysShowAvatars.value ? EdgeInsets.only(left: 35.0 * SettingsSvc.settings.avatarScale.value) : EdgeInsets.zero,
+                                  padding: showAvatar || alwaysShowAvatars ? EdgeInsets.only(left: 35.0 * avatarScale) : EdgeInsets.zero,
                                   child: MessageSender(olderMessage: olderMessage, message: message),
                                 ),
                               // add a box to account for height of reactions
@@ -314,7 +356,7 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                   replyTo != null &&
                                   getActiveMwc(replyTo!.guid!) != null)
                                 Padding(
-                                  padding: showAvatar || SettingsSvc.settings.alwaysShowAvatars.value ? const EdgeInsets.only(left: 45.0, right: 10) : const EdgeInsets.symmetric(horizontal: 10),
+                                  padding: showAvatar || alwaysShowAvatars ? const EdgeInsets.only(left: 45.0, right: 10) : const EdgeInsets.symmetric(horizontal: 10),
                                   child: DecoratedBox(
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(25),
@@ -323,7 +365,7 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                     child: ReplyBubble(
                                       parentController: getActiveMwc(replyTo!.guid!)!,
                                       part: replyTo!.guid! == message.threadOriginatorGuid ? message.normalizedThreadPart : 0,
-                                      showAvatar: (chat.isGroup || SettingsSvc.settings.alwaysShowAvatars.value || !iOS) && !replyTo!.isFromMe!,
+                                      showAvatar: (chat.isGroup || alwaysShowAvatars || !iOS) && !replyTo!.isFromMe!,
                                       cvController: widget.cvController,
                                     ),
                                   ),
@@ -347,8 +389,8 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                       ),
                                     ),
                                   Padding(
-                                    padding: (showAvatar || SettingsSvc.settings.alwaysShowAvatars.value) && !(message.isGroupEvent || e.isUnsent)
-                                        ? EdgeInsets.only(left: 35.0 * SettingsSvc.settings.avatarScale.value)
+                                    padding: (showAvatar || alwaysShowAvatars) && !(message.isGroupEvent || e.isUnsent)
+                                        ? EdgeInsets.only(left: 35.0 * avatarScale)
                                         : EdgeInsets.zero,
                                     child: DecoratedBox(
                                         decoration: iOS &&
@@ -458,12 +500,7 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                                                             } else {
                                                                               offset.value = offset.value.clamp(0, double.infinity);
                                                                             }
-                                                                            if (!gaveHapticFeedback && offset.value.abs() >= SlideToReply.replyThreshold) {
-                                                                              HapticFeedback.lightImpact();
-                                                                              gaveHapticFeedback = true;
-                                                                            } else if (offset.value.abs() < SlideToReply.replyThreshold) {
-                                                                              gaveHapticFeedback = false;
-                                                                            }
+                                                                            _handleHapticFeedback(offset);
                                                                           },
                                                                     onHorizontalDragEnd: !canSwipeToReply || isEditing(e.part)
                                                                         ? null
@@ -695,19 +732,27 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                                                 Positioned(
                                                                   top: -14,
                                                                   left: -20,
-                                                                  child: ReactionHolder(
-                                                                    reactions: messageParts.length == 1 ? reactions : reactionsForPart(e.part),
-                                                                    message: message,
-                                                                  ),
+                                                                  child: Obx(() {
+                                                                    // Observe granular reactions flag to minimize rebuilds
+                                                                    controller.reactionsChanged.value;
+                                                                    return ReactionHolder(
+                                                                      reactions: messageParts.length == 1 ? reactions : reactionsForPart(e.part),
+                                                                      message: message,
+                                                                    );
+                                                                  }),
                                                                 ),
                                                               if (!message.isFromMe!)
                                                                 Positioned(
                                                                   top: -14,
                                                                   right: -20,
-                                                                  child: ReactionHolder(
-                                                                    reactions: messageParts.length == 1 ? reactions : reactionsForPart(e.part),
-                                                                    message: message,
-                                                                  ),
+                                                                  child: Obx(() {
+                                                                    // Observe granular reactions flag to minimize rebuilds
+                                                                    controller.reactionsChanged.value;
+                                                                    return ReactionHolder(
+                                                                      reactions: messageParts.length == 1 ? reactions : reactionsForPart(e.part),
+                                                                      message: message,
+                                                                    );
+                                                                  }),
                                                                 ),
                                                             ],
                                                           ),
@@ -727,7 +772,7 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                               ),
                               // message properties (replies, edits, effect)
                               Padding(
-                                padding: showAvatar || SettingsSvc.settings.alwaysShowAvatars.value ? EdgeInsets.only(left: 35.0 * SettingsSvc.settings.avatarScale.value) : EdgeInsets.zero,
+                                padding: showAvatar || alwaysShowAvatars ? EdgeInsets.only(left: 35.0 * avatarScale) : EdgeInsets.zero,
                                 child: MessageProperties(globalKey: keys.length > index ? keys[index] : null, parentController: controller, part: e),
                               ),
                             ],
@@ -740,6 +785,9 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
               ),
               if (message.isFromMe! && !message.isGroupEvent) SelectCheckbox(message: message, controller: widget.cvController),
               Obx(() {
+                // Observe granular error state flag to minimize rebuilds
+                controller.errorStateChanged.value;
+                
                 if (message.error > 0 || message.guid!.startsWith("error-")) {
                   int errorCode = message.error;
                   String errorText = "An unknown internal error occurred.";
@@ -772,7 +820,7 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                   Message.delete(message.guid!);
                                   for (Attachment? a in message.attachments) {
                                     if (a == null) continue;
-                                    Attachment.delete(a.guid!);
+                                    await Attachment.deleteAsync(a.guid!);
                                     a.bytes = await File(a.path).readAsBytes();
                                   }
                                   await NotificationsSvc.clearFailedToSend(chat.id!);

@@ -37,6 +37,10 @@ class MessagesService extends GetxController {
   bool isFetching = false;
   bool _init = false;
   String? method;
+  
+  /// Granular reactivity map to track individual message updates
+  /// Key: message guid, Value: timestamp of last update
+  final RxMap<String, int> messageUpdateTrigger = <String, int>{}.obs;
 
   Message? get mostRecentSent => (struct.messages.where((e) => e.isFromMe!).toList()..sort(Message.sort)).firstOrNull;
 
@@ -141,49 +145,46 @@ class MessagesService extends GetxController {
     struct.removeMessage(oldGuid ?? updated.guid!);
     struct.removeAttachments(toUpdate.attachments.map((e) => e!.guid!));
     struct.addMessages([updated]);
+    
+    // Trigger granular update for this specific message
+    messageUpdateTrigger[updated.guid!] = DateTime.now().millisecondsSinceEpoch;
+    
     updateFunc.call(updated, oldGuid: oldGuid);
   }
 
   void removeMessage(Message toRemove) {
     struct.removeMessage(toRemove.guid!);
     struct.removeAttachments(toRemove.attachments.map((e) => e!.guid!));
+    messageUpdateTrigger.remove(toRemove.guid!);
     removeFunc.call(toRemove);
   }
-
-  void _updateMessageControllersWithReactions(List<Message> messages) {
-    // Update each message widget controller with its loaded reactions
-    for (Message message in messages) {
-      final mwc = getActiveMwc(message.guid!);
-      if (mwc != null && message.associatedMessages.isNotEmpty) {
-        // Update the controller with each reaction
-        for (Message reaction in message.associatedMessages) {
-          mwc.updateAssociatedMessage(reaction);
-        }
-      }
-    }
+  
+  /// Check if a specific message has been updated (for granular Obx widgets)
+  bool isMessageUpdated(String guid) {
+    return messageUpdateTrigger.containsKey(guid);
+  }
+  
+  /// Trigger an update for a specific message (useful for reactions, read receipts, etc.)
+  void triggerMessageUpdate(String guid) {
+    messageUpdateTrigger[guid] = DateTime.now().millisecondsSinceEpoch;
+  }
+  
+  /// Clear the update flag for a message after it's been processed
+  void clearMessageUpdate(String guid) {
+    messageUpdateTrigger.remove(guid);
   }
 
   Future<bool> loadChunk(int offset, ConversationViewController controller, {int limit = 25}) async {
-    final chunkStopwatch = Stopwatch()..start();
     isFetching = true;
     List<Message> _messages = [];
     offset = offset + struct.reactions.length;
     try {
-      Logger.debug("[loadChunk] START: Loading messages from offset $offset with limit $limit");
-      final getMessagesStopwatch = Stopwatch()..start();
       _messages = await Chat.getMessagesAsync(
         chat,
         offset: offset,
         limit: limit,
-        onSupplementalDataLoaded: () {
-          // Trigger UI update when reactions/attachments are loaded
-          Logger.debug("[loadChunk] Supplemental data loaded, updating message widget controllers");
-          _updateMessageControllersWithReactions(_messages);
-        },
       );
-      getMessagesStopwatch.stop();
-      Logger.debug(
-          "[loadChunk] getMessagesAsync took ${getMessagesStopwatch.elapsedMilliseconds}ms, total elapsed: ${chunkStopwatch.elapsedMilliseconds}ms");
+
       Logger.debug("[loadChunk] Loaded ${_messages.length} messages from local DB");
       if (_messages.isEmpty) {
         // get from server and save
@@ -206,15 +207,9 @@ class MessagesService extends GetxController {
       return Future.error(e, s);
     }
 
-    Logger.debug("[loadChunk] Adding messages to struct, total elapsed: ${chunkStopwatch.elapsedMilliseconds}ms");
-    final addMessagesStopwatch = Stopwatch()..start();
     struct.addMessages(_messages);
-    addMessagesStopwatch.stop();
-    Logger.debug(
-        "[loadChunk] struct.addMessages took ${addMessagesStopwatch.elapsedMilliseconds}ms, total elapsed: ${chunkStopwatch.elapsedMilliseconds}ms");
 
     // get thread originators
-    final threadOriginatorStopwatch = Stopwatch()..start();
     for (Message m in _messages.where((e) => e.threadOriginatorGuid != null)) {
       // see if the originator is already loaded
       final guid = m.threadOriginatorGuid!;
@@ -228,13 +223,9 @@ class MessagesService extends GetxController {
         struct.addThreadOriginator(threadOriginator);
       }
     }
-    threadOriginatorStopwatch.stop();
-    Logger.debug(
-        "[loadChunk] Thread originator processing took ${threadOriginatorStopwatch.elapsedMilliseconds}ms, total elapsed: ${chunkStopwatch.elapsedMilliseconds}ms");
 
     // this indicates an audio message was kept by the recipient
     // run this every time more messages are loaded just in case
-    final audioKeptStopwatch = Stopwatch()..start();
     for (Message m in struct.messages.where((e) => e.itemType == 5 && e.subject != null)) {
       final otherMessage = struct.getMessage(m.subject!);
       if (otherMessage != null) {
@@ -242,14 +233,8 @@ class MessagesService extends GetxController {
         otherMwc.audioWasKept.value = m.dateCreated;
       }
     }
-    audioKeptStopwatch.stop();
-    Logger.debug(
-        "[loadChunk] Audio kept processing took ${audioKeptStopwatch.elapsedMilliseconds}ms, total elapsed: ${chunkStopwatch.elapsedMilliseconds}ms");
 
     isFetching = false;
-    chunkStopwatch.stop();
-    Logger.debug(
-        "[loadChunk] COMPLETE: Total time ${chunkStopwatch.elapsedMilliseconds}ms for ${_messages.length} messages");
     return _messages.isNotEmpty;
   }
 

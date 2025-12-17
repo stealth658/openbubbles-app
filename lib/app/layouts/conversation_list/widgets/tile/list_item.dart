@@ -82,8 +82,11 @@ class ListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
+      // Granular reactivity - only rebuild this tile when THIS specific chat updates
+      final updateCounter = ChatsSvc.chatUpdateTrigger[chat.guid] ?? 0;
+      
       final tile = ConversationTile(
-        key: Key(chat.guid),
+        key: Key('${chat.guid}_$updateCounter'),
         chat: chat,
         controller: controller,
         onSelect: (bool isSelected) {

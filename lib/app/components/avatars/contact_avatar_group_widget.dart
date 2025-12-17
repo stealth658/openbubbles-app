@@ -34,39 +34,56 @@ class _ContactAvatarGroupWidgetState extends OptimizedState<ContactAvatarGroupWi
     3: [21.5/40, 9/40, [Alignment.bottomRight, Alignment.bottomLeft, Alignment.topCenter]],
     4: [1/2, 8.7/40, [Alignment.bottomRight, Alignment.bottomLeft, Alignment.topLeft, Alignment.topRight]],
   };
+  
+  // Cache values to prevent recalculation
+  String? _cachedCustomAvatarPath;
 
   @override
   void initState() {
     super.initState();
+    _cachedCustomAvatarPath = widget.chat.customAvatarPath;
+    
+    // Sort participants once during init (expensive operation)
     participants.sort((a, b) {
-      bool avatarA = a.contact?.avatar?.isNotEmpty ?? false;
-      bool avatarB = b.contact?.avatar?.isNotEmpty ?? false;
+      // Check ContactV2 avatars first, then fall back to old Contact
+      bool avatarA = (a.contactsV2.firstOrNull?.avatarPath != null) || (a.contact?.avatar?.isNotEmpty ?? false);
+      bool avatarB = (b.contactsV2.firstOrNull?.avatarPath != null) || (b.contact?.avatar?.isNotEmpty ?? false);
       if (!avatarA && avatarB) return 1;
       if (avatarA && !avatarB) return -1;
       return 0;
     });
   }
+  
+  @override
+  void didUpdateWidget(ContactAvatarGroupWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Only update cache if custom avatar path changed
+    if (oldWidget.chat.customAvatarPath != widget.chat.customAvatarPath) {
+      _cachedCustomAvatarPath = widget.chat.customAvatarPath;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     if (participants.isEmpty) {
-      return ContactAvatarWidget(
+      return Obx(() => ContactAvatarWidget(
         handle: Handle(address: ''),
         size: widget.size * SettingsSvc.settings.avatarScale.value,
         editable: false,
         scaleSize: false,
-      );
+      ));
     }
 
     return Obx(() {
         final hide = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
         final avatarSize = widget.size * SettingsSvc.settings.avatarScale.value;
         final maxAvatars = SettingsSvc.settings.maxAvatarsInGroupWidget.value;
+        final skin = SettingsSvc.settings.skin.value;
 
-        if (widget.chat.customAvatarPath != null && !hide) {
-          dynamic file = File(widget.chat.customAvatarPath!);
+        if (_cachedCustomAvatarPath != null && !hide) {
+          dynamic file = File(_cachedCustomAvatarPath!);
           return CircleAvatar(
-            key: ValueKey(widget.chat.customAvatarPath!),
+            key: ValueKey(_cachedCustomAvatarPath!),
             radius: avatarSize / 2,
             backgroundImage: FileImage(file),
             backgroundColor: Colors.transparent,
@@ -122,7 +139,7 @@ class _ContactAvatarGroupWidgetState extends OptimizedState<ContactAvatarGroupWi
                                       border: Border.all(color: context.theme.colorScheme.background, width: avatarSize * 0.01)
                                     ),
                                     child: Icon(
-                                      SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.group_solid : Icons.people,
+                                      skin == Skins.iOS ? CupertinoIcons.group_solid : Icons.people,
                                       size: size * 0.65,
                                       color: context.theme.colorScheme.properOnSurface.withValues(alpha: 0.8),
                                     ),

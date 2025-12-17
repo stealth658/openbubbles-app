@@ -19,6 +19,21 @@ class ContactTile extends StatelessWidget {
   final bool canBeRemoved;
 
   Contact? get contact => handle.contact;
+  ContactV2? get contactV2 => handle.contactsV2.firstOrNull;
+  
+  bool get hasPhones {
+    if (contactV2 != null) {
+      return contactV2!.addresses.any((addr) => !addr.contains('@'));
+    }
+    return contact?.phones.isNotEmpty ?? false;
+  }
+  
+  bool get hasEmails {
+    if (contactV2 != null) {
+      return contactV2!.addresses.any((addr) => addr.contains('@'));
+    }
+    return contact?.emails.isNotEmpty ?? false;
+  }
 
   ContactTile({
     super.key,
@@ -40,11 +55,13 @@ class ContactTile extends StatelessWidget {
         }
       },
       onTap: () async {
-        if (contact == null) {
+        final contactV2 = handle.contactsV2.firstOrNull;
+        if (contactV2 == null && contact == null) {
           await MethodChannelSvc.invokeMethod("open-contact-form", {'address': handle.address, 'address_type': handle.address.isEmail ? 'email' : 'phone'});
         } else {
           try {
-            await MethodChannelSvc.invokeMethod("view-contact-form", {'id': contact!.id});
+            final contactId = contactV2?.nativeContactId ?? contact!.id;
+            await MethodChannelSvc.invokeMethod("view-contact-form", {'id': contactId});
           } catch (_) {
             showSnackbar("Error", "Failed to find contact on device!");
           }
@@ -60,7 +77,7 @@ class ContactTile extends StatelessWidget {
             ),
           ),
         ),
-        subtitle: contact == null || hideInfo ? null : Text(
+        subtitle: (contact == null && handle.contactsV2.isEmpty) || hideInfo ? null : Text(
           handle.formattedAddress ?? handle.address,
           style: context.theme.textTheme.bodyMedium!.copyWith(color: context.theme.colorScheme.outline),
         ),
@@ -69,14 +86,14 @@ class ContactTile extends StatelessWidget {
           handle: handle,
           borderThickness: 0.1,
         ),
-        trailing: kIsWeb || (kIsDesktop && !isEmail) || (!isEmail && (contact?.phones.isEmpty ?? true))
+        trailing: kIsWeb || (kIsDesktop && !isEmail) || (!isEmail && !hasPhones)
             ? Container(width: 2)
             : FittedBox(
           child: Row(
             mainAxisAlignment: MainAxisAlignment.end,
             mainAxisSize: MainAxisSize.max,
             children: <Widget>[
-              if ((contact == null && isEmail) || (contact?.emails.length ?? 0) > 0)
+              if ((contact == null && contactV2 == null && isEmail) || hasEmails)
                 ButtonTheme(
                   minWidth: 1,
                   child: TextButton(
@@ -95,7 +112,7 @@ class ContactTile extends StatelessWidget {
                     ),
                   ),
                 ),
-              if (((contact == null && !isEmail) || (contact?.phones.length ?? 0) > 0) && !kIsWeb && !kIsDesktop)
+              if (((contact == null && contactV2 == null && !isEmail) || hasPhones) && !kIsWeb && !kIsDesktop)
                 ButtonTheme(
                   minWidth: 1,
                   child: TextButton(
@@ -116,7 +133,7 @@ class ContactTile extends StatelessWidget {
                     ),
                   ),
                 ),
-              if (((contact == null && !isEmail) || (contact?.phones.length ?? 0) > 0) && !kIsWeb && !kIsDesktop)
+              if (((contact == null && contactV2 == null && !isEmail) || hasPhones) && !kIsWeb && !kIsDesktop)
                 ButtonTheme(
                   minWidth: 1,
                   child: TextButton(

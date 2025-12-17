@@ -1,12 +1,11 @@
 import 'dart:convert';
 
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/objectbox.g.dart';
 import 'package:bluebubbles/database/io/message.dart';
+import 'package:bluebubbles/services/backend/descriptors/attachment_query_descriptor.dart';
 import 'package:bluebubbles/services/backend/interfaces/attachment_interface.dart';
 import 'package:bluebubbles/services/services.dart';
-import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:mime_type/mime_type.dart';
 // (needed when generating objectbox model code)
@@ -92,30 +91,6 @@ class Attachment {
     );
   }
 
-  /// Save a new attachment or update an existing attachment on disk
-  /// [message] is used to create a link between the attachment and message,
-  /// when provided
-  Attachment save(Message? message) {
-    if (kIsWeb) return this;
-    Database.runInTransaction(TxMode.write, () {
-      /// Find an existing attachment and update the attachment ID if applicable
-      Attachment? existing = Attachment.findOne(guid!);
-      if (existing != null) {
-        id = existing.id;
-      }
-      try {
-        /// store the attachment and add the link between the message and
-        /// attachment
-        if (message?.id != null) {
-          this.message.target = message;
-        }
-
-        id = Database.attachments.put(this);
-      } on UniqueViolationException catch (_) {}
-    });
-    return this;
-  }
-
   Future<Attachment> saveAsync(Message? message) async {
     if (kIsWeb) return this;
 
@@ -124,34 +99,8 @@ class Attachment {
       messageData: message?.toMap(),
     );
 
-    id = result['ROWID'];
+    id = result.id;
     return this;
-  }
-
-  /// Save many attachments at once. [map] is used to establish a link between
-  /// the message and its attachments.
-  static void bulkSave(Map<Message, List<Attachment>> map) {
-    return Database.runInTransaction(TxMode.write, () {
-      /// convert List<List<Attachment>> into just List<Attachment> (flatten it)
-      final attachments = map.values.flattened.toList();
-      /// find existing attachments
-      List<Attachment> existingAttachments =
-          Attachment.find(cond: Attachment_.guid.oneOf(attachments.map((e) => e.guid!).toList()));
-      /// map existing attachment IDs to the attachments to save, if applicable
-      for (Attachment a in attachments) {
-        final existing = existingAttachments.firstWhereOrNull((e) => e.guid == a.guid);
-        if (existing != null) {
-          a.id = existing.id;
-        }
-      }
-      try {
-        /// store the attachments and update their ids
-        final ids = Database.attachments.putMany(attachments);
-        for (int i = 0; i < attachments.length; i++) {
-          attachments[i].id = ids[i];
-        }
-      } on UniqueViolationException catch (_) {}
-    });
   }
 
   static Future<void> bulkSaveAsync(Map<Message, List<Attachment>> map) async {
@@ -164,58 +113,12 @@ class Attachment {
     await AttachmentInterface.bulkSaveAttachmentsAsync(mapData: mapData);
   }
 
-  /// replaces a temporary attachment with the new one from the server
-  static Future<Attachment> replaceAttachment(String? oldGuid, Attachment newAttachment) async {
-    if (kIsWeb) return newAttachment;
-    Attachment? existing = Attachment.findOne(oldGuid!);
-    if (existing == null) {
-      return Future.error("Old GUID ($oldGuid) does not exist!");
-    }
-    // update current chat image data to prevent the image or video thumbnail from reloading
-    if (cm.activeChat != null) {
-      final data = cvc(cm.activeChat!.chat).imageData[oldGuid];
-      if (data != null) {
-        cvc(cm.activeChat!.chat).imageData.remove(oldGuid);
-        cvc(cm.activeChat!.chat).imageData[newAttachment.guid!] = data;
-      }
-    }
-
-    // update values and save
-    existing.guid = newAttachment.guid;
-    existing.originalROWID = newAttachment.originalROWID;
-    existing.uti = newAttachment.uti;
-    existing.mimeType = newAttachment.mimeType ?? existing.mimeType;
-    existing.isOutgoing = newAttachment.isOutgoing;
-    existing.transferName = newAttachment.transferName;
-    existing.totalBytes = newAttachment.totalBytes;
-    existing.bytes = newAttachment.bytes;
-    existing.webUrl = newAttachment.webUrl;
-    existing.hasLivePhoto = newAttachment.hasLivePhoto;
-    existing.save(null);
-
-    // change the directory path
-    String appDocPath = FilesystemSvc.appDocDir.path;
-    String pathName = "$appDocPath/attachments/$oldGuid";
-    Directory directory = Directory(pathName);
-
-    if (directory.existsSync()) {
-      await directory.rename("$appDocPath/attachments/${newAttachment.guid}");
-    }
-
-    // grab values from existing
-    newAttachment.id = existing.id;
-    newAttachment.width = existing.width;
-    newAttachment.height = existing.height;
-    newAttachment.metadata = existing.metadata;
-    return newAttachment;
-  }
-
   /// replaces a temporary attachment with the new one from the server (async version)
   /// Note: This must be called from the main thread to access cm/cvc services
   static Future<Attachment> replaceAttachmentAsync(String? oldGuid, Attachment newAttachment) async {
     if (kIsWeb) return newAttachment;
-    
-    Attachment? existing = Attachment.findOne(oldGuid!);
+
+    Attachment? existing = await Attachment.findOneAsync(oldGuid!);
     if (existing == null) {
       return Future.error("Old GUID ($oldGuid) does not exist!");
     }
@@ -230,7 +133,7 @@ class Attachment {
     }
 
     // Call the isolate-safe database operations
-    final result = await AttachmentInterface.replaceAttachmentAsync(
+    final updatedAttachment = await AttachmentInterface.replaceAttachmentAsync(
       oldGuid: oldGuid,
       newAttachmentData: newAttachment.toMap(),
     );
@@ -245,7 +148,6 @@ class Attachment {
     }
 
     // Update newAttachment with values from result
-    final updatedAttachment = Attachment.fromMap(result);
     newAttachment.id = updatedAttachment.id;
     newAttachment.width = updatedAttachment.width;
     newAttachment.height = updatedAttachment.height;
@@ -254,53 +156,16 @@ class Attachment {
     return newAttachment;
   }
 
-  /// find an attachment by its guid
-  static Attachment? findOne(String guid) {
-    if (kIsWeb) return null;
-    final query = Database.attachments.query(Attachment_.guid.equals(guid)).build();
-    query.limit = 1;
-    final result = query.findFirst();
-    query.close();
-    return result;
-  }
-
   static Future<Attachment?> findOneAsync(String guid) async {
     if (kIsWeb) return null;
-
-    final result = await AttachmentInterface.findOneAttachmentAsync(guid: guid);
-
-    if (result == null) return null;
-    return Attachment.fromMap(result);
+    return await AttachmentInterface.findOneAttachmentAsync(guid: guid);
   }
 
-  /// Find all attachments matching a specified condition, or all attachments
-  /// if no condition is provided
-  static List<Attachment> find({Condition<Attachment>? cond}) {
-    final query = Database.attachments.query(cond).build();
-    return query.find();
-  }
-
-  static Future<List<Attachment>> findAsync({Condition<Attachment>? cond}) async {
+  static Future<List<Attachment>> findAsync({
+    AttachmentQueryDescriptor? queryDescriptor,
+  }) async {
     if (kIsWeb) return [];
-
-    // Note: For now, we don't serialize conditions for cross-isolate communication
-    // This will return all attachments. Future enhancement can add condition serialization.
-    final result = await AttachmentInterface.findAttachmentsAsync();
-
-    return result.map((e) => Attachment.fromMap(e)).toList();
-  }
-
-  /// Delete an attachment and remove all instances of that attachment in the DB
-  static void delete(String guid) {
-    if (kIsWeb) return;
-    Database.runInTransaction(TxMode.write, () {
-      final query = Database.attachments.query(Attachment_.guid.equals(guid)).build();
-      final result = query.findFirst();
-      query.close();
-      if (result?.id != null) {
-        Database.attachments.remove(result!.id!);
-      }
-    });
+    return await AttachmentInterface.findAttachmentsAsync(queryDescriptor: queryDescriptor);
   }
 
   static Future<void> deleteAsync(String guid) async {

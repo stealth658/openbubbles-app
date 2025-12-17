@@ -138,9 +138,8 @@ class Handle {
     return handle1;
   }
 
-  Map<String, dynamic> toMap({bool includeObjects = false}) {
-
-    final output = {
+  Map<String, dynamic> toMap() {
+    return {
       "ROWID": id,
       "originalROWID": originalROWID,
       "address": address,
@@ -151,13 +150,8 @@ class Handle {
       "color": color,
       "defaultPhone": defaultPhone,
       "defaultEmail": defaultEmail,
+      "contact": contact?.toMap(),
+      "contactRelation": contactRelation.target?.toMap(),
     };
-
-    if (includeObjects) {
-      output['contact'] = contact?.toMap();
-      output['contactRelation'] = contactRelation.target?.toMap();
-    }
-
-    return output;
   }
 }

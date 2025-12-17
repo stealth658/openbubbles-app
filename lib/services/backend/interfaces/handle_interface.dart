@@ -1,10 +1,11 @@
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/env.dart';
 import 'package:bluebubbles/services/backend/actions/handle_actions.dart';
 import 'package:get_it/get_it.dart';
 import 'package:bluebubbles/services/isolates/global_isolate.dart';
 
 class HandleInterface {
-  static Future<Map<String, dynamic>> saveHandleAsync({
+  static Future<Handle> saveHandleAsync({
     required Map<String, dynamic> handleData,
     required bool updateColor,
     required bool matchOnOriginalROWID,
@@ -15,15 +16,18 @@ class HandleInterface {
       'matchOnOriginalROWID': matchOnOriginalROWID,
     };
 
+    late Map<String, dynamic> handleMap;
     if (isIsolate()) {
-      return await HandleActions.saveHandleAsync(data);
+      handleMap = await HandleActions.saveHandleAsync(data);
     } else {
-      return await GetIt.I<GlobalIsolate>()
+      handleMap = await GetIt.I<GlobalIsolate>()
           .send<Map<String, dynamic>>(IsolateRequestType.saveHandleAsync, input: data);
     }
+    
+    return Handle.fromMap(handleMap);
   }
 
-  static Future<List<Map<String, dynamic>>> bulkSaveHandlesAsync({
+  static Future<List<Handle>> bulkSaveHandlesAsync({
     required List<Map<String, dynamic>> handlesData,
     required bool matchOnOriginalROWID,
   }) async {
@@ -32,15 +36,18 @@ class HandleInterface {
       'matchOnOriginalROWID': matchOnOriginalROWID,
     };
 
+    late List<Map<String, dynamic>> handlesDataResult;
     if (isIsolate()) {
-      return await HandleActions.bulkSaveHandlesAsync(data);
+      handlesDataResult = await HandleActions.bulkSaveHandlesAsync(data);
     } else {
-      return await GetIt.I<GlobalIsolate>()
+      handlesDataResult = await GetIt.I<GlobalIsolate>()
           .send<List<Map<String, dynamic>>>(IsolateRequestType.bulkSaveHandlesAsync, input: data);
     }
+    
+    return handlesDataResult.map((e) => Handle.fromMap(e)).toList();
   }
 
-  static Future<Map<String, dynamic>?> findOneHandleAsync({
+  static Future<Handle?> findOneHandleAsync({
     int? id,
     int? originalROWID,
     String? address,
@@ -53,20 +60,28 @@ class HandleInterface {
       'service': service,
     };
 
+    late Map<String, dynamic>? handleMap;
     if (isIsolate()) {
-      return await HandleActions.findOneHandleAsync(data);
+      handleMap = await HandleActions.findOneHandleAsync(data);
     } else {
-      return await GetIt.I<GlobalIsolate>()
+      handleMap = await GetIt.I<GlobalIsolate>()
           .send<Map<String, dynamic>?>(IsolateRequestType.findOneHandleAsync, input: data);
     }
+    
+    if (handleMap == null) return null;
+    
+    return Handle.fromMap(handleMap);
   }
 
-  static Future<List<Map<String, dynamic>>> findHandlesAsync() async {
+  static Future<List<Handle>> findHandlesAsync() async {
+    late List<Map<String, dynamic>> handlesData;
     if (isIsolate()) {
-      return await HandleActions.findHandlesAsync({});
+      handlesData = await HandleActions.findHandlesAsync({});
     } else {
-      return await GetIt.I<GlobalIsolate>()
+      handlesData = await GetIt.I<GlobalIsolate>()
           .send<List<Map<String, dynamic>>>(IsolateRequestType.findHandlesAsync, input: {});
     }
+    
+    return handlesData.map((e) => Handle.fromMap(e)).toList();
   }
 }

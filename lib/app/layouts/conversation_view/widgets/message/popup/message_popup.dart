@@ -817,7 +817,7 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
 
   void messageInfo() {
     const encoder = JsonEncoder.withIndent("     ");
-    Map map = message.toMap(includeObjects: true);
+    Map map = message.toMap();
     if (map["dateCreated"] is int) {
       map["dateCreated"] = DateFormat("MMMM d, yyyy h:mm:ss a").format(DateTime.fromMillisecondsSinceEpoch(map["dateCreated"]));
     }

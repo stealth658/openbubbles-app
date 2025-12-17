@@ -61,7 +61,7 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
       }
       Navigator.of(context, rootNavigator: true).pop();
       SettingsSvc.settings.userName.value = nameController.text;
-      await SettingsSvc.settings.saveOne("userName");
+      await SettingsSvc.settings.saveOneAsync("userName");
       setState(() {});
     }
     await showDialog(

@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/popup/details_menu_action.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
+import 'package:bluebubbles/services/backend/interfaces/prefs_interface.dart';
 import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:collection/collection.dart';
@@ -10,7 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:get/get.dart';
-import 'package:logger/logger.dart';
+import 'package:logger/logger.dart' show Level;
 import 'package:universal_io/io.dart';
 
 class Settings {
@@ -216,6 +217,10 @@ class Settings {
 
   Future<Settings> saveAsync() async {
     Map<String, dynamic> map = toMap(includeAll: true);
+
+    // Ensure the GlobalIsolate's settings are also updated
+    await PrefsInterface.syncAllSettings(settings: map);
+
     // Wait for each key to be saved before moving on
     await Future.forEach(map.entries, (entry) async {
       await _savePref(entry.key, entry.value);
@@ -224,17 +229,24 @@ class Settings {
     return this;
   }
 
-  Future<Settings> saveOne(String key) async {
+  Future<Settings> saveOneAsync(String key) async {
     Map<String, dynamic> map = toMap(includeAll: true);
     if (map.containsKey(key)) {
+      // Ensure the GlobalIsolate's settings are also updated
+      await PrefsInterface.syncSettings({key: map[key]});
       await _savePref(key, map[key]);
     }
 
     return this;
   }
 
-  Future<Settings> saveMany(List<String> keys) async {
+  Future<Settings> saveManyAsync(List<String> keys) async {
     Map<String, dynamic> map = toMap(includeAll: true);
+    map.removeWhere((key, value) => !keys.contains(key));
+
+    // Ensure the GlobalIsolate's settings are also updated
+    await PrefsInterface.syncSettings(map);
+
     for (String key in keys) {
       if (map.containsKey(key)) {
         await _savePref(key, map[key]);

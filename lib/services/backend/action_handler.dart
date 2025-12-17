@@ -122,23 +122,23 @@ class ActionHandler extends GetxService {
     // First, try to find a matching message with the replacement's GUID.
     // We check this first because if an event came in for that GUID, we should be able to ignore
     // the API response.
-    final existingReplacementMessage = Attachment.findOne(replacement.guid!);
+    final existingReplacementMessage = await Attachment.findOneAsync(replacement.guid!);
     if (existingReplacementMessage != null) {
       Logger.debug("Replacing existing attachment with GUID ${replacement.guid}...", tag: "AttachmentStatus");
-      await Attachment.replaceAttachment(replacement.guid, replacement);
+      await Attachment.replaceAttachmentAsync(replacement.guid, replacement);
       
       // Delete the temp message if it exists
       if (existingGuid != replacement.guid) {
         Logger.debug("Deleting temp attachment with GUID $existingGuid...", tag: "AttachmentStatus");
-        final existingTempMessage = Attachment.findOne(existingGuid);
+        final existingTempMessage = await Attachment.findOneAsync(existingGuid);
         if (existingTempMessage != null) {
-          Attachment.delete(existingTempMessage.guid!);
+          await Attachment.deleteAsync(existingTempMessage.guid!);
         }
       }
     } else {
       try {
         Logger.debug("Replacing original attachment with GUID $existingGuid with ${replacement.guid}...", tag: "AttachmentStatus");
-        await Attachment.replaceAttachment(existingGuid, replacement);
+        await Attachment.replaceAttachmentAsync(existingGuid, replacement);
       } catch (ex) {
         Logger.warn("Unable to find & replace attachment with GUID $existingGuid...", error: ex, tag: "AttachmentStatus");
       }
@@ -343,7 +343,7 @@ class ActionHandler extends GetxService {
     }
     // should have been handled by the sanity check
     if (tempGuid != null) return;
-    Logger.info("New message: [${m.text}] - for chat [${c.guid}]", tag: "ActionHandler");
+
     // Gets the chat from the db or server (if new)
     c = m.isParticipantEvent ? await handleNewOrUpdatedChat(c) : kIsWeb ? c : (Chat.findOne(guid: c.guid) ?? await handleNewOrUpdatedChat(c));
     // Get the message handle

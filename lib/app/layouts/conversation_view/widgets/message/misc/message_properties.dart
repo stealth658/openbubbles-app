@@ -81,20 +81,27 @@ class _MessagePropertiesState extends CustomState<MessageProperties, void, Messa
 
   @override
   Widget build(BuildContext context) {
-    final props = getProperties();
-    return AnimatedSize(
-      curve: Curves.easeInOut,
-      alignment: Alignment.bottomCenter,
-      duration: const Duration(milliseconds: 250),
-      child: props.isNotEmpty ? Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 15).add(const EdgeInsets.only(top: 3)),
-        child: Text.rich(
-          TextSpan(
-            children: intersperse(const TextSpan(text: " • "), props).toList(),
+    return Obx(() {
+      // Observe granular thread replies flag to minimize rebuilds
+      controller.threadRepliesChanged.value;
+      // Also observe showEdits since that's toggled directly
+      controller.showEdits.value;
+      
+      final props = getProperties();
+      return AnimatedSize(
+        curve: Curves.easeInOut,
+        alignment: Alignment.bottomCenter,
+        duration: const Duration(milliseconds: 250),
+        child: props.isNotEmpty ? Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 15).add(const EdgeInsets.only(top: 3)),
+          child: Text.rich(
+            TextSpan(
+              children: intersperse(const TextSpan(text: " • "), props).toList(),
+            ),
+            style: context.theme.textTheme.labelSmall!.copyWith(color: context.theme.colorScheme.primary, fontWeight: FontWeight.bold),
           ),
-          style: context.theme.textTheme.labelSmall!.copyWith(color: context.theme.colorScheme.primary, fontWeight: FontWeight.bold),
-        ),
-      ) : const SizedBox.shrink(),
-    );
+        ) : const SizedBox.shrink(),
+      );
+    });
   }
 }

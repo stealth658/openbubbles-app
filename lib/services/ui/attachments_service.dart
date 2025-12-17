@@ -385,7 +385,7 @@ class AttachmentsService extends GetxService {
             attachment.width = size.width.toInt();
             attachment.height = size.height.toInt();
           }
-          attachment.save(null);
+          await attachment.saveAsync(null);
         } catch (ex, stack) {
           Logger.error('Failed to get GIF dimensions!', error: ex, trace: stack);
         }
@@ -396,7 +396,7 @@ class AttachmentsService extends GetxService {
             attachment.width = size.width.toInt();
             attachment.height = size.height.toInt();
           }
-          attachment.save(null);
+          await attachment.saveAsync(null);
         } catch (ex, stack) {
           Logger.error('Failed to get Image Properties!', error: ex, trace: stack);
         }
@@ -412,7 +412,7 @@ class AttachmentsService extends GetxService {
         for (MapEntry<String, IfdTag> item in exif.entries) {
           attachment.metadata![item.key] = item.value.printable;
         }
-        attachment.save(null);
+        await attachment.saveAsync(null);
       } catch (ex, stack) {
         Logger.error('Failed to read EXIF data!', error: ex, trace: stack);
       }

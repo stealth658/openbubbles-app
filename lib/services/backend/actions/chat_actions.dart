@@ -269,9 +269,12 @@ class ChatActions {
       }
 
       // Save attachments
+      print('[addMessageToChat] Saving ${inputMessage.attachments.length} attachments for message ${inputMessage.guid} (ID: $messageId)');
       for (Attachment? attachment in inputMessage.attachments) {
         if (attachment == null) continue;
 
+        print('[addMessageToChat] Processing attachment ${attachment.guid}');
+        
         // Find existing attachment
         final attachQuery = attachmentBox.query(Attachment_.guid.equals(attachment.guid ?? '')).build();
         attachQuery.limit = 1;
@@ -280,16 +283,35 @@ class ChatActions {
 
         if (existingAttach != null) {
           attachment.id = existingAttach.id;
+          print('[addMessageToChat] Found existing attachment with ID ${existingAttach.id}');
+        } else {
+          print('[addMessageToChat] New attachment, will create');
         }
 
         // Link message to attachment
         if (messageId != null) {
           attachment.message.target = inputMessage;
+          print('[addMessageToChat] Linked attachment ${attachment.guid} to message ${inputMessage.guid} (ID: $messageId)');
+        } else {
+          print('[addMessageToChat] WARNING: No messageId to link attachment to!');
         }
 
         try {
-          attachmentBox.put(attachment);
-        } on UniqueViolationException catch (_) {}
+          final attachmentId = attachmentBox.put(attachment);
+          print('[addMessageToChat] Saved attachment ${attachment.guid} with ID $attachmentId, message link: ${attachment.message.target?.id}');
+        } on UniqueViolationException catch (_) {
+          print('[addMessageToChat] UniqueViolationException for attachment ${attachment.guid}');
+        }
+      }
+      
+      // Verify attachments were saved
+      if (messageId != null && inputMessage.attachments.isNotEmpty) {
+        final verifyQuery = (attachmentBox.query(Attachment_.id.notNull())
+              ..link(Attachment_.message, Message_.id.equals(messageId)))
+            .build();
+        final savedAttachments = verifyQuery.find();
+        verifyQuery.close();
+        print('[addMessageToChat] VERIFICATION: Found ${savedAttachments.length} attachments linked to message $messageId in DB');
       }
 
       // Calculate if message is newer
@@ -309,7 +331,6 @@ class ChatActions {
 
   static Future<Map<String, dynamic>> loadSupplementalData(Map<String, dynamic> data) async {
     final messageGuids = (data['messageGuids'] as List).cast<String>();
-    final messageIds = (data['messageIds'] as List).cast<int>();
 
     return Database.runInTransaction(TxMode.read, () {
       final messageBox = Database.messages;
@@ -322,28 +343,37 @@ class ChatActions {
       final reactions = reactionsQuery.find();
       reactionsQuery.close();
 
-      // Query attachments
-      final attachmentQuery = (attachmentBox.query(Attachment_.id.notNull())
-            ..link(Attachment_.message, Message_.id.oneOf(messageIds)))
-          .build();
-      final attachments = attachmentQuery.find();
-      attachmentQuery.close();
-
-      // Query sticker attachments
+      // Query sticker attachments for reactions
       final stickerMessageIds =
           reactions.where((m) => m.associatedMessageType == "sticker").map((m) => m.id!).toList();
 
+      final stickerAttachments = <Attachment>[];
       if (stickerMessageIds.isNotEmpty) {
-        final stickerQuery = (attachmentBox.query(Attachment_.id.notNull())
+        final stickerQuery = (attachmentBox.query(Attachment_.mimeType.notNull())
               ..link(Attachment_.message, Message_.id.oneOf(stickerMessageIds)))
             .build();
-        attachments.addAll(stickerQuery.find());
+        stickerAttachments.addAll(stickerQuery.find());
         stickerQuery.close();
+      }
+
+      // Build sticker attachment map
+      final stickerAttachmentMap = <int, List<Attachment>>{};
+      for (final attachment in stickerAttachments) {
+        final messageId = attachment.message.target?.id;
+        if (messageId != null) {
+          stickerAttachmentMap.putIfAbsent(messageId, () => []).add(attachment);
+        }
+      }
+
+      // Assign sticker attachments to reaction messages
+      for (final reaction in reactions) {
+        if (reaction.associatedMessageType == "sticker") {
+          reaction.attachments = stickerAttachmentMap[reaction.id] ?? [];
+        }
       }
 
       return <String, dynamic>{
         'reactions': reactions.map((e) => Map<String, dynamic>.from(e.toMap())).toList(),
-        'attachments': attachments.map((e) => Map<String, dynamic>.from(e.toMap())).toList(),
       };
     });
   }
@@ -551,8 +581,8 @@ class ChatActions {
 
       if (searchAround == null) {
         final query = (messageBox.query(includeDeleted
-                ? Message_.dateCreated.notNull().and(Message_.dateDeleted.isNull().or(Message_.dateDeleted.notNull()))
-                : Message_.dateDeleted.isNull().and(Message_.dateCreated.notNull()))
+          ? Message_.dateCreated.notNull().and(Message_.dateDeleted.isNull().or(Message_.dateDeleted.notNull()))
+          : Message_.dateDeleted.isNull().and(Message_.dateCreated.notNull()))
               ..link(Message_.chat, Chat_.id.equals(chatId))
               ..order(Message_.dateCreated, flags: Order.descending))
             .build();
@@ -597,6 +627,50 @@ class ChatActions {
           }
         }
       }
+
+      // Access dbAttachments to trigger lazy-load for each message
+      for (final message in messages) {
+        // Simply accessing dbAttachments will trigger the load from DB
+        final _ = message.dbAttachments.length; // Forces the load
+        
+        // Now populate the attachments field from dbAttachments
+        if (message.hasAttachments) {
+          message.attachments = List<Attachment>.from(message.dbAttachments);
+        }
+      }
+
+      // // Query attachments for messages
+      // // Note: We query attachments separately because ToMany relationships are lazy-loaded
+      // // and we need to populate the 'attachments' field (not dbAttachments) for serialization
+      // final attachmentBox = Database.attachments;
+      // final messageIds = messages.map((e) => e.id!).toList();
+      
+      // if (messageIds.isNotEmpty) {
+      //   final attachmentQuery = (attachmentBox.query(Attachment_.id.notNull())
+      //         ..link(Attachment_.message, Message_.id.oneOf(messageIds)))
+      //       .build();
+      //   final attachments = attachmentQuery.find();
+      //   attachmentQuery.close();
+
+      //   // Build attachment map by message ID
+      //   final attachmentMap = <int, List<Attachment>>{};
+      //   for (final attachment in attachments) {
+      //     final messageId = attachment.message.target?.id;
+      //     if (messageId != null) {
+      //       attachmentMap.putIfAbsent(messageId, () => []).add(attachment);
+      //     }
+      //   }
+
+      //   // IMPORTANT: Populate the 'attachments' field for serialization
+      //   // Do NOT modify 'dbAttachments' here - it represents the persisted DB relationship
+      //   // and should only be modified when actually saving/updating messages in the DB
+      //   for (final message in messages) {
+      //     final messageAttachments = attachmentMap[message.id];
+      //     if (messageAttachments != null && messageAttachments.isNotEmpty) {
+      //       message.attachments = messageAttachments;
+      //     }
+      //   }
+      // }
 
       return messages.map((e) => Map<String, dynamic>.from(e.toMap())).toList();
     });
@@ -663,7 +737,17 @@ class ChatActions {
       // Invoke a final put call to sync the relational data
       for (Message m in syncedMessages) {
         try {
+          // CRITICAL: Preserve dbAttachments ToMany relationship before put
+          final attachmentsToPreserve = List<Attachment>.from(m.dbAttachments);
+          
           Database.messages.put(m);
+          
+          // Restore and apply attachments after put
+          if (attachmentsToPreserve.isNotEmpty) {
+            m.dbAttachments.clear();
+            m.dbAttachments.addAll(attachmentsToPreserve);
+            m.dbAttachments.applyToDb();
+          }
         } catch (_) {}
       }
 
@@ -733,7 +817,24 @@ class ChatActions {
       }
 
       if (mods > 0) {
+        // CRITICAL: Preserve dbAttachments ToMany relationships before putMany
+        final attachmentPreservation = <String, List<Attachment>>{};
+        for (final msg in existingMessages) {
+          if (msg.dbAttachments.isNotEmpty) {
+            attachmentPreservation[msg.guid!] = List<Attachment>.from(msg.dbAttachments);
+          }
+        }
+        
         messageBox.putMany(existingMessages, mode: PutMode.update);
+        
+        // Restore attachments after putMany
+        for (final msg in existingMessages) {
+          if (attachmentPreservation.containsKey(msg.guid)) {
+            msg.dbAttachments.clear();
+            msg.dbAttachments.addAll(attachmentPreservation[msg.guid]!);
+            msg.dbAttachments.applyToDb();
+          }
+        }
       }
     }
 
@@ -748,7 +849,25 @@ class ChatActions {
       messages[i].chat.target = c;
     }
 
+    // CRITICAL: Preserve dbAttachments ToMany relationships before putMany
+    final attachmentPreservation = <String, List<Attachment>>{};
+    for (final msg in messages) {
+      if (msg.dbAttachments.isNotEmpty) {
+        attachmentPreservation[msg.guid!] = List<Attachment>.from(msg.dbAttachments);
+      }
+    }
+
     messageBox.putMany(messages, mode: PutMode.update);
+
+    // Restore attachments after putMany
+    for (final msg in messages) {
+      if (attachmentPreservation.containsKey(msg.guid)) {
+        msg.dbAttachments.clear();
+        msg.dbAttachments.addAll(attachmentPreservation[msg.guid]!);
+        msg.dbAttachments.applyToDb();
+      }
+    }
+    
     return messages;
   }
 
@@ -800,11 +919,10 @@ class ChatActions {
         queryBuilder = chatBox.query(Chat_.dateDeleted.isNull());
       }
 
-      // Build the query with sorting, limit, and offset
-      final query = (queryBuilder
-            ..order(Chat_.isPinned, flags: Order.descending)
-            ..order(Chat_.dbOnlyLatestMessageDate, flags: Order.descending))
-          .build()
+      // Build the query with limit and offset
+      // Note: No ordering at DB level - ChatService handles proper ordering
+      // including pinIndex which DB cannot efficiently order by
+      final query = queryBuilder.build()
         ..limit = limit
         ..offset = offset;
 

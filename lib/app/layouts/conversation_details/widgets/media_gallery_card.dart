@@ -127,7 +127,7 @@ class _MediaGalleryCardState extends OptimizedState<MediaGalleryCard> with Autom
       if (attachment.metadata?['thumbnail_status'] != 'error') {
         attachment.metadata ??= {};
         attachment.metadata!['thumbnail_status'] = 'error';
-        attachment.save(null);
+        await attachment.saveAsync(null);
       }
     }
 

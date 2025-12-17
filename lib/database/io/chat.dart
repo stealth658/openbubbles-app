@@ -665,7 +665,7 @@ class Chat {
   }
 
   /// Fetch messages asynchronously with progressive loading
-  /// Returns messages immediately, then loads reactions/attachments in background
+  /// Returns messages with attachments, then loads reactions in background
   static Future<List<Message>> getMessagesAsync(Chat chat,
       {int offset = 0,
       int limit = 25,
@@ -676,8 +676,8 @@ class Chat {
 
     final totalStopwatch = Stopwatch()..start();
 
-    // PHASE 1: Quick message query using interface/actions pattern
-    final messagesData = await ChatInterface.getMessagesAsync(
+    // PHASE 1: Query messages with attachments using interface/actions pattern
+    final messages = await ChatInterface.getMessagesAsync(
       chatId: chat.id!,
       chatGuid: chat.guid,
       participantsData: chat.participants.map((e) => e.toMap()).toList(),
@@ -687,21 +687,15 @@ class Chat {
       searchAround: searchAround,
     );
 
-    final messages = messagesData.map((e) => Message.fromMap(e)).toList();
-
-    Logger.debug(
-        "[getMessagesAsync] Phase 1 - Messages only: ${totalStopwatch.elapsedMilliseconds}ms (${messages.length} messages)");
-
     if (messages.isEmpty) {
       return messages;
     }
 
-    // PHASE 2: Load supplemental data in background (non-blocking)
+    // PHASE 2: Load reactions in background (non-blocking)
     final messageGuids = messages.map((e) => e.guid!).toList();
-    final messageIds = messages.map((e) => e.id!).toList();
 
     // Don't await - let this run in background and call callback when done
-    _loadSupplementalDataAsync(messages, messageGuids, messageIds, totalStopwatch, onSupplementalDataLoaded);
+    _loadSupplementalDataAsync(messages, messageGuids, totalStopwatch, onSupplementalDataLoaded);
 
     totalStopwatch.stop();
     Logger.debug("[getMessagesAsync] RETURNED (Phase 1 complete): ${totalStopwatch.elapsedMilliseconds}ms");
@@ -710,11 +704,10 @@ class Chat {
     return messages;
   }
 
-  /// Load reactions and attachments in background and append to messages
+  /// Load reactions in background and append to messages
   static Future<void> _loadSupplementalDataAsync(
     List<Message> messages,
     List<String> messageGuids,
-    List<int> messageIds,
     Stopwatch totalStopwatch,
     Function? onComplete,
   ) async {
@@ -723,44 +716,25 @@ class Chat {
     try {
       final result = await ChatInterface.loadSupplementalData(
         messageGuids: messageGuids,
-        messageIds: messageIds,
       );
 
       Logger.debug("[getMessagesAsync] Phase 2 - Supplemental query: ${supplementalStopwatch.elapsedMilliseconds}ms");
 
-      // Deserialize on main thread
+      // Deserialize reactions on main thread
       var associatedMessages =
           (result['reactions'] as List).map((e) => Message.fromMap(e as Map<String, dynamic>)).toList();
-      final allAttachments =
-          (result['attachments'] as List).map((e) => Attachment.fromMap(e as Map<String, dynamic>)).toList();
 
       // Normalize reactions
       associatedMessages = MessageHelper.normalizedAssociatedMessages(associatedMessages);
 
-      // Build attachment map
-      final attachmentMap = <int, List<Attachment>>{};
-      for (final attachment in allAttachments) {
-        final messageId = attachment.message.target?.id;
-        if (messageId != null) {
-          attachmentMap.putIfAbsent(messageId, () => []).add(attachment);
-        }
-      }
-
-      // Append attachments and reactions to original messages
-      for (Message m in associatedMessages) {
-        if (m.associatedMessageType == "sticker") {
-          m.attachments = attachmentMap[m.id] ?? [];
-        }
-      }
-
+      // Append reactions to original messages
       for (Message m in messages) {
-        m.attachments = attachmentMap[m.id] ?? [];
         m.associatedMessages = associatedMessages.where((e) => e.associatedMessageGuid == m.guid).toList();
       }
 
       supplementalStopwatch.stop();
       Logger.debug(
-          "[getMessagesAsync] Phase 2 - COMPLETE: ${supplementalStopwatch.elapsedMilliseconds}ms (${associatedMessages.length} reactions, ${allAttachments.length} attachments)");
+          "[getMessagesAsync] Phase 2 - COMPLETE: ${supplementalStopwatch.elapsedMilliseconds}ms (${associatedMessages.length} reactions)");
 
       // Notify caller that supplemental data has been loaded
       if (onComplete != null) {
@@ -773,9 +747,43 @@ class Chat {
 
   Chat getParticipants() {
     if (kIsWeb || id == null) return this;
+    
+    // Only fetch if participants haven't been loaded yet
+    // This prevents redundant database queries on every access
+    if (_participants.isNotEmpty) {
+      return this;
+    }
+    
     Database.runInTransaction(TxMode.read, () {
-      /// Find the handles themselves
-      _participants = List<Handle>.from(handles);
+      // Check if participants were deserialized from JSON
+      // If _participants is empty, load from handles relationship
+      if (handles.isNotEmpty) {
+        _participants = List<Handle>.from(handles);
+      }
+      
+      // Now re-fetch to get proper ObjectBox instances with relationships
+      if (_participants.isNotEmpty) {
+        final handleIds = _participants.map((h) => h.id).whereType<int>().where((id) => id != 0).toList();
+        
+        if (handleIds.isNotEmpty) {
+          final handlesBox = Database.handles;
+          final fetchedHandles = handlesBox.getMany(handleIds).whereType<Handle>().toList();
+          _participants = fetchedHandles;
+        }
+      }
+      
+      // Explicitly access contactsV2 for each handle and cache the contact name
+      // This MUST happen within the transaction so backlinks are loaded properly
+      for (final handle in _participants) {
+        final contactCount = handle.contactsV2.length;
+        
+        // Cache the contact name while we're in the transaction
+        if (contactCount > 0) {
+          handle.cachedContactName = handle.contactsV2.first.displayName;
+        } else {
+          handle.cachedContactName = null;
+        }
+      }
     });
 
     _deduplicateParticipants();
@@ -785,12 +793,11 @@ class Chat {
   Future<Chat> getParticipantsAsync() async {
     if (kIsWeb || id == null) return this;
 
-    final participantsData = await ChatInterface.getParticipantsAsync(
+    _participants = await ChatInterface.getParticipantsAsync(
       chatId: id!,
       chatGuid: guid,
     );
 
-    _participants = participantsData.map((e) => Handle.fromMap(e)).toList();
     _deduplicateParticipants();
     return this;
   }
@@ -876,18 +883,43 @@ class Chat {
   static Future<List<Chat>> getChatsAsync({int limit = 15, int offset = 0, List<int> ids = const []}) async {
     if (kIsWeb) throw Exception("Use socket to get chats on Web!");
 
-    final result = await ChatInterface.getChatsAsync(
+    final chats = await ChatInterface.getChatsAsync(
       limit: limit,
       offset: offset,
       ids: ids,
     );
-
-    // Deserialize and generate titles on the main thread
-    final chats = result.map((e) => Chat.fromMap(e)).toList();
+    
+    // Populate contact name cache on main thread for ALL chats in one transaction
+    // The cache populated in the isolate doesn't transfer through JSON serialization
+    Database.runInTransaction(TxMode.read, () {
+      for (Chat c in chats) {
+        // Re-fetch handles from ObjectBox to get proper instances with relationships
+        if (c._participants.isNotEmpty) {
+          final handleIds = c._participants.map((h) => h.id).whereType<int>().where((id) => id != 0).toList();
+          
+          if (handleIds.isNotEmpty) {
+            final handlesBox = Database.handles;
+            final fetchedHandles = handlesBox.getMany(handleIds).whereType<Handle>().toList();
+            c._participants = fetchedHandles;
+            
+            // Cache contact names while in transaction
+            for (final handle in c._participants) {
+              final contactCount = handle.contactsV2.length;
+              if (contactCount > 0) {
+                handle.cachedContactName = handle.contactsV2.first.displayName;
+              } else {
+                handle.cachedContactName = null;
+              }
+            }
+          }
+        }
+      }
+    });
     
     // Generate titles on the main thread (lightweight operation)
     for (Chat c in chats) {
-      c.title = c.getTitle();
+      final generatedTitle = c.getTitle();
+      c.title = generatedTitle;
     }
 
     return chats;
@@ -899,35 +931,29 @@ class Chat {
 
     final inputGuids = chats.map((e) => e.guid).toList();
 
-    final result = await ChatInterface.syncLatestMessages(
+    return await ChatInterface.syncLatestMessages(
       chatGuids: inputGuids,
       toggleUnread: toggleUnread,
     );
-
-    return result.map((e) => Chat.fromMap(e)).toList();
   }
 
   static Future<List<Chat>> bulkSyncChats(List<Chat> chats) async {
     if (kIsWeb) throw Exception("Web does not support saving chats!");
     if (chats.isEmpty) return [];
 
-    final result = await ChatInterface.bulkSyncChats(
+    return await ChatInterface.bulkSyncChats(
       chatsData: chats.map((e) => e.toMap()).toList(),
     );
-
-    return result.map((e) => Chat.fromMap(e)).toList();
   }
 
   static Future<List<Message>> bulkSyncMessages(Chat chat, List<Message> messages) async {
     if (kIsWeb) throw Exception("Web does not support saving messages!");
+    
     if (messages.isEmpty) return [];
-
-    final result = await ChatInterface.bulkSyncMessages(
+    return await ChatInterface.bulkSyncMessages(
       chatData: chat.toMap(),
       messagesData: messages.map((e) => e.toMap()).toList(),
     );
-
-    return result.map((e) => Message.fromMap(e)).toList();
   }
 
   void clearTranscript() {

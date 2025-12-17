@@ -1,24 +1,35 @@
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/env.dart';
 import 'package:bluebubbles/services/backend/actions/attachment_actions.dart';
+import 'package:bluebubbles/services/backend/descriptors/attachment_query_descriptor.dart';
+import 'package:bluebubbles/services/backend/hydration/attachment_hydration.dart';
 import 'package:bluebubbles/services/isolates/global_isolate.dart';
 import 'package:get_it/get_it.dart';
 
 class AttachmentInterface {
-  static Future<Map<String, dynamic>> saveAttachmentAsync({
+  static Future<Attachment> saveAttachmentAsync({
     required Map<String, dynamic> attachmentData,
     Map<String, dynamic>? messageData,
+    bool hydrateMessage = true,
   }) async {
     final data = {
       'attachmentData': attachmentData,
       'messageData': messageData,
     };
 
+    late Map<String, dynamic> attachmentMap;
     if (isIsolate()) {
-      return await AttachmentActions.saveAttachmentAsync(data);
+      attachmentMap = await AttachmentActions.saveAttachmentAsync(data);
     } else {
-      return await GetIt.I<GlobalIsolate>()
+      attachmentMap = await GetIt.I<GlobalIsolate>()
           .send<Map<String, dynamic>>(IsolateRequestType.saveAttachmentAsync, input: data);
     }
+    
+    final attachment = Attachment.fromMap(attachmentMap);
+    if (hydrateMessage) {
+      AttachmentHydration.hydrate(attachment);
+    }
+    return attachment;
   }
 
   static Future<void> bulkSaveAttachmentsAsync({
@@ -36,45 +47,77 @@ class AttachmentInterface {
     }
   }
 
-  static Future<Map<String, dynamic>> replaceAttachmentAsync({
+  static Future<Attachment> replaceAttachmentAsync({
     required String oldGuid,
     required Map<String, dynamic> newAttachmentData,
+    bool hydrateMessage = true,
   }) async {
     final data = {
       'oldGuid': oldGuid,
       'newAttachmentData': newAttachmentData,
     };
 
+    late Map<String, dynamic> attachmentMap;
     if (isIsolate()) {
-      return await AttachmentActions.replaceAttachmentAsync(data);
+      attachmentMap = await AttachmentActions.replaceAttachmentAsync(data);
     } else {
-      return await GetIt.I<GlobalIsolate>()
+      attachmentMap = await GetIt.I<GlobalIsolate>()
           .send<Map<String, dynamic>>(IsolateRequestType.replaceAttachmentAsync, input: data);
     }
+    
+    final attachment = Attachment.fromMap(attachmentMap);
+    if (hydrateMessage) {
+      AttachmentHydration.hydrate(attachment);
+    }
+    return attachment;
   }
 
-  static Future<Map<String, dynamic>?> findOneAttachmentAsync({
+  static Future<Attachment?> findOneAttachmentAsync({
     required String guid,
+    bool hydrateMessage = true,
   }) async {
     final data = {
       'guid': guid,
     };
 
+    late Map<String, dynamic>? attachmentMap;
     if (isIsolate()) {
-      return await AttachmentActions.findOneAttachmentAsync(data);
+      attachmentMap = await AttachmentActions.findOneAttachmentAsync(data);
     } else {
-      return await GetIt.I<GlobalIsolate>()
+      attachmentMap = await GetIt.I<GlobalIsolate>()
           .send<Map<String, dynamic>?>(IsolateRequestType.findOneAttachmentAsync, input: data);
     }
+    
+    if (attachmentMap == null) return null;
+    
+    final attachment = Attachment.fromMap(attachmentMap);
+    if (hydrateMessage) {
+      AttachmentHydration.hydrate(attachment);
+    }
+    return attachment;
   }
 
-  static Future<List<Map<String, dynamic>>> findAttachmentsAsync() async {
+  static Future<List<Attachment>> findAttachmentsAsync({
+    AttachmentQueryDescriptor? queryDescriptor,
+    bool hydrateMessage = true,
+  }) async {
+    final data = {
+      'queryDescriptor': queryDescriptor?.toMap(),
+    };
+    
+    late List<Map<String, dynamic>> attachmentsData;
     if (isIsolate()) {
-      return await AttachmentActions.findAttachmentsAsync({});
+      attachmentsData = await AttachmentActions.findAttachmentsAsync(data);
     } else {
-      return await GetIt.I<GlobalIsolate>()
-          .send<List<Map<String, dynamic>>>(IsolateRequestType.findAttachmentsAsync, input: {});
+      attachmentsData = await GetIt.I<GlobalIsolate>()
+          .send<List<Map<String, dynamic>>>(IsolateRequestType.findAttachmentsAsync, input: data);
     }
+    
+    final attachments = attachmentsData.map((e) => Attachment.fromMap(e)).toList();
+    if (hydrateMessage) {
+      AttachmentHydration.hydrateAll(attachments);
+    }
+    return attachments;
   }
 
   static Future<void> deleteAttachmentAsync({

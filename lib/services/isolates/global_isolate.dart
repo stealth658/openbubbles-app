@@ -349,6 +349,7 @@ enum IsolateRequestType {
   // Prefs actions
   saveReplyToMessageState,
   loadReplyToMessageState,
+  syncAllSettings,
   syncSettings,
 
   // Messages actions
@@ -380,6 +381,14 @@ enum IsolateRequestType {
   // Contact actions
   saveContactAsync,
   findOneContactAsync,
+
+  // ContactV2 actions (new contact service)
+  fetchAndMatchContactsV2,
+  checkContactChangesV2,
+  getStoredContactIdsV2,
+  findOneContactV2,
+  getContactsForHandlesV2,
+  refreshContactsV2,
 
   // Attachment actions
   saveAttachmentAsync,

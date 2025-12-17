@@ -506,6 +506,23 @@ Future<void> paintAvatar(
     bool inGroup = false}) async {
   fontSize ??= size * 0.5;
   borderWidth ??= size * 0.05;
+  
+  // Check ContactV2 avatars from disk first (more efficient)
+  final contactV2 = handle?.contactsV2.firstOrNull;
+  if (contactV2?.avatarPath != null) {
+    try {
+      final avatarBytes = await File(contactV2!.avatarPath!).readAsBytes();
+      Uint8List? contactAvatar = await clip(avatarBytes, size: size.toInt(), circle: kIsDesktop || inGroup);
+      if (contactAvatar != null) {
+        canvas.drawImage(await loadImage(contactAvatar), offset, Paint());
+        return;
+      }
+    } catch (e) {
+      // Fall through to old contact or gradient
+    }
+  }
+  
+  // Fall back to old Contact avatar (in-memory)
   Contact? contact = handle?.contact ?? (handle != null ? ContactsSvc.getContact(handle.address) : null);
   if (contact?.avatar != null) {
     Uint8List? contactAvatar = await clip(contact!.avatar ?? contact.avatar!, size: size.toInt(), circle: kIsDesktop || inGroup);

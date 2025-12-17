@@ -8,6 +8,7 @@ import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
 import 'package:bluebubbles/services/isolates/global_isolate.dart';
 import 'package:bluebubbles/services/services.dart';
+import 'package:bluebubbles/services/ui/contact_service_v2.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -119,6 +120,13 @@ class StartupTasks {
       return contactsService;
     });
 
+    Logger.info("Registering ContactServiceV2...");
+    GetIt.I.registerSingletonAsync<ContactServiceV2>(() async {
+      final contactServiceV2 = ContactServiceV2();
+      await contactServiceV2.init();
+      return contactServiceV2;
+    });
+
     Logger.info("Registering IntentsService, SyncService, and ThemesService...");
     GetIt.I.registerSingleton<IntentsService>(IntentsService());
     GetIt.I.registerSingleton<SyncService>(SyncService());
@@ -132,6 +140,7 @@ class StartupTasks {
       ThemeSvc.init(),
       IntentsSvc.init(),
       GetIt.I.isReady<ContactsService>(),
+      GetIt.I.isReady<ContactServiceV2>(),
     ]);
     Logger.info("All parallel services ready");
 
@@ -433,7 +442,7 @@ Future<void> reviewFlow() async {
     // If the user has already been asked, ask again after 90 days
     if ((lastReviewRequest == 0 && days >= 30) || (lastReviewRequest > 0 && days >= 90)) {
       SettingsSvc.settings.lastReviewRequestTimestamp.value = now.millisecondsSinceEpoch;
-      await SettingsSvc.settings.saveOne("lastReviewRequestTimestamp");
+      await SettingsSvc.settings.saveOneAsync("lastReviewRequestTimestamp");
       await requestReview();
     } else {
       Logger.info('Not requesting review, days since install/last request: $days');

@@ -441,7 +441,6 @@ class MessageActions {
     
     // Note: Progress reporting will be handled by the isolate wrapper if sendPort is provided
     final progressCallback = data['progressCallback'] as Function(int, int)?;
-
     return Database.runInTransaction(TxMode.write, () {
       final messageBox = Database.messages;
       final attachmentBox = Database.attachments;
@@ -539,7 +538,10 @@ class MessageActions {
             messageToSave.handle = allHandles.firstWhereOrNull((h) => h.originalROWID == messageToSave.handleId);
           }
 
-          // Handle attachments
+          // Save/update the message first (to ensure it has an ID)
+          messageToSave.id = messageBox.put(messageToSave);
+
+          // Handle attachments AFTER message is saved
           if (msgData['attachments'] != null) {
             final attachmentsData = (msgData['attachments'] as List).cast<Map<String, dynamic>>();
             List<Attachment> attachmentsToLink = [];
@@ -561,30 +563,29 @@ class MessageActions {
               }
             }
             
-            messageToSave.attachments = attachmentsToLink;
+            // IMPORTANT: Set BOTH attachment fields:
+            // 1. dbAttachments: ToMany relationship for DB persistence
+            //    Must be done AFTER message has an ID from put()
+            //    For existing messages, clear first to avoid duplicates
+            // 2. attachments: List field for serialization via toMap()            
+            messageToSave.dbAttachments.clear();
             messageToSave.dbAttachments.addAll(attachmentsToLink);
-          }
-
-          // Save/update the message
-          if (existingMessage == null) {
-            messageToSave.id = messageBox.put(messageToSave);
+            messageToSave.attachments = attachmentsToLink;
             
-            // Update chat's latest message if this is newer
-            if (checkForLatestMessageText) {
-              final latestMessage = msgChat.latestMessage;
-              if (messageToSave.dateCreated!.isAfter(latestMessage.dateCreated!)) {
-                msgChat.latestMessage = messageToSave;
-                chatBox.put(msgChat);
-              }
+            // Apply the ToMany relationship changes to DB
+            messageToSave.dbAttachments.applyToDb();
+          }
+            
+          // Update chat's latest message if this is newer (only for new messages)
+          if (existingMessage == null && checkForLatestMessageText) {
+            final latestMessage = msgChat.latestMessage;
+            if (messageToSave.dateCreated!.isAfter(latestMessage.dateCreated!)) {
+              msgChat.latestMessage = messageToSave;
+              chatBox.put(msgChat);
             }
           }
 
           savedMessages.add(messageToSave);
-
-          // Log progress periodically
-          if (index % 50 == 0 && index > 0) {
-            Logger.info('Processed $index of $totalMessages messages in isolate', tag: 'BulkAddMessages');
-          }
 
           index++;
         } catch (ex) {
@@ -598,9 +599,9 @@ class MessageActions {
       if (progressCallback != null) {
         progressCallback(totalMessages, totalMessages);
       }
-
-      Logger.info('Completed processing $totalMessages messages in isolate', tag: 'BulkAddMessages');
-
+      
+      // IMPORTANT: toMap() always includes attachments in serialization
+      // The 'attachments' field was populated when we saved the message
       return savedMessages.map((m) => m.toMap()).toList();
     });
   }

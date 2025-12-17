@@ -39,6 +39,16 @@ class Handle {
   @Transient()
   Contact? webContact;
 
+  // N:M Relationship to ContactV2 (new contact service)
+  // This is a backlink - ContactV2 owns the relationship
+  @Backlink('handles')
+  final contactsV2 = ToMany<ContactV2>();
+
+  // Cache the contact display name so it can be accessed outside of transactions
+  // This is populated when the handle is fetched within a transaction
+  @Transient()
+  String? cachedContactName;
+
   @Transient()
   Widget? _fakeAvatar;
 
@@ -60,12 +70,34 @@ class Handle {
       }
     }
     if (address.startsWith("urn:biz")) return "Business";
-    if (contact != null) return contact!.displayName;
+    
+    // Check cached contact name first (populated within transaction)
+    if (cachedContactName != null) {
+      return cachedContactName!;
+    }
+    
+    // Try to access ContactV2 directly (only works if in a transaction)
+    if (!kIsWeb && contactsV2.isNotEmpty) {
+      return contactsV2.first.displayName;
+    }
+    
+    // Fall back to old Contact system
+    if (contact != null) {
+      return contact!.displayName;
+    }
+    
     return address.contains("@") ? address : (formattedAddress ?? address);
   }
   String? get initials {
     // Remove any numbers, certain symbols, and non-alphabet characters
     if (address.startsWith("urn:biz")) return null;
+    
+    // Check ContactV2 first for initials
+    if (!kIsWeb && contactsV2.isNotEmpty) {
+      final contactV2Initials = contactsV2.first.initials;
+      if (contactV2Initials != null) return contactV2Initials;
+    }
+    
     String importantChars = displayName.toUpperCase().replaceAll(RegExp(r'[^a-zA-Z _-]'), "").trim();
     if (importantChars.isEmpty) return null;
 
@@ -147,14 +179,13 @@ class Handle {
   Future<Handle> saveAsync({bool updateColor = false, matchOnOriginalROWID = false}) async {
     if (kIsWeb) return this;
 
-    final result = await HandleInterface.saveHandleAsync(
+    final savedHandle = await HandleInterface.saveHandleAsync(
       handleData: toMap(),
       updateColor: updateColor,
       matchOnOriginalROWID: matchOnOriginalROWID,
     );
 
     // Update this handle with the saved data
-    final savedHandle = Handle.fromMap(result);
     id = savedHandle.id;
     color = savedHandle.color;
     contactRelation.target = savedHandle.contactRelation.target;
@@ -195,13 +226,12 @@ class Handle {
     if (kIsWeb) return handles;
     if (handles.isEmpty) return handles;
 
-    final result = await HandleInterface.bulkSaveHandlesAsync(
+    final savedHandles = await HandleInterface.bulkSaveHandlesAsync(
       handlesData: handles.map((e) => e.toMap()).toList(),
       matchOnOriginalROWID: matchOnOriginalROWID,
     );
 
     // Update the handles with saved data
-    final savedHandles = result.map((e) => Handle.fromMap(e)).toList();
     for (int i = 0; i < handles.length; i++) {
       if (i < savedHandles.length) {
         handles[i].id = savedHandles[i].id;
@@ -255,15 +285,12 @@ class Handle {
   static Future<Handle?> findOneAsync({int? id, int? originalROWID, Tuple2<String, String>? addressAndService}) async {
     if (kIsWeb || id == 0) return null;
 
-    final result = await HandleInterface.findOneHandleAsync(
+    return await HandleInterface.findOneHandleAsync(
       id: id,
       originalROWID: originalROWID,
       address: addressAndService?.item1,
       service: addressAndService?.item2,
     );
-
-    if (result == null) return null;
-    return Handle.fromMap(result);
   }
 
   static Handle merge(Handle handle1, Handle handle2) {
@@ -294,13 +321,11 @@ class Handle {
 
     // Note: For now, we don't serialize conditions for cross-isolate communication
     // This will return all handles. Future enhancement can add condition serialization.
-    final result = await HandleInterface.findHandlesAsync();
-
-    return result.map((e) => Handle.fromMap(e)).toList();
+    return await HandleInterface.findHandlesAsync();
   }
 
-  Map<String, dynamic> toMap({includeObjects = false}) {
-    final output = {
+  Map<String, dynamic> toMap() {
+    return {
       "ROWID": id,
       "originalROWID": originalROWID,
       "address": address,
@@ -311,13 +336,8 @@ class Handle {
       "color": color,
       "defaultPhone": defaultPhone,
       "defaultEmail": defaultEmail,
+      'contact': contact?.toMap(),
+      'contactRelation': contactRelation.target?.toMap(),
     };
-
-    if (includeObjects) {
-      output['contact'] = contact?.toMap();
-      output['contactRelation'] = contactRelation.target?.toMap();
-    }
-
-    return output;
   }
 }

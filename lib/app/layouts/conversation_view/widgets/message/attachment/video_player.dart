@@ -278,7 +278,7 @@ class _VideoPlayerState extends OptimizedState<VideoPlayer> with AutomaticKeepAl
           attachment.metadata ??= {};
           attachment.metadata!['thumbnail_status'] = 'error';
           if (attachment.id != null) {
-            attachment.save(null);
+            attachment.saveAsync(null);
           }
         }
       }

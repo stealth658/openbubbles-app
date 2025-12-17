@@ -2,6 +2,7 @@ import 'package:bluebubbles/services/backend/actions/app_actions.dart';
 import 'package:bluebubbles/services/backend/actions/attachment_actions.dart';
 import 'package:bluebubbles/services/backend/actions/chat_actions.dart';
 import 'package:bluebubbles/services/backend/actions/contact_actions.dart';
+import 'package:bluebubbles/services/backend/actions/contact_v2_actions.dart';
 import 'package:bluebubbles/services/backend/actions/handle_actions.dart';
 import 'package:bluebubbles/services/backend/actions/image_actions.dart';
 import 'package:bluebubbles/services/backend/actions/message_actions.dart';
@@ -32,6 +33,7 @@ class IsolateActons {
     // Prefs
     IsolateRequestType.saveReplyToMessageState: PrefsActions.saveReplyToMessageState,
     IsolateRequestType.loadReplyToMessageState: PrefsActions.loadReplyToMessageState,
+    IsolateRequestType.syncAllSettings: PrefsActions.syncAllSettings,
     IsolateRequestType.syncSettings: PrefsActions.syncSettings,
 
     // Messages
@@ -74,6 +76,14 @@ class IsolateActons {
     // Contact
     IsolateRequestType.saveContactAsync: ContactActions.saveContactAsync,
     IsolateRequestType.findOneContactAsync: ContactActions.findOneContactAsync,
+
+    // ContactV2 (new contact service)
+    IsolateRequestType.fetchAndMatchContactsV2: ContactV2Actions.fetchAndMatchContacts,
+    IsolateRequestType.checkContactChangesV2: ContactV2Actions.checkContactChanges,
+    IsolateRequestType.getStoredContactIdsV2: ContactV2Actions.getStoredContactIds,
+    IsolateRequestType.findOneContactV2: ContactV2Actions.findOneContactV2,
+    IsolateRequestType.getContactsForHandlesV2: ContactV2Actions.getContactsForHandles,
+    IsolateRequestType.refreshContactsV2: ContactV2Actions.refreshContacts,
 
     // Attachment
     IsolateRequestType.saveAttachmentAsync: AttachmentActions.saveAttachmentAsync,

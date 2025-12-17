@@ -4,12 +4,11 @@ import 'dart:math';
 
 import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/message_holder.dart';
-import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/typing/typing_indicator.dart';
+import 'package:bluebubbles/app/layouts/conversation_view/widgets/messages_view_components.dart';
 import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/wrappers/scrollbar_wrapper.dart';
-import 'package:bluebubbles/app/components/avatars/contact_avatar_widget.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/database/models.dart';
@@ -342,7 +341,6 @@ class MessagesViewState extends OptimizedState<MessagesView> {
 
   @override
   Widget build(BuildContext context) {
-    const moonIcon = CupertinoIcons.moon_fill;
     return DropRegion(
       hitTestBehavior: HitTestBehavior.translucent,
       formats: Platform.isLinux ? Formats.standardFormats : Formats.standardFormats.whereType<FileFormat>().toList(),
@@ -432,98 +430,24 @@ class MessagesViewState extends OptimizedState<MessagesView> {
                         slivers: <Widget>[
                           if (showSmartReplies || internalSmartReplies.isNotEmpty)
                             SliverToBoxAdapter(
-                              child: Obx(() => AnimatedSize(
-                                  duration: const Duration(milliseconds: 400),
-                                  child: smartReplies.isNotEmpty || internalSmartReplies.isNotEmpty
-                                      ? Padding(
-                                          padding: EdgeInsets.only(top: iOS ? 8.0 : 0.0, right: 5),
-                                          child: SizedBox(
-                                            height: context.theme.extension<BubbleText>()!.bubbleText.fontSize! + 35,
-                                            child: ListView(
-                                              scrollDirection: Axis.horizontal,
-                                              reverse: true,
-                                              children: List<Widget>.from(smartReplies)..addAll(internalSmartReplies.values),
-                                            ),
-                                          ),
-                                        )
-                                      : const SizedBox.shrink())),
+                              child: SmartRepliesRow(
+                                smartReplies: smartReplies,
+                                internalSmartReplies: internalSmartReplies,
+                              ),
                             ),
                           if (!chat.isGroup && chat.isIMessage)
                             SliverToBoxAdapter(
-                                child: AnimatedSize(
-                              key: controller.focusInfoKey,
-                              duration: const Duration(milliseconds: 250),
-                              child: Obx(() => controller.recipientNotifsSilenced.value
-                                  ? Padding(
-                                      padding: const EdgeInsets.all(10.0),
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Text(
-                                                String.fromCharCode(moonIcon.codePoint),
-                                                style: TextStyle(
-                                                  fontFamily: moonIcon.fontFamily,
-                                                  package: moonIcon.fontPackage,
-                                                  fontSize: context.theme.textTheme.bodyMedium!.fontSize,
-                                                  color: context.theme.colorScheme.tertiaryContainer,
-                                                ),
-                                              ),
-                                              Text(
-                                                " ${chat.title ?? "Recipient"} has notifications silenced",
-                                                style:
-                                                    context.theme.textTheme.bodyMedium!.copyWith(color: context.theme.colorScheme.tertiaryContainer),
-                                              ),
-                                            ],
-                                          ),
-                                          Obx(() {
-                                            // DO NOT REMOVE, used to update Obx widget
-                                            latestMessageDeliveredState.value;
-                                            if (_messages.firstOrNull?.isFromMe == true &&
-                                                _messages.firstOrNull?.dateRead == null &&
-                                                _messages.firstOrNull?.wasDeliveredQuietly == true &&
-                                                _messages.firstOrNull?.didNotifyRecipient == false) {
-                                              return TextButton(
-                                                child: Text("Notify Anyway",
-                                                    style: context.theme.textTheme.labelLarge!
-                                                        .copyWith(color: context.theme.colorScheme.tertiaryContainer)),
-                                                onPressed: () async {
-                                                  await HttpSvc.notify(_messages.first.guid!);
-                                                },
-                                              );
-                                            }
-                                            return const SizedBox.shrink();
-                                          }),
-                                        ],
-                                      ),
-                                    )
-                                  : const SizedBox.shrink()),
-                            )),
+                              child: NotificationsSilencedBanner(
+                                controller: controller,
+                                chat: chat,
+                                latestMessage: _messages.firstOrNull,
+                              ),
+                            ),
                           SliverToBoxAdapter(
-                            child: Obx(() => Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: <Widget>[
-                                    if (controller.showTypingIndicator.value && SettingsSvc.settings.alwaysShowAvatars.value && iOS)
-                                      Padding(
-                                        padding: const EdgeInsets.only(left: 10.0),
-                                        child: ContactAvatarWidget(
-                                          key: Key("${chat.participants.first.address}-typing-indicator"),
-                                          handle: chat.participants.first,
-                                          size: 30,
-                                          fontSize: 14,
-                                          borderThickness: 0.1,
-                                        ),
-                                      ),
-                                    Padding(
-                                      padding: const EdgeInsets.only(top: 5),
-                                      child: TypingIndicator(
-                                        controller: controller,
-                                      ),
-                                    ),
-                                  ],
-                                )),
+                            child: TypingIndicatorRow(
+                              controller: controller,
+                              chat: chat,
+                            ),
                           ),
                           if (_messages.isEmpty && widget.customService != null)
                             const SliverToBoxAdapter(
@@ -618,23 +542,9 @@ class MessagesViewState extends OptimizedState<MessagesView> {
                   ),
                 ),
               ),
-              Obx(
-                () => AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  color: context.theme.colorScheme.surface.withValues(alpha: dragging.value ? 0.4 : 0),
-                  child: dragging.value
-                      ? Center(
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(iOS ? CupertinoIcons.paperclip : Icons.attach_file, color: context.theme.colorScheme.primary, size: 50),
-                              Text("Attach ${numFiles.value} File${numFiles.value > 1 ? 's' : ''}",
-                                  style: context.theme.textTheme.headlineLarge!.copyWith(color: context.theme.colorScheme.primary)),
-                            ],
-                          ),
-                        )
-                      : const SizedBox.shrink(),
-                ),
+              DragDropOverlay(
+                dragging: dragging,
+                numFiles: numFiles,
               ),
             ],
           )),

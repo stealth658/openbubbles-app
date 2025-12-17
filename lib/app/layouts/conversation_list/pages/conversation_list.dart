@@ -179,8 +179,6 @@ class _ConversationListState extends CustomState<ConversationList, void, Convers
 
   @override
   Widget build(BuildContext context) {
-    print(SettingsSvc.settings.finishedSetup.value);
-    print(PrefsSvc.i.getBool('finishedSetup'));
     final child = ThemeSwitcher(
       iOSSkin: CupertinoConversationList(parentController: controller),
       materialSkin: MaterialConversationList(parentController: controller),

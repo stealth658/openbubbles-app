@@ -2,6 +2,7 @@ import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/env.dart';
 import 'package:bluebubbles/services/backend/actions/message_actions.dart';
+import 'package:bluebubbles/services/backend/hydration/message_hydration.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:get_it/get_it.dart';
 import 'package:bluebubbles/services/isolates/global_isolate.dart';
@@ -33,21 +34,22 @@ class MessageInterface {
     return results;
   }
 
-  static Future<List<Map<String, dynamic>>> bulkSaveNewMessages({
-    required Map<String, dynamic> chatData,
-    required List<Map<String, dynamic>> messagesData,
+  static Future<List<Message>> bulkSaveNewMessages({
+    required Map<String, dynamic> data,
+    bool hydrateAttachments = true,
   }) async {
-    final data = {
-      'chatData': chatData,
-      'messagesData': messagesData,
-    };
-
+    late List<Map<String, dynamic>> messagesData;
     if (isIsolate()) {
-      return await MessageActions.bulkSaveNewMessages(data);
+      messagesData = await MessageActions.bulkSaveNewMessages(data);
     } else {
-      return await GetIt.I<GlobalIsolate>()
+      messagesData = await GetIt.I<GlobalIsolate>()
           .send<List<Map<String, dynamic>>>(IsolateRequestType.bulkSaveNewMessages, input: data);
     }
+    final messages = messagesData.map((e) => Message.fromMap(e)).toList();
+    if (hydrateAttachments) {
+      MessageHydration.hydrateAll(messages);
+    }
+    return messages;
   }
 
   static Future<Map<String, dynamic>> replaceMessage({
@@ -150,10 +152,11 @@ class MessageInterface {
     }
   }
 
-  static Future<Map<String, dynamic>> saveMessageAsync({
+  static Future<Message?> saveMessageAsync({
     required Map<String, dynamic> messageData,
     Map<String, dynamic>? chatData,
     required bool updateIsBookmarked,
+    bool hydrateAttachments = true,
   }) async {
     final data = {
       'messageData': messageData,
@@ -161,44 +164,69 @@ class MessageInterface {
       'updateIsBookmarked': updateIsBookmarked,
     };
 
+    late Map<String, dynamic> messageMap;
     if (isIsolate()) {
-      return await MessageActions.saveMessageAsync(data);
+      messageMap = await MessageActions.saveMessageAsync(data);
     } else {
-      return await GetIt.I<GlobalIsolate>()
+      messageMap = await GetIt.I<GlobalIsolate>()
           .send<Map<String, dynamic>>(IsolateRequestType.saveMessageAsync, input: data);
     }
+    
+    final message = Message.fromMap(messageMap);
+    if (hydrateAttachments) {
+      MessageHydration.hydrate(message);
+    }
+    return message;
   }
 
-  static Future<Map<String, dynamic>?> findOneAsync({
+  static Future<Message?> findOneAsync({
     String? guid,
     String? associatedMessageGuid,
+    bool hydrateAttachments = true,
   }) async {
     final data = {
       'guid': guid,
       'associatedMessageGuid': associatedMessageGuid,
     };
 
+    late Map<String, dynamic>? messageMap;
     if (isIsolate()) {
-      return await MessageActions.findOneAsync(data);
+      messageMap = await MessageActions.findOneAsync(data);
     } else {
-      return await GetIt.I<GlobalIsolate>()
+      messageMap = await GetIt.I<GlobalIsolate>()
           .send<Map<String, dynamic>?>(IsolateRequestType.findOneAsync, input: data);
     }
+    
+    if (messageMap == null) return null;
+    
+    final message = Message.fromMap(messageMap);
+    if (hydrateAttachments) {
+      MessageHydration.hydrate(message);
+    }
+    return message;
   }
 
-  static Future<List<Map<String, dynamic>>> findAsync({
+  static Future<List<Message>> findAsync({
     String? conditionJson,
+    bool hydrateAttachments = true,
   }) async {
     final data = {
       'conditionJson': conditionJson,
     };
 
+    late List<Map<String, dynamic>> messagesData;
     if (isIsolate()) {
-      return await MessageActions.findAsync(data);
+      messagesData = await MessageActions.findAsync(data);
     } else {
-      return await GetIt.I<GlobalIsolate>()
+      messagesData = await GetIt.I<GlobalIsolate>()
           .send<List<Map<String, dynamic>>>(IsolateRequestType.findAsync, input: data);
     }
+    
+    final messages = messagesData.map((e) => Message.fromMap(e)).toList();
+    if (hydrateAttachments) {
+      MessageHydration.hydrateAll(messages);
+    }
+    return messages;
   }
 
   /// Bulk add messages - offloads heavy processing to the isolate
@@ -206,6 +234,7 @@ class MessageInterface {
     Map<String, dynamic>? chatData,
     required List<Map<String, dynamic>> messagesData,
     bool checkForLatestMessageText = true,
+    bool hydrateAttachments = true,
   }) async {
     late List<Map<String, dynamic>> results;
     final data = {
@@ -221,6 +250,10 @@ class MessageInterface {
         .send<List<Map<String, dynamic>>>(IsolateRequestType.bulkAddMessages, input: data);
     }
 
-    return results.map((e) => Message.fromMap(e)).toList();
+    final messages = results.map((e) => Message.fromMap(e)).toList();
+    if (hydrateAttachments) {
+      MessageHydration.hydrateAll(messages);
+    }
+    return messages;
   }
 }

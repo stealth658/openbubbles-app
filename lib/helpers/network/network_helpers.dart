@@ -29,7 +29,7 @@ Future<int> getOrCreateUniqueId() async {
   if (uniqueId == 0) {
     uniqueId = (DateTime.now().millisecondsSinceEpoch / 1000).round();
     SettingsSvc.settings.firstFcmRegisterDate.value = uniqueId;
-    await SettingsSvc.settings.saveOne('firstFcmRegisterDate');
+    await SettingsSvc.settings.saveOneAsync('firstFcmRegisterDate');
   }
 
   return uniqueId;

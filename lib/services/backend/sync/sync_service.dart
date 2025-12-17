@@ -40,7 +40,7 @@ class SyncService {
     // We won't try an incremental sync until the last (full) sync date is set
     SettingsSvc.settings.lastIncrementalSync.value = DateTime.now().millisecondsSinceEpoch;
     await SettingsSvc.saveSettings();
-    await PrefsInterface.syncSettings();
+    await PrefsInterface.syncAllSettings();
     await _manager!.start();
   }
 

@@ -19,6 +19,7 @@ class Database {
   static late final Box<Attachment> attachments;
   static late final Box<Chat> chats;
   static late final Box<Contact> contacts;
+  static late final Box<ContactV2> contactsV2;
   static late final Box<FCMData> fcmData;
   static late final Box<Handle> handles;
   static late final Box<Message> messages;
@@ -28,6 +29,8 @@ class Database {
 
   // ignore: deprecated_member_use_from_same_package
   static late final Box<ThemeObject> themeObjects;
+
+  static String get appDocPath => FilesystemSvc.appDocDir.path;
 
   static final Completer<void> initComplete = Completer();
 
@@ -45,6 +48,7 @@ class Database {
       Database.attachments = store.box<Attachment>();
       Database.chats = store.box<Chat>();
       Database.contacts = store.box<Contact>();
+      Database.contactsV2 = store.box<ContactV2>();
       Database.fcmData = store.box<FCMData>();
       Database.handles = store.box<Handle>();
       Database.messages = store.box<Message>();
@@ -60,13 +64,17 @@ class Database {
         await SettingsSvc.initCompleted.future;
         setupFinished = SettingsSvc.settings.finishedSetup.value;
       }
-      
+
+      bool setupFinished2 = PrefsSvc.i.getBool('finishedSetup') ?? false;
+      Logger.info("Database init: SettingsSvc.finishedSetup = $setupFinished, PrefsSvc.finishedSetup = $setupFinished2");
+
       if (!setupFinished) {
         Logger.warn("Clearing database because setup is not finished...");
 
         Database.attachments.removeAll();
         Database.chats.removeAll();
         Database.contacts.removeAll();
+        Database.contactsV2.removeAll();
         Database.fcmData.removeAll();
         Database.handles.removeAll();
         Database.messages.removeAll();
@@ -242,6 +250,7 @@ class Database {
     Database.chats.removeAll();
     Database.fcmData.removeAll();
     Database.contacts.removeAll();
+    Database.contactsV2.removeAll();
     Database.handles.removeAll();
     Database.messages.removeAll();
     Database.themes.removeAll();

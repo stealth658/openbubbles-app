@@ -44,6 +44,10 @@ class MethodCallHandler {
     fun methodCallHandler(call: MethodCall, result: MethodChannel.Result, context: Context) {
         Log.d(Constants.logTag, "Received new method call from Dart with method ${call.method}")
         when(call.method) {
+            "ready" -> {
+                Log.d(Constants.logTag, "Dart engine is ready!")
+                result.success(null)
+            }
             UnifiedPushHandler.tag -> UnifiedPushHandler().handleMethodCall(call, result, context)
             FirebaseAuthHandler.tag -> FirebaseAuthHandler().handleMethodCall(call, result, context)
             FirebaseDeleteTokenHandler.tag -> FirebaseDeleteTokenHandler().handleMethodCall(call, result, context)

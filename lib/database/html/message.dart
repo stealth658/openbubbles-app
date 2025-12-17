@@ -605,8 +605,8 @@ class Message {
     return existing;
   }
 
-  Map<String, dynamic> toMap({bool includeObjects = false}) {
-    final map = {
+  Map<String, dynamic> toMap() {
+    return {
       "ROWID": id,
       "originalROWID": originalROWID,
       "guid": guid,
@@ -642,14 +642,10 @@ class Message {
       "wasDeliveredQuietly": wasDeliveredQuietly,
       "didNotifyRecipient": didNotifyRecipient,
       "isBookmarked": isBookmarked,
+      "attachments": attachments.map((e) => e!.toMap()).toList(),
+      "attributedBody": attributedBody.map((e) => e.toMap()).toList(),
+      "messageSummaryInfo": messageSummaryInfo.map((e) => e.toJson()).toList(),
+      "payloadData": payloadData?.toJson(),
     };
-    if (includeObjects) {
-      map['attachments'] = (attachments).map((e) => e!.toMap()).toList();
-      map['handle'] = handle?.toMap();
-      map['attributedBody'] = attributedBody.map((e) => e.toMap()).toList();
-      map['messageSummaryInfo'] = messageSummaryInfo.map((e) => e.toJson()).toList();
-      map['payloadData'] = payloadData?.toJson();
-    }
-    return map;
   }
 }

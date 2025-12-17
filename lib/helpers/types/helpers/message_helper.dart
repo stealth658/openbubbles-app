@@ -34,10 +34,10 @@ class MessageHelper {
     try {
       final results = await MessageInterface.bulkAddMessages(
         chatData: chatData,
-        messagesData: messagesData,
+        messagesData: [messagesData.first],
         checkForLatestMessageText: checkForLatestMessageText,
       );
-      
+
       // Report completion
       if (onProgress != null) {
         onProgress(totalCount, totalCount);

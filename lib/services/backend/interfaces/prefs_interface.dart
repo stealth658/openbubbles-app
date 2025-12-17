@@ -33,16 +33,25 @@ class PrefsInterface {
     }
   }
 
-  static Future<void> syncSettings() async {
+  static Future<void> syncAllSettings({Map<String, dynamic>? settings}) async {
     final data = {
-      'settings': SettingsSvc.settings.toMap(includeAll: true),
+      'settings': settings ?? SettingsSvc.settings.toMap(includeAll: true),
     };
 
     if (isIsolate()) {
-      return await PrefsActions.syncSettings(data);
+      return await PrefsActions.syncAllSettings(data);
     } else {
       return await GetIt.I<GlobalIsolate>()
-          .send<void>(IsolateRequestType.syncSettings, input: data);
+          .send<void>(IsolateRequestType.syncAllSettings, input: data);
+    }
+  }
+
+  static Future<void> syncSettings(Map<String, dynamic> settings) async {
+    if (isIsolate()) {
+      return await PrefsActions.syncSettings(settings);
+    } else {
+      return await GetIt.I<GlobalIsolate>()
+          .send<void>(IsolateRequestType.syncSettings, input: settings);
     }
   }
 }

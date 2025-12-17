@@ -32,7 +32,7 @@ class LogLevelSelectorState extends State<LogLevelSelector> {
           Logger.currentLevel = val;
 
           SettingsSvc.settings.logLevel.value = val;
-          SettingsSvc.settings.saveOne("logLevel");
+          SettingsSvc.settings.saveOneAsync("logLevel");
         },
         options: Level.values.where((testLevel) => levelWhitelist.contains(testLevel)).toList(),
         textProcessing: (val) => val.name,

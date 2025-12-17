@@ -95,15 +95,19 @@ class _DeliveredIndicatorState extends CustomState<DeliveredIndicator, void, Mes
       curve: Curves.easeInOut,
       alignment: Alignment.bottomCenter,
       duration: const Duration(milliseconds: 250),
-      child: Obx(() => shouldShow && getText().isNotEmpty ? Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 15).add(EdgeInsets.only(
-          top: 3,
-          left: showAvatar || SettingsSvc.settings.alwaysShowAvatars.value ? 35 : 0)
-        ),
-        child: Text.rich(TextSpan(
-          children: getText(),
-        )),
-      ) : const SizedBox.shrink()),
+      child: Obx(() {
+        // Observe the granular delivery status flag to minimize rebuilds
+        controller.deliveryStatusChanged.value;
+        return shouldShow && getText().isNotEmpty ? Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 15).add(EdgeInsets.only(
+            top: 3,
+            left: showAvatar || SettingsSvc.settings.alwaysShowAvatars.value ? 35 : 0)
+          ),
+          child: Text.rich(TextSpan(
+            children: getText(),
+          )),
+        ) : const SizedBox.shrink();
+      }),
     );
   }
 }

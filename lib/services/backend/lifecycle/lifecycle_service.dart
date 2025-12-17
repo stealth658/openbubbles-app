@@ -21,6 +21,8 @@ class LifecycleService with WidgetsBindingObserver {
   bool isUiThread = true;
   bool windowFocused = true;
   bool? wasActiveAliveBefore;
+  bool _keepAppAlive = false;
+  
   bool get isAlive => kIsWeb ? !(window.document.hidden ?? false)
       : kIsDesktop ? windowFocused : (WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed
         || IsolateNameServer.lookupPortByName('bg_isolate') != null);
@@ -35,19 +37,16 @@ class LifecycleService with WidgetsBindingObserver {
 
   Future<void> init({bool headless = false, bool isBubble = false}) async {
     Logger.debug("Initializing LifecycleService${headless ? " in headless mode" : ""}");
-    
-    // Only add observer if we're on the UI thread
-    if (!headless) {
-      WidgetsBinding.instance.addObserver(this);
-    }
+    WidgetsBinding.instance.addObserver(this);
 
     isUiThread = !headless;
     this.isBubble = isBubble;
 
-    // Only handle foreground service on UI thread
-    if (!headless) {
-      handleForegroundService(AppLifecycleState.resumed);
-    }
+    // Cache keepAppAlive setting to avoid repeated async calls
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    _keepAppAlive = prefs.getBool("keepAppAlive") ?? false;
+
+    handleForegroundService(AppLifecycleState.resumed);
     Logger.debug("LifecycleService initialized");
   }
 
@@ -55,27 +54,23 @@ class LifecycleService with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     Logger.debug("App State changed to $state");
 
-    // If the current state is resume, and we've already had a resume, remove all states up to the last resume.
+    // If the current state is resume, and we've already had a resume, clear states from before the last resume
     if (state == AppLifecycleState.resumed && statesSinceLastResume.contains(AppLifecycleState.resumed)) {
-      // Remove states up to the last resume
-      while (statesSinceLastResume.isNotEmpty && statesSinceLastResume.first != AppLifecycleState.resumed) {
-        statesSinceLastResume.removeAt(0);
-      }
-    } else {
-      statesSinceLastResume.add(state);
+      // Remove all states up to and including the last resume
+      final lastResumeIndex = statesSinceLastResume.lastIndexOf(AppLifecycleState.resumed);
+      statesSinceLastResume.removeRange(0, lastResumeIndex + 1);
     }
+    
+    // Add the new state
+    statesSinceLastResume.add(state);
 
     if (state == AppLifecycleState.resumed) {
       await Database.waitForInit();
       open();
     } else if (state != AppLifecycleState.inactive) {
-      // UI-dependent: Keyboard management
-      if (isUiThread) {
-        SystemChannels.textInput.invokeMethod('TextInput.hide').catchError((e, stack) {
-          Logger.error("Error caught while hiding keyboard!", error: e, trace: stack);
-        });
-      }
-      
+      SystemChannels.textInput.invokeMethod('TextInput.hide').catchError((e, stack) {
+        Logger.error("Error caught while hiding keyboard!", error: e, trace: stack);
+      });
       if (isBubble) {
         closeBubble();
       } else {
@@ -86,19 +81,17 @@ class LifecycleService with WidgetsBindingObserver {
     handleForegroundService(state);
   }
 
-  void handleForegroundService(AppLifecycleState state) async {
+  void handleForegroundService(AppLifecycleState state) {
     // If an isolate is invoking this, we don't want to start/stop the foreground service.
     // It should already be running. We don't need to stop it because the socket service
     // is not started when in headless mode.
     if (!isUiThread) return;
 
+    // Don't handle foreground service for inactive/hidden states
     if ([AppLifecycleState.inactive, AppLifecycleState.hidden].contains(state)) return;
 
-    // This may get called before the settings service is initialized
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    bool keepAlive = prefs.getBool("keepAppAlive") ?? false;
-
-    if (Platform.isAndroid && keepAlive) {
+    // Use cached value instead of async SharedPreferences call
+    if (Platform.isAndroid && _keepAppAlive) {
       // We only want the foreground service to run when the app is not active
       if (state == AppLifecycleState.resumed) {
         Logger.info(tag: "LifecycleService", "Stopping foreground service");
@@ -111,22 +104,17 @@ class LifecycleService with WidgetsBindingObserver {
   }
 
   void open() {
-    // Only add observer if we're on the UI thread
-    if (isUiThread) {
-      WidgetsBinding.instance.addObserver(this);
+    // Observer is already added in init(), no need to add again
+    
+    if (!kIsDesktop || wasActiveAliveBefore != false) {
+      cm.setActiveToAlive();
     }
-
-    // UI-dependent: Chat controller management
-    if (isUiThread) {
-      if (!kIsDesktop || wasActiveAliveBefore != false) {
-        cm.setActiveToAlive();
-      }
-      if (cm.activeChat != null) {
-        cm.activeChat!.chat.toggleHasUnread(false);
-        ConversationViewController _cvc = cvc(cm.activeChat!.chat);
-        if (!_cvc.showingOverlays && _cvc.editing.isEmpty) {
-          _cvc.lastFocusedNode.requestFocus();
-        }
+    final activeChat = cm.activeChat;
+    if (activeChat != null) {
+      activeChat.chat.toggleHasUnread(false);
+      ConversationViewController _cvc = cvc(activeChat.chat);
+      if (!_cvc.showingOverlays && _cvc.editing.isEmpty) {
+        _cvc.lastFocusedNode.requestFocus();
       }
     }
 
@@ -141,7 +129,7 @@ class LifecycleService with WidgetsBindingObserver {
       SocketSvc.reconnect();
     }
 
-    if (kIsDesktop && isUiThread) {
+    if (kIsDesktop) {
       windowFocused = true;
     }
   }
@@ -154,39 +142,30 @@ class LifecycleService with WidgetsBindingObserver {
   }
 
   void close() {
-    // Only remove observer if we're on the UI thread
-    if (isUiThread) {
-      WidgetsBinding.instance.removeObserver(this);
-    }
+    WidgetsBinding.instance.removeObserver(this);
 
-    // UI-dependent: Chat controller management
-    if (isUiThread) {
-      if (kIsDesktop) {
-        wasActiveAliveBefore = cm.activeChat?.isAlive;
-      }
-      if (!kIsDesktop || wasActiveAliveBefore != false) {
-        cm.setActiveToDead();
-      }
-      if (cm.activeChat != null) {
-        ConversationViewController _cvc = cvc(cm.activeChat!.chat);
-        _cvc.lastFocusedNode.unfocus();
-      }
-      if (kIsDesktop) {
-        windowFocused = false;
-      }
+    if (kIsDesktop) {
+      wasActiveAliveBefore = cm.activeChat?.isAlive;
     }
-    
+    if (!kIsDesktop || wasActiveAliveBefore != false) {
+      cm.setActiveToDead();
+    }
     if (!kIsDesktop && !kIsWeb) {
       IsolateNameServer.removePortNameMapping('bg_isolate');
       SocketSvc.disconnect();
     }
+    final activeChat = cm.activeChat;
+    if (activeChat != null) {
+      ConversationViewController _cvc = cvc(activeChat.chat);
+      _cvc.lastFocusedNode.unfocus();
+    }
+    if (kIsDesktop) {
+      windowFocused = false;
+    }
   }
 
   void closeBubble() {
-    // UI-dependent: Chat controller management
-    if (isUiThread) {
-      cm.setActiveToDead();
-    }
+    cm.setActiveToDead();
     SocketSvc.disconnect();
   }
 }

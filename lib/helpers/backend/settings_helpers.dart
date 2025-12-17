@@ -17,7 +17,7 @@ Future<bool> saveNewServerUrl(
   if (force || sanitized != SettingsSvc.settings.serverAddress.value) {
     SettingsSvc.settings.serverAddress.value = sanitized;
 
-    await SettingsSvc.settings.saveMany(["serverAddress", ...saveAdditionalSettings]);
+    await SettingsSvc.settings.saveManyAsync(["serverAddress", ...saveAdditionalSettings]);
 
     // Don't await because we don't care about the result
     if (tryRestartForegroundService) {
@@ -45,7 +45,7 @@ Future<void> clearServerUrl(
   }
 ) async {
   SettingsSvc.settings.serverAddress.value = "";
-  await SettingsSvc.settings.saveMany(["serverAddress", ...saveAdditionalSettings]);
+  await SettingsSvc.settings.saveManyAsync(["serverAddress", ...saveAdditionalSettings]);
 
   // Don't await because we don't care about the result
   if (tryRestartForegroundService) {

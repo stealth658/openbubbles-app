@@ -1,4 +1,6 @@
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/env.dart';
+import 'package:bluebubbles/services/backend/hydration/message_hydration.dart';
 import 'package:bluebubbles/services/backend/actions/chat_actions.dart';
 import 'package:get_it/get_it.dart';
 import 'package:bluebubbles/services/isolates/global_isolate.dart';
@@ -129,11 +131,9 @@ class ChatInterface {
 
   static Future<Map<String, dynamic>> loadSupplementalData({
     required List<String> messageGuids,
-    required List<int> messageIds,
   }) async {
     final data = {
       'messageGuids': messageGuids,
-      'messageIds': messageIds,
     };
 
     if (isIsolate()) {
@@ -144,7 +144,7 @@ class ChatInterface {
     }
   }
 
-  static Future<List<Map<String, dynamic>>> syncLatestMessages({
+  static Future<List<Chat>> syncLatestMessages({
     required List<String> chatGuids,
     required bool toggleUnread,
   }) async {
@@ -153,30 +153,38 @@ class ChatInterface {
       'toggleUnread': toggleUnread,
     };
 
+    late List<Map<String, dynamic>> chatsData;
     if (isIsolate()) {
-      return await ChatActions.syncLatestMessages(data);
+      chatsData = await ChatActions.syncLatestMessages(data);
     } else {
-      return await GetIt.I<GlobalIsolate>()
+      chatsData = await GetIt.I<GlobalIsolate>()
           .send<List<Map<String, dynamic>>>(IsolateRequestType.syncLatestMessages, input: data);
     }
+
+    // Deserialize chats from maps
+    return chatsData.map((e) => Chat.fromMap(e)).toList();
   }
 
-  static Future<List<Map<String, dynamic>>> bulkSyncChats({
+  static Future<List<Chat>> bulkSyncChats({
     required List<Map<String, dynamic>> chatsData,
   }) async {
     final data = {
       'chatsData': chatsData,
     };
 
+    late List<Map<String, dynamic>> resultChatsData;
     if (isIsolate()) {
-      return await ChatActions.bulkSyncChats(data);
+      resultChatsData = await ChatActions.bulkSyncChats(data);
     } else {
-      return await GetIt.I<GlobalIsolate>()
+      resultChatsData = await GetIt.I<GlobalIsolate>()
           .send<List<Map<String, dynamic>>>(IsolateRequestType.bulkSyncChats, input: data);
     }
+
+    // Deserialize chats from maps
+    return resultChatsData.map((e) => Chat.fromMap(e)).toList();
   }
 
-  static Future<List<Map<String, dynamic>>> getMessagesAsync({
+  static Future<List<Message>> getMessagesAsync({
     required int chatId,
     required String chatGuid,
     required List<Map<String, dynamic>> participantsData,
@@ -184,6 +192,7 @@ class ChatInterface {
     int limit = 25,
     bool includeDeleted = false,
     int? searchAround,
+    bool hydrateAttachments = true,
   }) async {
     final data = {
       'chatId': chatId,
@@ -195,32 +204,55 @@ class ChatInterface {
       'searchAround': searchAround,
     };
 
+    late List<Map<String, dynamic>> messagesData;
     if (isIsolate()) {
-      return await ChatActions.getMessagesAsync(data);
+      messagesData = await ChatActions.getMessagesAsync(data);
     } else {
-      return await GetIt.I<GlobalIsolate>()
+      messagesData = await GetIt.I<GlobalIsolate>()
           .send<List<Map<String, dynamic>>>(IsolateRequestType.getMessagesAsync, input: data);
     }
+
+    // Deserialize messages from maps
+    final messages = messagesData.map((e) => Message.fromMap(e)).toList();
+    
+    // Hydrate messages with their attachments from the database
+    if (hydrateAttachments) {
+      MessageHydration.hydrateAll(messages);
+    }
+
+    return messages;
   }
 
-  static Future<List<Map<String, dynamic>>> bulkSyncMessages({
+  static Future<List<Message>> bulkSyncMessages({
     required Map<String, dynamic> chatData,
     required List<Map<String, dynamic>> messagesData,
+    bool hydrateAttachments = true,
   }) async {
     final data = {
       'chatData': chatData,
       'messagesData': messagesData,
     };
 
+    late List<Map<String, dynamic>> resultMessagesData;
     if (isIsolate()) {
-      return await ChatActions.bulkSyncMessages(data);
+      resultMessagesData = await ChatActions.bulkSyncMessages(data);
     } else {
-      return await GetIt.I<GlobalIsolate>()
+      resultMessagesData = await GetIt.I<GlobalIsolate>()
           .send<List<Map<String, dynamic>>>(IsolateRequestType.bulkSyncMessages, input: data);
     }
+
+    // Deserialize messages from maps
+    final messages = resultMessagesData.map((e) => Message.fromMap(e)).toList();
+    
+    // Hydrate messages with their attachments from the database
+    if (hydrateAttachments) {
+      MessageHydration.hydrateAll(messages);
+    }
+
+    return messages;
   }
 
-  static Future<List<Map<String, dynamic>>> getParticipantsAsync({
+  static Future<List<Handle>> getParticipantsAsync({
     required int chatId,
     required String chatGuid,
   }) async {
@@ -229,12 +261,16 @@ class ChatInterface {
       'chatGuid': chatGuid,
     };
 
+    late List<Map<String, dynamic>> participantsData;
     if (isIsolate()) {
-      return await ChatActions.getParticipantsAsync(data);
+      participantsData = await ChatActions.getParticipantsAsync(data);
     } else {
-      return await GetIt.I<GlobalIsolate>()
+      participantsData = await GetIt.I<GlobalIsolate>()
           .send<List<Map<String, dynamic>>>(IsolateRequestType.getParticipantsAsync, input: data);
     }
+
+    // Deserialize handles from maps
+    return participantsData.map((e) => Handle.fromMap(e)).toList();
   }
 
   static Future<void> clearTranscriptAsync({
@@ -254,7 +290,7 @@ class ChatInterface {
     }
   }
 
-  static Future<List<Map<String, dynamic>>> getChatsAsync({
+  static Future<List<Chat>> getChatsAsync({
     int limit = 15,
     int offset = 0,
     List<int> ids = const [],
@@ -265,11 +301,15 @@ class ChatInterface {
       'ids': ids,
     };
 
+    late List<Map<String, dynamic>> chatsData;
     if (isIsolate()) {
-      return await ChatActions.getChatsAsync(data);
+      chatsData = await ChatActions.getChatsAsync(data);
     } else {
-      return await GetIt.I<GlobalIsolate>()
+      chatsData = await GetIt.I<GlobalIsolate>()
           .send<List<Map<String, dynamic>>>(IsolateRequestType.getChatsAsync, input: data);
     }
+
+    // Deserialize chats from maps
+    return chatsData.map((e) => Chat.fromMap(e)).toList();
   }
 }

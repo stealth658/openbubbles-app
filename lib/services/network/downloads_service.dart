@@ -133,7 +133,7 @@ class AttachmentDownloadController extends GetxController {
       // Compress the attachment
       if (!kIsWeb) {
         await as.loadAndGetProperties(attachment, actualPath: attachment.path);
-        attachment.save(null);
+        await attachment.saveAsync(null);
       }
     } catch (ex) {
       // So what if it crashes here.... I don't care...

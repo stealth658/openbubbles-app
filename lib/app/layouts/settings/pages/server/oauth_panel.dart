@@ -83,14 +83,14 @@ class _OauthPanelState extends OptimizedState<OauthPanel> {
       error = "Authentication failed. Incorrect password!";
       SettingsSvc.settings.serverAddress.value = oldAddr;
       SettingsSvc.settings.guidAuthKey.value = oldPassword;
-      await SettingsSvc.settings.saveMany(["serverAddress", "guidAuthKey"]);
+      await SettingsSvc.settings.saveManyAsync(["serverAddress", "guidAuthKey"]);
       return setState(() {});
     }
     if (serverResponse?.statusCode != 200) {
       error = "Failed to connect to $addr! Please ensure your Server's URL is accessible from your device.";
       SettingsSvc.settings.serverAddress.value = oldAddr;
       SettingsSvc.settings.guidAuthKey.value = oldPassword;
-      await SettingsSvc.settings.saveMany(["serverAddress", "guidAuthKey"]);
+      await SettingsSvc.settings.saveManyAsync(["serverAddress", "guidAuthKey"]);
       return setState(() {});
     }
 

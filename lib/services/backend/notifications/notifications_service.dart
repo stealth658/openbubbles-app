@@ -84,34 +84,33 @@ class NotificationsService {
       if (details != null && details.didNotificationLaunchApp && details.notificationResponse?.payload != null) {
         IntentsSvc.openChat(details.notificationResponse!.payload!);
       }
-      // Defer notification channel creation - not critical for immediate startup
-      Future.microtask(() {
-        createNotificationChannel(
-          NEW_MESSAGE_CHANNEL,
-          "New Messages",
-          "Displays all received new messages",
-        );
-        createNotificationChannel(
-          ERROR_CHANNEL,
-          "Errors",
-          "Displays message send failures, connection failures, and more",
-        );
-        createNotificationChannel(
-          REMINDER_CHANNEL,
-          "Message Reminders",
-          "Displays message reminders set through the app",
-        );
-        createNotificationChannel(
-          FACETIME_CHANNEL,
-          "Incoming FaceTimes",
-          "Displays incoming FaceTimes detected by the server",
-        );
-        createNotificationChannel(
-          FOREGROUND_SERVICE_CHANNEL,
-          "Foreground Service",
-          "Allows BlueBubbles to stay open in the background for notifications if FCM is not being used",
-        );
-      });
+      // Create notification channels - Android automatically checks if they exist
+      // and skips creation if they already exist, so no need to check first
+      createNotificationChannel(
+        NEW_MESSAGE_CHANNEL,
+        "New Messages",
+        "Displays all received new messages",
+      );
+      createNotificationChannel(
+        ERROR_CHANNEL,
+        "Errors",
+        "Displays message send failures, connection failures, and more",
+      );
+      createNotificationChannel(
+        REMINDER_CHANNEL,
+        "Message Reminders",
+        "Displays message reminders set through the app",
+      );
+      createNotificationChannel(
+        FACETIME_CHANNEL,
+        "Incoming FaceTimes",
+        "Displays incoming FaceTimes detected by the server",
+      );
+      createNotificationChannel(
+        FOREGROUND_SERVICE_CHANNEL,
+        "Foreground Service",
+        "Allows BlueBubbles to stay open in the background for notifications if FCM is not being used",
+      );
     }
 
     // watch for new messages and handle the notification
@@ -121,29 +120,37 @@ class NotificationsService {
       countSub = countQuery.listen((event) {
         if (!SettingsSvc.settings.finishedSetup.value) return;
         final newCount = event.count();
-        final activeChatFetching = cm.activeChat != null ? MessagesSvc(cm.activeChat!.chat.guid).isFetching : false;
+        final activeChat = cm.activeChat;
+        final activeChatFetching = activeChat != null ? MessagesSvc(activeChat.chat.guid).isFetching : false;
         if (LifecycleSvc.isAlive &&
             (!SyncSvc.isIncrementalSyncing.value && !kIsDesktop) &&
             !activeChatFetching &&
             newCount > currentCount &&
             currentCount != 0) {
-          event.limit = newCount - currentCount;
+          final messagesToFetch = newCount - currentCount;
+          event.limit = messagesToFetch;
           final messages = event.find();
           event.limit = 0;
+          // Pre-load relationships for all messages
           for (Message message in messages) {
             if (message.chat.target == null) continue;
             message.handle = message.getHandle();
             message.attachments = List<Attachment>.from(message.dbAttachments);
           }
+          // Handle notifications for messages with valid chat targets
           for (Message message in messages) {
-            MessageHelper.handleNotification(message, message.chat.target!, findExisting: false);
+            final chatTarget = message.chat.target;
+            if (chatTarget != null) {
+              MessageHelper.handleNotification(message, chatTarget, findExisting: false);
+            }
           }
         }
         currentCount = newCount;
       });
     } else {
       countSub = WebListeners.newMessage.listen((tuple) {
-        final activeChatFetching = cm.activeChat != null ? MessagesSvc(cm.activeChat!.chat.guid).isFetching : false;
+        final activeChat = cm.activeChat;
+        final activeChatFetching = activeChat != null ? MessagesSvc(activeChat.chat.guid).isFetching : false;
         if (LifecycleSvc.isAlive && !activeChatFetching && tuple.item2 != null) {
           MessageHelper.handleNotification(tuple.item1, tuple.item2!, findExisting: false);
         }
@@ -196,11 +203,12 @@ class NotificationsService {
     final personIcon = (await rootBundle.load("assets/images/person64.png")).buffer.asUint8List();
 
     Uint8List chatIcon = await avatarAsBytes(chat: chat, quality: 256);
-    Uint8List contactIcon = message.isFromMe!
+    final isFromMe = message.isFromMe ?? false;
+    Uint8List contactIcon = isFromMe
         ? personIcon
         : await avatarAsBytes(
             participantsOverride:
-                !chat.isGroup ? null : chat.participants.where((e) => e.address == message.handle!.address).toList(),
+                !chat.isGroup ? null : chat.participants.where((e) => e.address == message.handle?.address).toList(),
             chat: chat,
             quality: 256);
     if (chatIcon.isEmpty) {
@@ -220,20 +228,22 @@ class NotificationsService {
       _lock.synchronized(
           () => showDesktopNotif(text, chat, title, contactName, message, isReaction, message.isGroupEvent));
     } else {
-      await MethodChannelSvc.invokeMethod("create-incoming-message-notification", {
-        "channel_id": NEW_MESSAGE_CHANNEL,
-        "chat_id": chat.id,
-        "chat_guid": guid,
-        "chat_is_group": isGroup,
-        "chat_title": title,
-        "chat_icon": isGroup ? chatIcon : contactIcon,
-        "contact_name": contactName,
-        "contact_avatar": contactIcon,
-        "message_guid": message.guid!,
-        "message_text": text,
-        "message_date": message.dateCreated!.millisecondsSinceEpoch,
-        "message_is_from_me": false,
-      });
+      if (message.guid != null && message.dateCreated != null) {
+        await MethodChannelSvc.invokeMethod("create-incoming-message-notification", {
+          "channel_id": NEW_MESSAGE_CHANNEL,
+          "chat_id": chat.id,
+          "chat_guid": guid,
+          "chat_is_group": isGroup,
+          "chat_title": title,
+          "chat_icon": isGroup ? chatIcon : contactIcon,
+          "contact_name": contactName,
+          "contact_avatar": contactIcon,
+          "message_guid": message.guid!,
+          "message_text": text,
+          "message_date": message.dateCreated!.millisecondsSinceEpoch,
+          "message_is_from_me": false,
+        });
+      }
     }
   }
 
@@ -358,7 +368,9 @@ class NotificationsService {
       isGroupEvent: isGroupEvent,
     ));
 
-    debounceTimers[guid]?.cancel();
+    // Cancel and clean up old timer
+    final oldTimer = debounceTimers[guid];
+    oldTimer?.cancel();
     debounceTimers[guid] = Timer(
       const Duration(milliseconds: 1000),
       () async => await _buildAndShowToast(chat, title, message),
@@ -369,10 +381,33 @@ class NotificationsService {
     final String guid = chat.guid;
     if (pendingMessages[guid]?.isEmpty ?? true) return;
 
-    Uint8List avatar = await avatarAsBytes(chat: chat, quality: 256);
-    String path = join(FilesystemSvc.appDocDir.path, "temp", "${randomString(8)}.png");
-    await File(path).create(recursive: true);
-    await File(path).writeAsBytes(avatar);
+    String path;
+    bool isTemporaryFile = false;
+    
+    // Optimization: For single-participant chats, use existing ContactV2 avatar if available
+    if (chat.participants.length == 1 && chat.customAvatarPath == null) {
+      final contactV2 = chat.participants.first.contactsV2.firstOrNull;
+      if (contactV2?.avatarPath != null && await File(contactV2!.avatarPath!).exists()) {
+        // Use existing avatar file directly, no need to generate and write a temp file
+        path = contactV2.avatarPath!;
+      } else {
+        // Need to generate composite avatar
+        isTemporaryFile = true;
+        final Uint8List avatar = await avatarAsBytes(chat: chat, quality: 256);
+        path = join(FilesystemSvc.appDocDir.path, "temp", "${randomString(8)}.png");
+        final File avatarFile = File(path);
+        await avatarFile.create(recursive: true);
+        await avatarFile.writeAsBytes(avatar);
+      }
+    } else {
+      // Group chat or custom avatar - need to generate composite avatar
+      isTemporaryFile = true;
+      final Uint8List avatar = await avatarAsBytes(chat: chat, quality: 256);
+      path = join(FilesystemSvc.appDocDir.path, "temp", "${randomString(8)}.png");
+      final File avatarFile = File(path);
+      await avatarFile.create(recursive: true);
+      await avatarFile.writeAsBytes(avatar);
+    }
 
     int usedLines = 0;
     int numToShow = 0;
@@ -450,7 +485,7 @@ class NotificationsService {
 
     activeToasts[guid] = toast;
 
-    _attachToastHandlers(toast, chat, message, path, actions, numMessages > 1);
+    _attachToastHandlers(toast, chat, message, path, actions, numMessages > 1, deleteFileOnClose: isTemporaryFile);
 
     await playDesktopNotificationSound();
 
@@ -462,12 +497,14 @@ class NotificationsService {
   }
 
   void _attachToastHandlers(LocalNotification toast, Chat chat, Message message, String avatarPath,
-      List<String> actions, bool multipleMessages) {
+      List<String> actions, bool multipleMessages, {bool deleteFileOnClose = true}) {
     toast.onClick = () async {
       _cleanNotificationState(chat.guid);
       await _openChat(chat);
       await windowManager.show();
-      _deleteTempFile(avatarPath);
+      if (deleteFileOnClose) {
+        _deleteTempFile(avatarPath);
+      }
     };
 
     toast.onClickAction = (index) {
@@ -495,7 +532,9 @@ class NotificationsService {
           ),
         );
       }
-      _deleteTempFile(avatarPath);
+      if (deleteFileOnClose) {
+        _deleteTempFile(avatarPath);
+      }
     };
 
     toast.onInput = (text) {
@@ -517,7 +556,9 @@ class NotificationsService {
         ),
       );
 
-      _deleteTempFile(avatarPath);
+      if (deleteFileOnClose) {
+        _deleteTempFile(avatarPath);
+      }
     };
 
     toast.onClose = (reason) async {
@@ -525,7 +566,9 @@ class NotificationsService {
         _cleanNotificationState(chat.guid);
       }
 
-      _deleteTempFile(avatarPath);
+      if (deleteFileOnClose) {
+        _deleteTempFile(avatarPath);
+      }
     };
   }
 
@@ -543,10 +586,14 @@ class NotificationsService {
     }
   }
 
-  void _deleteTempFile(String path) async {
-    final File file = File(path);
-    if (file.existsSync()) {
-      file.deleteSync();
+  Future<void> _deleteTempFile(String path) async {
+    try {
+      final File file = File(path);
+      if (await file.exists()) {
+        await file.delete();
+      }
+    } catch (e) {
+      // Ignore file deletion errors
     }
   }
 
@@ -564,6 +611,7 @@ class NotificationsService {
     const title = 'Could not connect';
     const subtitle = 'Your server may be offline!';
     if (kIsDesktop) {
+      // Don't create duplicate socket error toasts
       if (socketToast != null) return;
       socketToast = LocalNotification(
         type: LocalNotificationType.text02,

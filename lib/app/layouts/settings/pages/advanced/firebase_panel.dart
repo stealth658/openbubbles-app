@@ -402,7 +402,7 @@ class _FirebasePanelState extends OptimizedState<FirebasePanel> {
                                       }
 
                                       SettingsSvc.settings.firstFcmRegisterDate.value = 0;
-                                      await SettingsSvc.settings.saveOne('firstFcmRegisterDate');
+                                      await SettingsSvc.settings.saveOneAsync('firstFcmRegisterDate');
                                       exit(0);
                                     },
                                   ),

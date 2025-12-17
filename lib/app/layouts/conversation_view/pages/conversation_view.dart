@@ -1,5 +1,6 @@
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/header/cupertino_header.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/header/material_header.dart';
+import 'package:bluebubbles/app/layouts/conversation_view/widgets/messages_view_components.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/text_field/conversation_text_field.dart';
 import 'package:bluebubbles/app/wrappers/gradient_background_wrapper.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
@@ -9,7 +10,6 @@ import 'package:bluebubbles/app/layouts/conversation_view/widgets/effects/screen
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_acrylic/window_effect.dart';
@@ -35,6 +35,9 @@ class ConversationView extends StatefulWidget {
 
 class ConversationViewState extends OptimizedState<ConversationView> {
   late final ConversationViewController controller = cvc(chat, tag: widget.customService?.tag);
+  
+  // Cache actions map to avoid rebuilding on every frame
+  late final Map<Type, Action<Intent>> _actionsMap;
 
   Chat get chat => widget.chat;
 
@@ -53,6 +56,27 @@ class ConversationViewState extends OptimizedState<ConversationView> {
     }
 
     controller.loadReplyToMessageState(); // P224b
+    
+    // Build actions map once
+    _buildActionsMap();
+  }
+  
+  void _buildActionsMap() {
+    _actionsMap = {
+      OpenChatDetailsIntent: OpenChatDetailsAction(context, widget.chat),
+    };
+    
+    if (SettingsSvc.settings.enablePrivateAPI.value) {
+      _actionsMap.addAll({
+        ReplyRecentIntent: ReplyRecentAction(widget.chat),
+        HeartRecentIntent: HeartRecentAction(widget.chat),
+        LikeRecentIntent: LikeRecentAction(widget.chat),
+        DislikeRecentIntent: DislikeRecentAction(widget.chat),
+        LaughRecentIntent: LaughRecentAction(widget.chat),
+        EmphasizeRecentIntent: EmphasizeRecentAction(widget.chat),
+        QuestionRecentIntent: QuestionRecentAction(widget.chat),
+      });
+    }
   }
 
   @override
@@ -63,28 +87,33 @@ class ConversationViewState extends OptimizedState<ConversationView> {
 
   @override
   Widget build(BuildContext context) {
+    // Cache theme values to avoid repeated lookups
+    final theme = context.theme;
+    final colorScheme = theme.colorScheme;
+    final immersiveMode = SettingsSvc.settings.immersiveMode.value;
+    final monetTheming = SettingsSvc.settings.monetTheming.value;
+    final windowEffect = SettingsSvc.settings.windowEffect.value;
+    final avatarScale = SettingsSvc.settings.avatarScale.value;
+    final bubbleColor = colorScheme.bubble(context, chat.isIMessage);
+    final onBubbleColor = colorScheme.onBubble(context, chat.isIMessage);
+    final bubbleColorsExt = theme.extensions[BubbleColors] as BubbleColors?;
+    
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
-        systemNavigationBarColor: SettingsSvc.settings.immersiveMode.value
-            ? Colors.transparent
-            : context.theme.colorScheme.background,
-        systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
+        systemNavigationBarColor: immersiveMode ? Colors.transparent : colorScheme.background,
+        systemNavigationBarIconBrightness: colorScheme.brightness.opposite,
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: context.theme.colorScheme.brightness.opposite,
+        statusBarIconBrightness: colorScheme.brightness.opposite,
       ),
       child: Theme(
-        data: context.theme.copyWith(
+        data: theme.copyWith(
           // in case some components still use legacy theming
-          primaryColor: context.theme.colorScheme.bubble(context, chat.isIMessage),
-          colorScheme: context.theme.colorScheme.copyWith(
-            primary: context.theme.colorScheme.bubble(context, chat.isIMessage),
-            onPrimary: context.theme.colorScheme.onBubble(context, chat.isIMessage),
-            surface: SettingsSvc.settings.monetTheming.value == Monet.full
-                ? null
-                : (context.theme.extensions[BubbleColors] as BubbleColors?)?.receivedBubbleColor,
-            onSurface: SettingsSvc.settings.monetTheming.value == Monet.full
-                ? null
-                : (context.theme.extensions[BubbleColors] as BubbleColors?)?.onReceivedBubbleColor,
+          primaryColor: bubbleColor,
+          colorScheme: colorScheme.copyWith(
+            primary: bubbleColor,
+            onPrimary: onBubbleColor,
+            surface: monetTheming == Monet.full ? null : bubbleColorsExt?.receivedBubbleColor,
+            onSurface: monetTheming == Monet.full ? null : bubbleColorsExt?.onReceivedBubbleColor,
           ),
         ),
         child: PopScope(
@@ -112,31 +141,15 @@ class ConversationViewState extends OptimizedState<ConversationView> {
             top: false,
             bottom: false,
             child: Scaffold(
-              backgroundColor: SettingsSvc.settings.windowEffect.value != WindowEffect.disabled ? Colors.transparent : context.theme.colorScheme.background,
+              backgroundColor: windowEffect != WindowEffect.disabled ? Colors.transparent : colorScheme.background,
               extendBodyBehindAppBar: true,
               appBar: PreferredSize(
-                  preferredSize: Size(NavigationSvc.width(context), (kIsDesktop ? (!iOS ? 25 : 5) : 0) + 90 * (iOS ? SettingsSvc.settings.avatarScale.value : 0) + (!iOS ? kToolbarHeight : 0)),
+                  preferredSize: Size(NavigationSvc.width(context), (kIsDesktop ? (!iOS ? 25 : 5) : 0) + 90 * (iOS ? avatarScale : 0) + (!iOS ? kToolbarHeight : 0)),
                   child: iOS
                   ? CupertinoHeader(controller: controller)
                   : MaterialHeader(controller: controller) as PreferredSizeWidget),
               body: Actions(
-                actions: {
-                  if (SettingsSvc.settings.enablePrivateAPI.value)
-                    ReplyRecentIntent: ReplyRecentAction(widget.chat),
-                  if (SettingsSvc.settings.enablePrivateAPI.value)
-                    HeartRecentIntent: HeartRecentAction(widget.chat),
-                  if (SettingsSvc.settings.enablePrivateAPI.value)
-                    LikeRecentIntent: LikeRecentAction(widget.chat),
-                  if (SettingsSvc.settings.enablePrivateAPI.value)
-                    DislikeRecentIntent: DislikeRecentAction(widget.chat),
-                  if (SettingsSvc.settings.enablePrivateAPI.value)
-                    LaughRecentIntent: LaughRecentAction(widget.chat),
-                  if (SettingsSvc.settings.enablePrivateAPI.value)
-                    EmphasizeRecentIntent: EmphasizeRecentAction(widget.chat),
-                  if (SettingsSvc.settings.enablePrivateAPI.value)
-                    QuestionRecentIntent: QuestionRecentAction(widget.chat),
-                  OpenChatDetailsIntent: OpenChatDetailsAction(context, widget.chat),
-                },
+                actions: _actionsMap,
                 child: GradientBackground(
                   controller: controller,
                   child: SizedBox(
@@ -156,51 +169,7 @@ class ConversationViewState extends OptimizedState<ConversationView> {
                                     customService: widget.customService,
                                     controller: controller,
                                   ),
-                                  Align(
-                                    alignment: iOS ? Alignment.bottomRight : Alignment.bottomCenter,
-                                    child: Padding(
-                                      padding: const EdgeInsets.only(bottom: 10, right: 10, left: 10),
-                                      child: Obx(() => IgnorePointer(
-                                        ignoring: controller.showScrollDown.value ? false : true,
-                                        child: AnimatedOpacity(
-                                          opacity: controller.showScrollDown.value ? 1 : 0,
-                                          duration: const Duration(milliseconds: 300),
-                                          child: iOS ? TextButton(
-                                            style: TextButton.styleFrom(
-                                              backgroundColor: context.theme.colorScheme.secondary,
-                                              shape: const CircleBorder(),
-                                              padding: const EdgeInsets.all(0),
-                                              maximumSize: const Size(32, 32),
-                                              minimumSize: const Size(32, 32),
-                                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                            ),
-                                            onPressed: controller.scrollToBottom,
-                                            child: Container(
-                                              constraints: const BoxConstraints(minHeight: 32, minWidth: 32),
-                                              decoration: const BoxDecoration(
-                                                shape: BoxShape.circle,
-                                              ),
-                                              padding: const EdgeInsets.only(top: 3, left: 1),
-                                              alignment: Alignment.center,
-                                              child: Icon(
-                                                CupertinoIcons.chevron_down,
-                                                color: context.theme.colorScheme.onSecondary,
-                                                size: 20,
-                                              ),
-                                            ),
-                                          ) : FloatingActionButton.small(
-                                            heroTag: null,
-                                            onPressed: controller.scrollToBottom,
-                                            child: Icon(
-                                              Icons.arrow_downward,
-                                              color: context.theme.colorScheme.onSecondary,
-                                            ),
-                                            backgroundColor: context.theme.colorScheme.secondary,
-                                          ),
-                                        ),
-                                      )),
-                                    )
-                                  )
+                                  ScrollDownButton(controller: controller)
                                 ],
                               ),
                             ),
