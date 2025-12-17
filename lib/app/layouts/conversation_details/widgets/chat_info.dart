@@ -329,7 +329,7 @@ class _ChatInfoState extends OptimizedState<ChatInfo> {
           ),
         if (!chat.isGroup && iOS)
           Padding(
-            padding: const EdgeInsets.only(left: 10.0, right: 10, top: 20),
+            padding: const EdgeInsets.only(left: 15.0, right: 15, top: 20),
             child: Row(
               mainAxisAlignment: kIsWeb || kIsDesktop ? MainAxisAlignment.center : MainAxisAlignment.spaceBetween,
               children: intersperse(const SizedBox(width: 5), [
@@ -345,7 +345,7 @@ class _ChatInfoState extends OptimizedState<ChatInfo> {
           ),
         if (chat.isGroup)
           Padding(
-            padding: const EdgeInsets.only(left: 15.0, bottom: 5.0),
+            padding: const EdgeInsets.only(left: 15.0, top: 20.0, bottom: 5.0),
             child: Text("${chat.participants.length} ${iOS ? "OTHER MEMBERS" : "OTHER PEOPLE"}",
                 style: context.theme.textTheme.bodyMedium!.copyWith(color: context.theme.colorScheme.outline)),
           ),

@@ -682,7 +682,11 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.only(left: 5.0, top: 10.0, bottom: 5.0),
+                padding: EdgeInsets.only(
+                  left: 5.0,
+                  top: 10.0,
+                  bottom: 5.0 + MediaQuery.of(context).viewPadding.bottom,
+                ),
                 child: Theme(
                   data: context.theme.copyWith(
                     // in case some components still use legacy theming

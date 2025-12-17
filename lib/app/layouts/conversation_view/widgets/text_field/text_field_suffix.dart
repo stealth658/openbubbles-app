@@ -64,16 +64,27 @@ class _TextFieldSuffixState extends OptimizedState<TextFieldSuffix> {
         final hasText = widget.textController.text.isNotEmpty;
         final hasSubject = widget.subjectTextController?.text.isNotEmpty ?? false;
         
+        // For chat creator, we don't have a controller, so skip Obx
+        if (isChatCreator) {
+          return Padding(
+            padding: const EdgeInsets.all(3.0),
+            child: SendButton(
+              sendMessage: widget.sendMessage,
+              onLongPress: () {},
+            ),
+          );
+        }
+        
         return Obx(() {
-          // Only reactive values in Obx scope
-          final hasAttachments = widget.controller?.pickedAttachments.isNotEmpty ?? false;
-          final showRecording = (widget.controller?.showRecording.value ?? false) && widget.recorderController != null;
+          // Only reactive values in Obx scope - controller is guaranteed non-null here
+          final hasAttachments = widget.controller!.pickedAttachments.isNotEmpty;
+          final showRecording = widget.controller!.showRecording.value && widget.recorderController != null;
           final canSend = hasText || hasSubject || hasAttachments;
           
           return Padding(
             padding: const EdgeInsets.all(3.0),
             child: AnimatedCrossFade(
-              crossFadeState: (canSend || isChatCreator) && !showRecording
+              crossFadeState: canSend && !showRecording
                   ? CrossFadeState.showSecond
                   : CrossFadeState.showFirst,
               duration: const Duration(milliseconds: 150),
@@ -90,7 +101,7 @@ class _TextFieldSuffixState extends OptimizedState<TextFieldSuffix> {
               ),
               secondChild: SendButton(
                 sendMessage: widget.sendMessage,
-                onLongPress: isChatCreator ? () {} : () {
+                onLongPress: () {
                   if (widget.controller!.scheduledDate.value != null) return;
                   sendEffectAction(
                     context,

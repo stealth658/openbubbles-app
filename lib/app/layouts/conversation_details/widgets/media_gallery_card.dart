@@ -28,84 +28,61 @@ class MediaGalleryCard extends StatefulWidget {
 class _MediaGalleryCardState extends OptimizedState<MediaGalleryCard> with AutomaticKeepAliveClientMixin {
   Uint8List? videoPreview;
   Duration? duration;
-  AttachmentDownloadController? controller;
-  late PlatformFile attachmentFile = PlatformFile(
-    name: attachment.transferName!,
-    path: kIsWeb ? null : attachment.path,
-    bytes: attachment.bytes,
-    size: attachment.totalBytes!,
-  );
+  late dynamic content;
 
   Attachment get attachment => widget.attachment;
 
   @override
   void initState() {
     super.initState();
+    updateContent();
+  }
 
-    // check active downloader otherwise check file exists
-    if (AttachmentDownloader.getController(attachment.guid) != null) {
-      controller = AttachmentDownloader.getController(attachment.guid);
-      controller!.completeFuncs.add((file) {
-        setState(() {
-          controller = null;
-          attachmentFile = file;
-        });
-        if (attachment.mimeType?.contains("video") ?? false) {
-          getVideoPreview(file);
+  void updateContent() {
+    // Use the attachment service to get the content properly
+    content = as.getContent(attachment, autoDownload: false, onComplete: onComplete);
+    
+    // If getContent returned a controller, listen to it
+    if (content is AttachmentDownloadController) {
+      (content as AttachmentDownloadController).completeFuncs.add(onComplete);
+      (content as AttachmentDownloadController).errorFuncs.add(() {
+        if (mounted) {
+          setState(() {});
         }
       });
-      controller!.errorFuncs.add(() {
-        setState(() {
-          controller = null;
-        });
+    }
+    
+    // If content is a PlatformFile with a path, generate video preview if needed
+    if (content is PlatformFile && (content as PlatformFile).path != null) {
+      if (attachment.mimeType?.contains("video") ?? false) {
+        getVideoPreview(content as PlatformFile);
+      }
+    }
+  }
+
+  void onComplete(PlatformFile file) {
+    if (mounted) {
+      setState(() {
+        content = file;
       });
-    } else if (!kIsWeb) {
-      getBytes();
+      if (attachment.mimeType?.contains("video") ?? false) {
+        getVideoPreview(file);
+      }
     }
   }
 
   void downloadAttachment() {
     setState(() {
-      controller = Get.put(
-        AttachmentDownloadController(
-          attachment: attachment,
-          onComplete: (file) {
-            setState(() {
-              controller = null;
-              attachmentFile = file;
-            });
-            if (attachment.mimeType?.contains("video") ?? false) {
-              getVideoPreview(file);
-            }
-          },
-          onError: () {
-            setState(() {
-              controller = null;
-            });
-            showSnackbar("Error", "Failed to download attachment!");
-          },
-        ),
-        tag: attachment.guid,
-      );
-    });
-  }
-
-  Future<void> getBytes() async {
-    final file = File(attachment.path);
-    if (await file.exists()) {
-      final bytes = await file.readAsBytes();
-      setState(() {
-        attachmentFile = PlatformFile(
-          name: attachment.transferName!,
-          path: attachment.path,
-          bytes: bytes,
-          size: attachment.totalBytes!,
-        );
-      });
-      if (attachment.mimeType?.contains("video") ?? false) {
-        getVideoPreview(attachmentFile);
+      content = AttachmentDownloader.startDownload(attachment, onComplete: onComplete);
+      if (content is AttachmentDownloadController) {
+        (content as AttachmentDownloadController).errorFuncs.add(() {
+          if (mounted) {
+            setState(() {});
+          }
+          showSnackbar("Error", "Failed to download attachment!");
+        });
       }
-    }
+    });
   }
 
   Future<void> getVideoPreview(PlatformFile file) async {
@@ -148,17 +125,18 @@ class _MediaGalleryCardState extends OptimizedState<MediaGalleryCard> with Autom
         attachment.mimeType ?? "Unknown",
         textAlign: TextAlign.center,
       );
-    } else if (controller != null) {
+    } else if (content is AttachmentDownloadController) {
       child = SizedBox(
         height: 40,
         width: 40,
         child: Obx(() => CircleProgressBar(
           foregroundColor: context.theme.colorScheme.primary,
           backgroundColor: context.theme.colorScheme.outline,
-          value: controller!.progress.value?.toDouble() ?? 0
+          value: (content as AttachmentDownloadController).progress.value?.toDouble() ?? 0
         )),
       );
-    } else if (attachmentFile.bytes == null) {
+    } else if (content is Attachment) {
+      // Attachment not downloaded yet
       child = InkWell(
         onTap: downloadAttachment,
         child: Column(
@@ -184,24 +162,27 @@ class _MediaGalleryCardState extends OptimizedState<MediaGalleryCard> with Autom
           ],
         ),
       );
-    } else if (attachment.mimeType?.startsWith("image") ?? false) {
-      child = ImageDisplay(attachment: attachment, image: attachmentFile.bytes!);
-      addPadding = false;
-    } else if ((attachment.mimeType?.startsWith("video") ?? false) && !kIsDesktop && !kIsWeb) {
-      if (videoPreview != null) {
-        child = ImageDisplay(attachment: attachment, image: videoPreview!, duration: duration);
+    } else if (content is PlatformFile) {
+      final file = content as PlatformFile;
+      if (attachment.mimeType?.startsWith("image") ?? false) {
+        child = ImageDisplay(attachment: attachment, file: file);
         addPadding = false;
+      } else if ((attachment.mimeType?.startsWith("video") ?? false) && !kIsDesktop && !kIsWeb) {
+        if (videoPreview != null) {
+          child = ImageDisplay(attachment: attachment, image: videoPreview!, duration: duration);
+          addPadding = false;
+        } else {
+          child = const Text(
+            "Loading video preview...",
+            textAlign: TextAlign.center,
+          );
+        }
       } else {
-        child = const Text(
-          "Loading video preview...",
-          textAlign: TextAlign.center,
+        child = OtherFile(
+          file: file,
+          attachment: attachment,
         );
       }
-    } else if (attachmentFile.bytes != null) {
-      child = OtherFile(
-        file: attachmentFile,
-        attachment: attachment,
-      );
     } else {
       child = const SizedBox.shrink();
     }
@@ -226,12 +207,14 @@ class ImageDisplay extends StatelessWidget {
   const ImageDisplay({
     super.key,
     required this.attachment,
-    required this.image,
+    this.file,
+    this.image,
     this.duration,
   });
 
   final Attachment attachment;
-  final Uint8List image;
+  final PlatformFile? file;
+  final Uint8List? image;
   final Duration? duration;
 
   @override
@@ -253,14 +236,29 @@ class ImageDisplay extends StatelessWidget {
             height: NavigationSvc.width(context) / max(2, NavigationSvc.width(context) ~/ 200),
             child: Stack(
               children: [
-                Image.memory(
-                  image,
-                  fit: BoxFit.cover,
-                  alignment: Alignment.center,
-                  cacheWidth: NavigationSvc.width(context) ~/ max(2, NavigationSvc.width(context) ~/ 200) * 2,
-                  width: NavigationSvc.width(context) / max(2, NavigationSvc.width(context) ~/ 200),
-                  height: NavigationSvc.width(context) / max(2, NavigationSvc.width(context) ~/ 200),
-                ),
+                if (file != null && file!.path != null)
+                  Image.file(
+                    File(file!.path!),
+                    fit: BoxFit.cover,
+                    alignment: Alignment.center,
+                    cacheWidth: NavigationSvc.width(context) ~/ max(2, NavigationSvc.width(context) ~/ 200) * 2,
+                    width: NavigationSvc.width(context) / max(2, NavigationSvc.width(context) ~/ 200),
+                    height: NavigationSvc.width(context) / max(2, NavigationSvc.width(context) ~/ 200),
+                  )
+                else if (image != null)
+                  Image.memory(
+                    image!,
+                    fit: BoxFit.cover,
+                    alignment: Alignment.center,
+                    cacheWidth: NavigationSvc.width(context) ~/ max(2, NavigationSvc.width(context) ~/ 200) * 2,
+                    width: NavigationSvc.width(context) / max(2, NavigationSvc.width(context) ~/ 200),
+                    height: NavigationSvc.width(context) / max(2, NavigationSvc.width(context) ~/ 200),
+                  )
+                else
+                  SizedBox(
+                    width: NavigationSvc.width(context) / max(2, NavigationSvc.width(context) ~/ 200),
+                    height: NavigationSvc.width(context) / max(2, NavigationSvc.width(context) ~/ 200),
+                  ),
                 if ((attachment.mimeType?.contains("video") ?? false) && duration != null)
                   Positioned(
                     bottom: 10,
