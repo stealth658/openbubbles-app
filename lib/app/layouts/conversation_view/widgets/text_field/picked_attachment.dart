@@ -53,11 +53,24 @@ class _PickedAttachmentState extends OptimizedState<PickedAttachment> with Autom
         || mimeType == "image/heif"
         || mimeType == "image/tif"
         || mimeType == "image/tiff") {
-      final fakeAttachment = Attachment(
-        transferName: file.path,
-        mimeType: mimeType,
-      );
-      image = await as.loadAndGetProperties(fakeAttachment, actualPath: file.path, onlyFetchData: true);
+      // Use ensureImageCompatibility instead of deprecated loadAndGetProperties
+      try {
+        final fakeAttachment = Attachment(
+          transferName: file.path,
+          mimeType: mimeType,
+        );
+        final convertedPath = await as.ensureImageCompatibility(fakeAttachment);
+        if (convertedPath != null) {
+          final convertedFile = File(convertedPath);
+          image = await convertedFile.readAsBytes();
+        } else {
+          // Fallback to original bytes if conversion returns null
+          image = file.bytes;
+        }
+      } catch (ex) {
+        // Fallback to original bytes if conversion fails
+        image = file.bytes;
+      }
       setState(() {});
     } else if (mimeType.startsWith("image/")) {
       setState(() {

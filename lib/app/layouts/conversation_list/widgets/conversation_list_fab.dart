@@ -17,27 +17,17 @@ class ConversationListFAB extends CustomStateful<ConversationListController> {
 }
 
 class _ConversationListFABState extends CustomState<ConversationListFAB, void, ConversationListController> {
-
+  // Cache these values to prevent rebuild on every scroll event
+  double _lastScrollOffset = 0;
+  ScrollDirection _lastScrollDirection = ScrollDirection.idle;
+  
   @override
   void initState() {
     super.initState();
 
-    controller.materialScrollController.addListener(() {
-      if (!material) return;
-      if (controller.materialScrollStartPosition - controller.materialScrollController.offset < -75
-          && controller.materialScrollController.position.userScrollDirection == ScrollDirection.reverse
-          && controller.showMaterialFABText) {
-        setState(() {
-          controller.showMaterialFABText = false;
-        });
-      } else if (controller.materialScrollStartPosition - controller.materialScrollController.offset > 75
-          && controller.materialScrollController.position.userScrollDirection == ScrollDirection.forward
-          && !controller.showMaterialFABText) {
-        setState(() {
-          controller.showMaterialFABText = true;
-        });
-      }
-    });
+    // Optimize scroll listener to reduce setState calls
+    controller.materialScrollController.addListener(_handleScroll);
+    
     NavigationSvc.listener.stream.listen((event) {
       if (!mounted) return;
       if (NavigationSvc.isAvatarOnly(context) && controller.showMaterialFABText) {
@@ -48,110 +38,270 @@ class _ConversationListFABState extends CustomState<ConversationListFAB, void, C
     });
   }
 
+  void _handleScroll() {
+    if (!material) return;
+    
+    final offset = controller.materialScrollController.offset;
+    final direction = controller.materialScrollController.position.userScrollDirection;
+    
+    // Only process if direction actually changed (reduces unnecessary checks)
+    if (direction == _lastScrollDirection && (offset - _lastScrollOffset).abs() < 75) {
+      return;
+    }
+    
+    _lastScrollOffset = offset;
+    _lastScrollDirection = direction;
+    
+    final scrollDelta = controller.materialScrollStartPosition - offset;
+    
+    if (scrollDelta < -75 && direction == ScrollDirection.reverse && controller.showMaterialFABText) {
+      setState(() {
+        controller.showMaterialFABText = false;
+      });
+    } else if (scrollDelta > 75 && direction == ScrollDirection.forward && !controller.showMaterialFABText) {
+      setState(() {
+        controller.showMaterialFABText = true;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    controller.materialScrollController.removeListener(_handleScroll);
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final widget = Obx(() => Column(
+    // Extract iOS/Samsung widget to prevent rebuild on Material changes
+    final iosAndSamsungWidget = _IOSAndSamsungFAB(
+      controller: controller,
+      context: context,
+    );
+
+    return ThemeSwitcher(
+      iOSSkin: iosAndSamsungWidget,
+      materialSkin: _MaterialFAB(
+        controller: controller,
+        onScrollToTop: () async {
+          await controller.materialScrollController.animateTo(
+            0,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          );
+          setState(() {
+            controller.showMaterialFABText = true;
+          });
+        },
+      ),
+      samsungSkin: iosAndSamsungWidget,
+    );
+  }
+}
+
+/// Extracted iOS/Samsung FAB to prevent unnecessary rebuilds
+class _IOSAndSamsungFAB extends StatelessWidget {
+  const _IOSAndSamsungFAB({
+    required this.controller,
+    required this.context,
+  });
+
+  final ConversationListController controller;
+  final BuildContext context;
+
+  @override
+  Widget build(BuildContext context) {
+    final isIOS = SettingsSvc.settings.skin.value == Skins.iOS;
+    return Obx(() => Column(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        if (SettingsSvc.settings.cameraFAB.value && iOS && !kIsWeb && !kIsDesktop)
-          ConstrainedBox(
-            constraints: const BoxConstraints(
-              maxWidth: 45,
-              maxHeight: 45,
-            ),
-            child: FloatingActionButton(
-              child: Icon(
-                iOS ? CupertinoIcons.camera : Icons.photo_camera,
-                size: 20,
-                color: context.theme.colorScheme.onPrimaryContainer
-              ),
-              onPressed: () => controller.openCamera(context),
-              heroTag: null,
-              backgroundColor: context.theme.colorScheme.primaryContainer,
-            ),
+        // Camera FAB (iOS only)
+        if (SettingsSvc.settings.cameraFAB.value && isIOS && !kIsWeb && !kIsDesktop)
+          _CameraFAB(
+            controller: controller,
+            context: context,
+            isIOS: isIOS,
           ),
-        if (SettingsSvc.settings.cameraFAB.value && iOS && !kIsWeb && !kIsDesktop)
-          const SizedBox(
-            height: 10,
-          ),
-        InkWell(
-          onLongPress: iOS || !SettingsSvc.settings.cameraFAB.value || kIsWeb || kIsDesktop
-            ? null : () => controller.openCamera(context),
-          child: FloatingActionButton(
-            backgroundColor: context.theme.colorScheme.primary,
-            child: Icon(
-              iOS ? CupertinoIcons.pencil : Icons.message,
-              color: context.theme.colorScheme.onPrimary,
-              size: 25
-            ),
-            onPressed: () => controller.openNewChatCreator(context)
-          ),
+        if (SettingsSvc.settings.cameraFAB.value && isIOS && !kIsWeb && !kIsDesktop)
+          const SizedBox(height: 10),
+        // Main compose FAB
+        _ComposeFAB(
+          controller: controller,
+          context: context,
+          isIOS: isIOS,
+          showLongPress: isIOS || !SettingsSvc.settings.cameraFAB.value || kIsWeb || kIsDesktop,
         ),
       ],
     ));
+  }
+}
 
-    return ThemeSwitcher(
-      iOSSkin: widget,
-      materialSkin: AnimatedCrossFade(
-        crossFadeState: controller.selectedChats.isEmpty
-            ? CrossFadeState.showFirst : CrossFadeState.showSecond,
-        alignment: Alignment.center,
-        duration: const Duration(milliseconds: 300),
-        secondChild: const SizedBox.shrink(),
-        firstChild: SizedBox(
-          width: NavigationSvc.width(context),
-          height: 125,
-          child: Stack(
-            alignment: Alignment.bottomCenter,
-            clipBehavior: Clip.none,
-            children: [
-              AnimatedOpacity(
-                opacity: !controller.showMaterialFABText ? 1 : 0,
-                duration: const Duration(milliseconds: 300),
-                child: FloatingActionButton.small(
-                  heroTag: null,
-                  onPressed: () async {
-                    await controller.materialScrollController.animateTo(0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
-                    setState(() {
-                      controller.showMaterialFABText = true;
-                    });
-                  },
-                  child: Icon(
-                    Icons.arrow_upward,
-                    color: context.theme.colorScheme.onSecondary,
-                  ),
-                  backgroundColor: context.theme.colorScheme.secondary,
-                ),
-              ),
-              Positioned(
-                right: material ? 15 : 0,
-                child: InkWell(
-                  onLongPress: SettingsSvc.settings.cameraFAB.value && !kIsWeb && !kIsDesktop
-                      ? () => controller.openCamera(context) : null,
-                  child: Container(
-                    height: 65,
-                    padding: const EdgeInsets.only(right: 4.5, bottom: 9),
-                    child: FloatingActionButton(
-                      backgroundColor: context.theme.colorScheme.primaryContainer,
-                      shape: const CircleBorder(),
-                      child: Padding(
-                        padding: const EdgeInsets.only(left: 5.0, right: 5.0, top: 2),
-                        child: Icon(
-                          CupertinoIcons.bubble_left,
-                          color: context.theme.colorScheme.onPrimaryContainer,
-                          size: 24,
-                        ),
-                      ),
-                      onPressed: () => controller.openNewChatCreator(context),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+/// Extracted camera FAB to isolate rebuild scope
+class _CameraFAB extends StatelessWidget {
+  const _CameraFAB({
+    required this.controller,
+    required this.context,
+    required this.isIOS,
+  });
+
+  final ConversationListController controller;
+  final BuildContext context;
+  final bool isIOS;
+
+  @override
+  Widget build(BuildContext context) {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(
+        maxWidth: 45,
+        maxHeight: 45,
+      ),
+      child: FloatingActionButton(
+        heroTag: null,
+        backgroundColor: context.theme.colorScheme.primaryContainer,
+        onPressed: () => controller.openCamera(context),
+        child: Icon(
+          isIOS ? CupertinoIcons.camera : Icons.photo_camera,
+          size: 20,
+          color: context.theme.colorScheme.onPrimaryContainer,
+        ),
+      ),
+    );
+  }
+}
+
+/// Extracted compose FAB to isolate rebuild scope
+class _ComposeFAB extends StatelessWidget {
+  const _ComposeFAB({
+    required this.controller,
+    required this.context,
+    required this.isIOS,
+    required this.showLongPress,
+  });
+
+  final ConversationListController controller;
+  final BuildContext context;
+  final bool isIOS;
+  final bool showLongPress;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onLongPress: showLongPress ? null : () => controller.openCamera(context),
+      child: FloatingActionButton(
+        backgroundColor: context.theme.colorScheme.primary,
+        onPressed: () => controller.openNewChatCreator(context),
+        child: Icon(
+          isIOS ? CupertinoIcons.pencil : Icons.message,
+          color: context.theme.colorScheme.onPrimary,
+          size: 25,
+        ),
+      ),
+    );
+  }
+}
+
+/// Extracted Material FAB to prevent iOS/Samsung rebuilds
+class _MaterialFAB extends StatelessWidget {
+  const _MaterialFAB({
+    required this.controller,
+    required this.onScrollToTop,
+  });
+
+  final ConversationListController controller;
+  final VoidCallback onScrollToTop;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedCrossFade(
+      crossFadeState: controller.selectedChats.isEmpty
+          ? CrossFadeState.showFirst
+          : CrossFadeState.showSecond,
+      alignment: Alignment.center,
+      duration: const Duration(milliseconds: 300),
+      secondChild: const SizedBox.shrink(),
+      firstChild: SizedBox(
+        width: NavigationSvc.width(context),
+        height: 125,
+        child: Stack(
+          alignment: Alignment.bottomCenter,
+          clipBehavior: Clip.none,
+          children: [
+            // Scroll to top FAB
+            _ScrollToTopFAB(
+              controller: controller,
+              onPressed: onScrollToTop,
+            ),
+            // Main compose FAB
+            Positioned(
+              right: SettingsSvc.settings.skin.value == Skins.Material ? 15 : 0,
+              child: _MaterialComposeFAB(controller: controller),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Extracted scroll to top FAB to isolate animation
+class _ScrollToTopFAB extends StatelessWidget {
+  const _ScrollToTopFAB({
+    required this.controller,
+    required this.onPressed,
+  });
+
+  final ConversationListController controller;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedOpacity(
+      opacity: !controller.showMaterialFABText ? 1 : 0,
+      duration: const Duration(milliseconds: 300),
+      child: FloatingActionButton.small(
+        heroTag: null,
+        backgroundColor: context.theme.colorScheme.secondary,
+        onPressed: onPressed,
+        child: Icon(
+          Icons.arrow_upward,
+          color: context.theme.colorScheme.onSecondary,
+        ),
+      ),
+    );
+  }
+}
+
+/// Extracted Material compose FAB
+class _MaterialComposeFAB extends StatelessWidget {
+  const _MaterialComposeFAB({
+    required this.controller,
+  });
+
+  final ConversationListController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onLongPress: SettingsSvc.settings.cameraFAB.value && !kIsWeb && !kIsDesktop
+          ? () => controller.openCamera(context)
+          : null,
+      child: Container(
+        height: 65,
+        padding: const EdgeInsets.only(right: 4.5, bottom: 9),
+        child: FloatingActionButton(
+          backgroundColor: context.theme.colorScheme.primaryContainer,
+          shape: const CircleBorder(),
+          onPressed: () => controller.openNewChatCreator(context),
+          child: Padding(
+            padding: const EdgeInsets.only(left: 5.0, right: 5.0, top: 2),
+            child: Icon(
+              CupertinoIcons.bubble_left,
+              color: context.theme.colorScheme.onPrimaryContainer,
+              size: 24,
+            ),
           ),
         ),
       ),
-      samsungSkin: widget,
     );
   }
 }

@@ -303,6 +303,7 @@ class _AttachmentHolderState extends CustomState<AttachmentHolder, void, Message
                                   );
                                 },
                                 closedBuilder: (context, openContainer) {
+                                  print('[TEST] Attributed Body: ${message.attributedBody.map((e) => e.toMap()).toList()}');
                                   return GestureDetector(
                                     onTap: () {
                                       final _controller = controller.cvController ?? cvc(cm.activeChat!.chat);
@@ -312,19 +313,11 @@ class _AttachmentHolderState extends CustomState<AttachmentHolder, void, Message
                                     },
                                     child: Container(
                                       color: context.theme.colorScheme.properSurface,
-                                      child: ConstrainedBox(
-                                        constraints: BoxConstraints(
-                                          maxWidth: NavigationSvc.width(context) * 0.5,
-                                          maxHeight: context.height * 0.6,
-                                          minHeight: 40,
-                                          minWidth: 100,
-                                        ),
-                                        child: ImageViewer(
-                                          file: _content,
-                                          attachment: attachment,
-                                          isFromMe: message.isFromMe!,
-                                          controller: controller.cvController,
-                                        ),
+                                      child: ImageViewer(
+                                        file: _content,
+                                        attachment: attachment,
+                                        isFromMe: message.isFromMe!,
+                                        controller: controller.cvController,
                                       ),
                                     ),
                                   );

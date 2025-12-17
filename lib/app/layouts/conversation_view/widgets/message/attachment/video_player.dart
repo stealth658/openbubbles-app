@@ -457,7 +457,7 @@ class _VideoPlayerState extends OptimizedState<VideoPlayer> with AutomaticKeepAl
                       .round()
                       .abs()
                       .nonZero,
-                  fit: BoxFit.cover,
+                  fit: BoxFit.contain,
                   frameBuilder: (context, widget, frame, wasSyncLoaded) {
                     return AnimatedCrossFade(
                         crossFadeState: frame == null ? CrossFadeState.showFirst : CrossFadeState.showSecond,

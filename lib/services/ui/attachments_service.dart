@@ -6,7 +6,6 @@ import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:exif/exif.dart';
 import 'package:file_picker/file_picker.dart' hide PlatformFile;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -303,6 +302,12 @@ class AttachmentsService extends GetxService {
       } catch(_) {}
     }
 
+    // Clear metadata processing flag to force reprocessing
+    if (attachment.metadata != null) {
+      attachment.metadata!.remove('_dimensions_processed');
+      await attachment.saveAsync(null);
+    }
+
     Get.put(AttachmentDownloadController(
         attachment: attachment,
         onComplete: (file) => onComplete?.call(file),
@@ -427,7 +432,9 @@ class AttachmentsService extends GetxService {
   /// Should be called in the background after download completes.
   Future<void> loadImageProperties(Attachment attachment, {String? actualPath}) async {
     if (kIsWeb || attachment.mimeType == null || attachment.mimeStart != "image") return;
-    if (attachment.width != null && attachment.height != null && attachment.metadata != null) return; // Already loaded
+    
+    // Check if dimensions have already been processed
+    if (attachment.metadata?['_dimensions_processed'] == 'true') return;
 
     final filePath = actualPath ?? attachment.path;
     
@@ -435,17 +442,81 @@ class AttachmentsService extends GetxService {
     final compatiblePath = await ensureImageCompatibility(attachment, actualPath: filePath);
     if (compatiblePath == null) return;
 
-    // Get dimensions if not already set
-    if (attachment.width == null || attachment.height == null) {
+    bool dimensionsLoaded = false;
+    bool metadataLoaded = false;
+
+    // Try to get dimensions and metadata from EXIF first (runs in isolate to avoid UI lag)
+    if (attachment.mimeType != "image/gif") {
+      try {
+        final exif = await ImageInterface.readExifData(compatiblePath);
+        
+        if (exif != null) {          
+          // Extract dimensions from EXIF if available
+          int? exifWidth;
+          int? exifHeight;
+          
+          if (exif.containsKey('EXIF ExifImageWidth')) {
+            exifWidth = int.tryParse(exif['EXIF ExifImageWidth']!);
+          } else if (exif.containsKey('Image ImageWidth')) {
+            exifWidth = int.tryParse(exif['Image ImageWidth']!);
+          }
+          
+          if (exif.containsKey('EXIF ExifImageLength')) {
+            exifHeight = int.tryParse(exif['EXIF ExifImageLength']!);
+          } else if (exif.containsKey('Image ImageLength')) {
+            exifHeight = int.tryParse(exif['Image ImageLength']!);
+          }
+          
+          String? orientationStr;
+          if (exif.containsKey('Image Orientation')) {
+            orientationStr = exif['Image Orientation'];
+          }
+          
+          // Check if dimensions need to be swapped based on orientation
+          // Rotations of 90° or 270° require swapping width/height for display
+          bool needsSwap = orientationStr != null && (
+            orientationStr.contains('90') || 
+            orientationStr.contains('270') ||
+            orientationStr.toLowerCase().contains('rotated 90') ||
+            orientationStr.toLowerCase().contains('rotated 270')
+          );
+          
+          if (exifWidth != null && exifHeight != null && (attachment.width == null || attachment.height == null)) {
+            if (needsSwap) {
+              attachment.width = exifHeight;
+              attachment.height = exifWidth;
+            } else {
+              attachment.width = exifWidth;
+              attachment.height = exifHeight;
+            }
+            dimensionsLoaded = true;
+          }
+          
+          // Store EXIF metadata
+          if (attachment.metadata == null) {
+            attachment.metadata = exif;
+            metadataLoaded = true;
+          }
+          
+          if (dimensionsLoaded || metadataLoaded) {
+            await attachment.saveAsync(null);
+          }
+        }
+      } catch (ex, stack) {
+        Logger.error('Failed to read EXIF data!', error: ex, trace: stack);
+      }
+    }
+
+    // Fallback: Get dimensions using image size getter if not loaded from EXIF
+    if (!dimensionsLoaded && (attachment.width == null || attachment.height == null)) {
       if (attachment.mimeType == "image/gif") {
         try {
-          // For GIF, we need to read bytes to get dimensions
-          final bytes = await File(compatiblePath).readAsBytes();
-          Size size = getGifDimensions(bytes);
-          if (size.width != 0 && size.height != 0) {
-            attachment.width = size.width.toInt();
-            attachment.height = size.height.toInt();
-            await attachment.saveAsync(null);
+          // Read GIF dimensions in isolate (avoids loading full file into memory)
+          final dimensions = await ImageInterface.getGifDimensions(compatiblePath);
+          if (dimensions != null && dimensions['width'] != 0 && dimensions['height'] != 0) {
+            attachment.width = dimensions['width'];
+            attachment.height = dimensions['height'];
+            dimensionsLoaded = true;
           }
         } catch (ex, stack) {
           Logger.error('Failed to get GIF dimensions!', error: ex, trace: stack);
@@ -456,7 +527,7 @@ class AttachmentsService extends GetxService {
           if (size.width != 0 && size.height != 0) {
             attachment.width = size.width.toInt();
             attachment.height = size.height.toInt();
-            await attachment.saveAsync(null);
+            dimensionsLoaded = true;
           }
         } catch (ex, stack) {
           Logger.error('Failed to get Image Properties!', error: ex, trace: stack);
@@ -464,18 +535,11 @@ class AttachmentsService extends GetxService {
       }
     }
 
-    // Get EXIF metadata if not already set
-    if (attachment.metadata == null) {
-      try {
-        Map<String, IfdTag> exif = await readExifFromFile(File(compatiblePath));
-        attachment.metadata = {};
-        for (MapEntry<String, IfdTag> item in exif.entries) {
-          attachment.metadata![item.key] = item.value.printable;
-        }
-        await attachment.saveAsync(null);
-      } catch (ex, stack) {
-        Logger.error('Failed to read EXIF data!', error: ex, trace: stack);
-      }
+    // Mark dimensions as processed to avoid reprocessing
+    if (dimensionsLoaded) {
+      attachment.metadata ??= {};
+      attachment.metadata!['_dimensions_processed'] = 'true';
+      await attachment.saveAsync(null);
     }
   }
 

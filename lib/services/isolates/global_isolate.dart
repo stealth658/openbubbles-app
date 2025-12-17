@@ -345,6 +345,8 @@ enum IsolateRequestType {
 
   // Image actions
   convertImageToPng,
+  readExifData,
+  getGifDimensions,
 
   // Prefs actions
   saveReplyToMessageState,

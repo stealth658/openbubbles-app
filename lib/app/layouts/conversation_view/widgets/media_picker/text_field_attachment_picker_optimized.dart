@@ -1,0 +1,526 @@
+import 'dart:async';
+
+import 'package:bluebubbles/app/layouts/conversation_details/dialogs/timeframe_picker.dart';
+import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
+import 'package:bluebubbles/utils/share.dart';
+import 'package:bluebubbles/helpers/helpers.dart';
+import 'package:bluebubbles/app/layouts/conversation_view/widgets/media_picker/attachment_picker_file_optimized.dart';
+import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
+import 'package:bluebubbles/database/global/platform_file.dart';
+import 'package:bluebubbles/services/services.dart';
+import 'package:file_picker/file_picker.dart' hide PlatformFile;
+import 'package:file_picker/file_picker.dart' as pf;
+import 'package:flex_color_picker/flex_color_picker.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:hand_signature/signature.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:photo_manager/photo_manager.dart';
+
+/// Optimized attachment picker that avoids loading bytes until absolutely necessary
+/// This significantly improves performance and reduces memory usage
+class AttachmentPicker extends StatefulWidget {
+  const AttachmentPicker({
+    super.key,
+    required this.controller,
+  });
+  
+  final ConversationViewController controller;
+
+  @override
+  State<AttachmentPicker> createState() => _AttachmentPickerState();
+}
+
+class _AttachmentPickerState extends OptimizedState<AttachmentPicker> {
+  List<AssetEntity> _images = <AssetEntity>[];
+  bool _isLoadingImages = false;
+
+  ConversationViewController get controller => widget.controller;
+
+  @override
+  void initState() {
+    super.initState();
+    getAttachments();
+  }
+
+  Future<void> getAttachments() async {
+    if (kIsDesktop || kIsWeb || _isLoadingImages) return;
+    
+    setState(() {
+      _isLoadingImages = true;
+    });
+
+    try {
+      // Wait for opening animation to complete
+      await Future.delayed(const Duration(milliseconds: 250));
+      
+      final PermissionState ps = await PhotoManager.requestPermissionExtend();
+      if (!ps.hasAccess) {
+        showSnackbar("Error", "Storage permission not granted!");
+        return;
+      }
+
+      List<AssetPathEntity> list = await PhotoManager.getAssetPathList(onlyAll: true);
+      if (list.isNotEmpty) {
+        _images = await list.first.getAssetListRange(start: 0, end: 24);
+        
+        // See if there is a recent attachment
+        if (_images.isNotEmpty && 
+            DateTime.now().toLocal().isWithin(_images.first.modifiedDateTime, minutes: 2)) {
+          final file = await _images.first.file;
+          if (file != null) {
+            // Don't load bytes here - let the attachment service handle it when needed
+            eventDispatcher.emit('add-custom-smartreply', PlatformFile(
+              path: file.path,
+              name: file.path.split('/').last,
+              size: await file.length(),
+              bytes: null, // Don't preload bytes
+            ));
+          }
+        }
+      }
+    } catch (e) {
+      showSnackbar("Error", "Failed to load attachments: $e");
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingImages = false;
+        });
+      }
+    }
+  }
+
+  Future<void> openFullCamera({String type = 'camera'}) async {
+    bool granted = (await Permission.camera.request()).isGranted;
+    if (!granted) {
+      showSnackbar("Error", "Camera access was denied!");
+      return;
+    }
+
+    late final XFile? file;
+    if (type == 'camera') {
+      file = await ImagePicker().pickImage(source: ImageSource.camera);
+    } else {
+      file = await ImagePicker().pickVideo(source: ImageSource.camera);
+    }
+    
+    if (file != null) {
+      // Don't preload bytes - only store the path
+      controller.pickedAttachments.add(PlatformFile(
+        path: file.path,
+        name: file.path.split('/').last,
+        size: await file.length(),
+        bytes: null, // Will be loaded when actually sending
+      ));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 300,
+      child: RefreshIndicator(
+        onRefresh: () async {
+          await getAttachments();
+        },
+        child: NotificationListener<OverscrollIndicatorNotification>(
+          onNotification: (OverscrollIndicatorNotification overscroll) {
+            // Prevent stretchy effect
+            overscroll.disallowIndicator();
+            return true;
+          },
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: SizedBox(
+              height: 300,
+              child: Padding(
+                padding: const EdgeInsets.all(10.0),
+                child: CustomScrollView(
+                  physics: ThemeSwitcher.getScrollPhysics(),
+                  scrollDirection: Axis.horizontal,
+                  slivers: <Widget>[
+                    // Camera and Video buttons
+                    _buildActionButtons(context),
+                    const SliverPadding(padding: EdgeInsets.only(left: 5, right: 5)),
+                    // Files, Location, Schedule, Handwritten buttons
+                    _buildFeatureButtons(context),
+                    const SliverPadding(padding: EdgeInsets.only(left: 5, right: 5)),
+                    // Image grid
+                    _buildImageGrid(),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButtons(BuildContext context) {
+    return SliverGrid(
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 1.5,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+      ),
+      delegate: SliverChildBuilderDelegate(
+        (context, index) {
+          final isIOS = SettingsSvc.settings.skin.value == Skins.iOS;
+          return _ActionButton(
+            icon: index == 0 
+                ? (isIOS ? CupertinoIcons.camera : Icons.photo_camera_outlined)
+                : (isIOS ? CupertinoIcons.videocam : Icons.videocam_outlined),
+            label: index == 0 ? "Photo" : "Video",
+            onPressed: () => openFullCamera(type: index == 0 ? "camera" : "video"),
+          );
+        },
+        childCount: 2,
+      ),
+    );
+  }
+
+  Widget _buildFeatureButtons(BuildContext context) {
+    return SliverGrid(
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 4,
+        childAspectRatio: 2 / 3,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+      ),
+      delegate: SliverChildBuilderDelegate(
+        (context, index) {
+          return _FeatureButton(
+            index: index,
+            controller: controller,
+          );
+        },
+        childCount: 4,
+      ),
+    );
+  }
+
+  Widget _buildImageGrid() {
+    if (_isLoadingImages) {
+      return const SliverToBoxAdapter(
+        child: Center(
+          child: CupertinoActivityIndicator(),
+        ),
+      );
+    }
+
+    return SliverGrid(
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+      ),
+      delegate: SliverChildBuilderDelegate(
+        (context, index) {
+          final element = _images[index];
+          return AttachmentPickerFile(
+            key: Key("AttachmentPickerFile-${element.id}"),
+            data: element,
+            controller: controller,
+            onTap: () async {
+              final file = await element.file;
+              if (file == null) return;
+              
+              if ((await file.length()) / 1024000 > 1000) {
+                showSnackbar("Error", "This file is over 1 GB! Please compress it before sending.");
+                return;
+              }
+              
+              if (controller.pickedAttachments.firstWhereOrNull((e) => e.path == file.path) != null) {
+                controller.pickedAttachments.removeWhere((e) => e.path == file.path);
+              } else {
+                // Don't preload bytes - only store the path
+                controller.pickedAttachments.add(PlatformFile(
+                  path: file.path,
+                  name: file.path.split('/').last,
+                  size: await file.length(),
+                  bytes: null, // Will be loaded when actually sending
+                ));
+              }
+            },
+          );
+        },
+        childCount: _images.length,
+      ),
+    );
+  }
+}
+
+/// Extracted stateless widget to prevent unnecessary rebuilds
+class _ActionButton extends StatelessWidget {
+  const _ActionButton({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        backgroundColor: context.theme.colorScheme.properSurface,
+      ),
+      onPressed: onPressed,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          Icon(
+            icon,
+            color: context.theme.colorScheme.properOnSurface,
+          ),
+          const SizedBox(height: 8.0),
+          Text(
+            label,
+            style: context.theme.textTheme.labelLarge!
+                .copyWith(color: context.theme.colorScheme.properOnSurface),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Extracted stateless widget for feature buttons to prevent rebuilds
+class _FeatureButton extends StatelessWidget {
+  const _FeatureButton({
+    required this.index,
+    required this.controller,
+  });
+
+  final int index;
+  final ConversationViewController controller;
+
+  IconData getIcon() {
+    if (SettingsSvc.settings.skin.value == Skins.iOS) {
+      switch (index) {
+        case 0: return CupertinoIcons.folder_open;
+        case 1: return CupertinoIcons.location;
+        case 2: return CupertinoIcons.calendar_today;
+        case 3: return CupertinoIcons.pencil_outline;
+      }
+    } else {
+      switch (index) {
+        case 0: return Icons.folder_open_outlined;
+        case 1: return Icons.location_on_outlined;
+        case 2: return Icons.schedule;
+        case 3: return Icons.draw;
+      }
+    }
+    return Icons.abc;
+  }
+
+  String getText() {
+    switch (index) {
+      case 0: return "Files";
+      case 1: return "Location";
+      case 2: return "Schedule";
+      case 3: return "Handwritten";
+    }
+    return "";
+  }
+
+  Future<void> handlePress(BuildContext context) async {
+    switch (index) {
+      case 0:
+        await _handleFilePicker();
+        break;
+      case 1:
+        await _handleLocation();
+        break;
+      case 2:
+        await _handleSchedule(context);
+        break;
+      case 3:
+        await _handleHandwritten(context);
+        break;
+    }
+  }
+
+  Future<void> _handleFilePicker() async {
+    final res = await FilePicker.platform.pickFiles(
+      withReadStream: true,
+      allowMultiple: true,
+    );
+    if (res == null || res.files.isEmpty) return;
+
+    for (pf.PlatformFile file in res.files) {
+      if (file.size / 1024000 > 1000) {
+        showSnackbar("Error", "This file is over 1 GB! Please compress it before sending.");
+        continue;
+      }
+      
+      // Don't preload bytes for files - use readStream when sending
+      controller.pickedAttachments.add(PlatformFile(
+        path: file.path,
+        name: file.name,
+        bytes: null, // Will be loaded via stream when sending
+        size: file.size,
+      ));
+    }
+  }
+
+  Future<void> _handleLocation() async {
+    await Share.location(cm.activeChat!.chat);
+  }
+
+  Future<void> _handleSchedule(BuildContext context) async {
+    if (controller.pickedAttachments.isNotEmpty) {
+      return showSnackbar("Error", "Remove all attachments before scheduling!");
+    } else if (controller.replyToMessage != null || 
+               controller.subjectTextController.text.isNotEmpty) {
+      return showSnackbar("Error", "Private API features are not supported when scheduling!");
+    }
+    
+    final date = await showTimeframePicker("Pick date and time", context, presetsAhead: true);
+    if (date != null && date.isAfter(DateTime.now())) {
+      controller.scheduledDate.value = date;
+    }
+  }
+
+  Future<void> _handleHandwritten(BuildContext context) async {
+    Color selectedColor = context.theme.colorScheme.bubble(context, controller.chat.isIMessage);
+    
+    final result = await ColorPicker(
+      color: selectedColor,
+      onColorChanged: (Color newColor) {
+        selectedColor = newColor;
+      },
+      title: Text(
+        "Select Color",
+        style: context.theme.textTheme.titleLarge,
+      ),
+      width: 40,
+      height: 40,
+      spacing: 0,
+      runSpacing: 0,
+      borderRadius: 0,
+      wheelDiameter: 165,
+      enableOpacity: false,
+      showColorCode: true,
+      colorCodeHasColor: true,
+      pickersEnabled: <ColorPickerType, bool>{
+        ColorPickerType.wheel: true,
+      },
+      copyPasteBehavior: const ColorPickerCopyPasteBehavior(
+        parseShortHexCode: true,
+      ),
+      actionButtons: const ColorPickerActionButtons(
+        dialogActionButtons: true,
+      ),
+    ).showPickerDialog(
+      context,
+      barrierDismissible: false,
+      constraints: BoxConstraints(
+        minHeight: 480,
+        minWidth: NavigationSvc.width(context) - 70,
+        maxWidth: NavigationSvc.width(context) - 70,
+      ),
+    );
+
+    if (result && context.mounted) {
+      final control = HandSignatureControl();
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text(
+              "Draw Handwritten Message",
+              style: context.theme.textTheme.titleLarge,
+            ),
+            content: AspectRatio(
+              aspectRatio: 1,
+              child: Container(
+                constraints: const BoxConstraints.expand(),
+                child: HandSignature(
+                  control: control,
+                  color: selectedColor,
+                  width: 1.0,
+                  maxWidth: 10.0,
+                  type: SignatureDrawType.shape,
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                child: Text(
+                  "Cancel",
+                  style: context.theme.textTheme.bodyLarge!
+                      .copyWith(color: Get.context!.theme.colorScheme.primary),
+                ),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+              TextButton(
+                child: Text(
+                  "OK",
+                  style: context.theme.textTheme.bodyLarge!
+                      .copyWith(color: Get.context!.theme.colorScheme.primary),
+                ),
+                onPressed: () async {
+                  Navigator.of(context).pop();
+                  final bytes = await control.toImage(height: 512, fit: false);
+                  if (bytes != null) {
+                    final uint8 = bytes.buffer.asUint8List();
+                    controller.pickedAttachments.add(PlatformFile(
+                      path: null,
+                      name: "handwritten-${controller.pickedAttachments.length + 1}.png",
+                      bytes: uint8,
+                      size: uint8.lengthInBytes,
+                    ));
+                  }
+                },
+              ),
+            ],
+            backgroundColor: context.theme.colorScheme.properSurface,
+          );
+        },
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 5),
+        backgroundColor: context.theme.colorScheme.properSurface,
+      ),
+      onPressed: () => handlePress(context),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          Icon(
+            getIcon(),
+            color: context.theme.colorScheme.properOnSurface,
+          ),
+          const SizedBox(height: 8.0),
+          Text(
+            getText(),
+            style: context.theme.textTheme.labelLarge!
+                .copyWith(color: context.theme.colorScheme.properOnSurface),
+          ),
+        ],
+      ),
+    );
+  }
+}

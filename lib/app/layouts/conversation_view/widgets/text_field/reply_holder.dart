@@ -17,6 +17,11 @@ class ReplyHolder extends StatefulWidget {
 }
 
 class _ReplyHolderState extends OptimizedState<ReplyHolder> {
+  void _clearReply() {
+    widget.controller.replyToMessage = null;
+    widget.controller.scheduledDate.value = null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Obx(() {
@@ -24,81 +29,165 @@ class _ReplyHolderState extends OptimizedState<ReplyHolder> {
       final part = widget.controller.replyToMessage?.item2 ?? 0;
       final reply = message?.guid == null ? message : (getActiveMwc(message!.guid!)?.parts[part] ?? message);
       final date = widget.controller.scheduledDate.value;
-      if (reply != null || date != null) {
-        return Container(
-          color: context.theme.colorScheme.properSurface,
-          padding: EdgeInsets.only(left: !iOS ? 20.0 : 0, right: iOS ? 8.0 : 0),
-          child: Row(
-            children: [
-              if (iOS)
-                IconButton(
-                  constraints: kIsWeb || kIsDesktop ? null : const BoxConstraints(maxWidth: 30),
-                  padding: EdgeInsets.symmetric(horizontal: kIsWeb || kIsDesktop ? 12 : 8, vertical: kIsWeb || kIsDesktop ? 20 : 5),
-                  icon: Icon(
-                    CupertinoIcons.xmark_circle_fill,
-                    color: context.theme.colorScheme.properOnSurface,
-                    size: 17,
-                  ),
-                  onPressed: () {
-                    widget.controller.replyToMessage = null;
-                    widget.controller.scheduledDate.value = null;
-                    widget.controller.lastFocusedNode.requestFocus();
-                  },
-                  iconSize: 17,
-                ),
-              Expanded(
-                child: Text.rich(
-                  TextSpan(children: [
-                    if (iOS && reply != null)
-                      const TextSpan(text: "Replying to "),
-                    if (reply != null)
-                      TextSpan(
-                        text: message!.handle?.displayName ?? 'You',
-                        style: context.textTheme.bodyMedium!.copyWith(fontWeight: iOS ? FontWeight.bold : FontWeight.w400),
-                      ),
-                    if (date != null)
-                      TextSpan(
-                        text: "Scheduling for ${buildFullDate(date)}",
-                        style: context.textTheme.bodyMedium!.copyWith(fontWeight: FontWeight.bold),
-                      ),
-                    if (!iOS)
-                      const TextSpan(text: "\n"),
-                    if (reply != null)
-                      TextSpan(
-                        text: "${iOS ? " - " : ""}${MessageHelper.getNotificationText(reply is MessagePart ? Message(
-                          text: reply.text,
-                          subject: reply.subject,
-                          attachments: reply.attachments,
-                        ).mergeWith(message!) : message!)}",
-                        style: context.textTheme.bodyMedium!.copyWith(fontStyle: iOS ? FontStyle.italic : null).apply(fontSizeFactor: iOS ? 1 : 1.15),
-                      ),
-                  ]),
-                  style: context.textTheme.labelLarge!.copyWith(color: context.theme.colorScheme.properOnSurface),
-                  maxLines: iOS ? 1 : 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              if (!iOS)
-                IconButton(
-                  constraints: kIsWeb || kIsDesktop ? null : const BoxConstraints(maxWidth: 30),
-                  padding: EdgeInsets.symmetric(horizontal: kIsWeb || kIsDesktop ? 12 : 8, vertical: kIsWeb || kIsDesktop ? 20 : 5),
-                  icon: Icon(
-                    Icons.close,
-                    color: context.theme.colorScheme.properOnSurface,
-                    size: 17,
-                  ),
-                  onPressed: () {
-                    widget.controller.replyToMessage = null;
-                    widget.controller.scheduledDate.value = null;
-                  },
-                  iconSize: 25,
-                ),
-            ],
-          ),
-        );
-      } else {
+      
+      if (reply == null && date == null) {
         return const SizedBox.shrink();
       }
+
+      return _ReplyContent(
+        message: message,
+        reply: reply,
+        date: date,
+        onClear: _clearReply,
+        onClearWithFocus: () {
+          _clearReply();
+          widget.controller.lastFocusedNode.requestFocus();
+        },
+      );
     });
+  }
+}
+
+/// Extracted reply content to reduce Obx rebuild scope
+class _ReplyContent extends StatelessWidget {
+  const _ReplyContent({
+    required this.message,
+    required this.reply,
+    required this.date,
+    required this.onClear,
+    required this.onClearWithFocus,
+  });
+
+  final Message? message;
+  final dynamic reply;
+  final DateTime? date;
+  final VoidCallback onClear;
+  final VoidCallback onClearWithFocus;
+
+  @override
+  Widget build(BuildContext context) {
+    final isIOS = SettingsSvc.settings.skin.value == Skins.iOS;
+    
+    return Container(
+      color: context.theme.colorScheme.properSurface,
+      padding: EdgeInsets.only(left: !isIOS ? 20.0 : 0, right: isIOS ? 8.0 : 0),
+      child: Row(
+        children: [
+          if (isIOS)
+            _CloseButton(
+              icon: CupertinoIcons.xmark_circle_fill,
+              onPressed: onClearWithFocus,
+            ),
+          Expanded(
+            child: _ReplyText(
+              message: message,
+              reply: reply,
+              date: date,
+              isIOS: isIOS,
+            ),
+          ),
+          if (!isIOS)
+            _CloseButton(
+              icon: Icons.close,
+              iconSize: 25,
+              onPressed: onClear,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Extracted close button to isolate rebuild
+class _CloseButton extends StatelessWidget {
+  const _CloseButton({
+    required this.icon,
+    required this.onPressed,
+    this.iconSize = 17,
+  });
+
+  final IconData icon;
+  final VoidCallback onPressed;
+  final double iconSize;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      constraints: kIsWeb || kIsDesktop ? null : const BoxConstraints(maxWidth: 30),
+      padding: EdgeInsets.symmetric(
+        horizontal: kIsWeb || kIsDesktop ? 12 : 8,
+        vertical: kIsWeb || kIsDesktop ? 20 : 5,
+      ),
+      icon: Icon(
+        icon,
+        color: context.theme.colorScheme.properOnSurface,
+        size: 17,
+      ),
+      onPressed: onPressed,
+      iconSize: iconSize,
+    );
+  }
+}
+
+/// Extracted reply text to memoize expensive computation
+class _ReplyText extends StatelessWidget {
+  const _ReplyText({
+    required this.message,
+    required this.reply,
+    required this.date,
+    required this.isIOS,
+  });
+
+  final Message? message;
+  final dynamic reply;
+  final DateTime? date;
+  final bool isIOS;
+
+  String _getNotificationText() {
+    if (reply is MessagePart) {
+      final msg = Message(
+        text: reply.text,
+        subject: reply.subject,
+        attachments: reply.attachments,
+      ).mergeWith(message!);
+      return MessageHelper.getNotificationText(msg);
+    }
+    return MessageHelper.getNotificationText(message!);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Text.rich(
+      TextSpan(children: [
+        if (isIOS && reply != null)
+          const TextSpan(text: "Replying to "),
+        if (reply != null)
+          TextSpan(
+            text: message!.handle?.displayName ?? 'You',
+            style: context.textTheme.bodyMedium!.copyWith(
+              fontWeight: isIOS ? FontWeight.bold : FontWeight.w400,
+            ),
+          ),
+        if (date != null)
+          TextSpan(
+            text: "Scheduling for ${buildFullDate(date!)}",
+            style: context.textTheme.bodyMedium!.copyWith(fontWeight: FontWeight.bold),
+          ),
+        if (!isIOS)
+          const TextSpan(text: "\n"),
+        if (reply != null)
+          TextSpan(
+            text: "${isIOS ? " - " : ""}${_getNotificationText()}",
+            style: context.textTheme.bodyMedium!
+                .copyWith(fontStyle: isIOS ? FontStyle.italic : null)
+                .apply(fontSizeFactor: isIOS ? 1 : 1.15),
+          ),
+      ]),
+      style: context.textTheme.labelLarge!.copyWith(
+        color: context.theme.colorScheme.properOnSurface,
+      ),
+      maxLines: isIOS ? 1 : 2,
+      overflow: TextOverflow.ellipsis,
+    );
   }
 }

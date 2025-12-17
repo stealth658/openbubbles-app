@@ -1,3 +1,5 @@
+import 'package:convert/convert.dart';
+import 'package:exif/exif.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image/image.dart';
 import 'package:universal_io/io.dart';
@@ -23,6 +25,76 @@ class ImageActions {
       return Uint8List.fromList(encodePng(image));
     } catch (e) {
       print('Error converting image to PNG: $e');
+      return null;
+    }
+  }
+
+  /// Reads EXIF data from an image file
+  /// Input: Map with 'path' key containing file path
+  /// Output: Map<String, String> with EXIF tag names and their printable values
+  static Future<Map<String, String>?> readExifData(Map<String, dynamic> input) async {
+    try {
+      final path = input['path'] as String?;
+      if (path == null || kIsWeb) {
+        return null;
+      }
+
+      final file = File(path);
+      if (!file.existsSync()) {
+        return null;
+      }
+
+      // Read EXIF data
+      final exifData = await readExifFromFile(file);
+      
+      // Convert IfdTag values to strings for serialization
+      final result = <String, String>{};
+      for (var entry in exifData.entries) {
+        result[entry.key] = entry.value.printable;
+      }
+
+      return result;
+    } catch (e) {
+      print('Error reading EXIF data: $e');
+      return null;
+    }
+  }
+
+  /// Reads GIF dimensions from a file without loading entire file into memory
+  /// Input: Map with 'path' key containing file path
+  /// Output: Map with 'width' and 'height' keys
+  static Future<Map<String, int>?> getGifDimensions(Map<String, dynamic> input) async {
+    try {
+      final path = input['path'] as String?;
+      if (path == null || kIsWeb) {
+        return null;
+      }
+
+      final file = File(path);
+      if (!file.existsSync()) {
+        return null;
+      }
+
+      // Only read the first 10 bytes needed for GIF dimensions
+      final bytes = await file.openRead(0, 10).first;
+      
+      String hexString = "";
+      // Bytes 6 and 7 are the width bytes of a gif
+      hexString += hex.encode(bytes.sublist(7, 8));
+      hexString += hex.encode(bytes.sublist(6, 7));
+      int width = int.parse(hexString, radix: 16);
+
+      hexString = "";
+      // Bytes 8 and 9 are the height bytes of a gif
+      hexString += hex.encode(bytes.sublist(9, 10));
+      hexString += hex.encode(bytes.sublist(8, 9));
+      int height = int.parse(hexString, radix: 16);
+
+      print('Decoded GIF dimensions: ${width}x$height');
+      
+      return {'width': width, 'height': height};
+    } catch (e) {
+      print('Error reading GIF dimensions: $e');
       return null;
     }
   }

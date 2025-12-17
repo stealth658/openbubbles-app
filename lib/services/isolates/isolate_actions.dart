@@ -29,6 +29,8 @@ class IsolateActons {
 
     // Image
     IsolateRequestType.convertImageToPng: ImageActions.convertToPng,
+    IsolateRequestType.readExifData: ImageActions.readExifData,
+    IsolateRequestType.getGifDimensions: ImageActions.getGifDimensions,
 
     // Prefs
     IsolateRequestType.saveReplyToMessageState: PrefsActions.saveReplyToMessageState,

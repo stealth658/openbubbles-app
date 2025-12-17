@@ -161,7 +161,7 @@ class _NumberOfMessagesTextState extends CustomState<NumberOfMessagesText, int, 
           child: Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              "We will now download the first ${controller.numberToDownload == 0 ? "message" : "${controller.numberToDownload.toString().split(".").first} messages"} for each of your ChatSvc.\nYou can see more messages by simply scrolling up in the chat.",
+              "We will now download the first ${controller.numberToDownload == 0 ? "message" : "${controller.numberToDownload.toString().split(".").first} messages"} for each of your chats.\nYou can see more messages by simply scrolling up in the chat.",
               style: context.theme.textTheme.bodyLarge!.apply(
                 fontSizeDelta: 1.5,
                 color: context.theme.colorScheme.outline,

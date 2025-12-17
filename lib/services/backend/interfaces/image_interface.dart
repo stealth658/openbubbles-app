@@ -21,4 +21,30 @@ class ImageInterface {
           .send<Uint8List?>(IsolateRequestType.convertImageToPng, input: fileData);
     }
   }
+
+  /// Reads EXIF data from an image file in the global isolate
+  /// Returns a map of EXIF tag names to their string values
+  static Future<Map<String, String>?> readExifData(String filePath) async {
+    final input = {'path': filePath};
+
+    if (isIsolate()) {
+      return await ImageActions.readExifData(input);
+    } else {
+      return await GetIt.I<GlobalIsolate>()
+          .send<Map<String, String>?>(IsolateRequestType.readExifData, input: input);
+    }
+  }
+
+  /// Reads GIF dimensions from a file in the global isolate
+  /// Returns a map with 'width' and 'height' keys
+  static Future<Map<String, int>?> getGifDimensions(String filePath) async {
+    final input = {'path': filePath};
+
+    if (isIsolate()) {
+      return await ImageActions.getGifDimensions(input);
+    } else {
+      return await GetIt.I<GlobalIsolate>()
+          .send<Map<String, int>?>(IsolateRequestType.getGifDimensions, input: input);
+    }
+  }
 }

@@ -64,10 +64,12 @@ class ChatsService {
     }
   }
 
-  Future<void> init({bool force = false, bool headless = false}) async {
+  Future<void> init({bool force = false, bool headless = false, bool initWatchers = true}) async {
     this.headless = headless;
     if (!force && !SettingsSvc.settings.finishedSetup.value) return;
     Logger.info("Fetching chats...", tag: "ChatBloc");
+    
+    // Get current count from database or server
     currentCount = Chat.count() ??
         (await HttpSvc.chatCount().catchError((err) {
           Logger.info("Error when fetching chat count!", tag: "ChatBloc");
@@ -75,11 +77,16 @@ class ChatsService {
         }))
             .data['data']['total'] ??
         0;
+    
     loadedAllChats = Completer();
     if (currentCount != 0) {
       hasChats.value = true;
     } else {
       loadedChatBatch.value = true;
+      // Initialize watchers if requested (after we know we have no chats)
+      if (initWatchers) {
+        initDbWatchers();
+      }
       return;
     }
 
@@ -115,6 +122,11 @@ class ChatsService {
     }
     loadedAllChats.complete();
     Logger.info("Finished fetching chats (${chats.length}).", tag: "ChatBloc");
+    
+    // Initialize watchers AFTER loading all chats to avoid duplicates
+    if (initWatchers) {
+      initDbWatchers();
+    }
 
     if (kIsDesktop && Platform.isWindows) {
       /* ----- IMESSAGE:// HANDLER ----- */
@@ -304,7 +316,7 @@ class ChatsService {
     }
   }
 
-  void reset() {
+  void reset({bool reinitWatchers = true}) {
     currentCount = 0;
     hasChats.value = false;
     chats.clear();
@@ -314,6 +326,8 @@ class ChatsService {
     webCachedHandles.clear();
 
     countSub?.cancel();
-    initDbWatchers();
+    if (reinitWatchers) {
+      initDbWatchers();
+    }
   }
 }
