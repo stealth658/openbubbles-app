@@ -7,7 +7,7 @@ import 'package:bluebubbles/services/isolates/global_isolate.dart';
 class ServerInterface {
   static Future<ServerUpdateInfo> checkForServerUpdate() async {
     late Map<String, dynamic> response;
-    if (isIsolate()) {
+    if (isIsolate) {
       response = await ServerActions.checkForServerUpdate();
     } else {
       response = await GetIt.I<GlobalIsolate>()
@@ -26,7 +26,7 @@ class ServerInterface {
   static Future<ServerDetailsInfo> getServerDetails() async {
     late Map<String, dynamic> response;
 
-    if (isIsolate()) {
+    if (isIsolate) {
       response = await ServerActions.getServerDetails();
     } else {
       response = await GetIt.I<GlobalIsolate>()

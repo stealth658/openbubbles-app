@@ -14,7 +14,7 @@ class ImageInterface {
       'size': file.size,
     };
 
-    if (isIsolate()) {
+    if (isIsolate) {
       return ImageActions.convertToPng(fileData);
     } else {
       return await GetIt.I<GlobalIsolate>()
@@ -27,7 +27,7 @@ class ImageInterface {
   static Future<Map<String, String>?> readExifData(String filePath) async {
     final input = {'path': filePath};
 
-    if (isIsolate()) {
+    if (isIsolate) {
       return await ImageActions.readExifData(input);
     } else {
       return await GetIt.I<GlobalIsolate>()
@@ -40,7 +40,7 @@ class ImageInterface {
   static Future<Map<String, int>?> getGifDimensions(String filePath) async {
     final input = {'path': filePath};
 
-    if (isIsolate()) {
+    if (isIsolate) {
       return await ImageActions.getGifDimensions(input);
     } else {
       return await GetIt.I<GlobalIsolate>()

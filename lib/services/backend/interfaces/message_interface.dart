@@ -39,7 +39,7 @@ class MessageInterface {
     bool hydrateAttachments = true,
   }) async {
     late List<Map<String, dynamic>> messagesData;
-    if (isIsolate()) {
+    if (isIsolate) {
       messagesData = await MessageActions.bulkSaveNewMessages(data);
     } else {
       messagesData = await GetIt.I<GlobalIsolate>()
@@ -61,7 +61,7 @@ class MessageInterface {
       'newMessageData': newMessageData,
     };
 
-    if (isIsolate()) {
+    if (isIsolate) {
       return await MessageActions.replaceMessage(data);
     } else {
       return await GetIt.I<GlobalIsolate>()
@@ -78,7 +78,7 @@ class MessageInterface {
       'messageGuid': messageGuid,
     };
 
-    if (isIsolate()) {
+    if (isIsolate) {
       return await MessageActions.fetchAttachmentsAsync(data);
     } else {
       return await GetIt.I<GlobalIsolate>()
@@ -95,7 +95,7 @@ class MessageInterface {
       'messageGuid': messageGuid,
     };
 
-    if (isIsolate()) {
+    if (isIsolate) {
       return await MessageActions.getChatAsync(data);
     } else {
       return await GetIt.I<GlobalIsolate>()
@@ -110,7 +110,7 @@ class MessageInterface {
       'guid': guid,
     };
 
-    if (isIsolate()) {
+    if (isIsolate) {
       return await MessageActions.deleteMessage(data);
     } else {
       return await GetIt.I<GlobalIsolate>()
@@ -125,7 +125,7 @@ class MessageInterface {
       'guid': guid,
     };
 
-    if (isIsolate()) {
+    if (isIsolate) {
       return await MessageActions.softDeleteMessage(data);
     } else {
       return await GetIt.I<GlobalIsolate>()
@@ -144,7 +144,7 @@ class MessageInterface {
       'threadOriginatorGuid': threadOriginatorGuid,
     };
 
-    if (isIsolate()) {
+    if (isIsolate) {
       return await MessageActions.fetchAssociatedMessagesAsync(data);
     } else {
       return await GetIt.I<GlobalIsolate>()
@@ -165,7 +165,7 @@ class MessageInterface {
     };
 
     late Map<String, dynamic> messageMap;
-    if (isIsolate()) {
+    if (isIsolate) {
       messageMap = await MessageActions.saveMessageAsync(data);
     } else {
       messageMap = await GetIt.I<GlobalIsolate>()
@@ -190,7 +190,7 @@ class MessageInterface {
     };
 
     late Map<String, dynamic>? messageMap;
-    if (isIsolate()) {
+    if (isIsolate) {
       messageMap = await MessageActions.findOneAsync(data);
     } else {
       messageMap = await GetIt.I<GlobalIsolate>()
@@ -215,7 +215,7 @@ class MessageInterface {
     };
 
     late List<Map<String, dynamic>> messagesData;
-    if (isIsolate()) {
+    if (isIsolate) {
       messagesData = await MessageActions.findAsync(data);
     } else {
       messagesData = await GetIt.I<GlobalIsolate>()
@@ -243,7 +243,7 @@ class MessageInterface {
       'checkForLatestMessageText': checkForLatestMessageText,
     };
 
-    if (isIsolate()) {
+    if (isIsolate) {
       results = await MessageActions.bulkAddMessages(data);
     } else {
       results = await GetIt.I<GlobalIsolate>()

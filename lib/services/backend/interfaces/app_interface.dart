@@ -8,7 +8,7 @@ import 'package:github/github.dart';
 class AppInterface {
   static Future<AppUpdateInfo> checkForUpdate() async {
     late Map<String, dynamic> response;
-    if (isIsolate()) {
+    if (isIsolate) {
       response = await AppActions.checkForUpdate();
     } else {
       response = await GetIt.I<GlobalIsolate>()
@@ -27,7 +27,7 @@ class AppInterface {
 
   static Future<FCMDataInfo> getFcmData() async {
     late Map<String, dynamic> dataDict;
-    if (isIsolate()) {
+    if (isIsolate) {
       dataDict = AppActions.getFcmData();
     } else {
       dataDict = await GetIt.I<GlobalIsolate>()

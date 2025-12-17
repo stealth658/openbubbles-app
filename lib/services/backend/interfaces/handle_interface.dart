@@ -17,7 +17,7 @@ class HandleInterface {
     };
 
     late Map<String, dynamic> handleMap;
-    if (isIsolate()) {
+    if (isIsolate) {
       handleMap = await HandleActions.saveHandleAsync(data);
     } else {
       handleMap = await GetIt.I<GlobalIsolate>()
@@ -37,7 +37,7 @@ class HandleInterface {
     };
 
     late List<Map<String, dynamic>> handlesDataResult;
-    if (isIsolate()) {
+    if (isIsolate) {
       handlesDataResult = await HandleActions.bulkSaveHandlesAsync(data);
     } else {
       handlesDataResult = await GetIt.I<GlobalIsolate>()
@@ -61,7 +61,7 @@ class HandleInterface {
     };
 
     late Map<String, dynamic>? handleMap;
-    if (isIsolate()) {
+    if (isIsolate) {
       handleMap = await HandleActions.findOneHandleAsync(data);
     } else {
       handleMap = await GetIt.I<GlobalIsolate>()
@@ -75,7 +75,7 @@ class HandleInterface {
 
   static Future<List<Handle>> findHandlesAsync() async {
     late List<Map<String, dynamic>> handlesData;
-    if (isIsolate()) {
+    if (isIsolate) {
       handlesData = await HandleActions.findHandlesAsync({});
     } else {
       handlesData = await GetIt.I<GlobalIsolate>()

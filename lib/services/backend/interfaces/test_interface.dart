@@ -5,7 +5,7 @@ import 'package:bluebubbles/services/isolates/global_isolate.dart';
 
 class TestInterface {
   static Future<String> testReturnInput() async {
-    if (isIsolate()) {
+    if (isIsolate) {
       return TestActions.executeTestReturnInput('Hello from TestIsolate');
     } else {
       return await GetIt.I<GlobalIsolate>()

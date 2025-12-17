@@ -15,7 +15,7 @@ class ChatInterface {
       'chatGuid': chatGuid,
     };
 
-    if (isIsolate()) {
+    if (isIsolate) {
       return await ChatActions.clearNotificationForChat(data);
     } else {
       return await GetIt.I<GlobalIsolate>()
@@ -34,7 +34,7 @@ class ChatInterface {
       'shouldMarkOnServer': shouldMarkOnServer,
     };
 
-    if (isIsolate()) {
+    if (isIsolate) {
       return await ChatActions.markChatReadUnread(data);
     } else {
       return await GetIt.I<GlobalIsolate>()
@@ -53,7 +53,7 @@ class ChatInterface {
       'updateFlags': updateFlags,
     };
 
-    if (isIsolate()) {
+    if (isIsolate) {
       return await ChatActions.saveChat(data);
     } else {
       return await GetIt.I<GlobalIsolate>()
@@ -70,7 +70,7 @@ class ChatInterface {
       'messageIds': messageIds,
     };
 
-    if (isIsolate()) {
+    if (isIsolate) {
       return await ChatActions.deleteChat(data);
     } else {
       return await GetIt.I<GlobalIsolate>()
@@ -85,7 +85,7 @@ class ChatInterface {
       'chatData': chatData,
     };
 
-    if (isIsolate()) {
+    if (isIsolate) {
       return await ChatActions.softDeleteChat(data);
     } else {
       return await GetIt.I<GlobalIsolate>()
@@ -100,7 +100,7 @@ class ChatInterface {
       'chatData': chatData,
     };
 
-    if (isIsolate()) {
+    if (isIsolate) {
       return await ChatActions.unDeleteChat(data);
     } else {
       return await GetIt.I<GlobalIsolate>()
@@ -121,7 +121,7 @@ class ChatInterface {
       'checkForMessageText': checkForMessageText,
     };
 
-    if (isIsolate()) {
+    if (isIsolate) {
       return await ChatActions.addMessageToChat(data);
     } else {
       return await GetIt.I<GlobalIsolate>()
@@ -136,7 +136,7 @@ class ChatInterface {
       'messageGuids': messageGuids,
     };
 
-    if (isIsolate()) {
+    if (isIsolate) {
       return await ChatActions.loadSupplementalData(data);
     } else {
       return await GetIt.I<GlobalIsolate>()
@@ -154,7 +154,7 @@ class ChatInterface {
     };
 
     late List<Map<String, dynamic>> chatsData;
-    if (isIsolate()) {
+    if (isIsolate) {
       chatsData = await ChatActions.syncLatestMessages(data);
     } else {
       chatsData = await GetIt.I<GlobalIsolate>()
@@ -173,7 +173,7 @@ class ChatInterface {
     };
 
     late List<Map<String, dynamic>> resultChatsData;
-    if (isIsolate()) {
+    if (isIsolate) {
       resultChatsData = await ChatActions.bulkSyncChats(data);
     } else {
       resultChatsData = await GetIt.I<GlobalIsolate>()
@@ -205,7 +205,7 @@ class ChatInterface {
     };
 
     late List<Map<String, dynamic>> messagesData;
-    if (isIsolate()) {
+    if (isIsolate) {
       messagesData = await ChatActions.getMessagesAsync(data);
     } else {
       messagesData = await GetIt.I<GlobalIsolate>()
@@ -234,7 +234,7 @@ class ChatInterface {
     };
 
     late List<Map<String, dynamic>> resultMessagesData;
-    if (isIsolate()) {
+    if (isIsolate) {
       resultMessagesData = await ChatActions.bulkSyncMessages(data);
     } else {
       resultMessagesData = await GetIt.I<GlobalIsolate>()
@@ -262,7 +262,7 @@ class ChatInterface {
     };
 
     late List<Map<String, dynamic>> participantsData;
-    if (isIsolate()) {
+    if (isIsolate) {
       participantsData = await ChatActions.getParticipantsAsync(data);
     } else {
       participantsData = await GetIt.I<GlobalIsolate>()
@@ -282,7 +282,7 @@ class ChatInterface {
       'chatGuid': chatGuid,
     };
 
-    if (isIsolate()) {
+    if (isIsolate) {
       return await ChatActions.clearTranscriptAsync(data);
     } else {
       return await GetIt.I<GlobalIsolate>()
@@ -302,7 +302,7 @@ class ChatInterface {
     };
 
     late List<Map<String, dynamic>> chatsData;
-    if (isIsolate()) {
+    if (isIsolate) {
       chatsData = await ChatActions.getChatsAsync(data);
     } else {
       chatsData = await GetIt.I<GlobalIsolate>()

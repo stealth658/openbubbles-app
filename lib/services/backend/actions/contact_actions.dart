@@ -51,6 +51,17 @@ class ContactActions {
     });
   }
 
+  /// Gets all contacts ordered by display name
+  static Future<List<Map<String, dynamic>>> getAllContactsAsync() async {
+    return Database.runInTransaction(TxMode.read, () {
+      final query = (Database.contacts.query()..order(Contact_.displayName)).build();
+      final contacts = query.find();
+      query.close();
+      // Convert to unique set and back to list, then map to Map
+      return contacts.toSet().toList().map((e) => e.toMap()).toList();
+    });
+  }
+
   /// Uploads contacts to the server
   static Future<void> uploadContacts(Map<String, dynamic> data) async {
     final contacts = data['contacts'] as List<Map<String, dynamic>>;

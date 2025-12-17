@@ -403,6 +403,7 @@ enum IsolateRequestType {
   // Sync actions
   performIncrementalSync,
   uploadContacts,
+  getAllContactsAsync,
 
   // Message actions
   bulkSaveNewMessages,

@@ -31,13 +31,39 @@ class ChatCreatorTile extends StatefulWidget {
   OptimizedState createState() => _ChatCreatorTileState();
 }
 
-class _ChatCreatorTileState extends OptimizedState<ChatCreatorTile> with AutomaticKeepAliveClientMixin {
+class _ChatCreatorTileState extends OptimizedState<ChatCreatorTile> {
+  String? _formattedPhone;
+  bool _isFormatting = false;
+
   @override
-  bool get wantKeepAlive => true;
+  void initState() {
+    super.initState();
+    if (widget.format && !_isFormatting) {
+      _formatPhoneNumber();
+    }
+  }
+
+  @override
+  void didUpdateWidget(ChatCreatorTile oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.format && widget.subtitle != oldWidget.subtitle && !_isFormatting) {
+      _formatPhoneNumber();
+    }
+  }
+
+  Future<void> _formatPhoneNumber() async {
+    _isFormatting = true;
+    final formatted = await formatPhoneNumber(cleansePhoneNumber(widget.subtitle));
+    if (mounted) {
+      setState(() {
+        _formattedPhone = formatted;
+        _isFormatting = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
     return ListTile(
         mouseCursor: MouseCursor.defer,
         enableFeedback: true,
@@ -53,21 +79,10 @@ class _ChatCreatorTileState extends OptimizedState<ChatCreatorTile> with Automat
           ),
           overflow: TextOverflow.ellipsis,
         ),
-        subtitle: widget.format
-            ? FutureBuilder<String>(
-                future: formatPhoneNumber(cleansePhoneNumber(widget.subtitle)),
-                initialData: widget.subtitle,
-                builder: (context, snapshot) {
-                  return Text(
-                    snapshot.data ?? "",
-                    style: context.theme.textTheme.bodySmall!.copyWith(color: context.theme.colorScheme.outline),
-                  );
-                },
-              )
-            : Text(
-                widget.subtitle,
-                style: context.theme.textTheme.bodySmall!.copyWith(color: context.theme.colorScheme.outline),
-              ),
+        subtitle: Text(
+          widget.format ? (_formattedPhone ?? widget.subtitle) : widget.subtitle,
+          style: context.theme.textTheme.bodySmall!.copyWith(color: context.theme.colorScheme.outline),
+        ),
         leading: Padding(
           padding: const EdgeInsets.only(right: 5.0),
           child: widget.chat != null

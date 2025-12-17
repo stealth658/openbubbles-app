@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:bluebubbles/app/components/custom_text_editing_controllers.dart';
-import 'package:bluebubbles/app/layouts/chat_creator/widgets/chat_creator_tile.dart';
+import 'package:bluebubbles/app/layouts/chat_creator/widgets/chat_list_section.dart';
+import 'package:bluebubbles/app/layouts/chat_creator/widgets/message_type_toggle.dart';
+import 'package:bluebubbles/app/layouts/chat_creator/widgets/selected_contact_chip.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/pages/conversation_view.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/text_field/conversation_text_field.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
@@ -11,6 +13,7 @@ import 'package:bluebubbles/app/layouts/conversation_view/pages/messages_view.da
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/services/backend/interfaces/contact_interface.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/utils/string_utils.dart';
 import 'package:dio/dio.dart';
@@ -124,11 +127,16 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
       });
     });
 
-    updateObx(() {
+    updateObx(() async {
       if (widget.initialAttachments.isEmpty && !kIsWeb) {
-        final query = (Database.contacts.query()..order(Contact_.displayName)).build();
-        contacts = query.find().toSet().toList();
-        filteredContacts = List<Contact>.from(contacts);
+        // Use ContactInterface to load contacts in isolate - more efficient than runAsync
+        final contactMaps = await ContactInterface.getAllContactsAsync();
+        contacts = contactMaps.map((e) => Contact.fromMap(e)).toList();
+        if (mounted) {
+          setState(() {
+            filteredContacts = List<Contact>.from(contacts);
+          });
+        }
       }
       if (ChatsSvc.loadedAllChats.isCompleted) {
         existingChats = ChatsSvc.chats;
@@ -385,47 +393,10 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
                                       findChildIndexCallback: (key) => findChildIndexByKey(selectedContacts, key, (item) => item.address),
                                       itemBuilder: (context, index) {
                                         final e = selectedContacts[index];
-                                        return Padding(
-                                          padding: const EdgeInsets.symmetric(horizontal: 2.5),
-                                          child: Obx(() => Material(
-                                                key: ValueKey(e.address),
-                                                color: e.iMessage.value == true
-                                                    ? context.theme.colorScheme.bubble(context, true).withValues(alpha: 0.2)
-                                                    : e.iMessage.value == false
-                                                        ? context.theme.colorScheme
-                                                            .bubble(context, false)
-                                                            .withValues(alpha: 0.2)
-                                                        : context.theme.colorScheme.properSurface,
-                                                borderRadius: BorderRadius.circular(5),
-                                                clipBehavior: Clip.antiAlias,
-                                                child: InkWell(
-                                                  onTap: () {
-                                                    removeSelected(e);
-                                                  },
-                                                  child: Padding(
-                                                    padding: const EdgeInsets.symmetric(horizontal: 7.5, vertical: 7.0),
-                                                    child: Row(
-                                                      mainAxisAlignment: MainAxisAlignment.start,
-                                                      mainAxisSize: MainAxisSize.min,
-                                                      children: <Widget>[
-                                                        Text(e.displayName,
-                                                            style: context.theme.textTheme.bodyMedium!.copyWith(
-                                                              color: e.iMessage.value == true
-                                                                  ? context.theme.colorScheme.bubble(context, true)
-                                                                  : e.iMessage.value == false
-                                                                      ? context.theme.colorScheme.bubble(context, false)
-                                                                      : context.theme.colorScheme.properOnSurface,
-                                                            )),
-                                                        const SizedBox(width: 5.0),
-                                                        Icon(
-                                                          iOS ? CupertinoIcons.xmark : Icons.close,
-                                                          size: 15.0,
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ),
-                                              )),
+                                        return SelectedContactChip(
+                                          key: ValueKey(e.address),
+                                          contact: e,
+                                          onRemove: () => removeSelected(e),
                                         );
                                       },
                                     )),
@@ -484,58 +455,30 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
                   ],
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 15.0).add(const EdgeInsets.only(bottom: 5.0)),
-                child: ToggleButtons(
-                  constraints: BoxConstraints(minWidth: (NavigationSvc.width(context) - 35) / 2),
-                  fillColor: context.theme.colorScheme.bubble(context, iMessage).withValues(alpha: 0.2),
-                  splashColor: context.theme.colorScheme.bubble(context, iMessage).withValues(alpha: 0.2),
-                  children: [
-                    const Row(
-                      children: [
-                        Padding(
-                          padding: EdgeInsets.all(8.0),
-                          child: Text("iMessage"),
-                        ),
-                        Icon(CupertinoIcons.chat_bubble, size: 16),
-                      ],
-                    ),
-                    const Row(
-                      children: [
-                        Padding(
-                          padding: EdgeInsets.all(8.0),
-                          child: Text("SMS Forwarding"),
-                        ),
-                        Icon(Icons.messenger_outline, size: 16),
-                      ],
-                    ),
-                  ],
-                  borderRadius: BorderRadius.circular(20),
-                  selectedBorderColor: context.theme.colorScheme.bubble(context, iMessage),
-                  selectedColor: context.theme.colorScheme.bubble(context, iMessage),
-                  isSelected: [iMessage, sms],
-                  onPressed: (index) async {
-                    selectedContacts.clear();
-                    addressController.text = "";
-                    if (index == 0) {
-                      setState(() {
-                        iMessage = true;
-                        sms = false;
-                        filteredChats = List<Chat>.from(existingChats.where((e) => e.isIMessage));
-                      });
-                      await cm.setAllInactive();
-                      fakeController.value = null;
-                    } else {
-                      setState(() {
-                        iMessage = false;
-                        sms = true;
-                        filteredChats = List<Chat>.from(existingChats.where((e) => !e.isIMessage));
-                      });
-                      await cm.setAllInactive();
-                      fakeController.value = null;
-                    }
-                  },
-                ),
+              MessageTypeToggle(
+                iMessage: iMessage,
+                sms: sms,
+                onToggle: (index) async {
+                  selectedContacts.clear();
+                  addressController.text = "";
+                  if (index == 0) {
+                    setState(() {
+                      iMessage = true;
+                      sms = false;
+                      filteredChats = List<Chat>.from(existingChats.where((e) => e.isIMessage));
+                    });
+                    await cm.setAllInactive();
+                    fakeController.value = null;
+                  } else {
+                    setState(() {
+                      iMessage = false;
+                      sms = true;
+                      filteredChats = List<Chat>.from(existingChats.where((e) => !e.isIMessage));
+                    });
+                    await cm.setAllInactive();
+                    fakeController.value = null;
+                  }
+                },
               ),
               Expanded(
                 child: Theme(
@@ -557,119 +500,12 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
                     return AnimatedSwitcher(
                       duration: const Duration(milliseconds: 150),
                       child: fakeController.value == null
-                          ? CustomScrollView(
-                              shrinkWrap: true,
-                              physics: ThemeSwitcher.getScrollPhysics(),
-                              slivers: <Widget>[
-                                SliverList(
-                                  delegate: SliverChildBuilderDelegate((context, index) {
-                                    if (filteredChats.isEmpty) {
-                                      return Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Padding(
-                                            padding: const EdgeInsets.all(8.0),
-                                            child: Text(
-                                              "Loading existing ChatSvc...",
-                                              style: context.theme.textTheme.labelLarge,
-                                            ),
-                                          ),
-                                          buildProgressIndicator(context, size: 15),
-                                        ],
-                                      );
-                                    }
-                                    final chat = filteredChats[index];
-                                    final hideInfo =
-                                        SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
-                                    String _title = chat.properTitle;
-                                    if (hideInfo) {
-                                      _title =
-                                          chat.isGroup ? chat.fakeName : chat.participants[0].fakeName;
-                                    }
-                                    return Material(
-                                      color: Colors.transparent,
-                                      child: InkWell(
-                                        onTap: () {
-                                          addSelectedList(chat.participants
-                                              .where((e) =>
-                                                  selectedContacts.firstWhereOrNull((c) => c.address == e.address) ==
-                                                  null)
-                                              .map((e) => SelectedContact(
-                                                    displayName: e.displayName,
-                                                    address: e.address,
-                                                    isIMessage: chat.isIMessage,
-                                                  )));
-                                        },
-                                        child: ChatCreatorTile(
-                                          key: ValueKey(chat.guid),
-                                          title: _title,
-                                          subtitle: hideInfo
-                                              ? ""
-                                              : !chat.isGroup && chat.participants.isNotEmpty
-                                                  ? (chat.participants.first.formattedAddress ??
-                                                      chat.participants.first.address)
-                                                  : chat.getChatCreatorSubtitle(),
-                                          chat: chat,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                      childCount: filteredChats.length
-                                          .clamp(ChatsSvc.loadedAllChats.isCompleted ? 0 : 1, double.infinity)
-                                          .toInt()),
-                                ),
-                                SliverList(
-                                  delegate: SliverChildBuilderDelegate(
-                                    (context, index) {
-                                      final contact = filteredContacts[index];
-                                      contact.phones = getUniqueNumbers(contact.phones);
-                                      contact.emails = getUniqueEmails(contact.emails);
-                                      final hideInfo =
-                                          SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
-                                      return Column(
-                                        key: ValueKey(contact.id),
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          ...contact.phones.map((e) => Material(
-                                                color: Colors.transparent,
-                                                child: InkWell(
-                                                  onTap: () {
-                                                    if (selectedContacts.firstWhereOrNull((c) => c.address == e) !=
-                                                        null) return;
-                                                    addSelected(
-                                                        SelectedContact(displayName: contact.displayName, address: e));
-                                                  },
-                                                  child: ChatCreatorTile(
-                                                    title: hideInfo ? "Contact" : contact.displayName,
-                                                    subtitle: hideInfo ? "" : e,
-                                                    contact: contact,
-                                                    format: true,
-                                                  ),
-                                                ),
-                                              )),
-                                          ...contact.emails.map((e) => Material(
-                                                color: Colors.transparent,
-                                                child: InkWell(
-                                                  onTap: () {
-                                                    if (selectedContacts.firstWhereOrNull((c) => c.address == e) !=
-                                                        null) return;
-                                                    addSelected(
-                                                        SelectedContact(displayName: contact.displayName, address: e));
-                                                  },
-                                                  child: ChatCreatorTile(
-                                                    title: hideInfo ? "Contact" : contact.displayName,
-                                                    subtitle: hideInfo ? "" : e,
-                                                    contact: contact,
-                                                  ),
-                                                ),
-                                              )),
-                                        ],
-                                      );
-                                    },
-                                    childCount: filteredContacts.length,
-                                  ),
-                                ),
-                              ],
+                          ? ChatListSection(
+                              filteredChats: filteredChats,
+                              filteredContacts: filteredContacts,
+                              selectedContacts: selectedContacts,
+                              onChatTap: addSelectedList,
+                              onContactTap: addSelected,
                             )
                           : Container(
                               color: Colors.transparent,

@@ -98,5 +98,6 @@ class IsolateActons {
     // Sync
     IsolateRequestType.performIncrementalSync: SyncActions.performIncrementalSync,
     IsolateRequestType.uploadContacts: ContactActions.uploadContacts,
+    IsolateRequestType.getAllContactsAsync: ContactActions.getAllContactsAsync,
   };
 }

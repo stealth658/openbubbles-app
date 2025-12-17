@@ -7,7 +7,7 @@ class SyncInterface {
   /// Performs an incremental sync in the isolate
   /// Returns contact refresh data [changedContacts, removedContacts]
   static Future<List<List<int>>> performIncrementalSync() async {
-    if (isIsolate()) {
+    if (isIsolate) {
       return await SyncActions.performIncrementalSync({});
     } else {
       return await GetIt.I<GlobalIsolate>()

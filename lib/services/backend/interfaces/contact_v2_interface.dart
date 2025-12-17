@@ -11,7 +11,7 @@ class ContactV2Interface {
   /// 
   /// Returns a list of handle IDs that were affected by the matching
   static Future<List<int>> fetchAndMatchContactsAsync() async {
-    if (isIsolate()) {
+    if (isIsolate) {
       return await ContactV2Actions.fetchAndMatchContacts(<String, dynamic>{});
     } else {
       return await GetIt.I<GlobalIsolate>()
@@ -24,7 +24,7 @@ class ContactV2Interface {
   /// 
   /// Returns true if changes were detected and a re-sync was performed
   static Future<bool> checkContactChangesAsync() async {
-    if (isIsolate()) {
+    if (isIsolate) {
       return await ContactV2Actions.checkContactChanges(<String, dynamic>{});
     } else {
       return await GetIt.I<GlobalIsolate>()
@@ -35,7 +35,7 @@ class ContactV2Interface {
   /// Get all stored ContactV2 IDs (nativeContactId) for comparison
   /// Used by the periodic checker to detect changes
   static Future<List<String>> getStoredContactIdsAsync() async {
-    if (isIsolate()) {
+    if (isIsolate) {
       return await ContactV2Actions.getStoredContactIds(<String, dynamic>{});
     } else {
       return await GetIt.I<GlobalIsolate>()
@@ -51,7 +51,7 @@ class ContactV2Interface {
       'nativeContactId': nativeContactId,
     };
 
-    if (isIsolate()) {
+    if (isIsolate) {
       return await ContactV2Actions.findOneContactV2(data);
     } else {
       return await GetIt.I<GlobalIsolate>()
@@ -67,7 +67,7 @@ class ContactV2Interface {
       'handleIds': handleIds,
     };
 
-    if (isIsolate()) {
+    if (isIsolate) {
       return await ContactV2Actions.getContactsForHandles(data);
     } else {
       return await GetIt.I<GlobalIsolate>()
@@ -78,7 +78,7 @@ class ContactV2Interface {
   /// Manually trigger a contact refresh
   /// This will fetch all contacts and match them to handles
   static Future<List<int>> refreshContactsAsync() async {
-    if (isIsolate()) {
+    if (isIsolate) {
       return await ContactV2Actions.refreshContacts(<String, dynamic>{});
     } else {
       return await GetIt.I<GlobalIsolate>()

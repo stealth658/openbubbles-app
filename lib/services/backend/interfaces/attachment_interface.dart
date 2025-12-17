@@ -18,7 +18,7 @@ class AttachmentInterface {
     };
 
     late Map<String, dynamic> attachmentMap;
-    if (isIsolate()) {
+    if (isIsolate) {
       attachmentMap = await AttachmentActions.saveAttachmentAsync(data);
     } else {
       attachmentMap = await GetIt.I<GlobalIsolate>()
@@ -39,7 +39,7 @@ class AttachmentInterface {
       'mapData': mapData,
     };
 
-    if (isIsolate()) {
+    if (isIsolate) {
       return await AttachmentActions.bulkSaveAttachmentsAsync(data);
     } else {
       return await GetIt.I<GlobalIsolate>()
@@ -58,7 +58,7 @@ class AttachmentInterface {
     };
 
     late Map<String, dynamic> attachmentMap;
-    if (isIsolate()) {
+    if (isIsolate) {
       attachmentMap = await AttachmentActions.replaceAttachmentAsync(data);
     } else {
       attachmentMap = await GetIt.I<GlobalIsolate>()
@@ -81,7 +81,7 @@ class AttachmentInterface {
     };
 
     late Map<String, dynamic>? attachmentMap;
-    if (isIsolate()) {
+    if (isIsolate) {
       attachmentMap = await AttachmentActions.findOneAttachmentAsync(data);
     } else {
       attachmentMap = await GetIt.I<GlobalIsolate>()
@@ -106,7 +106,7 @@ class AttachmentInterface {
     };
     
     late List<Map<String, dynamic>> attachmentsData;
-    if (isIsolate()) {
+    if (isIsolate) {
       attachmentsData = await AttachmentActions.findAttachmentsAsync(data);
     } else {
       attachmentsData = await GetIt.I<GlobalIsolate>()
@@ -127,7 +127,7 @@ class AttachmentInterface {
       'guid': guid,
     };
 
-    if (isIsolate()) {
+    if (isIsolate) {
       return await AttachmentActions.deleteAttachmentAsync(data);
     } else {
       return await GetIt.I<GlobalIsolate>()

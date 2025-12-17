@@ -11,7 +11,7 @@ class ContactInterface {
       'contactData': contactData,
     };
 
-    if (isIsolate()) {
+    if (isIsolate) {
       return await ContactActions.saveContactAsync(data);
     } else {
       return await GetIt.I<GlobalIsolate>()
@@ -28,11 +28,21 @@ class ContactInterface {
       'address': address,
     };
 
-    if (isIsolate()) {
+    if (isIsolate) {
       return await ContactActions.findOneContactAsync(data);
     } else {
       return await GetIt.I<GlobalIsolate>()
           .send<Map<String, dynamic>?>(IsolateRequestType.findOneContactAsync, input: data);
+    }
+  }
+
+  /// Gets all contacts ordered by display name
+  static Future<List<Map<String, dynamic>>> getAllContactsAsync() async {
+    if (isIsolate) {
+      return await ContactActions.getAllContactsAsync();
+    } else {
+      return await GetIt.I<GlobalIsolate>()
+          .send<List<Map<String, dynamic>>>(IsolateRequestType.getAllContactsAsync, input: {});
     }
   }
 
@@ -42,7 +52,7 @@ class ContactInterface {
       'contacts': contacts,
     };
 
-    if (isIsolate()) {
+    if (isIsolate) {
       return await ContactActions.uploadContacts(data);
     } else {
       return await GetIt.I<GlobalIsolate>()

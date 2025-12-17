@@ -12,7 +12,7 @@ class PrefsInterface {
       'messagePart': messagePart,
     };
 
-    if (isIsolate()) {
+    if (isIsolate) {
       return await PrefsActions.saveReplyToMessageState(data);
     } else {
       return await GetIt.I<GlobalIsolate>()
@@ -25,7 +25,7 @@ class PrefsInterface {
       'chatGuid': chatGuid,
     };
 
-    if (isIsolate()) {
+    if (isIsolate) {
       return PrefsActions.loadReplyToMessageState(data);
     } else {
       return await GetIt.I<GlobalIsolate>()
@@ -38,7 +38,7 @@ class PrefsInterface {
       'settings': settings ?? SettingsSvc.settings.toMap(includeAll: true),
     };
 
-    if (isIsolate()) {
+    if (isIsolate) {
       return await PrefsActions.syncAllSettings(data);
     } else {
       return await GetIt.I<GlobalIsolate>()
@@ -47,7 +47,7 @@ class PrefsInterface {
   }
 
   static Future<void> syncSettings(Map<String, dynamic> settings) async {
-    if (isIsolate()) {
+    if (isIsolate) {
       return await PrefsActions.syncSettings(settings);
     } else {
       return await GetIt.I<GlobalIsolate>()
