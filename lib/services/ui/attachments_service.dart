@@ -59,12 +59,40 @@ class AttachmentsService extends GetxService {
     }
 
     final pathName = path ?? attachment.path;
+    
+    // Check for existing download controller
     if (AttachmentDownloader.getController(attachment.guid) != null) {
       return AttachmentDownloader.getController(attachment.guid);
-    } else if (File(pathName).existsSync()) {
+    }
+    
+    // Check if file exists and get the compatible path (converted if needed)
+    if (File(pathName).existsSync()) {
+      // For images, check if we need HEIC/TIFF conversion
+      String? compatiblePath = pathName;
+      if (attachment.mimeType?.contains('image/hei') ?? false) {
+        final convertedPath = "$pathName.png";
+        if (File(convertedPath).existsSync()) {
+          compatiblePath = convertedPath;
+        } else if (!kIsWeb && (Platform.isIOS || Platform.isMacOS)) {
+          // iOS/macOS have native HEIC support
+          compatiblePath = pathName;
+        } else {
+          // Will need conversion on first display
+          compatiblePath = pathName;
+        }
+      } else if (attachment.mimeType?.contains('image/tif') ?? false) {
+        final convertedPath = "$pathName.png";
+        if (File(convertedPath).existsSync()) {
+          compatiblePath = convertedPath;
+        } else {
+          // Will need conversion on first display
+          compatiblePath = pathName;
+        }
+      }
+      
       return PlatformFile(
         name: attachment.transferName!,
-        path: pathName,
+        path: compatiblePath,
         size: attachment.totalBytes ?? 0,
       );
     } else if (autoDownload ?? SettingsSvc.settings.autoDownload.value) {
@@ -314,101 +342,133 @@ class AttachmentsService extends GetxService {
     return thumbnail;
   }
 
-  Future<Uint8List?> loadAndGetProperties(Attachment attachment, {bool onlyFetchData = false, String? actualPath, bool isPreview = false}) async {
-    if (kIsWeb || attachment.mimeType == null || !["image", "video"].contains(attachment.mimeStart)) return null;
+  /// Converts HEIC/TIFF images to PNG if needed (only on platforms that don't support them natively).
+  /// Also extracts image dimensions and metadata lazily.
+  /// Returns the path to use (converted or original), or null if conversion failed.
+  Future<String?> ensureImageCompatibility(Attachment attachment, {String? actualPath}) async {
+    if (kIsWeb || attachment.mimeType == null || attachment.mimeStart != "image") return actualPath ?? attachment.path;
 
     final filePath = actualPath ?? attachment.path;
     File originalFile = File(filePath);
-    if (kIsDesktop) {
-      await originalFile.create(recursive: true);
+    
+    // Create parent directory if needed (desktop)
+    if (kIsDesktop && !await originalFile.parent.exists()) {
+      await originalFile.parent.create(recursive: true);
     }
 
-    // Handle getting heic and tiff images
-    if (attachment.mimeType!.contains('image/hei') && !kIsDesktop) {
-      if (await File("$filePath.png").exists()) {
-        originalFile = File("$filePath.png");
-      } else {
-        try {
-          if (onlyFetchData) {
-            return await FlutterImageCompress.compressWithFile(
-              filePath,
-              format: CompressFormat.png,
-              keepExif: true,
-              quality: isPreview ? 25 : 100,
-            );
-          } else {
-            final file = await FlutterImageCompress.compressAndGetFile(
-              filePath,
-              "$filePath.png",
-              format: CompressFormat.png,
-              keepExif: true,
-              quality: isPreview ? 25 : 100,
-            );
-
-            if (file == null) {
-              Logger.error("Failed to compress HEIC!");
-              throw Exception();
-            }
-  
-            originalFile = File("$filePath.png");
-          }
-        } catch (_) {}
-      }
-    }
-
+    // TIFF: Always needs conversion (Flutter doesn't support TIFF natively on any platform)
     if (attachment.mimeType!.contains('image/tif')) {
-      if (await File("$filePath.png").exists()) {
-        originalFile = File("$filePath.png");
-      } else {
+      final convertedPath = "$filePath.png";
+      if (await File(convertedPath).exists()) {
+        return convertedPath;
+      }
+      
+      // Convert TIFF to PNG
+      try {
         final image = await ImageInterface.convertToPng(PlatformFile(
-          name: randomString(8),
+          name: attachment.transferName ?? 'image.tiff',
           path: originalFile.path,
-          size: 0,
+          size: attachment.totalBytes ?? 0,
         ));
-        if (onlyFetchData) return image;
+        
         if (image != null) {
-          final cacheFile = File("$filePath.png");
-          originalFile = await cacheFile.writeAsBytes(image);
-        } else {
-          return null;
+          await File(convertedPath).writeAsBytes(image);
+          return convertedPath;
         }
+      } catch (ex, stack) {
+        Logger.error('Failed to convert TIFF!', error: ex, trace: stack);
+      }
+      return null;
+    }
+
+    // HEIC: Only convert on platforms that don't support it natively
+    // Android 9+ and iOS have native support
+    if (attachment.mimeType!.contains('image/hei')) {
+      final convertedPath = "$filePath.png";
+      
+      // Check if we already converted this file
+      if (await File(convertedPath).exists()) {
+        return convertedPath;
+      }
+      
+      // iOS/macOS: Native HEIC support, use original
+      if (!kIsWeb && (Platform.isIOS || Platform.isMacOS)) {
+        return filePath;
+      }
+      
+      // Android: Check API level (28+ has native support)
+      // For now, convert all Android to be safe for older devices
+      try {
+        final file = await FlutterImageCompress.compressAndGetFile(
+          filePath,
+          convertedPath,
+          format: CompressFormat.png,
+          keepExif: true,
+          quality: 100, // No quality loss for compatibility conversion
+        );
+
+        if (file == null) {
+          Logger.error("Failed to convert HEIC!");
+          return filePath; // Fallback to original, may not display on old devices
+        }
+
+        return convertedPath;
+      } catch (ex, stack) {
+        Logger.error('Failed to convert HEIC!', error: ex, trace: stack);
+        return filePath; // Fallback to original
       }
     }
 
-    Uint8List previewData = await originalFile.readAsBytes();
+    // All other formats: use as-is
+    return filePath;
+  }
 
-    if (attachment.width != null || attachment.height != null) {
+  /// Lazy-loads image properties (dimensions and EXIF) without loading the entire image into memory.
+  /// Should be called in the background after download completes.
+  Future<void> loadImageProperties(Attachment attachment, {String? actualPath}) async {
+    if (kIsWeb || attachment.mimeType == null || attachment.mimeStart != "image") return;
+    if (attachment.width != null && attachment.height != null && attachment.metadata != null) return; // Already loaded
+
+    final filePath = actualPath ?? attachment.path;
+    
+    // Ensure we have a compatible image file first
+    final compatiblePath = await ensureImageCompatibility(attachment, actualPath: filePath);
+    if (compatiblePath == null) return;
+
+    // Get dimensions if not already set
+    if (attachment.width == null || attachment.height == null) {
       if (attachment.mimeType == "image/gif") {
         try {
-          Size size = getGifDimensions(previewData);
+          // For GIF, we need to read bytes to get dimensions
+          final bytes = await File(compatiblePath).readAsBytes();
+          Size size = getGifDimensions(bytes);
           if (size.width != 0 && size.height != 0) {
             attachment.width = size.width.toInt();
             attachment.height = size.height.toInt();
+            await attachment.saveAsync(null);
           }
-          await attachment.saveAsync(null);
         } catch (ex, stack) {
           Logger.error('Failed to get GIF dimensions!', error: ex, trace: stack);
         }
-      } else if (attachment.mimeStart == "image") {
+      } else {
         try {
-          Size size = await getImageSizing(filePath, attachment);
+          Size size = await getImageSizing(compatiblePath, attachment);
           if (size.width != 0 && size.height != 0) {
             attachment.width = size.width.toInt();
             attachment.height = size.height.toInt();
+            await attachment.saveAsync(null);
           }
-          await attachment.saveAsync(null);
         } catch (ex, stack) {
           Logger.error('Failed to get Image Properties!', error: ex, trace: stack);
         }
       }
     }
 
-    if (attachment.metadata != null) {
-      // Map the EXIF to the metadata
+    // Get EXIF metadata if not already set
+    if (attachment.metadata == null) {
       try {
-        dynamic file = File(filePath);
-        Map<String, IfdTag> exif = await readExifFromFile(file);
-        attachment.metadata ??= {};
+        Map<String, IfdTag> exif = await readExifFromFile(File(compatiblePath));
+        attachment.metadata = {};
         for (MapEntry<String, IfdTag> item in exif.entries) {
           attachment.metadata![item.key] = item.value.printable;
         }
@@ -417,7 +477,27 @@ class AttachmentsService extends GetxService {
         Logger.error('Failed to read EXIF data!', error: ex, trace: stack);
       }
     }
+  }
 
-    return previewData;
+  /// Legacy method for compatibility - now just calls the new methods
+  @Deprecated('Use ensureImageCompatibility and loadImageProperties instead')
+  Future<Uint8List?> loadAndGetProperties(Attachment attachment, {bool onlyFetchData = false, String? actualPath, bool isPreview = false}) async {
+    if (kIsWeb || attachment.mimeType == null || !["image", "video"].contains(attachment.mimeStart)) return null;
+
+    final filePath = actualPath ?? attachment.path;
+    
+    // Ensure compatibility and get the right path
+    final compatiblePath = await ensureImageCompatibility(attachment, actualPath: filePath);
+    if (compatiblePath == null) return null;
+
+    // Load properties in background
+    loadImageProperties(attachment, actualPath: filePath);
+
+    // Read and return bytes (for legacy callers that expect bytes)
+    try {
+      return await File(compatiblePath).readAsBytes();
+    } catch (ex) {
+      return null;
+    }
   }
 }

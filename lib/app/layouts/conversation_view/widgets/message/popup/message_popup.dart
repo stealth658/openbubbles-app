@@ -737,9 +737,11 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
       popDetails();
       getActiveMwc(message.guid!)?.updateWidgets<EmbeddedMedia>(null);
     } else {
+      // Image caching is now handled by Flutter's image cache automatically
       for (Attachment? element in part.attachments) {
-        widget.cvController.imageData.remove(element!.guid!);
-        as.redownloadAttachment(element);
+        if (element != null) {
+          as.redownloadAttachment(element);
+        }
       }
       popDetails();
       getActiveMwc(message.guid!)?.updateWidgets<AttachmentHolder>(null);

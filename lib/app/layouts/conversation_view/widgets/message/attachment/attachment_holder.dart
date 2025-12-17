@@ -70,12 +70,30 @@ class _AttachmentHolderState extends CustomState<AttachmentHolder, void, Message
       if (content is AttachmentDownloadController && content.error != null) return;
     } catch (ex) { /* lateInitializationException */ }
     content = as.getContent(attachment, onComplete: onComplete);
+    
+    // If getContent returned a controller, listen to it
+    if (content is AttachmentDownloadController) {
+      ever((content as AttachmentDownloadController).file, (file) {
+        if (file != null && mounted) {
+          onComplete(file);
+        }
+      });
+    }
+    
     // If we can download it, do so
     if (content is Attachment && message.error == 0 && !message.guid!.contains("temp") && await as.canAutoDownload()) {
       if (mounted) {
         setState(() {
           content = AttachmentDownloader.startDownload(content, onComplete: onComplete);
         });
+        // Listen to the controller's file observable for immediate updates
+        if (content is AttachmentDownloadController) {
+          ever((content as AttachmentDownloadController).file, (file) {
+            if (file != null && mounted) {
+              onComplete(file);
+            }
+          });
+        }
       }
     }
   }
@@ -106,6 +124,14 @@ class _AttachmentHolderState extends CustomState<AttachmentHolder, void, Message
               setState(() {
                 content = AttachmentDownloader.startDownload(content, onComplete: onComplete);
               });
+              // Listen to the controller's file observable for immediate updates
+              if (content is AttachmentDownloadController) {
+                ever((content as AttachmentDownloadController).file, (file) {
+                  if (file != null && mounted) {
+                    onComplete(file);
+                  }
+                });
+              }
             } else if (content is AttachmentDownloadController) {
               final AttachmentDownloadController _content = content;
               if (!_content.error.value) return;
@@ -113,6 +139,14 @@ class _AttachmentHolderState extends CustomState<AttachmentHolder, void, Message
               setState(() {
                 content = AttachmentDownloader.startDownload(_content.attachment, onComplete: onComplete);
               });
+              // Listen to the controller's file observable for immediate updates
+              if (content is AttachmentDownloadController) {
+                ever((content as AttachmentDownloadController).file, (file) {
+                  if (file != null && mounted) {
+                    onComplete(file);
+                  }
+                });
+              }
             }
           },
           child: Ink(
@@ -216,9 +250,6 @@ class _AttachmentHolderState extends CustomState<AttachmentHolder, void, Message
                             return Padding(
                               padding: const EdgeInsets.all(20.0),
                               child: Obx(() {
-                                if (_content.progress.value == 1) {
-                                  updateContent();
-                                }
                                 return Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: <Widget>[

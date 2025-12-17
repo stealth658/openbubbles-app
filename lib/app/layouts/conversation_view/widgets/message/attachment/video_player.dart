@@ -200,29 +200,34 @@ class _VideoPlayerState extends OptimizedState<VideoPlayer> with AutomaticKeepAl
 
   @override
   void initState() {
+    super.initState();
+    
+    // Check for cached controller first
     VideoController? cachedController = cvController?.videoPlayers[attachment.guid];
-    thumbnail = cvController?.imageData[attachment.guid];
 
     if (cachedController != null) {
+      // Reuse existing controller
       videoController = cachedController;
       aspectRatio.value = videoController!.aspectRatio;
-
       updateObx(() {
         createListener(videoController!);
       });
+    } else {
+      // Load thumbnail for non-desktop platforms while controller initializes
+      if (!kIsDesktop && !kIsWeb) {
+        updateObx(() {
+          getThumbnail();
+        });
+      }
+      // Initialize new controller
+      initializeController();
     }
-
-    if (thumbnail == null && !kIsDesktop && !kIsWeb) {
-      updateObx(() {
-        getThumbnail();
-      });
-    }
-
-    initializeController();
-    super.initState();
   }
 
   Future<void> initializeController() async {
+    // Don't initialize if we already have a controller
+    if (videoController != null) return;
+    
     late final Media media;
     if (widget.file.path == null) {
       final blob = html.Blob([widget.file.bytes]);
@@ -232,13 +237,20 @@ class _VideoPlayerState extends OptimizedState<VideoPlayer> with AutomaticKeepAl
       media = Media(widget.file.path!);
     }
 
-    videoController ??= VideoController(Player());
+    videoController = VideoController(Player());
     await videoController!.player.setPlaylistMode(PlaylistMode.none);
     await videoController!.player.open(media, play: false);
     await videoController!.player.setVolume(muted.value ? 0 : 100);
     createListener(videoController!);
-    cvController?.videoPlayers[attachment.guid!] = videoController!;
-    setState(() {});
+    
+    // Cache the controller for reuse
+    if (cvController != null) {
+      cvController!.videoPlayers[attachment.guid!] = videoController!;
+    }
+    
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   void createListener(VideoController controller) {
@@ -262,31 +274,33 @@ class _VideoPlayerState extends OptimizedState<VideoPlayer> with AutomaticKeepAl
   }
 
   void getThumbnail() async {
-    if (!kIsWeb && !kIsDesktop) {
-      try {
-        // If we already errored, throw an error to load the error logo
-        if (attachment.metadata?['thumbnail_status'] == 'error') {
-          throw Exception('No video preview');
-        }
-        // If we haven't errored at all, fetch the thumbnail
-        thumbnail = await as.getVideoThumbnail(file.path!);
-      } catch (ex) {
-        // If an error occurs, set the thumnail to the cached no preview image.
-        // Only save to DB if the status wasn't already `error` somehow
+    if (kIsWeb || kIsDesktop) return;
+    
+    try {
+      // If we already errored, use fallback immediately
+      if (attachment.metadata?['thumbnail_status'] == 'error') {
         thumbnail = FilesystemSvc.noVideoPreviewIcon;
-        if (attachment.metadata?['thumbnail_status'] != 'error') {
-          attachment.metadata ??= {};
-          attachment.metadata!['thumbnail_status'] = 'error';
-          if (attachment.id != null) {
-            attachment.saveAsync(null);
-          }
+        if (mounted) setState(() {});
+        return;
+      }
+      
+      // Fetch the thumbnail
+      thumbnail = await as.getVideoThumbnail(file.path!);
+      if (mounted) setState(() {});
+    } catch (ex) {
+      // If an error occurs, set the thumbnail to the cached no preview image
+      thumbnail = FilesystemSvc.noVideoPreviewIcon;
+      
+      // Only save error status to DB if not already set
+      if (attachment.metadata?['thumbnail_status'] != 'error') {
+        attachment.metadata ??= {};
+        attachment.metadata!['thumbnail_status'] = 'error';
+        if (attachment.id != null) {
+          attachment.saveAsync(null);
         }
       }
-
-      if (thumbnail == null) return;
-      cvController?.imageData[attachment.guid!] = thumbnail!;
-      await precacheImage(MemoryImage(thumbnail!), context);
-      setState(() {});
+      
+      if (mounted) setState(() {});
     }
   }
 

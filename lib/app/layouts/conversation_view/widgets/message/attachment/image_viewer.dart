@@ -1,5 +1,5 @@
-import 'dart:async';
 import 'dart:math';
+import 'dart:io';
 
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
@@ -9,7 +9,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:tuple/tuple.dart';
 
 class ImageViewer extends StatefulWidget {
   final PlatformFile file;
@@ -35,88 +34,101 @@ class _ImageViewerState extends OptimizedState<ImageViewer> with AutomaticKeepAl
   PlatformFile get file => widget.file;
   ConversationViewController? get controller => widget.controller;
 
-  Uint8List? data;
-
-  @override
-  void initState() {
-    super.initState();
-    if (attachment.guid!.contains("demo") || controller == null) return;
-    data = controller!.imageData[attachment.guid];
-    updateObx(() {
-      initBytes();
-    });
-  }
-
-  void initBytes() async {
-    if (data != null) return;
-    // Try to get the image data from the "cache"
-    Uint8List? tmpData = controller!.imageData[attachment.guid];
-    if (tmpData == null) {
-      final completer = Completer<Uint8List>();
-      controller!.queueImage(Tuple4(attachment, file, context, completer));
-      final newData = await completer.future;
-      if (newData.isEmpty) return;
-      setState(() {
-        data = newData;
-      });
-    } else {
-      setState(() {
-        data = tmpData;
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    
+    // Handle demo attachments
     if (attachment.guid!.contains("demo")) {
       return Image.asset(attachment.transferName!, fit: BoxFit.cover);
     }
-    if (data == null) {
-      return SizedBox(
-        width: min((attachment.width?.toDouble() ?? NavigationSvc.width(context) * 0.5), NavigationSvc.width(context) * 0.5),
-        height: min((attachment.height?.toDouble() ?? NavigationSvc.width(context) * 0.5 / attachment.aspectRatio), NavigationSvc.width(context) * 0.5 / attachment.aspectRatio),
+
+    // Build the appropriate image widget based on platform and file availability
+    Widget imageWidget;
+    if (kIsWeb || file.path == null) {
+      // Web or no path - use memory image
+      if (file.bytes == null) {
+        imageWidget = SizedBox(
+          width: min((attachment.width?.toDouble() ?? NavigationSvc.width(context) * 0.5), NavigationSvc.width(context) * 0.5),
+          height: min((attachment.height?.toDouble() ?? NavigationSvc.width(context) * 0.5 / attachment.aspectRatio), NavigationSvc.width(context) * 0.5 / attachment.aspectRatio),
+        );
+      } else {
+        imageWidget = Image.memory(
+          file.bytes!,
+          gaplessPlayback: true,
+          filterQuality: FilterQuality.none,
+          cacheWidth: (min((attachment.width ?? 0), NavigationSvc.width(context) * 0.5) * Get.pixelRatio / 2).round().abs().nonZero,
+          cacheHeight: (min((attachment.height ?? 0), NavigationSvc.width(context) * 0.5 / attachment.aspectRatio) * Get.pixelRatio / 2).round().abs().nonZero,
+          fit: BoxFit.cover,
+          errorBuilder: (context, object, stacktrace) => Center(
+            heightFactor: 1,
+            child: Text("Failed to display image", style: context.theme.textTheme.bodyLarge),
+          ),
+        );
+      }
+    } else {
+      // Non-web with file path - use file image (much more efficient)
+      // Note: For HEIC/TIFF, the path might point to unconverted file initially.
+      // Image.file will handle it on iOS/macOS (native support), or fail gracefully
+      // and trigger errorBuilder where we can attempt conversion.
+      imageWidget = Image.file(
+        File(file.path!),
+        gaplessPlayback: true,
+        filterQuality: FilterQuality.none,
+        cacheWidth: (min((attachment.width ?? 0), NavigationSvc.width(context) * 0.5) * Get.pixelRatio / 2).round().abs().nonZero,
+        cacheHeight: (min((attachment.height ?? 0), NavigationSvc.width(context) * 0.5 / attachment.aspectRatio) * Get.pixelRatio / 2).round().abs().nonZero,
+        fit: BoxFit.cover,
+        errorBuilder: (context, object, stacktrace) => FutureBuilder<String?>(
+          future: as.ensureImageCompatibility(attachment, actualPath: file.path),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return SizedBox(
+                width: min((attachment.width?.toDouble() ?? NavigationSvc.width(context) * 0.5), NavigationSvc.width(context) * 0.5),
+                height: min((attachment.height?.toDouble() ?? NavigationSvc.width(context) * 0.5 / attachment.aspectRatio), NavigationSvc.width(context) * 0.5 / attachment.aspectRatio),
+                child: const Center(child: CircularProgressIndicator()),
+              );
+            }
+            
+            if (snapshot.hasData && snapshot.data != null && snapshot.data != file.path) {
+              // Conversion successful, display converted image
+              return Image.file(
+                File(snapshot.data!),
+                gaplessPlayback: true,
+                filterQuality: FilterQuality.none,
+                cacheWidth: (min((attachment.width ?? 0), NavigationSvc.width(context) * 0.5) * Get.pixelRatio / 2).round().abs().nonZero,
+                cacheHeight: (min((attachment.height ?? 0), NavigationSvc.width(context) * 0.5 / attachment.aspectRatio) * Get.pixelRatio / 2).round().abs().nonZero,
+                fit: BoxFit.cover,
+              );
+            }
+            
+            // Conversion failed or not needed
+            return Center(
+              heightFactor: 1,
+              child: Text("Failed to display image", style: context.theme.textTheme.bodyLarge),
+            );
+          },
+        ),
       );
     }
-    return Image.memory(
-      data!,
-      // prevents the image widget from "refreshing" when the provider changes
-      gaplessPlayback: true,
-      filterQuality: FilterQuality.none,
-      cacheWidth: (min((attachment.width ?? 0), NavigationSvc.width(context) * 0.5) * Get.pixelRatio / 2).round().abs().nonZero,
-      cacheHeight: (min((attachment.height ?? 0), NavigationSvc.width(context) * 0.5 / attachment.aspectRatio) * Get.pixelRatio / 2).round().abs().nonZero,
-      fit: BoxFit.cover,
-      frameBuilder: (context, w, frame, wasSyncLoaded) {
-        return AnimatedCrossFade(
-          crossFadeState: frame == null ? CrossFadeState.showFirst : CrossFadeState.showSecond,
-          alignment: Alignment.center,
-          duration: const Duration(milliseconds: 150),
-          secondChild: ConstrainedBox(
-            constraints: const BoxConstraints(
-              minHeight: 40,
-              minWidth: 100,
-            ),
-            child: Stack(
-              alignment: !widget.isFromMe ? Alignment.topRight : Alignment.topLeft,
-              children: [
-                w,
-                if (attachment.hasLivePhoto)
-                  const Padding(
-                    padding: EdgeInsets.all(10.0),
-                    child: Icon(CupertinoIcons.smallcircle_circle, color: Colors.white, size: 20),
-                  ),
-              ],
-            ),
-          ),
-          firstChild: SizedBox(
-            width: min((attachment.width?.toDouble() ?? NavigationSvc.width(context) * 0.5), NavigationSvc.width(context) * 0.5),
-            height: min((attachment.height?.toDouble() ?? NavigationSvc.width(context) * 0.5 / attachment.aspectRatio), NavigationSvc.width(context) * 0.5 / attachment.aspectRatio),
-          )
-        );
-      },
-      errorBuilder: (context, object, stacktrace) => Center(
-        heightFactor: 1,
-        child: Text("Failed to display image", style: context.theme.textTheme.bodyLarge),
+
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 150),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          minHeight: 40,
+          minWidth: 100,
+        ),
+        child: Stack(
+          alignment: !widget.isFromMe ? Alignment.topRight : Alignment.topLeft,
+          children: [
+            imageWidget,
+            if (attachment.hasLivePhoto)
+              const Padding(
+                padding: EdgeInsets.all(10.0),
+                child: Icon(CupertinoIcons.smallcircle_circle, color: Colors.white, size: 20),
+              ),
+          ],
+        ),
       ),
     );
   }

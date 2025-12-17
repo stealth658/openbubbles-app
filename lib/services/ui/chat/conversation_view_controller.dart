@@ -4,7 +4,6 @@ import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:bluebubbles/app/components/custom_text_editing_controllers.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/database/models.dart';
-import 'package:bluebubbles/services/backend/interfaces/image_interface.dart';
 import 'package:bluebubbles/services/backend/interfaces/prefs_interface.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/foundation.dart';
@@ -16,7 +15,6 @@ import 'package:metadata_fetch/metadata_fetch.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:tuple/tuple.dart';
 import 'package:unicode_emojis/unicode_emojis.dart';
-import 'package:universal_io/io.dart';
 
 ConversationViewController cvc(Chat chat, {String? tag}) => Get.isRegistered<ConversationViewController>(tag: tag ?? chat.guid)
 ? Get.find<ConversationViewController>(tag: tag ?? chat.guid) : Get.put(ConversationViewController(chat, tag_: tag), tag: tag ?? chat.guid);
@@ -33,8 +31,6 @@ class ConversationViewController extends StatefulController with GetSingleTicker
   }
 
   // caching items
-  final Map<String, Uint8List> imageData = {};
-  final List<Tuple4<Attachment, PlatformFile, BuildContext, Completer<Uint8List>>> imageCacheQueue = [];
   final Map<String, Map<String, Uint8List>> stickerData = {};
   final Map<String, Metadata> legacyUrlPreviews = {};
   final Map<String, VideoController> videoPlayers = {};
@@ -89,7 +85,6 @@ class ConversationViewController extends StatefulController with GetSingleTicker
   double _keyboardOffset = 0;
   Timer? _scrollDownDebounce;
   Future<void> Function(Tuple6<List<PlatformFile>, String, String, String?, int?, String?>, bool)? sendFunc;
-  bool isProcessingImage = false;
 
   @override
   void onInit() {
@@ -174,47 +169,7 @@ class ConversationViewController extends StatefulController with GetSingleTicker
     sendFunc?.call(Tuple6(attachments, text, subject, replyGuid, replyPart, effectId), isAudioMessage);
   }
 
-  void queueImage(Tuple4<Attachment, PlatformFile, BuildContext, Completer<Uint8List>> item) {
-    imageCacheQueue.add(item);
-    if (!isProcessingImage) _processNextImage();
-  }
 
-  Future<void> _processNextImage() async {
-    if (imageCacheQueue.isEmpty) {
-      isProcessingImage = false;
-      return;
-    }
-
-    isProcessingImage = true;
-    final queued = imageCacheQueue.removeAt(0);
-    final attachment = queued.item1;
-    final file = queued.item2;
-    Uint8List? tmpData;
-    // If it's an image, compress the image when loading it
-    if (kIsWeb || file.path == null) {
-      if (attachment.mimeType?.contains("image/tif") ?? false) {
-        tmpData = await ImageInterface.convertToPng(file);
-      } else {
-        tmpData = file.bytes;
-      }
-    } else if (attachment.canCompress) {
-      tmpData = await as.loadAndGetProperties(attachment, actualPath: file.path!);
-      // All other attachments can be held in memory as bytes
-    } else {
-      tmpData = await File(file.path!).readAsBytes();
-    }
-    if (tmpData == null) {
-      queued.item4.complete(Uint8List.fromList([]));
-      return;
-    }
-    imageData[attachment.guid!] = tmpData;
-    try {
-      await precacheImage(MemoryImage(tmpData), queued.item3);
-    } catch (_) {}
-    queued.item4.complete(tmpData);
-
-    await _processNextImage();
-  }
 
   bool isSelected(String guid) {
     return selected.firstWhereOrNull((e) => e.guid == guid) != null;

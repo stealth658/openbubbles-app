@@ -11,6 +11,7 @@ import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:media_kit_video/media_kit_video_controls/media_kit_video_controls.dart' as media_kit_video_controls;
 import 'package:universal_html/html.dart' as html;
@@ -55,13 +56,26 @@ class _FullscreenVideoState extends OptimizedState<FullscreenVideo> with Automat
       muted.value = widget.mute!.value;
     }
 
+    _setFullscreen(true);
     initControllers();
+  }
+
+  void _setFullscreen(bool fullscreen) {
+    if (fullscreen) {
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
+    } else {
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    }
   }
 
   void initControllers() async {
     if (widget.videoController != null) {
+      // Reuse existing controller from in-chat player
       videoController = widget.videoController!;
+      // Sync mute state
+      await videoController.player.setVolume(muted.value ? 0 : 100);
     } else {
+      // Create new controller
       videoController = VideoController(Player());
 
       late final Media media;
@@ -108,6 +122,12 @@ class _FullscreenVideoState extends OptimizedState<FullscreenVideo> with Automat
   void dispose() {
     hasDisposed = true;
     hideOverlayTimer?.cancel();
+    _setFullscreen(false);
+    
+    // Sync mute state back to parent
+    if (widget.mute != null) {
+      widget.mute!.value = muted.value;
+    }
     
     // Only dispose the player if one was not passed in (via a controller)
     if (widget.videoController == null) {
@@ -144,76 +164,13 @@ class _FullscreenVideoState extends OptimizedState<FullscreenVideo> with Automat
   Widget build(BuildContext context) {
     super.build(context);
     final RxBool _hover = false.obs;
-    return Obx(
-      () => Scaffold(
-        backgroundColor: Colors.black,
-        floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
-        bottomNavigationBar: !iOS || !widget.showInteractions
-            ? null
-            : Theme(
-                data: context.theme.copyWith(
-                  navigationBarTheme: context.theme.navigationBarTheme.copyWith(
-                    indicatorColor: samsung ? Colors.black : context.theme.colorScheme.properSurface,
-                  ),
-                ),
-                child: NavigationBar(
-                  selectedIndex: 0,
-                  backgroundColor: samsung ? Colors.black : context.theme.colorScheme.properSurface,
-                  labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
-                  elevation: 0,
-                  height: 60,
-                  destinations: [
-                    NavigationDestination(
-                        icon: Icon(
-                          iOS ? CupertinoIcons.cloud_download : Icons.file_download,
-                          color: samsung ? Colors.white : context.theme.colorScheme.primary,
-                        ),
-                        label: 'Download'),
-                    NavigationDestination(
-                        icon: Icon(
-                          iOS ? CupertinoIcons.info : Icons.info,
-                          color: context.theme.colorScheme.primary,
-                        ),
-                        label: 'Metadata'),
-                    NavigationDestination(
-                        icon: Icon(
-                          iOS ? CupertinoIcons.refresh : Icons.refresh,
-                          color: context.theme.colorScheme.primary,
-                        ),
-                        label: 'Refresh'),
-                    NavigationDestination(
-                        icon: Icon(
-                          muted.value
-                              ? iOS
-                                  ? CupertinoIcons.volume_mute
-                                  : Icons.volume_mute
-                              : iOS
-                                  ? CupertinoIcons.volume_up
-                                  : Icons.volume_up,
-                          color: context.theme.colorScheme.primary,
-                        ),
-                        label: 'Mute'),
-                  ],
-                  onDestinationSelected: (value) async {
-                    if (value == 0) {
-                      await as.saveToDisk(widget.file);
-                    } else if (value == 1) {
-                      showMetadataDialog(widget.attachment, context);
-                    } else if (value == 2) {
-                      refreshAttachment();
-                    } else if (value == 3) {
-                      muted.toggle();
-                      await videoController.player.setVolume(muted.value ? 0.0 : 100.0);
-                      setState(() {});
-                    }
-                  },
-                ),
-              ),
-        body: MouseRegion(
-          onEnter: (event) => showPlayPauseOverlay.value = true,
-          onExit: (event) => showPlayPauseOverlay.value = !videoController.player.state.playing,
-          child: Obx(() {
-            return SafeArea(
+    return Container(
+      color: Colors.black,
+      child: Obx(
+        () => MouseRegion(
+            onEnter: (event) => showPlayPauseOverlay.value = true,
+            onExit: (event) => showPlayPauseOverlay.value = !videoController.player.state.playing,
+            child: SafeArea(
               child: Center(
                 child: Theme(
                   data: context.theme.copyWith(
@@ -329,12 +286,67 @@ class _FullscreenVideoState extends OptimizedState<FullscreenVideo> with Automat
                             );
                           }),
                         ),
+                      // Bottom action bar for iOS
+                      if (iOS && widget.showInteractions)
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          child: AnimatedOpacity(
+                            opacity: showPlayPauseOverlay.value ? 1.0 : 0.0,
+                            duration: const Duration(milliseconds: 200),
+                            child: SafeArea(
+                              top: false,
+                              child: Container(
+                                height: 60,
+                                decoration: BoxDecoration(
+                                  color: samsung ? Colors.black : context.theme.colorScheme.properSurface.withOpacity(0.9),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                  children: [
+                                    IconButton(
+                                      icon: Icon(
+                                        CupertinoIcons.cloud_download,
+                                        color: samsung ? Colors.white : context.theme.colorScheme.primary,
+                                      ),
+                                      onPressed: () => as.saveToDisk(widget.file),
+                                    ),
+                                    IconButton(
+                                      icon: Icon(
+                                        CupertinoIcons.info,
+                                        color: samsung ? Colors.white : context.theme.colorScheme.primary,
+                                      ),
+                                      onPressed: () => showMetadataDialog(widget.attachment, context),
+                                    ),
+                                    IconButton(
+                                      icon: Icon(
+                                        CupertinoIcons.refresh,
+                                        color: samsung ? Colors.white : context.theme.colorScheme.primary,
+                                      ),
+                                      onPressed: () => refreshAttachment(),
+                                    ),
+                                    IconButton(
+                                      icon: Icon(
+                                        muted.value ? CupertinoIcons.volume_mute : CupertinoIcons.volume_up,
+                                        color: samsung ? Colors.white : context.theme.colorScheme.primary,
+                                      ),
+                                      onPressed: () async {
+                                        muted.toggle();
+                                        await videoController.player.setVolume(muted.value ? 0.0 : 100.0);
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
               ),
-            );
-          }),
+            ),
         ),
       ),
     );

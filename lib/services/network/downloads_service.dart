@@ -129,30 +129,39 @@ class AttachmentDownloadController extends GetxController {
     stopwatch.stop();
     Logger.info("Attachment downloaded in ${stopwatch.elapsedMilliseconds} ms");
 
-    try {
-      // Compress the attachment
-      if (!kIsWeb) {
-        await as.loadAndGetProperties(attachment, actualPath: attachment.path);
-        await attachment.saveAsync(null);
-      }
-    } catch (ex) {
-      // So what if it crashes here.... I don't care...
+    // Load image properties lazily in the background (non-blocking)
+    if (!kIsWeb && attachment.mimeStart == "image") {
+      as.loadImageProperties(attachment, actualPath: attachment.path).catchError((ex) {
+        Logger.warn("Failed to load image properties", error: ex);
+      });
     }
 
-    // Finish the downloader
-    AttachmentDownloader._removeFromQueue(this);
-    attachment.bytes = bytes;
-    // Add attachment to sink based on if we got data
-
+    // Only set attachment bytes on web (where we need them in memory)
+    if (kIsWeb) {
+      attachment.bytes = bytes;
+    }
+    
+    // Create the PlatformFile - only include bytes on web to avoid loading images into memory
     file.value = PlatformFile(
       name: attachment.transferName!,
       path: kIsWeb ? null : attachment.path,
       size: bytes.length,
-      bytes: bytes,
+      bytes: kIsWeb ? bytes : null,
     );
+    
+    // Set progress to 1.0 to trigger any Obx listeners
+    progress.value = 1.0;
+    
+    // Mark as not fetching
+    isFetching = false;
+    
+    // Call completion callbacks while controller is still registered
     for (Function f in completeFuncs) {
       f.call(file.value);
     }
+    
+    // Finally, remove the downloader from queue
+    AttachmentDownloader._removeFromQueue(this);
     if (kIsDesktop) {
       if (attachment.bytes != null) {
         File _file = await File(attachment.path).create(recursive: true);

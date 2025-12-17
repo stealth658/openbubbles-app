@@ -125,11 +125,7 @@ class Attachment {
 
     // Handle cm/cvc services on main thread BEFORE calling isolate
     if (cm.activeChat != null) {
-      final data = cvc(cm.activeChat!.chat).imageData[oldGuid];
-      if (data != null) {
-        cvc(cm.activeChat!.chat).imageData.remove(oldGuid);
-        cvc(cm.activeChat!.chat).imageData[newAttachment.guid!] = data;
-      }
+      // Image caching is now handled by Flutter's image cache automatically
     }
 
     // Call the isolate-safe database operations

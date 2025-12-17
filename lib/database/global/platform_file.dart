@@ -6,7 +6,7 @@ class PlatformFile {
     required this.name,
     required this.size,
     this.bytes,
-  }) : assert(path != null || bytes != null);
+  });
 
   factory PlatformFile.fromMap(Map data, {Stream<List<int>>? readStream}) {
     return PlatformFile(
