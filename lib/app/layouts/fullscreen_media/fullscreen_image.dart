@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/attachment/live_photo_mixin.dart';
 import 'package:bluebubbles/app/layouts/fullscreen_media/dialogs/metadata_dialog.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/utils/share.dart';
@@ -37,7 +38,7 @@ class FullscreenImage extends StatefulWidget {
   State<FullscreenImage> createState() => _FullscreenImageState();
 }
 
-class _FullscreenImageState extends OptimizedState<FullscreenImage> with AutomaticKeepAliveClientMixin {
+class _FullscreenImageState extends OptimizedState<FullscreenImage> with AutomaticKeepAliveClientMixin, LivePhotoMixin {
   final PhotoViewController controller = PhotoViewController();
   bool showOverlay = true;
   bool hasError = false;
@@ -47,6 +48,10 @@ class _FullscreenImageState extends OptimizedState<FullscreenImage> with Automat
   PlatformFile get file => widget.file;
   Attachment get attachment => widget.attachment;
   Message? get message => attachment.message.target;
+  
+  // Implement required getter for LivePhotoMixin
+  @override
+  Attachment get livePhotoAttachment => attachment;
 
   @override
   void initState() {
@@ -132,6 +137,11 @@ class _FullscreenImageState extends OptimizedState<FullscreenImage> with Automat
 
           // eventDispatcher.emit('overlay-toggle', newVal);
         },
+        onLongPress: () {
+          if (attachment.hasLivePhoto && !isDownloadingLivePhoto) {
+            handleLivePhotoTap();
+          }
+        },
         child: Stack(
           children: [
             (bytes != null || compatiblePath != null)
@@ -162,6 +172,8 @@ class _FullscreenImageState extends OptimizedState<FullscreenImage> with Automat
                 : hasError
                     ? Center(child: Text("Failed to load image", style: context.theme.textTheme.bodyLarge))
                     : Center(child: buildProgressIndicator(context)),
+            // Live photo video overlay
+            if (attachment.hasLivePhoto) buildLivePhotoOverlay(),
             if (!iOS)
               AnimatedOpacity(
                 opacity: showOverlay ? 1.0 : 0.0,

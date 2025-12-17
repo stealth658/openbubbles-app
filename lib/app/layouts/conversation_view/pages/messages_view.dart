@@ -229,12 +229,18 @@ class MessagesViewState extends OptimizedState<MessagesView> {
     _messages = messageService.struct.messages;
     _messages.sort(Message.sort);
     fetching = false;
-    _messages.sublist(max(oldLength - 1, 0)).forEachIndexed((i, m) {
-      if (!mounted) return;
-      final c = mwc(m);
-      c.cvController = controller;
-      listKey.currentState!.insertItem(i, duration: const Duration(milliseconds: 0));
-    });
+    
+    // Calculate safe sublist range - ensure start index doesn't exceed list length
+    final startIndex = min(max(oldLength - 1, 0), _messages.length);
+    if (startIndex < _messages.length) {
+      _messages.sublist(startIndex).forEachIndexed((i, m) {
+        if (!mounted) return;
+        final c = mwc(m);
+        c.cvController = controller;
+        listKey.currentState!.insertItem(i, duration: const Duration(milliseconds: 0));
+      });
+    }
+    
     // should only happen when a reaction is the most recent message
     if (oldLength == 0) {
       setState(() {});

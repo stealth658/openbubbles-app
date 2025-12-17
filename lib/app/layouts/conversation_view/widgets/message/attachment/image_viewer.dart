@@ -1,11 +1,11 @@
 import 'dart:math';
 import 'dart:io';
 
+import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/attachment/live_photo_mixin.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -29,10 +29,14 @@ class ImageViewer extends StatefulWidget {
   OptimizedState createState() => _ImageViewerState();
 }
 
-class _ImageViewerState extends OptimizedState<ImageViewer> with AutomaticKeepAliveClientMixin {
+class _ImageViewerState extends OptimizedState<ImageViewer> with AutomaticKeepAliveClientMixin, LivePhotoMixin {
   Attachment get attachment => widget.attachment;
   PlatformFile get file => widget.file;
   ConversationViewController? get controller => widget.controller;
+  
+  // Implement required getter for LivePhotoMixin
+  @override
+  Attachment get livePhotoAttachment => attachment;
 
   @override
   Widget build(BuildContext context) {
@@ -118,16 +122,20 @@ class _ImageViewerState extends OptimizedState<ImageViewer> with AutomaticKeepAl
           minHeight: 40,
           minWidth: 100,
         ),
-        child: Stack(
-          alignment: !widget.isFromMe ? Alignment.topRight : Alignment.topLeft,
-          children: [
-            imageWidget,
-            if (attachment.hasLivePhoto)
-              const Padding(
-                padding: EdgeInsets.all(10.0),
-                child: Icon(CupertinoIcons.smallcircle_circle, color: Colors.white, size: 20),
-              ),
-          ],
+        child: GestureDetector(
+          onLongPress: () {
+            if (attachment.hasLivePhoto && !isDownloadingLivePhoto) {
+              handleLivePhotoTap();
+            }
+          },
+          child: Stack(
+            alignment: !widget.isFromMe ? Alignment.topRight : Alignment.topLeft,
+            children: [
+              imageWidget,
+              // Live photo video overlay
+              if (attachment.hasLivePhoto) buildLivePhotoOverlay(),
+            ],
+          ),
         ),
       ),
     );
