@@ -36,6 +36,7 @@ class AttachmentsService extends GetxService {
         return attachment;
       }
     }
+
     if (attachment.guid?.contains("demo") ?? false) {
       return PlatformFile(
         name: attachment.transferName!,
@@ -44,6 +45,7 @@ class AttachmentsService extends GetxService {
         bytes: Uint8List.fromList([]),
       );
     }
+
     if (kIsWeb || attachment.guid == null) {
       if (attachment.bytes == null && (autoDownload ?? SettingsSvc.settings.autoDownload.value)) {
         return AttachmentDownloader.startDownload(attachment, onComplete: onComplete);
@@ -428,19 +430,19 @@ class AttachmentsService extends GetxService {
     return filePath;
   }
 
-  /// Lazy-loads image properties (dimensions and EXIF) without loading the entire image into memory.
-  /// Should be called in the background after download completes.
-  Future<void> loadImageProperties(Attachment attachment, {String? actualPath}) async {
-    if (kIsWeb || attachment.mimeType == null || attachment.mimeStart != "image") return;
-    
-    // Check if dimensions have already been processed
-    if (attachment.metadata?['_dimensions_processed'] == 'true') return;
-
+  Future<String?> loadImageProperties(Attachment attachment, {String? actualPath}) async {
+    if (kIsWeb || attachment.mimeType == null || attachment.mimeStart != "image") return null;
     final filePath = actualPath ?? attachment.path;
+
+    // Check if dimensions have already been processed.
+    // We don't want to rely on the height/width or metadata alone because
+    // it doesn't give the full picture of how to display the image (orientation, etc).
+    // We need to "double-check" by reading EXIF and image properties directly.
+    if (attachment.metadata?['_dimensions_processed'] == 'true') return filePath;
     
     // Ensure we have a compatible image file first
     final compatiblePath = await ensureImageCompatibility(attachment, actualPath: filePath);
-    if (compatiblePath == null) return;
+    if (compatiblePath == null) return null;
 
     bool dimensionsLoaded = false;
     bool metadataLoaded = false;
@@ -449,7 +451,6 @@ class AttachmentsService extends GetxService {
     if (attachment.mimeType != "image/gif") {
       try {
         final exif = await ImageInterface.readExifData(compatiblePath);
-        
         if (exif != null) {          
           // Extract dimensions from EXIF if available
           int? exifWidth;
@@ -480,8 +481,8 @@ class AttachmentsService extends GetxService {
             orientationStr.toLowerCase().contains('rotated 90') ||
             orientationStr.toLowerCase().contains('rotated 270')
           );
-          
-          if (exifWidth != null && exifHeight != null && (attachment.width == null || attachment.height == null)) {
+
+          if (exifWidth != null && exifHeight != null) {
             if (needsSwap) {
               attachment.width = exifHeight;
               attachment.height = exifWidth;
@@ -541,27 +542,7 @@ class AttachmentsService extends GetxService {
       attachment.metadata!['_dimensions_processed'] = 'true';
       await attachment.saveAsync(null);
     }
-  }
 
-  /// Legacy method for compatibility - now just calls the new methods
-  @Deprecated('Use ensureImageCompatibility and loadImageProperties instead')
-  Future<Uint8List?> loadAndGetProperties(Attachment attachment, {bool onlyFetchData = false, String? actualPath, bool isPreview = false}) async {
-    if (kIsWeb || attachment.mimeType == null || !["image", "video"].contains(attachment.mimeStart)) return null;
-
-    final filePath = actualPath ?? attachment.path;
-    
-    // Ensure compatibility and get the right path
-    final compatiblePath = await ensureImageCompatibility(attachment, actualPath: filePath);
-    if (compatiblePath == null) return null;
-
-    // Load properties in background
-    loadImageProperties(attachment, actualPath: filePath);
-
-    // Read and return bytes (for legacy callers that expect bytes)
-    try {
-      return await File(compatiblePath).readAsBytes();
-    } catch (ex) {
-      return null;
-    }
+    return filePath;
   }
 }

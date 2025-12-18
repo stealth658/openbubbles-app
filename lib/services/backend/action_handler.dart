@@ -406,7 +406,7 @@ class ActionHandler extends GetxService {
 
   Future<Chat> handleNewOrUpdatedChat(Chat partialData) async {
     // fetch all contacts for matching new handles if in background
-    if (!LifecycleSvc.isUiThread) {
+    if (LifecycleSvc.headless) {
       await ContactsSvc.init();
     }
     // get and return the chat from server

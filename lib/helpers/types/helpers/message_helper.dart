@@ -34,7 +34,7 @@ class MessageHelper {
     try {
       final results = await MessageInterface.bulkAddMessages(
         chatData: chatData,
-        messagesData: [messagesData.first],
+        messagesData: messagesData,
         checkForLatestMessageText: checkForLatestMessageText,
       );
 

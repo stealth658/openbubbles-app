@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
@@ -49,11 +50,19 @@ class _AttachmentPickerFileState extends OptimizedState<AttachmentPickerFile> wi
         || widget.data.mimeType == "image/heif"
         || widget.data.mimeType == "image/tif"
         || widget.data.mimeType == "image/tiff") {
+      // Use ensureImageCompatibility to get converted path, then read bytes
       final fakeAttachment = Attachment(
         transferName: file.path,
         mimeType: widget.data.mimeType!,
       );
-      image = await as.loadAndGetProperties(fakeAttachment, actualPath: file.path, onlyFetchData: true, isPreview: true);
+      final compatiblePath = await as.ensureImageCompatibility(fakeAttachment, actualPath: file.path);
+      if (compatiblePath != null) {
+        try {
+          image = await File(compatiblePath).readAsBytes();
+        } catch (ex) {
+          image = null;
+        }
+      }
       setState(() {});
     } else {
       image = await file.readAsBytes();

@@ -18,7 +18,7 @@ LifecycleService get LifecycleSvc => GetIt.I<LifecycleService>();
 
 class LifecycleService with WidgetsBindingObserver {
   bool isBubble = false;
-  bool isUiThread = true;
+  bool headless = false;
   bool windowFocused = true;
   bool? wasActiveAliveBefore;
   bool _keepAppAlive = false;
@@ -39,7 +39,7 @@ class LifecycleService with WidgetsBindingObserver {
     Logger.debug("Initializing LifecycleService${headless ? " in headless mode" : ""}");
     WidgetsBinding.instance.addObserver(this);
 
-    isUiThread = !headless;
+    this.headless = headless;
     this.isBubble = isBubble;
 
     // Cache keepAppAlive setting to avoid repeated async calls
@@ -85,7 +85,7 @@ class LifecycleService with WidgetsBindingObserver {
     // If an isolate is invoking this, we don't want to start/stop the foreground service.
     // It should already be running. We don't need to stop it because the socket service
     // is not started when in headless mode.
-    if (!isUiThread) return;
+    if (headless) return;
 
     // Don't handle foreground service for inactive/hidden states
     if ([AppLifecycleState.inactive, AppLifecycleState.hidden].contains(state)) return;

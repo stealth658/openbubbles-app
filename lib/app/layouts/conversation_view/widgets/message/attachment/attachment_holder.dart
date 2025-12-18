@@ -303,7 +303,6 @@ class _AttachmentHolderState extends CustomState<AttachmentHolder, void, Message
                                   );
                                 },
                                 closedBuilder: (context, openContainer) {
-                                  print('[TEST] Attributed Body: ${message.attributedBody.map((e) => e.toMap()).toList()}');
                                   return GestureDetector(
                                     onTap: () {
                                       final _controller = controller.cvController ?? cvc(cm.activeChat!.chat);

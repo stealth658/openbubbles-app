@@ -129,11 +129,13 @@ class AttachmentDownloadController extends GetxController {
     stopwatch.stop();
     Logger.info("Attachment downloaded in ${stopwatch.elapsedMilliseconds} ms");
 
-    // Load image properties lazily in the background (non-blocking)
+    // Load image properties before displaying (so UI shows correct dimensions immediately)
     if (!kIsWeb && attachment.mimeStart == "image") {
-      as.loadImageProperties(attachment, actualPath: attachment.path).catchError((ex) {
+      try {
+        await as.loadImageProperties(attachment, actualPath: attachment.path);
+      } catch (ex) {
         Logger.warn("Failed to load image properties", error: ex);
-      });
+      }
     }
 
     // Only set attachment bytes on web (where we need them in memory)
