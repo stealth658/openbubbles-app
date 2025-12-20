@@ -13,14 +13,12 @@ import 'package:get/get.dart';
 String getFullChatTitle(Chat _chat) {
   String? title = "";
   if (isNullOrEmpty(_chat.displayName)) {
-    Chat chat = _chat.getParticipants();
-
     List<String> titles = [];
-    for (int i = 0; i < chat.participants.length; i++) {
+    for (int i = 0; i < _chat.participants.length; i++) {
       // ignore: argument_type_not_assignable, return_of_invalid_type, invalid_assignment, for_in_of_invalid_element_type
-      String? name = chat.participants[i].displayName;
+      String? name = _chat.participants[i].displayName;
 
-      if (chat.participants.length > 1 && !name.isPhoneNumber) {
+      if (_chat.participants.length > 1 && !name.isPhoneNumber) {
         name = name.trim().split(" ")[0];
       } else {
         name = name.trim();
@@ -66,13 +64,7 @@ class Chat {
     return title!;
   }
   String? displayName;
-  List<Handle> _participants = [];
-  List<Handle> get participants {
-    if (_participants.isEmpty) {
-      getParticipants();
-    }
-    return _participants;
-  }
+  List<Handle> participants = [];
   bool? autoSendReadReceipts = true;
   bool? autoSendTypingIndicators = true;
   String? textFieldText;
@@ -135,7 +127,7 @@ class Chat {
     customAvatarPath = customAvatar;
     pinIndex = pinnedIndex;
     if (textFieldAttachments.isEmpty) textFieldAttachments = [];
-    _participants = participants ?? [];
+    this.participants = participants ?? [];
     _latestMessage = latestMessage;
   }
 
@@ -361,7 +353,7 @@ class Chat {
     // Send message to server to get the participants
     final chat = await cm.fetchChat(guid);
     if (chat != null) {
-      chat.save();
+      await chat.saveAsync();
     }
   }
 
@@ -387,13 +379,11 @@ class Chat {
     return [];
   }
 
-  Chat getParticipants() {
-    return this;
-  }
+
 
   void webSyncParticipants() {
     // ignore: argument_type_not_assignable, return_of_invalid_type, invalid_assignment, for_in_of_invalid_element_type
-    _participants = ChatsSvc.webCachedHandles.where((e) => _participants.map((e2) => e2.address).contains(e.address)).toList();
+    participants = ChatsSvc.webCachedHandles.where((e) => participants.map((e2) => e2.address).contains(e.address)).toList();
   }
 
   Chat addParticipant(Handle participant) {
@@ -522,8 +512,8 @@ class Chat {
     if (handles.isEmpty) {
       handles.addAll(other.handles);
     }
-    if (_participants.isEmpty) {
-      _participants.addAll(other._participants);
+    if (participants.isEmpty) {
+      participants.addAll(other.participants);
     }
     hasUnreadMessage ??= other.hasUnreadMessage;
     isArchived ??= other.isArchived;

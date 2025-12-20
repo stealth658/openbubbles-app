@@ -27,22 +27,15 @@ void showAddParticipant(BuildContext context, Chat chat) {
                 return slugify(text, delimiter: '').toString().replaceAll('-', '');
               }
 
-              for (Contact contact in ContactsSvc.contacts) {
-                for (String phone in contact.phones) {
-                  String cleansed = slugText(phone);
+              final allContacts = await ContactsSvcV2.getAllContacts();
+              for (ContactV2 contact in allContacts) {
+                // ContactV2 stores all addresses (phones and emails) in a single list
+                for (String address in contact.addresses) {
+                  String cleansed = slugText(address);
 
                   if (!cache.contains(cleansed)) {
                     cache.add(cleansed);
-                    contacts.add(Tuple2(phone, contact.displayName));
-                  }
-                }
-
-                for (String email in contact.emails) {
-                  String emailVal = slugText.call(email);
-
-                  if (!cache.contains(emailVal)) {
-                    cache.add(emailVal);
-                    contacts.add(Tuple2(email, contact.displayName));
+                    contacts.add(Tuple2(address, contact.displayName));
                   }
                 }
               }

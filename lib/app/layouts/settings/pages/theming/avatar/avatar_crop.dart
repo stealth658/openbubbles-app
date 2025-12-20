@@ -64,7 +64,7 @@ class _AvatarCropState extends OptimizedState<AvatarCrop> {
       }
       await file.writeAsBytes(croppedData);
       ChatsSvc.chats[widget.index!].customAvatarPath = file.path;
-      ChatsSvc.chats[widget.index!].save(updateCustomAvatarPath: true);
+      await ChatsSvc.chats[widget.index!].saveAsync(updateCustomAvatarPath: true);
       Navigator.of(context, rootNavigator: true).pop();
       Navigator.of(context).pop();
       showSnackbar("Notice", "Custom chat avatar saved successfully");
@@ -78,7 +78,7 @@ class _AvatarCropState extends OptimizedState<AvatarCrop> {
       }
       await file.writeAsBytes(croppedData);
       widget.chat!.customAvatarPath = file.path;
-      widget.chat!.save(updateCustomAvatarPath: true);
+      await widget.chat!.saveAsync(updateCustomAvatarPath: true);
       Navigator.of(context, rootNavigator: true).pop();
       Navigator.of(context).pop(widget.chat!.customAvatarPath);
       showSnackbar("Notice", "Custom chat avatar saved successfully");

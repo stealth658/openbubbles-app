@@ -86,6 +86,10 @@ class IsolateActons {
     IsolateRequestType.findOneContactV2: ContactV2Actions.findOneContactV2,
     IsolateRequestType.getContactsForHandlesV2: ContactV2Actions.getContactsForHandles,
     IsolateRequestType.refreshContactsV2: ContactV2Actions.refreshContacts,
+    IsolateRequestType.getContactByAddressV2: ContactV2Actions.getContactByAddress,
+    IsolateRequestType.getAllContactsV2: ContactV2Actions.getAllContacts,
+    IsolateRequestType.fetchNetworkContactsV2: ContactV2Actions.fetchNetworkContacts,
+    IsolateRequestType.getContactAvatarV2: ContactV2Actions.getContactAvatar,
 
     // Attachment
     IsolateRequestType.saveAttachmentAsync: AttachmentActions.saveAttachmentAsync,

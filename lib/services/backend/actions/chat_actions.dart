@@ -39,90 +39,74 @@ class ChatActions {
     final updateFlags = data['updateFlags'] as Map<String, bool>;
     final chatData = data['chatData'] as Map<String, dynamic>;
 
+    // Reconstruct the chat object and format addresses outside transaction
+    final inputChat = Chat.fromMap(chatData);
     return Database.runInTransaction(TxMode.write, () {
       final chatBox = Database.chats;
-      final handleBox = Database.handles;
 
       /// Find an existing chat
       final query = chatBox.query(Chat_.guid.equals(guid)).build();
       final existing = query.findFirst();
       query.close();
 
-      // Reconstruct the chat object
-      final chat = Chat.fromMap(chatData);
-      chat.id = existing?.id ?? chat.id;
-
-      if (!updateFlags['updateMuteType']!) {
-        chat.muteType = existing?.muteType ?? chat.muteType;
-      }
-      if (!updateFlags['updateMuteArgs']!) {
-        chat.muteArgs = existing?.muteArgs ?? chat.muteArgs;
-      }
-      if (!updateFlags['updateIsPinned']!) {
-        chat.isPinned = existing?.isPinned ?? chat.isPinned;
-      }
-      if (!updateFlags['updatePinIndex']!) {
-        chat.pinIndex = existing?.pinIndex ?? chat.pinIndex;
-      }
-      if (!updateFlags['updateIsArchived']!) {
-        chat.isArchived = existing?.isArchived ?? chat.isArchived;
-      }
-      if (!updateFlags['updateHasUnreadMessage']!) {
-        chat.hasUnreadMessage = existing?.hasUnreadMessage ?? chat.hasUnreadMessage;
-      }
-      if (!updateFlags['updateAutoSendReadReceipts']!) {
-        chat.autoSendReadReceipts = existing?.autoSendReadReceipts;
-      }
-      if (!updateFlags['updateAutoSendTypingIndicators']!) {
-        chat.autoSendTypingIndicators = existing?.autoSendTypingIndicators;
-      }
-      if (!updateFlags['updateCustomAvatarPath']!) {
-        chat.customAvatarPath = existing?.customAvatarPath ?? chat.customAvatarPath;
-      }
-      if (!updateFlags['updateTextFieldText']!) {
-        chat.textFieldText = existing?.textFieldText ?? chat.textFieldText;
-      }
-      if (!updateFlags['updateTextFieldAttachments']!) {
-        chat.textFieldAttachments = existing?.textFieldAttachments ?? chat.textFieldAttachments;
-      }
-      if (!updateFlags['updateDisplayName']!) {
-        chat.displayName = existing?.displayName ?? chat.displayName;
-      }
-      if (!updateFlags['updateDateDeleted']!) {
-        chat.dateDeleted = existing?.dateDeleted;
-      }
-      if (!updateFlags['updateLockChatName']!) {
-        chat.lockChatName = existing?.lockChatName ?? false;
-      }
-      if (!updateFlags['updateLockChatIcon']!) {
-        chat.lockChatIcon = existing?.lockChatIcon ?? false;
-      }
-      if (!updateFlags['updateLastReadMessageGuid']!) {
-        chat.lastReadMessageGuid = existing?.lastReadMessageGuid ?? chat.lastReadMessageGuid;
+      // Use existing chat if found, otherwise create new one from input
+      final chat = existing ?? inputChat;
+      if (existing == null) {
+        chat.id = inputChat.id;
       }
 
-      /// Save the chat and add the participants
-      for (int i = 0; i < chat.participants.length; i++) {
-        // Save each participant handle
-        final participantQuery = handleBox.query(Handle_.address.equals(chat.participants[i].address)).build();
-        final existingHandle = participantQuery.findFirst();
-        participantQuery.close();
-
-        if (existingHandle != null) {
-          chat.participants[i].id = existingHandle.id;
-        }
-        chat.participants[i].id = handleBox.put(chat.participants[i]);
+      // Update fields based on flags - use inputChat values when updating
+      if (updateFlags['updateMuteType']!) {
+        chat.muteType = inputChat.muteType;
+      }
+      if (updateFlags['updateMuteArgs']!) {
+        chat.muteArgs = inputChat.muteArgs;
+      }
+      if (updateFlags['updateIsPinned']!) {
+        chat.isPinned = inputChat.isPinned;
+      }
+      if (updateFlags['updatePinIndex']!) {
+        chat.pinIndex = inputChat.pinIndex;
+      }
+      if (updateFlags['updateIsArchived']!) {
+        chat.isArchived = inputChat.isArchived;
+      }
+      if (updateFlags['updateHasUnreadMessage']!) {
+        chat.hasUnreadMessage = inputChat.hasUnreadMessage;
+      }
+      if (updateFlags['updateAutoSendReadReceipts']!) {
+        chat.autoSendReadReceipts = inputChat.autoSendReadReceipts;
+      }
+      if (updateFlags['updateAutoSendTypingIndicators']!) {
+        chat.autoSendTypingIndicators = inputChat.autoSendTypingIndicators;
+      }
+      if (updateFlags['updateCustomAvatarPath']!) {
+        chat.customAvatarPath = inputChat.customAvatarPath;
+      }
+      if (updateFlags['updateTextFieldText']!) {
+        chat.textFieldText = inputChat.textFieldText;
+      }
+      if (updateFlags['updateTextFieldAttachments']!) {
+        chat.textFieldAttachments = inputChat.textFieldAttachments;
+      }
+      if (updateFlags['updateDisplayName']!) {
+        chat.displayName = inputChat.displayName;
+      }
+      if (updateFlags['updateDateDeleted']!) {
+        chat.dateDeleted = inputChat.dateDeleted;
+      }
+      if (updateFlags['updateLockChatName']!) {
+        chat.lockChatName = inputChat.lockChatName;
+      }
+      if (updateFlags['updateLockChatIcon']!) {
+        chat.lockChatIcon = inputChat.lockChatIcon;
+      }
+      if (updateFlags['updateLastReadMessageGuid']!) {
+        chat.lastReadMessageGuid = inputChat.lastReadMessageGuid;
       }
 
       try {
         chat.id = chatBox.put(chat);
-        // make sure to add participant relation if its a new chat
-        if (existing == null && chat.participants.isNotEmpty) {
-          final toSave = chatBox.get(chat.id!);
-          toSave!.handles.clear();
-          toSave.handles.addAll(chat.participants);
-          toSave.handles.applyToDb();
-        }
       } on UniqueViolationException catch (_) {}
 
       return chat.id;
@@ -378,7 +362,7 @@ class ChatActions {
     });
   }
 
-  static Future<List<Map<String, dynamic>>> syncLatestMessages(Map<String, dynamic> data) async {
+  static Future<List<int>> syncLatestMessages(Map<String, dynamic> data) async {
     final chatGuids = (data['chatGuids'] as List).cast<String>();
     final toggleUnread = data['toggleUnread'] as bool;
 
@@ -391,7 +375,7 @@ class ChatActions {
       List<Chat> existingChats = chatQuery.find();
       chatQuery.close();
 
-      if (existingChats.isEmpty) return <Map<String, dynamic>>[];
+      if (existingChats.isEmpty) return <int>[];
 
       // Pull the latest message for all of the chats
       List<int> chatIds = existingChats.map((e) => e.id!).toList();
@@ -429,7 +413,8 @@ class ChatActions {
         chatBox.putMany(updatedChats, mode: PutMode.update);
       }
 
-      return existingChats.map((e) => Map<String, dynamic>.from(e.toMap())).toList();
+      // Return just the IDs for efficient transfer across isolates
+      return existingChats.map((e) => e.id!).toList();
     });
   }
 
@@ -463,106 +448,146 @@ class ChatActions {
 
       // Mark the chat as unread if we updated the last message & it's not from us
       if (toggleUnread && !(lastMessage.isFromMe ?? false)) {
-        chat.toggleHasUnread(true);
+        chat.toggleHasUnreadAsync(true);
       }
     }
 
     return didUpdate;
   }
 
-  static Future<List<Map<String, dynamic>>> bulkSyncChats(Map<String, dynamic> data) async {
+  static Future<List<int>> bulkSyncChats(Map<String, dynamic> data) async {
     final chatsData = (data['chatsData'] as List).cast<Map<String, dynamic>>();
+    final inputChats = chatsData.map((e) => Chat.fromMap(e)).toList();
+
+    // 1. Extract all unique handles from the input chats
+    final Map<String, Handle> inputHandlesMap = {};
+    for (final chat in inputChats) {
+      // Use participants here because handles will be empty on inputChat.
+      // This is because handles are a ToMany relation that isn't passed across isolates
+      for (final participant in chat.participants) {
+        if (!inputHandlesMap.containsKey(participant.uniqueAddressAndService)) {
+          inputHandlesMap[participant.uniqueAddressAndService] = participant;
+        }
+      }
+    }
+
+    // 2. Update formatted addresses for all handles (Async, outside transaction)
+    for (final handle in inputHandlesMap.values) {
+      await handle.updateFormattedAddress();
+    }
 
     return Database.runInTransaction(TxMode.write, () {
       final chatBox = Database.chats;
       final handleBox = Database.handles;
 
-      // Deserialize input chats
-      final inputChats = chatsData.map((e) => Chat.fromMap(e)).toList();
-      final inputChatGuids = inputChats.map((element) => element.guid).toList();
+      // 3. Sync Handles
+      // Get all existing handles that match our input handles
+      final inputAddresses = inputHandlesMap.keys.toList();
+      final existingHandlesQuery = handleBox.query(Handle_.uniqueAddressAndService.oneOf(inputAddresses)).build();
+      final existingHandles = existingHandlesQuery.find();
+      existingHandlesQuery.close();
 
-      // 0. Create map for the chats and handles to save
-      Map<String, Handle> handlesToSave = {};
-      Map<String, List<String>> chatHandles = {};
-      Map<String, Chat> chatsToSave = {};
-      for (final chat in inputChats) {
-        chatsToSave[chat.guid] = chat;
-        for (final p in chat.participants) {
-          if (!handlesToSave.containsKey(p.uniqueAddressAndService)) {
-            handlesToSave[p.uniqueAddressAndService] = p;
+      // Map existing handles for easy lookup
+      final Map<String, Handle> existingHandlesMap = {};
+      for (final h in existingHandles) {
+        existingHandlesMap[h.uniqueAddressAndService] = h;
+      }
+
+      // Prepare handles to save
+      final List<Handle> handlesToSave = [];
+      for (final inputHandle in inputHandlesMap.values) {
+        final existing = existingHandlesMap[inputHandle.uniqueAddressAndService];
+        if (existing != null) {
+          inputHandle.id = existing.id;
+          handlesToSave.add(inputHandle);
+        } else {
+          handlesToSave.add(inputHandle);
+        }
+      }
+
+      // Save handles to DB
+      handleBox.putMany(handlesToSave);
+
+      // Re-map valid handles with IDs for linking
+      final Map<String, Handle> validHandles = {};
+      for (final h in handlesToSave) {
+        validHandles[h.uniqueAddressAndService] = h;
+      }
+
+      // 4. Sync Chats
+      final inputChatGuids = inputChats.map((e) => e.guid).toList();
+      final existingChatsQuery = chatBox.query(Chat_.guid.oneOf(inputChatGuids)).build();
+      final existingChats = existingChatsQuery.find();
+      existingChatsQuery.close();
+
+      final Map<String, Chat> existingChatsMap = {};
+      for (final c in existingChats) {
+        existingChatsMap[c.guid] = c;
+      }
+
+      // Create map of input chats for easy lookup
+      final Map<String, Chat> inputChatsMap = {};
+      for (final c in inputChats) {
+        inputChatsMap[c.guid] = c;
+      }
+
+      final List<Chat> chatsToSave = [];
+      final Map<String, List<Handle>> chatHandlesMap = {};
+      
+      for (final inputChat in inputChats) {
+        final existing = existingChatsMap[inputChat.guid];
+        Chat chatToSave;
+        
+        if (existing != null) {
+          // Use existing DB chat and merge input data
+          chatToSave = existing;
+          // Copy updatable fields from inputChat to existing
+          chatToSave.displayName = inputChat.displayName;
+          chatToSave.chatIdentifier = inputChat.chatIdentifier;
+          chatToSave.isArchived = inputChat.isArchived;
+          chatToSave.muteType = inputChat.muteType;
+          chatToSave.muteArgs = inputChat.muteArgs;
+          chatToSave.isPinned = inputChat.isPinned;
+          chatToSave.hasUnreadMessage = inputChat.hasUnreadMessage;
+          // Add other fields as needed from inputChat
+        } else {
+          // New chat - use inputChat but ensure it's clean
+          chatToSave = inputChat;
+        }
+        
+        // Prepare handles to link (collect them for later)
+        final handlesToLink = <Handle>[];
+        // Use participants here because handles will be empty on inputChat.
+        // This is because handles are a ToMany relation that isn't passed across isolates
+        for (final participant in inputChat.participants) {
+          final validHandle = validHandles[participant.uniqueAddressAndService];
+          if (validHandle != null) {
+            handlesToLink.add(validHandle);
           }
+        }
+        chatHandlesMap[inputChat.guid] = handlesToLink;
 
-          if (!chatHandles.containsKey(chat.guid)) {
-            chatHandles[chat.guid] = [];
-          }
+        chatsToSave.add(chatToSave);
+      }
 
-          if (!chatHandles[chat.guid]!.contains(p.uniqueAddressAndService)) {
-            chatHandles[chat.guid]?.add(p.uniqueAddressAndService);
+      // Save chats first
+      chatBox.putMany(chatsToSave);
+
+      // Now link handles to chats using fresh DB copies
+      for (final chatToSave in chatsToSave) {
+        final handlesToLink = chatHandlesMap[chatToSave.guid];
+        if (handlesToLink != null && handlesToLink.isNotEmpty) {
+          final freshChat = chatBox.get(chatToSave.id!);
+          if (freshChat != null) {
+            freshChat.handles.clear();
+            freshChat.handles.addAll(handlesToLink);
+            freshChat.handles.applyToDb();
           }
         }
       }
 
-      // 1. Check for existing handles and save new ones
-      List<Handle> inputHandles = handlesToSave.values.toList();
-      List<String> inputHandleAddressesAndServices =
-          inputHandles.map((element) => element.uniqueAddressAndService).toList();
-      final handleQuery =
-          handleBox.query(Handle_.uniqueAddressAndService.oneOf(inputHandleAddressesAndServices)).build();
-      List<String> existingHandleAddressesAndServices =
-          handleQuery.find().map((e) => e.uniqueAddressAndService).toList();
-      handleQuery.close();
-      inputHandles = inputHandles
-          .where((element) => !existingHandleAddressesAndServices.contains(element.uniqueAddressAndService))
-          .toList();
-      handleBox.putMany(inputHandles);
-
-      // 2. Fetch all inserted/existing handles based on input
-      final handleQuery2 =
-          handleBox.query(Handle_.uniqueAddressAndService.oneOf(inputHandleAddressesAndServices)).build();
-      List<Handle> handles = handleQuery2.find().toList();
-      handleQuery2.close();
-
-      // 3. Create map of inserted/existing handles
-      Map<String, Handle> handleMap = {};
-      for (final h in handles) {
-        handleMap[h.uniqueAddressAndService] = h;
-      }
-
-      // 4. Check for existing chats and save new ones
-      final chatQuery = chatBox.query(Chat_.guid.oneOf(inputChatGuids)).build();
-      List<String> existingChatGuids = chatQuery.find().map((e) => e.guid).toList();
-      chatQuery.close();
-      final newChats = inputChats.where((element) => !existingChatGuids.contains(element.guid)).toList();
-      chatBox.putMany(newChats);
-
-      // 5. Fetch all inserted/existing chats based on input
-      final chatQuery2 = chatBox.query(Chat_.guid.oneOf(inputChatGuids)).build();
-      List<Chat> resultChats = chatQuery2.find().toList();
-      chatQuery2.close();
-
-      // 6. Create map of inserted/existing chats
-      Map<String, Chat> chatMap = {};
-      for (final c in resultChats) {
-        chatMap[c.guid] = c;
-      }
-
-      // 7. Loop over chat -> participants map and relate all the participants to the chats
-      for (final item in chatHandles.entries) {
-        final chat = chatMap[item.key];
-        if (chat == null) continue;
-        final participants = item.value.map((e) => handleMap[e]).nonNulls.toList();
-        if (participants.isNotEmpty) {
-          chat.handles.clear();
-          chat.handles.addAll(participants);
-          chat.handles.applyToDb();
-          // Populate participants by calling getParticipants() to ensure proper serialization
-          chat.getParticipants();
-        }
-      }
-
-      // 8. Save & return updated chats
-      chatBox.putMany(resultChats);
-      return resultChats.map((e) => Map<String, dynamic>.from(e.toMap())).toList();
+      // Return just the IDs for efficient transfer across isolates
+      return chatsToSave.map((e) => e.id!).toList();
     });
   }
 
@@ -903,11 +928,12 @@ class ChatActions {
     });
   }
 
-  static Future<List<Map<String, dynamic>>> getChatsAsync(Map<String, dynamic> data) async {
+  static Future<List<int>> getChatsAsync(Map<String, dynamic> data) async {
     final limit = data['limit'] as int? ?? 15;
     final offset = data['offset'] as int? ?? 0;
     final ids = (data['ids'] as List?)?.cast<int>() ?? const <int>[];
 
+    // Fetch chat IDs in a read transaction
     return Database.runInTransaction(TxMode.read, () {
       final chatBox = Database.chats;
       late final QueryBuilder<Chat> queryBuilder;
@@ -926,18 +952,12 @@ class ChatActions {
         ..limit = limit
         ..offset = offset;
 
-      // Execute the query
-      final chats = query.find();
+      // Execute the query and return just the IDs
+      final result = query.find();
       query.close();
-
-      // Load participants for each chat and serialize
-      for (Chat c in chats) {
-        // Call getParticipants to load and deduplicate handles
-        c.getParticipants();
-      }
-
-      // Return serialized chats with proper type casting
-      return chats.map((e) => Map<String, dynamic>.from(e.toMap())).toList();
+      
+      // Return just the IDs for efficient transfer across isolates
+      return result.map((e) => e.id!).toList();
     });
   }
 }

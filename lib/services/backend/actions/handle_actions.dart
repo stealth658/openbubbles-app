@@ -1,16 +1,14 @@
 import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/database/models.dart';
-import 'package:bluebubbles/services/services.dart';
-import 'package:objectbox/objectbox.dart';
 import 'package:tuple/tuple.dart';
 
 class HandleActions {
-  static Future<Map<String, dynamic>> saveHandleAsync(Map<String, dynamic> data) async {
+  static Future<int> saveHandleAsync(Map<String, dynamic> data) async {
     final handleData = data['handleData'] as Map<String, dynamic>;
     final updateColor = data['updateColor'] as bool;
     final matchOnOriginalROWID = data['matchOnOriginalROWID'] as bool;
 
-    return Database.runInTransaction(TxMode.write, () {
+    return await Database.runInTransaction(TxMode.write, () async {
       final handle = Handle.fromMap(handleData);
 
       Handle? existing;
@@ -23,26 +21,29 @@ class HandleActions {
       if (existing != null) {
         handle.id = existing.id;
         handle.contactRelation.target = existing.contactRelation.target;
-      } else if (existing == null && handle.contactRelation.target == null) {
-        handle.contactRelation.target = ContactsSvc.matchHandleToContact(handle);
       }
+      // Contact matching is now handled automatically by ContactServiceV2
       if (!updateColor) {
         handle.color = existing?.color ?? handle.color;
       }
+      
+      // Format the address if not already formatted
+      await handle.updateFormattedAddress();
       
       try {
         handle.id = Database.handles.put(handle);
       } on UniqueViolationException catch (_) {}
 
-      return handle.toMap();
+      // Return just the ID for efficient transfer across isolates
+      return handle.id!;
     });
   }
 
-  static Future<List<Map<String, dynamic>>> bulkSaveHandlesAsync(Map<String, dynamic> data) async {
+  static Future<List<int>> bulkSaveHandlesAsync(Map<String, dynamic> data) async {
     final handlesData = (data['handlesData'] as List).cast<Map<String, dynamic>>();
     final matchOnOriginalROWID = data['matchOnOriginalROWID'] as bool;
 
-    return Database.runInTransaction(TxMode.write, () {
+    return await Database.runInTransaction(TxMode.write, () async {
       final handles = handlesData.map((e) => Handle.fromMap(e)).toList();
 
       /// Match existing to the handles to save, where possible
@@ -56,9 +57,11 @@ class HandleActions {
 
         if (existing != null) {
           h.id = existing.id;
-        } else {
-          h.contactRelation.target ??= ContactsSvc.matchHandleToContact(h);
         }
+        // Contact matching is now handled automatically by ContactServiceV2
+        
+        // Format the address if not already formatted
+        await h.updateFormattedAddress();
       }
 
       List<int> insertedIds = Database.handles.putMany(handles);
@@ -66,11 +69,12 @@ class HandleActions {
         handles[i].id = insertedIds[i];
       }
 
-      return handles.map((e) => e.toMap()).toList();
+      // Return just the IDs for efficient transfer across isolates
+      return handles.map((e) => e.id!).toList();
     });
   }
 
-  static Future<Map<String, dynamic>?> findOneHandleAsync(Map<String, dynamic> data) async {
+  static Future<int?> findOneHandleAsync(Map<String, dynamic> data) async {
     final id = data['id'] as int?;
     final originalROWID = data['originalROWID'] as int?;
     final address = data['address'] as String?;
@@ -102,11 +106,12 @@ class HandleActions {
         query.close();
       }
 
-      return result?.toMap();
+      // Return just the ID for efficient transfer across isolates
+      return result?.id;
     });
   }
 
-  static Future<List<Map<String, dynamic>>> findHandlesAsync(Map<String, dynamic> data) async {
+  static Future<List<int>> findHandlesAsync(Map<String, dynamic> data) async {
     return Database.runInTransaction(TxMode.read, () {
       final handleBox = Database.handles;
 
@@ -114,7 +119,8 @@ class HandleActions {
       final results = query.find();
       query.close();
 
-      return results.map((e) => e.toMap()).toList();
+      // Return just the IDs for efficient transfer across isolates
+      return results.map((e) => e.id!).toList();
     });
   }
 }

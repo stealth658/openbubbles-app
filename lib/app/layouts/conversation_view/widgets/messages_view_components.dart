@@ -33,8 +33,8 @@ class TypingIndicatorRow extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(left: 10.0),
                 child: ContactAvatarWidget(
-                  key: Key("${chat.participants.first.address}-typing-indicator"),
-                  handle: chat.participants.first,
+                  key: Key("${chat.handles.first.address}-typing-indicator"),
+                  handle: chat.handles.first,
                   size: 30,
                   fontSize: 14,
                   borderThickness: 0.1,

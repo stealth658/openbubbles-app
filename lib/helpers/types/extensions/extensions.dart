@@ -118,9 +118,9 @@ extension ChatListHelpers on RxList<Chat> {
   RxList<Chat> unknownSendersHelper(bool unknown) {
     if (!SettingsSvc.settings.filterUnknownSenders.value) return this;
     if (unknown) {
-      return where((e) => !e.isGroup && e.participants.firstOrNull?.contact == null).toList().obs;
+      return where((e) => !e.isGroup && e.handles.firstOrNull?.contact == null).toList().obs;
     } else {
-      return where((e) => e.isGroup || (!e.isGroup && e.participants.firstOrNull?.contact != null)).toList().obs;
+      return where((e) => e.isGroup || (!e.isGroup && e.handles.firstOrNull?.contact != null)).toList().obs;
     }
   }
 }

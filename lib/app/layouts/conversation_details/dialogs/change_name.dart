@@ -43,7 +43,7 @@ void showChangeName(Chat chat, String method, BuildContext context) {
                 if (response.statusCode == 200) {
                   Navigator.of(context, rootNavigator: true).pop();
                   Navigator.of(context, rootNavigator: true).pop();
-                  chat.changeName(controller.text);
+                  chat.changeNameAsync(controller.text);
                   showSnackbar("Notice", "Updated name successfully!");
                 } else {
                   Navigator.of(context, rootNavigator: true).pop();
@@ -51,7 +51,7 @@ void showChangeName(Chat chat, String method, BuildContext context) {
                 }
               } else {
                 Navigator.of(context, rootNavigator: true).pop();
-                chat.changeName(controller.text);
+                chat.changeNameAsync(controller.text);
               }
             },
           ),

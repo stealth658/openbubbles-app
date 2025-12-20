@@ -1,4 +1,5 @@
 import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/env.dart';
 import 'package:bluebubbles/services/backend/actions/attachment_actions.dart';
 import 'package:bluebubbles/services/backend/descriptors/attachment_query_descriptor.dart';
@@ -17,15 +18,20 @@ class AttachmentInterface {
       'messageData': messageData,
     };
 
-    late Map<String, dynamic> attachmentMap;
+    late int attachmentId;
     if (isIsolate) {
-      attachmentMap = await AttachmentActions.saveAttachmentAsync(data);
+      attachmentId = await AttachmentActions.saveAttachmentAsync(data);
     } else {
-      attachmentMap = await GetIt.I<GlobalIsolate>()
-          .send<Map<String, dynamic>>(IsolateRequestType.saveAttachmentAsync, input: data);
+      attachmentId = await GetIt.I<GlobalIsolate>()
+          .send<int>(IsolateRequestType.saveAttachmentAsync, input: data);
     }
     
-    final attachment = Attachment.fromMap(attachmentMap);
+    // Fetch attachment by ID using get
+    final attachment = Database.attachments.get(attachmentId);
+    if (attachment == null) {
+      throw Exception('Failed to fetch attachment with ID $attachmentId after save');
+    }
+    
     if (hydrateMessage) {
       AttachmentHydration.hydrate(attachment);
     }
@@ -57,15 +63,20 @@ class AttachmentInterface {
       'newAttachmentData': newAttachmentData,
     };
 
-    late Map<String, dynamic> attachmentMap;
+    late int attachmentId;
     if (isIsolate) {
-      attachmentMap = await AttachmentActions.replaceAttachmentAsync(data);
+      attachmentId = await AttachmentActions.replaceAttachmentAsync(data);
     } else {
-      attachmentMap = await GetIt.I<GlobalIsolate>()
-          .send<Map<String, dynamic>>(IsolateRequestType.replaceAttachmentAsync, input: data);
+      attachmentId = await GetIt.I<GlobalIsolate>()
+          .send<int>(IsolateRequestType.replaceAttachmentAsync, input: data);
     }
     
-    final attachment = Attachment.fromMap(attachmentMap);
+    // Fetch attachment by ID using get
+    final attachment = Database.attachments.get(attachmentId);
+    if (attachment == null) {
+      throw Exception('Failed to fetch attachment with ID $attachmentId after replace');
+    }
+    
     if (hydrateMessage) {
       AttachmentHydration.hydrate(attachment);
     }
@@ -80,18 +91,19 @@ class AttachmentInterface {
       'guid': guid,
     };
 
-    late Map<String, dynamic>? attachmentMap;
+    late int? attachmentId;
     if (isIsolate) {
-      attachmentMap = await AttachmentActions.findOneAttachmentAsync(data);
+      attachmentId = await AttachmentActions.findOneAttachmentAsync(data);
     } else {
-      attachmentMap = await GetIt.I<GlobalIsolate>()
-          .send<Map<String, dynamic>?>(IsolateRequestType.findOneAttachmentAsync, input: data);
+      attachmentId = await GetIt.I<GlobalIsolate>()
+          .send<int?>(IsolateRequestType.findOneAttachmentAsync, input: data);
     }
     
-    if (attachmentMap == null) return null;
+    if (attachmentId == null) return null;
     
-    final attachment = Attachment.fromMap(attachmentMap);
-    if (hydrateMessage) {
+    // Fetch attachment by ID using get
+    final attachment = Database.attachments.get(attachmentId);
+    if (attachment != null && hydrateMessage) {
       AttachmentHydration.hydrate(attachment);
     }
     return attachment;
@@ -105,15 +117,16 @@ class AttachmentInterface {
       'queryDescriptor': queryDescriptor?.toMap(),
     };
     
-    late List<Map<String, dynamic>> attachmentsData;
+    late List<int> attachmentIds;
     if (isIsolate) {
-      attachmentsData = await AttachmentActions.findAttachmentsAsync(data);
+      attachmentIds = await AttachmentActions.findAttachmentsAsync(data);
     } else {
-      attachmentsData = await GetIt.I<GlobalIsolate>()
-          .send<List<Map<String, dynamic>>>(IsolateRequestType.findAttachmentsAsync, input: data);
+      attachmentIds = await GetIt.I<GlobalIsolate>()
+          .send<List<int>>(IsolateRequestType.findAttachmentsAsync, input: data);
     }
     
-    final attachments = attachmentsData.map((e) => Attachment.fromMap(e)).toList();
+    // Fetch attachments by ID using getMany for efficiency
+    final attachments = Database.attachments.getMany(attachmentIds).whereType<Attachment>().toList();
     if (hydrateMessage) {
       AttachmentHydration.hydrateAll(attachments);
     }

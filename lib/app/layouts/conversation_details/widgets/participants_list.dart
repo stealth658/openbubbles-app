@@ -23,11 +23,11 @@ class ParticipantsList extends StatefulWidget {
 class _ParticipantsListState extends OptimizedState<ParticipantsList> {
   bool showMoreParticipants = false;
 
-  bool get shouldShowMore => widget.chat.participants.length > 5;
+  bool get shouldShowMore => widget.chat.handles.length > 5;
   
   List<Handle> get clippedParticipants => showMoreParticipants
-      ? widget.chat.participants
-      : widget.chat.participants.take(5).toList();
+      ? widget.chat.handles
+      : widget.chat.handles.take(5).toList();
 
   @override
   Widget build(BuildContext context) {
@@ -126,8 +126,8 @@ class _ParticipantsListState extends OptimizedState<ParticipantsList> {
           }
 
           return ContactTile(
-            key: Key(widget.chat.participants[index].address),
-            handle: widget.chat.participants[index],
+            key: Key(widget.chat.handles[index].address),
+            handle: widget.chat.handles[index],
             chat: widget.chat,
             canBeRemoved: widget.chat.isGroup &&
                 SettingsSvc.settings.enablePrivateAPI.value &&

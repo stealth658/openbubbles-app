@@ -103,11 +103,11 @@ class _CustomAvatarPanelState extends OptimizedState<CustomAvatarPanel> {
                                     }),
                                 TextButton(
                                     child: Text("Reset", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
-                                    onPressed: () {
+                                    onPressed: () async {
                                       File file = File(ChatsSvc.chats[index].customAvatarPath!);
                                       file.delete();
                                       ChatsSvc.chats[index].customAvatarPath = null;
-                                      ChatsSvc.chats[index].save(updateCustomAvatarPath: true);
+                                      await ChatsSvc.chats[index].saveAsync(updateCustomAvatarPath: true);
                                       Navigator.of(context, rootNavigator: true).pop();
                                     }),
                                 TextButton(

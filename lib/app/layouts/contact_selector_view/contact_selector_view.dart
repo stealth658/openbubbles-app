@@ -12,7 +12,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_acrylic/window_effect.dart';
 import 'package:get/get.dart' hide Response;
 import 'package:slugify/slugify.dart';
-import 'package:supercharged/supercharged.dart';
 
 class ContactSelectorView extends StatefulWidget {
   const ContactSelectorView({
@@ -20,7 +19,7 @@ class ContactSelectorView extends StatefulWidget {
     required this.onSelect,
   });
 
-  final void Function(Contact) onSelect;
+  final void Function(ContactV2) onSelect;
 
   @override
   ContactSelectorViewState createState() => ContactSelectorViewState();
@@ -31,7 +30,7 @@ class ContactSelectorViewState extends OptimizedState<ContactSelectorView> {
   final FocusNode searchNode = FocusNode();
   final ScrollController addressScrollController = ScrollController();
 
-  List<Contact> filteredContacts = [];
+  List<ContactV2> filteredContacts = [];
   String? oldSearch;
   Timer? _debounce;
 
@@ -45,19 +44,22 @@ class ContactSelectorViewState extends OptimizedState<ContactSelectorView> {
       _debounce = Timer(const Duration(milliseconds: 250), () async {
         final searchContacts = await SchedulerBinding.instance.scheduleTask(() async {
           final query = slugify(searchController.text, delimiter: "");
-          return ContactsSvc.contacts.filter((element) =>
-              slugify(element.displayName, delimiter: "").contains(query) || element.hasMatchingAddress(query));
+          final allContacts = await ContactsSvcV2.getAllContacts();
+          return allContacts.where((element) =>
+              slugify(element.displayName, delimiter: "").contains(query) || element.hasMatchingAddress(query)).toList();
         }, Priority.animation);
 
         _debounce = null;
         setState(() {
-          filteredContacts = List<Contact>.from(searchContacts);
+          filteredContacts = searchContacts;
         });
       });
     });
 
-    setState(() {
-      filteredContacts = List<Contact>.from(ContactsSvc.contacts);
+    ContactsSvcV2.getAllContacts().then((contacts) {
+      setState(() {
+        filteredContacts = contacts;
+      });
     });
   }
 
@@ -183,7 +185,7 @@ class ContactSelectorViewState extends OptimizedState<ContactSelectorView> {
                                           leading: Padding(
                                             padding: const EdgeInsets.only(right: 5.0),
                                             child: ContactAvatarWidget(
-                                              contact: contact,
+                                              contactV2: contact,
                                               editable: false,
                                             ),
                                           )),

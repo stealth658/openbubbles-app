@@ -77,7 +77,7 @@ class ConversationViewController extends StatefulController with GetSingleTicker
       lastFocusedNode.requestFocus();
     }
   }
-  late final mentionables = chat.participants.map((e) => Mentionable(
+  late final mentionables = chat.handles.map((e) => Mentionable(
     handle: e,
   )).toList();
 

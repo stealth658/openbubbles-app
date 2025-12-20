@@ -67,13 +67,13 @@ class ChatTitleController extends GetxController {
         final cachedParticipantCount = _participantCountCache[chat.guid];
 
         if (updatedChat.displayName != cachedDisplayName ||
-            updatedChat.participants.length != cachedParticipantCount) {
+            updatedChat.handles.length != cachedParticipantCount) {
           final newTitle = updatedChat.getTitle();
           if (_titleCache[chat.guid]?.value != newTitle) {
             _titleCache[chat.guid]?.value = newTitle;
           }
           _displayNameCache[chat.guid] = updatedChat.displayName;
-          _participantCountCache[chat.guid] = updatedChat.participants.length;
+          _participantCountCache[chat.guid] = updatedChat.handles.length;
         }
       });
     }

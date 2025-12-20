@@ -31,10 +31,12 @@ class RequestContacts extends StatelessWidget {
         },
       ),
       onNextPressed: () async {
-        if (Platform.isAndroid && !(await ContactsSvc.canAccessContacts())) {
-          await Permission.contacts.request();
+        bool hasPermission = await ContactsSvcV2.hasContactAccess;
+        if (Platform.isAndroid && !hasPermission) {
+          hasPermission = await ContactsSvcV2.requestContactPermission();
         }
-        if (!(await ContactsSvc.canAccessContacts())) {
+
+        if (!hasPermission) {
           return await showDialog(
             context: context,
             builder: (BuildContext context) {

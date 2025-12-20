@@ -306,7 +306,7 @@ class _ChatTitleState extends CustomState<ChatTitle, void, ConversationTileContr
         if (chat.guid == controller.chat.guid) {
           // check if we really need to update this widget
           if (chat.displayName != cachedDisplayName
-              || chat.participants.length != cachedParticipants.length) {
+              || chat.handles.length != cachedParticipants.length) {
             final newTitle = chat.getTitle();
             if (newTitle != title) {
               setState(() {
@@ -315,7 +315,7 @@ class _ChatTitleState extends CustomState<ChatTitle, void, ConversationTileContr
             }
           }
           cachedDisplayName = chat.displayName;
-          cachedParticipants = chat.participants;
+          cachedParticipants = chat.handles;
         }
       });
     }
@@ -343,7 +343,7 @@ class _ChatTitleState extends CustomState<ChatTitle, void, ConversationTileContr
         );
         String _title = title;
         if (hideInfo) {
-          _title = controller.chat.isGroup ? controller.chat.fakeName : controller.chat.participants[0].fakeName;
+          _title = controller.chat.isGroup ? controller.chat.fakeName : controller.chat.handles[0].fakeName;
         }
 
         return SizedBox(

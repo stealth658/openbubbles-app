@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:crypto/crypto.dart';
 import 'package:fast_contacts/fast_contacts.dart' hide Contact, StructuredName;
@@ -315,6 +316,97 @@ class ContactV2Actions {
       return avatarFile.path;
     } catch (e, stack) {
       Logger.error('[ContactV2] Error saving avatar for contact $contactId', error: e, trace: stack);
+      return null;
+    }
+  }
+
+  /// Get a contact by address (email or phone number)
+  static Future<Map<String, dynamic>?> getContactByAddress(dynamic data) async {
+    final dataMap = data as Map<dynamic, dynamic>;
+    final address = dataMap['address'] as String;
+
+    return await Database.runInTransaction(TxMode.read, () {
+      final contactsBox = Database.contactsV2;
+      
+      // Normalize the search address
+      final normalized = address.contains('@') 
+          ? ContactV2.normalizeEmail(address)
+          : ContactV2.normalizePhoneNumber(address);
+
+      // Search through all contacts for a match
+      final allContacts = contactsBox.getAll();
+      
+      for (final contact in allContacts) {
+        if (contact.hasMatchingAddress(normalized)) {
+          return contact.toMap();
+        }
+      }
+
+      return null;
+    });
+  }
+
+  /// Get all contacts from the database
+  static Future<List<Map<String, dynamic>>> getAllContacts(dynamic data) async {
+    return await Database.runInTransaction(TxMode.read, () {
+      final contactsBox = Database.contactsV2;
+      final allContacts = contactsBox.getAll();
+      return allContacts.map((c) => c.toMap()).toList();
+    });
+  }
+
+  /// Fetch network contacts for web/desktop (from server)
+  static Future<List<Map<String, dynamic>>> fetchNetworkContacts(dynamic data) async {
+    // This will be implemented when web/desktop support is added
+    // For now, return empty list
+    Logger.warn('[ContactV2] fetchNetworkContacts not yet implemented for web/desktop');
+    return [];
+  }
+
+  /// Get avatar data for a contact by native contact ID
+  static Future<Uint8List?> getContactAvatar(dynamic data) async {
+    final dataMap = data as Map<dynamic, dynamic>;
+    final nativeContactId = dataMap['nativeContactId'] as String;
+
+    try {
+      // First try to get from disk (if we've already saved it)
+      final appDocDir = Directory(Database.appDocPath);
+      final avatarsDir = Directory(p.join(appDocDir.path, 'contact_avatars'));
+      final avatarFile = File(p.join(avatarsDir.path, '$nativeContactId.jpg'));
+
+      if (await avatarFile.exists()) {
+        return await avatarFile.readAsBytes();
+      }
+
+      // If not on disk, try to fetch it fresh
+      if (!kIsWeb && !kIsDesktop) {
+        Uint8List? avatar;
+        
+        try {
+          avatar = await FastContacts.getContactImage(nativeContactId, size: ContactImageSize.fullSize);
+        } catch (e) {
+          Logger.warn('[ContactV2] Failed to get full size avatar for ID $nativeContactId: $e');
+        }
+
+        if (avatar == null) {
+          try {
+            avatar = await FastContacts.getContactImage(nativeContactId);
+          } catch (e) {
+            Logger.warn('[ContactV2] Failed to get small size avatar for ID $nativeContactId: $e');
+          }
+        }
+
+        // Save it to disk for future use
+        if (avatar != null) {
+          await _saveContactAvatar(nativeContactId, avatar);
+        }
+
+        return avatar;
+      }
+
+      return null;
+    } catch (e, stack) {
+      Logger.error('[ContactV2] Error getting contact avatar for $nativeContactId', error: e, trace: stack);
       return null;
     }
   }

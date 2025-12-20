@@ -11,7 +11,8 @@ import 'package:universal_io/io.dart';
 import 'package:get_it/get_it.dart';
 
 /// Get an instance of our [CloudMessagingService]
-CloudMessagingService fcm() => GetIt.I<CloudMessagingService>();
+// ignore: non_constant_identifier_names
+CloudMessagingService get FirebaseSvc => GetIt.I<CloudMessagingService>();
 
 /// Manager for registering the client with the server FCM client (used for notifications)
 ///

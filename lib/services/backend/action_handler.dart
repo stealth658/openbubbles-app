@@ -405,10 +405,7 @@ class ActionHandler extends GetxService {
   }
 
   Future<Chat> handleNewOrUpdatedChat(Chat partialData) async {
-    // fetch all contacts for matching new handles if in background
-    if (LifecycleSvc.headless) {
-      await ContactsSvc.init();
-    }
+    // Contact fetching is now handled automatically by ContactServiceV2 on startup
     // get and return the chat from server
     return await cm.fetchChat(partialData.guid) ?? partialData;
   }
@@ -425,7 +422,6 @@ class ActionHandler extends GetxService {
 
   Future<void> handleIncomingFaceTimeCall(Map<String, dynamic> data) async {
     Logger.info("Handling incoming FaceTime call");
-    await ContactsSvc.init();
     final callUuid = data["uuid"];
     String? address = data["handle"]?["address"];
     String caller = data["address"] ?? "Unknown Number";
@@ -435,8 +431,10 @@ class ActionHandler extends GetxService {
     // Find the contact info for the caller
     // Load the contact's avatar & name
     if (address != null) {
-      Contact? contact = ContactsSvc.getContact(address);
-      chatIcon = contact?.avatar;
+      ContactV2? contact = await ContactsSvcV2.getContact(address);
+      if (contact?.avatarPath != null) {
+        chatIcon = await ContactsSvcV2.getContactAvatar(contact!.nativeContactId);
+      }
       caller = contact?.displayName ?? caller;
     }
 
@@ -452,7 +450,6 @@ class ActionHandler extends GetxService {
 
   Future<void> handleIncomingFaceTimeCallLegacy(Map<String, dynamic> data) async {
     Logger.info("Handling incoming FaceTime call (legacy)");
-    await ContactsSvc.init();
     String? address = data["caller"];
     String? caller = address;
     Uint8List? chatIcon;
@@ -460,8 +457,10 @@ class ActionHandler extends GetxService {
     // Find the contact info for the caller
     // Load the contact's avatar & name
     if (address != null) {
-      Contact? contact = ContactsSvc.getContact(address);
-      chatIcon = contact?.avatar;
+      ContactV2? contact = await ContactsSvcV2.getContact(address);
+      if (contact?.avatarPath != null) {
+        chatIcon = await ContactsSvcV2.getContactAvatar(contact!.nativeContactId);
+      }
       caller = contact?.displayName ?? caller;
       await NotificationsSvc.createIncomingFaceTimeNotification(null, caller!, chatIcon, false);
     }
@@ -515,7 +514,7 @@ class ActionHandler extends GetxService {
       case "chat-read-status-changed":
         Chat? chat = Chat.findOne(guid: data["chatGuid"]);
         if (chat != null && (data["read"] == true || data["read"] == false)) {
-          chat.toggleHasUnread(!data["read"]!, privateMark: false);
+          chat.toggleHasUnreadAsync(!data["read"]!, privateMark: false);
         }
         return;
       case "typing-indicator":

@@ -192,7 +192,7 @@ class _ChatTitleAndAvatarState extends State<ChatTitleAndAvatar> {
               if (hideInfo) {
                 displayTitle = widget.chat.isGroup 
                     ? widget.chat.fakeName 
-                    : widget.chat.participants[0].fakeName;
+                    : widget.chat.handles[0].fakeName;
               }
               
               return RichText(
@@ -260,7 +260,7 @@ class _ChatTitleAndAvatarState extends State<ChatTitleAndAvatar> {
                 } else if (hideInfo) {
                   displayTitle = widget.chat.isGroup
                       ? widget.chat.fakeName
-                      : widget.chat.participants[0].fakeName;
+                      : widget.chat.handles[0].fakeName;
                 }
                 
                 return Text(
@@ -278,8 +278,8 @@ class _ChatTitleAndAvatarState extends State<ChatTitleAndAvatar> {
                   !hideInfo)
                 Text(
                   widget.chat.isGroup
-                      ? "${widget.chat.participants.length} recipients"
-                      : widget.chat.participants[0].address,
+                      ? "${widget.chat.handles.length} recipients"
+                      : widget.chat.handles[0].address,
                   style: context.theme.textTheme.labelLarge!.apply(
                     color: context.theme.colorScheme.outline,
                   ),

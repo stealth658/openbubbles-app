@@ -59,7 +59,7 @@ class _TypingIndicatorState extends OptimizedState<TypingIndicator> {
           Padding(
             padding: const EdgeInsets.only(left: 10, right: 10),
             child: ContactAvatarWidget(
-              handle: cm.activeChat!.chat.participants.first,
+              handle: cm.activeChat!.chat.handles.first,
               size: 25,
               fontSize: context.theme.textTheme.bodyMedium!.fontSize!,
               borderThickness: 0.1,

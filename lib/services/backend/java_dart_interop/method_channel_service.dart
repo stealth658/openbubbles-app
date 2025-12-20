@@ -263,7 +263,7 @@ class MethodChannelService {
             Chat? chat = Chat.findOne(guid: data["chatGuid"]);
             if (chat != null) {
               // Don't clear local notifications because tapping Mark as Read should clear the notification automatically
-              chat.toggleHasUnread(false, clearLocalNotifications: false);
+              chat.toggleHasUnreadAsync(false, clearLocalNotifications: false);
               return Future.value(true);
             }
           }
@@ -285,7 +285,7 @@ class MethodChannelService {
             if (chat == null || (payload.data["read"] != true && payload.data["read"] != false)) {
               return Future.value(false);
             } else {
-              chat.toggleHasUnread(!payload.data["read"]!, privateMark: false);
+              chat.toggleHasUnreadAsync(!payload.data["read"]!, privateMark: false);
               return Future.value(true);
             }
           } else {

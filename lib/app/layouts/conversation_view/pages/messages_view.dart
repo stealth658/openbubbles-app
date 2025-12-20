@@ -137,7 +137,7 @@ class MessagesViewState extends OptimizedState<MessagesView> {
   void dispose() {
     if (!kIsWeb && !kIsDesktop) smartReply.close();
     chat.lastReadMessageGuid = _messages.first.guid;
-    chat.save(updateLastReadMessageGuid: true);
+    chat.saveAsync(updateLastReadMessageGuid: true);
     messageService.close(force: widget.customService != null);
     for (Message m in _messages) {
       getActiveMwc(m.guid!)?.close();
@@ -147,7 +147,7 @@ class MessagesViewState extends OptimizedState<MessagesView> {
 
   void getFocusState() {
     if (!SettingsSvc.isMinMontereySync) return;
-    final recipient = chat.participants.firstOrNull;
+    final recipient = chat.handles.firstOrNull;
     if (recipient != null) {
       HttpSvc.handleFocusState(recipient.address).then((response) {
         final status = response.data['data']['status'];

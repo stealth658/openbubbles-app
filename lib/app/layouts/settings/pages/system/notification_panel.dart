@@ -348,7 +348,7 @@ class ChatListState extends OptimizedState<ChatList> {
       if (chat.muteArgs != null) {
         if (chat.muteType == "mute_individuals") {
           final participants =
-              chat.participants.where((element) => chat.muteArgs!.split(",").contains(element.address));
+              chat.handles.where((element) => chat.muteArgs!.split(",").contains(element.address));
           muteArgsStr = " - ${participants.length > 1 ? "${participants.length} people" : "1 person"}";
         } else if (chat.muteType == "temporary_mute") {
           final DateTime time = DateTime.parse(chat.muteArgs!).toLocal();

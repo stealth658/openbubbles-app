@@ -118,16 +118,16 @@ class ListItem extends StatelessWidget {
             }
 
             if (action == MaterialSwipeAction.pin) {
-              chat.togglePin(!chat.isPinned!);
+              chat.togglePinAsync(!chat.isPinned!);
             } else if (action == MaterialSwipeAction.alerts) {
-              chat.toggleMute(chat.muteType != "mute");
+              chat.toggleMuteAsync(chat.muteType != "mute");
             } else if (action == MaterialSwipeAction.delete) {
               ChatsSvc.removeChat(chat);
               Chat.softDelete(chat);
             } else if (action == MaterialSwipeAction.mark_read) {
-              chat.toggleHasUnread(!chat.hasUnreadMessage!);
+              chat.toggleHasUnreadAsync(!chat.hasUnreadMessage!);
             } else if (action == MaterialSwipeAction.archive) {
-              chat.toggleArchived(!chat.isArchived!);
+              chat.toggleArchivedAsync(!chat.isArchived!);
             }
             update.call();
           },

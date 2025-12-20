@@ -153,7 +153,7 @@ class _MaterialHeaderState extends CustomState<MaterialHeader, void, Conversatio
                               IconButton(
                                 onPressed: () {
                                   for (Chat element in controller.selectedChats) {
-                                    element.toggleHasUnread(!element.hasUnreadMessage!);
+                                    element.toggleHasUnreadAsync(!element.hasUnreadMessage!);
                                   }
                                   controller.clearSelectedChats();
                                 },
@@ -167,7 +167,7 @@ class _MaterialHeaderState extends CustomState<MaterialHeader, void, Conversatio
                               IconButton(
                                 onPressed: () {
                                   for (Chat element in controller.selectedChats) {
-                                    element.toggleMute(element.muteType != "mute");
+                                    element.toggleMuteAsync(element.muteType != "mute");
                                   }
                                   controller.clearSelectedChats();
                                 },
@@ -183,7 +183,7 @@ class _MaterialHeaderState extends CustomState<MaterialHeader, void, Conversatio
                               IconButton(
                                 onPressed: () {
                                   for (Chat element in controller.selectedChats) {
-                                    element.togglePin(!element.isPinned!);
+                                    element.togglePinAsync(!element.isPinned!);
                                   }
                                   controller.clearSelectedChats();
                                 },
@@ -195,7 +195,7 @@ class _MaterialHeaderState extends CustomState<MaterialHeader, void, Conversatio
                             IconButton(
                               onPressed: () {
                                 for (Chat element in controller.selectedChats) {
-                                  element.toggleArchived(!element.isArchived!);
+                                  element.toggleArchivedAsync(!element.isArchived!);
                                 }
                                 controller.clearSelectedChats();
                               },

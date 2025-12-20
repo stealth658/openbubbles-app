@@ -149,7 +149,7 @@ class _FirebasePanelState extends OptimizedState<FirebasePanel> {
                             try {
                               bool hasConfigs = await fdb.fetchFirebaseConfig();
                               if (hasConfigs) {
-                                await fcm().registerDevice();
+                                await FirebaseSvc.registerDevice();
                               } else {
                                 error.value = "Firebase not configured on the server!";
                               }
@@ -203,7 +203,7 @@ class _FirebasePanelState extends OptimizedState<FirebasePanel> {
                           );
 
                           await fdb.fetchFirebaseConfig();
-                          await fcm().registerDevice();
+                          await FirebaseSvc.registerDevice();
                         },
                       );
                     }),
@@ -284,7 +284,7 @@ class _FirebasePanelState extends OptimizedState<FirebasePanel> {
                         ),
                         onTap: () async {
                           try {
-                            await fcm().registerDevice();
+                            await FirebaseSvc.registerDevice();
                             showSnackbar("Device Registered", "Successfully re-registered device with server!");
                           } catch (e, s) {
                             Logger.error("Failed to re-register device with server", error: e, trace: s);
@@ -394,7 +394,7 @@ class _FirebasePanelState extends OptimizedState<FirebasePanel> {
 
                                       // Delete the Firebase FCM token
                                       try {
-                                        if (fcm().token != null) {
+                                        if (FirebaseSvc.token != null) {
                                           await MethodChannelSvc.invokeMethod("firebase-delete-token");
                                         }
                                       } catch (e, s) {

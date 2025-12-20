@@ -22,6 +22,7 @@ class SetupViewController extends StatefulController {
   int numberToDownload = 25;
   bool skipEmptyChats = true;
   bool saveToDownloads = false;
+  int? syncTimeFilter = 15552000000; // 6 months in milliseconds (default)
   String error = "";
   bool obscurePass = true;
 

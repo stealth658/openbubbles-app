@@ -208,7 +208,7 @@ class NotificationsService {
         ? personIcon
         : await avatarAsBytes(
             participantsOverride:
-                !chat.isGroup ? null : chat.participants.where((e) => e.address == message.handle?.address).toList(),
+                !chat.isGroup ? null : chat.handles.where((e) => e.address == message.handle?.address).toList(),
             chat: chat,
             quality: 256);
     if (chatIcon.isEmpty) {
@@ -385,8 +385,8 @@ class NotificationsService {
     bool isTemporaryFile = false;
     
     // Optimization: For single-participant chats, use existing ContactV2 avatar if available
-    if (chat.participants.length == 1 && chat.customAvatarPath == null) {
-      final contactV2 = chat.participants.first.contactsV2.firstOrNull;
+    if (chat.handles.length == 1 && chat.customAvatarPath == null) {
+      final contactV2 = chat.handles.first.contactsV2.firstOrNull;
       if (contactV2?.avatarPath != null && await File(contactV2!.avatarPath!).exists()) {
         // Use existing avatar file directly, no need to generate and write a temp file
         path = contactV2.avatarPath!;
@@ -510,7 +510,7 @@ class NotificationsService {
     toast.onClickAction = (index) {
       _cleanNotificationState(chat.guid);
       if (actions[index] == "Mark Read" || multipleMessages) {
-        chat.toggleHasUnread(false);
+        chat.toggleHasUnreadAsync(false);
         EventDispatcher().emit('refresh', null);
       } else if (SettingsSvc.settings.enablePrivateAPI.value) {
         final String reaction = ReactionTypes.emojiToReaction[actions[index]]!;

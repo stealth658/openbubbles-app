@@ -549,13 +549,6 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
   }
 
   Future<void> goToNextPage() async {
-    if (kIsWeb) {
-      // Init the full sync first so when we go to the next page,
-      // the manager is already created (since we don't await)
-      SyncSvc.initFullSync();
-      setup.startSetup(25, true, false);
-    }
-
     if (controller.currentPage == controller.pageOfNoReturn) {
       controller.pageController.nextPage(
         duration: const Duration(milliseconds: 300),
@@ -699,7 +692,8 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
     });
 
     Navigator.of(context, rootNavigator: true).pop();
-    SystemChannels.textInput.invokeMethod('TextInput.hide');
+    SystemChannels.textInput.invokeMethod('TextInput.hide').catchError((_) {});
+
     // Unauthorized request
     if (serverResponse?.statusCode == 401) {
       SocketSvc.forgetConnection();

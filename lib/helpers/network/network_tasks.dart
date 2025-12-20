@@ -40,9 +40,8 @@ class NetworkTasks {
           await ChatsSvc.init();
         }
 
-        if (ContactsSvc.contacts.isEmpty) {
-          await ContactsSvc.refreshContacts();
-        }
+        // Contact refresh is handled by ContactServiceV2
+        await ContactsSvcV2.refreshContacts();
       }
     }
   }

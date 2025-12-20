@@ -51,13 +51,13 @@ class ChatListSection extends StatelessWidget {
             final hideInfo = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
             String title = chat.properTitle;
             if (hideInfo) {
-              title = chat.isGroup ? chat.fakeName : chat.participants[0].fakeName;
+              title = chat.isGroup ? chat.fakeName : chat.handles[0].fakeName;
             }
             return Material(
               color: Colors.transparent,
               child: InkWell(
                 onTap: () {
-                  onChatTap(chat.participants
+                  onChatTap(chat.handles
                       .where((e) => selectedContacts.firstWhereOrNull((c) => c.address == e.address) == null)
                       .map((e) => SelectedContact(
                             displayName: e.displayName,
@@ -71,8 +71,8 @@ class ChatListSection extends StatelessWidget {
                   title: title,
                   subtitle: hideInfo
                       ? ""
-                      : !chat.isGroup && chat.participants.isNotEmpty
-                          ? (chat.participants.first.formattedAddress ?? chat.participants.first.address)
+                      : !chat.isGroup && chat.handles.isNotEmpty
+                          ? (chat.handles.first.formattedAddress ?? chat.handles.first.address)
                           : chat.getChatCreatorSubtitle(),
                   chat: chat,
                 ),

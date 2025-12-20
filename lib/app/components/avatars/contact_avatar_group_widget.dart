@@ -28,7 +28,7 @@ class ContactAvatarGroupWidget extends StatefulWidget {
 }
 
 class _ContactAvatarGroupWidgetState extends OptimizedState<ContactAvatarGroupWidget> {
-  late final List<Handle> participants = widget.chat.participants;
+  late final List<Handle> participants;
   final Map materialGeneration = {
     2: [24.5/40, 10.5/40, [Alignment.topRight, Alignment.bottomLeft]],
     3: [21.5/40, 9/40, [Alignment.bottomRight, Alignment.bottomLeft, Alignment.topCenter]],
@@ -44,6 +44,7 @@ class _ContactAvatarGroupWidgetState extends OptimizedState<ContactAvatarGroupWi
     _cachedCustomAvatarPath = widget.chat.customAvatarPath;
     
     // Sort participants once during init (expensive operation)
+    participants = widget.chat.handles.toList();
     participants.sort((a, b) {
       // Check ContactV2 avatars first, then fall back to old Contact
       bool avatarA = (a.contactsV2.firstOrNull?.avatarPath != null) || (a.contact?.avatar?.isNotEmpty ?? false);

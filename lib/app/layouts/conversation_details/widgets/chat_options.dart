@@ -106,7 +106,7 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
                                       File file = File(chat.customAvatarPath!);
                                       file.delete();
                                       chat.customAvatarPath = null;
-                                      chat.save(updateCustomAvatarPath: true);
+                                      chat.saveAsync(updateCustomAvatarPath: true);
                                       Navigator.of(context, rootNavigator: true).pop();
                                     },
                                   ),
@@ -194,7 +194,7 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
                     title: "Send Typing Indicators",
                     initialVal: chat.autoSendTypingIndicators ?? SettingsSvc.settings.privateSendTypingIndicators.value,
                     onChanged: (value) {
-                      chat.toggleAutoType(value);
+                      chat.toggleAutoTypeAsync(value);
                       setState(() {});
                     },
                     backgroundColor: tileColor,
@@ -207,9 +207,9 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
                       initialVal: chat.autoSendTypingIndicators == null,
                       onChanged: (value) {
                         if (!value) {
-                          chat.toggleAutoType(SettingsSvc.settings.privateSendTypingIndicators.value);
+                          chat.toggleAutoTypeAsync(SettingsSvc.settings.privateSendTypingIndicators.value);
                         } else {
-                          chat.toggleAutoType(null);
+                          chat.toggleAutoTypeAsync(null);
                         }
                         setState(() {});
                       }),
@@ -219,7 +219,7 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
                     title: "${SettingsSvc.settings.privateManualMarkAsRead.value ? "Automatically " : ""}Send Read Receipts",
                     initialVal: chat.autoSendReadReceipts ?? SettingsSvc.settings.privateMarkChatAsRead.value,
                     onChanged: (value) {
-                      chat.toggleAutoRead(value);
+                      chat.toggleAutoReadAsync(value);
                       setState(() {});
                     },
                     backgroundColor: tileColor,
@@ -232,9 +232,9 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
                     initialVal: chat.autoSendReadReceipts == null,
                     onChanged: (value) {
                       if (!value) {
-                        chat.toggleAutoRead(SettingsSvc.settings.privateMarkChatAsRead.value);
+                        chat.toggleAutoReadAsync(SettingsSvc.settings.privateMarkChatAsRead.value);
                       } else {
-                        chat.toggleAutoRead(null);
+                        chat.toggleAutoReadAsync(null);
                       }
                       setState(() {});
                     },
@@ -248,7 +248,7 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
                     initialVal: chat.lockChatName,
                     onChanged: (value) {
                       chat.lockChatName = value;
-                      chat.save(updateLockChatName: true);
+                      chat.saveAsync(updateLockChatName: true);
                       setState(() {});
                     },
                   ),
@@ -259,7 +259,7 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
                     initialVal: chat.lockChatIcon,
                     onChanged: (value) {
                       chat.lockChatIcon = value;
-                      chat.save(updateLockChatIcon: true);
+                      chat.saveAsync(updateLockChatIcon: true);
                       setState(() {});
                     },
                   ),
@@ -269,7 +269,7 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
                     title: "Pin Conversation",
                     initialVal: chat.isPinned!,
                     onChanged: (value) {
-                      chat.togglePin(!chat.isPinned!);
+                      chat.togglePinAsync(!chat.isPinned!);
                       setState(() {});
                     },
                     backgroundColor: tileColor,
@@ -279,7 +279,7 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
                     title: "Mute Conversation",
                     initialVal: chat.muteType == "mute",
                     onChanged: (value) {
-                      chat.toggleMute(value);
+                      chat.toggleMuteAsync(value);
                       setState(() {});
                     },
                     backgroundColor: tileColor,
@@ -289,7 +289,7 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
                     title: "Archive Conversation",
                     initialVal: chat.isArchived!,
                     onChanged: (value) {
-                      chat.toggleArchived(value);
+                      chat.toggleArchivedAsync(value);
                       setState(() {});
                     },
                     backgroundColor: tileColor,

@@ -34,6 +34,8 @@ class SyncSettings extends StatelessWidget {
             ),
             NumberOfMessagesSlider(parentController: controller),
             const SizedBox(height: 10),
+            TimeFilterDropdown(parentController: controller),
+            const SizedBox(height: 10),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 40.0),
               child: Row(
@@ -105,11 +107,11 @@ class SyncSettings extends StatelessWidget {
             final numberOfMessagesPerPage = controller.numberToDownload.clamp(1, double.infinity).toInt();
             final skipEmptyChats = controller.skipEmptyChats;
             final saveToDownloads = controller.saveToDownloads;
+            final syncTimeFilter = controller.syncTimeFilter;
             
             // Init the full sync first so when we go to the next page,
             // the manager is already created (since we don't await)
-            SyncSvc.initFullSync();
-            setup.startSetup(numberOfMessagesPerPage, skipEmptyChats, saveToDownloads);
+            setup.startSetup(numberOfMessagesPerPage, skipEmptyChats, saveToDownloads, syncTimeFilter);
 
             controller.pageController.nextPage(
               duration: const Duration(milliseconds: 300),
@@ -261,6 +263,73 @@ class _StatefulSwitchState extends CustomState<StatefulSwitch, int, SetupViewCon
           value = newVal;
         });
       },
+    );
+  }
+}
+
+class TimeFilterDropdown extends CustomStateful<SetupViewController> {
+  TimeFilterDropdown({required super.parentController});
+
+  @override
+  State<StatefulWidget> createState() => _TimeFilterDropdownState();
+}
+
+class _TimeFilterDropdownState extends CustomState<TimeFilterDropdown, int?, SetupViewController> {
+  // Time filter options in milliseconds
+  final Map<String, int?> timeOptions = {
+    '1 week': 604800000,           // 7 days
+    '1 month': 2592000000,          // 30 days
+    '3 months': 7776000000,         // 90 days
+    '6 months': 15552000000,        // 180 days (default)
+    '1 year': 31536000000,          // 365 days
+    'All time': null,               // No filter
+  };
+
+  late int? selectedValue;
+
+  @override
+  void initState() {
+    super.initState();
+    selectedValue = controller.syncTimeFilter;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 40.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisSize: MainAxisSize.max,
+        children: [
+          Expanded(
+            child: Text(
+              "Sync Active Chats Within",
+              style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.properOnSurface).copyWith(height: 1.5),
+              textAlign: TextAlign.left,
+            ),
+          ),
+          const SizedBox(width: 10),
+          DropdownButton<int?>(
+            value: selectedValue,
+            dropdownColor: context.theme.colorScheme.properSurface,
+            items: timeOptions.entries.map((entry) {
+              return DropdownMenuItem<int?>(
+                value: entry.value,
+                child: Text(
+                  entry.key,
+                  style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.properOnSurface),
+                ),
+              );
+            }).toList(),
+            onChanged: (int? newValue) {
+              controller.syncTimeFilter = newValue;
+              setState(() {
+                selectedValue = newValue;
+              });
+            },
+          ),
+        ],
+      ),
     );
   }
 }

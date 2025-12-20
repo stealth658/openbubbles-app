@@ -147,7 +147,7 @@ Future<void> showConversationTileMenu(
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: () {
-              chat.togglePin(!chat.isPinned!);
+              chat.togglePinAsync(!chat.isPinned!);
               Navigator.pop(context);
             },
             child: Padding(
@@ -176,7 +176,7 @@ Future<void> showConversationTileMenu(
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: () {
-              chat.toggleMute(chat.muteType != "mute");
+              chat.toggleMuteAsync(chat.muteType != "mute");
               Navigator.pop(context);
             },
             child: Padding(
@@ -204,7 +204,7 @@ Future<void> showConversationTileMenu(
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: () {
-            chat.toggleHasUnread(!chat.hasUnreadMessage!);
+            chat.toggleHasUnreadAsync(!chat.hasUnreadMessage!);
             Navigator.pop(context);
           },
           child: Padding(
@@ -233,7 +233,7 @@ Future<void> showConversationTileMenu(
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: () {
-              chat.toggleArchived(!chat.isArchived!);
+              chat.toggleArchivedAsync(!chat.isArchived!);
               Navigator.pop(context);
             },
             child: Padding(
@@ -379,7 +379,7 @@ Future<Uint8List> avatarAsBytes({
   List<Handle>? participantsOverride,
   double quality = 256,
 }) async {
-  final participants = participantsOverride ?? chat.participants;
+  final participants = participantsOverride ?? chat.handles;
   ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
   Canvas canvas = Canvas(pictureRecorder);
 
@@ -508,7 +508,11 @@ Future<void> paintAvatar(
   borderWidth ??= size * 0.05;
   
   // Check ContactV2 avatars from disk first (more efficient)
-  final contactV2 = handle?.contactsV2.firstOrNull;
+  ContactV2? contactV2 = handle?.contactsV2.firstOrNull;
+  if (contactV2 == null && handle != null) {
+    contactV2 = await ContactsSvcV2.getContact(handle.address);
+  }
+  
   if (contactV2?.avatarPath != null) {
     try {
       final avatarBytes = await File(contactV2!.avatarPath!).readAsBytes();
@@ -522,8 +526,8 @@ Future<void> paintAvatar(
     }
   }
   
-  // Fall back to old Contact avatar (in-memory)
-  Contact? contact = handle?.contact ?? (handle != null ? ContactsSvc.getContact(handle.address) : null);
+  // Fall back to old Contact avatar for backwards compatibility
+  Contact? contact = handle?.contact;
   if (contact?.avatar != null) {
     Uint8List? contactAvatar = await clip(contact!.avatar ?? contact.avatar!, size: size.toInt(), circle: kIsDesktop || inGroup);
     if (contactAvatar != null) {

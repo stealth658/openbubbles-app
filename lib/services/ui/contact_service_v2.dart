@@ -2,6 +2,7 @@ import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/backend/interfaces/contact_v2_interface.dart';
+import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/services/ui/chat/chats_service.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:flutter/foundation.dart';
@@ -29,16 +30,18 @@ class ContactServiceV2 {
   /// Check if we have contact access permission
   Future<bool> get hasContactAccess async {
     if (_hasContactAccess) return true;
-
-    if (kIsWeb || kIsDesktop) {
-      // For web/desktop, contacts are fetched from the server
-      // Not implemented yet for V2
-      _hasContactAccess = false;
-    } else {
-      _hasContactAccess = (await Permission.contacts.status).isGranted;
-    }
-
+    _hasContactAccess = await _canAccessContacts();
     return _hasContactAccess;
+  }
+
+  /// Check if we can access contacts
+  Future<bool> _canAccessContacts() async {
+    if (kIsWeb || kIsDesktop) {
+      int versionCode = (await SettingsSvc.getServerDetails()).item4;
+      return versionCode >= 42;
+    } else {
+      return (await Permission.contacts.status).isGranted;
+    }
   }
 
   /// Request contact permission from the user
@@ -58,8 +61,16 @@ class ContactServiceV2 {
   }
 
   /// Initialize the contact service
-  Future<void> init() async {
-    Logger.info('[ContactServiceV2] Initializing...');
+  /// [headless] - If true, skips operations that require UI or user interaction (for isolate usage)
+  Future<void> init({bool headless = false}) async {
+    Logger.info('[ContactServiceV2] Initializing... (headless: $headless)');
+    
+    // Skip contact access checks and fetching in headless mode
+    // The isolate doesn't need to fetch contacts, it just needs to be ready to process them
+    if (headless) {
+      Logger.info('[ContactServiceV2] Running in headless mode, skipping contact fetch');
+      return;
+    }
     
     // Check contact access
     await hasContactAccess;
@@ -209,7 +220,7 @@ class ContactServiceV2 {
             .query(Chat_.dateDeleted.isNull())
             .build()
             .find()
-            .where((chat) => chat.participants.any((p) => p.id == handleId))
+            .where((chat) => chat.handles.any((p) => p.id == handleId))
             .toList();
         
         // Update each chat in the ChatsService to trigger UI updates
@@ -244,5 +255,89 @@ class ContactServiceV2 {
   /// Check if a handle has been updated (exists in the update status map)
   bool isHandleUpdated(int handleId) {
     return handleUpdateStatus.containsKey(handleId);
+  }
+
+  /// Get a contact by address (email or phone number)
+  /// This will search through all contacts to find a match
+  Future<ContactV2?> getContact(String address) async {
+    try {
+      final contactMap = await ContactV2Interface.getContactByAddressAsync(address: address);
+      if (contactMap == null) return null;
+      return ContactV2.fromMap(contactMap);
+    } catch (e, stack) {
+      Logger.error('[ContactServiceV2] Error getting contact by address', error: e, trace: stack);
+      return null;
+    }
+  }
+
+  /// Match a handle to its associated contact
+  /// Returns the contact if found, null otherwise
+  Future<ContactV2?> matchHandleToContact(Handle handle) async {
+    if (!_hasContactAccess) return null;
+
+    try {
+      final contact = await getContactForHandle(handle.id!);
+      return contact;
+    } catch (e, stack) {
+      Logger.error('[ContactServiceV2] Error matching handle to contact', error: e, trace: stack);
+      return null;
+    }
+  }
+
+  /// Get all contacts from the database
+  /// Returns a list of all ContactV2 entities
+  Future<List<ContactV2>> getAllContacts() async {
+    try {
+      final contactMaps = await ContactV2Interface.getAllContactsAsync();
+      return contactMaps.map((m) => ContactV2.fromMap(m)).toList();
+    } catch (e, stack) {
+      Logger.error('[ContactServiceV2] Error getting all contacts', error: e, trace: stack);
+      return [];
+    }
+  }
+
+  /// Fetch network contacts for web/desktop
+  /// This fetches contacts from the server instead of the device
+  Future<List<ContactV2>> fetchNetworkContacts({Function(String)? logger}) async {
+    if (!kIsWeb && !kIsDesktop) {
+      Logger.warn('[ContactServiceV2] fetchNetworkContacts is only for web/desktop');
+      return [];
+    }
+
+    try {
+      logger?.call("Fetching contacts from server...");
+      final contactMaps = await ContactV2Interface.fetchNetworkContactsAsync();
+      logger?.call("Fetched ${contactMaps.length} contacts");
+      
+      final contacts = contactMaps.map((m) => ContactV2.fromMap(m)).toList();
+      
+      // Notify about all handles that might have been updated
+      final allHandleIds = contacts
+          .expand((c) => c.handles)
+          .where((h) => h.id != null)
+          .map((h) => h.id!)
+          .toList();
+      
+      if (allHandleIds.isNotEmpty) {
+        notifyHandlesUpdated(allHandleIds);
+      }
+      
+      return contacts;
+    } catch (e, stack) {
+      Logger.error('[ContactServiceV2] Error fetching network contacts', error: e, trace: stack);
+      logger?.call("Error fetching contacts: $e");
+      return [];
+    }
+  }
+
+  /// Get avatar data for a contact by ID
+  /// Returns the avatar as Uint8List if available
+  Future<Uint8List?> getContactAvatar(String nativeContactId) async {
+    try {
+      return await ContactV2Interface.getContactAvatarAsync(nativeContactId: nativeContactId);
+    } catch (e, stack) {
+      Logger.error('[ContactServiceV2] Error getting contact avatar', error: e, trace: stack);
+      return null;
+    }
   }
 }

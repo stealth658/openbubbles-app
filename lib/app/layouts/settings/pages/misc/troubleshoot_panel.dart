@@ -127,7 +127,7 @@ class _TroubleshootPanelState extends OptimizedState<TroubleshootPanel> {
                                       ),
                                     ),
                                   ));
-                          await ContactsSvc.fetchNetworkContacts(logger: (newLog) {
+                          await ContactsSvcV2.fetchNetworkContacts(logger: (newLog) {
                             log.add(newLog);
                           });
                         },

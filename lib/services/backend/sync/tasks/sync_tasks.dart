@@ -47,7 +47,7 @@ class BulkSyncChats extends AsyncTask<List<dynamic>, List<Chat>> {
       Map<String, Chat> chatsToSave = {};
       for (final chat in inputChats) {
         chatsToSave[chat.guid] = chat;
-        for (final p in chat.participants) {
+        for (final p in chat.handles) {
           if (!handlesToSave.containsKey(p.uniqueAddressAndService)) {
             handlesToSave[p.uniqueAddressAndService] = p;
           }
@@ -261,7 +261,7 @@ class SyncLastMessages extends AsyncTask<List<dynamic>, List<Chat>> {
       
       // Mark the chat as unread if we updated the last message & it's not from us
       if (toggleUnread && !(lastMessage.isFromMe ?? false)) {
-        chat.toggleHasUnread(true);
+        chat.toggleHasUnreadAsync(true);
       }
     }
 

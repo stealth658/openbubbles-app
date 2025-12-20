@@ -63,15 +63,15 @@ class _AttachmentsLoaderState extends OptimizedState<AttachmentsLoader> {
 
       // Associate handles with messages
       for (Attachment a in media) {
-        a.message.target?.handle = widget.chat.participants
+        a.message.target?.handle = widget.chat.handles
             .firstWhereOrNull((e) => e.originalROWID == a.message.target?.handleId);
       }
       for (Attachment a in docs) {
-        a.message.target?.handle = widget.chat.participants
+        a.message.target?.handle = widget.chat.handles
             .firstWhereOrNull((e) => e.originalROWID == a.message.target?.handleId);
       }
       for (Attachment a in locations) {
-        a.message.target?.handle = widget.chat.participants
+        a.message.target?.handle = widget.chat.handles
             .firstWhereOrNull((e) => e.originalROWID == a.message.target?.handleId);
       }
 

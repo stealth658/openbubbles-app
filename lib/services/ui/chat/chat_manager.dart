@@ -56,7 +56,7 @@ class ChatManager extends GetxService {
 
     createChatController(chat, active: true);
     if (clearNotifications) {
-      chat.toggleHasUnread(false, force: true);
+      chat.toggleHasUnreadAsync(false, force: true);
     }
     if (save) {
       Future(() async => await PrefsSvc.i.setString('lastOpenedChat', chat.guid));
@@ -75,6 +75,47 @@ class ChatManager extends GetxService {
   }
 
   bool isChatActive(String guid) => (getChatController(guid)?.isActive ?? false) && (getChatController(guid)?.isAlive ?? false);
+
+  /// Reset the chat manager by clearing all controllers and active chat state
+  void reset() {
+    Logger.debug('Resetting ChatManager');
+    
+    // Clear active chat
+    activeChat?.controller = null;
+    activeChat = null;
+    
+    // Set all controllers to inactive and clear the map
+    _chatControllers.forEach((key, value) {
+      value.isActive = false;
+      value.isAlive = false;
+    });
+    _chatControllers.clear();
+    
+    // Clear the highlight
+    eventDispatcher.emit("update-highlight", null);
+  }
+
+  /// Close the chat manager and clean up all resources
+  Future<void> close() async {
+    Logger.debug('Closing ChatManager');
+    
+    // Clear active chat
+    activeChat?.controller = null;
+    activeChat = null;
+    
+    // Set all controllers to inactive and clear the map
+    _chatControllers.forEach((key, value) {
+      value.isActive = false;
+      value.isAlive = false;
+    });
+    _chatControllers.clear();
+    
+    // Remove saved preferences
+    await PrefsSvc.i.remove('lastOpenedChat');
+    
+    // Clear the highlight
+    eventDispatcher.emit("update-highlight", null);
+  }
 
   ChatLifecycleManager createChatController(Chat chat, {active = false}) {
     // If a chat is passed, get the chat and set it be active and make sure it's stored
@@ -127,17 +168,17 @@ class ChatManager extends GetxService {
       Chat updatedChat = Chat.fromMap(chatData);
       Chat? chat = Chat.findOne(guid: chatGuid);
       if (chat == null) {
-        updatedChat.save();
+        await updatedChat.saveAsync();
         chat = Chat.findOne(guid: chatGuid)!;
-      } else if (chat.handles.length > updatedChat.participants.length) {
-        final newAddresses = updatedChat.participants.map((e) => e.address);
-        final handlesToUse = chat.participants.where((e) => newAddresses.contains(e.address));
+      } else if (chat.handles.length > updatedChat.handles.length) {
+        final newAddresses = updatedChat.handles.map((e) => e.address);
+        final handlesToUse = chat.handles.where((e) => newAddresses.contains(e.address));
         chat.handles.clear();
         chat.handles.addAll(handlesToUse);
         chat.handles.applyToDb();
-      } else if (chat.handles.length < updatedChat.participants.length) {
-        final existingAddresses = chat.participants.map((e) => e.address);
-        final newHandle = updatedChat.participants.firstWhere((e) => !existingAddresses.contains(e.address));
+      } else if (chat.handles.length < updatedChat.handles.length) {
+        final existingAddresses = chat.handles.map((e) => e.address);
+        final newHandle = updatedChat.handles.firstWhere((e) => !existingAddresses.contains(e.address));
         final handle = Handle.findOne(addressAndService: Tuple2(newHandle.address, chat.isIMessage ? "iMessage" : "SMS")) ?? await newHandle.saveAsync();
         chat.handles.add(handle);
         chat.handles.applyToDb();
@@ -145,7 +186,7 @@ class ChatManager extends GetxService {
       if (!chat.lockChatName) {
         chat.displayName = updatedChat.displayName;
       }
-      chat = chat.save(updateDisplayName: !chat.lockChatName);
+      chat = await chat.saveAsync(updateDisplayName: !chat.lockChatName);
       return chat;
     }
 

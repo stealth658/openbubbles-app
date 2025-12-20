@@ -84,7 +84,7 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
       ).bottom;
   late int numberToShow = 5;
   late Chat? dmChat = ChatsSvc.chats
-      .firstWhereOrNull((chat) => !chat.isGroup && chat.participants.firstWhereOrNull((handle) => handle.address == message.handle?.address) != null);
+      .firstWhereOrNull((chat) => !chat.isGroup && chat.handles.firstWhereOrNull((handle) => handle.address == message.handle?.address) != null);
   String? selfReaction;
   String? currentlySelectedReaction = "init";
 

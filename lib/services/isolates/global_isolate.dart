@@ -391,6 +391,10 @@ enum IsolateRequestType {
   findOneContactV2,
   getContactsForHandlesV2,
   refreshContactsV2,
+  getContactByAddressV2,
+  getAllContactsV2,
+  fetchNetworkContactsV2,
+  getContactAvatarV2,
 
   // Attachment actions
   saveAttachmentAsync,

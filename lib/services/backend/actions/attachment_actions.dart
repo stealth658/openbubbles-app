@@ -14,7 +14,7 @@ class AttachmentActions {
     return result;
   }
 
-  static Future<Map<String, dynamic>> saveAttachmentAsync(Map<String, dynamic> data) async {
+  static Future<int> saveAttachmentAsync(Map<String, dynamic> data) async {
     final attachmentData = data['attachmentData'] as Map<String, dynamic>;
     final messageData = data['messageData'] as Map<String, dynamic>?;
 
@@ -44,7 +44,8 @@ class AttachmentActions {
         attachment.id = Database.attachments.put(attachment);
       } on UniqueViolationException catch (_) {}
 
-      return attachment.toMap();
+      // Return just the ID for efficient transfer across isolates
+      return attachment.id!;
     });
   }
 
@@ -102,7 +103,7 @@ class AttachmentActions {
     });
   }
 
-  static Future<Map<String, dynamic>> replaceAttachmentAsync(Map<String, dynamic> data) async {
+  static Future<int> replaceAttachmentAsync(Map<String, dynamic> data) async {
     final oldGuid = data['oldGuid'] as String;
     final newAttachmentData = data['newAttachmentData'] as Map<String, dynamic>;
 
@@ -136,11 +137,12 @@ class AttachmentActions {
       newAttachment.height = existing.height;
       newAttachment.metadata = existing.metadata;
       
-      return newAttachment.toMap();
+      // Return just the ID for efficient transfer across isolates
+      return newAttachment.id!;
     });
   }
 
-  static Future<Map<String, dynamic>?> findOneAttachmentAsync(Map<String, dynamic> data) async {
+  static Future<int?> findOneAttachmentAsync(Map<String, dynamic> data) async {
     final guid = data['guid'] as String;
 
     return Database.runInTransaction(TxMode.read, () {
@@ -153,11 +155,12 @@ class AttachmentActions {
       final result = query.findFirst();
       query.close();
 
-      return result?.toMap();
+      // Return just the ID for efficient transfer across isolates
+      return result?.id;
     });
   }
 
-  static Future<List<Map<String, dynamic>>> findAttachmentsAsync(Map<String, dynamic> data) async {
+  static Future<List<int>> findAttachmentsAsync(Map<String, dynamic> data) async {
     final queryDescriptorMap = data['queryDescriptor'] as Map<String, dynamic>?;
     
     return Database.runInTransaction(TxMode.read, () {
@@ -176,7 +179,8 @@ class AttachmentActions {
       final results = query.find();
       query.close();
 
-      return results.map((e) => e.toMap()).toList();
+      // Return just the IDs for efficient transfer across isolates
+      return results.map((e) => e.id!).toList();
     });
   }
 

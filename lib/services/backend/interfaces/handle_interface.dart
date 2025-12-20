@@ -1,4 +1,5 @@
 import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/env.dart';
 import 'package:bluebubbles/services/backend/actions/handle_actions.dart';
 import 'package:get_it/get_it.dart';
@@ -16,15 +17,21 @@ class HandleInterface {
       'matchOnOriginalROWID': matchOnOriginalROWID,
     };
 
-    late Map<String, dynamic> handleMap;
+    late int handleId;
     if (isIsolate) {
-      handleMap = await HandleActions.saveHandleAsync(data);
+      handleId = await HandleActions.saveHandleAsync(data);
     } else {
-      handleMap = await GetIt.I<GlobalIsolate>()
-          .send<Map<String, dynamic>>(IsolateRequestType.saveHandleAsync, input: data);
+      handleId = await GetIt.I<GlobalIsolate>()
+          .send<int>(IsolateRequestType.saveHandleAsync, input: data);
     }
     
-    return Handle.fromMap(handleMap);
+    // Fetch handle by ID using get
+    final handle = Database.handles.get(handleId);
+    if (handle == null) {
+      throw Exception('Failed to fetch handle with ID $handleId after save');
+    }
+    
+    return handle;
   }
 
   static Future<List<Handle>> bulkSaveHandlesAsync({
@@ -36,15 +43,16 @@ class HandleInterface {
       'matchOnOriginalROWID': matchOnOriginalROWID,
     };
 
-    late List<Map<String, dynamic>> handlesDataResult;
+    late List<int> handleIds;
     if (isIsolate) {
-      handlesDataResult = await HandleActions.bulkSaveHandlesAsync(data);
+      handleIds = await HandleActions.bulkSaveHandlesAsync(data);
     } else {
-      handlesDataResult = await GetIt.I<GlobalIsolate>()
-          .send<List<Map<String, dynamic>>>(IsolateRequestType.bulkSaveHandlesAsync, input: data);
+      handleIds = await GetIt.I<GlobalIsolate>()
+          .send<List<int>>(IsolateRequestType.bulkSaveHandlesAsync, input: data);
     }
     
-    return handlesDataResult.map((e) => Handle.fromMap(e)).toList();
+    // Fetch handles by ID using getMany for efficiency
+    return Database.handles.getMany(handleIds).whereType<Handle>().toList();
   }
 
   static Future<Handle?> findOneHandleAsync({
@@ -60,28 +68,30 @@ class HandleInterface {
       'service': service,
     };
 
-    late Map<String, dynamic>? handleMap;
+    late int? handleId;
     if (isIsolate) {
-      handleMap = await HandleActions.findOneHandleAsync(data);
+      handleId = await HandleActions.findOneHandleAsync(data);
     } else {
-      handleMap = await GetIt.I<GlobalIsolate>()
-          .send<Map<String, dynamic>?>(IsolateRequestType.findOneHandleAsync, input: data);
+      handleId = await GetIt.I<GlobalIsolate>()
+          .send<int?>(IsolateRequestType.findOneHandleAsync, input: data);
     }
     
-    if (handleMap == null) return null;
+    if (handleId == null) return null;
     
-    return Handle.fromMap(handleMap);
+    // Fetch handle by ID using get
+    return Database.handles.get(handleId);
   }
 
   static Future<List<Handle>> findHandlesAsync() async {
-    late List<Map<String, dynamic>> handlesData;
+    late List<int> handleIds;
     if (isIsolate) {
-      handlesData = await HandleActions.findHandlesAsync({});
+      handleIds = await HandleActions.findHandlesAsync({});
     } else {
-      handlesData = await GetIt.I<GlobalIsolate>()
-          .send<List<Map<String, dynamic>>>(IsolateRequestType.findHandlesAsync, input: {});
+      handleIds = await GetIt.I<GlobalIsolate>()
+          .send<List<int>>(IsolateRequestType.findHandlesAsync, input: {});
     }
     
-    return handlesData.map((e) => Handle.fromMap(e)).toList();
+    // Fetch handles by ID using getMany for efficiency
+    return Database.handles.getMany(handleIds).whereType<Handle>().toList();
   }
 }

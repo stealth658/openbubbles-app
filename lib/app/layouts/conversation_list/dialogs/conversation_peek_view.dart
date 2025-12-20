@@ -234,7 +234,7 @@ class _ConversationPeekViewState extends OptimizedState<ConversationPeekView> wi
         color: Colors.transparent,
         child: InkWell(
           onTap: () async {
-            widget.chat.togglePin(!widget.chat.isPinned!);
+            widget.chat.togglePinAsync(!widget.chat.isPinned!);
             popPeekView();
           },
           child: ListTile(
@@ -257,7 +257,7 @@ class _ConversationPeekViewState extends OptimizedState<ConversationPeekView> wi
         color: Colors.transparent,
         child: InkWell(
           onTap: () async {
-            widget.chat.toggleMute(widget.chat.muteType != "mute");
+            widget.chat.toggleMuteAsync(widget.chat.muteType != "mute");
             popPeekView();
           },
           child: ListTile(
@@ -280,7 +280,7 @@ class _ConversationPeekViewState extends OptimizedState<ConversationPeekView> wi
         color: Colors.transparent,
         child: InkWell(
           onTap: () async {
-            widget.chat.toggleHasUnread(!widget.chat.hasUnreadMessage!, force: true);
+            widget.chat.toggleHasUnreadAsync(!widget.chat.hasUnreadMessage!, force: true);
             popPeekView();
           },
           child: ListTile(
@@ -303,7 +303,7 @@ class _ConversationPeekViewState extends OptimizedState<ConversationPeekView> wi
         color: Colors.transparent,
         child: InkWell(
           onTap: () async {
-            widget.chat.toggleArchived(!widget.chat.isArchived!);
+            widget.chat.toggleArchivedAsync(!widget.chat.isArchived!);
             popPeekView();
           },
           child: ListTile(

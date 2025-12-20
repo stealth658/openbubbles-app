@@ -166,7 +166,7 @@ class _PickedAttachmentState extends OptimizedState<PickedAttachment> with Autom
                               if (widget.controller != null) {
                                 widget.controller!.pickedAttachments.removeAt(widget.pickedAttachmentIndex);
                                 widget.controller!.chat.textFieldAttachments.removeWhere((e) => e == widget.data.path);
-                                widget.controller!.chat.save(updateTextFieldAttachments: true);
+                                widget.controller!.chat.saveAsync(updateTextFieldAttachments: true);
                                 widget.controller!.lastFocusedNode.requestFocus();
                               } else {
                                 widget.onRemove.call(widget.data);
@@ -204,7 +204,7 @@ class _PickedAttachmentState extends OptimizedState<PickedAttachment> with Autom
                   if (widget.controller != null) {
                     widget.controller!.pickedAttachments.removeAt(widget.pickedAttachmentIndex);
                     widget.controller!.chat.textFieldAttachments.removeWhere((e) => e == widget.data.path);
-                    widget.controller!.chat.save(updateTextFieldAttachments: true);
+                    widget.controller!.chat.saveAsync(updateTextFieldAttachments: true);
                     widget.controller!.lastFocusedNode.requestFocus();
                   } else {
                     widget.onRemove.call(widget.data);

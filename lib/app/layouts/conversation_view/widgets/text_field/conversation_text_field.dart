@@ -403,7 +403,7 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
       chat.textFieldText = "";
     }
     chat.textFieldAttachments = controller.pickedAttachments.where((e) => e.path != null).map((e) => e.path!).toList();
-    chat.save(updateTextFieldText: true, updateTextFieldAttachments: true);
+    chat.saveAsync(updateTextFieldText: true, updateTextFieldAttachments: true);
 
     controller.focusNode.dispose();
     controller.subjectFocusNode.dispose();
@@ -508,7 +508,7 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
     // Remove the saved text field draft
     if ((chat.textFieldText ?? "").isNotEmpty) {
       chat.textFieldText = "";
-      chat.save(updateTextFieldText: true);
+      chat.saveAsync(updateTextFieldText: true);
     }
   }
 

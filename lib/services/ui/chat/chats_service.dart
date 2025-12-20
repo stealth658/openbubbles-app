@@ -64,10 +64,12 @@ class ChatsService {
     }
   }
 
-  Future<void> init({bool force = false, bool headless = false, bool initWatchers = true}) async {
+  Future<void> init({bool force = false, bool headless = false}) async {
     this.headless = headless;
     if (!force && !SettingsSvc.settings.finishedSetup.value) return;
     Logger.info("Fetching chats...", tag: "ChatBloc");
+
+    reset();
     
     // Get current count from database or server
     currentCount = Chat.count() ??
@@ -83,15 +85,11 @@ class ChatsService {
       hasChats.value = true;
     } else {
       loadedChatBatch.value = true;
-      // Initialize watchers if requested (after we know we have no chats)
-      if (initWatchers) {
-        initDbWatchers();
-      }
+      initDbWatchers();
       return;
     }
 
     final batches = (currentCount < batchSize) ? batchSize : (currentCount / batchSize).ceil();
-
     for (int i = 0; i < batches; i++) {
       List<Chat> temp;
       if (kIsWeb) {
@@ -101,9 +99,14 @@ class ChatsService {
       }
 
       if (kIsWeb) {
-        webCachedHandles.addAll(temp.map((e) => e.participants).flattened.toList());
+        webCachedHandles.addAll(temp.map((e) => e.handles).flattened.toList());
         final ids = webCachedHandles.map((e) => e.address).toSet();
         webCachedHandles.retainWhere((element) => ids.remove(element.address));
+      }
+
+      // Clear the chats to prevent duplicates when we insert
+      if (temp.isNotEmpty) {
+        chats.clear();
       }
 
       // Insert each chat at the correct position using binary search
@@ -124,9 +127,7 @@ class ChatsService {
     Logger.info("Finished fetching chats (${chats.length}).", tag: "ChatBloc");
     
     // Initialize watchers AFTER loading all chats to avoid duplicates
-    if (initWatchers) {
-      initDbWatchers();
-    }
+    initDbWatchers();
 
     if (kIsDesktop && Platform.isWindows) {
       /* ----- IMESSAGE:// HANDLER ----- */
@@ -283,9 +284,9 @@ class ChatsService {
     items.insert(newIndex + (oldIndex < newIndex ? -1 : 0), item);
 
     // Move the pinIndex for each of the chats, and save the pinIndex in the DB
-    items.forEachIndexed((i, e) {
+    items.forEachIndexed((i, e) async {
       e.pinIndex = i;
-      e.save(updatePinIndex: true);
+      await e.saveAsync(updatePinIndex: true);
     });
     chats.sort(Chat.sort);
   }
@@ -295,7 +296,7 @@ class ChatsService {
     final pinnedChats = chats.bigPinHelper(true).where((e) => e.pinIndex != null).toList();
     for (var element in pinnedChats) {
       element.pinIndex = null;
-      element.save(updatePinIndex: true);
+      element.saveAsync(updatePinIndex: true);
     }
     chats.sort(Chat.sort);
   }
@@ -316,7 +317,7 @@ class ChatsService {
     }
   }
 
-  void reset({bool reinitWatchers = true}) {
+  void reset({bool reinitWatchers = false}) {
     currentCount = 0;
     hasChats.value = false;
     chats.clear();

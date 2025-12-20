@@ -221,7 +221,7 @@ class _ChatTitleState extends CustomState<ChatTitle, void, ConversationTileContr
         if (event.item1 != 'update-contacts') return;
         if (event.item2.isNotEmpty) {
           bool changed = false;
-          for (Handle h in controller.chat.participants) {
+          for (Handle h in controller.chat.handles) {
             if (event.item2.first.contains(h.contactRelation.targetId)) {
               changed = true;
               h.contactRelation.target = Database.contacts.get(h.contactRelation.targetId);
@@ -246,7 +246,7 @@ class _ChatTitleState extends CustomState<ChatTitle, void, ConversationTileContr
         if (chat.guid == controller.chat.guid) {
           // check if we really need to update this widget
           if (chat.displayName != cachedDisplayName
-              || chat.participants.length != cachedParticipants.length) {
+              || chat.handles.length != cachedParticipants.length) {
             final newTitle = chat.getTitle();
             if (newTitle != title) {
               setState(() {
@@ -255,7 +255,7 @@ class _ChatTitleState extends CustomState<ChatTitle, void, ConversationTileContr
             }
           }
           cachedDisplayName = chat.displayName;
-          cachedParticipants = chat.participants;
+          cachedParticipants = chat.handles;
         }
       });
     }
@@ -273,7 +273,7 @@ class _ChatTitleState extends CustomState<ChatTitle, void, ConversationTileContr
       final hideInfo = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
       String _title = title;
       if (hideInfo) {
-        _title = controller.chat.isGroup ? controller.chat.fakeName : controller.chat.participants[0].fakeName;
+        _title = controller.chat.isGroup ? controller.chat.fakeName : controller.chat.handles[0].fakeName;
       }
 
       return RichText(

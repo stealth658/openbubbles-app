@@ -263,7 +263,7 @@ class MessagesService extends GetxController {
       _messages.sort(Message.sort);
       for (Message message in _messages) {
         if (message.handle != null) {
-          message.handle!.contactRelation.target = ContactsSvc.matchHandleToContact(message.handle!);
+          // Contact matching is now handled automatically by ContactServiceV2
         }
       }
       struct.addMessages(_messages);

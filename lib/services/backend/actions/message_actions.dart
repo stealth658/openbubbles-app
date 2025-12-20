@@ -17,7 +17,7 @@ class MessageActions {
     return null;
   }
 
-  static Future<List<Map<String, dynamic>>> bulkSaveNewMessages(Map<String, dynamic> data) async {
+  static Future<List<int>> bulkSaveNewMessages(Map<String, dynamic> data) async {
     final chatData = data['chatData'] as Map<String, dynamic>;
     final messagesData = (data['messagesData'] as List).cast<Map<String, dynamic>>();
 
@@ -162,17 +162,17 @@ class MessageActions {
           if (isNewer) {
             inputChat.latestMessage = first;
             if (!first.isFromMe! && !cm.isChatActive(inputChat.guid)) {
-              inputChat.toggleHasUnread(true);
+              inputChat.toggleHasUnreadAsync(true);
             }
           }
         }
       }
 
-      return messages.map((e) => e.toMap()).toList();
+      return messages.map((e) => e.id!).toList();
     });
   }
 
-  static Future<Map<String, dynamic>> replaceMessage(Map<String, dynamic> data) async {
+  static Future<int> replaceMessage(Map<String, dynamic> data) async {
     final oldGuid = data['oldGuid'] as String?;
     final newMessageData = data['newMessageData'] as Map<String, dynamic>;
 
@@ -215,7 +215,8 @@ class MessageActions {
         print('Failed to replace message! This is likely due to a unique constraint being violated: ${ex.toString()}');
       }
       
-      return existing.toMap();
+      // Return just the ID for efficient transfer across isolates
+      return existing.id!;
     });
   }
 
@@ -318,7 +319,7 @@ class MessageActions {
     });
   }
 
-  static Future<Map<String, dynamic>> saveMessageAsync(Map<String, dynamic> data) async {
+  static Future<int> saveMessageAsync(Map<String, dynamic> data) async {
     final messageData = data['messageData'] as Map<String, dynamic>;
     final chatData = data['chatData'] as Map<String, dynamic>?;
     final updateIsBookmarked = data['updateIsBookmarked'] as bool;
@@ -381,11 +382,12 @@ class MessageActions {
         inputMessage.id = messageBox.put(inputMessage);
       } on UniqueViolationException catch (_) {}
 
-      return inputMessage.toMap();
+      // Return just the ID for efficient transfer across isolates
+      return inputMessage.id!;
     });
   }
 
-  static Future<Map<String, dynamic>?> findOneAsync(Map<String, dynamic> data) async {
+  static Future<int?> findOneAsync(Map<String, dynamic> data) async {
     final guid = data['guid'] as String?;
     final associatedMessageGuid = data['associatedMessageGuid'] as String?;
 
@@ -414,11 +416,12 @@ class MessageActions {
         handleQuery.close();
       }
 
-      return result?.toMap();
+      // Return just the ID for efficient transfer across isolates
+      return result?.id;
     });
   }
 
-  static Future<List<Map<String, dynamic>>> findAsync(Map<String, dynamic> data) async {
+  static Future<List<int>> findAsync(Map<String, dynamic> data) async {
     // For now, we'll support finding all messages
     // A more sophisticated implementation would deserialize the condition JSON
     return Database.runInTransaction(TxMode.read, () {
@@ -428,13 +431,14 @@ class MessageActions {
       final results = query.find();
       query.close();
 
-      return results.map((e) => e.toMap()).toList();
+      // Return just the IDs for efficient transfer across isolates
+      return results.map((e) => e.id!).toList();
     });
   }
 
   /// Bulk add messages with progress reporting
   /// This is the heavy-lifting version that runs in the isolate
-  static Future<List<Map<String, dynamic>>> bulkAddMessages(Map<String, dynamic> data) async {
+  static Future<List<int>> bulkAddMessages(Map<String, dynamic> data) async {
     final chatData = data['chatData'] as Map<String, dynamic>?;
     final messagesData = (data['messagesData'] as List).cast<Map<String, dynamic>>();
     final checkForLatestMessageText = data['checkForLatestMessageText'] as bool? ?? true;
@@ -600,9 +604,8 @@ class MessageActions {
         progressCallback(totalMessages, totalMessages);
       }
       
-      // IMPORTANT: toMap() always includes attachments in serialization
-      // The 'attachments' field was populated when we saved the message
-      return savedMessages.map((m) => m.toMap()).toList();
+      // Return just the IDs for efficient transfer across isolates
+      return savedMessages.map((m) => m.id!).toList();
     });
   }
 }

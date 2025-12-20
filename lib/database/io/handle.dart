@@ -147,6 +147,22 @@ class Handle {
     defaultEmail: json["defaultEmail"],
   );
 
+  /// Formats and sets the formattedAddress field if not already set.
+  /// 
+  /// For emails and business chats (urn:biz), uses the address as-is.
+  /// For phone numbers, formats them using the formatPhoneNumber helper.
+  /// 
+  /// This should be called in isolate actions before saving handles to the database.
+  Future<void> updateFormattedAddress() async {
+    if (formattedAddress != null) return;
+    
+    if (address.contains('@') || address.startsWith('urn:biz')) {
+      formattedAddress = address;
+    } else {
+      formattedAddress = await formatPhoneNumber(address);
+    }
+  }
+
   /// Save a single handle - prefer [bulkSave] for multiple handles rather
   /// than iterating through them
   Handle save({bool updateColor = false, matchOnOriginalROWID = false}) {
@@ -162,9 +178,8 @@ class Handle {
       if (existing != null) {
         id = existing.id;
         contactRelation.target = existing.contactRelation.target;
-      } else if (existing == null && contactRelation.target == null) {
-        contactRelation.target = ContactsSvc.matchHandleToContact(this);
       }
+      // Contact matching is now handled automatically by ContactServiceV2
       if (!updateColor) {
         color = existing?.color ?? color;
       }
@@ -207,9 +222,8 @@ class Handle {
 
         if (existing != null) {
           h.id = existing.id;
-        } else {
-          h.contactRelation.target ??= ContactsSvc.matchHandleToContact(h);
         }
+        // Contact matching is now handled automatically by ContactServiceV2
       }
 
       List<int> insertedIds = Database.handles.putMany(handles);

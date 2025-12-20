@@ -26,8 +26,7 @@ class NotificationSettingsDialog extends StatelessWidget {
                 style: context.theme.textTheme.bodySmall!.copyWith(color: context.theme.colorScheme.properOnSurface),),
               onTap: () async {
                 Navigator.of(context, rootNavigator: true).pop();
-                chat.toggleMute(chat.muteType != "mute");
-                chat.save();
+                await chat.toggleMuteAsync(chat.muteType != "mute");
                 updateParent.call();
                 eventDispatcher.emit("refresh", null);
               },
@@ -40,7 +39,7 @@ class NotificationSettingsDialog extends StatelessWidget {
                   style: context.theme.textTheme.bodySmall!.copyWith(color: context.theme.colorScheme.properOnSurface),),
                 onTap: () async {
                   Navigator.of(context, rootNavigator: true).pop();
-                  List<String?> names = chat.participants
+                  List<String?> names = chat.handles
                       .map((e) => e.displayName)
                       .toList();
                   List<String> existing = chat.muteArgs?.split(",") ?? [];
@@ -67,27 +66,27 @@ class NotificationSettingsDialog extends StatelessWidget {
                                     ),
                                     child: ListView.builder(
                                       shrinkWrap: true,
-                                      itemCount: chat.participants.length,
-                                      findChildIndexCallback: (key) => findChildIndexByKey(chat.participants, key, (item) => item.address),
+                                      itemCount: chat.handles.length,
+                                      findChildIndexCallback: (key) => findChildIndexByKey(chat.handles, key, (item) => item.address),
                                       itemBuilder: (context, index) {
                                         return CheckboxListTile(
-                                          key: ValueKey(chat.participants[index].address),
+                                          key: ValueKey(chat.handles[index].address),
                                           value: existing
-                                              .contains(chat.participants[index].address),
+                                              .contains(chat.handles[index].address),
                                           onChanged: (val) {
                                             setState(() {
                                               if (val!) {
-                                                existing.add(chat.participants[index].address);
+                                                existing.add(chat.handles[index].address);
                                               } else {
                                                 existing.removeWhere((element) =>
                                                 element ==
-                                                    chat.participants[index].address);
+                                                    chat.handles[index].address);
                                               }
                                             });
                                           },
                                           activeColor: context.theme.colorScheme.primary,
                                           title: Text(
-                                              names[index] ?? chat.participants[index].address,
+                                              names[index] ?? chat.handles[index].address,
                                               style: context.theme.textTheme.bodyLarge),
                                         );
                                       },
@@ -106,11 +105,11 @@ class NotificationSettingsDialog extends StatelessWidget {
                                   showSnackbar("Error", "Please select at least one person!");
                                   return;
                                 }
-                                chat.toggleMute(false);
+                                chat.toggleMuteAsync(false);
                                 chat.muteType = "mute_individuals";
                                 chat.muteArgs = existing.join(",");
                                 Navigator.of(context, rootNavigator: true).pop();
-                                chat.save(updateMuteType: true, updateMuteArgs: true);
+                                chat.saveAsync(updateMuteType: true, updateMuteArgs: true);
                                 updateParent.call();
                                 eventDispatcher.emit("refresh", null);
                               }
@@ -136,7 +135,7 @@ class NotificationSettingsDialog extends StatelessWidget {
                 if (shouldMuteDateTime(chat.muteArgs)) {
                   chat.muteType = null;
                   chat.muteArgs = null;
-                  chat.save(updateMuteType: true, updateMuteArgs: true);
+                  chat.saveAsync(updateMuteType: true, updateMuteArgs: true);
                 } else {
                   final messageDate = await showDatePicker(
                       context: context,
@@ -149,10 +148,10 @@ class NotificationSettingsDialog extends StatelessWidget {
                     if (messageTime != null) {
                       final finalDate = DateTime(messageDate.year, messageDate.month,
                           messageDate.day, messageTime.hour, messageTime.minute);
-                      chat.toggleMute(false);
+                      chat.toggleMuteAsync(false);
                       chat.muteType = "temporary_mute";
                       chat.muteArgs = finalDate.toIso8601String();
-                      chat.save(updateMuteType: true, updateMuteArgs: true);
+                      chat.saveAsync(updateMuteType: true, updateMuteArgs: true);
                       updateParent.call();
                       eventDispatcher.emit("refresh", null);
                     }
@@ -176,10 +175,10 @@ class NotificationSettingsDialog extends StatelessWidget {
                   context: context,
                   builder: (context) => TextDetectionDialog(controller)
                 );
-                chat.toggleMute(false);
+                chat.toggleMuteAsync(false);
                 chat.muteType = "text_detection";
                 chat.muteArgs = controller.text;
-                chat.save(updateMuteType: true, updateMuteArgs: true);
+                chat.saveAsync(updateMuteType: true, updateMuteArgs: true);
                 updateParent.call();
                 eventDispatcher.emit("refresh", null);
                 Navigator.of(context, rootNavigator: true).pop();
@@ -192,10 +191,10 @@ class NotificationSettingsDialog extends StatelessWidget {
               subtitle: Text("Delete your custom settings",
                 style: context.theme.textTheme.bodySmall!.copyWith(color: context.theme.colorScheme.properOnSurface),),
               onTap: () async {
-                chat.toggleMute(false);
+                chat.toggleMuteAsync(false);
                 chat.muteType = null;
                 chat.muteArgs = null;
-                chat.save(updateMuteType: true, updateMuteArgs: true);
+                chat.saveAsync(updateMuteType: true, updateMuteArgs: true);
                 updateParent.call();
                 eventDispatcher.emit("refresh", null);
                 Navigator.of(context, rootNavigator: true).pop();

@@ -1,4 +1,5 @@
 import 'package:async_task/async_task_extension.dart';
+import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/backend/sync/sync_manager_impl.dart';
@@ -22,9 +23,10 @@ class FullSyncManager extends SyncManager {
   int messagesSynced = 0;
 
   bool skipEmptyChats;
+  int? syncTimeFilter;
   String? origin;
 
-  FullSyncManager({int? endTimestamp, this.messageCount = 25, this.skipEmptyChats = true, bool saveLogs = false, String? origin})
+  FullSyncManager({int? endTimestamp, this.messageCount = 25, this.skipEmptyChats = true, bool saveLogs = false, this.syncTimeFilter, String? origin})
       : super("Full", saveLogs: saveLogs);
 
   @override
@@ -42,7 +44,7 @@ class FullSyncManager extends SyncManager {
     addToOutput('Full sync is starting...');
     addToOutput("Reloading your contacts...");
     await SettingsSvc.getServerDetails(refresh: true);
-    await ContactsSvc.refreshContacts();
+    await ContactsSvcV2.refreshContacts();
 
     addToOutput('Fetching chats from the server...');
 
@@ -62,19 +64,23 @@ class FullSyncManager extends SyncManager {
 
     try {
       int completedChats = 0;
+      int filteredChatsCount = 0;
       if (kIsDesktop && Platform.isWindows) {
         await WindowsTaskbar.setProgressMode(TaskbarProgressMode.normal);
       }
       await for (final chatEvent in streamChatPages(totalChats)) {
         double chatProgress = chatEvent.item1;
         List<Chat> newChats = chatEvent.item2;
+        int filteredInBatch = chatEvent.item3;
+        
+        // Update total filtered chats count
+        filteredChatsCount += filteredInBatch;
 
         addToOutput('Saving chunk of ${newChats.length} chat(s)...');
 
         // 1: Asynchronously save the chats
         // This returns the IDs, so we need to fetch them next
         List<Chat> chats = await Chat.bulkSyncChats(newChats);
-
         int deletedChats = 0;
 
         // 2: For each chat, get the messages.
@@ -89,7 +95,7 @@ class FullSyncManager extends SyncManager {
                 displayName = chat.displayName;
               } else if (displayName.contains(';-;')) {
                 String addr = displayName.split(';-;')[1];
-                Contact? contact = ContactsSvc.getContact(addr);
+                ContactV2? contact = await ContactsSvcV2.getContact(addr);
                 if (contact != null) {
                   displayName = contact.displayName;
                 } else if (!addr.contains("@")) {
@@ -99,7 +105,7 @@ class FullSyncManager extends SyncManager {
                 }
               }
 
-              if (chat.participants.isEmpty) {
+              if (chat.handles.isEmpty) {
                 addToOutput('Deleting chat: $displayName (no participants were found)');
                 Chat.softDelete(chat);
                 deletedChats++;
@@ -120,10 +126,11 @@ class FullSyncManager extends SyncManager {
 
               // Increment how many chats we've synced, then set the progress
               completedChats += 1;
-              setProgress(completedChats, (totalChats ?? newChats.length) - deletedChats);
+              int adjustedTotal = (totalChats ?? newChats.length) - filteredChatsCount - deletedChats;
+              setProgress(completedChats, adjustedTotal);
               chatsSynced += 1;
               if (kIsDesktop && Platform.isWindows) {
-                await WindowsTaskbar.setProgress(completedChats, (totalChats ?? newChats.length) - deletedChats);
+                await WindowsTaskbar.setProgress(completedChats, adjustedTotal);
               }
               // If we're supposed to be stopping, break out
               if (status.value == SyncStatus.STOPPING) break;
@@ -167,7 +174,7 @@ class FullSyncManager extends SyncManager {
     return completer!.future;
   }
 
-  Stream<Tuple2<double, List<Chat>>> streamChatPages(int? count, {int batchSize = 200}) async* {
+  Stream<Tuple3<double, List<Chat>, int>> streamChatPages(int? count, {int batchSize = 200}) async* {
     // Set some default sync values
     int batches = 1;
     int countPerBatch = batchSize;
@@ -182,7 +189,13 @@ class FullSyncManager extends SyncManager {
     for (int i = 0; i < batches; i++) {
       // Fetch the chats and throw an error if we don't get back a good response.
       // Throwing an error should cancel the sync
-      Response chatPage = await HttpSvc.chats(offset: i * countPerBatch, limit: countPerBatch, sort: kIsWeb ? "lastmessage" : null);
+      Response chatPage = await HttpSvc.chats(
+        offset: i * countPerBatch,
+        limit: countPerBatch,
+        sort: kIsWeb ? "lastmessage" : null,
+        withQuery: ["lastMessage"]
+      );
+
       dynamic data = chatPage.data;
       if (chatPage.statusCode != 200) {
         throw ChatRequestException(
@@ -192,7 +205,26 @@ class FullSyncManager extends SyncManager {
       // Convert the returned chat dictionaries to a list of Chat Objects
       List<dynamic> chatResponse = data["data"];
       List<Chat> chats = chatResponse.map((e) => Chat.fromMap(e)).toList();
-      yield Tuple2<double, List<Chat>>((i + 1) / batches, chats);
+
+      int filteredCount = 0;
+      // Filter chats based on lastMessage date if syncTimeFilter is set
+      if (syncTimeFilter != null) {
+        final cutoffDate = DateTime.now().subtract(Duration(milliseconds: syncTimeFilter!));
+        final originalCount = chats.length;
+        chats = chats.where((chat) {
+          // Use the latestMessage from the Chat object
+          final latestMessage = chat.latestMessage;
+          if (latestMessage.dateCreated != null) {
+            return latestMessage.dateCreated!.isAfter(cutoffDate);
+          }
+          
+          // If no latestMessage date, exclude the chat (it's likely empty)
+          return false;
+        }).toList();
+        filteredCount = originalCount - chats.length;
+      }
+      
+      yield Tuple3<double, List<Chat>, int>((i + 1) / batches, chats, filteredCount);
     }
   }
 
@@ -231,12 +263,11 @@ class FullSyncManager extends SyncManager {
     addToOutput("Reloading your contacts...");
     // Use reset because it's after the full-sync so all the
     // handles and contacts are assumed new.
-    await ContactsSvc.refreshContacts();
+    await ContactsSvcV2.refreshContacts();
     addToOutput("Reloading your chats...");
-    // Reset without reinitializing watchers to avoid duplicate chat detection
-    ChatsSvc.reset(reinitWatchers: false);
-    // Init with initWatchers=true to start watching AFTER all chats are loaded
-    await ChatsSvc.init(force: true, initWatchers: true);
+
+    ChatsSvc.reset();
+    await ChatsSvc.init(force: true);
     await super.complete();
   }
 }

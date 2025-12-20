@@ -38,35 +38,50 @@ class MessageInterface {
     required Map<String, dynamic> data,
     bool hydrateAttachments = true,
   }) async {
-    late List<Map<String, dynamic>> messagesData;
+    late List<int> messageIds;
     if (isIsolate) {
-      messagesData = await MessageActions.bulkSaveNewMessages(data);
+      messageIds = await MessageActions.bulkSaveNewMessages(data);
     } else {
-      messagesData = await GetIt.I<GlobalIsolate>()
-          .send<List<Map<String, dynamic>>>(IsolateRequestType.bulkSaveNewMessages, input: data);
+      messageIds = await GetIt.I<GlobalIsolate>()
+          .send<List<int>>(IsolateRequestType.bulkSaveNewMessages, input: data);
     }
-    final messages = messagesData.map((e) => Message.fromMap(e)).toList();
+    
+    // Fetch messages by ID using getMany for efficiency
+    final messages = Database.messages.getMany(messageIds).whereType<Message>().toList();
     if (hydrateAttachments) {
       MessageHydration.hydrateAll(messages);
     }
     return messages;
   }
 
-  static Future<Map<String, dynamic>> replaceMessage({
+  static Future<Message> replaceMessage({
     required String? oldGuid,
     required Map<String, dynamic> newMessageData,
+    bool hydrateAttachments = true,
   }) async {
     final data = {
       'oldGuid': oldGuid,
       'newMessageData': newMessageData,
     };
 
+    late int messageId;
     if (isIsolate) {
-      return await MessageActions.replaceMessage(data);
+      messageId = await MessageActions.replaceMessage(data);
     } else {
-      return await GetIt.I<GlobalIsolate>()
-          .send<Map<String, dynamic>>(IsolateRequestType.replaceMessage, input: data);
+      messageId = await GetIt.I<GlobalIsolate>()
+          .send<int>(IsolateRequestType.replaceMessage, input: data);
     }
+    
+    // Fetch message by ID using get
+    final message = Database.messages.get(messageId);
+    if (message == null) {
+      throw Exception('Failed to fetch message with ID $messageId after replace');
+    }
+    
+    if (hydrateAttachments) {
+      MessageHydration.hydrate(message);
+    }
+    return message;
   }
 
   static Future<List<Map<String, dynamic>>> fetchAttachmentsAsync({
@@ -164,16 +179,17 @@ class MessageInterface {
       'updateIsBookmarked': updateIsBookmarked,
     };
 
-    late Map<String, dynamic> messageMap;
+    late int messageId;
     if (isIsolate) {
-      messageMap = await MessageActions.saveMessageAsync(data);
+      messageId = await MessageActions.saveMessageAsync(data);
     } else {
-      messageMap = await GetIt.I<GlobalIsolate>()
-          .send<Map<String, dynamic>>(IsolateRequestType.saveMessageAsync, input: data);
+      messageId = await GetIt.I<GlobalIsolate>()
+          .send<int>(IsolateRequestType.saveMessageAsync, input: data);
     }
     
-    final message = Message.fromMap(messageMap);
-    if (hydrateAttachments) {
+    // Fetch message by ID using get
+    final message = Database.messages.get(messageId);
+    if (message != null && hydrateAttachments) {
       MessageHydration.hydrate(message);
     }
     return message;
@@ -189,18 +205,19 @@ class MessageInterface {
       'associatedMessageGuid': associatedMessageGuid,
     };
 
-    late Map<String, dynamic>? messageMap;
+    late int? messageId;
     if (isIsolate) {
-      messageMap = await MessageActions.findOneAsync(data);
+      messageId = await MessageActions.findOneAsync(data);
     } else {
-      messageMap = await GetIt.I<GlobalIsolate>()
-          .send<Map<String, dynamic>?>(IsolateRequestType.findOneAsync, input: data);
+      messageId = await GetIt.I<GlobalIsolate>()
+          .send<int?>(IsolateRequestType.findOneAsync, input: data);
     }
     
-    if (messageMap == null) return null;
+    if (messageId == null) return null;
     
-    final message = Message.fromMap(messageMap);
-    if (hydrateAttachments) {
+    // Fetch message by ID using get
+    final message = Database.messages.get(messageId);
+    if (message != null && hydrateAttachments) {
       MessageHydration.hydrate(message);
     }
     return message;
@@ -214,15 +231,16 @@ class MessageInterface {
       'conditionJson': conditionJson,
     };
 
-    late List<Map<String, dynamic>> messagesData;
+    late List<int> messageIds;
     if (isIsolate) {
-      messagesData = await MessageActions.findAsync(data);
+      messageIds = await MessageActions.findAsync(data);
     } else {
-      messagesData = await GetIt.I<GlobalIsolate>()
-          .send<List<Map<String, dynamic>>>(IsolateRequestType.findAsync, input: data);
+      messageIds = await GetIt.I<GlobalIsolate>()
+          .send<List<int>>(IsolateRequestType.findAsync, input: data);
     }
     
-    final messages = messagesData.map((e) => Message.fromMap(e)).toList();
+    // Fetch messages by ID using getMany for efficiency
+    final messages = Database.messages.getMany(messageIds).whereType<Message>().toList();
     if (hydrateAttachments) {
       MessageHydration.hydrateAll(messages);
     }
@@ -236,7 +254,7 @@ class MessageInterface {
     bool checkForLatestMessageText = true,
     bool hydrateAttachments = true,
   }) async {
-    late List<Map<String, dynamic>> results;
+    late List<int> messageIds;
     final data = {
       'chatData': chatData,
       'messagesData': messagesData,
@@ -244,13 +262,14 @@ class MessageInterface {
     };
 
     if (isIsolate) {
-      results = await MessageActions.bulkAddMessages(data);
+      messageIds = await MessageActions.bulkAddMessages(data);
     } else {
-      results = await GetIt.I<GlobalIsolate>()
-        .send<List<Map<String, dynamic>>>(IsolateRequestType.bulkAddMessages, input: data);
+      messageIds = await GetIt.I<GlobalIsolate>()
+        .send<List<int>>(IsolateRequestType.bulkAddMessages, input: data);
     }
 
-    final messages = results.map((e) => Message.fromMap(e)).toList();
+    // Fetch messages by ID using getMany for efficiency
+    final messages = Database.messages.getMany(messageIds).whereType<Message>().toList();
     if (hydrateAttachments) {
       MessageHydration.hydrateAll(messages);
     }

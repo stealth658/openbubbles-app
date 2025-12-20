@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:bluebubbles/env.dart';
 import 'package:bluebubbles/services/backend/actions/contact_v2_actions.dart';
 import 'package:bluebubbles/services/isolates/global_isolate.dart';
@@ -83,6 +85,58 @@ class ContactV2Interface {
     } else {
       return await GetIt.I<GlobalIsolate>()
           .send<List<int>>(IsolateRequestType.refreshContactsV2, input: <String, dynamic>{});
+    }
+  }
+
+  /// Get a contact by address (email or phone number)
+  static Future<Map<String, dynamic>?> getContactByAddressAsync({
+    required String address,
+  }) async {
+    final data = {
+      'address': address,
+    };
+
+    if (isIsolate) {
+      return await ContactV2Actions.getContactByAddress(data);
+    } else {
+      return await GetIt.I<GlobalIsolate>()
+          .send<Map<String, dynamic>?>(IsolateRequestType.getContactByAddressV2, input: data);
+    }
+  }
+
+  /// Get all contacts from the database
+  static Future<List<Map<String, dynamic>>> getAllContactsAsync() async {
+    if (isIsolate) {
+      return await ContactV2Actions.getAllContacts(<String, dynamic>{});
+    } else {
+      return await GetIt.I<GlobalIsolate>()
+          .send<List<Map<String, dynamic>>>(IsolateRequestType.getAllContactsV2, input: <String, dynamic>{});
+    }
+  }
+
+  /// Fetch network contacts for web/desktop (from server)
+  static Future<List<Map<String, dynamic>>> fetchNetworkContactsAsync() async {
+    if (isIsolate) {
+      return await ContactV2Actions.fetchNetworkContacts(<String, dynamic>{});
+    } else {
+      return await GetIt.I<GlobalIsolate>()
+          .send<List<Map<String, dynamic>>>(IsolateRequestType.fetchNetworkContactsV2, input: <String, dynamic>{});
+    }
+  }
+
+  /// Get avatar data for a contact
+  static Future<Uint8List?> getContactAvatarAsync({
+    required String nativeContactId,
+  }) async {
+    final data = {
+      'nativeContactId': nativeContactId,
+    };
+
+    if (isIsolate) {
+      return await ContactV2Actions.getContactAvatar(data);
+    } else {
+      return await GetIt.I<GlobalIsolate>()
+          .send<Uint8List?>(IsolateRequestType.getContactAvatarV2, input: data);
     }
   }
 }

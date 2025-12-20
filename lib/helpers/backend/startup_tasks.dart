@@ -112,13 +112,6 @@ class StartupTasks {
 
     Logger.info("Registering CloudMessagingService...");
     GetIt.I.registerSingleton<CloudMessagingService>(CloudMessagingService());
-  
-    Logger.info("Registering ContactsService...");
-    GetIt.I.registerSingletonAsync<ContactsService>(() async {
-      final contactsService = ContactsService();
-      await contactsService.init();
-      return contactsService;
-    });
 
     Logger.info("Registering ContactServiceV2...");
     GetIt.I.registerSingletonAsync<ContactServiceV2>(() async {
@@ -139,7 +132,6 @@ class StartupTasks {
       GetIt.I.isReady<LifecycleService>(),
       ThemeSvc.init(),
       IntentsSvc.init(),
-      GetIt.I.isReady<ContactsService>(),
       GetIt.I.isReady<ContactServiceV2>(),
     ]);
     Logger.info("All parallel services ready");
@@ -232,21 +224,22 @@ class StartupTasks {
     Logger.info("Registering HttpService...");
     GetIt.I.registerSingleton<HttpService>(HttpService());
     HttpSvc.init();
-    Logger.info("Global isolate services initialization complete");
 
-    Logger.info("Registering ContactsService...");
-    GetIt.I.registerSingletonAsync<ContactsService>(() async {
-      final contactsService = ContactsService();
-      await contactsService.init();
-      return contactsService;
+    Logger.info("Registering ContactServiceV2...");
+    GetIt.I.registerSingletonAsync<ContactServiceV2>(() async {
+      final contactServiceV2 = ContactServiceV2();
+      await contactServiceV2.init(headless: true);
+      return contactServiceV2;
     });
-    await GetIt.I.isReady<ContactsService>();
-    Logger.info("ContactsService ready");
+    await GetIt.I.isReady<ContactServiceV2>();
+    Logger.info("ContactServiceV2 ready");
 
     Logger.info("Registering ChatsService...");
     GetIt.I.registerSingleton<ChatsService>(ChatsService());
     await ChatsSvc.init(headless: true);
     Logger.info("ChatsService ready");
+    
+    Logger.info("Global isolate services initialization complete");
   }
 
   static Future<void> initBackgroundIsolate() async {
@@ -320,8 +313,6 @@ class StartupTasks {
       SocketSvc.init();
     }
 
-    
-
     // Fetch server details for the rest of the app.
     // We only need to fetch it on startup since the metadata shouldn't change.
     // Don't await - let this happen in background
@@ -334,7 +325,7 @@ class StartupTasks {
     // Only register FCM device on startup
     // Don't await - let this happen in background
     Logger.info("Registering FCM device in background...");
-    fcm().registerDevice().catchError((e, s) {
+    FirebaseSvc.registerDevice().catchError((e, s) {
       Logger.warn("Failed to register FCM device on startup!", error: e, trace: s);
       return null; // Return null on error
     });

@@ -813,7 +813,8 @@ List<Widget> buildSettingItemList({
                 );
 
                 final contacts = <Map<String, dynamic>>[];
-                for (Contact c in ContactsSvc.contacts) {
+                final allContacts = await ContactsSvcV2.getAllContacts();
+                for (ContactV2 c in allContacts) {
                   var map = c.toMap();
                   contacts.add(map);
                 }
@@ -1065,7 +1066,7 @@ List<Widget> buildSettingItemList({
                             await FCMData.deleteFcmData();
 
                             try {
-                              if (fcm().token != null) {
+                              if (FirebaseSvc.token != null) {
                                 await MethodChannelSvc.invokeMethod("firebase-delete-token");
                               }
                             } catch (e, s) {

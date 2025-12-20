@@ -164,10 +164,9 @@ class ChatSyncManager extends SyncManager {
   Future<void> complete() async {
     addToOutput("Successfully synced $chatsSynced chats(s)!");
     addToOutput("Reloading your chats...");
-    // Reset without reinitializing watchers to avoid duplicate chat detection
-    ChatsSvc.reset(reinitWatchers: false);
-    // Init with initWatchers=true to start watching AFTER all chats are loaded
-    await ChatsSvc.init(force: true, initWatchers: true);
+
+    ChatsSvc.reset();
+    await ChatsSvc.init(force: true);
     await super.complete();
   }
 }

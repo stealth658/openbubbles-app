@@ -51,7 +51,7 @@ class _ConversationDetailsState extends OptimizedState<ConversationDetails> with
           return Database.chats.get(chat.id!);
         });
         if (_chat != null) {
-          final update = _chat.getTitle() != chat.title || _chat.participants.length != chat.participants.length;
+          final update = _chat.getTitle() != chat.title || _chat.handles.length != chat.handles.length;
           chat = _chat.merge(chat);
           if (update) {
             setState(() {});
@@ -60,7 +60,7 @@ class _ConversationDetailsState extends OptimizedState<ConversationDetails> with
       });
     } else {
       sub = WebListeners.chatUpdate.listen((_chat) {
-        final update = _chat.getTitle() != chat.title || _chat.participants.length != chat.participants.length;
+        final update = _chat.getTitle() != chat.title || _chat.handles.length != chat.handles.length;
         chat = _chat.merge(chat);
         if (update) {
           setState(() {});
@@ -165,7 +165,7 @@ class _ConversationDetailsState extends OptimizedState<ConversationDetails> with
                 onAttachmentsLoaded: onAttachmentsLoaded,
               ),
             ),
-            if (chat.participants.length > 2 && SettingsSvc.settings.enablePrivateAPI.value && SettingsSvc.serverDetailsSync().item4 >= 226)
+            if (chat.handles.length > 2 && SettingsSvc.settings.enablePrivateAPI.value && SettingsSvc.serverDetailsSync().item4 >= 226)
               SliverToBoxAdapter(
                 child: Builder(
                   builder: (context) {

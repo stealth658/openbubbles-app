@@ -68,7 +68,7 @@ class MaterialHeader extends StatelessWidget implements PreferredSizeWidget {
               ),
             );
           } : () async {
-            final handle = controller.chat.participants.first;
+            final handle = controller.chat.handles.first;
             final contactV2 = handle.contactsV2.firstOrNull;
             final contact = handle.contact;
             if (contactV2 == null && contact == null) {
@@ -93,18 +93,18 @@ class MaterialHeader extends StatelessWidget implements PreferredSizeWidget {
           padding: EdgeInsets.only(top: kIsDesktop ? 20 : 0),
           child: ManualMark(controller: controller),
         ),
-        if (Platform.isAndroid && !controller.chat.isGroup && controller.chat.participants.first.address.isPhoneNumber)
+        if (Platform.isAndroid && !controller.chat.isGroup && controller.chat.handles.first.address.isPhoneNumber)
           IconButton(
             icon: Icon(Icons.call_outlined, color: context.theme.colorScheme.onBackground),
             onPressed: () {
-              launchUrl(Uri(scheme: "tel", path: controller.chat.participants.first.address));
+              launchUrl(Uri(scheme: "tel", path: controller.chat.handles.first.address));
             },
           ),
-        if (Platform.isAndroid && !controller.chat.isGroup && controller.chat.participants.first.address.isEmail)
+        if (Platform.isAndroid && !controller.chat.isGroup && controller.chat.handles.first.address.isEmail)
           IconButton(
             icon: Icon(Icons.mail_outlined, color: context.theme.colorScheme.onBackground),
             onPressed: () {
-              launchUrl(Uri(scheme: "mailto", path: controller.chat.participants.first.address));
+              launchUrl(Uri(scheme: "mailto", path: controller.chat.handles.first.address));
             },
           ),
         Padding(
@@ -126,7 +126,7 @@ class MaterialHeader extends StatelessWidget implements PreferredSizeWidget {
                   ),
                 );
               } else if (value == 1) {
-                controller.chat.toggleArchived(!controller.chat.isArchived!);
+                controller.chat.toggleArchivedAsync(!controller.chat.isArchived!);
                 if (Get.isSnackbarOpen) {
                   Get.closeAllSnackbars();
                 }
@@ -298,7 +298,7 @@ class _ChatIconAndTitleState extends CustomState<_ChatIconAndTitle, void, Conver
         if (chat.guid == controller.chat.guid) {
           // check if we really need to update this widget
           if (chat.displayName != cachedDisplayName
-              || chat.participants.length != cachedParticipants.length) {
+              || chat.handles.length != cachedParticipants.length) {
             final newTitle = chat.getTitle();
             if (newTitle != title) {
               setState(() {
@@ -307,7 +307,7 @@ class _ChatIconAndTitleState extends CustomState<_ChatIconAndTitle, void, Conver
             }
           }
           cachedDisplayName = chat.displayName;
-          cachedParticipants = chat.participants;
+          cachedParticipants = chat.handles;
         }
       });
     }
@@ -344,7 +344,7 @@ class _ChatIconAndTitleState extends CustomState<_ChatIconAndTitle, void, Conver
                 if (controller.inSelectMode.value) {
                   _title = "${controller.selected.length} selected";
                 } else if (hideInfo) {
-                  _title = controller.chat.isGroup ? controller.chat.fakeName : controller.chat.participants[0].fakeName;
+                  _title = controller.chat.isGroup ? controller.chat.fakeName : controller.chat.handles[0].fakeName;
                 }
                 return Text(
                   _title,
@@ -356,8 +356,8 @@ class _ChatIconAndTitleState extends CustomState<_ChatIconAndTitle, void, Conver
               if (samsung && (controller.chat.isGroup || (!title.isPhoneNumber && !title.isEmail)) && !hideInfo)
                 Text(
                   controller.chat.isGroup
-                    ? "${controller.chat.participants.length} recipients"
-                    : controller.chat.participants[0].address,
+                    ? "${controller.chat.handles.length} recipients"
+                    : controller.chat.handles[0].address,
                   style: context.theme.textTheme.labelLarge!.apply(color: context.theme.colorScheme.outline),
                   maxLines: 1,
                   overflow: TextOverflow.fade,

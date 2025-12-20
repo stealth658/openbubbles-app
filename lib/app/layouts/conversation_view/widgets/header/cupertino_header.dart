@@ -318,7 +318,7 @@ class _ChatIconAndTitleState extends CustomState<_ChatIconAndTitle, void, Conver
       sub = WebListeners.chatUpdate.listen((chat) {
         if (chat.guid == controller.chat.guid) {
           // check if we really need to update this widget
-          if (chat.displayName != cachedDisplayName || chat.participants.length != cachedParticipants.length) {
+          if (chat.displayName != cachedDisplayName || chat.handles.length != cachedParticipants.length) {
             final newTitle = chat.getTitle();
             if (newTitle != title) {
               setState(() {
@@ -327,7 +327,7 @@ class _ChatIconAndTitleState extends CustomState<_ChatIconAndTitle, void, Conver
             }
           }
           cachedDisplayName = chat.displayName;
-          cachedParticipants = chat.participants;
+          cachedParticipants = chat.handles;
         }
       });
     }
@@ -344,7 +344,7 @@ class _ChatIconAndTitleState extends CustomState<_ChatIconAndTitle, void, Conver
     final hideInfo = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
     String _title = title;
     if (hideInfo) {
-      _title = controller.chat.isGroup ? controller.chat.fakeName : controller.chat.participants[0].fakeName;
+      _title = controller.chat.isGroup ? controller.chat.fakeName : controller.chat.handles[0].fakeName;
     }
     final children = [
       IgnorePointer(

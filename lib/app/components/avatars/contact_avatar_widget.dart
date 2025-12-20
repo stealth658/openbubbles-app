@@ -17,11 +17,13 @@ class ContactAvatarWidget extends StatefulWidget {
       this.editable = true,
       this.handle,
       this.contact,
+      this.contactV2,
       this.scaleSize = true,
       this.preferHighResAvatar = false,
       this.padding = EdgeInsets.zero});
   final Handle? handle;
   final Contact? contact;
+  final ContactV2? contactV2;
   final double? size;
   final double? fontSize;
   final double borderThickness;
@@ -36,7 +38,7 @@ class ContactAvatarWidget extends StatefulWidget {
 
 class _ContactAvatarWidgetState extends OptimizedState<ContactAvatarWidget> {
   Contact? get contact => widget.contact ?? widget.handle?.contact;
-  ContactV2? get contactV2 => widget.handle?.contactsV2.firstOrNull;
+  ContactV2? get contactV2 => widget.contactV2 ?? widget.handle?.contactsV2.firstOrNull;
   late final String keyPrefix = widget.handle?.address ?? randomString(8);
   
   // Cache computed values to avoid recalculating on every build

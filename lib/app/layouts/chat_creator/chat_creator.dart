@@ -109,7 +109,7 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
           final _chats = existingChats.where((e) =>
               ((iMessage && e.isIMessage) || (sms && !e.isIMessage)) &&
               ((e.title?.toLowerCase().contains(query) ?? false) ||
-                  e.participants.firstWhereOrNull((e) =>
+                  e.handles.firstWhereOrNull((e) =>
                           ids.contains(e.contact?.id) ||
                           e.address.contains(query) ||
                           e.displayName.toLowerCase().contains(query)) !=
@@ -121,7 +121,7 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
           filteredContacts = List<Contact>.from(tuple.item1);
           filteredChats = List<Chat>.from(tuple.item2);
           if (addressController.text.isNotEmpty) {
-            filteredChats.sort((a, b) => a.participants.length.compareTo(b.participants.length));
+            filteredChats.sort((a, b) => a.handles.length.compareTo(b.handles.length));
           }
         });
       });
@@ -214,10 +214,10 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
     // match each selected contact to a participant in a chat
     if (existingChat == null) {
       for (Chat c in (checkDeleted ? Database.chats.getAll() : filteredChats)) {
-        if (c.participants.length != selectedContacts.length) continue;
+        if (c.handles.length != selectedContacts.length) continue;
         int matches = 0;
         for (SelectedContact contact in selectedContacts) {
-          for (Handle participant in c.participants) {
+          for (Handle participant in c.handles) {
             // If one is an email and the other isn't, skip
             if (contact.address.isEmail && !participant.address.isEmail) continue;
             if (contact.address == participant.address) {
@@ -646,7 +646,7 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
                             HttpSvc.createChat(participants, textController.text, method).then((response) async {
                               // Load the chat data and save it to the DB
                               Chat newChat = Chat.fromMap(response.data["data"]);
-                              newChat = newChat.save();
+                              newChat = await newChat.saveAsync();
 
                               // Fetch the newly saved chat data from the DB
                               // Throw an error if it wasn't saved correctly.

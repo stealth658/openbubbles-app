@@ -91,7 +91,7 @@ class HandleSyncManager extends SyncManager {
       }
 
       addToOutput("Streaming handles from server...");
-      bool hasContactAccess = await ContactsSvc.hasContactAccess;
+      // Contact matching is now handled automatically by ContactServiceV2
       await for (final handleEvent in streamHandlePages(totalHandles)) {
         double handleProgress = handleEvent.item1;
         List<Handle> serverHandles = handleEvent.item2;
@@ -110,9 +110,8 @@ class HandleSyncManager extends SyncManager {
             h.formattedAddress = await formatPhoneNumber(h.address);
           }
 
-          if (hasContactAccess) {
-            h.contactRelation.target ??= ContactsSvc.matchHandleToContact(h);
-          }
+          // Contact matching is now handled automatically by ContactServiceV2
+          // through the many-to-many relationship
         }
 
         // Save the new handles to the DB
@@ -192,7 +191,7 @@ class HandleSyncManager extends SyncManager {
   cacheChatHandleRelationships(List<Chat> chats) {
     addToOutput("Caching chat participants...");
     for (Chat c in chats) {
-      List<Handle> handles = c.participants;
+      List<Handle> handles = c.handles;
       List<int> rowIds = handles.map((e) => e.originalROWID).nonNulls.toList();
       chatHandleCache[c] = rowIds;
     }
@@ -265,10 +264,9 @@ class HandleSyncManager extends SyncManager {
     rebuildRelationships(newHandles);
     addToOutput("Successfully synced $handlesSynced handle(s)!");
     addToOutput("Reloading your chats...");
-    // Reset without reinitializing watchers to avoid duplicate chat detection
-    ChatsSvc.reset(reinitWatchers: false);
-    // Init with initWatchers=true to start watching AFTER all chats are loaded
-    await ChatsSvc.init(force: true, initWatchers: true);
+
+    ChatsSvc.reset();
+    await ChatsSvc.init(force: true);
     await super.complete();
   }
 }

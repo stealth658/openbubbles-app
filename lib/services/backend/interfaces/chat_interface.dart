@@ -1,5 +1,7 @@
 import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/env.dart';
+import 'package:bluebubbles/services/backend/hydration/chat_hydration.dart';
 import 'package:bluebubbles/services/backend/hydration/message_hydration.dart';
 import 'package:bluebubbles/services/backend/actions/chat_actions.dart';
 import 'package:get_it/get_it.dart';
@@ -147,41 +149,59 @@ class ChatInterface {
   static Future<List<Chat>> syncLatestMessages({
     required List<String> chatGuids,
     required bool toggleUnread,
+    bool cacheContactNames = true,
   }) async {
     final data = {
       'chatGuids': chatGuids,
       'toggleUnread': toggleUnread,
     };
 
-    late List<Map<String, dynamic>> chatsData;
+    late List<int> chatIds;
     if (isIsolate) {
-      chatsData = await ChatActions.syncLatestMessages(data);
+      chatIds = await ChatActions.syncLatestMessages(data);
     } else {
-      chatsData = await GetIt.I<GlobalIsolate>()
-          .send<List<Map<String, dynamic>>>(IsolateRequestType.syncLatestMessages, input: data);
+      chatIds = await GetIt.I<GlobalIsolate>()
+          .send<List<int>>(IsolateRequestType.syncLatestMessages, input: data);
     }
 
-    // Deserialize chats from maps
-    return chatsData.map((e) => Chat.fromMap(e)).toList();
+    // Fetch chats by ID using getMany for efficiency
+    final chats = Database.chats.getMany(chatIds).whereType<Chat>().toList();
+    
+    // Hydrate chats (cache contact names only, participants are lazy-loaded)
+    await ChatHydration.hydrateAll(
+      chats,
+      cacheContactNames: cacheContactNames,
+    );
+    
+    return chats;
   }
 
   static Future<List<Chat>> bulkSyncChats({
     required List<Map<String, dynamic>> chatsData,
+    bool cacheContactNames = true,
   }) async {
     final data = {
       'chatsData': chatsData,
     };
 
-    late List<Map<String, dynamic>> resultChatsData;
+    late List<int> chatIds;
     if (isIsolate) {
-      resultChatsData = await ChatActions.bulkSyncChats(data);
+      chatIds = await ChatActions.bulkSyncChats(data);
     } else {
-      resultChatsData = await GetIt.I<GlobalIsolate>()
-          .send<List<Map<String, dynamic>>>(IsolateRequestType.bulkSyncChats, input: data);
+      chatIds = await GetIt.I<GlobalIsolate>()
+          .send<List<int>>(IsolateRequestType.bulkSyncChats, input: data);
     }
 
-    // Deserialize chats from maps
-    return resultChatsData.map((e) => Chat.fromMap(e)).toList();
+    // Fetch chats by ID using getMany for efficiency
+    final chats = Database.chats.getMany(chatIds).whereType<Chat>().toList();
+    
+    // Hydrate chats (cache contact names only, participants are lazy-loaded)
+    await ChatHydration.hydrateAll(
+      chats,
+      cacheContactNames: cacheContactNames,
+    );
+    
+    return chats;
   }
 
   static Future<List<Message>> getMessagesAsync({
@@ -294,6 +314,7 @@ class ChatInterface {
     int limit = 15,
     int offset = 0,
     List<int> ids = const [],
+    bool cacheContactNames = true,
   }) async {
     final data = {
       'limit': limit,
@@ -301,15 +322,23 @@ class ChatInterface {
       'ids': ids,
     };
 
-    late List<Map<String, dynamic>> chatsData;
+    late List<int> chatIds;
     if (isIsolate) {
-      chatsData = await ChatActions.getChatsAsync(data);
+      chatIds = await ChatActions.getChatsAsync(data);
     } else {
-      chatsData = await GetIt.I<GlobalIsolate>()
-          .send<List<Map<String, dynamic>>>(IsolateRequestType.getChatsAsync, input: data);
+      chatIds = await GetIt.I<GlobalIsolate>()
+          .send<List<int>>(IsolateRequestType.getChatsAsync, input: data);
     }
 
-    // Deserialize chats from maps
-    return chatsData.map((e) => Chat.fromMap(e)).toList();
+    // Fetch chats by ID using getMany for efficiency
+    final chats = Database.chats.getMany(chatIds).whereType<Chat>().toList();
+    
+    // Hydrate chats (cache contact names only, participants are lazy-loaded)
+    await ChatHydration.hydrateAll(
+      chats,
+      cacheContactNames: cacheContactNames,
+    );
+    
+    return chats;
   }
 }

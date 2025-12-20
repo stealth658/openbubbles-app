@@ -338,12 +338,10 @@ class Message {
   static Future<Message> replaceMessage(String? oldGuid, Message newMessage) async {
     if (kIsWeb) throw Exception("Web does not support replacing messages!");
     
-    final result = await MessageInterface.replaceMessage(
+    return await MessageInterface.replaceMessage(
       oldGuid: oldGuid,
       newMessageData: newMessage.toMap(),
     );
-
-    return Message.fromMap(result);
   }
 
   Message updateMetadata(Metadata? metadata) {
@@ -673,7 +671,9 @@ class Message {
     // we only want lines ending at messages to me to connect downwards (this
     // helps simplify some things and prevent rendering mistakes)
     if (getLineType(olderMessage, threadOriginator) == LineType.meToOther ||
-        getLineType(olderMessage, threadOriginator) == LineType.otherToOther) return false;
+        getLineType(olderMessage, threadOriginator) == LineType.otherToOther) {
+      return false;
+    }
     // if the lower message isn't from me, then draw the connecting line
     // (if the message is from me, that message will draw a connecting line up
     // rather than this message drawing one downwards).
@@ -725,7 +725,9 @@ class Message {
     if (upperIsThreadOriginatorBubble(olderMessage) ||
         (!threadOriginator.isFromMe! && isFromMe!) ||
         getLineType(olderMessage, threadOriginator) == LineType.meToMe ||
-        getLineType(olderMessage, threadOriginator) == LineType.otherToMe) return true;
+        getLineType(olderMessage, threadOriginator) == LineType.otherToMe) {
+      return true;
+    }
     // if the upper message is from me, then draw the connecting line
     // (if the message is not from me, that message will draw a connecting line
     // down rather than this message drawing one upwards).
@@ -1016,7 +1018,7 @@ class Message {
       "wasDeliveredQuietly": wasDeliveredQuietly,
       "didNotifyRecipient": didNotifyRecipient,
       "isBookmarked": isBookmarked,
-      "attachments": (attachments).map((e) => e!.toMap()).toList(),
+      "attachments": attachments.map((e) => e!.toMap()).toList(),
       "attributedBody": attributedBody.map((e) => e.toMap()).toList(),
       "messageSummaryInfo": messageSummaryInfo.map((e) => e.toJson()).toList(),
       "payloadData": payloadData?.toJson(),

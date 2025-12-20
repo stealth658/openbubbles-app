@@ -111,7 +111,7 @@ class LifecycleService with WidgetsBindingObserver {
     }
     final activeChat = cm.activeChat;
     if (activeChat != null) {
-      activeChat.chat.toggleHasUnread(false);
+      activeChat.chat.toggleHasUnreadAsync(false);
       ConversationViewController _cvc = cvc(activeChat.chat);
       if (!_cvc.showingOverlays && _cvc.editing.isEmpty) {
         _cvc.lastFocusedNode.requestFocus();

@@ -1,6 +1,5 @@
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/database.dart';
-import 'package:bluebubbles/services/ui/contact_service.dart';
 import 'package:collection/collection.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
@@ -123,7 +122,7 @@ class FilesystemService {
   void deleteDB() {
     if (kIsWeb) return;
     Database.reset();
-    ContactsSvc.contacts.clear();
+    // Contacts are now managed by ContactServiceV2 and don't need manual clearing
   }
 
   String uriToFilename(String? uri, String? mimeType) {

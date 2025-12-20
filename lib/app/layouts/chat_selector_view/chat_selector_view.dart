@@ -165,7 +165,7 @@ class ChatSelectorViewState extends OptimizedState<ChatSelectorView> {
                                   String _title = chat.properTitle;
                                   if (hideInfo) {
                                     _title =
-                                        chat.isGroup ? chat.fakeName : chat.participants[0].fakeName;
+                                        chat.isGroup ? chat.fakeName : chat.handles[0].fakeName;
                                   }
                                   return Material(
                                     color: Colors.transparent,
@@ -180,8 +180,8 @@ class ChatSelectorViewState extends OptimizedState<ChatSelectorView> {
                                         subtitle: hideInfo
                                             ? ""
                                             : !chat.isGroup
-                                                ? (chat.participants.first.formattedAddress ??
-                                                    chat.participants.first.address)
+                                                ? (chat.handles.first.formattedAddress ??
+                                                    chat.handles.first.address)
                                                 : chat.getChatCreatorSubtitle(),
                                         chat: chat,
                                         showTrailing: false,

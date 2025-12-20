@@ -95,8 +95,8 @@ class HandleSelectorViewState extends OptimizedState<HandleSelectorView> {
     });
 
     // If there is a chat & participants, filter by participants
-    if (widget.forChat != null && widget.forChat!.participants.isNotEmpty) {
-      final addresses = widget.forChat!.participants.map((e) => e.address);
+    if (widget.forChat != null && widget.forChat!.handles.isNotEmpty) {
+      final addresses = widget.forChat!.handles.map((e) => e.address);
       handles = handles.where((element) => addresses.contains(element.address)).toList();
     }
 

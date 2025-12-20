@@ -22,12 +22,14 @@ class SyncActions {
     
     Logger.info('Starting contact refresh');
     try {
-      final refreshedItems = await ContactsSvc.refreshContacts();
-      Logger.info('Finished contact refresh, shouldRefresh $refreshedItems');
-      return refreshedItems;
+      final refreshedHandleIds = await ContactsSvcV2.refreshContacts();
+      Logger.info('Finished contact refresh, refreshed ${refreshedHandleIds.length} handles');
+      // Return format: [contactIds, handleIds] - ContactV2 doesn't track contact IDs separately
+      // so we return empty list for contactIds and the affected handle IDs
+      return [<int>[], refreshedHandleIds];
     } catch (ex, stack) {
       Logger.error('Contacts refresh failed!', error: ex, trace: stack);
-      return [];
+      return [<int>[], <int>[]];
     }
   }
 }
