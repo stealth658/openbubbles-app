@@ -2,8 +2,8 @@ import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/env.dart';
 import 'package:bluebubbles/services/backend/hydration/chat_hydration.dart';
-import 'package:bluebubbles/services/backend/hydration/message_hydration.dart';
 import 'package:bluebubbles/services/backend/actions/chat_actions.dart';
+import 'package:bluebubbles/services/backend/lifecycle/lifecycle_service.dart';
 import 'package:get_it/get_it.dart';
 import 'package:bluebubbles/services/isolates/global_isolate.dart';
 
@@ -19,7 +19,7 @@ class ChatInterface {
 
     if (isIsolate) {
       return await ChatActions.clearNotificationForChat(data);
-    } else {
+    } else if (!LifecycleSvc.isBubble) {
       return await GetIt.I<GlobalIsolate>()
           .send<void>(IsolateRequestType.clearNotificationForChat, input: data);
     }
@@ -224,23 +224,16 @@ class ChatInterface {
       'searchAround': searchAround,
     };
 
-    late List<Map<String, dynamic>> messagesData;
+    late List<int> messageIds;
     if (isIsolate) {
-      messagesData = await ChatActions.getMessagesAsync(data);
+      messageIds = await ChatActions.getMessagesAsync(data);
     } else {
-      messagesData = await GetIt.I<GlobalIsolate>()
-          .send<List<Map<String, dynamic>>>(IsolateRequestType.getMessagesAsync, input: data);
+      messageIds = await GetIt.I<GlobalIsolate>()
+          .send<List<int>>(IsolateRequestType.getMessagesAsync, input: data);
     }
 
-    // Deserialize messages from maps
-    final messages = messagesData.map((e) => Message.fromMap(e)).toList();
-    
-    // Hydrate messages with their attachments from the database
-    if (hydrateAttachments) {
-      MessageHydration.hydrateAll(messages);
-    }
-
-    return messages;
+    // Fetch messages by ID using getMany for efficiency
+    return Database.messages.getMany(messageIds).whereType<Message>().toList();
   }
 
   static Future<List<Message>> bulkSyncMessages({
@@ -253,23 +246,16 @@ class ChatInterface {
       'messagesData': messagesData,
     };
 
-    late List<Map<String, dynamic>> resultMessagesData;
+    late List<int> messageIds;
     if (isIsolate) {
-      resultMessagesData = await ChatActions.bulkSyncMessages(data);
+      messageIds = await ChatActions.bulkSyncMessages(data);
     } else {
-      resultMessagesData = await GetIt.I<GlobalIsolate>()
-          .send<List<Map<String, dynamic>>>(IsolateRequestType.bulkSyncMessages, input: data);
+      messageIds = await GetIt.I<GlobalIsolate>()
+          .send<List<int>>(IsolateRequestType.bulkSyncMessages, input: data);
     }
 
-    // Deserialize messages from maps
-    final messages = resultMessagesData.map((e) => Message.fromMap(e)).toList();
-    
-    // Hydrate messages with their attachments from the database
-    if (hydrateAttachments) {
-      MessageHydration.hydrateAll(messages);
-    }
-
-    return messages;
+    // Fetch messages by ID using getMany for efficiency
+    return Database.messages.getMany(messageIds).whereType<Message>().toList();
   }
 
   static Future<List<Handle>> getParticipantsAsync({
@@ -281,16 +267,16 @@ class ChatInterface {
       'chatGuid': chatGuid,
     };
 
-    late List<Map<String, dynamic>> participantsData;
+    late List<int> handleIds;
     if (isIsolate) {
-      participantsData = await ChatActions.getParticipantsAsync(data);
+      handleIds = await ChatActions.getParticipantsAsync(data);
     } else {
-      participantsData = await GetIt.I<GlobalIsolate>()
-          .send<List<Map<String, dynamic>>>(IsolateRequestType.getParticipantsAsync, input: data);
+      handleIds = await GetIt.I<GlobalIsolate>()
+          .send<List<int>>(IsolateRequestType.getParticipantsAsync, input: data);
     }
 
-    // Deserialize handles from maps
-    return participantsData.map((e) => Handle.fromMap(e)).toList();
+    // Fetch handles by ID using getMany for efficiency
+    return Database.handles.getMany(handleIds).whereType<Handle>().toList();
   }
 
   static Future<void> clearTranscriptAsync({

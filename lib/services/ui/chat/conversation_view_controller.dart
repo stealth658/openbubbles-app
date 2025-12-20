@@ -169,8 +169,6 @@ class ConversationViewController extends StatefulController with GetSingleTicker
     sendFunc?.call(Tuple6(attachments, text, subject, replyGuid, replyPart, effectId), isAudioMessage);
   }
 
-
-
   bool isSelected(String guid) {
     return selected.firstWhereOrNull((e) => e.guid == guid) != null;
   }

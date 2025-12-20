@@ -316,6 +316,8 @@ class GlobalIsolate {
               sendPort.send(IsolateResponse.success(uuid: uuid, data: result).toMap());
             }
           }
+
+          print('Returning request: $type');
         } catch (e) {
           print('Error in isolate action: $e');
 

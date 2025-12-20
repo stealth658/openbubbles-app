@@ -9,15 +9,13 @@ class ChatActions {
   static Future<void> clearNotificationForChat(Map<String, dynamic> data) async {
     final chatId = data['chatId'] as int;
     
-    if (!LifecycleSvc.isBubble) {
-      await MethodChannelSvc.invokeMethod(
-        "delete-notification",
-        {
-          "notification_id": chatId,
-          "tag": "new_message"
-        }
-      );
-    }
+    await MethodChannelSvc.invokeMethod(
+      "delete-notification",
+      {
+        "notification_id": chatId,
+        "tag": "new_message"
+      }
+  );
   }
 
   static Future<void> markChatReadUnread(Map<String, dynamic> data) async {
@@ -591,7 +589,7 @@ class ChatActions {
     });
   }
 
-  static Future<List<Map<String, dynamic>>> getMessagesAsync(Map<String, dynamic> data) async {
+  static Future<List<int>> getMessagesAsync(Map<String, dynamic> data) async {
     final chatId = data['chatId'] as int;
     final participantsData = (data['participantsData'] as List).cast<Map<String, dynamic>>();
     final offset = data['offset'] as int? ?? 0;
@@ -638,7 +636,7 @@ class ChatActions {
         afterQuery.close();
       }
 
-      // Handle matching
+      // Handle matching - filter out messages that don't match participant requirements
       for (int i = 0; i < messages.length; i++) {
         Message message = messages[i];
         if (participants.isNotEmpty && !message.isFromMe! && message.handleId != null && message.handleId != 0) {
@@ -647,61 +645,16 @@ class ChatActions {
           if (handle == null && message.originalROWID != null) {
             messages.remove(message);
             i--;
-          } else {
-            message.handle = handle;
           }
         }
       }
 
-      // Access dbAttachments to trigger lazy-load for each message
-      for (final message in messages) {
-        // Simply accessing dbAttachments will trigger the load from DB
-        final _ = message.dbAttachments.length; // Forces the load
-        
-        // Now populate the attachments field from dbAttachments
-        if (message.hasAttachments) {
-          message.attachments = List<Attachment>.from(message.dbAttachments);
-        }
-      }
-
-      // // Query attachments for messages
-      // // Note: We query attachments separately because ToMany relationships are lazy-loaded
-      // // and we need to populate the 'attachments' field (not dbAttachments) for serialization
-      // final attachmentBox = Database.attachments;
-      // final messageIds = messages.map((e) => e.id!).toList();
-      
-      // if (messageIds.isNotEmpty) {
-      //   final attachmentQuery = (attachmentBox.query(Attachment_.id.notNull())
-      //         ..link(Attachment_.message, Message_.id.oneOf(messageIds)))
-      //       .build();
-      //   final attachments = attachmentQuery.find();
-      //   attachmentQuery.close();
-
-      //   // Build attachment map by message ID
-      //   final attachmentMap = <int, List<Attachment>>{};
-      //   for (final attachment in attachments) {
-      //     final messageId = attachment.message.target?.id;
-      //     if (messageId != null) {
-      //       attachmentMap.putIfAbsent(messageId, () => []).add(attachment);
-      //     }
-      //   }
-
-      //   // IMPORTANT: Populate the 'attachments' field for serialization
-      //   // Do NOT modify 'dbAttachments' here - it represents the persisted DB relationship
-      //   // and should only be modified when actually saving/updating messages in the DB
-      //   for (final message in messages) {
-      //     final messageAttachments = attachmentMap[message.id];
-      //     if (messageAttachments != null && messageAttachments.isNotEmpty) {
-      //       message.attachments = messageAttachments;
-      //     }
-      //   }
-      // }
-
-      return messages.map((e) => Map<String, dynamic>.from(e.toMap())).toList();
+      // Return only message IDs
+      return messages.map((e) => e.id!).toList();
     });
   }
 
-  static Future<List<Map<String, dynamic>>> bulkSyncMessages(Map<String, dynamic> data) async {
+  static Future<List<int>> bulkSyncMessages(Map<String, dynamic> data) async {
     final chatData = data['chatData'] as Map<String, dynamic>;
     final messagesData = (data['messagesData'] as List).cast<Map<String, dynamic>>();
 
@@ -712,7 +665,7 @@ class ChatActions {
       final chatQuery = Database.chats.query(Chat_.guid.equals(inputChat.guid)).build();
       final dbChat = chatQuery.findFirst();
       chatQuery.close();
-      if (dbChat == null) return <Map<String, dynamic>>[];
+      if (dbChat == null) return <int>[];
 
       // Gather handles from chat and cache them
       Map<String, Handle> handlesCache = {};
@@ -776,7 +729,8 @@ class ChatActions {
         } catch (_) {}
       }
 
-      return syncedMessages.map((e) => Map<String, dynamic>.from(e.toMap())).toList();
+      // Return only message IDs
+      return syncedMessages.map((e) => e.id!).toList();
     });
   }
 
@@ -896,7 +850,7 @@ class ChatActions {
     return messages;
   }
 
-  static Future<List<Map<String, dynamic>>> getParticipantsAsync(Map<String, dynamic> data) async {
+  static Future<List<int>> getParticipantsAsync(Map<String, dynamic> data) async {
     final chatId = data['chatId'] as int;
 
     return Database.runInTransaction(TxMode.read, () {
@@ -904,9 +858,10 @@ class ChatActions {
       final chat = query.findFirst();
       query.close();
 
-      if (chat == null) return <Map<String, dynamic>>[];
+      if (chat == null) return <int>[];
 
-      return List<Handle>.from(chat.handles).map((e) => Map<String, dynamic>.from(e.toMap())).toList();
+      // Return only handle IDs
+      return List<Handle>.from(chat.handles).map((e) => e.id!).toList();
     });
   }
 

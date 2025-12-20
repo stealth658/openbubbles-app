@@ -2,7 +2,6 @@ import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/env.dart';
 import 'package:bluebubbles/services/backend/actions/message_actions.dart';
-import 'package:bluebubbles/services/backend/hydration/message_hydration.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:get_it/get_it.dart';
 import 'package:bluebubbles/services/isolates/global_isolate.dart';
@@ -48,9 +47,6 @@ class MessageInterface {
     
     // Fetch messages by ID using getMany for efficiency
     final messages = Database.messages.getMany(messageIds).whereType<Message>().toList();
-    if (hydrateAttachments) {
-      MessageHydration.hydrateAll(messages);
-    }
     return messages;
   }
 
@@ -78,9 +74,6 @@ class MessageInterface {
       throw Exception('Failed to fetch message with ID $messageId after replace');
     }
     
-    if (hydrateAttachments) {
-      MessageHydration.hydrate(message);
-    }
     return message;
   }
 
@@ -189,9 +182,6 @@ class MessageInterface {
     
     // Fetch message by ID using get
     final message = Database.messages.get(messageId);
-    if (message != null && hydrateAttachments) {
-      MessageHydration.hydrate(message);
-    }
     return message;
   }
 
@@ -217,9 +207,6 @@ class MessageInterface {
     
     // Fetch message by ID using get
     final message = Database.messages.get(messageId);
-    if (message != null && hydrateAttachments) {
-      MessageHydration.hydrate(message);
-    }
     return message;
   }
 
@@ -241,9 +228,6 @@ class MessageInterface {
     
     // Fetch messages by ID using getMany for efficiency
     final messages = Database.messages.getMany(messageIds).whereType<Message>().toList();
-    if (hydrateAttachments) {
-      MessageHydration.hydrateAll(messages);
-    }
     return messages;
   }
 
@@ -270,9 +254,6 @@ class MessageInterface {
 
     // Fetch messages by ID using getMany for efficiency
     final messages = Database.messages.getMany(messageIds).whereType<Message>().toList();
-    if (hydrateAttachments) {
-      MessageHydration.hydrateAll(messages);
-    }
     return messages;
   }
 }

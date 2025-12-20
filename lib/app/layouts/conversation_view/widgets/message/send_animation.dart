@@ -66,6 +66,7 @@ class _SendAnimationState
         controller.preparePlayer(path: SettingsSvc.settings.sendSoundPath.value!, volume: SettingsSvc.settings.soundVolume.value / 100).then((_) => controller.startPlayer());
       }
     }
+
     for (int i = 0; i < attachments.length; i++) {
       final file = attachments[i];
       final message = Message(

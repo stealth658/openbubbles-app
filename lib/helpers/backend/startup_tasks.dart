@@ -8,7 +8,6 @@ import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
 import 'package:bluebubbles/services/isolates/global_isolate.dart';
 import 'package:bluebubbles/services/services.dart';
-import 'package:bluebubbles/services/ui/contact_service_v2.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
