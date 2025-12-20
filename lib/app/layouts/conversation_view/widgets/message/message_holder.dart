@@ -759,7 +759,7 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                                         ],
                                                       ),
                                                     // swipe to reply
-                                                    if (canSwipeToReply && !message.isGroupEvent && !e.isUnsent)
+                                                    if (canSwipeToReply && !message.isGroupEvent && !e.isUnsent && !widget.isReplyThread && index < replyOffsets.length)
                                                       Obx(() => SlideToReply(width: replyOffsets[index].value.abs(), isFromMe: message.isFromMe!)),
                                                   ].conditionalReverse(message.isFromMe!),
                                                 ),

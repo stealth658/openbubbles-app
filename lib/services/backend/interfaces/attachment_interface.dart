@@ -3,7 +3,6 @@ import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/env.dart';
 import 'package:bluebubbles/services/backend/actions/attachment_actions.dart';
 import 'package:bluebubbles/services/backend/descriptors/attachment_query_descriptor.dart';
-import 'package:bluebubbles/services/backend/hydration/attachment_hydration.dart';
 import 'package:bluebubbles/services/isolates/global_isolate.dart';
 import 'package:get_it/get_it.dart';
 
@@ -32,9 +31,6 @@ class AttachmentInterface {
       throw Exception('Failed to fetch attachment with ID $attachmentId after save');
     }
     
-    if (hydrateMessage) {
-      AttachmentHydration.hydrate(attachment);
-    }
     return attachment;
   }
 
@@ -77,9 +73,6 @@ class AttachmentInterface {
       throw Exception('Failed to fetch attachment with ID $attachmentId after replace');
     }
     
-    if (hydrateMessage) {
-      AttachmentHydration.hydrate(attachment);
-    }
     return attachment;
   }
 
@@ -103,9 +96,6 @@ class AttachmentInterface {
     
     // Fetch attachment by ID using get
     final attachment = Database.attachments.get(attachmentId);
-    if (attachment != null && hydrateMessage) {
-      AttachmentHydration.hydrate(attachment);
-    }
     return attachment;
   }
 
@@ -127,9 +117,6 @@ class AttachmentInterface {
     
     // Fetch attachments by ID using getMany for efficiency
     final attachments = Database.attachments.getMany(attachmentIds).whereType<Attachment>().toList();
-    if (hydrateMessage) {
-      AttachmentHydration.hydrateAll(attachments);
-    }
     return attachments;
   }
 
