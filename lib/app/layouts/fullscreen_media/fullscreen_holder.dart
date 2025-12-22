@@ -250,7 +250,7 @@ class FullscreenMediaHolderState extends OptimizedState<FullscreenMediaHolder> {
                       return InkWell(
                         onTap: () {
                           final AttachmentDownloadController _content = content;
-                          if (!_content.error.value) return;
+                          if (_content.state.value != AttachmentDownloadState.error) return;
                           Get.delete<AttachmentDownloadController>(tag: _content.attachment.guid);
                           content = AttachmentDownloader.startDownload(_content.attachment, onComplete: (file) {
                             setState(() {
@@ -261,6 +261,9 @@ class FullscreenMediaHolderState extends OptimizedState<FullscreenMediaHolder> {
                         child: Padding(
                           padding: const EdgeInsets.all(20.0),
                           child: Obx(() {
+                            final isError = _content.state.value == AttachmentDownloadState.error;
+                            final isProcessing = _content.state.value == AttachmentDownloadState.processing;
+                            
                             return Column(
                               mainAxisSize: MainAxisSize.min,
                               children: <Widget>[
@@ -268,18 +271,26 @@ class FullscreenMediaHolderState extends OptimizedState<FullscreenMediaHolder> {
                                   height: 40,
                                   width: 40,
                                   child: Center(
-                                    child: _content.error.value
+                                    child: isError
                                         ? Icon(iOS ? CupertinoIcons.arrow_clockwise : Icons.refresh, size: 30)
-                                        : CircleProgressBar(
-                                            value: _content.progress.value?.toDouble() ?? 0,
-                                            backgroundColor: context.theme.colorScheme.outline,
-                                            foregroundColor: context.theme.colorScheme.properOnSurface,
-                                          ),
+                                        : isProcessing
+                                            ? (iOS
+                                                ? const CupertinoActivityIndicator(radius: 14)
+                                                : const CircularProgressIndicator())
+                                            : CircleProgressBar(
+                                                value: _content.progress.value?.toDouble() ?? 0,
+                                                backgroundColor: context.theme.colorScheme.outline,
+                                                foregroundColor: context.theme.colorScheme.properOnSurface,
+                                              ),
                                   ),
                                 ),
-                                _content.error.value ? const SizedBox(height: 10) : const SizedBox(height: 5),
+                                isError ? const SizedBox(height: 10) : const SizedBox(height: 5),
                                 Text(
-                                  _content.error.value ? "Failed to download!" : (_content.attachment.mimeType ?? ""),
+                                  isError
+                                      ? "Failed to download!"
+                                      : isProcessing
+                                          ? "Processing..."
+                                          : (_content.attachment.mimeType ?? ""),
                                   style: context.theme.textTheme.bodyLarge!
                                       .copyWith(color: context.theme.colorScheme.properOnSurface),
                                   maxLines: 2,

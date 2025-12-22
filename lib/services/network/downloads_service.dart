@@ -10,6 +10,20 @@ import 'package:get/get.dart' hide Response;
 import 'package:path/path.dart';
 import 'package:universal_io/io.dart';
 
+/// Download state for attachments
+enum AttachmentDownloadState {
+  /// Waiting in queue to start downloading
+  queued,
+  /// Currently downloading from server
+  downloading,
+  /// Download complete, now processing (EXIF extraction, format conversion, etc.)
+  processing,
+  /// Download and processing complete
+  complete,
+  /// Download or processing failed
+  error,
+}
+
 /// Get an instance of our [AttachmentDownloadService]
 // ignore: non_constant_identifier_names
 AttachmentDownloadService AttachmentDownloader = Get.isRegistered<AttachmentDownloadService>()
@@ -53,16 +67,16 @@ class AttachmentDownloadService extends GetxService {
   }
 
   void _fetchNext() {
-    if (_downloaders.values.flattened.where((e) => e.isFetching).length < maxDownloads) {
+    if (_downloaders.values.flattened.where((e) => e.state.value == AttachmentDownloadState.downloading).length < maxDownloads) {
       AttachmentDownloadController? activeChatDownloader;
       // first check if we have an active chat that needs downloads, if so prioritize that chat
       if (cm.activeChat != null && _downloaders.containsKey(cm.activeChat!.chat.guid)) {
-        activeChatDownloader = _downloaders[cm.activeChat!.chat.guid]!.firstWhereOrNull((e) => !e.isFetching);
+        activeChatDownloader = _downloaders[cm.activeChat!.chat.guid]!.firstWhereOrNull((e) => e.state.value == AttachmentDownloadState.queued);
         activeChatDownloader?.fetchAttachment();
       }
       // otherwise just grab a random attachment that needs fetching
       if (activeChatDownloader == null) {
-        _downloaders.values.flattened.firstWhereOrNull((e) => !e.isFetching)?.fetchAttachment();
+        _downloaders.values.flattened.firstWhereOrNull((e) => e.state.value == AttachmentDownloadState.queued)?.fetchAttachment();
       }
     }
   }
@@ -74,9 +88,8 @@ class AttachmentDownloadController extends GetxController {
   final List<Function> errorFuncs = [];
   final RxnNum progress = RxnNum();
   final Rxn<PlatformFile> file = Rxn<PlatformFile>();
-  final RxBool error = RxBool(false);
+  final Rx<AttachmentDownloadState> state = Rx<AttachmentDownloadState>(AttachmentDownloadState.queued);
   Stopwatch stopwatch = Stopwatch();
-  bool isFetching = false;
 
   AttachmentDownloadController({
     required this.attachment,
@@ -95,12 +108,19 @@ class AttachmentDownloadController extends GetxController {
 
   Future<void> fetchAttachment() async {
     if (attachment.guid == null || attachment.guid!.contains("temp")) return;
-    isFetching = true;
+    state.value = AttachmentDownloadState.downloading;
     stopwatch.start();
-    var response = await HttpSvc.downloadAttachment(attachment.guid!,
-        onReceiveProgress: (count, total) => setProgress(kIsWeb ? (count / total) : (count / attachment.totalBytes!))).catchError((err) async {
-      if (!kIsWeb) {
-        File file = File(attachment.path);
+    
+    // For web, download to memory. For native platforms, write directly to disk
+    final savePath = kIsWeb ? null : attachment.path;
+    
+    var response = await HttpSvc.downloadAttachment(
+      attachment.guid!,
+      savePath: savePath,
+      onReceiveProgress: (count, total) => setProgress(kIsWeb ? (count / total) : (count / attachment.totalBytes!)),
+    ).catchError((err) async {
+      if (!kIsWeb && savePath != null) {
+        File file = File(savePath);
         if (await file.exists()) {
           await file.delete();
         }
@@ -109,25 +129,40 @@ class AttachmentDownloadController extends GetxController {
         f.call();
       }
 
-      error.value = true;
+      state.value = AttachmentDownloadState.error;
       AttachmentDownloader._removeFromQueue(this);
       return Response(requestOptions: RequestOptions(path: ''));
     });
+    
+    Logger.info("Finished downloading attachment");
     if (response.statusCode != 200) return;
-    Uint8List bytes;
-    if (attachment.mimeType == "image/gif") {
-      bytes = await fixSpeedyGifs(response.data);
-    } else {
-      bytes = response.data;
-    }
-    if (!kIsWeb && !kIsDesktop) {
-      File _file = await File(attachment.path).create(recursive: true);
-      await _file.writeAsBytes(bytes);
-    }
+    
     attachment.webUrl = response.requestOptions.path;
-    Logger.info("Finished fetching attachment");
     stopwatch.stop();
     Logger.info("Attachment downloaded in ${stopwatch.elapsedMilliseconds} ms");
+    
+    // Set processing state to show indeterminate spinner
+    progress.value = 1.0;
+    state.value = AttachmentDownloadState.processing;
+    
+    // Handle web-specific processing (bytes in memory)
+    Uint8List? bytes;
+    if (kIsWeb) {
+      if (attachment.mimeType == "image/gif") {
+        bytes = await fixSpeedyGifs(response.data);
+      } else {
+        bytes = response.data;
+      }
+      attachment.bytes = bytes;
+    } else {
+      // For native platforms, file is already written to disk
+      // Handle GIF optimization if needed
+      if (attachment.mimeType == "image/gif" && savePath != null) {
+        final fileBytes = await File(savePath).readAsBytes();
+        final optimizedBytes = await fixSpeedyGifs(fileBytes);
+        await File(savePath).writeAsBytes(optimizedBytes);
+      }
+    }
 
     // Load image properties before displaying (so UI shows correct dimensions immediately)
     if (!kIsWeb && attachment.mimeStart == "image") {
@@ -137,25 +172,17 @@ class AttachmentDownloadController extends GetxController {
         Logger.warn("Failed to load image properties", error: ex);
       }
     }
-
-    // Only set attachment bytes on web (where we need them in memory)
-    if (kIsWeb) {
-      attachment.bytes = bytes;
-    }
     
-    // Create the PlatformFile - only include bytes on web to avoid loading images into memory
+    // Create the PlatformFile
     file.value = PlatformFile(
       name: attachment.transferName!,
       path: kIsWeb ? null : attachment.path,
-      size: bytes.length,
+      size: kIsWeb ? bytes!.length : await File(attachment.path).length(),
       bytes: kIsWeb ? bytes : null,
     );
     
-    // Set progress to 1.0 to trigger any Obx listeners
-    progress.value = 1.0;
-    
-    // Mark as not fetching
-    isFetching = false;
+    // Mark as complete
+    state.value = AttachmentDownloadState.complete;
     
     // Call completion callbacks while controller is still registered
     for (Function f in completeFuncs) {
@@ -164,12 +191,14 @@ class AttachmentDownloadController extends GetxController {
     
     // Finally, remove the downloader from queue
     AttachmentDownloader._removeFromQueue(this);
-    if (kIsDesktop) {
-      if (attachment.bytes != null) {
-        File _file = await File(attachment.path).create(recursive: true);
-        await _file.writeAsBytes(attachment.bytes!.toList());
-      }
+    
+    // Desktop-specific handling
+    if (kIsDesktop && attachment.bytes != null) {
+      File _file = await File(attachment.path).create(recursive: true);
+      await _file.writeAsBytes(attachment.bytes!.toList());
     }
+    
+    // Auto-save handling
     if (SettingsSvc.settings.autoSave.value
         && !kIsWeb
         && !kIsDesktop

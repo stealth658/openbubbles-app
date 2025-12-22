@@ -129,11 +129,18 @@ class _MediaGalleryCardState extends OptimizedState<MediaGalleryCard> with Autom
       child = SizedBox(
         height: 40,
         width: 40,
-        child: Obx(() => CircleProgressBar(
-          foregroundColor: context.theme.colorScheme.primary,
-          backgroundColor: context.theme.colorScheme.outline,
-          value: (content as AttachmentDownloadController).progress.value?.toDouble() ?? 0
-        )),
+        child: Obx(() {
+          final controller = content as AttachmentDownloadController;
+          return controller.state.value == AttachmentDownloadState.processing
+              ? (iOS
+                  ? const CupertinoActivityIndicator(radius: 14)
+                  : const CircularProgressIndicator())
+              : CircleProgressBar(
+                  foregroundColor: context.theme.colorScheme.primary,
+                  backgroundColor: context.theme.colorScheme.outline,
+                  value: controller.progress.value?.toDouble() ?? 0,
+                );
+        }),
       );
     } else if (content is Attachment) {
       // Attachment not downloaded yet

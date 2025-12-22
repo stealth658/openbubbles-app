@@ -285,15 +285,46 @@ class HttpService {
   }
 
   /// Get the attachment data for the specified [guid]
-  Future<Response> downloadAttachment(String guid, {void Function(int, int)? onReceiveProgress, bool original = false, CancelToken? cancelToken}) async {
+  /// If [savePath] is provided, downloads directly to that file path (more efficient, avoids loading into memory)
+  /// Otherwise returns bytes in response data (legacy behavior for web)
+  Future<Response> downloadAttachment(String guid, {void Function(int, int)? onReceiveProgress, bool original = false, CancelToken? cancelToken, String? savePath}) async {
     return runApiGuarded(() async {
       final response = await dio.get(
           "$apiRoot/attachment/$guid/download",
           queryParameters: buildQueryParams({"original": original}),
-          options: Options(responseType: ResponseType.bytes, receiveTimeout: dio.options.receiveTimeout! * 12, headers: headers),
+          options: Options(
+            responseType: savePath != null ? ResponseType.stream : ResponseType.bytes,
+            receiveTimeout: dio.options.receiveTimeout! * 12,
+            headers: headers
+          ),
           cancelToken: cancelToken,
           onReceiveProgress: onReceiveProgress,
       );
+      
+      // If savePath provided, write stream directly to file
+      if (savePath != null && response.data != null) {
+        final file = File(savePath);
+        await file.parent.create(recursive: true);
+        
+        final raf = await file.open(mode: FileMode.write);
+        try {
+          await for (final chunk in response.data.stream) {
+            await raf.writeFrom(chunk);
+          }
+        } finally {
+          await raf.close();
+        }
+        
+        // Return response with file info instead of bytes
+        return Response(
+          requestOptions: response.requestOptions,
+          statusCode: response.statusCode,
+          statusMessage: response.statusMessage,
+          headers: response.headers,
+          extra: response.extra,
+        );
+      }
+      
       return returnSuccessOrError(response);
     });
   }
