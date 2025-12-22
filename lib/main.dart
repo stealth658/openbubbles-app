@@ -72,7 +72,7 @@ Future<Null> initApp(bool bubble, List<String> arguments) async {
     await StartupTasks.initStartupServices(isBubble: bubble);
 
     /* ----- RANDOM STUFF INITIALIZATION ----- */
-    HttpOverrides.global = BadCertOverride();
+    HttpOverrides.global = CustomHttpContext();
     dynamic exception;
     StackTrace? stacktrace;
 

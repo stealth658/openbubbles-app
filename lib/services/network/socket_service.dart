@@ -57,6 +57,25 @@ class SocketService {
   }
 
   void startSocket() {
+    // Validate server address before attempting to connect
+    if (isNullOrEmpty(serverAddress)) {
+      Logger.warn("Cannot start socket: server address is empty");
+      lastError.value = "Server address not configured";
+      state.value = SocketState.error;
+      return;
+    }
+    
+    // Validate that server address is a valid URL
+    Uri? uri = Uri.tryParse(serverAddress);
+    if (uri == null || (uri.scheme != 'http' && uri.scheme != 'https')) {
+      Logger.error("Invalid server address: $serverAddress");
+      lastError.value = "Invalid server URL format";
+      state.value = SocketState.error;
+      return;
+    }
+    
+    Logger.info("Starting socket connection to $serverAddress");
+    
     OptionBuilder options = OptionBuilder()
         .setQuery({"guid": password})
         .setTransports(['websocket', 'polling'])
@@ -68,8 +87,6 @@ class SocketService {
         .disableAutoConnect()
         .enableReconnection();
     socket = io(serverAddress, options.build());
-    // placed here so that [socket] is still initialized
-    if (isNullOrEmpty(serverAddress)) return;
 
     socket?.onConnect((data) => handleStatusUpdate(SocketState.connected, data));
     socket?.onReconnect((data) => handleStatusUpdate(SocketState.connected, data));
@@ -172,51 +189,90 @@ class SocketService {
   }
 
   void handleStatusUpdate(SocketState status, dynamic data) {
-    if (_lastState == status) return;
+    // Don't skip state updates entirely - we need to process errors even if state hasn't changed
+    bool stateChanged = _lastState != status;
     _lastState = status;
 
     switch (status) {
       case SocketState.connected:
-        state.value = SocketState.connected;
-        _reconnectTimer?.cancel();
-        _reconnectTimer = null;
-        NetworkTasks.onConnect();
-        NotificationsSvc.clearSocketError();
+        if (stateChanged) {
+          state.value = SocketState.connected;
+          _reconnectTimer?.cancel();
+          _reconnectTimer = null;
+          NetworkTasks.onConnect();
+          NotificationsSvc.clearSocketError();
+          Logger.info("Socket connected successfully to $serverAddress");
+        }
       case SocketState.disconnected:
-        Logger.info("Disconnected from socket?...");
-        state.value = SocketState.disconnected;
+        if (stateChanged) {
+          Logger.info("Disconnected from socket at $serverAddress");
+          state.value = SocketState.disconnected;
+        }
       case SocketState.connecting:
-        Logger.info("Connecting to socket?...");
-        state.value = SocketState.connecting;
+        if (stateChanged) {
+          Logger.info("Attempting to connect to socket at $serverAddress");
+          state.value = SocketState.connecting;
+        }
       case SocketState.error:
-        Logger.info("Socket connect error, fetching new URL...");
-
+        // Parse and log the error details
+        String errorDetails = "Unknown error";
+        
         if (data is SocketException) {
           handleSocketException(data);
+          errorDetails = lastError.value;
+        } else if (data is Map) {
+          errorDetails = data.toString();
+        } else if (data != null) {
+          errorDetails = data.toString();
         }
+        
+        Logger.error("Socket error connecting to $serverAddress: $errorDetails");
+        lastError.value = errorDetails;
         state.value = SocketState.error;
-        // After 5 seconds of an error, we should retry the connection
-        _reconnectTimer = Timer(const Duration(seconds: 5), () async {
-          if (state.value == SocketState.connected) return;
+        
+        // Only set up reconnect timer if one doesn't already exist
+        if (_reconnectTimer == null || !_reconnectTimer!.isActive) {
+          Logger.info("Scheduling reconnect attempt in 5 seconds...");
+          _reconnectTimer = Timer(const Duration(seconds: 5), () async {
+            if (state.value == SocketState.connected) {
+              Logger.info("Already connected, skipping reconnect");
+              return;
+            }
+            
+            Logger.info("Attempting to fetch new URL and restart socket...");
+            String? newUrl = await fdb.fetchNewUrl();
+            if (newUrl != null && newUrl != serverAddress) {
+              Logger.info("Server URL changed from $serverAddress to $newUrl");
+            }
+            
+            restartSocket();
 
-          await fdb.fetchNewUrl();
-          restartSocket();
+            if (state.value == SocketState.connected) return;
 
-          if (state.value == SocketState.connected) return;
-
-          if (!SettingsSvc.settings.keepAppAlive.value) {
-            NotificationsSvc.createSocketError();
-          }
-        });
+            if (!SettingsSvc.settings.keepAppAlive.value) {
+              NotificationsSvc.createSocketError();
+            }
+          });
+        }
     }
   }
 
   void handleSocketException(SocketException e) {
     String msg = e.message;
     if (msg.contains("Failed host lookup")) {
-      lastError.value = "Failed to resolve hostname";
+      lastError.value = "Failed to resolve hostname: ${e.address?.host ?? 'unknown'}";
+    } else if (msg.contains("Connection refused")) {
+      lastError.value = "Connection refused - server may be offline";
+    } else if (msg.contains("Connection timed out")) {
+      lastError.value = "Connection timed out";
+    } else if (msg.contains("Network is unreachable")) {
+      lastError.value = "Network is unreachable";
+    } else if (msg.contains("Certificate") || msg.contains("CERTIFICATE")) {
+      lastError.value = "SSL/TLS certificate error: $msg";
     } else {
       lastError.value = msg;
     }
+    
+    Logger.error("Socket exception: ${lastError.value}", error: e);
   }
 }

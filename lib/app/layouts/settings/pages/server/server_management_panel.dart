@@ -6,7 +6,6 @@ import 'package:bluebubbles/app/layouts/settings/dialogs/custom_headers_dialog.d
 import 'package:bluebubbles/app/layouts/settings/pages/server/oauth_panel.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/helpers/backend/settings_helpers.dart';
-import 'package:bluebubbles/services/network/http_overrides.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/utils/share.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
@@ -194,17 +193,12 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                                         showSnackbar("Copied", "Server address copied to clipboard!");
                                       }
                                     }),
-                              if (hasBadCert)
-                                TextSpan(
-                                    text: "Server URL has a bad certificate!",
-                                    style: TextStyle(color: getIndicatorColor(SocketState.disconnected))),
                               const TextSpan(text: "\n\n"),
                               if (!SettingsSvc.fcmData.isNull)
                                 TextSpan(
                                     text:
                                         "Firebase Database: ${isNullOrEmptyString(SettingsSvc.fcmData.firebaseURL) ? "Firestore" : "Realtime"}"),
                               if (!SettingsSvc.fcmData.isNull) const TextSpan(text: "\n\n"),
-                              if (hasBadCert) const TextSpan(text: "\n\n"),
                               TextSpan(
                                   text:
                                       "Latency: ${redact ? "Redacted" : ("${controller.latency.value ?? "N/A"} ms")}"),

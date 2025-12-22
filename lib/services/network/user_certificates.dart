@@ -4,22 +4,23 @@ import 'package:flutter_user_certificates_android/flutter_user_certificates_andr
 
 
 class UserCertificates {
-  Future<SecurityContext> getContext() async {
-    final ctx = SecurityContext();
-
-    // return default if platform is not android
+  Future<SecurityContext?> getContext() async {
+    // return null if platform is not android (use default system certs)
     if (!Platform.isAndroid){
-      return ctx;
+      return null;
     }
 
     final certs = await FlutterUserCertificatesAndroid().getUserCertificates();
 
-    // return default if no user certs
+    // return null if no user certs (use default system certs)
     if (certs == null) {
-      return ctx;
+      return null;
     }
 
-    // loop over certs and add them to context
+    // Use defaultContext which includes system certificates
+    final ctx = SecurityContext.defaultContext;
+    
+    // Add user certificates to the default context
     for (var c in certs.entries) {
       ctx.setTrustedCertificatesBytes(utf8.encode(c.value.toPEM()));
     }
