@@ -381,7 +381,7 @@
     },
     {
       "id": "13:4148278195232901830",
-      "lastPropertyId": "50:2365667614914378517",
+      "lastPropertyId": "51:566585826105040267",
       "name": "Message",
       "properties": [
         {
@@ -591,6 +591,14 @@
           "id": "50:2365667614914378517",
           "name": "isDelivered",
           "type": 1
+        },
+        {
+          "id": "51:566585826105040267",
+          "name": "handleRelationId",
+          "indexId": "18:669353420101708385",
+          "type": 11,
+          "flags": 520,
+          "relationTarget": "Handle"
         }
       ],
       "relations": []
@@ -767,7 +775,7 @@
     }
   ],
   "lastEntityId": "18:7539271658762089511",
-  "lastIndexId": "17:2899936591829146931",
+  "lastIndexId": "18:669353420101708385",
   "lastRelationId": "2:2117154782513366348",
   "lastSequenceId": "0:0",
   "modelVersion": 5,

@@ -2,7 +2,6 @@ import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:collection/collection.dart';
 
 /// Widget that handles loading attachments asynchronously with loading state
 class AttachmentsLoader extends StatefulWidget {
@@ -60,20 +59,6 @@ class _AttachmentsLoaderState extends OptimizedState<AttachmentsLoader> {
           .where((e) => (e.mimeType ?? "").contains("location"))
           .take(10)
           .toList();
-
-      // Associate handles with messages
-      for (Attachment a in media) {
-        a.message.target?.handle = widget.chat.handles
-            .firstWhereOrNull((e) => e.originalROWID == a.message.target?.handleId);
-      }
-      for (Attachment a in docs) {
-        a.message.target?.handle = widget.chat.handles
-            .firstWhereOrNull((e) => e.originalROWID == a.message.target?.handleId);
-      }
-      for (Attachment a in locations) {
-        a.message.target?.handle = widget.chat.handles
-            .firstWhereOrNull((e) => e.originalROWID == a.message.target?.handleId);
-      }
 
       setState(() {
         isLoading = false;

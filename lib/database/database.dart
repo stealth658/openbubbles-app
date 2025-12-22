@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/database/migrations/message_handle_relationship_migration.dart';
 import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
@@ -13,7 +14,7 @@ import 'package:io/io.dart';
 import 'package:path/path.dart';
 
 class Database {
-  static int version = 5;
+  static int version = 6;
 
   static late final Store store;
   static late final Box<Attachment> attachments;
@@ -97,9 +98,7 @@ class Database {
     }
 
     try {
-      _performDatabaseMigrations();
-
-      // So long as migrations succeed, we can update the database version
+      await _performDatabaseMigrations();
       await PrefsSvc.i.setInt('dbVersion', version);
     } catch (e, s) {
       Logger.error("Failed to perform database migrations!", error: e, trace: s);
@@ -164,76 +163,93 @@ class Database {
     }
   }
 
-  static void _performDatabaseMigrations({int? versionOverride}) {
+  static Future<void> _performDatabaseMigrations({int? versionOverride}) async {
     int version = versionOverride ?? PrefsSvc.i.getInt('dbVersion') ?? (SettingsSvc.settings.finishedSetup.value ? 1 : Database.version);
-    if (version <= Database.version) return;
+    if (version >= Database.version) return;
 
     final Stopwatch s = Stopwatch();
     s.start();
 
-    int nextVersion = version;
     Logger.debug("Performing database migration from version $version to ${Database.version}", tag: "DB-Migration");
-    switch (Database.version) {
-      // Version 2 changed handleId to match the server side ROWID, rather than client side ROWID
-      case 2:
-        Logger.info("Fetching all messages and handles...", tag: "DB-Migration");
-        final messages = Database.messages.getAll();
-        if (messages.isNotEmpty) {
-          final handles = Database.handles.getAll();
-          Logger.info("Replacing handleIds for messages...", tag: "DB-Migration");
-          for (Message m in messages) {
-            if (m.isFromMe! || m.handleId == 0 || m.handleId == null) continue;
-            m.handleId = handles.firstWhereOrNull((e) => e.id == m.handleId)?.originalROWID ?? m.handleId;
+    
+    // Migrate one version at a time, starting from current version
+    int currentVersion = version;
+    
+    while (currentVersion < Database.version) {
+      final int nextVersion = currentVersion + 1;
+      Logger.info("Migrating from version $currentVersion to $nextVersion...", tag: "DB-Migration");
+      
+      switch (nextVersion) {
+        // Version 2 changed handleId to match the server side ROWID, rather than client side ROWID
+        case 2:
+          Logger.info("Fetching all messages and handles...", tag: "DB-Migration");
+          final messages = Database.messages.getAll();
+          if (messages.isNotEmpty) {
+            final handles = Database.handles.getAll();
+            Logger.info("Replacing handleIds for messages...", tag: "DB-Migration");
+            for (Message m in messages) {
+              if (m.isFromMe! || m.handleId == 0 || m.handleId == null) continue;
+              m.handleId = handles.firstWhereOrNull((e) => e.id == m.handleId)?.originalROWID ?? m.handleId;
+            }
+            Logger.info("Final save...", tag: "DB-Migration");
+            Database.messages.putMany(messages);
           }
-          Logger.info("Final save...", tag: "DB-Migration");
-          Database.messages.putMany(messages);
-        }
-
-        nextVersion = 2;
-      // Version 3 modifies chat typing indicators and read receipts values to follow global setting initially
-      case 3:
-        final chats = Database.chats.getAll();
-        final papi = SettingsSvc.settings.enablePrivateAPI.value;
-        final typeGlobal = SettingsSvc.settings.privateSendTypingIndicators.value;
-        final readGlobal = SettingsSvc.settings.privateMarkChatAsRead.value;
-        for (Chat c in chats) {
-          if (papi && readGlobal && !(c.autoSendReadReceipts ?? true)) {
-            // dont do anything
-          } else {
-            c.autoSendReadReceipts = null;
+          break;
+          
+        // Version 3 modifies chat typing indicators and read receipts values to follow global setting initially
+        case 3:
+          final chats = Database.chats.getAll();
+          final papi = SettingsSvc.settings.enablePrivateAPI.value;
+          final typeGlobal = SettingsSvc.settings.privateSendTypingIndicators.value;
+          final readGlobal = SettingsSvc.settings.privateMarkChatAsRead.value;
+          for (Chat c in chats) {
+            if (papi && readGlobal && !(c.autoSendReadReceipts ?? true)) {
+              // dont do anything
+            } else {
+              c.autoSendReadReceipts = null;
+            }
+            if (papi && typeGlobal && !(c.autoSendTypingIndicators ?? true)) {
+              // dont do anything
+            } else {
+              c.autoSendTypingIndicators = null;
+            }
           }
-          if (papi && typeGlobal && !(c.autoSendTypingIndicators ?? true)) {
-            // dont do anything
-          } else {
-            c.autoSendTypingIndicators = null;
+          Database.chats.putMany(chats);
+          break;
+          
+        // Version 4 saves FCM Data to the shared preferences for use in Tasker integration
+        case 4:
+          SettingsSvc.getFcmData();
+          SettingsSvc.fcmData.save();
+          break;
+          
+        case 5:
+          // Find the Bright White theme and reset it back to the default (new colors)
+          final brightWhite = Database.themes.query(ThemeStruct_.name.equals("Bright White")).build().findFirst();
+          if (brightWhite != null) {
+            brightWhite.data = ThemesService.whiteLightTheme;
+            Database.themes.put(brightWhite, mode: PutMode.update);
           }
-        }
 
-        Database.chats.putMany(chats);
-        nextVersion = 3;
-      // Version 4 saves FCM Data to the shared preferences for use in Tasker integration
-      case 4:
-        SettingsSvc.getFcmData();
-        SettingsSvc.fcmData.save();
-        nextVersion = 4;
-      case 5:
-        // Find the Bright White theme and reset it back to the default (new colors)
-        final brightWhite = Database.themes.query(ThemeStruct_.name.equals("Bright White")).build().findFirst();
-        if (brightWhite != null) {
-          brightWhite.data = ThemesService.whiteLightTheme;
-          Database.themes.put(brightWhite, mode: PutMode.update);
-        }
-
-        // Find the OLED theme and reset it back to the default (new colors)
-        final oled = Database.themes.query(ThemeStruct_.name.equals("OLED Dark")).build().findFirst();
-        if (oled != null) {
-          oled.data = ThemesService.oledDarkTheme;
-          Database.themes.put(oled, mode: PutMode.update);
-        }
-    }
-
-    if (nextVersion != version) {
-      _performDatabaseMigrations(versionOverride: nextVersion);
+          // Find the OLED theme and reset it back to the default (new colors)
+          final oled = Database.themes.query(ThemeStruct_.name.equals("OLED Dark")).build().findFirst();
+          if (oled != null) {
+            oled.data = ThemesService.oledDarkTheme;
+            Database.themes.put(oled, mode: PutMode.update);
+          }
+          break;
+        
+        // Version 6: Migrate Message.handle from embedded object to ToOne relationship (Phase 2)
+        case 6:
+          Logger.info("Executing Message-Handle relationship migration (Phase 2)...", tag: "DB-Migration");
+          MessageHandleRelationshipMigration.migrate();
+          break;
+      }
+      
+      // Update the current version and save it
+      currentVersion = nextVersion;
+      await PrefsSvc.i.setInt('dbVersion', currentVersion);
+      Logger.info("Successfully migrated to version $currentVersion", tag: "DB-Migration");
     }
 
     s.stop();

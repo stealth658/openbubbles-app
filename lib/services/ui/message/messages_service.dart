@@ -5,12 +5,14 @@ import 'package:bluebubbles/helpers/types/constants.dart';
 import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
+import 'package:bluebubbles/services/ui/message/message_update_coordinator.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:collection/collection.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart' hide Response;
+import 'package:rxdart/rxdart.dart';
 
 // ignore: non_constant_identifier_names
 MessagesService MessagesSvc(String chatGuid) => Get.isRegistered<MessagesService>(tag: chatGuid)
@@ -66,7 +68,11 @@ class MessagesService extends GetxController {
               ..link(Message_.chat, Chat_.id.equals(chat.id!))
               ..order(Message_.id, flags: Order.descending))
             .watch(triggerImmediately: true);
-        countSub = countQuery.listen((event) async {
+        
+        // Debounce the stream to batch rapid changes (reduces processing overhead)
+        countSub = countQuery
+            .debounceTime(const Duration(milliseconds: 100))
+            .listen((event) async {
           if (!SettingsSvc.settings.finishedSetup.value) return;
           final newCount = event.count();
           if (!isFetching && newCount > currentCount && currentCount != 0) {
@@ -114,7 +120,6 @@ class MessagesService extends GetxController {
   }
 
   Future<void> _handleNewMessage(Message message) async {
-    message.handle = message.getHandle();
     if (message.hasAttachments && !kIsWeb) {
       message.attachments = List<Attachment>.from(message.dbAttachments);
       // we may need an artificial delay in some cases since the attachment
@@ -124,15 +129,78 @@ class MessagesService extends GetxController {
         message.attachments = List<Attachment>.from(message.dbAttachments);
       }
     }
-    // add this as a reaction if needed, update thread originators and associated messages
-    if (message.associatedMessageGuid != null) {
-      struct.getMessage(message.associatedMessageGuid!)?.associatedMessages.add(message);
-      getActiveMwc(message.associatedMessageGuid!)?.updateAssociatedMessage(message);
-    }
-    if (message.threadOriginatorGuid != null) {
-      getActiveMwc(message.threadOriginatorGuid!)?.updateThreadOriginator(message);
-    }
+    
+    // Add to struct first to ensure it's available for lookups
     struct.addMessages([message]);
+    
+    // Handle reactions with improved reactivity
+    if (message.associatedMessageGuid != null) {
+      final parentMessage = struct.getMessage(message.associatedMessageGuid!);
+      if (parentMessage != null) {
+        // Add to parent's associated messages list
+        parentMessage.associatedMessages.add(message);
+        
+        // Get or create the controller - this ensures it exists
+        final mwcInstance = getActiveMwc(message.associatedMessageGuid!);
+        if (mwcInstance != null) {
+          // Controller exists, update it
+          mwcInstance.updateAssociatedMessage(message);
+          Logger.debug(
+            "Updated reaction ${message.guid} on parent ${message.associatedMessageGuid}",
+            tag: "MessageReactivity"
+          );
+        } else {
+          // Controller doesn't exist yet, queue for retry
+          Logger.warn(
+            "Parent controller not ready for reaction ${message.guid}, will retry",
+            tag: "MessageReactivity"
+          );
+          Future.delayed(const Duration(milliseconds: 100), () {
+            final retryMwc = getActiveMwc(message.associatedMessageGuid!);
+            if (retryMwc != null) {
+              retryMwc.updateAssociatedMessage(message);
+              Logger.debug(
+                "Retry successful: Updated reaction ${message.guid} on parent ${message.associatedMessageGuid}",
+                tag: "MessageReactivity"
+              );
+              // Trigger immediate UI update via coordinator
+              muc.notifyMessageUpdate(chat.guid, message.associatedMessageGuid!);
+            } else {
+              Logger.error(
+                "Retry failed: Parent controller still not found for reaction ${message.guid}",
+                tag: "MessageReactivity"
+              );
+            }
+          });
+        }
+        
+        // Trigger immediate UI update via coordinator (bypasses ObjectBox watch latency)
+        muc.notifyMessageUpdate(chat.guid, message.associatedMessageGuid!);
+      } else {
+        Logger.warn(
+          "Parent message not found for reaction ${message.guid} (parent: ${message.associatedMessageGuid})",
+          tag: "MessageReactivity"
+        );
+      }
+    }
+    
+    // Handle thread originators with improved reactivity
+    if (message.threadOriginatorGuid != null) {
+      final mwcInstance = getActiveMwc(message.threadOriginatorGuid!);
+      if (mwcInstance != null) {
+        mwcInstance.updateThreadOriginator(message);
+        // Trigger immediate UI update for thread count
+        muc.notifyMessageUpdate(chat.guid, message.threadOriginatorGuid!);
+      } else {
+        // Queue retry for thread originator
+        Future.delayed(const Duration(milliseconds: 100), () {
+          getActiveMwc(message.threadOriginatorGuid!)?.updateThreadOriginator(message);
+          muc.notifyMessageUpdate(chat.guid, message.threadOriginatorGuid!);
+        });
+      }
+    }
+    
+    // Only call newFunc for non-reactions (regular messages)
     if (message.associatedMessageGuid == null) {
       newFunc.call(message);
     }
@@ -177,12 +245,43 @@ class MessagesService extends GetxController {
   Future<bool> loadChunk(int offset, ConversationViewController controller, {int limit = 25}) async {
     isFetching = true;
     List<Message> _messages = [];
+
+    // Adjust offset because reactions _are_ messages. We just separate them out in the struct.
     offset = offset + struct.reactions.length;
+
     try {
+      Logger.debug("[loadChunk] Starting to load messages (offset: $offset, limit: $limit)", tag: "MessageReactivity");
+      
       _messages = await Chat.getMessagesAsync(
         chat,
         offset: offset,
         limit: limit,
+        onSupplementalDataLoaded: () {
+          // Phase 2 complete - reactions have been loaded
+          Logger.info("[loadChunk] Supplemental data loaded, triggering UI updates for ${_messages.length} messages", tag: "MessageReactivity");
+          
+          // Trigger UI updates for each message that has reactions
+          for (final message in _messages) {
+            if (message.associatedMessages.isNotEmpty) {
+              Logger.debug("[loadChunk] Message ${message.guid} has ${message.associatedMessages.length} reactions, triggering update", tag: "MessageReactivity");
+              
+              // Get the controller if it exists and update it
+              final mwcInstance = getActiveMwc(message.guid!);
+              if (mwcInstance != null) {
+                // Update the controller with the new associated messages
+                for (final reaction in message.associatedMessages) {
+                  mwcInstance.updateAssociatedMessage(reaction, updateHolder: true);
+                }
+                Logger.debug("[loadChunk] Updated controller for ${message.guid} with reactions", tag: "MessageReactivity");
+              } else {
+                Logger.warn("[loadChunk] No controller found for ${message.guid} with ${message.associatedMessages.length} reactions", tag: "MessageReactivity");
+              }
+              
+              // Trigger immediate UI update via coordinator
+              muc.notifyMessageUpdate(chat.guid, message.guid!);
+            }
+          }
+        },
       );
 
       Logger.debug("[loadChunk] Loaded ${_messages.length} messages from local DB");
@@ -261,11 +360,6 @@ class MessagesService extends GetxController {
       beforeResponse.addAll(afterResponse);
       _messages = beforeResponse.map((e) => Message.fromMap(e)).toList();
       _messages.sort(Message.sort);
-      for (Message message in _messages) {
-        if (message.handle != null) {
-          // Contact matching is now handled automatically by ContactServiceV2
-        }
-      }
       struct.addMessages(_messages);
     }
     isFetching = false;

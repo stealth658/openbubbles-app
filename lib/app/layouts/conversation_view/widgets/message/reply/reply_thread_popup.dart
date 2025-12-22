@@ -30,7 +30,6 @@ void showBookmarksThread(ConversationViewController cvController, BuildContext c
   for (Message m in _messages) {
     m.realAttachments;
     m.fetchAssociatedMessages();
-    m.handle = m.getHandle();
   }
   _messages.sort((a, b) => Message.sort(a, b, descending: false));
   _buildThreadView(_messages, null, cvController, context);

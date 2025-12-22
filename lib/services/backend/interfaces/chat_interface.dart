@@ -1,7 +1,6 @@
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/env.dart';
-import 'package:bluebubbles/services/backend/hydration/chat_hydration.dart';
 import 'package:bluebubbles/services/backend/actions/chat_actions.dart';
 import 'package:bluebubbles/services/backend/lifecycle/lifecycle_service.dart';
 import 'package:get_it/get_it.dart';
@@ -148,8 +147,7 @@ class ChatInterface {
 
   static Future<List<Chat>> syncLatestMessages({
     required List<String> chatGuids,
-    required bool toggleUnread,
-    bool cacheContactNames = true,
+    required bool toggleUnread
   }) async {
     final data = {
       'chatGuids': chatGuids,
@@ -165,20 +163,11 @@ class ChatInterface {
     }
 
     // Fetch chats by ID using getMany for efficiency
-    final chats = Database.chats.getMany(chatIds).whereType<Chat>().toList();
-    
-    // Hydrate chats (cache contact names only, participants are lazy-loaded)
-    await ChatHydration.hydrateAll(
-      chats,
-      cacheContactNames: cacheContactNames,
-    );
-    
-    return chats;
+    return Database.chats.getMany(chatIds).whereType<Chat>().toList();
   }
 
   static Future<List<Chat>> bulkSyncChats({
-    required List<Map<String, dynamic>> chatsData,
-    bool cacheContactNames = true,
+    required List<Map<String, dynamic>> chatsData
   }) async {
     final data = {
       'chatsData': chatsData,
@@ -193,15 +182,7 @@ class ChatInterface {
     }
 
     // Fetch chats by ID using getMany for efficiency
-    final chats = Database.chats.getMany(chatIds).whereType<Chat>().toList();
-    
-    // Hydrate chats (cache contact names only, participants are lazy-loaded)
-    await ChatHydration.hydrateAll(
-      chats,
-      cacheContactNames: cacheContactNames,
-    );
-    
-    return chats;
+    return Database.chats.getMany(chatIds).whereType<Chat>().toList();
   }
 
   static Future<List<Message>> getMessagesAsync({
@@ -300,7 +281,6 @@ class ChatInterface {
     int limit = 15,
     int offset = 0,
     List<int> ids = const [],
-    bool cacheContactNames = true,
   }) async {
     final data = {
       'limit': limit,
@@ -317,14 +297,6 @@ class ChatInterface {
     }
 
     // Fetch chats by ID using getMany for efficiency
-    final chats = Database.chats.getMany(chatIds).whereType<Chat>().toList();
-    
-    // Hydrate chats (cache contact names only, participants are lazy-loaded)
-    await ChatHydration.hydrateAll(
-      chats,
-      cacheContactNames: cacheContactNames,
-    );
-    
-    return chats;
+    return Database.chats.getMany(chatIds).whereType<Chat>().toList();
   }
 }

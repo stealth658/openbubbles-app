@@ -3,6 +3,7 @@ import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
+import 'package:bluebubbles/services/ui/message/message_update_coordinator.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -86,6 +87,8 @@ class _MessagePropertiesState extends CustomState<MessageProperties, void, Messa
       controller.threadRepliesChanged.value;
       // Also observe showEdits since that's toggled directly
       controller.showEdits.value;
+      // Watch coordinator trigger for immediate thread reply updates (bypasses ObjectBox latency)
+      muc.getUpdateTrigger(controller.cvController?.chat.guid ?? cm.activeChat!.chat.guid, message.guid!)?.value;
       
       final props = getProperties();
       return AnimatedSize(

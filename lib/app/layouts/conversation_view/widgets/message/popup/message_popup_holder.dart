@@ -113,18 +113,26 @@ class _MessagePopupHolderState extends OptimizedState<MessagePopupHolder> {
     HapticFeedback.lightImpact();
     final reaction = type ?? SettingsSvc.settings.quickTapbackType.value;
     Logger.info("Sending reaction type: $reaction");
+    
+    final tempMessage = Message(
+      associatedMessageGuid: message.guid,
+      associatedMessageType: reaction,
+      associatedMessagePart: part,
+      dateCreated: DateTime.now(),
+      hasAttachments: false,
+      isFromMe: true,
+      handleId: 0,
+    );
+    
+    Logger.debug(
+      "[sendTapback] Creating temp reaction: type=$reaction, parent=${message.guid}",
+      tag: "MessageReactivity"
+    );
+    
     outq.queue(OutgoingItem(
       type: QueueType.sendMessage,
       chat: message.getChat() ?? cm.activeChat!.chat,
-      message: Message(
-        associatedMessageGuid: message.guid,
-        associatedMessageType: reaction,
-        associatedMessagePart: part,
-        dateCreated: DateTime.now(),
-        hasAttachments: false,
-        isFromMe: true,
-        handleId: 0,
-      ),
+      message: tempMessage,
       selected: message,
       reaction: reaction,
     ));

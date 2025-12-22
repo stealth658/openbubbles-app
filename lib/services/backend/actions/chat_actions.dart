@@ -677,7 +677,7 @@ class ChatActions {
 
       // For each message, match the handles & replace the old reference
       for (Message message in inputMessages) {
-        message.handle ??= handlesCache.values.firstWhereOrNull((e) => e.originalROWID == message.handleId);
+        message.handleRelation.target ??= handlesCache.values.firstWhereOrNull((e) => e.originalROWID == message.handleId);
       }
 
       // Extract & cache the attachments

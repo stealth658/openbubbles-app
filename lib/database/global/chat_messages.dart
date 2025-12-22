@@ -17,7 +17,9 @@ class ChatMessages {
       (e.normalizedThreadPart == originatorPart && e.guid != originatorGuid) || (returnOriginator ? e.guid == originatorGuid : false)).toList() ?? [];
 
   void addMessages(List<Message> __messages) {
+    print('[TEST] Adding ${__messages.length} messages to ChatMessages struct');
     for (Message m in __messages) {
+      print('[TEST] Message GUID: ${m.guid}; Text: ${m.text}');
       if (m.associatedMessageGuid != null) {
         // add reactions
         _reactions[m.guid!] = m;

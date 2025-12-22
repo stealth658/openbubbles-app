@@ -86,7 +86,7 @@ class ChatEvent extends StatelessWidget {
           },
           child: Text(
             part.isUnsent
-                ? (message.isFromMe! ? "You unsent a message. Others may still see the message on devices where the software hasn't been updated" : "${message.handle?.displayName ?? "Unknown"} unsent a message")
+                ? (message.isFromMe! ? "You unsent a message. Others may still see the message on devices where the software hasn't been updated" : "${message.handleRelation.target?.displayName ?? "Unknown"} unsent a message")
                 : message.groupEventText,
             style: context.theme.textTheme.bodySmall!.copyWith(color: context.theme.colorScheme.outline),
             overflow: TextOverflow.ellipsis,

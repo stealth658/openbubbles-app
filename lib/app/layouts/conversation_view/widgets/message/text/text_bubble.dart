@@ -76,12 +76,12 @@ class _TextBubbleState extends CustomState<TextBubble, void, MessageWidgetContro
     if (selected && !iOS) return [context.theme.colorScheme.tertiaryContainer, context.theme.colorScheme.tertiaryContainer];
     List<Color> bubbleColors = [context.theme.colorScheme.properSurface, context.theme.colorScheme.properSurface];
     if (SettingsSvc.settings.colorfulBubbles.value && !message.isFromMe!) {
-      if (message.handle?.color == null) {
-        bubbleColors = toColorGradient(message.handle?.address);
+      if (message.handleRelation.target?.color == null) {
+        bubbleColors = toColorGradient(message.handleRelation.target?.address);
       } else {
         bubbleColors = [
-          HexColor(message.handle!.color!),
-          HexColor(message.handle!.color!).lightenAmount(0.075),
+          HexColor(message.handleRelation.target!.color!),
+          HexColor(message.handleRelation.target!.color!).lightenAmount(0.075),
         ];
       }
     }

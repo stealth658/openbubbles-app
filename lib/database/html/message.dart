@@ -275,8 +275,6 @@ class Message {
       final existing = service?.struct.getMessage(threadOriginatorGuid!);
       final threadOriginator = existing;
       // ignore: argument_type_not_assignable, return_of_invalid_type, invalid_assignment, for_in_of_invalid_element_type
-      threadOriginator?.handle ??= Handle.findOne(originalROWID: threadOriginator.handleId);
-      // ignore: argument_type_not_assignable, return_of_invalid_type, invalid_assignment, for_in_of_invalid_element_type
       if (threadOriginator != null) associatedMessages.add(threadOriginator);
       if (existing == null && threadOriginator != null) service?.struct.addThreadOriginator(threadOriginator);
     }

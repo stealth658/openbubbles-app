@@ -4,6 +4,7 @@ import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:bluebubbles/helpers/ui/facetime_helpers.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
+import 'package:bluebubbles/services/ui/message/message_update_coordinator.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/utils/file_utils.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
@@ -110,8 +111,8 @@ class ActionHandler extends GetxService {
     } else {
       try {
         // If we didn't find a matching message with the replacement's GUID, replace the existing message.
-      Logger.debug("Replacing message with GUID $existingGuid with ${replacement.guid}...", tag: "MessageStatus");
-      await Message.replaceMessage(existingGuid, replacement);
+        Logger.debug("Replacing message with GUID $existingGuid with ${replacement.guid}...", tag: "MessageStatus");
+        await Message.replaceMessage(existingGuid, replacement);
       } catch (ex) {
         Logger.warn("Unable to find & replace message with GUID $existingGuid...", tag: "MessageStatus", error: ex);
       }
@@ -147,6 +148,43 @@ class ActionHandler extends GetxService {
 
   Future<void> sendMessage(Chat c, Message m, Message? selected, String? r) async {
     final completer = Completer<void>();
+    
+    // For reactions, add to UI immediately before sending to server
+    if (r != null && m.associatedMessageGuid != null) {
+      Logger.debug(
+        "[ActionHandler] Adding temp reaction to UI immediately: temp=${m.guid}, parent=${m.associatedMessageGuid}, type=$r",
+        tag: "MessageReactivity"
+      );
+      
+      // Update parent message's controller with temp reaction
+      final parentMwc = getActiveMwc(m.associatedMessageGuid!);
+      if (parentMwc != null) {
+        parentMwc.updateAssociatedMessage(m, updateHolder: true);
+        Logger.debug(
+          "[ActionHandler] Added temp reaction to parent controller ${m.associatedMessageGuid}",
+          tag: "MessageReactivity"
+        );
+        
+        // Emit 'added' event for the temp reaction
+        parentMwc.emitUpdateEvent(MessageUpdateType.added);
+      } else {
+        Logger.warn(
+          "[ActionHandler] Parent controller not found for temp reaction, will update when controller loads",
+          tag: "MessageReactivity"
+        );
+      }
+      
+      // Trigger coordinator notification for immediate UI update
+      muc.notifyMessageUpdate(c.guid, m.associatedMessageGuid!);
+    } else {
+      // For regular messages, emit 'added' event
+      final mwc = getActiveMwc(m.guid!);
+      if (mwc != null) {
+        mwc.addedChanged.toggle();
+        mwc.emitUpdateEvent(MessageUpdateType.added);
+      }
+    }
+    
     if (r == null) {
       HttpSvc.sendMessage(
         c.guid,
@@ -167,6 +205,13 @@ class ActionHandler extends GetxService {
         final newMessage = Message.fromMap(response.data['data']);
         try {
           await matchMessageWithExisting(c, m.guid!, newMessage, existing: m);
+          
+          // Emit 'sent' event when message successfully sent
+          final mwc = getActiveMwc(newMessage.guid!);
+          if (mwc != null) {
+            mwc.sentChanged.toggle();
+            mwc.emitUpdateEvent(MessageUpdateType.sent);
+          }
         } catch (ex) {
           Logger.warn("Failed to find message match for ${m.guid} -> ${newMessage.guid}!", error: ex, tag: "MessageStatus");
         }
@@ -187,8 +232,41 @@ class ActionHandler extends GetxService {
     } else {
       HttpSvc.sendTapback(c.guid, selected!.text ?? "", selected.guid!, r, partIndex: m.associatedMessagePart).then((response) async {
         final newMessage = Message.fromMap(response.data['data']);
+        Logger.debug(
+          "[ActionHandler] Reaction sent successfully: temp=${m.guid}, real=${newMessage.guid}, parent=${selected.guid}",
+          tag: "MessageReactivity"
+        );
         try {
           await matchMessageWithExisting(c, m.guid!, newMessage, existing: m);
+          
+          // Trigger UI update for the parent message when reaction is replaced
+          if (newMessage.associatedMessageGuid != null) {
+            Logger.debug(
+              "[ActionHandler] Triggering UI update for parent ${newMessage.associatedMessageGuid} after reaction replaced",
+              tag: "MessageReactivity"
+            );
+            
+            // Update the parent message's controller with the real reaction
+            final parentMwc = getActiveMwc(newMessage.associatedMessageGuid!);
+            if (parentMwc != null) {
+              parentMwc.updateAssociatedMessage(newMessage, updateHolder: true);
+              Logger.debug(
+                "[ActionHandler] Updated parent controller for ${newMessage.associatedMessageGuid} with real reaction ${newMessage.guid}",
+                tag: "MessageReactivity"
+              );
+              
+              // Emit 'sent' event for the reaction
+              parentMwc.emitUpdateEvent(MessageUpdateType.sent);
+            } else {
+              Logger.warn(
+                "[ActionHandler] Parent controller not found for ${newMessage.associatedMessageGuid} when updating reaction",
+                tag: "MessageReactivity"
+              );
+            }
+            
+            // Trigger coordinator notification for immediate UI update
+            muc.notifyMessageUpdate(c.guid, newMessage.associatedMessageGuid!);
+          }
         } catch (ex) {
           Logger.warn("Failed to find message match for ${m.guid} -> ${newMessage.guid}!", error: ex, tag: "MessageStatus");
         }
@@ -346,9 +424,7 @@ class ActionHandler extends GetxService {
 
     // Gets the chat from the db or server (if new)
     c = m.isParticipantEvent ? await handleNewOrUpdatedChat(c) : kIsWeb ? c : (Chat.findOne(guid: c.guid) ?? await handleNewOrUpdatedChat(c));
-    // Get the message handle
-    m.handle = c.handles.firstWhereOrNull((e) => e.originalROWID == m.handleId) ?? Handle.findOne(originalROWID: m.handleId);
-    
+
     // Display notification if needed and save everything to DB
     bool shouldNotify = shouldNotifyForNewMessageGuid(m.guid!);
     if (!shouldNotify) {
@@ -373,6 +449,9 @@ class ActionHandler extends GetxService {
       await MessageHelper.handleNotification(m, c);
     }
     await c.addMessage(m);
+    
+    // Trigger immediate UI update via coordinator (bypasses ObjectBox watch latency)
+    muc.notifyMessageUpdate(c.guid, m.guid!);
   }
 
   Future<void> handleUpdatedMessage(Chat c, Message m, String? tempGuid, {bool checkExisting = true}) async {
@@ -402,6 +481,9 @@ class ActionHandler extends GetxService {
     // update the message in the DB
     await matchMessageWithExisting(c, tempGuid ?? m.guid!, m);
     eventDispatcher.emit("message-updated-${m.guid}");
+    
+    // Trigger immediate UI update via coordinator (bypasses ObjectBox watch latency)
+    muc.notifyMessageUpdate(c.guid, m.guid!);
   }
 
   Future<Chat> handleNewOrUpdatedChat(Chat partialData) async {

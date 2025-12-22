@@ -56,7 +56,6 @@ class _FullscreenImageState extends OptimizedState<FullscreenImage> with Automat
   @override
   void initState() {
     super.initState();
-    message?.handle = message?.getHandle();
     _setFullscreen(true);
     updateObx(() {
       initBytes();
@@ -215,7 +214,7 @@ class _FullscreenImageState extends OptimizedState<FullscreenImage> with Automat
                                     Text(
                                         (message?.isFromMe ?? false)
                                             ? 'You'
-                                            : message?.handle?.displayName ?? "Unknown",
+                                            : message?.handleRelation.target?.displayName ?? "Unknown",
                                         style: context.theme.textTheme.titleLarge!.copyWith(color: Colors.white)),
                                     if (message?.dateCreated != null)
                                       Padding(

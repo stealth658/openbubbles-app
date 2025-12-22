@@ -134,7 +134,6 @@ class NotificationsService {
           // Pre-load relationships for all messages
           for (Message message in messages) {
             if (message.chat.target == null) continue;
-            message.handle = message.getHandle();
             message.attachments = List<Attachment>.from(message.dbAttachments);
           }
           // Handle notifications for messages with valid chat targets
@@ -196,7 +195,7 @@ class NotificationsService {
     if (chat.shouldMuteNotification(message) || message.isFromMe!) return;
     final isGroup = chat.isGroup;
     final guid = chat.guid;
-    final contactName = message.handle?.displayName ?? "Unknown";
+    final contactName = message.handleRelation.target?.displayName ?? "Unknown";
     final title = isGroup ? chat.getTitle() : contactName;
     final text = hideContent ? "iMessage" : MessageHelper.getNotificationText(message);
     final isReaction = !isNullOrEmpty(message.associatedMessageGuid);
@@ -208,7 +207,7 @@ class NotificationsService {
         ? personIcon
         : await avatarAsBytes(
             participantsOverride:
-                !chat.isGroup ? null : chat.handles.where((e) => e.address == message.handle?.address).toList(),
+                !chat.isGroup ? null : chat.handles.where((e) => e.address == message.handleRelation.target?.address).toList(),
             chat: chat,
             quality: 256);
     if (chatIcon.isEmpty) {

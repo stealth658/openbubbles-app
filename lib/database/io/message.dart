@@ -51,6 +51,10 @@ class Message {
   Handle? handle;
   bool hasAttachments;
   bool hasReactions;
+  
+  // Phase 1: Add ToOne relationship for Handle
+  // This will eventually replace the embedded Handle object above
+  final handleRelation = ToOne<Handle>();
   DateTime? dateDeleted;
   Map<String, dynamic>? metadata;
   String? threadOriginatorGuid;
@@ -263,11 +267,23 @@ class Message {
       if (existing != null) {
         id = existing.id;
         text ??= existing.text;
+        
+        // Phase 2: Preserve the handle relationship from existing message
+        if (existing.handleRelation.hasValue) {
+          handleRelation.target = existing.handleRelation.target;
+        }
       }
 
-      // Save the participant & set the handle ID to the new participant
-      if (handle == null && handleId != null) {
-        handle = Handle.findOne(originalROWID: handleId);
+      // Phase 2: Set up handle relationship if we have a handle
+      if (handle != null && !handleRelation.hasValue) {
+        if (handle!.id != null) {
+          handleRelation.targetId = handle!.id!;
+        } else if (handleId != null) {
+          final foundHandle = Handle.findOne(originalROWID: handleId);
+          if (foundHandle != null) {
+            handleRelation.target = foundHandle;
+          }
+        }
       }
       // Save associated messages or the original message (depending on whether
       // this message is a reaction or regular message
@@ -431,6 +447,10 @@ class Message {
   }
 
   Handle? getHandle() {
+    // Phase 2: Prefer ToOne relationship if available
+    if (handleRelation.target != null) return handleRelation.target;
+    
+    // Fallback to manual lookup for backward compatibility
     if (kIsWeb || handleId == 0 || handleId == null) return null;
     return Handle.findOne(originalROWID: handleId!);
   }
@@ -443,7 +463,6 @@ class Message {
       final result = query.findFirst();
       query.close();
       if (result != null) {
-        result.handle = result.getHandle();
         // Populate attachments field from dbAttachments for consistent behavior
         if (result.hasAttachments) {
           result.attachments = List<Attachment>.from(result.dbAttachments);
@@ -456,8 +475,6 @@ class Message {
       final result = query.findFirst();
       query.close();
       if (result != null) {
-        result.handle = result.getHandle();
-
         // Populate attachments field from dbAttachments for consistent behavior
         if (result.hasAttachments) {
           result.attachments = List<Attachment>.from(result.dbAttachments);
@@ -888,10 +905,10 @@ class Message {
     if (!existing.chat.hasValue && newMessage.chat.hasValue) {
       existing.chat.target = newMessage.chat.target;
     }
-
-    // Update handle
-    if (existing.handle?.id == null && newMessage.handle?.id != null) {
-      existing.handle = newMessage.handle;
+    
+    // Update handle relationship
+    if (!existing.handleRelation.hasValue && newMessage.handleRelation.hasValue) {
+      existing.handleRelation.target = newMessage.handleRelation.target;
     }
 
     // Update attachments

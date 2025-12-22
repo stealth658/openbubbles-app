@@ -6,7 +6,6 @@ import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/services/backend/interfaces/message_interface.dart';
 import 'package:collection/collection.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
@@ -53,7 +52,7 @@ class MessageHelper {
 
   static Future<void> handleNotification(Message message, Chat chat, {bool findExisting = true}) async {
     // if from me
-    if (message.isFromMe! || message.handle == null) return;
+    if (message.isFromMe! || !message.handleRelation.hasValue) return;
     // if it is a "kept audio" message
     if (message.itemType == 5 && message.subject != null) return;
     // See if there is an existing message for the given GUID
@@ -72,10 +71,8 @@ class MessageHelper {
     if (message.expressiveSendStyleId == "com.apple.MobileSMS.expressivesend.invisibleink") {
       return "Message sent with Invisible Ink";
     }
-    if (kIsWeb && !message.isFromMe! && message.handle == null) {
-      message.handle = message.getHandle();
-    }
-    String sender = !withSender ? "" : "${message.isFromMe! ? "You: " : (message.handle?.displayName ?? "Someone")}: ";
+
+    String sender = !withSender ? "" : "${message.isFromMe! ? "You: " : (message.handleRelation.target?.displayName ?? "Someone")}: ";
 
     if (message.isInteractive) {
       return "$sender${message.interactiveText}";
@@ -98,7 +95,7 @@ class MessageHelper {
       return "$output: ${_getAttachmentText(message.realAttachments)}";
     } else if (!isNullOrEmpty(message.associatedMessageGuid)) {
       // It's a reaction message, get the sender
-      String sender = message.isFromMe! ? 'You' : (message.handle?.displayName ?? "Someone");
+      String sender = message.isFromMe! ? 'You' : (message.handleRelation.target?.displayName ?? "Someone");
       // fetch the associated message object
       Message? associatedMessage = Message.findOne(guid: message.associatedMessageGuid);
       if (associatedMessage != null) {

@@ -47,7 +47,8 @@ class ReactionWidgetState extends OptimizedState<ReactionWidget> {
   void initState() {
     super.initState();
     updateObx(() {
-      if (!kIsWeb && widget.message != null) {
+      // Skip database watch for temp reactions (no ID yet)
+      if (!kIsWeb && widget.message != null && reaction.id != null) {
         final messageQuery = Database.messages.query(Message_.id.equals(reaction.id!)).watch();
         sub = messageQuery.listen((Query<Message> query) async {
           final _message = await runAsync(() {
@@ -101,11 +102,6 @@ class ReactionWidgetState extends OptimizedState<ReactionWidget> {
         child: GestureDetector(
           onTap: () {
             if (reactions == null) return;
-            for (Message m in reactions!) {
-              if (!m.isFromMe!) {
-                m.handle ??= m.getHandle();
-              }
-            }
             Navigator.push(
               context,
               PageRouteBuilder(

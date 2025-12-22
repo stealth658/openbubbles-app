@@ -13,7 +13,7 @@ class MessageSender extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 25).add(const EdgeInsets.only(bottom: 3)),
       child: Text(
-        message.handle?.displayName ?? "",
+        message.handleRelation.target?.displayName ?? "",
         style: context.theme.textTheme.labelMedium!.copyWith(color: context.theme.colorScheme.outline, fontWeight: FontWeight.normal),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,

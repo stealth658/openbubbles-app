@@ -20,6 +20,7 @@ import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/timest
 import 'package:bluebubbles/app/components/avatars/contact_avatar_widget.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
+import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:collection/collection.dart';
@@ -86,6 +87,9 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
   bool? _cachedShowSender;
   bool? _cachedCanSwipeToReply;
   Message? _cachedReplyTo;
+  
+  // Track what needs recalculation
+  Set<_CacheKey> _invalidatedCaches = {};
 
   @override
   void initState() {
@@ -107,10 +111,10 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
     }
 
     // Observe handle updates from ContactServiceV2
-    if (message.handle?.id != null) {
+    if (message.handleRelation.target?.id != null) {
       ever(ContactsSvcV2.handleUpdateStatus, (_) {
         // Check if this specific handle was updated
-        if (ContactsSvcV2.isHandleUpdated(message.handle!.id!)) {
+        if (ContactsSvcV2.isHandleUpdated(message.handleRelation.target!.id!)) {
           _updateCachedValues();
           if (mounted) setState(() {});
         }
@@ -125,40 +129,74 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
     _updateCachedValues();
   }
   
-  void _updateCachedValues() {
-    _cachedBubbleColors = getBubbleColors();
-    _cachedShowSender = !message.isGroupEvent &&
-        (!message.sameSender(olderMessage) || (olderMessage?.isGroupEvent ?? false) || (olderMessage == null || !message.dateCreated!.isWithin(olderMessage!.dateCreated!, minutes: 30)));
-    _cachedCanSwipeToReply = SettingsSvc.settings.enablePrivateAPI.value && SettingsSvc.isMinBigSurSync && chat.isIMessage && !widget.isReplyThread && !message.guid!.startsWith("temp") && !message.guid!.startsWith("error");
-    _cachedReplyTo = message.threadOriginatorGuid == null
-        ? null
-        : SettingsSvc.settings.repliesToPrevious.value
-            ? (service.struct.getPreviousReply(message.threadOriginatorGuid!, message.normalizedThreadPart, message.guid!) ?? service.struct.getThreadOriginator(message.threadOriginatorGuid!))
-            : service.struct.getThreadOriginator(message.threadOriginatorGuid!);
+  /// Smart cache invalidation - only recalculate what changed
+  void _updateCachedValues({bool forceAll = false, Set<_CacheKey>? specific}) {
+    if (forceAll) {
+      // Recalculate everything
+      _cachedBubbleColors = null;
+      _cachedShowSender = null;
+      _cachedCanSwipeToReply = null;
+      _cachedReplyTo = null;
+      _invalidatedCaches.clear();
+    } else if (specific != null) {
+      // Only invalidate specific caches
+      _invalidatedCaches.addAll(specific);
+    }
+    
+    // Recalculate only what's needed
+    if (forceAll || _invalidatedCaches.contains(_CacheKey.bubbleColors) || _cachedBubbleColors == null) {
+      _cachedBubbleColors = _calculateBubbleColors();
+      _invalidatedCaches.remove(_CacheKey.bubbleColors);
+    }
+    if (forceAll || _invalidatedCaches.contains(_CacheKey.showSender) || _cachedShowSender == null) {
+      _cachedShowSender = !message.isGroupEvent &&
+          (!message.sameSender(olderMessage) || (olderMessage?.isGroupEvent ?? false) || 
+           (olderMessage == null || !message.dateCreated!.isWithin(olderMessage!.dateCreated!, minutes: 30)));
+      _invalidatedCaches.remove(_CacheKey.showSender);
+    }
+    if (forceAll || _invalidatedCaches.contains(_CacheKey.canSwipeToReply) || _cachedCanSwipeToReply == null) {
+      _cachedCanSwipeToReply = SettingsSvc.settings.enablePrivateAPI.value && SettingsSvc.isMinBigSurSync && 
+          chat.isIMessage && !widget.isReplyThread && !message.guid!.startsWith("temp") && !message.guid!.startsWith("error");
+      _invalidatedCaches.remove(_CacheKey.canSwipeToReply);
+    }
+    if (forceAll || _invalidatedCaches.contains(_CacheKey.replyTo) || _cachedReplyTo == null) {
+      _cachedReplyTo = message.threadOriginatorGuid == null
+          ? null
+          : SettingsSvc.settings.repliesToPrevious.value
+              ? (service.struct.getPreviousReply(message.threadOriginatorGuid!, message.normalizedThreadPart, message.guid!) ?? 
+                 service.struct.getThreadOriginator(message.threadOriginatorGuid!))
+              : service.struct.getThreadOriginator(message.threadOriginatorGuid!);
+      _invalidatedCaches.remove(_CacheKey.replyTo);
+    }
+  }
+  
+  /// Helper to calculate bubble colors (extracted for smart caching)
+  List<Color> _calculateBubbleColors() {
+    List<Color> bubbleColors = [context.theme.colorScheme.properSurface, context.theme.colorScheme.properSurface];
+    if (SettingsSvc.settings.colorfulBubbles.value && !message.isFromMe!) {
+      if (message.handleRelation.target?.color == null) {
+        bubbleColors = toColorGradient(message.handleRelation.target?.address);
+      } else {
+        bubbleColors = [
+          HexColor(message.handleRelation.target!.color!),
+          HexColor(message.handleRelation.target!.color!).lightenAmount(0.075),
+        ];
+      }
+    }
+    return bubbleColors;
   }
 
   @override
   void updateWidget(void _) {
     messageParts = controller.parts;
-    _updateCachedValues();
+    // Only invalidate caches that depend on message parts changing
+    _updateCachedValues(specific: {_CacheKey.replyTo});
     super.updateWidget(_);
   }
 
   List<Color> getBubbleColors() {
-    if (_cachedBubbleColors != null) return _cachedBubbleColors!;
-    
-    List<Color> bubbleColors = [context.theme.colorScheme.properSurface, context.theme.colorScheme.properSurface];
-    if (SettingsSvc.settings.colorfulBubbles.value && !message.isFromMe!) {
-      if (message.handle?.color == null) {
-        bubbleColors = toColorGradient(message.handle?.address);
-      } else {
-        bubbleColors = [
-          HexColor(message.handle!.color!),
-          HexColor(message.handle!.color!).lightenAmount(0.075),
-        ];
-      }
-    }
-    return bubbleColors;
+    // Return cached value if available
+    return _cachedBubbleColors ?? _calculateBubbleColors();
   }
 
   void _handleHapticFeedback(RxDouble offset) {
@@ -214,7 +252,11 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
     
     // Cache associated messages filtering
     final stickers = message.associatedMessages.where((e) => e.associatedMessageType == "sticker").toList();
-    final reactions = message.associatedMessages.where((e) => ReactionTypes.toList().contains(e.associatedMessageType?.replaceAll("-", ""))).toList();
+    
+    // Helper to get reactions - MUST be called inside Obx() to be reactive
+    List<Message> getReactions() {
+      return message.associatedMessages.where((e) => ReactionTypes.toList().contains(e.associatedMessageType?.replaceAll("-", ""))).toList();
+    }
     
     // Cache settings values to avoid repeated observable reads
     final alwaysShowAvatars = SettingsSvc.settings.alwaysShowAvatars.value;
@@ -224,7 +266,7 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
       return stickers.where((s) => (s.associatedMessagePart ?? 0) == part);
     }
 
-    Iterable<Message> reactionsForPart(int part) {
+    Iterable<Message> reactionsForPart(int part, List<Message> reactions) {
       return reactions.where((s) => (s.associatedMessagePart ?? 0) == part);
     }
 
@@ -347,7 +389,14 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                   child: MessageSender(olderMessage: olderMessage, message: message),
                                 ),
                               // add a box to account for height of reactions
-                              if ((messageParts.length == 1 && reactions.isNotEmpty) || reactionsForPart(e.part).isNotEmpty) const SizedBox(height: 12.5),
+                              Obx(() {
+                                controller.reactionsChanged.value; // observe for reactivity
+                                final reactions = getReactions();
+                                if ((messageParts.length == 1 && reactions.isNotEmpty) || reactionsForPart(e.part, reactions).isNotEmpty) {
+                                  return const SizedBox(height: 12.5);
+                                }
+                                return const SizedBox.shrink();
+                              }),
                               if (!iOS &&
                                   index == 0 &&
                                   !widget.isReplyThread &&
@@ -382,7 +431,7 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                     Padding(
                                       padding: const EdgeInsets.only(left: 5.0),
                                       child: ContactAvatarWidget(
-                                        handle: message.handle,
+                                        handle: message.handleRelation.target,
                                         size: iOS ? 30 : 35,
                                         fontSize: context.theme.textTheme.bodyLarge!.fontSize!,
                                         borderThickness: 0.1,
@@ -434,11 +483,19 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                                         message: message,
                                                       ),
                                                     if (samsung)
-                                                      Padding(
-                                                        padding: (messageParts.length == 1 && reactions.isNotEmpty) || reactionsForPart(e.part).isNotEmpty
-                                                            ? EdgeInsets.only(left: message.isFromMe! ? 0 : 10, right: message.isFromMe! ? 20 : 0)
-                                                            : const EdgeInsets.only(right: 10),
-                                                        child: MessageTimestamp(controller: controller, cvController: widget.cvController),
+                                                      Builder(
+                                                        builder: (context) {
+                                                          return Obx(() {
+                                                            controller.reactionsChanged.value; // observe for reactivity
+                                                            final reactions = getReactions();
+                                                            return Padding(
+                                                              padding: (messageParts.length == 1 && reactions.isNotEmpty) || reactionsForPart(e.part, reactions).isNotEmpty
+                                                                  ? EdgeInsets.only(left: message.isFromMe! ? 0 : 10, right: message.isFromMe! ? 20 : 0)
+                                                                  : const EdgeInsets.only(right: 10),
+                                                              child: MessageTimestamp(controller: controller, cvController: widget.cvController),
+                                                            );
+                                                          });
+                                                        },
                                                       ),
                                                     // otherwise show content
                                                     if (!message.isGroupEvent && !e.isUnsent)
@@ -516,7 +573,9 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                                                         ? null
                                                                         : () {
                                                                             if (ReplyScope.maybeOf(context) != null) return;
-                                                                            replyOffsets[index].value = 0;
+                                                                            if (index < replyOffsets.length) {
+                                                                              replyOffsets[index].value = 0;
+                                                                            }
                                                                           },
                                                                     child: ClipPath(
                                                                       clipper: TailClipper(
@@ -735,8 +794,17 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                                                   child: Obx(() {
                                                                     // Observe granular reactions flag to minimize rebuilds
                                                                     controller.reactionsChanged.value;
+                                                                    // Also watch coordinator trigger for immediate updates (bypasses ObjectBox latency)
+                                                                    muc.getUpdateTrigger(chat.guid, message.guid!)?.value;
+                                                                    // Recalculate reactions inside Obx for reactivity
+                                                                    final reactions = getReactions();
+                                                                    final reactionList = messageParts.length == 1 ? reactions : reactionsForPart(e.part, reactions).toList();
+                                                                    Logger.debug(
+                                                                      "[MessageHolder] Rebuilding ReactionHolder for ${message.guid} (isFromMe) with ${reactionList.length} reactions",
+                                                                      tag: "MessageReactivity"
+                                                                    );
                                                                     return ReactionHolder(
-                                                                      reactions: messageParts.length == 1 ? reactions : reactionsForPart(e.part),
+                                                                      reactions: reactionList,
                                                                       message: message,
                                                                     );
                                                                   }),
@@ -748,8 +816,17 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                                                   child: Obx(() {
                                                                     // Observe granular reactions flag to minimize rebuilds
                                                                     controller.reactionsChanged.value;
+                                                                    // Also watch coordinator trigger for immediate updates (bypasses ObjectBox latency)
+                                                                    muc.getUpdateTrigger(chat.guid, message.guid!)?.value;
+                                                                    // Recalculate reactions inside Obx for reactivity
+                                                                    final reactions = getReactions();
+                                                                    final reactionList = messageParts.length == 1 ? reactions : reactionsForPart(e.part, reactions).toList();
+                                                                    Logger.debug(
+                                                                      "[MessageHolder] Rebuilding ReactionHolder for ${message.guid} (!isFromMe) with ${reactionList.length} reactions",
+                                                                      tag: "MessageReactivity"
+                                                                    );
                                                                     return ReactionHolder(
-                                                                      reactions: messageParts.length == 1 ? reactions : reactionsForPart(e.part),
+                                                                      reactions: reactionList,
                                                                       message: message,
                                                                     );
                                                                   }),
@@ -786,7 +863,7 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
               if (message.isFromMe! && !message.isGroupEvent) SelectCheckbox(message: message, controller: widget.cvController),
               Obx(() {
                 // Observe granular error state flag to minimize rebuilds
-                controller.errorStateChanged.value;
+                controller.errorChanged.value;
                 
                 if (message.error > 0 || message.guid!.startsWith("error-")) {
                   int errorCode = message.error;
@@ -882,4 +959,13 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
       ),
     );
   }
+}
+
+/// Cache keys for smart cache invalidation in MessageHolder
+/// Only recalculates values that have actually changed
+enum _CacheKey {
+  bubbleColors,
+  showSender,
+  canSwipeToReply,
+  replyTo,
 }

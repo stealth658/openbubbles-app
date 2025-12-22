@@ -13,9 +13,68 @@ import 'package:path/path.dart' as p;
 /// All operations here run in the GlobalIsolate to prevent UI jank
 /// This follows the architecture outlined in FR-1.md
 class ContactV2Actions {
+  /// Generate multiple normalized variants of a phone number to handle country code mismatches
+  /// 
+  /// Returns a set of normalized phone numbers including:
+  /// - The original normalized number (digits + plus sign only)
+  /// - Variant without country code (if one exists)
+  /// - Variant with country code removed but assuming it started with +
+  /// 
+  /// This handles cases where:
+  /// - Contact has "1234567890" but Handle has "+11234567890"
+  /// - Contact has "+11234567890" but Handle has "1234567890"
+  /// - Works with any country code, not just +1
+  static Set<String> _getPhoneNumberVariants(String phone) {
+    final variants = <String>{};
+    final normalized = ContactV2.normalizePhoneNumber(phone);
+    
+    if (normalized.isEmpty) return variants;
+    
+    // Always include the base normalized version
+    variants.add(normalized);
+    
+    // If it starts with +, add variant without the +
+    if (normalized.startsWith('+')) {
+      variants.add(normalized.substring(1));
+      
+      // Also try removing common country codes (1-3 digits after +)
+      // Country codes can be 1-3 digits (e.g., +1, +44, +852, +1246)
+      for (int i = 1; i <= 3 && i < normalized.length; i++) {
+        final withoutCountryCode = normalized.substring(i + 1);
+        if (withoutCountryCode.isNotEmpty) {
+          variants.add(withoutCountryCode);
+        }
+      }
+    } else {
+      // If no +, try adding + and common country code lengths
+      // This handles cases where the stored number doesn't have + but the contact does
+      variants.add('+$normalized');
+      
+      // Try removing 1-3 digit prefixes as potential country codes
+      for (int i = 1; i <= 3 && i < normalized.length; i++) {
+        final withoutPrefix = normalized.substring(i);
+        if (withoutPrefix.isNotEmpty) {
+          variants.add(withoutPrefix);
+          variants.add('+$withoutPrefix');
+        }
+      }
+    }
+    
+    return variants;
+  }
+
+  /// Check if two phone numbers match, accounting for country code differences
+  static bool _phoneNumbersMatch(String phone1, String phone2) {
+    final variants1 = _getPhoneNumberVariants(phone1);
+    final variants2 = _getPhoneNumberVariants(phone2);
+    
+    // Check if any variant of phone1 matches any variant of phone2
+    return variants1.any((v1) => variants2.contains(v1));
+  }
+
   /// Fetch all contacts from device and match them to existing handles
   /// This is the main operation described in Section II.A of FR-1.md
-  static Future<List<int>> fetchAndMatchContacts(dynamic data) async {
+  static Future<List<int>> syncContactsToHandles(dynamic data) async {
     final startTime = DateTime.now().millisecondsSinceEpoch;
     final affectedHandleIds = <int>[];
 
@@ -39,10 +98,18 @@ class ContactV2Actions {
       final avatarPaths = <String, String?>{};
       for (final rawContact in rawContacts) {
         try {
-          final avatarData = await FastContacts.getContactImage(
+          Uint8List? avatarData = await FastContacts.getContactImage(
             rawContact.id,
             size: ContactImageSize.fullSize,
           );
+
+          if (avatarData == null || avatarData.isEmpty) {
+            avatarData = await FastContacts.getContactImage(
+              rawContact.id,
+              size: ContactImageSize.thumbnail,
+            );
+          }
+
           if (avatarData != null && avatarData.isNotEmpty) {
             avatarPaths[rawContact.id] = await _saveContactAvatar(rawContact.id, avatarData);
           }
@@ -59,7 +126,7 @@ class ContactV2Actions {
         for (final rawContact in rawContacts) {
           // Normalize addresses
           final normalizedAddresses = <String>[];
-          
+
           // Add normalized phone numbers
           for (final phone in rawContact.phones) {
             final normalized = ContactV2.normalizePhoneNumber(phone.number);
@@ -126,22 +193,28 @@ class ContactV2Actions {
             
             for (final handle in allHandles) {
               // Check if address matches when normalized
-              // Use appropriate normalization based on whether it's an email or phone number
               final isHandleEmail = handle.address.contains('@');
               
               // Skip if types don't match (email vs phone)
               if (isContactEmail != isHandleEmail) continue;
               
-              final handleAddress = isHandleEmail 
-                  ? ContactV2.normalizeEmail(handle.address)
-                  : ContactV2.normalizePhoneNumber(handle.address);
-              final handleFormatted = handle.formattedAddress != null 
-                  ? (isHandleEmail 
-                      ? ContactV2.normalizeEmail(handle.formattedAddress!)
-                      : ContactV2.normalizePhoneNumber(handle.formattedAddress!))
-                  : null;
+              bool matches = false;
+              
+              if (isContactEmail) {
+                // For emails, use simple normalized comparison
+                final handleAddress = ContactV2.normalizeEmail(handle.address);
+                final handleFormatted = handle.formattedAddress != null 
+                    ? ContactV2.normalizeEmail(handle.formattedAddress!)
+                    : null;
+                
+                matches = handleAddress == address || handleFormatted == address;
+              } else {
+                // For phone numbers, use variant matching to handle country codes
+                matches = _phoneNumbersMatch(address, handle.address) ||
+                    (handle.formattedAddress != null && _phoneNumbersMatch(address, handle.formattedAddress!));
+              }
 
-              if (handleAddress == address || handleFormatted == address) {
+              if (matches) {
                 if (!matchedHandles.contains(handle)) {
                   matchedHandles.add(handle);
                   if (handle.id != null && !affectedHandleIds.contains(handle.id!)) {
@@ -202,7 +275,7 @@ class ContactV2Actions {
 
       if (hasChanges) {
         Logger.info('[ContactV2] Contact changes detected, triggering refresh');
-        await fetchAndMatchContacts(<String, dynamic>{});
+        await syncContactsToHandles(<String, dynamic>{});
         return true;
       }
 
@@ -224,7 +297,7 @@ class ContactV2Actions {
   }
 
   /// Find a single ContactV2 by native contact ID
-  static Future<Map<String, dynamic>?> findOneContactV2(dynamic data) async {
+  static Future<Map<String, dynamic>?> findOneContact(dynamic data) async {
     final dataMap = data as Map<dynamic, dynamic>;
     final nativeContactId = dataMap['nativeContactId'] as String;
 
@@ -270,7 +343,7 @@ class ContactV2Actions {
 
   /// Manually trigger a contact refresh
   static Future<List<int>> refreshContacts(dynamic data) async {
-    return await fetchAndMatchContacts(data);
+    return await syncContactsToHandles(data);
   }
 
   /// Save a contact avatar to disk and return the file path

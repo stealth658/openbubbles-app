@@ -17,6 +17,7 @@ class NetworkTasks {
   static Future<void>? _configureNetworkToolsFuture;
 
   static Future<void> onConnect() async {
+    Logger.info('[NetworkTasks] Handling onConnect tasks. Finished Setup: ${SettingsSvc.settings.finishedSetup.value}');
     if (SettingsSvc.settings.finishedSetup.value) {
       // Separate functionality for android vs. other
       if (!Platform.isAndroid) {
@@ -24,6 +25,7 @@ class NetworkTasks {
       } else {
         // Only start incremental sync if the app is active and the previous state wasn't just hidden
         // or if the app was never resumed before
+        Logger.info('[Checks] Lifecycle State: ${LifecycleSvc.currentState}, Has Resumed: ${LifecycleSvc.hasResumed}, Was Paused: ${LifecycleSvc.wasPaused}');
         if (!LifecycleSvc.hasResumed || (LifecycleSvc.currentState == AppLifecycleState.resumed && LifecycleSvc.wasPaused)) {
           await SyncSvc.startIncrementalSync();
         }
@@ -39,9 +41,6 @@ class NetworkTasks {
           ChatsSvc.reset();
           await ChatsSvc.init();
         }
-
-        // Contact refresh is handled by ContactServiceV2
-        await ContactsSvcV2.refreshContacts();
       }
     }
   }

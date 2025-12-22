@@ -3,7 +3,6 @@ import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/backend/interfaces/contact_v2_interface.dart';
 import 'package:bluebubbles/services/services.dart';
-import 'package:bluebubbles/services/ui/chat/chats_service.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
@@ -26,6 +25,10 @@ class ContactServiceV2 {
 
   /// Whether we have permission to access contacts
   bool _hasContactAccess = false;
+
+  bool get hasContactAccessSync {
+    return _hasContactAccess;
+  }
 
   /// Check if we have contact access permission
   Future<bool> get hasContactAccess async {
@@ -65,42 +68,43 @@ class ContactServiceV2 {
   Future<void> init({bool headless = false}) async {
     Logger.info('[ContactServiceV2] Initializing... (headless: $headless)');
     
-    // Skip contact access checks and fetching in headless mode
-    // The isolate doesn't need to fetch contacts, it just needs to be ready to process them
-    if (headless) {
-      Logger.info('[ContactServiceV2] Running in headless mode, skipping contact fetch');
-      return;
-    }
-    
-    // Check contact access
-    await hasContactAccess;
-
-    // If we have access, always fetch fresh contacts on startup
-    // This ensures we pick up any contact changes that happened while the app was closed
-    if (_hasContactAccess) {
-      Logger.info('[ContactServiceV2] Has contact access, fetching contacts from device');
-      await fetchAndMatchContacts();
-      Logger.info('[ContactServiceV2] Contact fetch completed');
+    // We only want to call the sync operations if we're not in heardless mode.
+    // The UI thread will invoke these methods on init, but should not wait for them to complete.
+    // The isolate does not need to perform these operations on startup as no state is required.
+    // The UI thread will use the notifyHandlesUpdated method to update UI components as needed.
+    if (!headless) {
+      await hasContactAccess;
+      Logger.info('[ContactServiceV2] Contact access: $_hasContactAccess');
+      await syncContactsToHandles(wait: false);
     } else {
-      Logger.info('[ContactServiceV2] No contact access, skipping contact fetch');
+      Logger.info('[ContactServiceV2] Headless mode, skipping contact sync opeerations');
     }
+
+    Logger.info('[ContactServiceV2] Initialization complete');
   }
 
-  /// Fetch all contacts and match them to handles
-  /// This triggers the GlobalIsolate to do the heavy lifting
-  /// Returns a list of handle IDs that were affected
-  Future<List<int>> fetchAndMatchContacts() async {
-    if (!_hasContactAccess) {
+  Future<List<int>> syncContactsToHandles({bool wait = true}) async {
+    final access = await hasContactAccess;
+    if (!access) {
       Logger.warn('[ContactServiceV2] Cannot fetch contacts without permission');
       return [];
     }
 
     try {
       Logger.info('[ContactServiceV2] Starting contact fetch and match...');
-      final affectedHandleIds = await ContactV2Interface.fetchAndMatchContactsAsync();
-      
-      // Notify UI about updated handles
-      notifyHandlesUpdated(affectedHandleIds);
+      List<int> affectedHandleIds = [];
+
+      if (wait) {
+        affectedHandleIds = await ContactV2Interface.syncContactsToHandles();
+        notifyHandlesUpdated(affectedHandleIds);
+      } else {
+        // Fire and forget
+        ContactV2Interface.syncContactsToHandles().then((affectedHandleIds) {
+          notifyHandlesUpdated(affectedHandleIds);
+        }).catchError((e, stack) {
+          Logger.error('[ContactServiceV2] Error in async contact fetch and match', error: e, trace: stack);
+        });
+      }
       
       Logger.info('[ContactServiceV2] Completed contact fetch and match');
       return affectedHandleIds;
@@ -110,55 +114,14 @@ class ContactServiceV2 {
     }
   }
 
-  /// Check for contact database changes
-  /// This is designed to be called periodically by workmanager
-  /// Returns true if changes were detected and a re-sync was performed
-  Future<bool> checkForContactChanges() async {
-    if (!_hasContactAccess) return false;
-
-    try {
-      Logger.info('[ContactServiceV2] Checking for contact changes...');
-      final hasChanges = await ContactV2Interface.checkContactChangesAsync();
-      
-      if (hasChanges) {
-        Logger.info('[ContactServiceV2] Contact changes detected');
-      }
-      
-      return hasChanges;
-    } catch (e, stack) {
-      Logger.error('[ContactServiceV2] Error checking for contact changes', error: e, trace: stack);
-      return false;
-    }
-  }
-
-  /// Manually trigger a contact refresh
-  /// This will fetch all contacts and match them to handles
-  Future<List<int>> refreshContacts() async {
-    if (!_hasContactAccess) {
-      Logger.warn('[ContactServiceV2] Cannot refresh contacts without permission');
-      return [];
-    }
-
-    try {
-      Logger.info('[ContactServiceV2] Starting manual contact refresh...');
-      final affectedHandleIds = await ContactV2Interface.refreshContactsAsync();
-      
-      // Notify UI about updated handles
-      notifyHandlesUpdated(affectedHandleIds);
-      
-      Logger.info('[ContactServiceV2] Completed manual contact refresh');
-      return affectedHandleIds;
-    } catch (e, stack) {
-      Logger.error('[ContactServiceV2] Error refreshing contacts', error: e, trace: stack);
-      return [];
-    }
-  }
-
   /// Get a ContactV2 for a specific handle ID
   /// This retrieves the contact from the isolate/database
   Future<ContactV2?> getContactForHandle(int handleId) async {
+    final access = await hasContactAccess;
+    if (!access) return null;
+
     try {
-      final contacts = await ContactV2Interface.getContactsForHandlesAsync(
+      final contacts = await ContactV2Interface.getContactsForHandles(
         handleIds: [handleId],
       );
 
@@ -172,8 +135,11 @@ class ContactServiceV2 {
 
   /// Get ContactV2 entities for multiple handle IDs
   Future<List<ContactV2>> getContactsForHandles(List<int> handleIds) async {
+    final access = await hasContactAccess;
+    if (!access) return [];
+
     try {
-      final contactMaps = await ContactV2Interface.getContactsForHandlesAsync(
+      final contactMaps = await ContactV2Interface.getContactsForHandles(
         handleIds: handleIds,
       );
 
@@ -261,7 +227,7 @@ class ContactServiceV2 {
   /// This will search through all contacts to find a match
   Future<ContactV2?> getContact(String address) async {
     try {
-      final contactMap = await ContactV2Interface.getContactByAddressAsync(address: address);
+      final contactMap = await ContactV2Interface.getContactByAddress(address: address);
       if (contactMap == null) return null;
       return ContactV2.fromMap(contactMap);
     } catch (e, stack) {
@@ -288,7 +254,7 @@ class ContactServiceV2 {
   /// Returns a list of all ContactV2 entities
   Future<List<ContactV2>> getAllContacts() async {
     try {
-      final contactMaps = await ContactV2Interface.getAllContactsAsync();
+      final contactMaps = await ContactV2Interface.getAllContacts();
       return contactMaps.map((m) => ContactV2.fromMap(m)).toList();
     } catch (e, stack) {
       Logger.error('[ContactServiceV2] Error getting all contacts', error: e, trace: stack);
@@ -306,7 +272,7 @@ class ContactServiceV2 {
 
     try {
       logger?.call("Fetching contacts from server...");
-      final contactMaps = await ContactV2Interface.fetchNetworkContactsAsync();
+      final contactMaps = await ContactV2Interface.fetchNetworkContacts();
       logger?.call("Fetched ${contactMaps.length} contacts");
       
       final contacts = contactMaps.map((m) => ContactV2.fromMap(m)).toList();
@@ -334,7 +300,7 @@ class ContactServiceV2 {
   /// Returns the avatar as Uint8List if available
   Future<Uint8List?> getContactAvatar(String nativeContactId) async {
     try {
-      return await ContactV2Interface.getContactAvatarAsync(nativeContactId: nativeContactId);
+      return await ContactV2Interface.getContactAvatar(nativeContactId: nativeContactId);
     } catch (e, stack) {
       Logger.error('[ContactServiceV2] Error getting contact avatar', error: e, trace: stack);
       return null;

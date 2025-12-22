@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
@@ -22,17 +24,31 @@ class DeliveredIndicator extends CustomStateful<MessageWidgetController> {
 class _DeliveredIndicatorState extends CustomState<DeliveredIndicator, void, MessageWidgetController> {
   Message get message => controller.message;
   bool get showAvatar => (controller.cvController?.chat ?? cm.activeChat!.chat).isGroup;
+  
+  StreamSubscription? _updateSub;
 
   @override
   void initState() {
     forceDelete = false;
     super.initState();
 
-    eventDispatcher.stream.listen((event) {
-      if (event.item1 == "message-updated-${message.guid}") {
-        setState(() {});
-      }
+    // Listen to controller's update stream instead of global eventDispatcher
+    // This reduces overhead from O(n) global listeners to targeted per-message updates
+    _updateSub = controller.updateStream
+        .where((event) => 
+          event.type == MessageUpdateType.delivered || 
+          event.type == MessageUpdateType.read ||
+          event.type == MessageUpdateType.sent
+        )
+        .listen((event) {
+      if (mounted) setState(() {});
     });
+  }
+  
+  @override
+  void dispose() {
+    _updateSub?.cancel();
+    super.dispose();
   }
 
   bool get shouldShow {
@@ -96,8 +112,9 @@ class _DeliveredIndicatorState extends CustomState<DeliveredIndicator, void, Mes
       alignment: Alignment.bottomCenter,
       duration: const Duration(milliseconds: 250),
       child: Obx(() {
-        // Observe the granular delivery status flag to minimize rebuilds
-        controller.deliveryStatusChanged.value;
+        // Observe the granular delivery status flags to minimize rebuilds
+        controller.deliveredChanged.value;
+        controller.readChanged.value;
         return shouldShow && getText().isNotEmpty ? Padding(
           padding: const EdgeInsets.symmetric(horizontal: 15).add(EdgeInsets.only(
             top: 3,

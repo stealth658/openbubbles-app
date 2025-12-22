@@ -270,12 +270,12 @@ class ImageDisplay extends StatelessWidget {
                     ),
                   ),
                 if (!(attachment.message.target?.isFromMe ?? true)
-                    && attachment.message.target?.handle != null
+                    && attachment.message.target?.handleRelation.hasValue == true
                     && SettingsSvc.settings.skin.value == Skins.iOS)
                   Positioned(
                     top: 10,
                     right: 10,
-                    child: ContactAvatarWidget(handle: attachment.message.target?.handle),
+                    child: ContactAvatarWidget(handle: attachment.message.target?.handleRelation.target),
                   ),
               ],
             ),

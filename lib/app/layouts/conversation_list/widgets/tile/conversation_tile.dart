@@ -338,7 +338,6 @@ class _ChatSubtitleState extends CustomState<ChatSubtitle, void, ConversationTil
           isDelivered = controller.chat.isGroup || !isFromMe || message?.dateDelivered != null || message?.dateRead != null;
           // check if we really need to update this widget
           if (message != null && (message.guid != cachedLatestMessageGuid || message.dateEdited != cachedDateEdited)) {
-            message.handle = message.getHandle();
             String newSubtitle = MessageHelper.getNotificationText(message);
             if (newSubtitle != subtitle) {
               setState(() {

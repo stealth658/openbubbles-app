@@ -480,7 +480,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(13, 4148278195232901830),
     name: 'Message',
-    lastPropertyId: const obx_int.IdUid(50, 2365667614914378517),
+    lastPropertyId: const obx_int.IdUid(51, 566585826105040267),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -726,6 +726,14 @@ final _entities = <obx_int.ModelEntity>[
         name: 'isDelivered',
         type: 1,
         flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(51, 566585826105040267),
+        name: 'handleRelationId',
+        type: 11,
+        flags: 520,
+        indexId: const obx_int.IdUid(18, 669353420101708385),
+        relationTarget: 'Handle',
       ),
     ],
     relations: <obx_int.ModelRelation>[],
@@ -978,7 +986,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
   final model = obx_int.ModelInfo(
     entities: _entities,
     lastEntityId: const obx_int.IdUid(18, 7539271658762089511),
-    lastIndexId: const obx_int.IdUid(17, 2899936591829146931),
+    lastIndexId: const obx_int.IdUid(18, 669353420101708385),
     lastRelationId: const obx_int.IdUid(2, 2117154782513366348),
     lastSequenceId: const obx_int.IdUid(0, 0),
     retiredEntityUids: const [
@@ -1697,7 +1705,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
     ),
     Message: obx_int.EntityDefinition<Message>(
       model: _entities[5],
-      toOneRelations: (Message object) => [object.chat],
+      toOneRelations: (Message object) => [object.chat, object.handleRelation],
       toManyRelations: (Message object) => {
         obx_int.RelInfo<Attachment>.toOneBacklink(
           17,
@@ -1755,7 +1763,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final dbMetadataOffset = object.dbMetadata == null
             ? null
             : fbb.writeString(object.dbMetadata!);
-        fbb.startTable(51);
+        fbb.startTable(52);
         fbb.addInt64(0, object.id ?? 0);
         fbb.addInt64(1, object.originalROWID);
         fbb.addOffset(2, guidOffset);
@@ -1796,6 +1804,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
         fbb.addBool(47, object.didNotifyRecipient);
         fbb.addBool(48, object.isBookmarked);
         fbb.addBool(49, object.isDelivered);
+        fbb.addInt64(50, object.handleRelation.targetId);
         fbb.finish(fbb.endTable());
         return object.id ?? 0;
       },
@@ -2033,6 +2042,13 @@ obx_int.ModelDefinition getObjectBoxModel() {
           0,
         );
         object.chat.attach(store);
+        object.handleRelation.targetId = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          104,
+          0,
+        );
+        object.handleRelation.attach(store);
         obx_int.InternalToManyAccess.setRelInfo<Message>(
           object.dbAttachments,
           store,
@@ -2867,6 +2883,11 @@ class Message_ {
   /// See [Message.isDelivered].
   static final isDelivered = obx.QueryBooleanProperty<Message>(
     _entities[5].properties[39],
+  );
+
+  /// See [Message.handleRelation].
+  static final handleRelation = obx.QueryRelationToOne<Message, Handle>(
+    _entities[5].properties[40],
   );
 
   /// see [Message.dbAttachments]

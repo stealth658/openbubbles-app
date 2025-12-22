@@ -108,11 +108,9 @@ class MethodChannelService {
         await Database.waitForInit();
         Logger.info("Received updated message from MethodChannel");
 
-        // The socket will handle this event if the app is alive
-        if (LifecycleSvc.isAlive && (SocketSvc.socket?.connected ?? false)) {
-          Logger.debug("App is alive, ignoring updated message...");
-          return Future.value(true);
-        } else if (!LifecycleSvc.isAlive && SettingsSvc.settings.keepAppAlive.value) {
+        // Don't ignore message updates when app is alive - they contain important info like delivery status
+        // The socket might not always send these events, or there could be timing issues
+        if (!LifecycleSvc.isAlive && SettingsSvc.settings.keepAppAlive.value) {
           Logger.debug("Ignoring FCM message while app is not alive, but keepAppAlive is enabled");
           return Future.value(true);
         }
@@ -155,11 +153,8 @@ class MethodChannelService {
         await Database.waitForInit();
         Logger.info("Received ${call.method} from MethodChannel");
 
-        // The socket will handle this event if the app is alive
-        if (LifecycleSvc.isAlive && (SocketSvc.socket?.connected ?? false)) {
-          Logger.debug("App is alive, ignoring updated message...");
-          return Future.value(true);
-        } else if (!LifecycleSvc.isAlive && SettingsSvc.settings.keepAppAlive.value) {
+        // Don't ignore chat updates when app is alive - they need to be processed
+        if (!LifecycleSvc.isAlive && SettingsSvc.settings.keepAppAlive.value) {
           Logger.debug("Ignoring FCM message while app is not alive, but keepAppAlive is enabled");
           return Future.value(true);
         }
@@ -180,11 +175,8 @@ class MethodChannelService {
         await Database.waitForInit();
         Logger.info("Received group icon change from MethodChannel");
 
-        // The socket will handle this event if the app is alive
-        if (LifecycleSvc.isAlive && (SocketSvc.socket?.connected ?? false)) {
-          Logger.debug("App is alive, ignoring updated message...");
-          return Future.value(true);
-        } else if (!LifecycleSvc.isAlive && SettingsSvc.settings.keepAppAlive.value) {
+        // Don't ignore icon changes when app is alive - they need to be processed
+        if (!LifecycleSvc.isAlive && SettingsSvc.settings.keepAppAlive.value) {
           Logger.debug("Ignoring FCM message while app is not alive, but keepAppAlive is enabled");
           return Future.value(true);
         }

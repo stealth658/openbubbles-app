@@ -37,6 +37,7 @@ class ChatsService {
   final List<Handle> webCachedHandles = [];
 
   void initDbWatchers() {
+    if (headless) return;
     if (!kIsWeb) {
       // watch for new chats
       final countQuery = (Database.chats.query(Chat_.dateDeleted.isNull())..order(Chat_.id, flags: Order.descending))
@@ -66,7 +67,7 @@ class ChatsService {
 
   Future<void> init({bool force = false, bool headless = false}) async {
     this.headless = headless;
-    if (!force && !SettingsSvc.settings.finishedSetup.value) return;
+    if ((!force && !SettingsSvc.settings.finishedSetup.value) || headless) return;
     Logger.info("Fetching chats...", tag: "ChatBloc");
 
     reset();
@@ -89,7 +90,12 @@ class ChatsService {
       return;
     }
 
-    final batches = (currentCount < batchSize) ? batchSize : (currentCount / batchSize).ceil();
+    // Clear existing chats to avoid duplicates on re-init
+    if (chats.isNotEmpty) {
+      chats.clear();
+    }
+
+    final batches = (currentCount / batchSize).ceil();
     for (int i = 0; i < batches; i++) {
       List<Chat> temp;
       if (kIsWeb) {
@@ -102,11 +108,6 @@ class ChatsService {
         webCachedHandles.addAll(temp.map((e) => e.handles).flattened.toList());
         final ids = webCachedHandles.map((e) => e.address).toSet();
         webCachedHandles.retainWhere((element) => ids.remove(element.address));
-      }
-
-      // Clear the chats to prevent duplicates when we insert
-      if (temp.isNotEmpty) {
-        chats.clear();
       }
 
       // Insert each chat at the correct position using binary search
@@ -123,6 +124,7 @@ class ChatsService {
       }
       loadedChatBatch.value = true;
     }
+
     loadedAllChats.complete();
     Logger.info("Finished fetching chats (${chats.length}).", tag: "ChatBloc");
     
@@ -162,6 +164,7 @@ class ChatsService {
   /// Find the correct insertion index for a chat based on pin status and latest message date
   /// Uses binary search for O(log n) performance
   int _findInsertionIndex(Chat chat) {
+    if (headless) return 0;
     if (chats.isEmpty) return 0;
     
     int left = 0;
@@ -187,6 +190,7 @@ class ChatsService {
   /// Reposition a chat in the list based on its current state
   /// More efficient than full sort - O(n) instead of O(n log n)
   void _repositionChat(Chat chat) {
+    if (headless) return;
     final currentIndex = chats.indexWhere((e) => e.guid == chat.guid);
     if (currentIndex == -1) return;
     
@@ -201,6 +205,7 @@ class ChatsService {
   /// Public sort method for external callers (for backwards compatibility)
   /// Now performs a full sort - use sparingly, prefer updateChat with repositioning
   void sort() {
+    if (headless) return;
     Logger.info('[SORT] Performing full chat sort...', tag: 'ChatBloc');
     final ids = chats.map((e) => e.guid).toSet();
     chats.retainWhere((element) => ids.remove(element.guid));
@@ -208,6 +213,7 @@ class ChatsService {
   }
 
   bool updateChat(Chat updated, {bool shouldSort = false, bool override = false}) {
+    if (headless) return false;
     final index = chats.indexWhere((e) => updated.guid == e.guid);
     if (index != -1) {
       final toUpdate = chats[index];
@@ -231,6 +237,7 @@ class ChatsService {
   }
 
   Future<void> addChat(Chat toAdd) async {
+    if (headless) return;
     // Check if chat already exists
     final existingIndex = chats.indexWhere((e) => e.guid == toAdd.guid);
     if (existingIndex != -1) {
@@ -249,6 +256,7 @@ class ChatsService {
   }
 
   void removeChat(Chat toRemove) {
+    if (headless) return;
     final index = chats.indexWhere((e) => toRemove.guid == e.guid);
     if (index != -1) {
       chats.removeAt(index);

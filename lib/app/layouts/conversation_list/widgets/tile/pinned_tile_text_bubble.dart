@@ -66,7 +66,6 @@ class PinnedTileTextBubbleState extends CustomState<PinnedTileTextBubble, void, 
           });
           // check if we really need to update this widget
           if (message != null && message.guid != cachedLatestMessageGuid) {
-            message.handle = message.getHandle();
             lastMessage = message;
             String newSubtitle = MessageHelper.getNotificationText(message);
             if (newSubtitle != subtitle) {
@@ -113,12 +112,12 @@ class PinnedTileTextBubbleState extends CustomState<PinnedTileTextBubble, void, 
     ];
     if (lastMessage == null) return bubbleColors;
     if (!SettingsSvc.settings.colorfulAvatars.value && SettingsSvc.settings.colorfulBubbles.value && !lastMessage!.isFromMe!) {
-      if (lastMessage!.handle?.color == null) {
-        bubbleColors = toColorGradient(lastMessage!.handle?.address);
+      if (lastMessage!.handleRelation.target?.color == null) {
+        bubbleColors = toColorGradient(lastMessage!.handleRelation.target?.address);
       } else {
         bubbleColors = [
-          HexColor(lastMessage!.handle!.color!),
-          HexColor(lastMessage!.handle!.color!).lightenAmount(0.075),
+          HexColor(lastMessage!.handleRelation.target!.color!),
+          HexColor(lastMessage!.handleRelation.target!.color!).lightenAmount(0.075),
         ];
       }
     }

@@ -22,7 +22,7 @@ class SyncActions {
     
     Logger.info('Starting contact refresh');
     try {
-      final refreshedHandleIds = await ContactsSvcV2.refreshContacts();
+      final refreshedHandleIds = await ContactsSvcV2.syncContactsToHandles();
       Logger.info('Finished contact refresh, refreshed ${refreshedHandleIds.length} handles');
       // Return format: [contactIds, handleIds] - ContactV2 doesn't track contact IDs separately
       // so we return empty list for contactIds and the affected handle IDs

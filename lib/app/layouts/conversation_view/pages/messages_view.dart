@@ -43,6 +43,12 @@ class MessagesViewState extends OptimizedState<MessagesView> {
   bool fetching = false;
   late bool noMoreMessages = widget.customService != null;
   List<Message> _messages = <Message>[];
+  
+  // Notifier for list structure changes only (add/remove)
+  final ValueNotifier<int> _listVersion = ValueNotifier<int>(0);
+  
+  // Debounce setState calls to prevent rapid rebuilds
+  Timer? _setStateDebouncer;
 
   RxList<Widget> smartReplies = <Widget>[].obs;
   RxMap<String, Widget> internalSmartReplies = <String, Widget>{}.obs;
@@ -50,7 +56,6 @@ class MessagesViewState extends OptimizedState<MessagesView> {
   late final messageService = widget.customService ?? MessagesSvc(chat.guid)
     ..init(chat, handleNewMessage, handleUpdatedMessage, handleDeletedMessage, jumpToMessage);
   final smartReply = GoogleMlKit.nlp.smartReply();
-  final listKey = GlobalKey<SliverAnimatedListState>();
   final RxBool dragging = false.obs;
   final RxInt numFiles = 0.obs;
   final RxBool latestMessageDeliveredState = false.obs;
@@ -103,12 +108,12 @@ class MessagesViewState extends OptimizedState<MessagesView> {
       }
       _messages = messageService.struct.messages;
       _messages.sort(Message.sort);
-      setState(() {});
-      _messages.forEachIndexed((i, m) {
+      // Initialize message widget controllers
+      _messages.forEach((m) {
         final c = mwc(m);
         c.cvController = controller;
-        listKey.currentState!.insertItem(i, duration: const Duration(milliseconds: 0));
       });
+      setState(() {});
       // scroll to message if needed
       if (searchMessage != null) {
         final index = _messages.indexWhere((element) => element.guid == searchMessage.guid);
@@ -140,8 +145,12 @@ class MessagesViewState extends OptimizedState<MessagesView> {
     chat.saveAsync(updateLastReadMessageGuid: true);
     messageService.close(force: widget.customService != null);
     for (Message m in _messages) {
-      getActiveMwc(m.guid!)?.close();
+      if (m.guid != null) {
+        getActiveMwc(m.guid!)?.close();
+      }
     }
+    _setStateDebouncer?.cancel();
+    _listVersion.dispose();
     super.dispose();
   }
 
@@ -209,55 +218,85 @@ class MessagesViewState extends OptimizedState<MessagesView> {
       smartReply.addMessageToConversationFromLocalUser(message.fullText, message.dateCreated!.millisecondsSinceEpoch);
     } else {
       smartReply.addMessageToConversationFromRemoteUser(
-          message.fullText, message.dateCreated!.millisecondsSinceEpoch, message.handle?.address ?? "participant");
+          message.fullText, message.dateCreated!.millisecondsSinceEpoch, message.handleRelation.target?.address ?? "participant");
     }
   }
 
   Future<void> loadNextChunk({int limit = 25}) async {
-    if (noMoreMessages || fetching) return;
+    if (noMoreMessages || fetching) {
+      Logger.debug("loadNextChunk: Skipping - noMoreMessages=$noMoreMessages, fetching=$fetching");
+      return;
+    }
     fetching = true;
+    final previousLength = _messages.length;
+    Logger.debug("loadNextChunk: Starting - current messages: $previousLength");
 
     // Start loading the next chunk of messages
     noMoreMessages = !(await messageService.loadChunk(_messages.length, controller, limit: limit).catchError((e, stack) {
       Logger.error("Failed to fetch message chunk!", error: e, trace: stack);
+      fetching = false;
       return true;
     }));
 
-    if (noMoreMessages) return setState(() {});
+    if (noMoreMessages) {
+      Logger.debug("loadNextChunk: No more messages available");
+      fetching = false;
+      return setState(() {});
+    }
 
     final oldLength = _messages.length;
-    _messages = messageService.struct.messages;
+    final oldMessageGuids = Set<String>.from(_messages.map((m) => m.guid).whereType<String>());
+    
+    final newMessagesFromService = messageService.struct.messages;
+    final newMessages = newMessagesFromService.where((m) => !oldMessageGuids.contains(m.guid)).toList();
+    
+    Logger.debug("loadNextChunk: Found ${newMessages.length} new messages (old: $oldLength, new: ${newMessagesFromService.length})");
+    
+    // Initialize message widget controllers for new messages
+    for (final newMsg in newMessages) {
+      final c = mwc(newMsg);
+      c.cvController = controller;
+    }
+    
+    // Update the list and rebuild - let SliverAnimatedList recalculate based on new length
+    _messages = newMessagesFromService;
     _messages.sort(Message.sort);
     fetching = false;
     
-    // Calculate safe sublist range - ensure start index doesn't exceed list length
-    final startIndex = min(max(oldLength - 1, 0), _messages.length);
-    if (startIndex < _messages.length) {
-      _messages.sublist(startIndex).forEachIndexed((i, m) {
-        if (!mounted) return;
-        final c = mwc(m);
-        c.cvController = controller;
-        listKey.currentState!.insertItem(i, duration: const Duration(milliseconds: 0));
-      });
-    }
-    
-    // should only happen when a reaction is the most recent message
-    if (oldLength == 0) {
-      setState(() {});
-    }
+    Logger.debug("loadNextChunk: Updated _messages list to ${_messages.length} items, calling setState");
+    setState(() {});
   }
 
   void handleNewMessage(Message message) async {
+    Logger.debug("handleNewMessage: Received new message ${message.guid}, current count: ${_messages.length}");
+    
+    // Check if message already exists to prevent duplicates
+    final existingIndex = _messages.indexWhere((m) => m.guid == message.guid);
+    if (existingIndex != -1) {
+      Logger.debug("handleNewMessage: Message ${message.guid} already exists at index $existingIndex, skipping duplicate");
+      // Trigger update for this specific message via reactivity system
+      if (message.guid != null) {
+        muc.notifyMessageUpdate(chat.guid, message.guid!);
+      }
+      return;
+    }
+    
     _messages.add(message);
     _messages.sort(Message.sort);
     final insertIndex = _messages.indexOf(message);
-
-    if (listKey.currentState != null) {
-      listKey.currentState!.insertItem(
-        insertIndex,
-        duration: const Duration(milliseconds: 500),
-      );
-    }
+    
+    // Initialize message widget controller
+    final c = mwc(message);
+    c.cvController = controller;
+    
+    Logger.debug("handleNewMessage: Added message at index $insertIndex, _messages now has ${_messages.length} items");
+    
+    // Debounced setState to prevent rapid rebuilds
+    _listVersion.value++;
+    _setStateDebouncer?.cancel();
+    _setStateDebouncer = Timer(const Duration(milliseconds: 16), () {
+      if (mounted) setState(() {});
+    });
 
     if (insertIndex == 0 && showSmartReplies) {
       _addMessageToSmartReply(message);
@@ -286,9 +325,17 @@ class MessagesViewState extends OptimizedState<MessagesView> {
   }
 
   void handleUpdatedMessage(Message message, {String? oldGuid}) {
+    Logger.debug("handleUpdatedMessage: Updating message ${message.guid ?? oldGuid}");
     final index = _messages.indexWhere((e) => e.guid == (oldGuid ?? message.guid));
     if (index != -1) {
       _messages[index] = message;
+      Logger.debug("handleUpdatedMessage: Updated message at index $index");
+      // Use reactivity system instead of setState to avoid full rebuild
+      if (message.guid != null) {
+        muc.notifyMessageUpdate(chat.guid, message.guid!);
+      }
+    } else {
+      Logger.warn("handleUpdatedMessage: Message ${message.guid ?? oldGuid} not found in list");
     }
     if (message.wasDeliveredQuietly != latestMessageDeliveredState.value) {
       latestMessageDeliveredState.value = message.wasDeliveredQuietly;
@@ -296,10 +343,18 @@ class MessagesViewState extends OptimizedState<MessagesView> {
   }
 
   void handleDeletedMessage(Message message) {
+    Logger.debug("handleDeletedMessage: Deleting message ${message.guid}");
     final index = _messages.indexWhere((e) => e.guid == message.guid);
     if (index != -1) {
       _messages.removeAt(index);
-      listKey.currentState!.removeItem(index, (context, animation) => const SizedBox.shrink());
+      Logger.debug("handleDeletedMessage: Removed message at index $index");
+      _listVersion.value++;
+      _setStateDebouncer?.cancel();
+      _setStateDebouncer = Timer(const Duration(milliseconds: 16), () {
+        if (mounted) setState(() {});
+      });
+    } else {
+      Logger.warn("handleDeletedMessage: Message ${message.guid} not found in list");
     }
   }
 
@@ -459,86 +514,65 @@ class MessagesViewState extends OptimizedState<MessagesView> {
                             const SliverToBoxAdapter(
                               child: Loader(text: "Loading surrounding message context..."),
                             ),
-                          SliverAnimatedList(
-                              initialItemCount: _messages.length + 1,
-                              key: listKey,
-                              findChildIndexCallback: (key) => findChildIndexByKey(_messages, key, (item) => item.guid),
-                              itemBuilder: (BuildContext context, int index, Animation<double> animation) {
-                                // paginate
-                                if (index >= _messages.length) {
-                                  if (!noMoreMessages && initialized && index == _messages.length) {
-                                    if (!fetching) {
-                                      loadNextChunk();
+                          SliverList(
+                              delegate: SliverChildBuilderDelegate(
+                                (BuildContext context, int index) {
+                                try {
+                                  
+                                  // paginate
+                                  if (index >= _messages.length) {
+                                    if (!noMoreMessages && initialized && index == _messages.length) {
+                                      if (!fetching) {
+                                        loadNextChunk();
+                                      }
+                                      return const Loader();
                                     }
-                                    return const Loader();
+
+                                    return const SizedBox.shrink();
                                   }
 
-                                  return const SizedBox.shrink();
-                                }
+                                  Message? olderMessage;
+                                  Message? newerMessage;
+                                  if (index + 1 < _messages.length) {
+                                    olderMessage = _messages[index + 1];
+                                  }
+                                  if (index - 1 >= 0) {
+                                    newerMessage = _messages[index - 1];
+                                  }
 
-                                Message? olderMessage;
-                                Message? newerMessage;
-                                if (index + 1 < _messages.length) {
-                                  olderMessage = _messages[index + 1];
-                                }
-                                if (index - 1 >= 0) {
-                                  newerMessage = _messages[index - 1];
-                                }
-
-                                final message = _messages[index];
-                                final messageWidget = Padding(
-                                  padding: const EdgeInsets.only(left: 5.0, right: 5.0),
-                                  child: AutoScrollTag(
-                                    key: ValueKey("${message.guid!}-scrolling"),
-                                    index: index,
-                                    controller: scrollController,
-                                    highlightColor: context.theme.colorScheme.surface.withValues(alpha: 0.7),
-                                    child: MessageHolder(
-                                      cvController: controller,
-                                      message: message,
-                                      oldMessageGuid: olderMessage?.guid,
-                                      newMessageGuid: newerMessage?.guid,
-                                    ),
-                                  ),
-                                );
-
-                                if (index == 0) {
-                                  return SizeTransition(
-                                    axis: Axis.vertical,
-                                    sizeFactor: animation.drive(Tween(begin: 0.0, end: 1.0).chain(CurveTween(curve: Curves.easeInOut))),
-                                    child: SlideTransition(
-                                        position: animation.drive(
-                                          Tween(
-                                            begin: const Offset(0.0, 1),
-                                            end: const Offset(0.0, 0.0),
-                                          ).chain(
-                                            CurveTween(
-                                              curve: Curves.easeInOut,
-                                            ),
-                                          ),
+                                  final message = _messages[index];
+                                  return RepaintBoundary(
+                                    child: Padding(
+                                      key: ValueKey(message.guid ?? 'unknown-$index'),
+                                      padding: const EdgeInsets.only(left: 5.0, right: 5.0),
+                                      child: AutoScrollTag(
+                                        key: ValueKey("${message.guid ?? 'unknown-$index'}-scrolling"),
+                                        index: index,
+                                        controller: scrollController,
+                                        highlightColor: context.theme.colorScheme.surface.withValues(alpha: 0.7),
+                                        child: MessageHolder(
+                                          cvController: controller,
+                                          message: message,
+                                          oldMessageGuid: olderMessage?.guid,
+                                          newMessageGuid: newerMessage?.guid,
                                         ),
-                                        child: AnimatedBuilder(
-                                          animation: animation,
-                                          builder: (context, child) {
-                                            return Opacity(
-                                              opacity: message.guid!.contains("temp") &&
-                                                      (!isNullOrEmpty(message.text) || !isNullOrEmpty(message.subject)) &&
-                                                      !animation.isCompleted
-                                                  ? 0
-                                                  : 1,
-                                              child: child,
-                                            );
-                                          },
-                                          child: messageWidget,
-                                        )),
+                                      ),
+                                    ),
+                                  );
+                                } catch (e, stack) {
+                                  Logger.error("Error in SliverList itemBuilder at index $index", error: e, trace: stack);
+                                  return SizedBox(
+                                    key: ValueKey('error-$index'),
+                                    height: 50,
+                                    child: Center(
+                                      child: Text('Error loading message at index $index'),
+                                    ),
                                   );
                                 }
-
-                                return SizedBox(
-                                  key: ValueKey(_messages[index].guid!),
-                                  child: messageWidget,
-                                );
-                              }),
+                              },
+                              childCount: _messages.length + 1,
+                            ),
+                          ),
                           const SliverPadding(
                             padding: EdgeInsets.all(70),
                           ),

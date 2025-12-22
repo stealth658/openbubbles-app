@@ -106,7 +106,7 @@ class _RedactedModePanelState extends OptimizedState<RedactedModePanel> {
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               ContactAvatarWidget(
-                                handle: message.handle,
+                                handle: message.handleRelation.target,
                                 size: iOS ? 30 : 35,
                                 fontSize: context.theme.textTheme.bodyLarge!.fontSize!,
                                 borderThickness: 0.1,

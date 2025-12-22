@@ -387,16 +387,14 @@ enum IsolateRequestType {
   findOneContactAsync,
 
   // ContactV2 actions (new contact service)
-  fetchAndMatchContactsV2,
-  checkContactChangesV2,
-  getStoredContactIdsV2,
-  findOneContactV2,
-  getContactsForHandlesV2,
-  refreshContactsV2,
-  getContactByAddressV2,
-  getAllContactsV2,
-  fetchNetworkContactsV2,
-  getContactAvatarV2,
+  syncContactsToHandles,
+  getStoredContactIds,
+  findOneContact,
+  getContactsForHandles,
+  getContactByAddress,
+  getAllContacts,
+  fetchNetworkContacts,
+  getContactAvatar,
 
   // Attachment actions
   saveAttachmentAsync,

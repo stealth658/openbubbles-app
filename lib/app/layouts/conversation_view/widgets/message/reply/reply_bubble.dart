@@ -41,10 +41,10 @@ class _ReplyBubbleState extends CustomState<ReplyBubble, void, MessageWidgetCont
   Color getBubbleColor() {
     Color bubbleColor = context.theme.colorScheme.properSurface;
     if (SettingsSvc.settings.colorfulBubbles.value && !message.isFromMe!) {
-      if (message.handle?.color == null) {
-        bubbleColor = toColorGradient(message.handle?.address).first;
+      if (message.handleRelation.target?.color == null) {
+        bubbleColor = toColorGradient(message.handleRelation.target?.address).first;
       } else {
-        bubbleColor = HexColor(message.handle!.color!);
+        bubbleColor = HexColor(message.handleRelation.target!.color!);
       }
     }
     return bubbleColor;
@@ -73,7 +73,7 @@ class _ReplyBubbleState extends CustomState<ReplyBubble, void, MessageWidgetCont
               child: Text.rich(
                 TextSpan(children: [
                   TextSpan(
-                    text: message.handle?.displayName ?? 'You',
+                    text: message.handleRelation.target?.displayName ?? 'You',
                     style: context.textTheme.bodyMedium!.copyWith(fontWeight: FontWeight.w400, color: context.theme.colorScheme.outline),
                   ),
                   const TextSpan(text: "\n"),
@@ -115,7 +115,7 @@ class _ReplyBubbleState extends CustomState<ReplyBubble, void, MessageWidgetCont
                     children: [
                       if (widget.showAvatar)
                         ContactAvatarWidget(
-                          handle: message.handle,
+                          handle: message.handleRelation.target,
                           size: 30,
                           fontSize: context.theme.textTheme.bodyLarge!.fontSize!,
                           borderThickness: 0.1,

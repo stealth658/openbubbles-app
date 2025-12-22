@@ -45,6 +45,7 @@ class SyncService {
     isIncrementalSyncing.value = true;
 
     List<List<int>> result = [];
+    Logger.info('[Incremental Sync] Starting incremental sync...');
     
     try {
       // Use the GlobalIsolate to perform the sync

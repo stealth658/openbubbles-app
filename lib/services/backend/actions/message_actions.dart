@@ -75,18 +75,36 @@ class MessageActions {
         }
       }
 
-      // 4. Check for existing messages & create list of new messages to save
+      // 4. Check for existing messages & create map of existing messages by GUID
       final messageQuery = messageBox.query(Message_.guid.oneOf(inputMessageGuids)).build();
-      List<String> existingMessageGuids = messageQuery.find().map((e) => e.guid!).toList();
+      List<Message> existingMessages = messageQuery.find();
       messageQuery.close();
-      final newMessages = inputMessages.where((element) => !existingMessageGuids.contains(element.guid)).toList();
+      
+      // Create a map of existing messages by GUID for quick lookup
+      Map<String, Message> existingMessageMap = {};
+      for (final existingMsg in existingMessages) {
+        existingMessageMap[existingMsg.guid!] = existingMsg;
+      }
+      
+      final newMessages = inputMessages.where((element) => !existingMessageMap.containsKey(element.guid)).toList();
 
       // 5. Fetch all handles and map the old handle ROWIDs from each message to the new ones based on the original ROWID
       List<Handle> handles = handleBox.getAll();
 
       for (final msg in newMessages) {
         msg.chat.target = inputChat;
-        msg.handle = handles.firstWhereOrNull((e) => e.originalROWID == msg.handleId);
+        
+        // For new messages from isolate, handleRelation won't be set due to serialization
+        // Look up by handleId and establish the relationship
+        if (msg.handleId != null && msg.handleId! > 0) {
+          final foundHandle = handles.firstWhereOrNull((e) => e.originalROWID == msg.handleId);
+          msg.handle = foundHandle;
+          
+          // Set up handleRelation for the ToOne relationship
+          if (foundHandle != null && foundHandle.id != null) {
+            msg.handleRelation.target = foundHandle;
+          }
+        }
       }
 
       // 6. Relate the attachments to the messages
@@ -108,8 +126,25 @@ class MessageActions {
       // 9. Check inserted messages for associated message GUIDs & update hasReactions flag
       Map<String, Message> messagesToUpdate = {};
       for (final message in messages) {
-        // Update the handles from our cache
-        message.handle = handles.firstWhereOrNull((element) => element.originalROWID == message.handleId);
+        // Check if this message existed before - if so, preserve its handleRelation
+        final existingMsg = existingMessageMap[message.guid];
+        if (existingMsg != null && existingMsg.handleRelation.hasValue) {
+          // Preserve the existing handleRelation
+          message.handleRelation.target = existingMsg.handleRelation.target;
+          message.handle = existingMsg.handleRelation.target;
+        } else if (!message.handleRelation.hasValue && message.handleId != null && message.handleId! > 0) {
+          // No existing relationship, set up from handleId
+          final foundHandle = handles.firstWhereOrNull((element) => element.originalROWID == message.handleId);
+          message.handle = foundHandle;
+          
+          // Set up handleRelation for the ToOne relationship
+          if (foundHandle != null && foundHandle.id != null) {
+            message.handleRelation.target = foundHandle;
+          }
+        } else if (message.handleRelation.hasValue) {
+          // Use the relationship to populate handle field
+          message.handle = message.handleRelation.target;
+        }
 
         // Continue if there isn't an associated message GUID to process
         if ((message.associatedMessageGuid ?? '').isEmpty) continue;
@@ -282,7 +317,6 @@ class MessageActions {
 
     return Database.runInTransaction(TxMode.read, () {
       final messageBox = Database.messages;
-      final handleBox = Database.handles;
 
       // Fetch associated messages (reactions)
       final query = messageBox.query(Message_.associatedMessageGuid.equals(messageGuid)).build();
@@ -299,14 +333,6 @@ class MessageActions {
         originatorQuery.close();
 
         if (threadOriginator != null) {
-          // Fetch the handle for the thread originator
-          if (threadOriginator.handleId != null && threadOriginator.handleId != 0) {
-            final handleQuery = handleBox.query(Handle_.originalROWID.equals(threadOriginator.handleId!)).build();
-            handleQuery.limit = 1;
-            threadOriginator.handle = handleQuery.findFirst();
-            handleQuery.close();
-          }
-          
           associatedMessages.add(threadOriginator);
         }
       }
@@ -340,14 +366,30 @@ class MessageActions {
       if (existing != null) {
         inputMessage.id = existing.id;
         inputMessage.text ??= existing.text;
+        
+        // Preserve existing handleRelation if available
+        if (existing.handleRelation.hasValue && !inputMessage.handleRelation.hasValue) {
+          inputMessage.handleRelation.target = existing.handleRelation.target;
+          inputMessage.handle = existing.handleRelation.target;
+        }
       }
 
       // Save the participant & set the handle ID to the new participant
-      if (inputMessage.handle == null && inputMessage.handleId != null) {
+      // Only do handleId lookup if we don't already have a handleRelation
+      if (inputMessage.handle == null && !inputMessage.handleRelation.hasValue && inputMessage.handleId != null) {
         final handleQuery = handleBox.query(Handle_.originalROWID.equals(inputMessage.handleId!)).build();
         handleQuery.limit = 1;
-        inputMessage.handle = handleQuery.findFirst();
+        final foundHandle = handleQuery.findFirst();
         handleQuery.close();
+        inputMessage.handle = foundHandle;
+        
+        // Set up handleRelation for the ToOne relationship
+        if (foundHandle != null && foundHandle.id != null) {
+          inputMessage.handleRelation.target = foundHandle;
+        }
+      } else if (inputMessage.handleRelation.hasValue && inputMessage.handle == null) {
+        // Use existing relationship to populate handle field
+        inputMessage.handle = inputMessage.handleRelation.target;
       }
 
       // Save associated messages or the original message (depending on whether
@@ -393,7 +435,6 @@ class MessageActions {
 
     return Database.runInTransaction(TxMode.read, () {
       final messageBox = Database.messages;
-      final handleBox = Database.handles;
 
       Message? result;
 
@@ -407,13 +448,6 @@ class MessageActions {
         query.limit = 1;
         result = query.findFirst();
         query.close();
-      }
-
-      if (result != null && result.handleId != null && result.handleId != 0) {
-        final handleQuery = handleBox.query(Handle_.originalROWID.equals(result.handleId!)).build();
-        handleQuery.limit = 1;
-        result.handle = handleQuery.findFirst();
-        handleQuery.close();
       }
 
       // Return just the ID for efficient transfer across isolates
@@ -538,8 +572,24 @@ class MessageActions {
           
           // Associate chat and handle
           messageToSave.chat.target = msgChat;
-          if (messageToSave.handleId != null && messageToSave.handleId! > 0) {
-            messageToSave.handle = allHandles.firstWhereOrNull((h) => h.originalROWID == messageToSave.handleId);
+          
+          // Preserve existing handleRelation from DB, otherwise do handleId lookup
+          if (existingMessage != null && existingMessage.handleRelation.hasValue) {
+            // Use existing relationship
+            messageToSave.handleRelation.target = existingMessage.handleRelation.target;
+            messageToSave.handle = existingMessage.handleRelation.target;
+          } else if (!messageToSave.handleRelation.hasValue && messageToSave.handleId != null && messageToSave.handleId! > 0) {
+            // No existing relationship, look up by handleId
+            final foundHandle = allHandles.firstWhereOrNull((h) => h.originalROWID == messageToSave.handleId);
+            messageToSave.handle = foundHandle;
+            
+            // Set up handleRelation for the ToOne relationship
+            if (foundHandle != null && foundHandle.id != null) {
+              messageToSave.handleRelation.target = foundHandle;
+            }
+          } else if (messageToSave.handleRelation.hasValue && messageToSave.handle == null) {
+            // Use existing relationship to populate handle field
+            messageToSave.handle = messageToSave.handleRelation.target;
           }
 
           // Save/update the message first (to ensure it has an ID)

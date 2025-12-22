@@ -280,7 +280,7 @@ class Chat {
       /// Check if the sender is muted
     } else if (muteType == "mute_individuals") {
       List<String> individuals = muteArgs!.split(",");
-      return individuals.contains(message?.handle?.address ?? "");
+      return individuals.contains(message?.handleRelation.target?.address ?? "");
 
       /// Check if the chat is temporarily muted
     } else if (muteType == "temporary_mute") {
@@ -537,12 +537,10 @@ class Chat {
         Message message = messages[i];
         if (chat.handles.isNotEmpty && !message.isFromMe! && message.handleId != null && message.handleId != 0) {
           Handle? handle =
-              chat.handles.firstWhereOrNull((e) => e.originalROWID == message.handleId) ?? message.getHandle();
+              chat.handles.firstWhereOrNull((e) => e.originalROWID == message.handleId) ?? message.handleRelation.target;
           if (handle == null) {
             messages.remove(message);
             i--;
-          } else {
-            message.handle = handle;
           }
         }
       }
@@ -628,17 +626,29 @@ class Chat {
       associatedMessages = MessageHelper.normalizedAssociatedMessages(associatedMessages);
 
       // Append reactions to original messages
+      int messagesWithReactions = 0;
       for (Message m in messages) {
-        m.associatedMessages = associatedMessages.where((e) => e.associatedMessageGuid == m.guid).toList();
+        final messageReactions = associatedMessages.where((e) => e.associatedMessageGuid == m.guid).toList();
+        m.associatedMessages = messageReactions;
+        if (messageReactions.isNotEmpty) {
+          messagesWithReactions++;
+          Logger.debug(
+            "[getMessagesAsync] Phase 2 - Added ${messageReactions.length} reactions to message ${m.guid}",
+            tag: "MessageReactivity"
+          );
+        }
       }
 
       supplementalStopwatch.stop();
       Logger.debug(
-          "[getMessagesAsync] Phase 2 - COMPLETE: ${supplementalStopwatch.elapsedMilliseconds}ms (${associatedMessages.length} reactions)");
+          "[getMessagesAsync] Phase 2 - COMPLETE: ${supplementalStopwatch.elapsedMilliseconds}ms (${associatedMessages.length} reactions on $messagesWithReactions messages)");
 
       // Notify caller that supplemental data has been loaded
       if (onComplete != null) {
+        Logger.debug("[getMessagesAsync] Phase 2 - Calling onComplete callback", tag: "MessageReactivity");
         onComplete();
+      } else {
+        Logger.warn("[getMessagesAsync] Phase 2 - No onComplete callback provided!", tag: "MessageReactivity");
       }
     } catch (ex, stacktrace) {
       Logger.error("Failed to load supplemental data for messages", error: ex, trace: stacktrace);

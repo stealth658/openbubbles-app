@@ -80,16 +80,14 @@ class IsolateActons {
     IsolateRequestType.findOneContactAsync: ContactActions.findOneContactAsync,
 
     // ContactV2 (new contact service)
-    IsolateRequestType.fetchAndMatchContactsV2: ContactV2Actions.fetchAndMatchContacts,
-    IsolateRequestType.checkContactChangesV2: ContactV2Actions.checkContactChanges,
-    IsolateRequestType.getStoredContactIdsV2: ContactV2Actions.getStoredContactIds,
-    IsolateRequestType.findOneContactV2: ContactV2Actions.findOneContactV2,
-    IsolateRequestType.getContactsForHandlesV2: ContactV2Actions.getContactsForHandles,
-    IsolateRequestType.refreshContactsV2: ContactV2Actions.refreshContacts,
-    IsolateRequestType.getContactByAddressV2: ContactV2Actions.getContactByAddress,
-    IsolateRequestType.getAllContactsV2: ContactV2Actions.getAllContacts,
-    IsolateRequestType.fetchNetworkContactsV2: ContactV2Actions.fetchNetworkContacts,
-    IsolateRequestType.getContactAvatarV2: ContactV2Actions.getContactAvatar,
+    IsolateRequestType.syncContactsToHandles: ContactV2Actions.syncContactsToHandles,
+    IsolateRequestType.getStoredContactIds: ContactV2Actions.getStoredContactIds,
+    IsolateRequestType.findOneContact: ContactV2Actions.findOneContact,
+    IsolateRequestType.getContactsForHandles: ContactV2Actions.getContactsForHandles,
+    IsolateRequestType.getContactByAddress: ContactV2Actions.getContactByAddress,
+    IsolateRequestType.getAllContacts: ContactV2Actions.getAllContacts,
+    IsolateRequestType.fetchNetworkContacts: ContactV2Actions.fetchNetworkContacts,
+    IsolateRequestType.getContactAvatar: ContactV2Actions.getContactAvatar,
 
     // Attachment
     IsolateRequestType.saveAttachmentAsync: AttachmentActions.saveAttachmentAsync,

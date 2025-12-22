@@ -84,7 +84,7 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
       ).bottom;
   late int numberToShow = 5;
   late Chat? dmChat = ChatsSvc.chats
-      .firstWhereOrNull((chat) => !chat.isGroup && chat.handles.firstWhereOrNull((handle) => handle.address == message.handle?.address) != null);
+      .firstWhereOrNull((chat) => !chat.isGroup && chat.handles.firstWhereOrNull((handle) => handle.address == message.handleRelation.target?.address) != null);
   String? selfReaction;
   String? currentlySelectedReaction = "init";
 
@@ -137,13 +137,6 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
       if (!(self?.contains("-") ?? true)) {
         selfReaction = self;
         currentlySelectedReaction = selfReaction;
-      }
-      for (Message m in reactions) {
-        if (m.isFromMe!) {
-          m.handle = null;
-        } else {
-          m.handle ??= m.getHandle();
-        }
       }
       setState(() {
         if (iOS) messageOffset = itemHeight * numberToShow + 40;
@@ -679,7 +672,7 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
   void createContact() async {
     popDetails();
     await MethodChannelSvc
-        .invokeMethod("open-contact-form", {'address': message.handle!.address, 'address_type': message.handle!.address.isEmail ? 'email' : 'phone'});
+        .invokeMethod("open-contact-form", {'address': message.handleRelation.target!.address, 'address_type': message.handleRelation.target!.address.isEmail ? 'email' : 'phone'});
   }
 
   void showThread() {
@@ -694,7 +687,7 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
   }
 
   void newConvo() {
-    Handle? handle = message.handle;
+    Handle? handle = message.handleRelation.target;
     if (handle == null) return;
     popDetails();
     NavigationSvc.pushAndRemoveUntil(
@@ -942,7 +935,7 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
             onTap: remindLater,
             action: DetailsMenuAction.RemindLater,
           ),
-        if (!kIsWeb && !kIsDesktop && !message.isFromMe! && message.handle != null && message.handle!.contact == null)
+        if (!kIsWeb && !kIsDesktop && !message.isFromMe! && message.handleRelation.target != null && message.handleRelation.target!.contact == null)
           DetailsMenuActionWidget(
             onTap: createContact,
             action: DetailsMenuAction.CreateContact,
@@ -1141,7 +1134,7 @@ class ReactionDetails extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.only(bottom: 8.0),
                         child: Text(
-                          message.isFromMe! ? SettingsSvc.settings.userName.value : (message.handle?.displayName ?? "Unknown"),
+                          message.isFromMe! ? SettingsSvc.settings.userName.value : (message.handleRelation.target?.displayName ?? "Unknown"),
                           style: context.theme.textTheme.bodySmall!.copyWith(color: context.theme.colorScheme.properOnSurface),
                         ),
                       ),
@@ -1153,7 +1146,7 @@ class ReactionDetails extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.only(bottom: 8.0),
                         child: Text(
-                          message.isFromMe! ? SettingsSvc.settings.userName.value : (message.handle?.fakeName ?? "Friend"),
+                          message.isFromMe! ? SettingsSvc.settings.userName.value : (message.handleRelation.target?.fakeName ?? "Friend"),
                           style: context.theme.textTheme.bodySmall!.copyWith(color: context.theme.colorScheme.properOnSurface),
                         ),
                       ),
