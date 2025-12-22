@@ -228,7 +228,7 @@ class _BackupRestorePanelState extends OptimizedState<BackupRestorePanel> {
                                             content: const Text("Are you sure you want to replace this backup with your current Settings?"),
                                             onNo: () => Navigator.of(_context).pop(),
                                             onYes: () async {
-                                              Map<String, dynamic> json = SettingsSvc.settings.toMap();
+                                              Map<String, dynamic> json = SettingsSvc.settings.toMap(includeAll: false);
                                               json["description"] = item["description"];
                                               json["timestamp"] = DateTime.now().millisecondsSinceEpoch;
                                               Response response = await HttpSvc.setSettings(item["name"], json);
@@ -387,7 +387,7 @@ class _BackupRestorePanelState extends OptimizedState<BackupRestorePanel> {
                             } else {
                               Navigator.of(_context).pop();
                             }
-                            Map<String, dynamic> json = SettingsSvc.settings.toMap();
+                            Map<String, dynamic> json = SettingsSvc.settings.toMap(includeAll: false);
                             if (desc.isNotEmpty) {
                               json["description"] = desc;
                             }

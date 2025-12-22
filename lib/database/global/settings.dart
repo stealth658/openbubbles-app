@@ -208,7 +208,7 @@ class Settings {
   }
 
   Settings save() {
-    Map<String, dynamic> map = toMap(includeAll: true);
+    Map<String, dynamic> map = toMap();
     map.forEach((key, value) async {
       await _savePref(key, value);
     });
@@ -216,7 +216,7 @@ class Settings {
   }
 
   Future<Settings> saveAsync() async {
-    Map<String, dynamic> map = toMap(includeAll: true);
+    Map<String, dynamic> map = toMap();
 
     // Ensure the GlobalIsolate's settings are also updated
     await PrefsInterface.syncAllSettings(settings: map);
@@ -230,7 +230,7 @@ class Settings {
   }
 
   Future<Settings> saveOneAsync(String key) async {
-    Map<String, dynamic> map = toMap(includeAll: true);
+    Map<String, dynamic> map = toMap();
     if (map.containsKey(key)) {
       // Ensure the GlobalIsolate's settings are also updated
       await PrefsInterface.syncSettings({key: map[key]});
@@ -241,7 +241,7 @@ class Settings {
   }
 
   Future<Settings> saveManyAsync(List<String> keys) async {
-    Map<String, dynamic> map = toMap(includeAll: true);
+    Map<String, dynamic> map = toMap();
     map.removeWhere((key, value) => !keys.contains(key));
 
     // Ensure the GlobalIsolate's settings are also updated
@@ -270,7 +270,7 @@ class Settings {
     }
   }
 
-  Map<String, dynamic> toMap({bool includeAll = false}) {
+  Map<String, dynamic> toMap({bool includeAll = true}) {
     Map<String, dynamic> map = {
       'autoDownload': autoDownload.value,
       'onlyWifiDownload': onlyWifiDownload.value,

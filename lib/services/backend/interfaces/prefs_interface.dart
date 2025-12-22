@@ -35,7 +35,7 @@ class PrefsInterface {
 
   static Future<void> syncAllSettings({Map<String, dynamic>? settings}) async {
     final data = {
-      'settings': settings ?? SettingsSvc.settings.toMap(includeAll: true),
+      'settings': settings ?? SettingsSvc.settings.toMap(),
     };
 
     if (isIsolate) {
