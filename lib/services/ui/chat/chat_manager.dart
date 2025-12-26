@@ -1,12 +1,12 @@
 import 'dart:async';
 
+import 'package:bluebubbles/services/backend/interfaces/chat_interface.dart';
 import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:dio/dio.dart';
 import 'package:get/get.dart' hide Response;
-import 'package:tuple/tuple.dart';
 
 ChatManager cm = Get.isRegistered<ChatManager>() ? Get.find<ChatManager>() : Get.put(ChatManager());
 
@@ -165,29 +165,7 @@ class ChatManager extends GetxService {
       Map<String, dynamic> chatData = response.data["data"];
 
       Logger.info("Got updated chat metadata from server. Saving.", tag: "Fetch-Chat");
-      Chat updatedChat = Chat.fromMap(chatData);
-      Chat? chat = Chat.findOne(guid: chatGuid);
-      if (chat == null) {
-        await updatedChat.saveAsync();
-        chat = Chat.findOne(guid: chatGuid)!;
-      } else if (chat.handles.length > updatedChat.handles.length) {
-        final newAddresses = updatedChat.handles.map((e) => e.address);
-        final handlesToUse = chat.handles.where((e) => newAddresses.contains(e.address));
-        chat.handles.clear();
-        chat.handles.addAll(handlesToUse);
-        chat.handles.applyToDb();
-      } else if (chat.handles.length < updatedChat.handles.length) {
-        final existingAddresses = chat.handles.map((e) => e.address);
-        final newHandle = updatedChat.handles.firstWhere((e) => !existingAddresses.contains(e.address));
-        final handle = Handle.findOne(addressAndService: Tuple2(newHandle.address, chat.isIMessage ? "iMessage" : "SMS")) ?? await newHandle.saveAsync();
-        chat.handles.add(handle);
-        chat.handles.applyToDb();
-      }
-      if (!chat.lockChatName) {
-        chat.displayName = updatedChat.displayName;
-      }
-      chat = await chat.saveAsync(updateDisplayName: !chat.lockChatName);
-      return chat;
+      return (await ChatInterface.bulkSyncChats(chatsData: [chatData])).first;
     }
 
     return null;

@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:bluebubbles/helpers/ui/facetime_helpers.dart';
 import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/services/backend/interfaces/chat_interface.dart';
 import 'package:bluebubbles/services/services.dart';
-import 'package:bluebubbles/services/ui/message/message_update_coordinator.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/utils/file_utils.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
@@ -15,7 +15,8 @@ import 'package:get/get.dart' hide Response;
 import 'package:tuple/tuple.dart';
 import 'package:universal_io/io.dart';
 
-ActionHandler ah = Get.isRegistered<ActionHandler>() ? Get.find<ActionHandler>() : Get.put(ActionHandler());
+// ignore: non_constant_identifier_names
+ActionHandler MessageHandlerSvc = Get.isRegistered<ActionHandler>() ? Get.find<ActionHandler>() : Get.put(ActionHandler());
 
 class ActionHandler extends GetxService {
   final RxList<Tuple2<String, RxDouble>> attachmentProgress = <Tuple2<String, RxDouble>>[].obs;
@@ -419,11 +420,27 @@ class ActionHandler extends GetxService {
         return await handleUpdatedMessage(c, m, tempGuid, checkExisting: false);
       }
     }
+
     // should have been handled by the sanity check
     if (tempGuid != null) return;
 
-    // Gets the chat from the db or server (if new)
-    c = m.isParticipantEvent ? await handleNewOrUpdatedChat(c) : kIsWeb ? c : (Chat.findOne(guid: c.guid) ?? await handleNewOrUpdatedChat(c));
+    // Gets the chat from the db or server (if new).
+    // If the participant list is empty, we should fetch the chat from the server to populate it.
+    // If we have an ID, we can assume it's already in the database, with the proper participants.
+    c = m.isParticipantEvent || (c.participants.isEmpty && c.handles.isEmpty)
+      ? await handleNewOrUpdatedChat(c) 
+      : kIsWeb 
+        ? c 
+        : (Chat.findOne(guid: c.guid) ?? await handleNewOrUpdatedChat(c));
+
+    // New chat incoming, we should sync the data to the database.
+    // We should get a valid object back. If we don't, log it.
+    if (c.id == null) {
+      c = (await ChatInterface.bulkSyncChats(chatsData: [c.toMap()])).firstOrNull ?? c;
+      if (c.id == null) {
+        Logger.warn("Failed to sync new chat for incoming message ${m.guid}!", tag: "ActionHandler");
+      }
+    }
 
     // Display notification if needed and save everything to DB
     bool shouldNotify = shouldNotifyForNewMessageGuid(m.guid!);
@@ -449,6 +466,12 @@ class ActionHandler extends GetxService {
       await MessageHelper.handleNotification(m, c);
     }
     await c.addMessage(m);
+    
+    // Reload the latest message from the database to ensure we have the most up-to-date data
+    c.dbLatestMessage;
+    
+    // Reposition the chat in the chat list (more efficient than sorting the entire list)
+    ChatsSvc.updateChat(c, shouldSort: true, override: true);
     
     // Trigger immediate UI update via coordinator (bypasses ObjectBox watch latency)
     muc.notifyMessageUpdate(c.guid, m.guid!);
@@ -557,11 +580,11 @@ class ActionHandler extends GetxService {
           final message = Message.fromMap(payload.data);
           if (message.isFromMe!) {
             if (payload.data['tempGuid'] == null) {
-              ah.outOfOrderTempGuids.add(message.guid!);
+              MessageHandlerSvc.outOfOrderTempGuids.add(message.guid!);
               await Future.delayed(const Duration(milliseconds: 500));
-              if (!ah.outOfOrderTempGuids.contains(message.guid!)) return;
+              if (!MessageHandlerSvc.outOfOrderTempGuids.contains(message.guid!)) return;
             } else {
-              ah.outOfOrderTempGuids.remove(message.guid!);
+              MessageHandlerSvc.outOfOrderTempGuids.remove(message.guid!);
             }
           }
 
@@ -569,7 +592,7 @@ class ActionHandler extends GetxService {
           if (useQueue) {
             inq.queue(item);
           } else {
-            await ah.handleNewMessage(item.chat, item.message, item.tempGuid);
+            await MessageHandlerSvc.handleNewMessage(item.chat, item.message, item.tempGuid);
           }
         }
         return;
@@ -580,7 +603,7 @@ class ActionHandler extends GetxService {
           if (useQueue) {
             inq.queue(item);
           } else {
-            await ah.handleUpdatedMessage(item.chat, item.message, item.tempGuid);
+            await MessageHandlerSvc.handleUpdatedMessage(item.chat, item.message, item.tempGuid);
           }
         }
         return;
@@ -590,7 +613,7 @@ class ActionHandler extends GetxService {
       case "participant-left":
         try {
           final item = IncomingItem.fromMap(QueueType.updatedMessage, data);
-          ah.handleNewOrUpdatedChat(item.chat);
+          MessageHandlerSvc.handleNewOrUpdatedChat(item.chat);
         } catch (_) {}
         return;
       case "chat-read-status-changed":

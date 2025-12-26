@@ -18,9 +18,9 @@ class OutgoingQueue extends Queue {
     switch (item.type) {
       case QueueType.sendMultipart:
       case QueueType.sendMessage:
-        return await ah.prepMessage(item.chat, item.message, item.selected, item.reaction, clearNotificationsIfFromMe: !(item.customArgs?['notifReply'] ?? false));
+        return await MessageHandlerSvc.prepMessage(item.chat, item.message, item.selected, item.reaction, clearNotificationsIfFromMe: !(item.customArgs?['notifReply'] ?? false));
       case QueueType.sendAttachment:
-        return await ah.prepAttachment(item.chat, item.message);
+        return await MessageHandlerSvc.prepAttachment(item.chat, item.message);
       default:
         Logger.info("Unhandled queue event: ${item.type.name}");
         break;
@@ -59,13 +59,13 @@ class OutgoingQueue extends Queue {
 
     switch (item.type) {
       case QueueType.sendMessage:
-        await handleSend(() => ah.sendMessage(item.chat, item.message, item.selected, item.reaction), item.chat);
+        await handleSend(() => MessageHandlerSvc.sendMessage(item.chat, item.message, item.selected, item.reaction), item.chat);
         break;
       case QueueType.sendMultipart:
-        await handleSend(() => ah.sendMultipart(item.chat, item.message, item.selected, item.reaction), item.chat);
+        await handleSend(() => MessageHandlerSvc.sendMultipart(item.chat, item.message, item.selected, item.reaction), item.chat);
         break;
       case QueueType.sendAttachment:
-        await handleSend(() => ah.sendAttachment(item.chat, item.message, item.customArgs?['audio'] ?? false), item.chat);
+        await handleSend(() => MessageHandlerSvc.sendAttachment(item.chat, item.message, item.customArgs?['audio'] ?? false), item.chat);
         break;
       default:
         Logger.info("Unhandled queue event: ${item.type.name}");

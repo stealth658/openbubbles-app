@@ -100,6 +100,7 @@ class ContactServiceV2 {
       } else {
         // Fire and forget
         ContactV2Interface.syncContactsToHandles().then((affectedHandleIds) {
+          Logger.info('[ContactServiceV2] Completed contact sync, notifying UI of ${affectedHandleIds.length} affected handles');
           notifyHandlesUpdated(affectedHandleIds);
         }).catchError((e, stack) {
           Logger.error('[ContactServiceV2] Error in async contact fetch and match', error: e, trace: stack);

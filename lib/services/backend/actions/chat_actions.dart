@@ -563,8 +563,8 @@ class ChatActions {
             handlesToLink.add(validHandle);
           }
         }
-        chatHandlesMap[inputChat.guid] = handlesToLink;
 
+        chatHandlesMap[inputChat.guid] = handlesToLink;
         chatsToSave.add(chatToSave);
       }
 

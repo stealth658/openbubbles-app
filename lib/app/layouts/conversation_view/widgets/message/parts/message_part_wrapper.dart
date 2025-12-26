@@ -81,7 +81,7 @@ class MessagePartWrapper extends StatelessWidget {
       final response = await HttpSvc.edit(message.guid!, newEdit, "Edited to: '$newEdit'", partIndex: part.part);
       if (response.statusCode == 200) {
         final updatedMessage = Message.fromMap(response.data['data']);
-        ah.handleUpdatedMessage(chat, updatedMessage, null);
+        MessageHandlerSvc.handleUpdatedMessage(chat, updatedMessage, null);
       }
       if (!dismissed) {
         Navigator.of(Get.context!, rootNavigator: true).pop();

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:bluebubbles/database/database.dart';
@@ -13,6 +14,9 @@ import 'package:path/path.dart' as p;
 /// All operations here run in the GlobalIsolate to prevent UI jank
 /// This follows the architecture outlined in FR-1.md
 class ContactV2Actions {
+  /// Completer to ensure syncContactsToHandles only runs once at a time
+  static Completer<List<int>>? _syncCompleter;
+  
   /// Generate multiple normalized variants of a phone number to handle country code mismatches
   /// 
   /// Returns a set of normalized phone numbers including:
@@ -63,20 +67,21 @@ class ContactV2Actions {
     return variants;
   }
 
-  /// Check if two phone numbers match, accounting for country code differences
-  static bool _phoneNumbersMatch(String phone1, String phone2) {
-    final variants1 = _getPhoneNumberVariants(phone1);
-    final variants2 = _getPhoneNumberVariants(phone2);
-    
-    // Check if any variant of phone1 matches any variant of phone2
-    return variants1.any((v1) => variants2.contains(v1));
-  }
-
   /// Fetch all contacts from device and match them to existing handles
   /// This is the main operation described in Section II.A of FR-1.md
   static Future<List<int>> syncContactsToHandles(dynamic data) async {
+    // If already processing, wait for the existing operation to complete
+    if (_syncCompleter != null && !_syncCompleter!.isCompleted) {
+      Logger.info('[ContactV2] Sync already in progress, waiting for completion...');
+      return await _syncCompleter!.future;
+    }
+    
+    // Create a new completer for this sync operation
+    _syncCompleter = Completer<List<int>>();
+    
     final startTime = DateTime.now().millisecondsSinceEpoch;
     final affectedHandleIds = <int>[];
+    
 
     try {
       // Step 1: Fetch contacts using FastContacts
@@ -122,10 +127,45 @@ class ContactV2Actions {
       Database.runInTransaction(TxMode.write, () {
         final contactsBox = Database.contactsV2;
         final handlesBox = Database.handles;
+        final allHandles = handlesBox.getAll();
+
+        final emailHandleMap = <String, List<Handle>>{};
+        final phoneHandleMap = <String, List<Handle>>{};
+        
+        for (final handle in allHandles) {
+          final isEmail = handle.address.contains('@');
+          
+          if (isEmail) {
+            final normalized = ContactV2.normalizeEmail(handle.address);
+            emailHandleMap.putIfAbsent(normalized, () => []).add(handle);
+            
+            if (handle.formattedAddress != null) {
+              final formattedNormalized = ContactV2.normalizeEmail(handle.formattedAddress!);
+              if (formattedNormalized != normalized) {
+                emailHandleMap.putIfAbsent(formattedNormalized, () => []).add(handle);
+              }
+            }
+          } else {
+            // For phones, generate all variants and map them
+            final variants = _getPhoneNumberVariants(handle.address);
+            for (final variant in variants) {
+              phoneHandleMap.putIfAbsent(variant, () => []).add(handle);
+            }
+            
+            if (handle.formattedAddress != null) {
+              final formattedVariants = _getPhoneNumberVariants(handle.formattedAddress!);
+              for (final variant in formattedVariants) {
+                phoneHandleMap.putIfAbsent(variant, () => []).add(handle);
+              }
+            }
+          }
+        }
+
+        Logger.info('[ContactV2] Built lookup maps: ${emailHandleMap.length} email keys, ${phoneHandleMap.length} phone variant keys');
 
         for (final rawContact in rawContacts) {
           // Normalize addresses
-          final normalizedAddresses = <String>[];
+          final normalizedAddresses = <String>{};
 
           // Add normalized phone numbers
           for (final phone in rawContact.phones) {
@@ -156,21 +196,22 @@ class ContactV2Actions {
           existingQuery.close();
 
           ContactV2 contact;
+          Set<int> existingHandleIds = {};
+          
           if (existingContact != null) {
             // Update existing contact
             contact = existingContact;
             final nameChanged = contact.displayName != rawContact.displayName;
             contact.displayName = rawContact.displayName;
-            contact.addresses = normalizedAddresses;
+            contact.addresses = normalizedAddresses.toList();
             contact.avatarPath = avatarPath;
             
+            // Track existing handles to detect changes
+            existingHandleIds = contact.handles.map((h) => h.id).whereType<int>().toSet();
+            
             if (nameChanged) {
-              // Mark all existing handles for this contact as affected
-              for (final existingHandle in contact.handles) {
-                if (existingHandle.id != null && !affectedHandleIds.contains(existingHandle.id!)) {
-                  affectedHandleIds.add(existingHandle.id!);
-                }
-              }
+              // Mark all existing handles for this contact as affected (name changed)
+              affectedHandleIds.addAll(existingHandleIds);
             }
           } else {
             // Create new contact
@@ -178,62 +219,77 @@ class ContactV2Actions {
               displayName: rawContact.displayName,
               nativeContactId: rawContact.id,
               avatarPath: avatarPath,
-              addresses: normalizedAddresses,
+              addresses: normalizedAddresses.toList(),
             );
           }
 
-          // Step 3: Match contact to handles
-          final matchedHandles = <Handle>[];
-          
-          // Get all handles - we'll filter by normalization since handles might not be normalized in DB
-          final allHandles = handlesBox.getAll();
+          // Step 3: Match contact to handles using lookup maps (O(addresses) instead of O(addresses × handles))
+          final matchedHandles = <Handle>{};
           
           for (final address in normalizedAddresses) {
-            final isContactEmail = address.contains('@');
+            final isEmail = address.contains('@');
             
-            for (final handle in allHandles) {
-              // Check if address matches when normalized
-              final isHandleEmail = handle.address.contains('@');
-              
-              // Skip if types don't match (email vs phone)
-              if (isContactEmail != isHandleEmail) continue;
-              
-              bool matches = false;
-              
-              if (isContactEmail) {
-                // For emails, use simple normalized comparison
-                final handleAddress = ContactV2.normalizeEmail(handle.address);
-                final handleFormatted = handle.formattedAddress != null 
-                    ? ContactV2.normalizeEmail(handle.formattedAddress!)
-                    : null;
-                
-                matches = handleAddress == address || handleFormatted == address;
-              } else {
-                // For phone numbers, use variant matching to handle country codes
-                matches = _phoneNumbersMatch(address, handle.address) ||
-                    (handle.formattedAddress != null && _phoneNumbersMatch(address, handle.formattedAddress!));
+            if (isEmail) {
+              // Direct lookup for emails
+              final handles = emailHandleMap[address];
+              if (handles != null) {
+                matchedHandles.addAll(handles);
               }
-
-              if (matches) {
-                if (!matchedHandles.contains(handle)) {
-                  matchedHandles.add(handle);
-                  if (handle.id != null && !affectedHandleIds.contains(handle.id!)) {
-                    affectedHandleIds.add(handle.id!);
-                  }
+            } else {
+              // For phones, check all variants
+              final variants = _getPhoneNumberVariants(address);
+              for (final variant in variants) {
+                final handles = phoneHandleMap[variant];
+                if (handles != null) {
+                  matchedHandles.addAll(handles);
                 }
               }
             }
           }
 
-          // Clear existing handle relationships and add new ones
-          contact.handles.clear();
-          contact.handles.addAll(matchedHandles);
+          // Compare new handles with existing handles to detect changes
+          final newHandleIds = matchedHandles.map((h) => h.id).whereType<int>().toSet();
+          final hasChanges = existingContact == null || 
+              existingHandleIds.length != newHandleIds.length ||
+              !existingHandleIds.containsAll(newHandleIds);
 
-          // Save the contact with its relationships
-          try {
-            contactsBox.put(contact);
-          } on UniqueViolationException catch (e) {
-            Logger.warn('[ContactV2] Unique violation for contact ${contact.nativeContactId}: $e');
+          if (hasChanges) {
+            // Only update if handles actually changed
+            contact.handles.clear();
+            contact.handles.addAll(matchedHandles);
+            
+            // Mark all affected handles (both old and new)
+            affectedHandleIds.addAll(existingHandleIds);
+            affectedHandleIds.addAll(newHandleIds);
+
+            // Save the contact with its relationships
+            try {
+              contactsBox.put(contact);
+            } on UniqueViolationException catch (e) {
+              Logger.warn('[ContactV2] Unique violation for contact ${contact.nativeContactId}: $e');
+            }
+
+            // Link handles to chats without handles
+            final chatsToUpdate = <Chat>{};
+            for (final handle in matchedHandles) {
+              final chatQuery = Database.chats
+                  .query(Chat_.guid.contains(';-;${handle.address}'))
+                  .build();
+              final chats = chatQuery.find();
+              chatQuery.close();
+
+              for (final chat in chats) {
+                if (chat.handles.isEmpty) {
+                  chat.handles.add(handle);
+                  chatsToUpdate.add(chat);
+                }
+              }
+            }
+
+            if (chatsToUpdate.isNotEmpty) {
+              Logger.info('[ContactV2] Updating ${chatsToUpdate.length} chats to link matched handles');
+              Database.chats.putMany(chatsToUpdate.toList());
+            }
           }
         }
       });
@@ -242,9 +298,14 @@ class ContactV2Actions {
       Logger.info('[ContactV2] Contact fetch and match completed in ${endTime - startTime}ms');
       Logger.info('[ContactV2] Affected ${affectedHandleIds.length} handles');
 
+      // Complete the completer with the result
+      _syncCompleter?.complete(affectedHandleIds);
       return affectedHandleIds;
     } catch (e, stack) {
       Logger.error('[ContactV2] Error fetching and matching contacts', error: e, trace: stack);
+      
+      // Complete the completer with an empty list on error
+      _syncCompleter?.complete([]);
       return [];
     }
   }

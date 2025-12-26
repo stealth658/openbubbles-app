@@ -29,7 +29,7 @@ class AttachmentsService extends GetxService {
 
   dynamic getContent(Attachment attachment, {String? path, bool? autoDownload, Function(PlatformFile)? onComplete}) {
     if (attachment.guid?.startsWith("temp") ?? false) {
-      final sendProgress = ah.attachmentProgress.firstWhereOrNull((e) => e.item1 == attachment.guid);
+      final sendProgress = MessageHandlerSvc.attachmentProgress.firstWhereOrNull((e) => e.item1 == attachment.guid);
       if (sendProgress != null) {
         return sendProgress;
       } else {

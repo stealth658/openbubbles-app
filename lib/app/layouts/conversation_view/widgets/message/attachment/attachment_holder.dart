@@ -208,7 +208,7 @@ class _AttachmentHolderState extends CustomState<AttachmentHolder, void, Message
                                             ? Text("Cancel", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary))
                                             : Text("Waiting for iMessage...", style: context.theme.textTheme.bodyLarge!, textAlign: TextAlign.center),
                                         onPressed: _content.item2.value < 1 ? () {
-                                          ah.latestCancelToken?.cancel("User cancelled send.");
+                                          MessageHandlerSvc.latestCancelToken?.cancel("User cancelled send.");
                                         } : null,
                                       ),
                                   ],

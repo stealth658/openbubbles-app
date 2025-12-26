@@ -3,7 +3,6 @@ import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:dio/dio.dart';
-import 'package:objectbox/objectbox.dart';
 
 class ContactActions {
   static Future<Map<String, dynamic>> saveContactAsync(Map<String, dynamic> data) async {

@@ -96,7 +96,7 @@ class MethodChannelService {
             if (LifecycleSvc.isAlive && SettingsSvc.settings.endpointUnifiedPush.value == "") {
               await inq.queue(item);
             } else {
-              await ah.handleNewMessage(item.chat, item.message, item.tempGuid);
+              await MessageHandlerSvc.handleNewMessage(item.chat, item.message, item.tempGuid);
             }
           }
         } catch (e, s) {
@@ -138,7 +138,7 @@ class MethodChannelService {
             if (LifecycleSvc.isAlive) {
               await inq.queue(item);
             } else {
-              await ah.handleUpdatedMessage(item.chat, item.message, item.tempGuid);
+              await MessageHandlerSvc.handleUpdatedMessage(item.chat, item.message, item.tempGuid);
             }
           }
         } catch (e, s) {
@@ -164,7 +164,7 @@ class MethodChannelService {
           if (!isNullOrEmpty(data)) {
             final payload = ServerPayload.fromJson(data!);
             final item = IncomingItem.fromMap(QueueType.updatedMessage, payload.data);
-            await ah.handleNewOrUpdatedChat(item.chat);
+            await MessageHandlerSvc.handleNewOrUpdatedChat(item.chat);
           }
         } catch (e, s) {
           return Future.error(e, s);
@@ -354,7 +354,7 @@ class MethodChannelService {
 
         try {
           final Map<String, dynamic> jsonData = jsonDecode(data['data']);
-          await ah.handleEvent(data['event'], jsonData, 'MethodChannel', useQueue: false);
+          await MessageHandlerSvc.handleEvent(data['event'], jsonData, 'MethodChannel', useQueue: false);
         } catch (e, s) {
           return Future.error(e, s);
         }

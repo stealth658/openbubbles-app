@@ -735,6 +735,15 @@ class Chat {
       offset: offset,
       ids: ids,
     );
+
+    // DEBUG: Find a chat that contains
+    for (Chat c in chats) {
+      if (c.guid.contains('7035013261')) {
+        Logger.info('[TEST] Found chat with guid containing 7035013261: ${c.guid}');
+        Logger.info('[TEST] Participants: ${c.handles.map((e) => e.formattedAddress).toList()}');
+        Logger.info('[TEST] Contacts: ${c.handles.map((e) => e.contact?.displayName ?? "No Contact").toList()}');
+      }
+    }
     
     // Populate contact name cache on main thread for ALL chats in one transaction
     // The cache populated in the isolate doesn't transfer through JSON serialization
