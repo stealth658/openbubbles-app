@@ -509,10 +509,6 @@ Future<void> paintAvatar(
   
   // Check ContactV2 avatars from disk first (more efficient)
   ContactV2? contactV2 = handle?.contactsV2.firstOrNull;
-  if (contactV2 == null && handle != null) {
-    contactV2 = await ContactsSvcV2.getContact(handle.address);
-  }
-  
   if (contactV2?.avatarPath != null) {
     try {
       final avatarBytes = await File(contactV2!.avatarPath!).readAsBytes();
