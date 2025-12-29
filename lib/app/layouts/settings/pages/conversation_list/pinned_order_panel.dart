@@ -99,7 +99,8 @@ class PinnedOrderPanel extends StatelessWidget {
                         ),
                       );
                     }
-                    if (ChatsSvc.hasChats.value && ChatsSvc.chats.bigPinHelper(true).isEmpty) {
+                    final pinnedChats = ChatsSvc.getFilteredChats(pinnedOnly: true);
+                    if (ChatsSvc.hasChats.value && pinnedChats.isEmpty) {
                       return Center(
                         child: Padding(
                           padding: const EdgeInsets.only(top: 50.0),
@@ -121,13 +122,14 @@ class PinnedOrderPanel extends StatelessWidget {
                             style: context.theme.textTheme.bodyLarge),
                       ),
                       itemBuilder: (context, index) {
+                        final chat = pinnedChats[index];
                         return ReorderableDragStartListener(
-                          key: Key(ChatsSvc.chats.bigPinHelper(true)[index].guid.toString()),
+                          key: Key(chat.guid.toString()),
                           index: index,
                           child: AbsorbPointer(
                             absorbing: true,
                             child: ConversationTile(
-                              chat: ChatsSvc.chats.bigPinHelper(true)[index],
+                              chat: chat,
                               controller: Get.put(
                                   ConversationListController(showUnknownSenders: true, showArchivedChats: true),
                                   tag: "pinned-order-panel"),
@@ -137,7 +139,7 @@ class PinnedOrderPanel extends StatelessWidget {
                           ),
                         );
                       },
-                      itemCount: ChatsSvc.chats.bigPinHelper(true).length,
+                      itemCount: pinnedChats.length,
                     );
                   }),
                 ],

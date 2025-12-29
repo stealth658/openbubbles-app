@@ -637,7 +637,7 @@ class ActionHandler extends GetxService {
         }
         return;
       case "typing-indicator":
-        final chat = ChatsSvc.chats.firstWhereOrNull((element) => element.guid == data["guid"]);
+        final chat = ChatsSvc.findChatByGuid(data["guid"]);
         if (chat != null) {
           final controller = cvc(chat);
           controller.showTypingIndicator.value = data["display"];

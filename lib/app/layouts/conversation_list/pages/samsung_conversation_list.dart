@@ -86,16 +86,19 @@ class _SamsungConversationListState extends OptimizedState<SamsungConversationLi
               showScrollbar: true,
               controller: controller.samsungScrollController,
               child: Obx(() {
-                final _chats = ChatsSvc.chats
-                    .archivedHelper(controller.showArchivedChats)
-                    .unknownSendersHelper(controller.showUnknownSenders);
+                final _chats = ChatsSvc.getFilteredChats(
+                  showArchived: controller.showArchivedChats,
+                  showUnknown: controller.showUnknownSenders,
+                );
+                final _pinnedChats = _chats.where((e) => e.isPinned ?? false).toList();
+                final _unpinnedChats = _chats.where((e) => !(e.isPinned ?? false)).toList();
 
                 return CustomScrollView(
                   physics: ThemeSwitcher.getScrollPhysics(),
                   controller: controller.samsungScrollController,
                   slivers: [
                     SamsungHeader(parentController: controller),
-                    if (!ChatsSvc.loadedChatBatch.value || _chats.bigPinHelper(false).isEmpty)
+                    if (!ChatsSvc.loadedChatBatch.value || _unpinnedChats.isEmpty)
                       SliverToBoxAdapter(
                         child: Center(
                           child: Padding(
@@ -122,7 +125,7 @@ class _SamsungConversationListState extends OptimizedState<SamsungConversationLi
                           ),
                         ),
                       ),
-                    if (_chats.bigPinHelper(true).isNotEmpty)
+                    if (_pinnedChats.isNotEmpty)
                       SliverPadding(
                         padding: const EdgeInsets.only(bottom: 15),
                         sliver: SliverDecoration(
@@ -131,7 +134,7 @@ class _SamsungConversationListState extends OptimizedState<SamsungConversationLi
                           sliver: SliverList(
                               delegate: SliverChildBuilderDelegate(
                             (context, index) {
-                              final chat = _chats.bigPinHelper(true)[index];
+                              final chat = _pinnedChats[index];
                               return ListItem(
                                   chat: chat,
                                   controller: controller,
@@ -139,7 +142,7 @@ class _SamsungConversationListState extends OptimizedState<SamsungConversationLi
                                     setState(() {});
                                   });
                             },
-                            childCount: _chats.bigPinHelper(true).length,
+                            childCount: _pinnedChats.length,
                           )),
                         ),
                       ),
@@ -151,7 +154,7 @@ class _SamsungConversationListState extends OptimizedState<SamsungConversationLi
                         sliver: SliverList(
                           delegate: SliverChildBuilderDelegate(
                             (context, index) {
-                              final chat = _chats.bigPinHelper(false)[index];
+                              final chat = _unpinnedChats[index];
                               return ListItem(
                                   chat: chat,
                                   controller: controller,
@@ -159,7 +162,7 @@ class _SamsungConversationListState extends OptimizedState<SamsungConversationLi
                                     setState(() {});
                                   });
                             },
-                            childCount: _chats.bigPinHelper(false).length,
+                            childCount: _unpinnedChats.length,
                           ),
                         ),
                       ),

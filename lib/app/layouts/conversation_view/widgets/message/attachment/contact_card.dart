@@ -71,7 +71,7 @@ class _ContactCardState extends OptimizedState<ContactCard> with AutomaticKeepAl
     final avatarStr = avatarLines.join();
 
     try {
-      contact = as.parseAppleContact(appleContact);
+      contact = AttachmentsSvc.parseAppleContact(appleContact);
     } catch (ex) {
       contact = Contact(displayName: "Invalid Contact", id: randomString(8));
     }

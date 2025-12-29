@@ -87,7 +87,7 @@ class _ImageViewerState extends OptimizedState<ImageViewer> with AutomaticKeepAl
         cacheHeight: calculatedHeight,
         fit: BoxFit.contain,
         errorBuilder: (context, object, stacktrace) => FutureBuilder<String?>(
-          future: as.ensureImageCompatibility(attachment, actualPath: file.path),
+          future: AttachmentsSvc.ensureImageCompatibility(attachment, actualPath: file.path),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return SizedBox(

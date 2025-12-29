@@ -40,7 +40,7 @@ class _MediaGalleryCardState extends OptimizedState<MediaGalleryCard> with Autom
 
   void updateContent() {
     // Use the attachment service to get the content properly
-    content = as.getContent(attachment, autoDownload: false, onComplete: onComplete);
+    content = AttachmentsSvc.getContent(attachment, autoDownload: false, onComplete: onComplete);
     
     // If getContent returned a controller, listen to it
     if (content is AttachmentDownloadController) {
@@ -92,7 +92,7 @@ class _MediaGalleryCardState extends OptimizedState<MediaGalleryCard> with Autom
     }
 
     try {
-      videoPreview = await as.getVideoThumbnail(file.path!);
+      videoPreview = await AttachmentsSvc.getVideoThumbnail(file.path!);
       dynamic _file = File(file.path!);
       final tempController = VideoPlayerController.file(_file);
       await tempController.initialize();

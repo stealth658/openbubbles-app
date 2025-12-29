@@ -61,7 +61,7 @@ class _MaterialConversationTileState extends CustomState<MaterialConversationTil
                     .copyWith(
                       fontWeight: controller.shouldHighlight.value
                           ? FontWeight.w600
-                          : GlobalChatSvc.unreadState(controller.chat.guid).value
+                          : (ChatsSvc.getChatState(controller.chat.guid)?.hasUnreadMessage.value ?? false)
                               ? FontWeight.bold
                               : null,
                     )
@@ -69,7 +69,7 @@ class _MaterialConversationTileState extends CustomState<MaterialConversationTil
               )),
           subtitle: controller.subtitle ??
               Obx(() {
-                final unread = GlobalChatSvc.unreadState(controller.chat.guid).value;
+                final unread = ChatsSvc.getChatState(controller.chat.guid)?.hasUnreadMessage.value ?? false;
                 return ChatSubtitle(
                     parentController: controller,
                     style: context.theme.textTheme.bodyMedium!
@@ -206,8 +206,8 @@ class _MaterialTrailingState extends CustomState<MaterialTrailing, void, Convers
     return Padding(
       padding: const EdgeInsets.only(right: 3),
       child: Obx(() {
-        final unread = GlobalChatSvc.unreadState(controller.chat.guid).value;
-        final muteType = GlobalChatSvc.muteState(controller.chat.guid).value;
+        final unread = ChatsSvc.getChatState(controller.chat.guid)?.hasUnreadMessage.value ?? false;
+        final muteType = ChatsSvc.getChatState(controller.chat.guid)?.muteType.value;
 
         String indicatorText = "";
         if (SettingsSvc.settings.statusIndicatorsOnChats.value && (cachedLatestMessage?.isFromMe ?? false) && !controller.chat.isGroup) {
@@ -262,22 +262,22 @@ class _MaterialTrailingState extends CustomState<MaterialTrailing, void, Convers
               ],
             ),
             const SizedBox(height: 5),
-            Row(
+            Obx(() => Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               mainAxisAlignment: MainAxisAlignment.end,
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (controller.chat.isPinned!) Icon(Icons.push_pin_outlined, size: 15, color: context.theme.colorScheme.outline),
+                if (controller.chatState?.isPinned.value ?? false) Icon(Icons.push_pin_outlined, size: 15, color: context.theme.colorScheme.outline),
                 if (muteType == "mute")
                   const SizedBox(width: 5),
                 if (muteType == "mute")
-                  Obx(() => Icon(
-                        Icons.notifications_off_outlined,
-                        color: controller.shouldHighlight.value || unread ? context.theme.colorScheme.primary : context.theme.colorScheme.outline,
-                        size: 15,
-                      )),
+                  Icon(
+                    Icons.notifications_off_outlined,
+                    color: controller.shouldHighlight.value || unread ? context.theme.colorScheme.primary : context.theme.colorScheme.outline,
+                    size: 15,
+                  ),
               ],
-            ),
+            )),
           ],
         );
     })
@@ -307,7 +307,7 @@ class _UnreadIconState extends CustomState<UnreadIcon, void, ConversationTileCon
   Widget build(BuildContext context) {
     return Obx(() => Padding(
       padding: const EdgeInsets.only(left: 5.0, right: 5.0),
-      child: (GlobalChatSvc.unreadState(controller.chat.guid).value)
+      child: (ChatsSvc.getChatState(controller.chat.guid)?.hasUnreadMessage.value ?? false)
           ? Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(35),

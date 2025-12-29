@@ -41,7 +41,7 @@ class _AttachmentPickerFileState extends OptimizedState<AttachmentPickerFile> wi
     path = file.path;
     if (widget.data.mimeType?.startsWith("video/") ?? false) {
       try {
-        image = await as.getVideoThumbnail(file.path, useCachedFile: false);
+        image = await AttachmentsSvc.getVideoThumbnail(file.path, useCachedFile: false);
       } catch (ex) {
         image = FilesystemSvc.noVideoPreviewIcon;
       }
@@ -55,7 +55,7 @@ class _AttachmentPickerFileState extends OptimizedState<AttachmentPickerFile> wi
         transferName: file.path,
         mimeType: widget.data.mimeType!,
       );
-      final compatiblePath = await as.ensureImageCompatibility(fakeAttachment, actualPath: file.path);
+      final compatiblePath = await AttachmentsSvc.ensureImageCompatibility(fakeAttachment, actualPath: file.path);
       if (compatiblePath != null) {
         try {
           image = await File(compatiblePath).readAsBytes();

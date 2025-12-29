@@ -23,7 +23,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:vcf_dart/vcf_dart.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 
-AttachmentsService as = Get.isRegistered<AttachmentsService>() ? Get.find<AttachmentsService>() : Get.put(AttachmentsService());
+AttachmentsService AttachmentsSvc = Get.isRegistered<AttachmentsService>() ? Get.find<AttachmentsService>() : Get.put(AttachmentsService());
 
 class AttachmentsService extends GetxService {
 

@@ -232,7 +232,7 @@ class _UnreadIconState extends OptimizedState<_UnreadIcon> {
         ),
         const SizedBox(width: 2),
         Obx(() {
-          final _count = widget.controller.inSelectMode.value ? widget.controller.selected.length : GlobalChatSvc.unreadCount.value;
+          final _count = widget.controller.inSelectMode.value ? widget.controller.selected.length : ChatsSvc.unreadCount.value;
           if (_count == 0) return const SizedBox.shrink();
           return Padding(
               padding: const EdgeInsets.only(top: 3),

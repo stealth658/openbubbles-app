@@ -32,7 +32,7 @@ class _CreateScheduledMessageState extends OptimizedState<CreateScheduledMessage
   final FocusNode messageNode = FocusNode();
   late final TextEditingController numberController = TextEditingController(text: widget.existing?.schedule.interval?.toString() ?? '1');
 
-  late String selectedChat = widget.existing?.payload.chatGuid ?? ChatsSvc.chats.first.guid;
+  late String selectedChat = widget.existing?.payload.chatGuid ?? ChatsSvc.allChats.first.guid;
   late String schedule = widget.existing?.schedule.type ?? "once";
   late String frequency = widget.existing?.schedule.intervalType ?? "daily";
   late int interval = widget.existing?.schedule.interval ?? 1;
@@ -161,8 +161,8 @@ class _CreateScheduledMessageState extends OptimizedState<CreateScheduledMessage
               backgroundColor: tileColor,
               children: [
                 SettingsOptions<Chat>(
-                  initial: ChatsSvc.chats.firstWhere((e) => e.guid == selectedChat),
-                  options: ChatsSvc.chats,
+                  initial: ChatsSvc.findChatByGuid(selectedChat)!,
+                  options: ChatsSvc.allChats,
                   onChanged: (Chat? val) {
                     if (val == null) return;
                     setState(() {
@@ -359,7 +359,7 @@ class _CreateScheduledMessageState extends OptimizedState<CreateScheduledMessage
                     valueListenable: messageController,
                     builder: (context, value, _) {
                       if (error != null) return Text(error, style: const TextStyle(color: Colors.red));
-                      return Text("Scheduling \"${messageController.text}\" to ${ChatsSvc.chats.firstWhere((e) => e.guid == selectedChat).getTitle()}.\nScheduling $schedule${schedule == "recurring" ? " every $interval ${frequencyToText[frequency]}(s) starting" : ""} on ${buildSeparatorDateSamsung(date)} at ${buildTime(date)}.");
+                      return Text("Scheduling \"${messageController.text}\" to ${ChatsSvc.findChatByGuid(selectedChat)!.getTitle()}.\nScheduling $schedule${schedule == "recurring" ? " every $interval ${frequencyToText[frequency]}(s) starting" : ""} on ${buildSeparatorDateSamsung(date)} at ${buildTime(date)}.");
                     },
                   ),
                 ),

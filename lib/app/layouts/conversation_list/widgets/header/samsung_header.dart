@@ -179,7 +179,7 @@ class _ExpandedHeaderTextState extends CustomState<ExpandedHeaderText, void, Con
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final unreadChats = GlobalChatSvc.unreadCount.value;
+      final unreadChats = ChatsSvc.unreadCount.value;
       return Text(
           controller.selectedChats.isNotEmpty
               ? "${controller.selectedChats.length} selected"

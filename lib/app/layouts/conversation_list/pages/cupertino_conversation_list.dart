@@ -76,7 +76,7 @@ class CupertinoConversationListState extends OptimizedState<CupertinoConversatio
                     if (!showArchived && !showUnknown) CupertinoHeader(controller: controller),
                     Obx(() {
                       NavigationSvc.listener.value;
-                      final _chats = ChatsSvc.chats.archivedHelper(showArchived).unknownSendersHelper(showUnknown).bigPinHelper(true);
+                      final _chats = ChatsSvc.getFilteredChats(showArchived: showArchived, showUnknown: showUnknown, pinnedOnly: true);
 
                       if (_chats.isEmpty) {
                         return const SliverToBoxAdapter(child: SizedBox.shrink());
@@ -153,17 +153,12 @@ class CupertinoConversationListState extends OptimizedState<CupertinoConversatio
                                             index < _filledPageCount ? maxOnPage : _chats.length % maxOnPage,
                                             (_index) {
                                               final pinnedChat = _chats[index * maxOnPage + _index];
-                                              // Wrap with Obx for granular reactivity
-                                              return Obx(() {
-                                                // Only rebuild this tile when THIS specific chat updates
-                                                final updateCounter = ChatsSvc.chatUpdateTrigger[pinnedChat.guid] ?? 0;
-                                                
-                                                return PinnedConversationTile(
-                                                  key: Key('${pinnedChat.guid}_$updateCounter'),
-                                                  chat: pinnedChat,
-                                                  controller: controller,
-                                                );
-                                              });
+                                              // No need for Obx here - PinnedConversationTile handles its own reactivity
+                                              return PinnedConversationTile(
+                                                key: Key(pinnedChat.guid),
+                                                chat: pinnedChat,
+                                                controller: controller,
+                                              );
                                             },
                                           ),
                                         ),
@@ -205,7 +200,7 @@ class CupertinoConversationListState extends OptimizedState<CupertinoConversatio
                       );
                     }),
                     Obx(() {
-                      final _chats = ChatsSvc.chats.archivedHelper(showArchived).unknownSendersHelper(showUnknown).bigPinHelper(false);
+                      final _chats = ChatsSvc.getFilteredChats(showArchived: showArchived, showUnknown: showUnknown, excludePinned: true);
 
                       if (!ChatsSvc.loadedChatBatch.value || _chats.isEmpty) {
                         return SliverToBoxAdapter(
@@ -239,19 +234,14 @@ class CupertinoConversationListState extends OptimizedState<CupertinoConversatio
                       return SliverList(
                         delegate: SliverChildBuilderDelegate(
                           (context, index) {
-                            final chat = ChatsSvc.chats.firstWhere((e) => e.guid == _chats[index].guid);
+                            final chat = ChatsSvc.findChatByGuid(_chats[index].guid)!;
                             
-                            // Wrap with Obx for granular reactivity
-                            final child = Obx(() {
-                              // Only rebuild this tile when THIS specific chat updates
-                              final updateCounter = ChatsSvc.chatUpdateTrigger[chat.guid] ?? 0;
-                              
-                              return ConversationTile(
-                                key: Key('${chat.guid}_$updateCounter'),
-                                chat: chat,
-                                controller: controller,
-                              );
-                            });
+                            // No need for Obx here - ConversationTile handles its own reactivity
+                            final child = ConversationTile(
+                              key: Key(chat.guid),
+                              chat: chat,
+                              controller: controller,
+                            );
                             
                             final separator = Obx(() => !SettingsSvc.settings.hideDividers.value
                                 ? Padding(

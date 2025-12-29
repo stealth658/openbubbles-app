@@ -141,9 +141,9 @@ class _ConversationDetailsState extends OptimizedState<ConversationDetails> with
                   onPressed: () {
                     final attachments = media.where((e) => selected.contains(e.guid!));
                     for (Attachment a in attachments) {
-                      final file = as.getContent(a, autoDownload: false);
+                      final file = AttachmentsSvc.getContent(a, autoDownload: false);
                       if (file is PlatformFile) {
-                        as.saveToDisk(file);
+                        AttachmentsSvc.saveToDisk(file);
                       }
                     }
                   },

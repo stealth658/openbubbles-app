@@ -56,7 +56,7 @@ class _UrlPreviewState extends OptimizedState<UrlPreview> with AutomaticKeepAliv
           title: data.title,
           siteName: data.siteName,
         );
-        dataOverride!.url = as.parseAppleLocationUrl(_location)?.replaceAll("\\", "").replaceAll("http:", "https:").replaceAll("/?", "/place?").replaceAll(",", "%2C");
+        dataOverride!.url = AttachmentsSvc.parseAppleLocationUrl(_location)?.replaceAll("\\", "").replaceAll("http:", "https:").replaceAll("/?", "/place?").replaceAll(",", "%2C");
         if (dataOverride!.url == null) return;
         final response = await HttpSvc.dio.get(dataOverride!.url!);
         final document = parser.parse(response.data);
@@ -76,7 +76,7 @@ class _UrlPreviewState extends OptimizedState<UrlPreview> with AutomaticKeepAliv
         final attachment = widget.message.attachments
             .firstWhereOrNull((e) => e?.transferName?.contains("pluginPayloadAttachment") ?? false);
         if (attachment != null) {
-          content = as.getContent(attachment, autoDownload: true, onComplete: (file) {
+          content = AttachmentsSvc.getContent(attachment, autoDownload: true, onComplete: (file) {
             setState(() {
               content = file;
             });

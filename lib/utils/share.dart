@@ -104,7 +104,7 @@ class Share {
 
     Future<Tuple5<String, String, Uint8List, String, String?>> getLocationPreview() async {
       _locationData = await Geolocator.getCurrentPosition();
-      String vcfString = as.createAppleLocation(_locationData.latitude, _locationData.longitude);
+      String vcfString = AttachmentsSvc.createAppleLocation(_locationData.latitude, _locationData.longitude);
 
       // Build out the file we are going to send
       String _attachmentGuid = "temp-${randomString(8)}";

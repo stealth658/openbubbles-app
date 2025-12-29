@@ -132,10 +132,10 @@ class ContactsService {
       // dummy to make the full contacts UI refresh happen on web
       changedIds.last.add(handles.length);
       contacts = _contacts;
-      for (Chat c in ChatsSvc.chats) {
+      for (Chat c in ChatsSvc.allChats) {
         c.webSyncParticipants();
       }
-      ChatsSvc.chats.refresh();
+      // No longer need to refresh since chatStates is not reactive
     }
 
     final endTime = DateTime.now().millisecondsSinceEpoch;

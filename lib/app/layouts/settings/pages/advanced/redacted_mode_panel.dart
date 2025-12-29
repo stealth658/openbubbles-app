@@ -141,7 +141,7 @@ class _RedactedModePanelState extends OptimizedState<RedactedModePanel> {
                                           duration: const Duration(milliseconds: 150),
                                           opacity: SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideAttachments.value ? 0 : 1,
                                           child: ImageViewer(
-                                            file: as.getContent(message.attachments.first!),
+                                            file: AttachmentsSvc.getContent(message.attachments.first!),
                                             attachment: message.attachments.first!,
                                             isFromMe: false,
                                           ),

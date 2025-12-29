@@ -83,7 +83,7 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
         View.of(context).devicePixelRatio,
       ).bottom;
   late int numberToShow = 5;
-  late Chat? dmChat = ChatsSvc.chats
+  late Chat? dmChat = ChatsSvc.allChats
       .firstWhereOrNull((chat) => !chat.isGroup && chat.handles.firstWhereOrNull((handle) => handle.address == message.handleRelation.target?.address) != null);
   String? selfReaction;
   String? currentlySelectedReaction = "init";
@@ -101,7 +101,7 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
   bool get isSent => !message.guid!.startsWith('temp') && !message.guid!.startsWith('error');
 
   bool get showDownload =>
-      (isSent && part.attachments.isNotEmpty && part.attachments.where((element) => as.getContent(element) is PlatformFile).isNotEmpty) ||
+      (isSent && part.attachments.isNotEmpty && part.attachments.where((element) => AttachmentsSvc.getContent(element) is PlatformFile).isNotEmpty) ||
       isEmbeddedMedia;
 
   late bool isEmbeddedMedia = (message.balloonBundleId == "com.apple.Handwriting.HandwritingProvider" ||
@@ -434,11 +434,11 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
           size: 0,
         );
       } else {
-        content = as.getContent(part.attachments.first);
+        content = AttachmentsSvc.getContent(part.attachments.first);
       }
       if (content is PlatformFile) {
         popDetails();
-        await as.saveToDisk(content, isDocument: part.attachments.first.mimeStart != "image" && part.attachments.first.mimeStart != "video");
+        await AttachmentsSvc.saveToDisk(content, isDocument: part.attachments.first.mimeStart != "image" && part.attachments.first.mimeStart != "video");
       }
     } catch (ex, trace) {
       Logger.error("Error downloading attachment: ${ex.toString()}", error: ex, trace: trace);
@@ -568,7 +568,7 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
           bytes: response.data,
         );
 
-        await as.saveToDisk(file, isDocument: element.mimeStart != "image" && element.mimeStart != "video");
+        await AttachmentsSvc.saveToDisk(file, isDocument: element.mimeStart != "image" && element.mimeStart != "video");
       }
       progress.value = 1;
       downloadingAttachments.value = false;
@@ -646,7 +646,7 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
           size: response.data.length,
           bytes: response.data,
         );
-        await as.saveToDisk(file, isDocument: true);
+        await AttachmentsSvc.saveToDisk(file, isDocument: true);
       }
       downloadingAttachments.value = false;
     } catch (ex, trace) {
@@ -701,8 +701,8 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
     popDetails();
     List<PlatformFile> attachments = [];
     final _attachments = message.attachments
-        .where((e) => as.getContent(e!, autoDownload: false) is PlatformFile)
-        .map((e) => as.getContent(e!, autoDownload: false) as PlatformFile);
+        .where((e) => AttachmentsSvc.getContent(e!, autoDownload: false) is PlatformFile)
+        .map((e) => AttachmentsSvc.getContent(e!, autoDownload: false) as PlatformFile);
     for (PlatformFile a in _attachments) {
       Uint8List? bytes = a.bytes;
       bytes ??= await File(a.path!).readAsBytes();
@@ -733,7 +733,7 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
       // Image caching is now handled by Flutter's image cache automatically
       for (Attachment? element in part.attachments) {
         if (element != null) {
-          as.redownloadAttachment(element);
+          AttachmentsSvc.redownloadAttachment(element);
         }
       }
       popDetails();

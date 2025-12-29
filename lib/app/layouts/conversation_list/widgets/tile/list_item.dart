@@ -81,61 +81,77 @@ class ListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() {
-      // Granular reactivity - only rebuild this tile when THIS specific chat updates
-      final updateCounter = ChatsSvc.chatUpdateTrigger[chat.guid] ?? 0;
-      
-      final tile = ConversationTile(
-        key: Key('${chat.guid}_$updateCounter'),
-        chat: chat,
-        controller: controller,
-        onSelect: (bool isSelected) {
-          if (isSelected) {
-            controller.selectedChats.add(chat);
-            controller.updateSelectedChats();
+    // No need for Obx here - ConversationTile handles its own reactivity
+    final tile = ConversationTile(
+      key: Key(chat.guid),
+      chat: chat,
+      controller: controller,
+      onSelect: (bool isSelected) {
+        if (isSelected) {
+          controller.selectedChats.add(chat);
+          controller.updateSelectedChats();
+        } else {
+          controller.selectedChats.removeWhere((element) => element.guid == chat.guid);
+          controller.updateSelectedChats();
+        }
+      },
+    );
+
+    if (SettingsSvc.settings.swipableConversationTiles.value) {
+      return Dismissible(
+        background: (kIsDesktop || kIsWeb)
+            ? null
+            : Obx(() => slideBackground(chat, false)),
+        secondaryBackground: (kIsDesktop || kIsWeb)
+            ? null
+            : Obx(() => slideBackground(chat, true)),
+        key: UniqueKey(),
+        onDismissed: (direction) {
+          MaterialSwipeAction action;
+          if (direction == DismissDirection.endToStart) {
+            action = leftAction;
           } else {
-            controller.selectedChats.removeWhere((element) => element.guid == chat.guid);
-            controller.updateSelectedChats();
+            action = rightAction;
           }
-        },
-      );
 
-      if (SettingsSvc.settings.swipableConversationTiles.value) {
-        return Dismissible(
-          background: (kIsDesktop || kIsWeb)
-              ? null
-              : Obx(() => slideBackground(chat, false)),
-          secondaryBackground: (kIsDesktop || kIsWeb)
-              ? null
-              : Obx(() => slideBackground(chat, true)),
-          key: UniqueKey(),
-          onDismissed: (direction) {
-            MaterialSwipeAction action;
-            if (direction == DismissDirection.endToStart) {
-              action = leftAction;
+          if (action == MaterialSwipeAction.pin) {
+            final chatState = ChatsSvc.getChatState(chat.guid);
+            if (chatState != null) {
+              chatState.setIsPinned(!chat.isPinned!);
             } else {
-              action = rightAction;
-            }
-
-            if (action == MaterialSwipeAction.pin) {
               chat.togglePinAsync(!chat.isPinned!);
-            } else if (action == MaterialSwipeAction.alerts) {
+            }
+          } else if (action == MaterialSwipeAction.alerts) {
+            final chatState = ChatsSvc.getChatState(chat.guid);
+            if (chatState != null) {
+              chatState.setMuted(chat.muteType != "mute");
+            } else {
               chat.toggleMuteAsync(chat.muteType != "mute");
-            } else if (action == MaterialSwipeAction.delete) {
-              ChatsSvc.removeChat(chat);
-              Chat.softDelete(chat);
-            } else if (action == MaterialSwipeAction.mark_read) {
+            }
+          } else if (action == MaterialSwipeAction.delete) {
+            ChatsSvc.removeChat(chat);
+            Chat.softDelete(chat);
+          } else if (action == MaterialSwipeAction.mark_read) {
+            final chatState = ChatsSvc.getChatState(chat.guid);
+            if (chatState != null) {
+              chatState.setHasUnread(!chat.hasUnreadMessage!);
+            } else {
               chat.toggleHasUnreadAsync(!chat.hasUnreadMessage!);
-            } else if (action == MaterialSwipeAction.archive) {
+            }
+          } else if (action == MaterialSwipeAction.archive) {
+            final chatState = ChatsSvc.getChatState(chat.guid);
+            if (chatState != null) {
+              chatState.setArchived(!chat.isArchived!);
+            } else {
               chat.toggleArchivedAsync(!chat.isArchived!);
             }
-            update.call();
-          },
-          child: tile,
-        );
-      } else {
-        return tile;
-      }
-    });
+          }
+          update.call();
+        },
+        child: tile,
+      );
+    } else {
+      return tile;
+    }
   }
 }

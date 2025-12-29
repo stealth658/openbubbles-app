@@ -234,7 +234,12 @@ class _ConversationPeekViewState extends OptimizedState<ConversationPeekView> wi
         color: Colors.transparent,
         child: InkWell(
           onTap: () async {
-            widget.chat.togglePinAsync(!widget.chat.isPinned!);
+            final chatState = ChatsSvc.getChatState(widget.chat.guid);
+            if (chatState != null) {
+              await chatState.setIsPinned(!widget.chat.isPinned!);
+            } else {
+              await widget.chat.togglePinAsync(!widget.chat.isPinned!);
+            }
             popPeekView();
           },
           child: ListTile(
@@ -257,7 +262,12 @@ class _ConversationPeekViewState extends OptimizedState<ConversationPeekView> wi
         color: Colors.transparent,
         child: InkWell(
           onTap: () async {
-            widget.chat.toggleMuteAsync(widget.chat.muteType != "mute");
+            final chatState = ChatsSvc.getChatState(widget.chat.guid);
+            if (chatState != null) {
+              await chatState.setMuted(widget.chat.muteType != "mute");
+            } else {
+              await widget.chat.toggleMuteAsync(widget.chat.muteType != "mute");
+            }
             popPeekView();
           },
           child: ListTile(
@@ -280,7 +290,12 @@ class _ConversationPeekViewState extends OptimizedState<ConversationPeekView> wi
         color: Colors.transparent,
         child: InkWell(
           onTap: () async {
-            widget.chat.toggleHasUnreadAsync(!widget.chat.hasUnreadMessage!, force: true);
+            final chatState = ChatsSvc.getChatState(widget.chat.guid);
+            if (chatState != null) {
+              await chatState.setHasUnread(!widget.chat.hasUnreadMessage!, force: true);
+            } else {
+              await widget.chat.toggleHasUnreadAsync(!widget.chat.hasUnreadMessage!, force: true);
+            }
             popPeekView();
           },
           child: ListTile(
@@ -303,7 +318,12 @@ class _ConversationPeekViewState extends OptimizedState<ConversationPeekView> wi
         color: Colors.transparent,
         child: InkWell(
           onTap: () async {
-            widget.chat.toggleArchivedAsync(!widget.chat.isArchived!);
+            final chatState = ChatsSvc.getChatState(widget.chat.guid);
+            if (chatState != null) {
+              await chatState.setArchived(!widget.chat.isArchived!);
+            } else {
+              await widget.chat.toggleArchivedAsync(!widget.chat.isArchived!);
+            }
             popPeekView();
           },
           child: ListTile(

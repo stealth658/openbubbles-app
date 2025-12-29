@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/typing/typing_indicator.dart';
+import 'package:bluebubbles/app/state/chat_state.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/pages/conversation_list.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/tile/cupertino_conversation_tile.dart';
@@ -29,6 +30,9 @@ class ConversationTileController extends StatefulController {
   final Function(bool)? onSelect;
   final bool inSelectMode;
   final Widget? subtitle;
+
+  /// Get the ChatState for this chat (if it exists)
+  ChatState? get chatState => ChatsSvc.getChatState(chat.guid);
 
   bool get isSelected => listController.selectedChats
       .firstWhereOrNull((e) => e.guid == chat.guid) != null;

@@ -139,7 +139,7 @@ class _FullscreenVideoState extends OptimizedState<FullscreenVideo> with Automat
 
   void refreshAttachment() {
     showSnackbar('In Progress', 'Redownloading attachment. Please wait...');
-    as.redownloadAttachment(widget.attachment, onComplete: (file) async {
+    AttachmentsSvc.redownloadAttachment(widget.attachment, onComplete: (file) async {
       if (hasDisposed) return;
       hasListener = false;
       late final Media media;
@@ -310,7 +310,7 @@ class _FullscreenVideoState extends OptimizedState<FullscreenVideo> with Automat
                                         CupertinoIcons.cloud_download,
                                         color: samsung ? Colors.white : context.theme.colorScheme.primary,
                                       ),
-                                      onPressed: () => as.saveToDisk(widget.file),
+                                      onPressed: () => AttachmentsSvc.saveToDisk(widget.file),
                                     ),
                                     IconButton(
                                       icon: Icon(

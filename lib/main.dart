@@ -486,7 +486,7 @@ class _HomeState extends OptimizedState<Home> with WidgetsBindingObserver, TrayL
           if (await temp.exists()) await temp.delete(recursive: true);
 
           /* ----- BADGE ICON LISTENER ----- */
-          GlobalChatSvc.unreadCount.listen((count) async {
+          ChatsSvc.unreadCount.listen((count) async {
             if (count == 0) {
               await WindowsTaskbar.resetOverlayIcon();
             } else if (count <= 9) {

@@ -7,6 +7,7 @@ import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/attach
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/attachment/other_file.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/attachment/video_player.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/interactive/url_preview.dart';
+import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/reply/reply_bubble.dart';
 import 'package:bluebubbles/app/layouts/fullscreen_media/fullscreen_holder.dart';
 import 'package:bluebubbles/app/components/circle_progress_bar.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
@@ -69,7 +70,7 @@ class _AttachmentHolderState extends CustomState<AttachmentHolder, void, Message
     try {
       if (content is AttachmentDownloadController && content.error != null) return;
     } catch (ex) { /* lateInitializationException */ }
-    content = as.getContent(attachment, onComplete: onComplete);
+    content = AttachmentsSvc.getContent(attachment, onComplete: onComplete);
     
     // If getContent returned a controller, listen to it
     if (content is AttachmentDownloadController) {
@@ -81,7 +82,7 @@ class _AttachmentHolderState extends CustomState<AttachmentHolder, void, Message
     }
     
     // If we can download it, do so
-    if (content is Attachment && message.error == 0 && !message.guid!.contains("temp") && await as.canAutoDownload()) {
+    if (content is Attachment && message.error == 0 && !message.guid!.contains("temp") && await AttachmentsSvc.canAutoDownload()) {
       if (mounted) {
         setState(() {
           content = AttachmentDownloader.startDownload(content, onComplete: onComplete);
@@ -114,6 +115,7 @@ class _AttachmentHolderState extends CustomState<AttachmentHolder, void, Message
   Widget build(BuildContext context) {
     final bool showTail = message.showTail(newerMessage) && part.part == controller.parts.length - 1;
     final bool hideAttachments = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideAttachments.value;
+    final bool isInReply = ReplyScope.maybeOf(context) != null;
     return ColorFiltered(
       colorFilter: ColorFilter.mode(context.theme.colorScheme.tertiaryContainer.withValues(alpha: 0.5), selected ? BlendMode.srcOver : BlendMode.dstOver),
       child: Material(
@@ -154,15 +156,18 @@ class _AttachmentHolderState extends CustomState<AttachmentHolder, void, Message
             child: ConstrainedBox(
               constraints: BoxConstraints(
                 maxWidth: NavigationSvc.width(context) * 0.5,
-                maxHeight: context.height * 0.6,
-                minHeight: 40,
-                minWidth: 100,
+                maxHeight: isInReply ? double.infinity : context.height * 0.6,
+                minHeight: isInReply ? 0 : 40,
+                minWidth: isInReply ? 0 : 100,
               ),
               child: Padding(
                 padding: content is PlatformFile && !hideAttachments
                     ? (showTail ? EdgeInsets.zero : EdgeInsets.only(left: message.isFromMe! ? 0 : 10, right: message.isFromMe! ? 10 : 0))
+                    : isInReply
+                    ? const EdgeInsets.symmetric(vertical: 5, horizontal: 10)
+                        .add(EdgeInsets.only(left: message.isFromMe! ? 0 : 10, right: message.isFromMe! ? 10 : 0))
                     : const EdgeInsets.symmetric(vertical: 10, horizontal: 15)
-                    .add(EdgeInsets.only(left: message.isFromMe! ? 0 : 10, right: message.isFromMe! ? 10 : 0)),
+                        .add(EdgeInsets.only(left: message.isFromMe! ? 0 : 10, right: message.isFromMe! ? 10 : 0)),
                 child: AnimatedSize(
                   duration: const Duration(milliseconds: 150),
                   child: Center(
@@ -248,10 +253,16 @@ class _AttachmentHolderState extends CustomState<AttachmentHolder, void, Message
                           } else if (content is AttachmentDownloadController) {
                             final AttachmentDownloadController _content = content;
                             return Padding(
-                              padding: const EdgeInsets.all(20.0),
+                              padding: EdgeInsets.only(
+                                  left: 20.0,
+                                  top: isInReply ? 10.0 : 20.0,
+                                  right: 20.0,
+                                  bottom: isInReply ? 10.0 : 20.0
+                              ),
                               child: Obx(() {
                                 final isError = _content.state.value == AttachmentDownloadState.error;
                                 final isProcessing = _content.state.value == AttachmentDownloadState.processing;
+                                final isQueued = _content.state.value == AttachmentDownloadState.queued;
                                 
                                 return Column(
                                   mainAxisSize: MainAxisSize.min,
@@ -266,8 +277,10 @@ class _AttachmentHolderState extends CustomState<AttachmentHolder, void, Message
                                                 ? (iOS
                                                     ? const CupertinoActivityIndicator(radius: 14)
                                                     : const CircularProgressIndicator())
-                                                : CircleProgressBar(
-                                                    value: _content.progress.value?.toDouble() ?? 0,
+                                                : isQueued
+                                                    ? Icon(iOS ? CupertinoIcons.clock : Icons.schedule, size: 30)
+                                                    : CircleProgressBar(
+                                                        value: _content.progress.value?.toDouble() ?? 0,
                                                     backgroundColor: context.theme.colorScheme.outline,
                                                     foregroundColor: context.theme.colorScheme.properOnSurface,
                                                   ),
@@ -278,8 +291,10 @@ class _AttachmentHolderState extends CustomState<AttachmentHolder, void, Message
                                       isError
                                           ? "Failed to download!"
                                           : isProcessing
-                                              ? "Processing..."
-                                              : (_content.attachment.mimeType ?? ""),
+                                              ? "Processing"
+                                              : isQueued
+                                                  ? "Queued"
+                                                  : (_content.attachment.mimeType ?? ""),
                                       style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.properOnSurface),
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,

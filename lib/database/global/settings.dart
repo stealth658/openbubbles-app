@@ -25,6 +25,7 @@ class Settings {
   final RxBool reachedConversationList = false.obs;
   final RxBool autoDownload = true.obs;
   final RxBool onlyWifiDownload = false.obs;
+  final RxInt maxConcurrentDownloads = 2.obs;
   final RxBool autoSave = false.obs;
   final RxString autoSavePicsLocation = "Pictures".obs;
   final RxString autoSaveDocsLocation = "/storage/emulated/0/Download/".obs;
@@ -275,6 +276,7 @@ class Settings {
     Map<String, dynamic> map = {
       'autoDownload': autoDownload.value,
       'onlyWifiDownload': onlyWifiDownload.value,
+      'maxConcurrentDownloads': maxConcurrentDownloads.value,
       'autoSave': autoSave.value,
       'autoSavePicsLocation': autoSavePicsLocation.value,
       'autoSaveDocsLocation': autoSaveDocsLocation.value,
@@ -418,6 +420,7 @@ class Settings {
     SettingsSvc.settings.reachedConversationList.value = map['reachedConversationList'] ?? SettingsSvc.settings.reachedConversationList.value;
     SettingsSvc.settings.autoDownload.value = map['autoDownload'] ?? SettingsSvc.settings.autoDownload.value;
     SettingsSvc.settings.onlyWifiDownload.value = map['onlyWifiDownload'] ?? SettingsSvc.settings.onlyWifiDownload.value;
+    SettingsSvc.settings.maxConcurrentDownloads.value = map['maxConcurrentDownloads'] ?? SettingsSvc.settings.maxConcurrentDownloads.value;
     SettingsSvc.settings.autoSave.value = map['autoSave'] ?? SettingsSvc.settings.autoSave.value;
     SettingsSvc.settings.autoSavePicsLocation.value = map['autoSavePicsLocation'] ?? SettingsSvc.settings.autoSavePicsLocation.value;
     SettingsSvc.settings.autoSaveDocsLocation.value = map['autoSaveDocsLocation'] ?? SettingsSvc.settings.autoSaveDocsLocation.value;
@@ -565,10 +568,9 @@ class Settings {
     s.finishedSetup.value = map['finishedSetup'] ?? false;
     s.reachedConversationList.value = map['reachedConversationList'] ?? false;
     s.autoDownload.value = map['autoDownload'] ?? true;
-    s.autoSave.value = map['autoSave'] ?? false;
-    s.autoSavePicsLocation.value = map['autoSavePicsLocation'] ?? "Pictures";
-    s.autoSaveDocsLocation.value = map['autoSaveDocsLocation'] ?? "/storage/emulated/0/Download/";
     s.onlyWifiDownload.value = map['onlyWifiDownload'] ?? false;
+    s.maxConcurrentDownloads.value = map['maxConcurrentDownloads'] ?? 2;
+    s.autoSave.value = map['autoSave'] ?? false;
     s.autoOpenKeyboard.value = map['autoOpenKeyboard'] ?? true;
     s.hideTextPreviews.value = map['hideTextPreviews'] ?? false;
     s.showIncrementalSync.value = map['showIncrementalSync'] ?? false;

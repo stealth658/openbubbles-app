@@ -168,7 +168,7 @@ class FullscreenMediaHolderState extends OptimizedState<FullscreenMediaHolder> {
                   itemBuilder: (BuildContext context, int index) {
                     final attachment = attachments[index];
                     dynamic content =
-                        as.getContent(attachment, path: attachment.guid == null ? attachment.transferName : null);
+                        AttachmentsSvc.getContent(attachment, path: attachment.guid == null ? attachment.transferName : null);
                     final key = attachment.guid ?? attachment.transferName ?? randomString(8);
 
                     if (content is PlatformFile) {
@@ -263,6 +263,7 @@ class FullscreenMediaHolderState extends OptimizedState<FullscreenMediaHolder> {
                           child: Obx(() {
                             final isError = _content.state.value == AttachmentDownloadState.error;
                             final isProcessing = _content.state.value == AttachmentDownloadState.processing;
+                            final isQueued = _content.state.value == AttachmentDownloadState.queued;
                             
                             return Column(
                               mainAxisSize: MainAxisSize.min,
@@ -277,8 +278,10 @@ class FullscreenMediaHolderState extends OptimizedState<FullscreenMediaHolder> {
                                             ? (iOS
                                                 ? const CupertinoActivityIndicator(radius: 14)
                                                 : const CircularProgressIndicator())
-                                            : CircleProgressBar(
-                                                value: _content.progress.value?.toDouble() ?? 0,
+                                            : isQueued
+                                                ? Icon(iOS ? CupertinoIcons.clock : Icons.schedule, size: 30)
+                                                : CircleProgressBar(
+                                                    value: _content.progress.value?.toDouble() ?? 0,
                                                 backgroundColor: context.theme.colorScheme.outline,
                                                 foregroundColor: context.theme.colorScheme.properOnSurface,
                                               ),
@@ -289,8 +292,10 @@ class FullscreenMediaHolderState extends OptimizedState<FullscreenMediaHolder> {
                                   isError
                                       ? "Failed to download!"
                                       : isProcessing
-                                          ? "Processing..."
-                                          : (_content.attachment.mimeType ?? ""),
+                                          ? "Processing"
+                                          : isQueued
+                                              ? "Queued"
+                                              : (_content.attachment.mimeType ?? ""),
                                   style: context.theme.textTheme.bodyLarge!
                                       .copyWith(color: context.theme.colorScheme.properOnSurface),
                                   maxLines: 2,

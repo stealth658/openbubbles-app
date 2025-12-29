@@ -26,7 +26,7 @@ export 'ui/chat/chat_lifecycle_manager.dart';
 export 'ui/chat/chat_manager.dart';
 export 'ui/chat/chats_service.dart';
 export 'ui/chat/conversation_view_controller.dart';
-export 'ui/chat/global_chat_service.dart';
+// GlobalChatService merged into ChatsService
 export 'ui/message/message_update_coordinator.dart';
 export 'ui/message/message_widget_controller.dart';
 export 'ui/message/messages_service.dart';

@@ -242,9 +242,8 @@ class OpenNextChatAction extends Action<OpenNextChatIntent> {
   Object? invoke(covariant OpenNextChatIntent intent) {
     final chat = cm.activeChat?.chat;
     if (chat != null) {
-      final index = ChatsSvc.chats.indexWhere((e) => e.guid == chat.guid);
-      if (index > -1 && index < ChatsSvc.chats.length - 1) {
-        final _chat = ChatsSvc.chats[index + 1];
+      final _chat = ChatsSvc.getNextChat(chat.guid);
+      if (_chat != null) {
         NavigationSvc.pushAndRemoveUntil(
           context,
           ConversationView(
@@ -271,9 +270,8 @@ class OpenPreviousChatAction extends Action<OpenPreviousChatIntent> {
   Object? invoke(covariant OpenPreviousChatIntent intent) {
     final chat = cm.activeChat?.chat;
     if (chat != null) {
-      final index = ChatsSvc.chats.indexWhere((e) => e.guid == chat.guid);
-      if (index > 0 && index < ChatsSvc.chats.length) {
-        final _chat = ChatsSvc.chats[index - 1];
+      final _chat = ChatsSvc.getPreviousChat(chat.guid);
+      if (_chat != null) {
         NavigationSvc.pushAndRemoveUntil(
           context,
           ConversationView(

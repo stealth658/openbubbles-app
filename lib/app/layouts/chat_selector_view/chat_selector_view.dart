@@ -45,7 +45,7 @@ class ChatSelectorViewState extends OptimizedState<ChatSelectorView> {
       _debounce = Timer(const Duration(milliseconds: 250), () async {
         final searchChats = await SchedulerBinding.instance.scheduleTask(() async {
           final query = slugify(searchController.text, delimiter: "");
-          return ChatsSvc.chats.filter((element) => slugify(element.getTitle(), delimiter: "").contains(query));
+          return ChatsSvc.searchChats(query);
         }, Priority.animation);
 
         _debounce = null;
@@ -58,12 +58,12 @@ class ChatSelectorViewState extends OptimizedState<ChatSelectorView> {
     updateObx(() {
       if (ChatsSvc.loadedAllChats.isCompleted) {
         setState(() {
-          filteredChats = List<Chat>.from(ChatsSvc.chats);
+          filteredChats = ChatsSvc.allChats;
         });
       } else {
         ChatsSvc.loadedAllChats.future.then((_) {
           setState(() {
-            filteredChats = List<Chat>.from(ChatsSvc.chats);
+            filteredChats = ChatsSvc.allChats;
           });
         });
       }

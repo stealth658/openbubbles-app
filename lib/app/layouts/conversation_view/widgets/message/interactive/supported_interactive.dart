@@ -35,7 +35,7 @@ class _SupportedInteractiveState extends OptimizedState<SupportedInteractive> wi
     updateObx(() async {
       final attachment = widget.message.attachments.firstOrNull;
       if (attachment != null) {
-        content = as.getContent(attachment, autoDownload: true, onComplete: (file) {
+        content = AttachmentsSvc.getContent(attachment, autoDownload: true, onComplete: (file) {
           setState(() {
             content = file;
           });

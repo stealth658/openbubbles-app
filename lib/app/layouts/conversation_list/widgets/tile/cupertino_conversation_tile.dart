@@ -235,7 +235,7 @@ class _CupertinoTrailingState extends CustomState<CupertinoTrailing, void, Conve
               overflow: TextOverflow.clip,
             );
           }),
-          Column(
+          Obx(() => Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
@@ -245,7 +245,7 @@ class _CupertinoTrailingState extends CustomState<CupertinoTrailing, void, Conve
                     : context.theme.colorScheme.outline,
                 size: 15,
               ),
-              if (controller.chat.muteType == "mute")
+              if (controller.chatState?.muteType.value == "mute")
                 Padding(
                     padding: const EdgeInsets.only(top: 5.0),
                     child: Icon(
@@ -256,7 +256,7 @@ class _CupertinoTrailingState extends CustomState<CupertinoTrailing, void, Conve
                       size: 12,
                     ))
             ],
-          ),
+          )),
         ],
       ),
     );
@@ -285,7 +285,7 @@ class _UnreadIconState extends CustomState<UnreadIcon, void, ConversationTileCon
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(left: 5.0, right: 5.0),
-      child: Obx(() => GlobalChatSvc.unreadState(controller.chat.guid).value
+      child: Obx(() => (ChatsSvc.getChatState(controller.chat.guid)?.hasUnreadMessage.value ?? false)
           ? Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(35),

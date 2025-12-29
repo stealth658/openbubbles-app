@@ -44,7 +44,7 @@ class _PickedAttachmentState extends OptimizedState<PickedAttachment> with Autom
     final mimeType = mime(widget.data.name) ?? "";
     if (mimeType.startsWith("video/") && Platform.isAndroid) {
       try {
-        image = await as.getVideoThumbnail(file.path!, useCachedFile: false);
+        image = await AttachmentsSvc.getVideoThumbnail(file.path!, useCachedFile: false);
       } catch (ex) {
         image = FilesystemSvc.noVideoPreviewIcon;
       }
@@ -59,7 +59,7 @@ class _PickedAttachmentState extends OptimizedState<PickedAttachment> with Autom
           transferName: file.path,
           mimeType: mimeType,
         );
-        final convertedPath = await as.ensureImageCompatibility(fakeAttachment);
+        final convertedPath = await AttachmentsSvc.ensureImageCompatibility(fakeAttachment);
         if (convertedPath != null) {
           final convertedFile = File(convertedPath);
           image = await convertedFile.readAsBytes();

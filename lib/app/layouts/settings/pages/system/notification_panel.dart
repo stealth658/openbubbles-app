@@ -385,7 +385,7 @@ class ChatListState extends OptimizedState<ChatList> {
               ),
             );
           }
-          if (ChatsSvc.loadedChatBatch.value && ChatsSvc.chats.isEmpty) {
+          if (ChatsSvc.loadedChatBatch.value && ChatsSvc.isEmpty) {
             return SliverToBoxAdapter(
               child: Center(
                 child: Padding(
@@ -415,20 +415,20 @@ class ChatListState extends OptimizedState<ChatList> {
                       physics: ThemeSwitcher.getScrollPhysics(),
                       shrinkWrap: true,
                       controller: _controller,
-                      findChildIndexCallback: (key) => findChildIndexByKey(ChatsSvc.chats, key, (item) => item.guid),
+                      findChildIndexCallback: (key) => findChildIndexByKey(ChatsSvc.allChats, key, (item) => item.guid),
                       itemBuilder: (context, index) {
+                        final chat = ChatsSvc.allChats[index];
                         return ConversationTile(
-                          key: Key(ChatsSvc.chats[index].guid.toString()),
-                          chat: ChatsSvc.chats[index],
+                          key: Key(chat.guid.toString()),
+                          chat: chat,
                           controller: Get.put(
                             ConversationListController(showUnknownSenders: true, showArchivedChats: true),
                             tag: "notification-panel"
                           ),
                           inSelectMode: true,
-                          subtitle: Text(getSubtitle(ChatsSvc.chats[index]),
+                          subtitle: Text(getSubtitle(chat),
                               style: context.theme.textTheme.bodySmall!.copyWith(color: context.theme.colorScheme.properOnSurface),),
                           onSelect: (_) async {
-                            final chat = ChatsSvc.chats[index];
                             await showDialog(
                               context: context,
                               builder: (context) => NotificationSettingsDialog(chat, () {
@@ -438,7 +438,7 @@ class ChatListState extends OptimizedState<ChatList> {
                           },
                         );
                       },
-                      itemCount: ChatsSvc.chats.length,
+                      itemCount: ChatsSvc.length,
                     ),
                   ),
                 ),

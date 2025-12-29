@@ -285,7 +285,7 @@ class _VideoPlayerState extends OptimizedState<VideoPlayer> with AutomaticKeepAl
       }
       
       // Fetch the thumbnail
-      thumbnail = await as.getVideoThumbnail(file.path!);
+      thumbnail = await AttachmentsSvc.getVideoThumbnail(file.path!);
       if (mounted) setState(() {});
     } catch (ex) {
       // If an error occurs, set the thumbnail to the cached no preview image

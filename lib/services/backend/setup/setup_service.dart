@@ -24,6 +24,6 @@ class SetupService extends GetxService {
     await NetworkTasks.onConnect();
     
     // Trigger a full UI update for the chat list
-    ChatsSvc.chats.refresh();
+    // No longer need to refresh since chatStates is not reactive
   }
 }

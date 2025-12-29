@@ -30,7 +30,6 @@ AttachmentDownloadService AttachmentDownloader = Get.isRegistered<AttachmentDown
     ? Get.find<AttachmentDownloadService>() : Get.put(AttachmentDownloadService());
 
 class AttachmentDownloadService extends GetxService {
-  int maxDownloads = 2;
   final RxList<String> downloaders = <String>[].obs;
   final Map<String, List<AttachmentDownloadController>> _downloaders = {};
 
@@ -67,6 +66,7 @@ class AttachmentDownloadService extends GetxService {
   }
 
   void _fetchNext() {
+    final maxDownloads = SettingsSvc.settings.maxConcurrentDownloads.value;
     if (_downloaders.values.flattened.where((e) => e.state.value == AttachmentDownloadState.downloading).length < maxDownloads) {
       AttachmentDownloadController? activeChatDownloader;
       // first check if we have an active chat that needs downloads, if so prioritize that chat
@@ -167,7 +167,7 @@ class AttachmentDownloadController extends GetxController {
     // Load image properties before displaying (so UI shows correct dimensions immediately)
     if (!kIsWeb && attachment.mimeStart == "image") {
       try {
-        await as.loadImageProperties(attachment, actualPath: attachment.path);
+        await AttachmentsSvc.loadImageProperties(attachment, actualPath: attachment.path);
       } catch (ex) {
         Logger.warn("Failed to load image properties", error: ex);
       }
@@ -206,7 +206,7 @@ class AttachmentDownloadController extends GetxController {
         && !(attachment.message.target?.isInteractive ?? false)) {
       String filePath = "/storage/emulated/0/Download/";
       if (attachment.mimeType?.startsWith("image") ?? false) {
-        await as.saveToDisk(file.value!, isAutoDownload: true);
+        await AttachmentsSvc.saveToDisk(file.value!, isAutoDownload: true);
       } else if (file.value?.bytes != null) {
         await File(join(filePath, file.value!.name)).writeAsBytes(file.value!.bytes!);
       }

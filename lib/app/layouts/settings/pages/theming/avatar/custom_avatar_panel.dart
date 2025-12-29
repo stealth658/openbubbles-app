@@ -50,7 +50,7 @@ class _CustomAvatarPanelState extends OptimizedState<CustomAvatarPanel> {
               ),
             );
           }
-          if (ChatsSvc.loadedChatBatch.value && ChatsSvc.chats.isEmpty) {
+          if (ChatsSvc.loadedChatBatch.value && ChatsSvc.isEmpty) {
             return SliverToBoxAdapter(
               child: Center(
                 child: Padding(
@@ -67,17 +67,18 @@ class _CustomAvatarPanelState extends OptimizedState<CustomAvatarPanel> {
           return SliverList(
             delegate: SliverChildBuilderDelegate(
                   (context, index) {
+                final chat = ChatsSvc.allChats[index];
                 return ConversationTile(
                   key: Key(
-                      ChatsSvc.chats[index].guid.toString()),
-                  chat: ChatsSvc.chats[index],
+                      chat.guid.toString()),
+                  chat: chat,
                   controller: Get.put(
                     ConversationListController(showUnknownSenders: true, showArchivedChats: true),
                     tag: "custom-avatar-panel"
                   ),
                   inSelectMode: true,
                   onSelect: (_) {
-                    if (ChatsSvc.chats[index].customAvatarPath != null) {
+                    if (chat.customAvatarPath != null) {
                       showDialog(
                         context: context,
                         builder: (BuildContext context) {
@@ -104,10 +105,10 @@ class _CustomAvatarPanelState extends OptimizedState<CustomAvatarPanel> {
                                 TextButton(
                                     child: Text("Reset", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
                                     onPressed: () async {
-                                      File file = File(ChatsSvc.chats[index].customAvatarPath!);
+                                      File file = File(chat.customAvatarPath!);
                                       file.delete();
-                                      ChatsSvc.chats[index].customAvatarPath = null;
-                                      await ChatsSvc.chats[index].saveAsync(updateCustomAvatarPath: true);
+                                      chat.customAvatarPath = null;
+                                      await chat.saveAsync(updateCustomAvatarPath: true);
                                       Navigator.of(context, rootNavigator: true).pop();
                                     }),
                                 TextButton(
@@ -116,7 +117,7 @@ class _CustomAvatarPanelState extends OptimizedState<CustomAvatarPanel> {
                                       Navigator.of(context).pop();
                                       NavigationSvc.pushSettings(
                                         context,
-                                        AvatarCrop(index: index),
+                                        AvatarCrop(chat: chat),
                                       );
                                     }),
                               ]);
@@ -125,13 +126,13 @@ class _CustomAvatarPanelState extends OptimizedState<CustomAvatarPanel> {
                     } else {
                       NavigationSvc.pushSettings(
                         context,
-                        AvatarCrop(index: index),
+                        AvatarCrop(chat: chat),
                       );
                     }
                   },
                 );
               },
-              childCount: ChatsSvc.chats.length,
+              childCount: ChatsSvc.length,
             ),
           );
         }),

@@ -81,7 +81,7 @@ class LocationsSection extends StatelessWidget {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemBuilder: (context, index) {
-                if (as.getContent(locations[index]) is! PlatformFile) {
+                if (AttachmentsSvc.getContent(locations[index]) is! PlatformFile) {
                   return const Text("Failed to load location!");
                 }
                 return Material(
@@ -109,7 +109,7 @@ class LocationsSection extends StatelessWidget {
                           siteName: "Tap to open",
                         ),
                         message: locations[index].message.target!,
-                        file: as.getContent(locations[index]),
+                        file: AttachmentsSvc.getContent(locations[index]),
                       ),
                     ),
                   ),

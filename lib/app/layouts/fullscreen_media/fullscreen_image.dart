@@ -84,7 +84,7 @@ class _FullscreenImageState extends OptimizedState<FullscreenImage> with Automat
     
     // For non-web platforms, ensure we have a compatible image path
     // but don't load bytes into memory - let Image.file handle it
-    compatiblePath = await as.ensureImageCompatibility(attachment, actualPath: file.path!);
+    compatiblePath = await AttachmentsSvc.ensureImageCompatibility(attachment, actualPath: file.path!);
     setState(() {});
   }
 
@@ -102,7 +102,7 @@ class _FullscreenImageState extends OptimizedState<FullscreenImage> with Automat
       compatiblePath = null;
       hasError = false;
     });
-    as.redownloadAttachment(widget.attachment, onComplete: (newFile) {
+    AttachmentsSvc.redownloadAttachment(widget.attachment, onComplete: (newFile) {
       if (kIsWeb || newFile.path == null) {
         setState(() {
           bytes = newFile.bytes;
@@ -293,7 +293,7 @@ class _FullscreenImageState extends OptimizedState<FullscreenImage> with Automat
                             CupertinoIcons.cloud_download,
                             color: samsung ? Colors.white : context.theme.colorScheme.primary,
                           ),
-                          onPressed: () => as.saveToDisk(widget.file),
+                          onPressed: () => AttachmentsSvc.saveToDisk(widget.file),
                         ),
                         if (!kIsWeb && !kIsDesktop)
                           IconButton(
@@ -345,7 +345,7 @@ class _FullscreenImageState extends OptimizedState<FullscreenImage> with Automat
                           Icons.file_download_outlined,
                           color: context.theme.colorScheme.onSecondary,
                         ),
-                        onPressed: () => as.saveToDisk(widget.file),
+                        onPressed: () => AttachmentsSvc.saveToDisk(widget.file),
                       ),
                       if (!kIsWeb && !kIsDesktop)
                         Padding(

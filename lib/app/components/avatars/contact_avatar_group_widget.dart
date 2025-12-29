@@ -53,6 +53,18 @@ class _ContactAvatarGroupWidgetState extends OptimizedState<ContactAvatarGroupWi
       if (avatarA && !avatarB) return -1;
       return 0;
     });
+    
+    // Observe customAvatarPath changes from ChatState if available
+    final chatState = ChatsSvc.getChatState(widget.chat.guid);
+    if (chatState != null) {
+      chatState.customAvatarPath.listen((newPath) {
+        if (newPath != _cachedCustomAvatarPath && mounted) {
+          setState(() {
+            _cachedCustomAvatarPath = newPath;
+          });
+        }
+      });
+    }
   }
   
   @override

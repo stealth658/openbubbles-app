@@ -37,7 +37,7 @@ class NetworkTasks {
       }
 
       if (kIsWeb) {
-        if (ChatsSvc.chats.isEmpty) {
+        if (ChatsSvc.isEmpty) {
           ChatsSvc.reset();
           await ChatsSvc.init();
         }

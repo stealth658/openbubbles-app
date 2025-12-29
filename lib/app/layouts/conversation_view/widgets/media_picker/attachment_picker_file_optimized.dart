@@ -55,7 +55,7 @@ class _AttachmentPickerFileState extends OptimizedState<AttachmentPickerFile> {
       // Only load bytes for videos (thumbnails only)
       if (widget.data.mimeType?.startsWith("video/") ?? false) {
         try {
-          thumbnailBytes = await as.getVideoThumbnail(file.path, useCachedFile: false);
+          thumbnailBytes = await AttachmentsSvc.getVideoThumbnail(file.path, useCachedFile: false);
         } catch (ex) {
           thumbnailBytes = FilesystemSvc.noVideoPreviewIcon;
         }
@@ -70,7 +70,7 @@ class _AttachmentPickerFileState extends OptimizedState<AttachmentPickerFile> {
           transferName: file.path,
           mimeType: widget.data.mimeType!,
         );
-        filePath = await as.ensureImageCompatibility(fakeAttachment, actualPath: file.path);
+        filePath = await AttachmentsSvc.ensureImageCompatibility(fakeAttachment, actualPath: file.path);
       } else {
         // For regular images, just use the file path directly
         filePath = file.path;

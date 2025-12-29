@@ -139,11 +139,11 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
         }
       }
       if (ChatsSvc.loadedAllChats.isCompleted) {
-        existingChats = ChatsSvc.chats;
+        existingChats = ChatsSvc.allChats;
         filteredChats = List<Chat>.from(existingChats.where((e) => e.isIMessage));
       } else {
         ChatsSvc.loadedAllChats.future.then((_) {
-          existingChats = ChatsSvc.chats;
+          existingChats = ChatsSvc.allChats;
           setState(() {
             filteredChats = List<Chat>.from(existingChats.where((e) => e.isIMessage));
           });

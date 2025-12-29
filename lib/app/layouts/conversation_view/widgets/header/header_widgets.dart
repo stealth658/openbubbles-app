@@ -86,8 +86,8 @@ class ManualMarkState extends OptimizedState<ManualMark> {
                 widget.controller.selected.sort((a, b) => Message.sort(a, b, descending: false));
                 for (Message m in widget.controller.selected) {
                   final _attachments = m.attachments
-                      .where((e) => as.getContent(e!, autoDownload: false) is PlatformFile)
-                      .map((e) => as.getContent(e!, autoDownload: false) as PlatformFile);
+                      .where((e) => AttachmentsSvc.getContent(e!, autoDownload: false) is PlatformFile)
+                      .map((e) => AttachmentsSvc.getContent(e!, autoDownload: false) as PlatformFile);
                   for (PlatformFile a in _attachments) {
                     Uint8List? bytes = a.bytes;
                     bytes ??= await File(a.path!).readAsBytes();

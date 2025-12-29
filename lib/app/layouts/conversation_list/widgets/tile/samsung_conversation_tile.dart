@@ -174,8 +174,8 @@ class _SamsungTrailingState extends CustomState<SamsungTrailing, void, Conversat
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final unread = GlobalChatSvc.unreadState(controller.chat.guid).value;
-      final muteType = GlobalChatSvc.muteState(controller.chat.guid).value;
+      final unread = ChatsSvc.getChatState(controller.chat.guid)?.hasUnreadMessage.value ?? false;
+      final muteType = ChatsSvc.getChatState(controller.chat.guid)?.muteType.value;
 
       String indicatorText = "";
       if (SettingsSvc.settings.statusIndicatorsOnChats.value && (cachedLatestMessage?.isFromMe ?? false) && !controller.chat.isGroup) {
@@ -208,15 +208,23 @@ class _SamsungTrailingState extends CustomState<SamsungTrailing, void, Conversat
                 overflow: TextOverflow.clip,
               )
             ),
-            if (controller.chat.isPinned!) const SizedBox(width: 5.0),
-            if (muteType == "mute")
-              Obx(() => Icon(
-                    Icons.notifications_off,
-                    color: controller.shouldHighlight.value || unread ? context.theme.colorScheme.onBackground : context.theme.colorScheme.outline,
-                    size: 16,
-                  )),
-            if (muteType == "mute") const SizedBox(width: 2.0),
-            if (controller.chat.isPinned!) Icon(Icons.star, size: 16, color: context.theme.colorScheme.tertiary),
+            Obx(() {
+              final isPinned = controller.chatState?.isPinned.value ?? controller.chat.isPinned ?? false;
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (isPinned) const SizedBox(width: 5.0),
+                  if (muteType == "mute")
+                    Icon(
+                      Icons.notifications_off,
+                      color: controller.shouldHighlight.value || unread ? context.theme.colorScheme.onBackground : context.theme.colorScheme.outline,
+                      size: 16,
+                    ),
+                  if (muteType == "mute") const SizedBox(width: 2.0),
+                  if (isPinned) Icon(Icons.star, size: 16, color: context.theme.colorScheme.tertiary),
+                ],
+              );
+            }),
           ],
         ),
       );
@@ -245,7 +253,7 @@ class _UnreadIconState extends CustomState<UnreadIcon, void, ConversationTileCon
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final unread = GlobalChatSvc.unreadState(controller.chat.guid).value;
+      final unread = ChatsSvc.getChatState(controller.chat.guid)?.hasUnreadMessage.value ?? false;
       return (unread)
           ? Container(
               decoration: BoxDecoration(

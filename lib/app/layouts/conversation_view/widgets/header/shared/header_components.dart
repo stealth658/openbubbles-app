@@ -87,7 +87,7 @@ class BackButtonWithBadge extends StatelessWidget {
         Obx(() {
           final count = controller.inSelectMode.value
               ? controller.selected.length
-              : GlobalChatSvc.unreadCount.value;
+              : ChatsSvc.unreadCount.value;
           if (count == 0) return const SizedBox.shrink();
           
           return Padding(

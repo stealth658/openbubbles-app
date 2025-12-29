@@ -269,7 +269,12 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
                     title: "Pin Conversation",
                     initialVal: chat.isPinned!,
                     onChanged: (value) {
-                      chat.togglePinAsync(!chat.isPinned!);
+                      final chatState = ChatsSvc.getChatState(chat.guid);
+                      if (chatState != null) {
+                        chatState.setIsPinned(!chat.isPinned!);
+                      } else {
+                        chat.togglePinAsync(!chat.isPinned!);
+                      }
                       setState(() {});
                     },
                     backgroundColor: tileColor,
@@ -443,7 +448,7 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
                           final attachments = m.attachments.where(
                               (e) => e?.guid != null && ["image/png", "image/jpg", "image/jpeg"].contains(e!.mimeType));
                           final files =
-                              attachments.map((e) => as.getContent(e!, autoDownload: false)).whereType<PlatformFile>();
+                              attachments.map((e) => AttachmentsSvc.getContent(e!, autoDownload: false)).whereType<PlatformFile>();
                           if (files.isNotEmpty) {
                             for (PlatformFile f in files) {
                               final a = attachments.firstWhere((e) => e!.transferName == f.name);

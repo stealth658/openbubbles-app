@@ -185,7 +185,7 @@ class _UnreadIconState extends CustomState<UnreadIcon, void, ConversationTileCon
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final unread = GlobalChatSvc.unreadState(controller.chat.guid).value;
+      final unread = ChatsSvc.getChatState(controller.chat.guid)?.hasUnreadMessage.value ?? false;
       return unread ? Positioned(
         left: sqrt(widget.width) - widget.width * 0.05 * sqrt(2),
         top: sqrt(widget.width) - widget.width * 0.05 * sqrt(2),
@@ -227,7 +227,7 @@ class _MuteIconState extends CustomState<MuteIcon, void, ConversationTileControl
   Widget build(BuildContext context) {
     return Obx(() {
       final muteType = controller.chat.muteType;
-      final unread = GlobalChatSvc.unreadState(controller.chat.guid).value;
+      final unread = ChatsSvc.getChatState(controller.chat.guid)?.hasUnreadMessage.value ?? false;
 
       return muteType == "mute"
           ? Positioned(
@@ -335,11 +335,12 @@ class _ChatTitleState extends CustomState<ChatTitle, void, ConversationTileContr
       ),
       child: Obx(() {
         final hideInfo = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
+        final isPinned = controller.chatState?.isPinned.value ?? controller.chat.isPinned ?? false;
         final style = context.theme.textTheme.bodyMedium!.apply(
           color: controller.shouldHighlight.value
               ? context.theme.colorScheme.onBubble(context, controller.chat.isIMessage)
               : context.theme.colorScheme.outline,
-          fontSizeFactor: controller.chat.isPinned! ? 0.95 : 1,
+          fontSizeFactor: isPinned ? 0.95 : 1,
         );
         String _title = title;
         if (hideInfo) {
@@ -452,7 +453,7 @@ class _ReactionIconState extends CustomState<ReactionIcon, void, ConversationTil
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final unread = GlobalChatSvc.unreadState(controller.chat.guid).value;
+      final unread = ChatsSvc.getChatState(controller.chat.guid)?.hasUnreadMessage.value ?? false;
       return unread && !isNullOrEmpty(controller.chat.latestMessage.associatedMessageGuid) && !controller.chat.latestMessage.isFromMe!
           ? Positioned(
               top: -sqrt(widget.width / 2) + widget.width * 0.05,

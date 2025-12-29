@@ -152,10 +152,6 @@ class StartupTasks {
       GetIt.I.isReady<NotificationsService>()
     ]);
 
-    GetIt.I.registerSingleton<GlobalChatService>(GlobalChatService());
-    if (SettingsSvc.settings.finishedSetup.value) {
-      GlobalChatSvc.init();
-    }
 
     GetIt.I.registerSingleton<EventDispatcher>(EventDispatcher());
 
@@ -306,7 +302,6 @@ class StartupTasks {
       return;
     }
 
-    GlobalChatSvc.init();
 
     if (!kIsDesktop) {
       Logger.info("Initializing ChatsService and SocketService...");
