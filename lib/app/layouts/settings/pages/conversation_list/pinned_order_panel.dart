@@ -89,7 +89,7 @@ class PinnedOrderPanel extends StatelessWidget {
                               Padding(
                                 padding: const EdgeInsets.all(8.0),
                                 child: Text(
-                                  "Loading ChatSvc...",
+                                  "Loading chats...",
                                   style: context.theme.textTheme.labelLarge,
                                 ),
                               ),

@@ -152,7 +152,7 @@ class ChatSelectorViewState extends OptimizedState<ChatSelectorView> {
                                         Padding(
                                           padding: const EdgeInsets.all(8.0),
                                           child: Text(
-                                            "Loading ChatSvc...",
+                                            "Loading chats...",
                                             style: context.theme.textTheme.labelLarge,
                                           ),
                                         ),

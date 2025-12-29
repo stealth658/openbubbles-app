@@ -2,6 +2,7 @@ import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/services.dart';
+import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 
@@ -194,12 +195,30 @@ class ChatActions {
         inputMessage.text ??= existing.text;
       }
 
-      // Save the handle if needed
+      // Prepare handle reference (find or create handle, but don't set relation yet)
+      Handle? handleToLink;
       if (inputMessage.handle == null && inputMessage.handleId != null) {
         final handleQuery = handleBox.query(Handle_.originalROWID.equals(inputMessage.handleId!)).build();
         handleQuery.limit = 1;
-        inputMessage.handle = handleQuery.findFirst();
+        handleToLink = handleQuery.findFirst();
         handleQuery.close();
+      } else if (inputMessage.handle != null) {
+        // Try and find existing handle by unique address
+        final existingHandleQuery = handleBox
+            .query(Handle_.uniqueAddressAndService.equals(inputMessage.handle!.uniqueAddressAndService))
+            .build();
+        existingHandleQuery.limit = 1;
+        final existingHandle = existingHandleQuery.findFirst();
+        existingHandleQuery.close();
+
+        if (existingHandle != null) {
+          handleToLink = existingHandle;
+        } else {
+          // Save new handle
+          final handleId = handleBox.put(inputMessage.handle!);
+          inputMessage.handle!.id = handleId;
+          handleToLink = inputMessage.handle;
+        }
       }
 
       // Handle associated messages (reactions)
@@ -250,13 +269,22 @@ class ChatActions {
         messageId = retryResult?.id;
       }
 
+      // Now that message exists in DB, set the handle relationship on the DB-connected object
+      if (messageId != null && handleToLink != null) {
+        final dbMessage = messageBox.get(messageId);
+        if (dbMessage != null) {
+          // Only set if not already set
+          if (dbMessage.handleRelation.target == null) {
+            dbMessage.handleRelation.target = handleToLink;
+            messageBox.put(dbMessage);
+          }
+        }
+      }
+
       // Save attachments
-      print('[addMessageToChat] Saving ${inputMessage.attachments.length} attachments for message ${inputMessage.guid} (ID: $messageId)');
       for (Attachment? attachment in inputMessage.attachments) {
         if (attachment == null) continue;
 
-        print('[addMessageToChat] Processing attachment ${attachment.guid}');
-        
         // Find existing attachment
         final attachQuery = attachmentBox.query(Attachment_.guid.equals(attachment.guid ?? '')).build();
         attachQuery.limit = 1;
@@ -265,35 +293,18 @@ class ChatActions {
 
         if (existingAttach != null) {
           attachment.id = existingAttach.id;
-          print('[addMessageToChat] Found existing attachment with ID ${existingAttach.id}');
-        } else {
-          print('[addMessageToChat] New attachment, will create');
         }
 
         // Link message to attachment
         if (messageId != null) {
           attachment.message.target = inputMessage;
-          print('[addMessageToChat] Linked attachment ${attachment.guid} to message ${inputMessage.guid} (ID: $messageId)');
-        } else {
-          print('[addMessageToChat] WARNING: No messageId to link attachment to!');
         }
 
         try {
-          final attachmentId = attachmentBox.put(attachment);
-          print('[addMessageToChat] Saved attachment ${attachment.guid} with ID $attachmentId, message link: ${attachment.message.target?.id}');
+          attachmentBox.put(attachment);
         } on UniqueViolationException catch (_) {
-          print('[addMessageToChat] UniqueViolationException for attachment ${attachment.guid}');
+          Logger.warn('[addMessageToChat] UniqueViolationException for attachment ${attachment.guid}');
         }
-      }
-      
-      // Verify attachments were saved
-      if (messageId != null && inputMessage.attachments.isNotEmpty) {
-        final verifyQuery = (attachmentBox.query(Attachment_.id.notNull())
-              ..link(Attachment_.message, Message_.id.equals(messageId)))
-            .build();
-        final savedAttachments = verifyQuery.find();
-        verifyQuery.close();
-        print('[addMessageToChat] VERIFICATION: Found ${savedAttachments.length} attachments linked to message $messageId in DB');
       }
 
       // Calculate if message is newer
@@ -304,7 +315,6 @@ class ChatActions {
       }
 
       return <String, dynamic>{
-        'message': Map<String, dynamic>.from(inputMessage.toMap()),
         'messageId': messageId,
         'isNewer': isNewerInIsolate,
       };
@@ -534,24 +544,9 @@ class ChatActions {
       
       for (final inputChat in inputChats) {
         final existing = existingChatsMap[inputChat.guid];
-        Chat chatToSave;
-        
-        if (existing != null) {
-          // Use existing DB chat and merge input data
-          chatToSave = existing;
-          // Copy updatable fields from inputChat to existing
-          chatToSave.displayName = inputChat.displayName;
-          chatToSave.chatIdentifier = inputChat.chatIdentifier;
-          chatToSave.isArchived = inputChat.isArchived;
-          chatToSave.muteType = inputChat.muteType;
-          chatToSave.muteArgs = inputChat.muteArgs;
-          chatToSave.isPinned = inputChat.isPinned;
-          chatToSave.hasUnreadMessage = inputChat.hasUnreadMessage;
-          // Add other fields as needed from inputChat
-        } else {
-          // New chat - use inputChat but ensure it's clean
-          chatToSave = inputChat;
-        }
+
+        // Don't sync specific fields because they 
+        Chat chatToSave = existing ?? inputChat;
         
         // Prepare handles to link (collect them for later)
         final handlesToLink = <Handle>[];

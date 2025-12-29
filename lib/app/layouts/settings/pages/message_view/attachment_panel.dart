@@ -30,9 +30,9 @@ class _AttachmentPanelState extends OptimizedState<AttachmentPanel> {
                   backgroundColor: tileColor,
                   children: [
                     Obx(() => SettingsSwitch(
-                          onChanged: (bool val) {
+                          onChanged: (bool val) async {
                             SettingsSvc.settings.autoDownload.value = val;
-                            saveSettings();
+                            await SettingsSvc.settings.saveOneAsync('autoDownload');
                           },
                           initialVal: SettingsSvc.settings.autoDownload.value,
                           title: "Auto-download Attachments",
@@ -42,9 +42,9 @@ class _AttachmentPanelState extends OptimizedState<AttachmentPanel> {
                         )),
                     const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     Obx(() => SettingsSwitch(
-                          onChanged: (bool val) {
+                          onChanged: (bool val) async {
                             SettingsSvc.settings.onlyWifiDownload.value = val;
-                            saveSettings();
+                            await SettingsSvc.settings.saveOneAsync('onlyWifiDownload');
                           },
                           initialVal: SettingsSvc.settings.onlyWifiDownload.value,
                           title: "Only Auto-download Attachments on WiFi",
@@ -54,9 +54,9 @@ class _AttachmentPanelState extends OptimizedState<AttachmentPanel> {
                       const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     if (!kIsWeb && !kIsDesktop)
                       Obx(() => SettingsSwitch(
-                            onChanged: (bool val) {
+                            onChanged: (bool val) async {
                               SettingsSvc.settings.autoSave.value = val;
-                              saveSettings();
+                              await SettingsSvc.settings.saveOneAsync('autoSave');
                             },
                             initialVal: SettingsSvc.settings.autoSave.value,
                             title: "Auto-save Attachments",
@@ -99,7 +99,7 @@ class _AttachmentPanelState extends OptimizedState<AttachmentPanel> {
                                         Navigator.of(context, rootNavigator: true).pop();
                                         SettingsSvc.settings.autoSavePicsLocation.value = "Pictures/${pathController.text}";
                                       }
-                                      saveSettings();
+                                      await SettingsSvc.settings.saveOneAsync('autoSavePicsLocation');
                                     },
                                   ),
                                 ],
@@ -140,7 +140,7 @@ class _AttachmentPanelState extends OptimizedState<AttachmentPanel> {
                           );
                           if (savePath != null) {
                             SettingsSvc.settings.autoSaveDocsLocation.value = savePath;
-                            saveSettings();
+                            await SettingsSvc.settings.saveOneAsync('autoSaveDocsLocation');
                           }
                         },
                       )),
@@ -148,9 +148,9 @@ class _AttachmentPanelState extends OptimizedState<AttachmentPanel> {
                       const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     if (!kIsWeb && !kIsDesktop)
                       Obx(() => SettingsSwitch(
-                            onChanged: (bool val) {
+                            onChanged: (bool val) async {
                               SettingsSvc.settings.askWhereToSave.value = val;
-                              saveSettings();
+                              await SettingsSvc.settings.saveOneAsync('askWhereToSave');
                             },
                             initialVal: SettingsSvc.settings.askWhereToSave.value,
                             title: "Ask Where to Save Attachments",
@@ -172,9 +172,9 @@ class _AttachmentPanelState extends OptimizedState<AttachmentPanel> {
                       bottomPadding: false,
                     ),
                     Obx(() => SettingsSwitch(
-                          onChanged: (bool val) {
+                          onChanged: (bool val) async {
                             SettingsSvc.settings.startVideosMuted.value = val;
-                            saveSettings();
+                            await SettingsSvc.settings.saveOneAsync('startVideosMuted');
                           },
                           initialVal: SettingsSvc.settings.startVideosMuted.value,
                           title: "Mute in Attachment Preview",
@@ -182,9 +182,9 @@ class _AttachmentPanelState extends OptimizedState<AttachmentPanel> {
                         )),
                     const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     Obx(() => SettingsSwitch(
-                          onChanged: (bool val) {
+                          onChanged: (bool val) async {
                             SettingsSvc.settings.startVideosMutedFullscreen.value = val;
-                            saveSettings();
+                            await SettingsSvc.settings.saveOneAsync('startVideosMutedFullscreen');
                           },
                           initialVal: SettingsSvc.settings.startVideosMutedFullscreen.value,
                           title: "Mute in Fullscreen Player",
@@ -213,10 +213,10 @@ class _AttachmentPanelState extends OptimizedState<AttachmentPanel> {
                       }),
                       Obx(() => SettingsOptions<SwipeDirection>(
                             initial: SettingsSvc.settings.fullscreenViewerSwipeDir.value,
-                            onChanged: (val) {
+                            onChanged: (val) async {
                               if (val == null) return;
                               SettingsSvc.settings.fullscreenViewerSwipeDir.value = val;
-                              saveSettings();
+                              await SettingsSvc.settings.saveOneAsync('fullscreenViewerSwipeDir');
                             },
                             options: SwipeDirection.values,
                             textProcessing: (val) => val.toString().split(".").last,
@@ -231,9 +231,5 @@ class _AttachmentPanelState extends OptimizedState<AttachmentPanel> {
             ),
           ),
         ]);
-  }
-
-  void saveSettings() {
-    SettingsSvc.saveSettings();
   }
 }

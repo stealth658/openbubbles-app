@@ -51,7 +51,7 @@ class _ScreenEffectsWidgetState extends OptimizedState<ScreenEffectsWidget> with
       laserController = LaserController(vsync: this, windowSize: Size(NavigationSvc.width(context), context.height));
     });
 
-    eventDispatcher.stream.listen((event) async {
+    EventDispatcherSvc.stream.listen((event) async {
       if (event.item1 == 'play-effect' && mounted && screenSelected.isEmpty) {
         setState(() {
           screenSelected = event.item2['type'];

@@ -443,7 +443,7 @@ class _HomeState extends OptimizedState<Home> with WidgetsBindingObserver, TrayL
     WidgetsBinding.instance.addObserver(this);
 
     /* ----- APP REFRESH LISTENER INITIALIZATION ----- */
-    eventDispatcher.stream.listen((event) {
+    EventDispatcherSvc.stream.listen((event) {
       if (event.item1 == 'refresh-all') {
         setState(() {});
       }
@@ -497,7 +497,7 @@ class _HomeState extends OptimizedState<Home> with WidgetsBindingObserver, TrayL
           });
 
           /* ----- WINDOW EFFECT INITIALIZATION ----- */
-          eventDispatcher.stream.listen((event) async {
+          EventDispatcherSvc.stream.listen((event) async {
             if (event.item1 == 'theme-update') {
               EasyDebounce.debounce('window-effect', const Duration(milliseconds: 500), () async {
                 if (mounted) {
@@ -507,7 +507,7 @@ class _HomeState extends OptimizedState<Home> with WidgetsBindingObserver, TrayL
             }
           });
 
-          Future(() => eventDispatcher.emit("theme-update", null));
+          Future(() => EventDispatcherSvc.emit("theme-update", null));
         }
 
         /* ----- SYSTEM TRAY INITIALIZATION ----- */
@@ -594,7 +594,7 @@ class _HomeState extends OptimizedState<Home> with WidgetsBindingObserver, TrayL
       }
       AdaptiveTheme.maybeOf(context)?.setSystem();
 
-      eventDispatcher.emit("theme-update", null);
+      EventDispatcherSvc.emit("theme-update", null);
     }
   }
 

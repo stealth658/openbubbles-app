@@ -57,7 +57,7 @@ class _DesktopPanelState extends OptimizedState<DesktopPanel> {
                         onChanged: (bool val) async {
                           SettingsSvc.settings.launchAtStartup.value =
                               await SettingsSvc.setupLaunchAtStartup(val, SettingsSvc.settings.launchAtStartupMinimized.value);
-                          saveSettings();
+                          await SettingsSvc.settings.saveOneAsync('launchAtStartup');
                         },
                         initialVal: SettingsSvc.settings.launchAtStartup.value,
                         title: "Launch on Startup",
@@ -86,7 +86,7 @@ class _DesktopPanelState extends OptimizedState<DesktopPanel> {
                                 SettingsSvc.settings.launchAtStartupMinimized.value = val;
                                 SettingsSvc.settings.launchAtStartup.value =
                                     await SettingsSvc.setupLaunchAtStartup(SettingsSvc.settings.launchAtStartup.value, val);
-                                saveSettings();
+                                await SettingsSvc.settings.saveOneAsync('launchAtStartupMinimized');
                               },
                               initialVal: SettingsSvc.settings.launchAtStartupMinimized.value,
                               title: "Launch on Startup Minimized",
@@ -115,7 +115,7 @@ class _DesktopPanelState extends OptimizedState<DesktopPanel> {
                           onChanged: (bool val) async {
                             SettingsSvc.settings.useCustomTitleBar.value = val;
                             await windowManager.setTitleBarStyle(val ? TitleBarStyle.hidden : TitleBarStyle.normal);
-                            saveSettings();
+                            await SettingsSvc.settings.saveOneAsync('useCustomTitleBar');
                           },
                           initialVal: SettingsSvc.settings.useCustomTitleBar.value,
                           title: "Use Custom TitleBar",
@@ -145,7 +145,7 @@ class _DesktopPanelState extends OptimizedState<DesktopPanel> {
                       return SettingsSwitch(
                         onChanged: (bool val) async {
                           SettingsSvc.settings.minimizeToTray.value = val;
-                          saveSettings();
+                          await SettingsSvc.settings.saveOneAsync('minimizeToTray');
                         },
                         initialVal: SettingsSvc.settings.minimizeToTray.value,
                         title: "Minimize to Tray",
@@ -176,7 +176,7 @@ class _DesktopPanelState extends OptimizedState<DesktopPanel> {
                         onChanged: (bool val) async {
                           SettingsSvc.settings.closeToTray.value = val;
                           await windowManager.setPreventClose(val);
-                          saveSettings();
+                          await SettingsSvc.settings.saveOneAsync('closeToTray');
                         },
                         initialVal: SettingsSvc.settings.closeToTray.value,
                         title: "Close to Tray",
@@ -195,9 +195,9 @@ class _DesktopPanelState extends OptimizedState<DesktopPanel> {
                 backgroundColor: tileColor,
                 children: [
                   Obx(() => SettingsSwitch(
-                        onChanged: (bool val) {
+                        onChanged: (bool val) async {
                           SettingsSvc.settings.desktopNotifications.value = val;
-                          saveSettings();
+                          await SettingsSvc.settings.saveOneAsync('desktopNotifications');
                         },
                         initialVal: SettingsSvc.settings.desktopNotifications.value,
                         title: "Desktop Notifications",
@@ -232,7 +232,7 @@ class _DesktopPanelState extends OptimizedState<DesktopPanel> {
                               await File(path).create(recursive: true);
                               await File(path).writeAsBytes(platformFile.bytes!);
                               SettingsSvc.settings.desktopNotificationSoundPath.value = path;
-                              SettingsSvc.saveSettings();
+                              await SettingsSvc.settings.saveOneAsync('desktopNotificationSoundPath');
                             }
                           },
                           trailing: SettingsSvc.settings.desktopNotificationSoundPath.value != null
@@ -268,7 +268,7 @@ class _DesktopPanelState extends OptimizedState<DesktopPanel> {
                                           await file.delete();
                                         }
                                         SettingsSvc.settings.desktopNotificationSoundPath.value = null;
-                                        SettingsSvc.saveSettings();
+                                        await SettingsSvc.settings.saveOneAsync('desktopNotificationSoundPath');
                                       },
                                     ),
                                   ],
@@ -300,9 +300,9 @@ class _DesktopPanelState extends OptimizedState<DesktopPanel> {
                           update: (val) {
                             SettingsSvc.settings.desktopNotificationSoundVolume.value = val.toInt();
                           },
-                          onChangeEnd: (val) {
+                          onChangeEnd: (val) async {
                             SettingsSvc.settings.desktopNotificationSoundVolume.value = val.toInt();
-                            saveSettings();
+                            await SettingsSvc.settings.saveOneAsync('desktopNotificationSoundVolume');
                           },
                         ),
                       )),
@@ -336,13 +336,13 @@ class _DesktopPanelState extends OptimizedState<DesktopPanel> {
                                     if (Platform.isWindows)
                                       SettingsSwitch(
                                         initialVal: SettingsSvc.settings.showReplyField.value,
-                                        onChanged: (value) {
+                                        onChanged: (value) async {
                                           SettingsSvc.settings.showReplyField.value = value;
                                           maxActions.value = value ? 4 : 5;
                                           if (SettingsSvc.settings.selectedActionIndices.length > maxActions.value) {
                                             SettingsSvc.settings.selectedActionIndices.removeLast();
                                           }
-                                          saveSettings();
+                                          await SettingsSvc.settings.saveOneAsync('showReplyField');
                                         },
                                         leading: const SettingsLeadingIcon(
                                           iosIcon: CupertinoIcons.arrowshape_turn_up_left,
@@ -362,7 +362,7 @@ class _DesktopPanelState extends OptimizedState<DesktopPanel> {
                                           alignment: WrapAlignment.center,
                                           buildDraggableFeedback: (context, constraints, child) => AnimatedScale(
                                               duration: const Duration(milliseconds: 250), scale: 1.1, child: child),
-                                          onReorder: (int oldIndex, int newIndex) {
+                                          onReorder: (int oldIndex, int newIndex) async {
                                             List<String> selected = SettingsSvc.settings.selectedActionIndices
                                                 .map((index) => SettingsSvc.settings.actionList[index])
                                                 .toList();
@@ -381,7 +381,7 @@ class _DesktopPanelState extends OptimizedState<DesktopPanel> {
                                                 selected.map((s) => SettingsSvc.settings.actionList.indexOf(s)).toList();
                                             selectedIndices.sort();
                                             SettingsSvc.settings.selectedActionIndices.value = selectedIndices;
-                                            saveSettings();
+                                            await SettingsSvc.settings.saveOneAsync('selectedActionIndices');
                                           },
                                           children: List.generate(
                                             ReactionTypes.toList().length + 1,
@@ -411,13 +411,14 @@ class _DesktopPanelState extends OptimizedState<DesktopPanel> {
                                                         : SystemMouseCursors.click,
                                                     child: GestureDetector(
                                                       behavior: HitTestBehavior.translucent,
-                                                      onTap: () {
+                                                      onTap: () async {
                                                         if (hardDisabled) return;
                                                         if (!SettingsSvc.settings.selectedActionIndices.remove(index)) {
                                                           SettingsSvc.settings.selectedActionIndices.add(index);
                                                           SettingsSvc.settings.selectedActionIndices.sort();
                                                         }
-                                                        saveSettings();
+                                                        
+                                                        await SettingsSvc.settings.saveOneAsync('selectedActionIndices');
                                                       },
                                                       child: AnimatedContainer(
                                                         margin: const EdgeInsets.symmetric(vertical: 5),
@@ -699,9 +700,5 @@ class _DesktopPanelState extends OptimizedState<DesktopPanel> {
     notificationPlayer.dispose();
 
     super.dispose();
-  }
-
-  void saveSettings() {
-    SettingsSvc.saveSettings();
   }
 }

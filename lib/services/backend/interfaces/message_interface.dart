@@ -16,20 +16,7 @@ class MessageInterface {
       input: null,
     );
     stopwatch.stop();
-    
     Logger.info('Fetched ${results.length} messages from CUSTOM ISOLATE in ${stopwatch.elapsedMilliseconds}ms: ${results.map((m) => m?.guid).join(", ")}');
-
-    final stopwatch2 = Stopwatch()..start();
-    final oneDayAgo = DateTime.now().subtract(const Duration(days: 1));
-    final messages = (await Database.messages.query(Message_.dateCreated.greaterThan(oneDayAgo.millisecondsSinceEpoch)).build().findAsync());
-    stopwatch2.stop();
-    print('Fetched ${messages.length} messages from BUILT IN ISOLATE in ${stopwatch2.elapsedMilliseconds}ms');
-
-    final stopwatch3 = Stopwatch()..start();
-    final messages2 = Database.messages.query(Message_.dateCreated.greaterThan(oneDayAgo.millisecondsSinceEpoch)).build().find();
-    stopwatch3.stop();
-    print('Fetched ${messages2.length} messages from NON ASYNC in ${stopwatch3.elapsedMilliseconds}ms');
-
     return results;
   }
 

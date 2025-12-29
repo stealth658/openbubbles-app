@@ -1,3 +1,4 @@
+import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:convert/convert.dart';
 import 'package:exif/exif.dart';
 import 'package:flutter/foundation.dart';
@@ -24,7 +25,7 @@ class ImageActions {
       
       return Uint8List.fromList(encodePng(image));
     } catch (e) {
-      print('Error converting image to PNG: $e');
+      Logger.warn('Error converting image to PNG: $e');
       return null;
     }
   }
@@ -55,7 +56,7 @@ class ImageActions {
 
       return result;
     } catch (e) {
-      print('Error reading EXIF data: $e');
+      Logger.warn('Error reading EXIF data: $e');
       return null;
     }
   }
@@ -89,12 +90,10 @@ class ImageActions {
       hexString += hex.encode(bytes.sublist(9, 10));
       hexString += hex.encode(bytes.sublist(8, 9));
       int height = int.parse(hexString, radix: 16);
-
-      print('Decoded GIF dimensions: ${width}x$height');
       
       return {'width': width, 'height': height};
     } catch (e) {
-      print('Error reading GIF dimensions: $e');
+      Logger.warn('Error reading GIF dimensions: $e');
       return null;
     }
   }

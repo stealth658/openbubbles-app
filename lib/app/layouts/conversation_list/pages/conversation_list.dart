@@ -141,7 +141,7 @@ class _ConversationListState extends CustomState<ConversationList, void, Convers
         // This only runs once
         if (notInSettings) {
           SettingsSvc.settings.reachedConversationList.value = true;
-          SettingsSvc.saveSettings();
+          SettingsSvc.settings.saveOneAsync('reachedConversationList');
           SettingsSvc.getServerDetails(refresh: true);
           t.cancel();
         }
@@ -219,7 +219,7 @@ class _ConversationListState extends CustomState<ConversationList, void, Convers
                           if (cm.activeChat != null) {
                             cvc(cm.activeChat!.chat).close();
                           }
-                          eventDispatcher.emit('update-highlight', null);
+                          EventDispatcherSvc.emit('update-highlight', null);
                         }
                         return true;
                       }, id: 2);

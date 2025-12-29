@@ -173,22 +173,27 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
                     if (value == null || value.name.contains("Divider")) return;
                     value.save();
 
+                    final List<String> toSave = [];
                     if (value.name == "Music Theme ☀" || value.name == "Music Theme 🌙") {
                       // disable monet theming if music theme enabled
                       SettingsSvc.settings.monetTheming.value = Monet.none;
-                      SettingsSvc.saveSettings(SettingsSvc.settings);
+                      toSave.add('monetTheming');
                       await MethodChannelSvc.invokeMethod("request-notification-listener-permission");
                       try {
                         await MethodChannelSvc.invokeMethod("start-notification-listener");
                         SettingsSvc.settings.colorsFromMedia.value = true;
-                        SettingsSvc.saveSettings(SettingsSvc.settings);
+                        toSave.add('colorsFromMedia');
                       } catch (e) {
                         showSnackbar("Error", "Something went wrong, please ensure you granted the permission correctly!");
                         return;
                       }
                     } else {
                       SettingsSvc.settings.colorsFromMedia.value = false;
-                      SettingsSvc.saveSettings(SettingsSvc.settings);
+                      toSave.add('colorsFromMedia');
+                    }
+
+                    if (toSave.isNotEmpty) {
+                      await SettingsSvc.settings.saveManyAsync(toSave);
                     }
 
                     if (value.name == "Music Theme ☀" || value.name == "Music Theme 🌙") {
@@ -220,7 +225,7 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
                     editable = !currentTheme.isPreset;
                     setState(() {});
 
-                    eventDispatcher.emit('theme-update', null);
+                    EventDispatcherSvc.emit('theme-update', null);
                   },
                 ),
                 SettingsSwitch(

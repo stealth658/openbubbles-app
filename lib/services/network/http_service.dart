@@ -616,7 +616,7 @@ class HttpService {
   /// the response or how to query the DB.
   ///
   /// [withQuery] options: `"chats"` / `"chat"`, `"attachment"` / `"attachments"`,
-  /// `"handle"`, `"ChatSvc.participants"` / `"chat.participants"`,  `"attachment.metadata"`, `"attributedBody"
+  /// `"handle"`, `"chats.participants"` / `"chat.participants"`,  `"attachment.metadata"`, `"attributedBody"
   Future<Response> messages({List<String> withQuery = const [], List<dynamic> where = const [], String sort = "DESC", int? before, int? after, String? chatGuid, int offset = 0, int limit = 100, bool convertAttachments = true, CancelToken? cancelToken}) async {
     return runApiGuarded(() async {
       final response = await dio.post(
@@ -633,7 +633,7 @@ class HttpService {
   /// like in the response or how to query the DB.
   ///
   /// [withQuery] options: `"chats"` / `"chat"`, `"attachment"` / `"attachments"`,
-  /// `"ChatSvc.participants"` / `"chat.participants"`, `"attributedBody"` (set as one string, comma separated, no spaces)
+  /// `"chats.participants"` / `"chat.participants"`, `"attributedBody"` (set as one string, comma separated, no spaces)
   Future<Response> singleMessage(String guid, {String withQuery = "", CancelToken? cancelToken}) async {
     return runApiGuarded(() async {
       final response = await dio.get(
@@ -839,7 +839,7 @@ class HttpService {
   /// Query the handles DB. Use [withQuery] to specify what you would like in
   /// the response or how to query the DB.
   ///
-  /// [withQuery] options: `"chats"` / `"chat"`, `"ChatSvc.participants"` / `"chat.participants"`
+  /// [withQuery] options: `"chats"` / `"chat"`, `"chats.participants"` / `"chat.participants"`
   /// (set as one string, comma separated, no spaces)
   Future<Response> handles({List<String> withQuery = const [], String? address, int offset = 0, int limit = 100, CancelToken? cancelToken}) async {
     return runApiGuarded(() async {

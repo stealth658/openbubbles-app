@@ -88,7 +88,6 @@ class WindowEffects {
     if (!kIsDesktop || !Platform.isWindows) return;
     WindowEffect effect = SettingsSvc.settings.windowEffect.value;
     if (!effects.contains(effect)) SettingsSvc.settings.windowEffect.value = WindowEffect.disabled;
-    SettingsSvc.saveSettings(SettingsSvc.settings);
 
     bool supportsTransparentAcrylic = parsedWindowsVersion() >= 22000;
     bool addOpacity = SettingsSvc.settings.windowEffect.value == WindowEffect.acrylic && !supportsTransparentAcrylic;
@@ -102,6 +101,7 @@ class WindowEffects {
       _dark = isDark(color: color);
     }
     await Window.setEffect(effect: effect, color: color.withValues(alpha: addOpacity ? _extra : 0), dark: _dark);
+    await SettingsSvc.settings.saveOneAsync('windowEffect');
   }
 }
 

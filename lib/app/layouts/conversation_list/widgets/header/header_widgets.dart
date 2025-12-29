@@ -377,9 +377,9 @@ class CupertinoOverflowMenu extends StatelessWidget {
 
 Future<void> goToSearch(BuildContext context) async {
   final current = NavigationSvc.ratio(context);
-  eventDispatcher.emit("override-split", 0.3);
+  EventDispatcherSvc.emit("override-split", 0.3);
   await NavigationSvc.pushLeft(context, SearchView());
-  eventDispatcher.emit("override-split", current);
+  EventDispatcherSvc.emit("override-split", current);
 }
 
 Future<void> goToFindMy(BuildContext context) async {

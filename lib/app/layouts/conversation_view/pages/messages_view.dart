@@ -73,7 +73,7 @@ class MessagesViewState extends OptimizedState<MessagesView> {
   void initState() {
     super.initState();
 
-    eventDispatcher.stream.listen((e) async {
+    EventDispatcherSvc.stream.listen((e) async {
       if (e.item1 == "refresh-messagebloc" && e.item2 == chat.guid) {
         // Clear state items
         noMoreMessages = false;

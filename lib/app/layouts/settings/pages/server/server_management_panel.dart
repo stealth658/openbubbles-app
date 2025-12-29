@@ -569,7 +569,7 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                           backgroundColor: tileColor,
                           onChanged: (bool val) async {
                             SettingsSvc.settings.syncContactsAutomatically.value = val;
-                            SettingsSvc.saveSettings();
+                            await SettingsSvc.settings.saveOneAsync("syncContactsAutomatically");
                           },
                           leading: const SettingsLeadingIcon(
                             iosIcon: CupertinoIcons.person_2,

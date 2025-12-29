@@ -134,7 +134,7 @@ class _ConversationTileState extends CustomState<ConversationTile, void, Convers
           cm.activeChat?.chat.guid == controller.chat.guid;
     }
 
-    eventDispatcher.stream.listen((event) {
+    EventDispatcherSvc.stream.listen((event) {
       if (event.item1 == 'update-highlight' && mounted) {
         if ((kIsDesktop || kIsWeb) && event.item2 == controller.chat.guid) {
           controller.shouldHighlight.value = true;
@@ -217,7 +217,7 @@ class _ChatTitleState extends CustomState<ChatTitle, void, ConversationTileContr
         });
       });
       // listen for contacts update (if tile is active, we can update it)
-      eventDispatcher.stream.listen((event) {
+      EventDispatcherSvc.stream.listen((event) {
         if (event.item1 != 'update-contacts') return;
         if (event.item2.isNotEmpty) {
           bool changed = false;
@@ -358,7 +358,7 @@ class _ChatSubtitleState extends CustomState<ChatSubtitle, void, ConversationTil
       });
     } else {
       // listen for contacts update (if tile is active, we can update it)
-      eventDispatcher.stream.listen((event) {
+      EventDispatcherSvc.stream.listen((event) {
         if (event.item1 != 'update-contacts') return;
         if (event.item2.isNotEmpty) {
           String newSubtitle = MessageHelper.getNotificationText(controller.chat.latestMessage);

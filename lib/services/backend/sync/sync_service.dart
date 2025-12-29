@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:bluebubbles/helpers/ui/ui_helpers.dart';
 import 'package:bluebubbles/services/backend/interfaces/contact_interface.dart';
 import 'package:bluebubbles/services/backend/interfaces/sync_interface.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
@@ -37,7 +38,7 @@ class SyncService {
     // Set the last sync date (for incremental, even though this isn't incremental)
     // We won't try an incremental sync until the last (full) sync date is set
     SettingsSvc.settings.lastIncrementalSync.value = DateTime.now().millisecondsSinceEpoch;
-    await SettingsSvc.saveSettings();
+    await SettingsSvc.settings.saveOneAsync('lastIncrementalSync');
     await _manager!.start();
   }
 
@@ -74,6 +75,10 @@ class SyncService {
         if (result.last.isNotEmpty) {
           ContactsSvcV2.notifyHandlesUpdated(result.last);
         }
+      }
+
+      if (SettingsSvc.settings.showIncrementalSync.value) {
+        showSnackbar('Success', '🔄 Incremental sync complete 🔄');
       }
     } catch (e, stack) {
       Logger.error('Incremental sync failed!', error: e, trace: stack);

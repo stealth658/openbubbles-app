@@ -10,7 +10,6 @@ class MessageActions {
     // Fetch a message with a limit of 1 using ObjectBox
     final oneDayAgo = DateTime.now().subtract(const Duration(days: 1));
     final messages = (await Database.messages.query(Message_.dateCreated.greaterThan(oneDayAgo.millisecondsSinceEpoch)).build().findAsync());
-    print('Fetched ${messages.length} messages from isolate');
     if (messages.isNotEmpty) {
       return messages;
     }
@@ -180,7 +179,7 @@ class MessageActions {
         try {
           messageBox.putMany(messagesToUpdate.values.toList());
         } catch (ex) {
-          print('Failed to put associated messages into DB: ${ex.toString()}');
+          Logger.warn('Failed to put associated messages into DB: ${ex.toString()}');
         }
       }
 
@@ -247,7 +246,7 @@ class MessageActions {
       try {
         messageBox.put(existing, mode: PutMode.update);
       } catch (ex) {
-        print('Failed to replace message! This is likely due to a unique constraint being violated: ${ex.toString()}');
+        Logger.warn('Failed to replace message! This is likely due to a unique constraint being violated: ${ex.toString()}');
       }
       
       // Return just the ID for efficient transfer across isolates

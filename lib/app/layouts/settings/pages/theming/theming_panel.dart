@@ -70,7 +70,7 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                         if (val == null) return;
                         AdaptiveTheme.of(context).setThemeMode(val);
                         setState(() {});
-                        eventDispatcher.emit('theme-update', null);
+                        EventDispatcherSvc.emit('theme-update', null);
                       },
                       options: AdaptiveThemeMode.values,
                       textProcessing: (val) => val.toString().split(".").last,
@@ -103,8 +103,8 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                         update: (double val) {
                           SettingsSvc.settings.avatarScale.value = val;
                         },
-                        onChangeEnd: (double val) {
-                          saveSettings();
+                        onChangeEnd: (double val) async {
+                          await SettingsSvc.settings.saveOneAsync('avatarScale');
                         },
                         formatValue: ((double val) => val.toPrecision(2).toString()),
                         backgroundColor: tileColor,
@@ -126,9 +126,9 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                             if (val == null) return;
                             await cm.setAllInactive();
                             SettingsSvc.settings.skin.value = val;
-                            saveSettings();
+                            await SettingsSvc.settings.saveOneAsync('skin');
                             setState(() {});
-                            eventDispatcher.emit('theme-update', null);
+                            EventDispatcherSvc.emit('theme-update', null);
                           },
                           options: Skins.values,
                           textProcessing: (val) => val.name,
@@ -139,11 +139,11 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                     if (!kIsDesktop) const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     if (!kIsDesktop)
                       Obx(() => SettingsSwitch(
-                            onChanged: (bool val) {
+                            onChanged: (bool val) async {
                               SettingsSvc.settings.tabletMode.value = val;
-                              saveSettings();
+                              await SettingsSvc.settings.saveOneAsync('tabletMode');
                               // update the conversation view UI
-                              eventDispatcher.emit('split-refresh', null);
+                              EventDispatcherSvc.emit('split-refresh', null);
                             },
                             initialVal: SettingsSvc.settings.tabletMode.value,
                             title: "Tablet Mode",
@@ -154,16 +154,16 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                     if (!kIsWeb && !kIsDesktop) const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     if (!kIsWeb && !kIsDesktop)
                       Obx(() => SettingsSwitch(
-                            onChanged: (bool val) {
+                            onChanged: (bool val) async {
                               SettingsSvc.settings.immersiveMode.value = val;
-                              saveSettings();
+                              await SettingsSvc.settings.saveOneAsync('immersiveMode');
                               if (val) {
                                 SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
                               } else {
                                 SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
                                     overlays: [SystemUiOverlay.bottom, SystemUiOverlay.top]);
                               }
-                              eventDispatcher.emit('theme-update', null);
+                              EventDispatcherSvc.emit('theme-update', null);
                             },
                             initialVal: SettingsSvc.settings.immersiveMode.value,
                             title: "Immersive Mode",
@@ -208,7 +208,7 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                           }
                           await PrefsSvc.i.setString('window-effect', effect.toString());
                           await WindowEffects.setEffect(color: context.theme.colorScheme.background);
-                          saveSettings();
+                          await SettingsSvc.settings.saveManyAsync(['windowEffect', 'windowEffectCustomOpacityLight', 'windowEffectCustomOpacityDark']);
                         },
                         title: "Window Effect",
                         subtitle:
@@ -231,10 +231,10 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                           trailing: SettingsSvc.settings.windowEffectCustomOpacityLight.value !=
                                   WindowEffects.defaultOpacity(dark: false)
                               ? ElevatedButton(
-                                  onPressed: () {
+                                  onPressed: () async {
                                     SettingsSvc.settings.windowEffectCustomOpacityLight.value =
                                         WindowEffects.defaultOpacity(dark: false);
-                                    saveSettings();
+                                    await SettingsSvc.settings.saveOneAsync('windowEffectCustomOpacityLight');
                                   },
                                   child: const Text("Reset to Default"),
                                 )
@@ -253,8 +253,8 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                           divisions: 100,
                           formatValue: (value) => value.toStringAsFixed(2),
                           update: (value) => SettingsSvc.settings.windowEffectCustomOpacityLight.value = value,
-                          onChangeEnd: (value) {
-                            saveSettings();
+                          onChangeEnd: (value) async {
+                            await SettingsSvc.settings.saveOneAsync('windowEffectCustomOpacityLight');
                           },
                         );
                       }
@@ -268,10 +268,10 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                           trailing: SettingsSvc.settings.windowEffectCustomOpacityDark.value !=
                                   WindowEffects.defaultOpacity(dark: true)
                               ? ElevatedButton(
-                                  onPressed: () {
+                                  onPressed: () async {
                                     SettingsSvc.settings.windowEffectCustomOpacityDark.value =
                                         WindowEffects.defaultOpacity(dark: true);
-                                    saveSettings();
+                                    await SettingsSvc.settings.saveOneAsync('windowEffectCustomOpacityDark');
                                   },
                                   child: const Text("Reset to Default"),
                                 )
@@ -290,8 +290,8 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                           divisions: 100,
                           formatValue: (value) => value.toStringAsFixed(2),
                           update: (value) => SettingsSvc.settings.windowEffectCustomOpacityDark.value = value,
-                          onChangeEnd: (value) {
-                            saveSettings();
+                          onChangeEnd: (value) async {
+                            await SettingsSvc.settings.saveOneAsync('windowEffectCustomOpacityDark');
                           },
                         );
                       }
@@ -312,7 +312,7 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                                 "Apply the ${Platform.isWindows ? "Windows" : Platform.isLinux ? "Linux" : "MacOS"} accent color to your theme",
                             onChanged: (value) async {
                               SettingsSvc.settings.useDesktopAccent.value = value;
-                              saveSettings();
+                              await SettingsSvc.settings.saveOneAsync('useDesktopAccent');
                               await ThemeSvc.refreshDesktopAccent(context);
                             },
                           )),
@@ -345,13 +345,13 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                             final currentTheme = ThemeStruct.getLightTheme();
                             if (currentTheme.name == "Music Theme ☀" || currentTheme.name == "Music Theme 🌙") {
                               SettingsSvc.settings.colorsFromMedia.value = false;
-                              SettingsSvc.saveSettings(SettingsSvc.settings);
+                              await SettingsSvc.settings.saveOneAsync('colorsFromMedia');
                               ThemeStruct previousDark = await ThemeSvc.revertToPreviousDarkTheme();
                               ThemeStruct previousLight = await ThemeSvc.revertToPreviousLightTheme();
                               await ThemeSvc.changeTheme(context, light: previousLight, dark: previousDark);
                             }
                             SettingsSvc.settings.monetTheming.value = val ?? Monet.none;
-                            saveSettings();
+                            await SettingsSvc.settings.saveOneAsync('monetTheming');
                             await ThemeSvc.refreshMonet(context);
                           },
                           options: Monet.values,
@@ -374,7 +374,7 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                                 await MethodChannelSvc.invokeMethod("start-notification-listener");
                                 // disable monet theming if music theme enabled
                                 SettingsSvc.settings.monetTheming.value = Monet.none;
-                                saveSettings();
+                                await SettingsSvc.settings.saveOneAsync('monetTheming');
                                 var allThemes = ThemeStruct.getThemes();
                                 var currentLight = ThemeStruct.getLightTheme();
                                 var currentDark = ThemeStruct.getDarkTheme();
@@ -384,7 +384,7 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                                     light: allThemes.firstWhere((element) => element.name == "Music Theme ☀"),
                                     dark: allThemes.firstWhere((element) => element.name == "Music Theme 🌙"));
                                 SettingsSvc.settings.colorsFromMedia.value = val;
-                                saveSettings();
+                                await SettingsSvc.settings.saveOneAsync('colorsFromMedia');
                               } catch (e) {
                                 showSnackbar("Error",
                                     "Something went wrong, please ensure you granted the permission correctly!");
@@ -399,7 +399,7 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                               await PrefsSvc.i.remove("previous-dark");
                               await ThemeSvc.changeTheme(context, light: previousLight, dark: previousDark);
                               SettingsSvc.settings.colorsFromMedia.value = val;
-                              saveSettings();
+                              await SettingsSvc.settings.saveOneAsync('colorsFromMedia');
                             }
                           },
                           initialVal: SettingsSvc.settings.colorsFromMedia.value,
@@ -416,9 +416,9 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                       ),
                     if (!kIsWeb && !kIsDesktop) const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     Obx(() => SettingsSwitch(
-                          onChanged: (bool val) {
+                          onChanged: (bool val) async {
                             SettingsSvc.settings.colorfulAvatars.value = val;
-                            saveSettings();
+                            await SettingsSvc.settings.saveOneAsync('colorfulAvatars');
                           },
                           initialVal: SettingsSvc.settings.colorfulAvatars.value,
                           title: "Colorful Avatars",
@@ -427,9 +427,9 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                         )),
                     const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     Obx(() => SettingsSwitch(
-                          onChanged: (bool val) {
+                          onChanged: (bool val) async {
                             SettingsSvc.settings.colorfulBubbles.value = val;
-                            saveSettings();
+                            await SettingsSvc.settings.saveOneAsync('colorfulBubbles');
                           },
                           initialVal: SettingsSvc.settings.colorfulBubbles.value,
                           title: "Colorful Bubbles",
@@ -485,7 +485,8 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                                   if (val == null) return;
                                   controller.currentMode.value = val;
                                   SettingsSvc.settings.refreshRate.value = controller.currentMode.value;
-                                  SettingsSvc.saveSettings(null, true);
+                                  await SettingsSvc.settings.saveOneAsync('refreshRate');
+                                  await SettingsSvc.updateDisplayMode();
                                 },
                                 options: controller.refreshRates,
                                 textProcessing: (val) => val == 0 ? "Auto" : "$val Hz",
@@ -626,10 +627,6 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
         ],
       ),
     );
-  }
-
-  void saveSettings() {
-    SettingsSvc.saveSettings();
   }
 
   void showMonetDialog(BuildContext context) {

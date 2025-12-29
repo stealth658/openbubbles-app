@@ -124,10 +124,8 @@ class _NotificationProvidersState extends OptimizedState<NotificationProvidersPa
                   Obx(() => SettingsSwitch(
                     onChanged: (bool val) async {
                       SettingsSvc.settings.keepAppAlive.value = val;
-                      await SettingsSvc.saveSettings(SettingsSvc.settings);
-
-                      // Save the custom headers to prefs
-                      await PrefsSvc.i.setString('customHeaders', jsonEncode(HttpSvc.headers));
+                      SettingsSvc.settings.customHeaders.value = HttpSvc.headers;
+                      await SettingsSvc.settings.saveManyAsync(['keepAppAlive', 'customHeaders']);
 
                       // We don't need to start the service here because it will be started
                       // when the app is inactive.

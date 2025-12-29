@@ -233,11 +233,8 @@ class SettingsService {
     );
   }
 
-  Future<void> saveSettings([Settings? newSettings, bool updateDisplayMode = false]) async {
-    // Set the new settings as the current settings in the manager
-    settings = newSettings ?? settings;
-    await settings.saveAsync();
-    if (updateDisplayMode && !kIsWeb && !kIsDesktop) {
+  Future<void> updateDisplayMode() async {
+    if (!kIsWeb && !kIsDesktop) {
       try {
         final mode = await settings.getDisplayMode();
         FlutterDisplayMode.setPreferredMode(mode);
@@ -253,14 +250,15 @@ class SettingsService {
   Future<Map<String, dynamic>> getServerDetailsDict() async {
     final response = await HttpSvc.serverInfo();
     if (response.statusCode == 200) {
+      final List<String> toSave = [];
       if (settings.iCloudAccount.isEmpty && response.data['data']['detected_icloud'] is String) {
         settings.iCloudAccount.value = response.data['data']['detected_icloud'];
-        settings.save();
+        toSave.add('iCloudAccount');
       }
 
       if (response.data['data']['private_api'] is bool) {
         settings.serverPrivateAPI.value = response.data['data']['private_api'];
-        settings.save();
+        toSave.add('serverPrivateAPI');
       }
 
       final version = int.tryParse(response.data['data']['os_version'].split(".")[0]);
@@ -272,6 +270,10 @@ class SettingsService {
       if (minorVersion != null) await PrefsSvc.i.setInt("macos-minor-version", minorVersion);
       if (serverVersion != null) await PrefsSvc.i.setString("server-version", serverVersion);
       await PrefsSvc.i.setInt("server-version-code", versionCode);
+      
+      if (toSave.isNotEmpty) {
+        await settings.saveManyAsync(toSave);
+      }
 
       return {
         'macOSVersion': version ?? 11,
@@ -542,14 +544,12 @@ class SettingsService {
   }
 
   Future<void> checkServerUpdate() async {
-    print("[UPDATE] Checking for server update...");
     late ServerUpdateInfo updateInfo;
     if (Platform.isAndroid) {
       updateInfo = await ServerInterface.checkForServerUpdate();
     } else {
       updateInfo = await checkForServerUpdate();
     }
-    print("[UPDATE] Server update info: $updateInfo");
     
     if (!updateInfo.available || 
         (updateInfo.version != null && PrefsSvc.i.getString("server-update-check") == updateInfo.version)) return;
@@ -652,14 +652,12 @@ class SettingsService {
   }
 
   Future<void> checkClientUpdate() async {
-    print("[UPDATE] Checking for app update...");
     late AppUpdateInfo updateInfo;
     if (Platform.isAndroid) {
       updateInfo = await AppInterface.checkForUpdate();
     } else {
       updateInfo = await checkForUpdate();
     }
-    print("[UPDATE] Update info: $updateInfo");
     if (!updateInfo.available) return;
     
     showDialog(

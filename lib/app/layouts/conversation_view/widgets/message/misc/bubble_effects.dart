@@ -46,7 +46,7 @@ class _BubbleEffectsState extends OptimizedState<BubbleEffects> {
   void initState() {
     getTween();
 
-    eventDispatcher.stream.listen((event) async {
+    EventDispatcherSvc.stream.listen((event) async {
       if (event.item1 == 'play-bubble-effect' && event.item2 == '${widget.part}/${widget.message.guid}') {
         size = widget.globalKey?.currentContext?.size ?? Size.zero;
         setState(() {

@@ -52,9 +52,9 @@ class _NotificationPanelState extends OptimizedState<NotificationPanel> with Sin
             SettingsSection(backgroundColor: tileColor, children: [
               if (!kIsWeb)
                 Obx(() => SettingsSwitch(
-                  onChanged: (bool val) {
+                  onChanged: (bool val) async {
                     SettingsSvc.settings.notifyOnChatList.value = val;
-                    saveSettings();
+                    await SettingsSvc.settings.saveOneAsync('notifyOnChatList');
                   },
                   initialVal: SettingsSvc.settings.notifyOnChatList.value,
                   title: "Send Notifications on Chat List",
@@ -79,9 +79,9 @@ class _NotificationPanelState extends OptimizedState<NotificationPanel> with Sin
                 ),
               const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
               Obx(() => SettingsSwitch(
-                onChanged: (bool val) {
+                onChanged: (bool val) async {
                   SettingsSvc.settings.notifyReactions.value = val;
-                  saveSettings();
+                  await SettingsSvc.settings.saveOneAsync('notifyReactions');
                 },
                 initialVal: SettingsSvc.settings.notifyReactions.value,
                 title: "Notify for Reactions",
@@ -96,7 +96,7 @@ class _NotificationPanelState extends OptimizedState<NotificationPanel> with Sin
                 onChanged: (bool val) async {
                   if (!val) {
                     SettingsSvc.settings.globalTextDetection.value = "";
-                    saveSettings();
+                    await SettingsSvc.settings.saveOneAsync('globalTextDetection');
                     return;
                   }
                   final TextEditingController controller = TextEditingController();
@@ -106,7 +106,7 @@ class _NotificationPanelState extends OptimizedState<NotificationPanel> with Sin
                     builder: (context) => TextDetectionDialog(controller),
                   );
                   SettingsSvc.settings.globalTextDetection.value = controller.text;
-                  saveSettings();
+                  await SettingsSvc.settings.saveOneAsync('globalTextDetection');
                 },
                 backgroundColor: tileColor,
               )),
@@ -122,7 +122,7 @@ class _NotificationPanelState extends OptimizedState<NotificationPanel> with Sin
                     builder: (context) => TextDetectionDialog(controller),
                   );
                   SettingsSvc.settings.globalTextDetection.value = controller.text;
-                  saveSettings();
+                  await SettingsSvc.settings.saveOneAsync('globalTextDetection');
                 },
               ) : const SizedBox.shrink())
             ]),
@@ -134,9 +134,9 @@ class _NotificationPanelState extends OptimizedState<NotificationPanel> with Sin
               backgroundColor: tileColor,
               children: [
                 Obx(() => SettingsSwitch(
-                  onChanged: (bool val) {
+                  onChanged: (bool val) async {
                     SettingsSvc.settings.hideTextPreviews.value = val;
-                    saveSettings();
+                    await SettingsSvc.settings.saveOneAsync('hideTextPreviews');
                   },
                   initialVal: SettingsSvc.settings.hideTextPreviews.value,
                   title: "Hide Message Text",
@@ -145,9 +145,9 @@ class _NotificationPanelState extends OptimizedState<NotificationPanel> with Sin
                 )),
                 const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                 Obx(() => SettingsSwitch(
-                  onChanged: (bool val) {
+                  onChanged: (bool val) async {
                     SettingsSvc.settings.showIncrementalSync.value = val;
-                    saveSettings();
+                    await SettingsSvc.settings.saveOneAsync('showIncrementalSync');
                   },
                   initialVal: SettingsSvc.settings.showIncrementalSync.value,
                   title: "Notify When Incremental Sync Complete",
@@ -326,10 +326,6 @@ class _NotificationPanelState extends OptimizedState<NotificationPanel> with Sin
       )
     ));
   }
-
-  void saveSettings() {
-    SettingsSvc.saveSettings();
-  }
 }
 
 class ChatList extends StatefulWidget {
@@ -378,7 +374,7 @@ class ChatListState extends OptimizedState<ChatList> {
                       Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: Text(
-                          "Loading ChatSvc...",
+                          "Loading chats...",
                           style: context.theme.textTheme.labelLarge,
                         ),
                       ),

@@ -172,6 +172,7 @@ class _UnifiedPushPanelState
       await MethodChannelSvc.invokeMethod("UnifiedPushHandler", {"operation": "unregister"});
       SettingsSvc.settings.endpointUnifiedPush.value = "";
     }
-    SettingsSvc.saveSettings();
+
+    await SettingsSvc.settings.saveOneAsync('endpointUnifiedPush');
   }
 }

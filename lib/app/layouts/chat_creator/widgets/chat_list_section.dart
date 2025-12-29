@@ -39,7 +39,7 @@ class ChatListSection extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: Text(
-                      "Loading existing ChatSvc...",
+                      "Loading existing chats...",
                       style: context.theme.textTheme.labelLarge,
                     ),
                   ),

@@ -60,9 +60,9 @@ class _TaskerPanelState extends OptimizedState<TaskerPanel> {
                   backgroundColor: tileColor,
                   children: [
                     Obx(() => SettingsSwitch(
-                      onChanged: (bool val) {
+                      onChanged: (bool val) async {
                         SettingsSvc.settings.sendEventsToTasker.value = val;
-                        SettingsSvc.saveSettings();
+                        await SettingsSvc.settings.saveOneAsync('sendEventsToTasker');
                       },
                       initialVal: SettingsSvc.settings.sendEventsToTasker.value,
                       title: "Send Events to Tasker",

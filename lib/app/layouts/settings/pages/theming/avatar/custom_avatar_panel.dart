@@ -39,7 +39,7 @@ class _CustomAvatarPanelState extends OptimizedState<CustomAvatarPanel> {
                       Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: Text(
-                          "Loading ChatSvc...",
+                          "Loading chats...",
                           style: context.theme.textTheme.labelLarge,
                         ),
                       ),

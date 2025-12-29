@@ -63,9 +63,9 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                 backgroundColor: tileColor,
                 children: [
                   Obx(() => SettingsSwitch(
-                        onChanged: (bool val) {
+                        onChanged: (bool val) async {
                           SettingsSvc.settings.showDeliveryTimestamps.value = val;
-                          saveSettings();
+                          await SettingsSvc.settings.saveOneAsync('showDeliveryTimestamps');
                         },
                         initialVal: SettingsSvc.settings.showDeliveryTimestamps.value,
                         title: "Show Delivery Timestamps",
@@ -73,9 +73,9 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                       )),
                   const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                   Obx(() => SettingsSwitch(
-                        onChanged: (bool val) {
+                        onChanged: (bool val) async {
                           SettingsSvc.settings.recipientAsPlaceholder.value = val;
-                          saveSettings();
+                          await SettingsSvc.settings.saveOneAsync('recipientAsPlaceholder');
                         },
                         initialVal: SettingsSvc.settings.recipientAsPlaceholder.value,
                         title: "Show Chat Name as Placeholder",
@@ -85,9 +85,9 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                       )),
                   const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                   Obx(() => SettingsSwitch(
-                        onChanged: (bool val) {
+                        onChanged: (bool val) async {
                           SettingsSvc.settings.alwaysShowAvatars.value = val;
-                          saveSettings();
+                          await SettingsSvc.settings.saveOneAsync('alwaysShowAvatars');
                         },
                         initialVal: SettingsSvc.settings.alwaysShowAvatars.value,
                         title: "Show Avatars in DM Chats",
@@ -99,9 +99,9 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                     const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                   if (!kIsWeb && !kIsDesktop)
                     Obx(() => SettingsSwitch(
-                          onChanged: (bool val) {
+                          onChanged: (bool val) async {
                             SettingsSvc.settings.smartReply.value = val;
-                            saveSettings();
+                            await SettingsSvc.settings.saveOneAsync('smartReply');
                           },
                           initialVal: SettingsSvc.settings.smartReply.value,
                           title: "Smart Suggestions",
@@ -112,9 +112,9 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                         )),
                   const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                   Obx(() => SettingsSwitch(
-                        onChanged: (bool val) {
+                        onChanged: (bool val) async {
                           SettingsSvc.settings.repliesToPrevious.value = val;
-                          saveSettings();
+                          await SettingsSvc.settings.saveOneAsync('repliesToPrevious');
                         },
                         initialVal: SettingsSvc.settings.repliesToPrevious.value,
                         title: "Show Replies To Previous Message",
@@ -166,15 +166,15 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                     ),
                   if (!kIsWeb)
                     const SettingsSubtitle(
-                      subtitle: "Note: Overrides any custom avatars set for group ChatSvc.",
+                      subtitle: "Note: Overrides any custom avatars set for group chats.",
                     ),
                   if (!kIsWeb)
                     const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                   if (!kIsWeb)
                     Obx(() => SettingsSwitch(
-                          onChanged: (bool val) {
+                          onChanged: (bool val) async {
                             SettingsSvc.settings.scrollToLastUnread.value = val;
-                            saveSettings();
+                            await SettingsSvc.settings.saveOneAsync('scrollToLastUnread');
                           },
                           initialVal: SettingsSvc.settings.scrollToLastUnread.value,
                           title: "Store Last Read Message",
@@ -218,7 +218,7 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                             await File(path).create(recursive: true);
                             await File(path).writeAsBytes(platformFile.bytes!);
                             SettingsSvc.settings.sendSoundPath.value = path;
-                            SettingsSvc.saveSettings();
+                            await SettingsSvc.settings.saveOneAsync('sendSoundPath');
                           }
                         },
                         trailing: (SettingsSvc.settings.sendSoundPath.value == null)
@@ -261,7 +261,7 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                                         await file.delete();
                                       }
                                       SettingsSvc.settings.sendSoundPath.value = null;
-                                      SettingsSvc.saveSettings();
+                                      await SettingsSvc.settings.saveOneAsync('sendSoundPath');
                                     },
                                   ),
                                 ],
@@ -281,7 +281,7 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                             await File(path).create(recursive: true);
                             await File(path).writeAsBytes(platformFile.bytes!);
                             SettingsSvc.settings.receiveSoundPath.value = path;
-                            SettingsSvc.saveSettings();
+                            await SettingsSvc.settings.saveOneAsync('receiveSoundPath');
                           }
                         },
                         trailing: (SettingsSvc.settings.receiveSoundPath.value == null)
@@ -324,7 +324,7 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                                         await file.delete();
                                       }
                                       SettingsSvc.settings.receiveSoundPath.value = null;
-                                      SettingsSvc.saveSettings();
+                                      await SettingsSvc.settings.saveOneAsync('receiveSoundPath');
                                     },
                                   ),
                                 ],
@@ -356,9 +356,9 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                 children: [
                   if (!kIsWeb && !kIsDesktop)
                     Obx(() => SettingsSwitch(
-                          onChanged: (bool val) {
+                          onChanged: (bool val) async {
                             SettingsSvc.settings.autoOpenKeyboard.value = val;
-                            saveSettings();
+                            await SettingsSvc.settings.saveOneAsync('autoOpenKeyboard');
                           },
                           initialVal: SettingsSvc.settings.autoOpenKeyboard.value,
                           title: "Auto-open Keyboard",
@@ -369,9 +369,9 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                     const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                   if (!kIsWeb && !kIsDesktop)
                     Obx(() => SettingsSwitch(
-                          onChanged: (bool val) {
+                          onChanged: (bool val) async {
                             SettingsSvc.settings.swipeToCloseKeyboard.value = val;
-                            saveSettings();
+                            await SettingsSvc.settings.saveOneAsync('swipeToCloseKeyboard');
                           },
                           initialVal: SettingsSvc.settings.swipeToCloseKeyboard.value,
                           title: "Swipe Message Box to Close Keyboard",
@@ -382,9 +382,9 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                     const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                   if (!kIsWeb && !kIsDesktop)
                     Obx(() => SettingsSwitch(
-                          onChanged: (bool val) {
+                          onChanged: (bool val) async {
                             SettingsSvc.settings.swipeToOpenKeyboard.value = val;
-                            saveSettings();
+                            await SettingsSvc.settings.saveOneAsync('swipeToOpenKeyboard');
                           },
                           initialVal: SettingsSvc.settings.swipeToOpenKeyboard.value,
                           title: "Swipe Message Box to Open Keyboard",
@@ -395,9 +395,9 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                     const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                   if (!kIsWeb && !kIsDesktop)
                     Obx(() => SettingsSwitch(
-                          onChanged: (bool val) {
+                          onChanged: (bool val) async {
                             SettingsSvc.settings.hideKeyboardOnScroll.value = val;
-                            saveSettings();
+                            await SettingsSvc.settings.saveOneAsync('hideKeyboardOnScroll');
                           },
                           initialVal: SettingsSvc.settings.hideKeyboardOnScroll.value,
                           title: "Hide Keyboard When Scrolling",
@@ -407,9 +407,9 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                     const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                   if (!kIsWeb && !kIsDesktop)
                     Obx(() => SettingsSwitch(
-                          onChanged: (bool val) {
+                          onChanged: (bool val) async {
                             SettingsSvc.settings.openKeyboardOnSTB.value = val;
-                            saveSettings();
+                            await SettingsSvc.settings.saveOneAsync('openKeyboardOnSTB');
                           },
                           initialVal: SettingsSvc.settings.openKeyboardOnSTB.value,
                           title: "Open Keyboard After Tapping Scroll To Bottom",
@@ -418,12 +418,14 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                   if (!kIsWeb && !kIsDesktop)
                     const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                   Obx(() => SettingsSwitch(
-                        onChanged: (bool val) {
+                        onChanged: (bool val) async {
                           SettingsSvc.settings.doubleTapForDetails.value = val;
                           if (val && SettingsSvc.settings.enableQuickTapback.value) {
                             SettingsSvc.settings.enableQuickTapback.value = false;
+                            await SettingsSvc.settings.saveManyAsync(['doubleTapForDetails', 'enableQuickTapback']);
+                          } else {
+                            await SettingsSvc.settings.saveOneAsync('doubleTapForDetails');
                           }
-                          saveSettings();
                         },
                         initialVal: SettingsSvc.settings.doubleTapForDetails.value,
                         title: "Double-${kIsWeb || kIsDesktop ? "Click" : "Tap"} Message for Details",
@@ -435,9 +437,9 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                     const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                   if (!kIsDesktop && !kIsWeb)
                     Obx(() => SettingsSwitch(
-                          onChanged: (bool val) {
+                          onChanged: (bool val) async {
                             SettingsSvc.settings.sendWithReturn.value = val;
-                            saveSettings();
+                            await SettingsSvc.settings.saveOneAsync('sendWithReturn');
                           },
                           initialVal: SettingsSvc.settings.sendWithReturn.value,
                           title: "Send Message with Enter",
@@ -445,9 +447,9 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                         )),
                   const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                   Obx(() => SettingsSwitch(
-                        onChanged: (bool val) {
+                        onChanged: (bool val) async {
                           SettingsSvc.settings.scrollToBottomOnSend.value = val;
-                          saveSettings();
+                          await SettingsSvc.settings.saveOneAsync('scrollToBottomOnSend');
                         },
                         initialVal: SettingsSvc.settings.scrollToBottomOnSend.value,
                         title: "Scroll To Bottom When Sending Messages",
@@ -461,10 +463,6 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
         ),
       ],
     );
-  }
-
-  void saveSettings() {
-    SettingsSvc.saveSettings();
   }
 
   @override

@@ -50,7 +50,7 @@ class _TabletModeWrapperState extends OptimizedState<TabletModeWrapper> {
   void initState() {
     super.initState();
     _ratio = RxDouble((PrefsSvc.i.getDouble('splitRatio') ?? widget.initialRatio).clamp(widget.minRatio, widget.maxRatio));
-    eventDispatcher.stream.listen((event) {
+    EventDispatcherSvc.stream.listen((event) {
       if (event.item1 == 'split-refresh') {
         _ratio.value = PrefsSvc.i.getDouble('splitRatio') ?? _ratio.value;
         setState(() {});
@@ -61,7 +61,7 @@ class _TabletModeWrapperState extends OptimizedState<TabletModeWrapper> {
     });
     debounce<double>(_ratio, (val) async {
       await PrefsSvc.i.setDouble('splitRatio', val);
-      eventDispatcher.emit('split-refresh', null);
+      EventDispatcherSvc.emit('split-refresh', null);
     });
   }
 

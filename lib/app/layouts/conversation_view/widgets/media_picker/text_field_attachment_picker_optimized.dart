@@ -73,7 +73,7 @@ class _AttachmentPickerState extends OptimizedState<AttachmentPicker> {
           final file = await _images.first.file;
           if (file != null) {
             // Don't load bytes here - let the attachment service handle it when needed
-            eventDispatcher.emit('add-custom-smartreply', PlatformFile(
+            EventDispatcherSvc.emit('add-custom-smartreply', PlatformFile(
               path: file.path,
               name: file.path.split('/').last,
               size: await file.length(),

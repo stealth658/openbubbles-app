@@ -212,7 +212,7 @@ class ChatsService {
     chats.sort(Chat.sort);
   }
 
-  bool updateChat(Chat updated, {bool shouldSort = false, bool override = false}) {
+  bool updateChat(Chat updated, {bool override = false}) {
     if (headless) return false;
     final index = chats.indexWhere((e) => updated.guid == e.guid);
     if (index != -1) {
@@ -225,11 +225,8 @@ class ChatsService {
         
         // Trigger granular update for this specific chat
         chatUpdateTrigger[merged.guid] = DateTime.now().millisecondsSinceEpoch;
-        
-        if (shouldSort) {
-          // Use efficient repositioning instead of full sort
-          _repositionChat(merged);
-        }
+        // Use efficient repositioning instead of full sort
+        _repositionChat(merged);
       }
     }
 
@@ -242,7 +239,7 @@ class ChatsService {
     final existingIndex = chats.indexWhere((e) => e.guid == toAdd.guid);
     if (existingIndex != -1) {
       // Update existing chat instead
-      updateChat(toAdd, shouldSort: true, override: true);
+      updateChat(toAdd, override: true);
       return;
     }
     

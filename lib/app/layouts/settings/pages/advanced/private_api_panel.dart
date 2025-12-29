@@ -128,7 +128,7 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
                         () => SettingsSwitch(
                           onChanged: (bool val) async {
                             SettingsSvc.settings.enablePrivateAPI.value = val;
-                            saveSettings();
+                            await SettingsSvc.settings.saveOneAsync('enablePrivateAPI');
                           },
                           initialVal: SettingsSvc.settings.enablePrivateAPI.value,
                           title: "Enable Private API Features",
@@ -150,9 +150,9 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
                         backgroundColor: tileColor,
                         children: [
                           SettingsSwitch(
-                            onChanged: (bool val) {
+                            onChanged: (bool val) async {
                               SettingsSvc.settings.privateSendTypingIndicators.value = val;
-                              saveSettings();
+                              await SettingsSvc.settings.saveOneAsync('privateSendTypingIndicators');
                             },
                             initialVal: SettingsSvc.settings.privateSendTypingIndicators.value,
                             title: "Send Typing Indicators",
@@ -171,12 +171,15 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
                                     children: [
                                       const SettingsDivider(),
                                       SettingsSwitch(
-                                        onChanged: (bool val) {
+                                        onChanged: (bool val) async {
                                           SettingsSvc.settings.privateMarkChatAsRead.value = val;
+                                          final toSave = ['privateMarkChatAsRead'];
                                           if (val) {
                                             SettingsSvc.settings.privateManualMarkAsRead.value = false;
+                                            toSave.add('privateManualMarkAsRead');
                                           }
-                                          saveSettings();
+
+                                          await SettingsSvc.settings.saveManyAsync(toSave);
                                         },
                                         initialVal: SettingsSvc.settings.privateMarkChatAsRead.value,
                                         title: "Automatic Mark Read / Send Read Receipts",
@@ -201,9 +204,9 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
                               children: [
                                 const SettingsDivider(),
                                 SettingsSwitch(
-                                  onChanged: (bool val) {
+                                  onChanged: (bool val) async {
                                     SettingsSvc.settings.privateManualMarkAsRead.value = val;
-                                    saveSettings();
+                                    await SettingsSvc.settings.saveOneAsync('privateManualMarkAsRead');
                                   },
                                   initialVal: SettingsSvc.settings.privateManualMarkAsRead.value,
                                   title: "Manual Mark Read / Send Read Receipts",
@@ -223,12 +226,15 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
                           SettingsSwitch(
                             title: "Double-${kIsWeb || kIsDesktop ? "Click" : "Tap"} Message for Quick Tapback",
                             initialVal: SettingsSvc.settings.enableQuickTapback.value,
-                            onChanged: (bool val) {
+                            onChanged: (bool val) async {
                               SettingsSvc.settings.enableQuickTapback.value = val;
+                              final toSave = ['enableQuickTapback'];
                               if (val && SettingsSvc.settings.doubleTapForDetails.value) {
                                 SettingsSvc.settings.doubleTapForDetails.value = false;
+                                toSave.add('doubleTapForDetails');
                               }
-                              saveSettings();
+
+                              await SettingsSvc.settings.saveManyAsync(toSave);
                             },
                             subtitle: "Send a tapback of your choosing when double ${kIsWeb || kIsDesktop ? "click" : "tapp"}ing a message",
                             backgroundColor: tileColor,
@@ -310,10 +316,10 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
                                 ],
                                 initial: SettingsSvc.settings.quickTapbackType.value,
                                 textProcessing: (val) => val,
-                                onChanged: (val) {
+                                onChanged: (val) async {
                                   if (val == null) return;
                                   SettingsSvc.settings.quickTapbackType.value = val;
-                                  saveSettings();
+                                  await SettingsSvc.settings.saveOneAsync('quickTapbackType');
                                 },
                                 secondaryColor: headerColor,
                               ),
@@ -328,9 +334,9 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
                                 SettingsSwitch(
                                   title: "Up Arrow for Quick Edit",
                                   initialVal: SettingsSvc.settings.editLastSentMessageOnUpArrow.value,
-                                  onChanged: (bool val) {
+                                  onChanged: (bool val) async {
                                     SettingsSvc.settings.editLastSentMessageOnUpArrow.value = val;
-                                    saveSettings();
+                                    await SettingsSvc.settings.saveOneAsync('editLastSentMessageOnUpArrow');
                                   },
                                   subtitle: "Press the Up Arrow to begin editing the last message you sent",
                                   backgroundColor: tileColor,
@@ -350,9 +356,9 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
                               children: [
                                 const SettingsDivider(),
                                 SettingsSwitch(
-                                  onChanged: (bool val) {
+                                  onChanged: (bool val) async {
                                     SettingsSvc.settings.privateSubjectLine.value = val;
-                                    saveSettings();
+                                    await SettingsSvc.settings.saveOneAsync('privateSubjectLine');
                                   },
                                   initialVal: SettingsSvc.settings.privateSubjectLine.value,
                                   title: "Send Subject Lines",
@@ -375,9 +381,9 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
                               children: [
                                 const SettingsDivider(),
                                 SettingsSwitch(
-                                  onChanged: (bool val) {
+                                  onChanged: (bool val) async {
                                     SettingsSvc.settings.privateAPISend.value = val;
-                                    saveSettings();
+                                    await SettingsSvc.settings.saveOneAsync('privateAPISend');
                                   },
                                   initialVal: SettingsSvc.settings.privateAPISend.value,
                                   title: "Private API Send",
@@ -400,9 +406,9 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
                               children: [
                                 const SettingsDivider(),
                                 SettingsSwitch(
-                                  onChanged: (bool val) {
+                                  onChanged: (bool val) async {
                                     SettingsSvc.settings.privateAPIAttachmentSend.value = val;
-                                    saveSettings();
+                                    await SettingsSvc.settings.saveOneAsync('privateAPIAttachmentSend');
                                   },
                                   initialVal: SettingsSvc.settings.privateAPIAttachmentSend.value,
                                   title: "Private API Attachment Send",
@@ -427,9 +433,5 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
             ),
           ),
         ]);
-  }
-
-  void saveSettings() async {
-    await SettingsSvc.saveSettings();
   }
 }

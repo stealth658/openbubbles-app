@@ -1,6 +1,5 @@
 import 'package:async_task/async_task_extension.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
-import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/backend/sync/sync_manager_impl.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -47,7 +46,7 @@ class IncrementalSyncManager extends SyncManager {
 
   // The default extra fields to fetch with the messages
   List<String> defaultWithQuery = [
-    "chats", "ChatSvc.participants", "attachments", "attributedBody", "messageSummaryInfo", "payloadData"];
+    "chats", "chats.participants", "attachments", "attributedBody", "messageSummaryInfo", "payloadData"];
 
   IncrementalSyncManager({
       this.startRowId,
@@ -314,6 +313,7 @@ class IncrementalSyncManager extends SyncManager {
 
       // If we have a start timestamp, use the time that our sync started.
       // Otherwise, use the last timestamp we got from the API
+      final toSave = ['lastIncrementalSync'];
       if (startTimestamp != null) {
         SettingsSvc.settings.lastIncrementalSync.value = syncStartedAt;
       } else if (lastSyncedTimestamp != null) {
@@ -323,18 +323,24 @@ class IncrementalSyncManager extends SyncManager {
       // The lastRowId should always get set, even when sycing using timestamps
       if (lastSyncedRowId != null) {
         SettingsSvc.settings.lastIncrementalSyncRowId.value = lastSyncedRowId!;
+        toSave.add('lastIncrementalSyncRowId');
       }
 
-      await SettingsSvc.saveSettings();
+      await SettingsSvc.settings.saveManyAsync(toSave);
+    }
+
+    // Reload contacts and match them to handles
+    await ContactsSvcV2.syncContactsToHandles();
+
+    // Update the chat service with the latest chats
+    for (var chat in syncedChats.values) {
+      chat.dbLatestMessage;
+      ChatsSvc.updateChat(chat, override: true);
     }
 
     // Call this first so listeners can react before any
     // "heavier" calls are made
     await super.complete();
-
-    if (SettingsSvc.settings.showIncrementalSync.value) {
-      showSnackbar('Success', '🔄 Incremental sync complete 🔄');
-    }
 
     if (onComplete != null) {
       onComplete!();

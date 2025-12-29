@@ -219,7 +219,7 @@ void sendEffectAction(
                                                       setState(() {
                                                         bubbleSelected = bubbleEffects[index];
                                                         message.expressiveSendStyleId = effectMap[bubbleSelected];
-                                                        eventDispatcher.emit('play-bubble-effect', '0/${message.guid}');
+                                                        EventDispatcherSvc.emit('play-bubble-effect', '0/${message.guid}');
                                                         if (bubbleSelected == "gentle") {
                                                           animController = Control.playFromStart;
                                                         }

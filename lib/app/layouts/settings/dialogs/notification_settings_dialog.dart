@@ -28,7 +28,7 @@ class NotificationSettingsDialog extends StatelessWidget {
                 Navigator.of(context, rootNavigator: true).pop();
                 await chat.toggleMuteAsync(chat.muteType != "mute");
                 updateParent.call();
-                eventDispatcher.emit("refresh", null);
+                EventDispatcherSvc.emit("refresh", null);
               },
             ),
             if (chat.isGroup)
@@ -111,7 +111,7 @@ class NotificationSettingsDialog extends StatelessWidget {
                                 Navigator.of(context, rootNavigator: true).pop();
                                 chat.saveAsync(updateMuteType: true, updateMuteArgs: true);
                                 updateParent.call();
-                                eventDispatcher.emit("refresh", null);
+                                EventDispatcherSvc.emit("refresh", null);
                               }
                           ),
                         ],
@@ -153,7 +153,7 @@ class NotificationSettingsDialog extends StatelessWidget {
                       chat.muteArgs = finalDate.toIso8601String();
                       chat.saveAsync(updateMuteType: true, updateMuteArgs: true);
                       updateParent.call();
-                      eventDispatcher.emit("refresh", null);
+                      EventDispatcherSvc.emit("refresh", null);
                     }
                   }
                 }
@@ -180,7 +180,7 @@ class NotificationSettingsDialog extends StatelessWidget {
                 chat.muteArgs = controller.text;
                 chat.saveAsync(updateMuteType: true, updateMuteArgs: true);
                 updateParent.call();
-                eventDispatcher.emit("refresh", null);
+                EventDispatcherSvc.emit("refresh", null);
                 Navigator.of(context, rootNavigator: true).pop();
               },
             ),
@@ -196,7 +196,7 @@ class NotificationSettingsDialog extends StatelessWidget {
                 chat.muteArgs = null;
                 chat.saveAsync(updateMuteType: true, updateMuteArgs: true);
                 updateParent.call();
-                eventDispatcher.emit("refresh", null);
+                EventDispatcherSvc.emit("refresh", null);
                 Navigator.of(context, rootNavigator: true).pop();
               },
             ),

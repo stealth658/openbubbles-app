@@ -33,7 +33,7 @@ class ChatManager extends GetxService {
     });
 
     if (save) {
-      eventDispatcher.emit("update-highlight", null);
+      EventDispatcherSvc.emit("update-highlight", null);
       Future(() async => await PrefsSvc.i.remove('lastOpenedChat'));
     }
   }
@@ -51,7 +51,7 @@ class ChatManager extends GetxService {
 
   /// Same as setActiveChat but saves lastOpenedChat to prefs on next frame
   void setActiveChatSync(Chat chat, {clearNotifications = true, save = true}) {
-    eventDispatcher.emit("update-highlight", chat.guid);
+    EventDispatcherSvc.emit("update-highlight", chat.guid);
     Logger.debug('Setting active chat to ${chat.guid} (${chat.displayName})');
 
     createChatController(chat, active: true);
@@ -70,7 +70,7 @@ class ChatManager extends GetxService {
 
   void setActiveToAlive() {
     Logger.info('Setting active chat to alive: ${activeChat?.chat.guid}');
-    eventDispatcher.emit("update-highlight", activeChat?.chat.guid);
+    EventDispatcherSvc.emit("update-highlight", activeChat?.chat.guid);
     activeChat?.isAlive = true;
   }
 
@@ -92,7 +92,7 @@ class ChatManager extends GetxService {
     _chatControllers.clear();
     
     // Clear the highlight
-    eventDispatcher.emit("update-highlight", null);
+    EventDispatcherSvc.emit("update-highlight", null);
   }
 
   /// Close the chat manager and clean up all resources
@@ -114,7 +114,7 @@ class ChatManager extends GetxService {
     await PrefsSvc.i.remove('lastOpenedChat');
     
     // Clear the highlight
-    eventDispatcher.emit("update-highlight", null);
+    EventDispatcherSvc.emit("update-highlight", null);
   }
 
   ChatLifecycleManager createChatController(Chat chat, {active = false}) {

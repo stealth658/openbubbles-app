@@ -218,7 +218,7 @@ class CupertinoConversationListState extends OptimizedState<CupertinoConversatio
                                     padding: const EdgeInsets.all(8.0),
                                     child: Text(
                                       !ChatsSvc.loadedChatBatch.value
-                                          ? "Loading ChatSvc..."
+                                          ? "Loading chats..."
                                           : showArchived
                                               ? "You have no archived chats"
                                               : showUnknown

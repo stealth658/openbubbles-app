@@ -195,7 +195,7 @@ class ContactServiceV2 {
           // Force the chat to recalculate its title
           chat.title = null;
           ChatsService chats = Get.find<ChatsService>();
-          chats.updateChat(chat, shouldSort: false);
+          chats.updateChat(chat);
         }
       }
     } catch (e, stack) {

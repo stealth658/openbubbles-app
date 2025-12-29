@@ -5,6 +5,7 @@ import 'package:bluebubbles/services/backend/actions/chat_actions.dart';
 import 'package:bluebubbles/services/backend/lifecycle/lifecycle_service.dart';
 import 'package:get_it/get_it.dart';
 import 'package:bluebubbles/services/isolates/global_isolate.dart';
+import 'package:tuple/tuple.dart';
 
 class ChatInterface {
   static Future<void> clearNotificationForChat({
@@ -109,7 +110,7 @@ class ChatInterface {
     }
   }
 
-  static Future<Map<String, dynamic>> addMessageToChat({
+  static Future<Tuple2<Message, bool>> addMessageToChat({
     required Map<String, dynamic> messageData,
     required Map<String, dynamic> chatData,
     required Map<String, dynamic> latestMessageData,
@@ -122,12 +123,17 @@ class ChatInterface {
       'checkForMessageText': checkForMessageText,
     };
 
+    late Map<String, dynamic> result;
     if (isIsolate) {
-      return await ChatActions.addMessageToChat(data);
+      result = await ChatActions.addMessageToChat(data);
     } else {
-      return await GetIt.I<GlobalIsolate>()
+      result = await GetIt.I<GlobalIsolate>()
           .send<Map<String, dynamic>>(IsolateRequestType.addMessageToChat, input: data);
     }
+
+    final message = Database.messages.get(result['messageId'] as int)!;
+    final isNewer = result['isNewer'] as bool;
+    return Tuple2(message, isNewer);
   }
 
   static Future<Map<String, dynamic>> loadSupplementalData({

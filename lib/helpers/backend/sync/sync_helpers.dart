@@ -51,7 +51,7 @@ import 'package:collection/collection.dart';
 //
 // List<Chat> syncChats(List<Chat> chats) {
 //   // Get a list of the GUIDs
-//   List<String> inputChatGuids = ChatSvc.map((element) => element.guid).toList();
+//   List<String> inputChatGuids = chats.map((element) => element.guid).toList();
 //
 //   // Query the database for existing chats
 //   QueryBuilder<Chat> query = Database.chatBox.query(Chat_.guid.oneOf(inputChatGuids));
@@ -59,14 +59,14 @@ import 'package:collection/collection.dart';
 //   List<String> existingChatGuids = existingChats.map((e) => e.guid).toList();
 //
 //   // Insert any non-existing chats
-//   List<Chat> newChats = ChatSvc.where((element) => !existingChatGuids.contains(element.guid)).toList();
+//   List<Chat> newChats = chats.where((element) => !existingChatGuids.contains(element.guid)).toList();
 //   Database.chatBox.putMany(newChats);
 //
 //   // Update any existing chats
 //   if (existingChats.isNotEmpty) {
 //     int mods = 0;
 //     for (var i = 0; i < existingChats.length; i++) {
-//       Chat? newChat = ChatSvc.firstWhereOrNull((e) => e.guid == existingChats[i].guid);
+//       Chat? newChat = chats.firstWhereOrNull((e) => e.guid == existingChats[i].guid);
 //       if (newChat == null) continue;
 //
 //       // We put newChat first because we want the new info to take precedence
@@ -84,7 +84,7 @@ import 'package:collection/collection.dart';
 //   List<Chat> syncedChats = query2.build().find().toList();
 //
 //   // Insert the real ID
-//   for (var i = 0; i < ChatSvc.length; i++) {
+//   for (var i = 0; i < chats.length; i++) {
 //     Chat? synced = syncedChats.firstWhereOrNull((e) => e.guid == chats[i].guid);
 //     if (synced == null) continue;
 //

@@ -329,7 +329,7 @@ class _TroubleshootPanelState extends OptimizedState<TroubleshootPanel> {
                           try {
                             final handleSyncer = HandleSyncManager();
                             await handleSyncer.start();
-                            eventDispatcher.emit("refresh-all", null);
+                            EventDispatcherSvc.emit("refresh-all", null);
 
                             showSnackbar("Success",
                                 "Successfully re-synced handles! You may need to close and re-open the app for changes to take effect.");
@@ -368,7 +368,7 @@ class _TroubleshootPanelState extends OptimizedState<TroubleshootPanel> {
 
                             final chatSyncer = ChatSyncManager();
                             await chatSyncer.start();
-                            eventDispatcher.emit("refresh-all", null);
+                            EventDispatcherSvc.emit("refresh-all", null);
 
                             showSnackbar("Success",
                                 "Successfully synced your chat info! You may need to close and re-open the app for changes to take effect.");

@@ -13,6 +13,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart' hide Response;
 import 'package:metadata_fetch/metadata_fetch.dart';
+import 'package:tuple/tuple.dart';
 // (needed when generating objectbox model code)
 // ignore: unnecessary_import
 import 'package:objectbox/objectbox.dart';
@@ -49,12 +50,7 @@ class Chat {
   Message? _latestMessage;
   Message get latestMessage {
     if (_latestMessage != null) return _latestMessage!;
-    _latestMessage = Chat.getMessages(this, limit: 1, getDetails: true).firstOrNull ??
-        Message(
-          dateCreated: DateTime.fromMillisecondsSinceEpoch(0),
-          guid: guid,
-        );
-    return _latestMessage!;
+    return dbLatestMessage;
   }
 
   Message get dbLatestMessage {
@@ -375,7 +371,7 @@ class Chat {
     return this;
   }
 
-  Future<Chat> addMessage(Message message,
+  Future<Tuple2<Message, bool>> addMessage(Message message,
       {bool changeUnreadStatus = true, bool checkForMessageText = true, bool clearNotificationsIfFromMe = true}) async {
     // If this is a message preview and we don't already have metadata for this, get it
     if (message.fullText.replaceAll("\n", " ").hasUrl &&
@@ -403,10 +399,9 @@ class Chat {
         checkForMessageText: checkForMessageText,
       );
 
-      // Deserialize result
-      newMessage = Message.fromMap(result['message'] as Map<String, dynamic>);
-      newMessage.id = result['messageId'] as int?;
-      isNewer = result['isNewer'] as bool;
+      // Extract from Tuple2
+      newMessage = result.item1;
+      isNewer = result.item2;
     } catch (ex, stacktrace) {
       newMessage = Message.findOne(guid: message.guid);
       if (newMessage == null) {
@@ -455,8 +450,8 @@ class Chat {
       serverSyncParticipantsAsync();
     }
 
-    // Return the current chat instance (with updated vals)
-    return this;
+    // Return the saved message and isNewer flag as a Tuple
+    return Tuple2(newMessage ?? message, isNewer);
   }
 
   Future<void> serverSyncParticipantsAsync() async {
@@ -735,15 +730,6 @@ class Chat {
       offset: offset,
       ids: ids,
     );
-
-    // DEBUG: Find a chat that contains
-    for (Chat c in chats) {
-      if (c.guid.contains('7035013261')) {
-        Logger.info('[TEST] Found chat with guid containing 7035013261: ${c.guid}');
-        Logger.info('[TEST] Participants: ${c.handles.map((e) => e.formattedAddress).toList()}');
-        Logger.info('[TEST] Contacts: ${c.handles.map((e) => e.contact?.displayName ?? "No Contact").toList()}');
-      }
-    }
     
     // Populate contact name cache on main thread for ALL chats in one transaction
     // The cache populated in the isolate doesn't transfer through JSON serialization

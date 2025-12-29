@@ -219,7 +219,7 @@ class ContactsService {
     if (refreshedContacts.isNotEmpty) {
       contacts = refreshedContacts;
       if (reloadUI != null) {
-        eventDispatcher.emit('update-contacts', reloadUI);
+        EventDispatcherSvc.emit('update-contacts', reloadUI);
       }
     }
   }
@@ -340,7 +340,7 @@ class ContactsService {
           }
         }
       }
-      eventDispatcher.emit('update-contacts', null);
+      EventDispatcherSvc.emit('update-contacts', null);
     }
 
     logger?.call("Fetching contacts (with avatars)...");

@@ -104,8 +104,7 @@ class LifecycleService with WidgetsBindingObserver {
   }
 
   void open() {
-    // Observer is already added in init(), no need to add again
-    
+    // Observer is permanently registered in init() and should never be removed
     if (!kIsDesktop || wasActiveAliveBefore != false) {
       cm.setActiveToAlive();
     }
@@ -142,7 +141,9 @@ class LifecycleService with WidgetsBindingObserver {
   }
 
   void close() {
-    WidgetsBinding.instance.removeObserver(this);
+    // DO NOT remove observer here - it needs to stay registered to receive resumed events.
+    // Leaving this commented out as a reminder.
+    // WidgetsBinding.instance.removeObserver(this);
 
     if (kIsDesktop) {
       wasActiveAliveBefore = cm.activeChat?.isAlive;

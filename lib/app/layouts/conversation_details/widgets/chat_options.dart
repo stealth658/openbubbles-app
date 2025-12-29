@@ -329,7 +329,7 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
                                   onPressed: () async {
                                     Navigator.of(context).pop();
                                     chat.clearTranscript();
-                                    eventDispatcher.emit("refresh-messagebloc", {"chatGuid": chat.guid});
+                                    EventDispatcherSvc.emit("refresh-messagebloc", {"chatGuid": chat.guid});
                                   },
                                 ),
                               ]);

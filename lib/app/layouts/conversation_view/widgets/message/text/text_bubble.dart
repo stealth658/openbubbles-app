@@ -49,7 +49,7 @@ class _TextBubbleState extends CustomState<TextBubble, void, MessageWidgetContro
         ..scene(begin: Duration.zero, duration: const Duration(milliseconds: 500), curve: Curves.easeInOut)
             .tween("size", 1.0.tweenTo(1.0));
     }
-    eventDispatcher.stream.listen((event) async {
+    EventDispatcherSvc.stream.listen((event) async {
       if (event.item1 == 'play-bubble-effect' && event.item2 == '${part.part}/${message.guid}' && effect == MessageEffect.gentle) {
         setState(() {
           anim = Control.playFromStart;

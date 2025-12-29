@@ -34,9 +34,9 @@ class _ChatListPanelState extends OptimizedState<ChatListPanel> {
                   backgroundColor: tileColor,
                   children: [
                     Obx(() => SettingsSwitch(
-                          onChanged: (bool val) {
+                          onChanged: (bool val) async {
                             SettingsSvc.settings.showConnectionIndicator.value = val;
-                            saveSettings();
+                            await SettingsSvc.settings.saveOneAsync('showConnectionIndicator');
                           },
                           initialVal: SettingsSvc.settings.showConnectionIndicator.value,
                           title: "Show Connection Indicator",
@@ -45,9 +45,9 @@ class _ChatListPanelState extends OptimizedState<ChatListPanel> {
                         )),
                     const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     Obx(() => SettingsSwitch(
-                          onChanged: (bool val) {
+                          onChanged: (bool val) async {
                             SettingsSvc.settings.showSyncIndicator.value = val;
-                            saveSettings();
+                            await SettingsSvc.settings.saveOneAsync('showSyncIndicator');
                           },
                           initialVal: SettingsSvc.settings.showSyncIndicator.value,
                           title: "Show Sync Indicator in Chat List",
@@ -58,9 +58,9 @@ class _ChatListPanelState extends OptimizedState<ChatListPanel> {
                         )),
                     const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     Obx(() => SettingsSwitch(
-                          onChanged: (bool val) {
+                          onChanged: (bool val) async {
                             SettingsSvc.settings.statusIndicatorsOnChats.value = val;
-                            saveSettings();
+                            await SettingsSvc.settings.saveOneAsync('statusIndicatorsOnChats');
                           },
                           initialVal: SettingsSvc.settings.statusIndicatorsOnChats.value,
                           title: "Message Status Indicators",
@@ -76,9 +76,9 @@ class _ChatListPanelState extends OptimizedState<ChatListPanel> {
                   backgroundColor: tileColor,
                   children: [
                     Obx(() => SettingsSwitch(
-                          onChanged: (bool val) {
+                          onChanged: (bool val) async {
                             SettingsSvc.settings.filteredChatList.value = val;
-                            saveSettings();
+                            await SettingsSvc.settings.saveOneAsync('filteredChatList');
                           },
                           initialVal: SettingsSvc.settings.filteredChatList.value,
                           title: "Filtered Chat List",
@@ -89,9 +89,9 @@ class _ChatListPanelState extends OptimizedState<ChatListPanel> {
                         )),
                     const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     Obx(() => SettingsSwitch(
-                          onChanged: (bool val) {
+                          onChanged: (bool val) async {
                             SettingsSvc.settings.filterUnknownSenders.value = val;
-                            saveSettings();
+                            await SettingsSvc.settings.saveOneAsync('filterUnknownSenders');
                           },
                           initialVal: SettingsSvc.settings.filterUnknownSenders.value,
                           title: "Filter Unknown Senders",
@@ -104,9 +104,9 @@ class _ChatListPanelState extends OptimizedState<ChatListPanel> {
                       const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     if (!kIsWeb)
                       Obx(() => SettingsSwitch(
-                            onChanged: (bool val) {
+                            onChanged: (bool val) async {
                               SettingsSvc.settings.unarchiveOnNewMessage.value = val;
-                              saveSettings();
+                              await SettingsSvc.settings.saveOneAsync('unarchiveOnNewMessage');
                             },
                             initialVal: SettingsSvc.settings.unarchiveOnNewMessage.value,
                             title: "Unarchive Chats On New Message",
@@ -121,9 +121,9 @@ class _ChatListPanelState extends OptimizedState<ChatListPanel> {
                   backgroundColor: tileColor,
                   children: [
                     Obx(() => SettingsSwitch(
-                          onChanged: (bool val) {
+                          onChanged: (bool val) async {
                             SettingsSvc.settings.hideDividers.value = val;
-                            saveSettings();
+                            await SettingsSvc.settings.saveOneAsync('hideDividers');
                           },
                           initialVal: SettingsSvc.settings.hideDividers.value,
                           title: "Hide Dividers",
@@ -132,9 +132,9 @@ class _ChatListPanelState extends OptimizedState<ChatListPanel> {
                         )),
                     const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     Obx(() => SettingsSwitch(
-                          onChanged: (bool val) {
+                          onChanged: (bool val) async {
                             SettingsSvc.settings.denseChatTiles.value = val;
-                            saveSettings();
+                            await SettingsSvc.settings.saveOneAsync('denseChatTiles');
                           },
                           initialVal: SettingsSvc.settings.denseChatTiles.value,
                           title: "Dense Conversation Tiles",
@@ -169,10 +169,10 @@ class _ChatListPanelState extends OptimizedState<ChatListPanel> {
                               ),
                               Flexible(
                                 child: SettingsOptions<int>(
-                                  onChanged: (int? val) {
+                                  onChanged: (int? val) async {
                                     if (val == null) return;
                                     SettingsSvc.settings.pinRowsPortrait.value = val.toInt();
-                                    saveSettings();
+                                    await SettingsSvc.settings.saveOneAsync('pinRowsPortrait');
                                   },
                                   options: List.generate(4, (index) => index + 1),
                                   initial: SettingsSvc.settings.pinRowsPortrait.value,
@@ -202,10 +202,10 @@ class _ChatListPanelState extends OptimizedState<ChatListPanel> {
                               ),
                               Flexible(
                                 child: SettingsOptions<int>(
-                                  onChanged: (int? val) {
+                                  onChanged: (int? val) async {
                                     if (val == null) return;
                                     SettingsSvc.settings.pinRowsLandscape.value = val.toInt();
-                                    saveSettings();
+                                    await SettingsSvc.settings.saveOneAsync('pinRowsLandscape');
                                   },
                                   options: List.generate(4, (index) => index + 1),
                                   initial: SettingsSvc.settings.pinRowsLandscape.value,
@@ -235,10 +235,10 @@ class _ChatListPanelState extends OptimizedState<ChatListPanel> {
                               ),
                               Flexible(
                                 child: SettingsOptions<int>(
-                                  onChanged: (int? val) {
+                                  onChanged: (int? val) async {
                                     if (val == null) return;
                                     SettingsSvc.settings.pinColumnsPortrait.value = val.toInt();
-                                    saveSettings();
+                                    await SettingsSvc.settings.saveOneAsync('pinColumnsPortrait');
                                   },
                                   options: List.generate(4, (index) => index + 1),
                                   initial: SettingsSvc.settings.pinColumnsPortrait.value,
@@ -290,10 +290,10 @@ class _ChatListPanelState extends OptimizedState<ChatListPanel> {
                                           child: SettingsOptions<int>(
                                             initial: SettingsSvc.settings.pinRowsPortrait.value,
                                             options: List.generate(4, (index) => index + 1),
-                                            onChanged: (int? val) {
+                                            onChanged: (int? val) async {
                                               if (val == null) return;
                                               SettingsSvc.settings.pinRowsPortrait.value = val;
-                                              saveSettings();
+                                              await SettingsSvc.settings.saveOneAsync('pinRowsPortrait');
                                             },
                                             title: "Pin Rows",
                                             secondaryColor: context.theme.colorScheme.secondary,
@@ -315,10 +315,10 @@ class _ChatListPanelState extends OptimizedState<ChatListPanel> {
                                           child: SettingsOptions<int>(
                                             initial: SettingsSvc.settings.pinColumnsLandscape.value,
                                             options: List.generate(5, (index) => index + 2),
-                                            onChanged: (int? val) {
+                                            onChanged: (int? val) async {
                                               if (val == null) return;
                                               SettingsSvc.settings.pinColumnsLandscape.value = val;
-                                              saveSettings();
+                                              await SettingsSvc.settings.saveOneAsync('pinColumnsLandscape');
                                             },
                                             title: "Pins Per Row",
                                             secondaryColor: context.theme.colorScheme.secondary,
@@ -463,9 +463,9 @@ class _ChatListPanelState extends OptimizedState<ChatListPanel> {
                     backgroundColor: tileColor,
                     children: [
                       Obx(() => SettingsSwitch(
-                            onChanged: (bool val) {
+                            onChanged: (bool val) async {
                               SettingsSvc.settings.swipableConversationTiles.value = val;
-                              saveSettings();
+                              await SettingsSvc.settings.saveOneAsync('swipableConversationTiles');
                             },
                             initialVal: SettingsSvc.settings.swipableConversationTiles.value,
                             title: "Swipe Actions for Conversation Tiles",
@@ -480,10 +480,10 @@ class _ChatListPanelState extends OptimizedState<ChatListPanel> {
                               children: [
                                 SettingsOptions<MaterialSwipeAction>(
                                   initial: SettingsSvc.settings.materialRightAction.value,
-                                  onChanged: (val) {
+                                  onChanged: (val) async {
                                     if (val != null) {
                                       SettingsSvc.settings.materialRightAction.value = val;
-                                      saveSettings();
+                                      await SettingsSvc.settings.saveOneAsync('materialRightAction');
                                     }
                                   },
                                   options: MaterialSwipeAction.values,
@@ -494,10 +494,10 @@ class _ChatListPanelState extends OptimizedState<ChatListPanel> {
                                 ),
                                 SettingsOptions<MaterialSwipeAction>(
                                   initial: SettingsSvc.settings.materialLeftAction.value,
-                                  onChanged: (val) {
+                                  onChanged: (val) async {
                                     if (val != null) {
                                       SettingsSvc.settings.materialLeftAction.value = val;
-                                      saveSettings();
+                                      await SettingsSvc.settings.saveOneAsync('materialLeftAction');
                                     }
                                   },
                                   options: MaterialSwipeAction.values,
@@ -521,9 +521,9 @@ class _ChatListPanelState extends OptimizedState<ChatListPanel> {
                   children: [
                     if (SettingsSvc.settings.skin.value == Skins.iOS)
                       SettingsSwitch(
-                          onChanged: (bool val) {
+                          onChanged: (bool val) async {
                             SettingsSvc.settings.moveChatCreatorToHeader.value = val;
-                            saveSettings();
+                            await SettingsSvc.settings.saveOneAsync('moveChatCreatorToHeader');
                           },
                           initialVal: SettingsSvc.settings.moveChatCreatorToHeader.value,
                           title: "Move Chat Creator Button to Header",
@@ -535,9 +535,9 @@ class _ChatListPanelState extends OptimizedState<ChatListPanel> {
                       const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     if (!kIsWeb && !kIsDesktop)
                       SettingsSwitch(
-                            onChanged: (bool val) {
+                            onChanged: (bool val) async {
                               SettingsSvc.settings.cameraFAB.value = val;
-                              saveSettings();
+                              await SettingsSvc.settings.saveOneAsync('cameraFAB');
                             },
                             initialVal: SettingsSvc.settings.cameraFAB.value,
                             title: SettingsSvc.settings.skin.value != Skins.iOS ? "Long Press for Camera" : "Add Camera Button",
@@ -553,9 +553,5 @@ class _ChatListPanelState extends OptimizedState<ChatListPanel> {
             ),
           ),
         ]);
-  }
-
-  void saveSettings() {
-    SettingsSvc.saveSettings(SettingsSvc.settings);
   }
 }

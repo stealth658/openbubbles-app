@@ -157,6 +157,8 @@ class StartupTasks {
       GlobalChatSvc.init();
     }
 
+    GetIt.I.registerSingleton<EventDispatcher>(EventDispatcher());
+
     Logger.info("Startup services initialization complete");
   }
 

@@ -178,7 +178,7 @@ class ConversationViewController extends StatefulController with GetSingleTicker
   }
 
   void close() {
-    eventDispatcher.emit("update-highlight", null);
+    EventDispatcherSvc.emit("update-highlight", null);
     cm.setAllInactiveSync();
     Get.delete<ConversationViewController>(tag: tag);
   }

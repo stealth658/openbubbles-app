@@ -49,9 +49,9 @@ class _MessagePropertiesState extends CustomState<MessageProperties, void, Messa
           }
           HapticFeedback.mediumImpact();
           if ((stringToMessageEffect[effect] ?? MessageEffect.none).isBubble) {
-            eventDispatcher.emit('play-bubble-effect', '${widget.part.part}/${message.guid}');
+            EventDispatcherSvc.emit('play-bubble-effect', '${widget.part.part}/${message.guid}');
           } else if (widget.globalKey != null) {
-            eventDispatcher.emit('play-effect', {
+            EventDispatcherSvc.emit('play-effect', {
               'type': effect,
               'size': widget.globalKey!.globalPaintBounds(context),
             });

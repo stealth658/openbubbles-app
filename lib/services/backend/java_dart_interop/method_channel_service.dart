@@ -100,6 +100,7 @@ class MethodChannelService {
             }
           }
         } catch (e, s) {
+          Logger.error("Error processing new message: $e", trace: s);
           return Future.error(e, s);
         }
 

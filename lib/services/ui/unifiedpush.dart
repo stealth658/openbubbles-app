@@ -14,6 +14,6 @@ class UnifiedPushPanelRefresh extends GetxService {
     enabled.value = newEndpoint != "";
     SettingsSvc.settings.endpointUnifiedPush.value = newEndpoint;
     SettingsSvc.settings.enableUnifiedPush.value = enabled.value;
-    SettingsSvc.saveSettings();
+    SettingsSvc.settings.saveManyAsync(['endpointUnifiedPush', 'enableUnifiedPush']);
   }
 }

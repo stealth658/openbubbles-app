@@ -51,7 +51,6 @@ class MessageHelper {
   }
 
   static Future<void> handleNotification(Message message, Chat chat, {bool findExisting = true}) async {
-    // if from me
     if (message.isFromMe! || !message.handleRelation.hasValue) return;
     // if it is a "kept audio" message
     if (message.itemType == 5 && message.subject != null) return;

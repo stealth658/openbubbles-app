@@ -192,9 +192,9 @@ class _RedactedModePanelState extends OptimizedState<RedactedModePanel> {
                 backgroundColor: tileColor,
                 children: [
                   Obx(() => SettingsSwitch(
-                    onChanged: (bool val) {
+                    onChanged: (bool val) async {
                       SettingsSvc.settings.redactedMode.value = val;
-                      saveSettings();
+                      await saveSettings('redactedMode');
                     },
                     initialVal: SettingsSvc.settings.redactedMode.value,
                     title: "Enable Redacted Mode",
@@ -216,9 +216,9 @@ class _RedactedModePanelState extends OptimizedState<RedactedModePanel> {
                       backgroundColor: tileColor,
                       children: [
                         SettingsSwitch(
-                          onChanged: (bool val) {
+                          onChanged: (bool val) async {
                             SettingsSvc.settings.hideMessageContent.value = val;
-                            saveSettings();
+                            await saveSettings('hideMessageContent');
                           },
                           initialVal: SettingsSvc.settings.hideMessageContent.value,
                           title: "Hide Message Content",
@@ -227,9 +227,9 @@ class _RedactedModePanelState extends OptimizedState<RedactedModePanel> {
                         ),
                         const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                         SettingsSwitch(
-                          onChanged: (bool val) {
+                          onChanged: (bool val) async {
                             SettingsSvc.settings.hideAttachments.value = val;
-                            saveSettings();
+                            await saveSettings('hideAttachments');
                           },
                           initialVal: SettingsSvc.settings.hideAttachments.value,
                           title: "Hide Attachments",
@@ -238,9 +238,9 @@ class _RedactedModePanelState extends OptimizedState<RedactedModePanel> {
                         ),
                         const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                         SettingsSwitch(
-                          onChanged: (bool val) {
+                          onChanged: (bool val) async {
                             SettingsSvc.settings.hideContactInfo.value = val;
-                            saveSettings();
+                            await saveSettings('hideContactInfo');
                           },
                           initialVal: SettingsSvc.settings.hideContactInfo.value,
                           title: "Hide Contact Info",
@@ -250,9 +250,9 @@ class _RedactedModePanelState extends OptimizedState<RedactedModePanel> {
                         ),
                         const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                         SettingsSwitch(
-                          onChanged: (bool val) {
+                          onChanged: (bool val) async {
                             SettingsSvc.settings.generateFakeAvatars.value = val;
-                            saveSettings();
+                            await saveSettings('generateFakeAvatars');
                           },
                           initialVal: SettingsSvc.settings.generateFakeAvatars.value,
                           title: "Generate Fake Avatars",
@@ -272,8 +272,8 @@ class _RedactedModePanelState extends OptimizedState<RedactedModePanel> {
     );
   }
 
-  void saveSettings() {
+  Future<void> saveSettings(String key) async {
     placeholder.value += 1;
-    SettingsSvc.saveSettings();
+    await SettingsSvc.settings.saveOneAsync(key);
   }
 }

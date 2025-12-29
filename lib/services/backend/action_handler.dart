@@ -427,11 +427,16 @@ class ActionHandler extends GetxService {
     // Gets the chat from the db or server (if new).
     // If the participant list is empty, we should fetch the chat from the server to populate it.
     // If we have an ID, we can assume it's already in the database, with the proper participants.
-    c = m.isParticipantEvent || (c.participants.isEmpty && c.handles.isEmpty)
+    c = m.isParticipantEvent
       ? await handleNewOrUpdatedChat(c) 
       : kIsWeb 
         ? c 
         : (Chat.findOne(guid: c.guid) ?? await handleNewOrUpdatedChat(c));
+
+    if (c.id != null && c.participants.isEmpty && c.handles.isEmpty) {
+      Logger.info("Chat ${c.guid} has no participants, fetching updated chat data from server...", tag: "ActionHandler");
+      c = await handleNewOrUpdatedChat(c);
+    }
 
     // New chat incoming, we should sync the data to the database.
     // We should get a valid object back. If we don't, log it.
@@ -442,7 +447,11 @@ class ActionHandler extends GetxService {
       }
     }
 
-    // Display notification if needed and save everything to DB
+    // Save message to DB first to get the complete DB object
+    final result = await c.addMessage(m);
+    m = result.item1;
+    
+    // Display notification if needed
     bool shouldNotify = shouldNotifyForNewMessageGuid(m.guid!);
     if (!shouldNotify) {
       Logger.info("Not notifying for already handled new message with GUID ${m.guid}...", tag: "ActionHandler");
@@ -462,16 +471,21 @@ class ActionHandler extends GetxService {
       }
     }
 
-    if ((!LifecycleSvc.isAlive || SettingsSvc.settings.endpointUnifiedPush.value != "" || (cm.activeChat == null && Get.rawRoute?.settings.name != "/")) && shouldNotify) {
-      await MessageHelper.handleNotification(m, c);
+    bool isAppInactive = !LifecycleSvc.isAlive;
+    bool hasUnifiedPushEndpoint = SettingsSvc.settings.endpointUnifiedPush.value != "";
+    bool isNotInActiveChat = cm.activeChat == null && Get.rawRoute?.settings.name != "/";
+    bool shouldSendNotification = (isAppInactive || hasUnifiedPushEndpoint || isNotInActiveChat) && shouldNotify;
+
+    if (shouldSendNotification) {
+      // We don't need to await this
+      MessageHelper.handleNotification(m, c, findExisting: false);
     }
-    await c.addMessage(m);
     
     // Reload the latest message from the database to ensure we have the most up-to-date data
     c.dbLatestMessage;
     
     // Reposition the chat in the chat list (more efficient than sorting the entire list)
-    ChatsSvc.updateChat(c, shouldSort: true, override: true);
+    ChatsSvc.updateChat(c, override: true);
     
     // Trigger immediate UI update via coordinator (bypasses ObjectBox watch latency)
     muc.notifyMessageUpdate(c.guid, m.guid!);
@@ -503,7 +517,7 @@ class ActionHandler extends GetxService {
 
     // update the message in the DB
     await matchMessageWithExisting(c, tempGuid ?? m.guid!, m);
-    eventDispatcher.emit("message-updated-${m.guid}");
+    EventDispatcherSvc.emit("message-updated-${m.guid}");
     
     // Trigger immediate UI update via coordinator (bypasses ObjectBox watch latency)
     muc.notifyMessageUpdate(c.guid, m.guid!);

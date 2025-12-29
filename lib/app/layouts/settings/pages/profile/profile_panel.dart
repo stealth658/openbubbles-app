@@ -104,11 +104,11 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
     );
   }
 
-  void removePhoto() {
+  Future<void> removePhoto() async {
     File file = File(SettingsSvc.settings.userAvatarPath.value!);
     file.delete();
     SettingsSvc.settings.userAvatarPath.value = null;
-    SettingsSvc.saveSettings();
+    await SettingsSvc.settings.saveOneAsync("userAvatarPath");
   }
 
   @override
