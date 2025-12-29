@@ -204,7 +204,12 @@ Future<void> showConversationTileMenu(
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: () {
-            chat.toggleHasUnreadAsync(!chat.hasUnreadMessage!);
+            final chatState = ChatsSvc.getChatState(chat.guid);
+            if (chatState != null) {
+              chatState.setHasUnread(!chat.hasUnreadMessage!);
+            } else {
+              chat.toggleHasUnreadAsync(!chat.hasUnreadMessage!);
+            }
             Navigator.pop(context);
           },
           child: Padding(

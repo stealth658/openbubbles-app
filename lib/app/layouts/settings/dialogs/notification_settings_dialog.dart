@@ -1,6 +1,7 @@
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/backend_ui_interop/event_dispatcher.dart';
 import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -26,7 +27,12 @@ class NotificationSettingsDialog extends StatelessWidget {
                 style: context.theme.textTheme.bodySmall!.copyWith(color: context.theme.colorScheme.properOnSurface),),
               onTap: () async {
                 Navigator.of(context, rootNavigator: true).pop();
-                await chat.toggleMuteAsync(chat.muteType != "mute");
+                final chatState = ChatsSvc.getChatState(chat.guid);
+                if (chatState != null) {
+                  await chatState.setMuted(chat.muteType != "mute");
+                } else {
+                  await chat.toggleMuteAsync(chat.muteType != "mute");
+                }
                 updateParent.call();
                 EventDispatcherSvc.emit("refresh", null);
               },
@@ -105,7 +111,12 @@ class NotificationSettingsDialog extends StatelessWidget {
                                   showSnackbar("Error", "Please select at least one person!");
                                   return;
                                 }
-                                chat.toggleMuteAsync(false);
+                                final chatState = ChatsSvc.getChatState(chat.guid);
+                                if (chatState != null) {
+                                  chatState.setMuted(false);
+                                } else {
+                                  chat.toggleMuteAsync(false);
+                                }
                                 chat.muteType = "mute_individuals";
                                 chat.muteArgs = existing.join(",");
                                 Navigator.of(context, rootNavigator: true).pop();
@@ -148,7 +159,12 @@ class NotificationSettingsDialog extends StatelessWidget {
                     if (messageTime != null) {
                       final finalDate = DateTime(messageDate.year, messageDate.month,
                           messageDate.day, messageTime.hour, messageTime.minute);
-                      chat.toggleMuteAsync(false);
+                      final chatState = ChatsSvc.getChatState(chat.guid);
+                      if (chatState != null) {
+                        chatState.setMuted(false);
+                      } else {
+                        chat.toggleMuteAsync(false);
+                      }
                       chat.muteType = "temporary_mute";
                       chat.muteArgs = finalDate.toIso8601String();
                       chat.saveAsync(updateMuteType: true, updateMuteArgs: true);
@@ -175,7 +191,12 @@ class NotificationSettingsDialog extends StatelessWidget {
                   context: context,
                   builder: (context) => TextDetectionDialog(controller)
                 );
-                chat.toggleMuteAsync(false);
+                final chatState = ChatsSvc.getChatState(chat.guid);
+                if (chatState != null) {
+                  chatState.setMuted(false);
+                } else {
+                  chat.toggleMuteAsync(false);
+                }
                 chat.muteType = "text_detection";
                 chat.muteArgs = controller.text;
                 chat.saveAsync(updateMuteType: true, updateMuteArgs: true);
@@ -191,7 +212,12 @@ class NotificationSettingsDialog extends StatelessWidget {
               subtitle: Text("Delete your custom settings",
                 style: context.theme.textTheme.bodySmall!.copyWith(color: context.theme.colorScheme.properOnSurface),),
               onTap: () async {
-                chat.toggleMuteAsync(false);
+                final chatState = ChatsSvc.getChatState(chat.guid);
+                if (chatState != null) {
+                  chatState.setMuted(false);
+                } else {
+                  chat.toggleMuteAsync(false);
+                }
                 chat.muteType = null;
                 chat.muteArgs = null;
                 chat.saveAsync(updateMuteType: true, updateMuteArgs: true);

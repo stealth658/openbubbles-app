@@ -132,7 +132,8 @@ class _SettingsPageState extends OptimizedState<SettingsPage> {
                               // Build widgets list dynamically
                               final List<Widget> widgets = [];
 
-                              for (final item in settingsItemList) {
+                              for (int i = 0; i < settingsItemList.length; i++) {
+                                final item = settingsItemList[i];
                                 if (item is SearchableSettingItem) {
                                   // Flat item (SearchableSettingItem)
                                   final titleMatches = item.title
@@ -143,9 +144,27 @@ class _SettingsPageState extends OptimizedState<SettingsPage> {
                                         tag.toLowerCase().contains(lowerQuery),
                                   );
 
+                                  // Check if this is a header (contains SettingsHeader widget)
+                                  final isHeader = item.child.runtimeType.toString().contains('SettingsHeader');
+                                  
+                                  // If it's a header and we're searching, check if the next section has matches
+                                  bool shouldShowHeader = true;
+                                  if (isHeader && searchQuery.isNotEmpty && i + 1 < settingsItemList.length) {
+                                    final nextItem = settingsItemList[i + 1];
+                                    if (nextItem is SettingsSection && nextItem.searchableSettingsItems != null) {
+                                      // Only show header if the section has matching items
+                                      shouldShowHeader = nextItem.searchableSettingsItems!.any((childItem) {
+                                        final childTitleMatches = childItem.title.toLowerCase().contains(lowerQuery);
+                                        final childTagMatches = childItem.searchTags.any(
+                                          (tag) => tag.toLowerCase().contains(lowerQuery),
+                                        );
+                                        return childTitleMatches || childTagMatches;
+                                      });
+                                    }
+                                  }
+
                                   if (searchQuery.isEmpty ||
-                                      titleMatches ||
-                                      tagMatches) {
+                                      (shouldShowHeader && (titleMatches || tagMatches))) {
                                     widgets.add(item);
 
                                     if (searchQuery.isNotEmpty) {

@@ -284,7 +284,12 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
                     title: "Mute Conversation",
                     initialVal: chat.muteType == "mute",
                     onChanged: (value) {
-                      chat.toggleMuteAsync(value);
+                      final chatState = ChatsSvc.getChatState(chat.guid);
+                      if (chatState != null) {
+                        chatState.setMuted(value);
+                      } else {
+                        chat.toggleMuteAsync(value);
+                      }
                       setState(() {});
                     },
                     backgroundColor: tileColor,
@@ -294,7 +299,12 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
                     title: "Archive Conversation",
                     initialVal: chat.isArchived!,
                     onChanged: (value) {
-                      chat.toggleArchivedAsync(value);
+                      final chatState = ChatsSvc.getChatState(chat.guid);
+                      if (chatState != null) {
+                        chatState.setArchived(value);
+                      } else {
+                        chat.toggleArchivedAsync(value);
+                      }
                       setState(() {});
                     },
                     backgroundColor: tileColor,

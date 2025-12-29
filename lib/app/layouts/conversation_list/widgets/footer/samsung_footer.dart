@@ -29,7 +29,12 @@ class _SamsungFooterState extends CustomState<SamsungFooter, void, ConversationL
             IconButton(
               onPressed: () {
                 for (Chat element in controller.selectedChats) {
-                  element.toggleHasUnreadAsync(!element.hasUnreadMessage!);
+                  final chatState = ChatsSvc.getChatState(element.guid);
+                  if (chatState != null) {
+                    chatState.setHasUnread(!element.hasUnreadMessage!);
+                  } else {
+                    element.toggleHasUnreadAsync(!element.hasUnreadMessage!);
+                  }
                 }
                 controller.clearSelectedChats();
               },
@@ -45,7 +50,12 @@ class _SamsungFooterState extends CustomState<SamsungFooter, void, ConversationL
             IconButton(
               onPressed: () {
                 for (Chat element in controller.selectedChats) {
-                  element.toggleMuteAsync(element.muteType != "mute");
+                  final chatState = ChatsSvc.getChatState(element.guid);
+                  if (chatState != null) {
+                    chatState.setMuted(element.muteType != "mute");
+                  } else {
+                    element.toggleMuteAsync(element.muteType != "mute");
+                  }
                 }
                 controller.clearSelectedChats();
               },
@@ -61,7 +71,12 @@ class _SamsungFooterState extends CustomState<SamsungFooter, void, ConversationL
             IconButton(
               onPressed: () {
                 for (Chat element in controller.selectedChats) {
-                  element.togglePinAsync(!element.isPinned!);
+                  final chatState = ChatsSvc.getChatState(element.guid);
+                  if (chatState != null) {
+                    chatState.setIsPinned(!element.isPinned!);
+                  } else {
+                    element.togglePinAsync(!element.isPinned!);
+                  }
                 }
                 controller.clearSelectedChats();
               },
@@ -73,7 +88,12 @@ class _SamsungFooterState extends CustomState<SamsungFooter, void, ConversationL
           IconButton(
             onPressed: () {
               for (Chat element in controller.selectedChats) {
-                element.toggleArchivedAsync(!element.isArchived!);
+                final chatState = ChatsSvc.getChatState(element.guid);
+                if (chatState != null) {
+                  chatState.setArchived(!element.isArchived!);
+                } else {
+                  element.toggleArchivedAsync(!element.isArchived!);
+                }
               }
               controller.clearSelectedChats();
             },

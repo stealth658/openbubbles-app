@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/scheduler.dart';
 
 class SettingsSearchBariOS extends StatefulWidget {
   final ValueChanged<String>? onChanged;
@@ -37,7 +38,10 @@ class _SettingsSearchBariOSState extends State<SettingsSearchBariOS> {
        setState(() {
          searchValue = query.toLowerCase();
        });
-       widget.onChanged?.call(query);
+       // Defer the callback to prevent accessing size during layout
+       SchedulerBinding.instance.addPostFrameCallback((_) {
+         widget.onChanged?.call(query);
+       });
      },
    );
   }

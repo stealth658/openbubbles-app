@@ -259,73 +259,73 @@ class GlobalIsolate {
     sendPort.send(receivePort.sendPort);
 
     receivePort.listen((message) async {
-      if (message is Map<String, dynamic>) {
-        final isolateRequest = IsolateRequest.fromMap(message);
-        final String uuid = isolateRequest.uuid;
-        final type = isolateRequest.type;
-        final dynamic data = isolateRequest.data;
-        print('Received request: $type');
+      if (message is! Map<String, dynamic>) return;
 
-        try {
-          final action = IsolateActons.actions[type];
-          if (action == null) {
-            throw Exception('Unknown request type: $type');
-          }
+      final isolateRequest = IsolateRequest.fromMap(message);
+      final String uuid = isolateRequest.uuid;
+      final type = isolateRequest.type;
+      final dynamic data = isolateRequest.data;
+      print('Received request: $type');
 
-          // Check function signature using Function.toString() introspection
-          final functionStr = action.toString();
-          final isAsync = functionStr.contains('Future<');
-          final hasInput = !functionStr.contains('()') && !functionStr.contains('Function()');
-          final hasOutput = !functionStr.contains('void Function');
-
-          if (isAsync) {
-            if (!hasInput && hasOutput) {
-              // Future<T> Function()
-              final result = await action();
-              sendPort.send(IsolateResponse.success(uuid: uuid, data: result).toMap());
-            } else if (hasInput && !hasOutput) {
-              // Future<void> Function(T)
-              await action(data);
-              sendPort.send(IsolateResponse.success(uuid: uuid).toMap());
-            } else if (!hasInput && !hasOutput) {
-              // Future<void> Function()
-              await action();
-              sendPort.send(IsolateResponse.success(uuid: uuid).toMap());
-            } else {
-              // Future<R> Function(T)
-              final result = await action(data);
-              sendPort.send(IsolateResponse.success(uuid: uuid, data: result).toMap());
-            }
-          } else {
-            // Synchronous functions
-            if (!hasInput && hasOutput) {
-              // T Function()
-              final result = action();
-              sendPort.send(IsolateResponse.success(uuid: uuid, data: result).toMap());
-            } else if (hasInput && !hasOutput) {
-              // void Function(T)
-              action(data);
-              sendPort.send(IsolateResponse.success(uuid: uuid).toMap());
-            } else if (!hasInput && !hasOutput) {
-              // void Function()
-              action();
-              sendPort.send(IsolateResponse.success(uuid: uuid).toMap());
-            } else {
-              // R Function(T)
-              final result = action(data);
-              sendPort.send(IsolateResponse.success(uuid: uuid, data: result).toMap());
-            }
-          }
-
-          print('Returning request: $type');
-        } catch (e) {
-          print('Error in isolate action: $e');
-
-          // Send standardized error response
-          sendPort.send(
-            IsolateResponse.error(uuid: uuid, error: e.toString(), message: "Error executing isolate action").toMap(),
-          );
+      try {
+        final action = IsolateActons.actions[type];
+        if (action == null) {
+          throw Exception('Unknown request type: $type');
         }
+
+        // Check function signature using Function.toString() introspection
+        final functionStr = action.toString();
+        final isAsync = functionStr.contains('Future<');
+        final hasInput = !functionStr.contains('()') && !functionStr.contains('Function()');
+        final hasOutput = !functionStr.contains('void Function');
+
+        if (isAsync) {
+          if (!hasInput && hasOutput) {
+            // Future<T> Function()
+            final result = await action();
+            sendPort.send(IsolateResponse.success(uuid: uuid, data: result).toMap());
+          } else if (hasInput && !hasOutput) {
+            // Future<void> Function(T)
+            await action(data);
+            sendPort.send(IsolateResponse.success(uuid: uuid).toMap());
+          } else if (!hasInput && !hasOutput) {
+            // Future<void> Function()
+            await action();
+            sendPort.send(IsolateResponse.success(uuid: uuid).toMap());
+          } else {
+            // Future<R> Function(T)
+            final result = await action(data);
+            sendPort.send(IsolateResponse.success(uuid: uuid, data: result).toMap());
+          }
+        } else {
+          // Synchronous functions
+          if (!hasInput && hasOutput) {
+            // T Function()
+            final result = action();
+            sendPort.send(IsolateResponse.success(uuid: uuid, data: result).toMap());
+          } else if (hasInput && !hasOutput) {
+            // void Function(T)
+            action(data);
+            sendPort.send(IsolateResponse.success(uuid: uuid).toMap());
+          } else if (!hasInput && !hasOutput) {
+            // void Function()
+            action();
+            sendPort.send(IsolateResponse.success(uuid: uuid).toMap());
+          } else {
+            // R Function(T)
+            final result = action(data);
+            sendPort.send(IsolateResponse.success(uuid: uuid, data: result).toMap());
+          }
+        }
+
+        print('Returning request: $type');
+      } catch (e) {
+        print('Error in isolate action: $e');
+
+        // Send standardized error response
+        sendPort.send(
+          IsolateResponse.error(uuid: uuid, error: e.toString(), message: "Error executing isolate action").toMap(),
+        );
       }
     });
   }

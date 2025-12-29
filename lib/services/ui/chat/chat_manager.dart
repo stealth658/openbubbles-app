@@ -56,7 +56,15 @@ class ChatManager extends GetxService {
 
     createChatController(chat, active: true);
     if (clearNotifications) {
-      chat.toggleHasUnreadAsync(false, force: true);
+      // Defer the observable update to avoid updating during build phase
+      Future.microtask(() {
+        final chatState = ChatsSvc.getChatState(chat.guid);
+        if (chatState != null) {
+          chatState.setHasUnread(false, force: true);
+        } else {
+          chat.toggleHasUnreadAsync(false, force: true);
+        }
+      });
     }
     if (save) {
       Future(() async => await PrefsSvc.i.setString('lastOpenedChat', chat.guid));
