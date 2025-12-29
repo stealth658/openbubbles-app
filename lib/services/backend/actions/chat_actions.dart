@@ -321,52 +321,22 @@ class ChatActions {
     });
   }
 
-  static Future<Map<String, dynamic>> loadSupplementalData(Map<String, dynamic> data) async {
+  static Future<List<int>> loadSupplementalData(Map<String, dynamic> data) async {
     final messageGuids = (data['messageGuids'] as List).cast<String>();
 
     return Database.runInTransaction(TxMode.read, () {
       final messageBox = Database.messages;
-      final attachmentBox = Database.attachments;
 
-      // Query reactions
+      // Query reactions and return just their IDs
       final reactionsQuery = (messageBox.query(Message_.associatedMessageGuid.oneOf(messageGuids))
             ..order(Message_.originalROWID))
           .build();
       final reactions = reactionsQuery.find();
       reactionsQuery.close();
 
-      // Query sticker attachments for reactions
-      final stickerMessageIds =
-          reactions.where((m) => m.associatedMessageType == "sticker").map((m) => m.id!).toList();
-
-      final stickerAttachments = <Attachment>[];
-      if (stickerMessageIds.isNotEmpty) {
-        final stickerQuery = (attachmentBox.query(Attachment_.mimeType.notNull())
-              ..link(Attachment_.message, Message_.id.oneOf(stickerMessageIds)))
-            .build();
-        stickerAttachments.addAll(stickerQuery.find());
-        stickerQuery.close();
-      }
-
-      // Build sticker attachment map
-      final stickerAttachmentMap = <int, List<Attachment>>{};
-      for (final attachment in stickerAttachments) {
-        final messageId = attachment.message.target?.id;
-        if (messageId != null) {
-          stickerAttachmentMap.putIfAbsent(messageId, () => []).add(attachment);
-        }
-      }
-
-      // Assign sticker attachments to reaction messages
-      for (final reaction in reactions) {
-        if (reaction.associatedMessageType == "sticker") {
-          reaction.attachments = stickerAttachmentMap[reaction.id] ?? [];
-        }
-      }
-
-      return <String, dynamic>{
-        'reactions': reactions.map((e) => Map<String, dynamic>.from(e.toMap())).toList(),
-      };
+      // Return just the reaction message IDs
+      // Hydration will happen on the main thread with proper DB connection
+      return reactions.map((e) => e.id!).toList();
     });
   }
 

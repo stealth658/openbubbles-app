@@ -261,10 +261,6 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
     // Cache settings values to avoid repeated observable reads
     final alwaysShowAvatars = SettingsSvc.settings.alwaysShowAvatars.value;
     final avatarScale = SettingsSvc.settings.avatarScale.value;
-    
-    Iterable<Message> stickersForPart(int part) {
-      return stickers.where((s) => (s.associatedMessagePart ?? 0) == part);
-    }
 
     Iterable<Message> reactionsForPart(int part, List<Message> reactions) {
       return reactions.where((s) => (s.associatedMessagePart ?? 0) == part);
@@ -319,36 +315,14 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                             children: [
                               // add previous edits if needed
                               if (e.isEdited)
-                                Padding(
-                                  padding: showAvatar || alwaysShowAvatars ? EdgeInsets.only(left: 35.0 * avatarScale) : EdgeInsets.zero,
-                                  child: Obx(() => AnimatedSize(
-                                        duration: const Duration(milliseconds: 250),
-                                        alignment: Alignment.bottomCenter,
-                                        curve: controller.showEdits.value ? Curves.easeOutBack : Curves.easeOut,
-                                        child: controller.showEdits.value
-                                            ? Opacity(
-                                                opacity: 0.75,
-                                                child: Column(
-                                                  crossAxisAlignment: message.isFromMe! ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                                                  mainAxisSize: MainAxisSize.min,
-                                                  children: e.edits
-                                                      .map((edit) => ClipPath(
-                                                            clipper: TailClipper(
-                                                              isFromMe: message.isFromMe!,
-                                                              showTail: message.showTail(newerMessage) && e.part == controller.parts.length - 1,
-                                                              connectLower: iOS ? false : (e.part != 0 && e.part != controller.parts.length - 1) || (e.part == 0 && controller.parts.length > 1),
-                                                              connectUpper: iOS ? false : e.part != 0,
-                                                            ),
-                                                            child: TextBubble(
-                                                              parentController: controller,
-                                                              message: edit,
-                                                            ),
-                                                          ))
-                                                      .toList(),
-                                                ),
-                                              )
-                                            : Container(height: 0, constraints: BoxConstraints(maxWidth: NavigationSvc.width(context) * MessageWidgetController.maxBubbleSizeFactor - 30)),
-                                      )),
+                                _EditHistoryObserver(
+                                  controller: controller,
+                                  message: message,
+                                  part: e,
+                                  newerMessage: newerMessage,
+                                  showAvatar: showAvatar,
+                                  alwaysShowAvatars: alwaysShowAvatars,
+                                  avatarScale: avatarScale,
                                 ),
                               if (iOS &&
                                   index == 0 &&
@@ -389,14 +363,13 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                   child: MessageSender(olderMessage: olderMessage, message: message),
                                 ),
                               // add a box to account for height of reactions
-                              Obx(() {
-                                controller.reactionsChanged.value; // observe for reactivity
-                                final reactions = getReactions();
-                                if ((messageParts.length == 1 && reactions.isNotEmpty) || reactionsForPart(e.part, reactions).isNotEmpty) {
-                                  return const SizedBox(height: 12.5);
-                                }
-                                return const SizedBox.shrink();
-                              }),
+                              _ReactionSpacing(
+                                controller: controller,
+                                messageParts: messageParts,
+                                part: e,
+                                getReactions: getReactions,
+                                reactionsForPart: reactionsForPart,
+                              ),
                               if (!iOS &&
                                   index == 0 &&
                                   !widget.isReplyThread &&
@@ -454,24 +427,11 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                                 context: context,
                                               )
                                             : const BoxDecoration(),
-                                        child: Obx(
-                                          () => GestureDetector(
-                                            behavior: HitTestBehavior.translucent,
-                                            onTap: widget.cvController.inSelectMode.value
-                                                ? () {
-                                                    if (widget.cvController.isSelected(message.guid!)) {
-                                                      widget.cvController.selected.remove(message);
-                                                    } else {
-                                                      widget.cvController.selected.add(message);
-                                                    }
-                                                  }
-                                                : kIsDesktop || kIsWeb || iOS || material
-                                                    ? () => tapped.value = !tapped.value
-                                                    : null,
-                                            child: IgnorePointer(
-                                              ignoring: widget.cvController.inSelectMode.value,
-                                              child: Container(
-                                                width: double.infinity,
+                                        child: _SelectModeWrapper(
+                                          cvController: widget.cvController,
+                                          message: message,
+                                          tapped: tapped,
+                                          child: Align(
                                                 alignment: message.isFromMe! ? Alignment.centerRight : Alignment.centerLeft,
                                                 child: Row(
                                                   mainAxisSize: MainAxisSize.min,
@@ -483,19 +443,14 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                                         message: message,
                                                       ),
                                                     if (samsung)
-                                                      Builder(
-                                                        builder: (context) {
-                                                          return Obx(() {
-                                                            controller.reactionsChanged.value; // observe for reactivity
-                                                            final reactions = getReactions();
-                                                            return Padding(
-                                                              padding: (messageParts.length == 1 && reactions.isNotEmpty) || reactionsForPart(e.part, reactions).isNotEmpty
-                                                                  ? EdgeInsets.only(left: message.isFromMe! ? 0 : 10, right: message.isFromMe! ? 20 : 0)
-                                                                  : const EdgeInsets.only(right: 10),
-                                                              child: MessageTimestamp(controller: controller, cvController: widget.cvController),
-                                                            );
-                                                          });
-                                                        },
+                                                      _SamsungTimestampObserver(
+                                                        controller: controller,
+                                                        message: message,
+                                                        messageParts: messageParts,
+                                                        part: e,
+                                                        cvController: widget.cvController,
+                                                        getReactions: getReactions,
+                                                        reactionsForPart: reactionsForPart,
                                                       ),
                                                     // otherwise show content
                                                     if (!message.isGroupEvent && !e.isUnsent)
@@ -781,55 +736,34 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                                                 ),
                                                               ),
                                                               // show stickers on top
-                                                              if ((messageParts.length == 1 ? stickers : stickersForPart(e.part)).isNotEmpty)
-                                                                StickerHolder(
-                                                                  stickerMessages: messageParts.length == 1 ? stickers : stickersForPart(e.part),
-                                                                  controller: widget.cvController,
-                                                                ),
+                                                              _StickerObserver(
+                                                                messageParts: messageParts,
+                                                                stickers: stickers,
+                                                                part: e,
+                                                                cvController: widget.cvController,
+                                                              ),
                                                               // show reactions on top
                                                               if (message.isFromMe!)
-                                                                Positioned(
-                                                                  top: -14,
-                                                                  left: -20,
-                                                                  child: Obx(() {
-                                                                    // Observe granular reactions flag to minimize rebuilds
-                                                                    controller.reactionsChanged.value;
-                                                                    // Also watch coordinator trigger for immediate updates (bypasses ObjectBox latency)
-                                                                    muc.getUpdateTrigger(chat.guid, message.guid!)?.value;
-                                                                    // Recalculate reactions inside Obx for reactivity
-                                                                    final reactions = getReactions();
-                                                                    final reactionList = messageParts.length == 1 ? reactions : reactionsForPart(e.part, reactions).toList();
-                                                                    Logger.debug(
-                                                                      "[MessageHolder] Rebuilding ReactionHolder for ${message.guid} (isFromMe) with ${reactionList.length} reactions",
-                                                                      tag: "MessageReactivity"
-                                                                    );
-                                                                    return ReactionHolder(
-                                                                      reactions: reactionList,
-                                                                      message: message,
-                                                                    );
-                                                                  }),
+                                                                _ReactionObserver(
+                                                                  controller: controller,
+                                                                  message: message,
+                                                                  messageParts: messageParts,
+                                                                  part: e,
+                                                                  chatGuid: chat.guid,
+                                                                  isFromMe: true,
+                                                                  getReactions: getReactions,
+                                                                  reactionsForPart: reactionsForPart,
                                                                 ),
                                                               if (!message.isFromMe!)
-                                                                Positioned(
-                                                                  top: -14,
-                                                                  right: -20,
-                                                                  child: Obx(() {
-                                                                    // Observe granular reactions flag to minimize rebuilds
-                                                                    controller.reactionsChanged.value;
-                                                                    // Also watch coordinator trigger for immediate updates (bypasses ObjectBox latency)
-                                                                    muc.getUpdateTrigger(chat.guid, message.guid!)?.value;
-                                                                    // Recalculate reactions inside Obx for reactivity
-                                                                    final reactions = getReactions();
-                                                                    final reactionList = messageParts.length == 1 ? reactions : reactionsForPart(e.part, reactions).toList();
-                                                                    Logger.debug(
-                                                                      "[MessageHolder] Rebuilding ReactionHolder for ${message.guid} (!isFromMe) with ${reactionList.length} reactions",
-                                                                      tag: "MessageReactivity"
-                                                                    );
-                                                                    return ReactionHolder(
-                                                                      reactions: reactionList,
-                                                                      message: message,
-                                                                    );
-                                                                  }),
+                                                                _ReactionObserver(
+                                                                  controller: controller,
+                                                                  message: message,
+                                                                  messageParts: messageParts,
+                                                                  part: e,
+                                                                  chatGuid: chat.guid,
+                                                                  isFromMe: false,
+                                                                  getReactions: getReactions,
+                                                                  reactionsForPart: reactionsForPart,
                                                                 ),
                                                             ],
                                                           ),
@@ -841,9 +775,8 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                                   ].conditionalReverse(message.isFromMe!),
                                                 ),
                                               ),
-                                            ),
                                           ),
-                                        )),
+                                        ),
                                   ),
                                 ],
                               ),
@@ -856,101 +789,12 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                           ),
                         )),
                     // delivered / read receipt
-                    Obx(() => DeliveredIndicator(parentController: controller, forceShow: tapped.value)),
+                    _DeliveredIndicatorObserver(controller: controller, tapped: tapped),
                   ],
                 ),
               ),
               if (message.isFromMe! && !message.isGroupEvent) SelectCheckbox(message: message, controller: widget.cvController),
-              Obx(() {
-                // Observe granular error state flag to minimize rebuilds
-                controller.errorChanged.value;
-                
-                if (message.error > 0 || message.guid!.startsWith("error-")) {
-                  int errorCode = message.error;
-                  String errorText = "An unknown internal error occurred.";
-                  if (errorCode == 22) {
-                    errorText = "The recipient is not registered with iMessage!";
-                  } else if (message.guid!.startsWith("error-")) {
-                    errorText = message.guid!.split('-')[1];
-                  }
-
-                  return IconButton(
-                    icon: Icon(
-                      iOS ? CupertinoIcons.exclamationmark_circle : Icons.error_outline,
-                      color: context.theme.colorScheme.error,
-                    ),
-                    onPressed: () {
-                      showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return AlertDialog(
-                            backgroundColor: context.theme.colorScheme.properSurface,
-                            title: Text("Message failed to send", style: context.theme.textTheme.titleLarge),
-                            content: Text("Error ($errorCode): $errorText", style: context.theme.textTheme.bodyLarge),
-                            actions: <Widget>[
-                              TextButton(
-                                child: Text("Retry", style: context.theme.textTheme.bodyLarge!.copyWith(color: Get.context!.theme.colorScheme.primary)),
-                                onPressed: () async {
-                                  // Remove the original message and notification
-                                  Navigator.of(context).pop();
-                                  service.removeMessage(message);
-                                  Message.delete(message.guid!);
-                                  for (Attachment? a in message.attachments) {
-                                    if (a == null) continue;
-                                    await Attachment.deleteAsync(a.guid!);
-                                    a.bytes = await File(a.path).readAsBytes();
-                                  }
-                                  await NotificationsSvc.clearFailedToSend(chat.id!);
-                                  // Re-send
-                                  message.id = null;
-                                  message.error = 0;
-                                  message.dateCreated = DateTime.now();
-                                  if (message.attachments.isNotEmpty) {
-                                    outq.queue(OutgoingItem(
-                                      type: QueueType.sendAttachment,
-                                      chat: chat,
-                                      message: message,
-                                    ));
-                                  } else {
-                                    outq.queue(OutgoingItem(
-                                      type: QueueType.sendMessage,
-                                      chat: chat,
-                                      message: message,
-                                    ));
-                                  }
-                                },
-                              ),
-                              TextButton(
-                                child: Text("Remove", style: context.theme.textTheme.bodyLarge!.copyWith(color: Get.context!.theme.colorScheme.primary)),
-                                onPressed: () async {
-                                  Navigator.of(context).pop();
-                                  // Delete the message from the DB
-                                  Message.delete(message.guid!);
-                                  // Remove the message from the Bloc
-                                  service.removeMessage(message);
-                                  await NotificationsSvc.clearFailedToSend(chat.id!);
-                                  // Get the "new" latest info
-                                  List<Message> latest = await Chat.getMessagesAsync(chat, limit: 1);
-                                  chat.latestMessage = latest.first;
-                                  await chat.saveAsync();
-                                },
-                              ),
-                              TextButton(
-                                child: Text("Cancel", style: context.theme.textTheme.bodyLarge!.copyWith(color: Get.context!.theme.colorScheme.primary)),
-                                onPressed: () async {
-                                  Navigator.of(context).pop();
-                                  await NotificationsSvc.clearFailedToSend(chat.id!);
-                                },
-                              )
-                            ],
-                          );
-                        },
-                      );
-                    },
-                  );
-                }
-                return const SizedBox.shrink();
-              }),
+              _ErrorIndicatorObserver(controller: controller, message: message, chat: chat, service: service),
               // slide to view timestamp
               if (iOS) MessageTimestamp(controller: controller, cvController: widget.cvController),
             ],
@@ -958,6 +802,376 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
         ],
       ),
     );
+  }
+}
+
+/// Isolated widget for reaction observation to prevent unnecessary rebuilds
+/// Only rebuilds when reactions actually change, not the entire message
+class _ReactionObserver extends StatelessWidget {
+  const _ReactionObserver({
+    required this.controller,
+    required this.message,
+    required this.messageParts,
+    required this.part,
+    required this.chatGuid,
+    required this.isFromMe,
+    required this.getReactions,
+    required this.reactionsForPart,
+  });
+
+  final MessageWidgetController controller;
+  final Message message;
+  final List<MessagePart> messageParts;
+  final MessagePart part;
+  final String chatGuid;
+  final bool isFromMe;
+  final List<Message> Function() getReactions;
+  final Iterable<Message> Function(int, List<Message>) reactionsForPart;
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      top: -14,
+      left: isFromMe ? -20 : null,
+      right: isFromMe ? null : -20,
+      child: Obx(() {
+        // Observe granular reactions flag to minimize rebuilds
+        controller.reactionsChanged.value;
+        // Also watch coordinator trigger for immediate updates (bypasses ObjectBox latency)
+        muc.getUpdateTrigger(chatGuid, message.guid!)?.value;
+        // Recalculate reactions inside Obx for reactivity
+        final reactions = getReactions();
+        final reactionList = messageParts.length == 1 ? reactions : reactionsForPart(part.part, reactions).toList();
+        Logger.debug(
+          "[MessageHolder] Rebuilding ReactionHolder for ${message.guid} (isFromMe: $isFromMe) with ${reactionList.length} reactions",
+          tag: "MessageReactivity"
+        );
+        return ReactionHolder(
+          reactions: reactionList,
+          message: message,
+        );
+      }),
+    );
+  }
+}
+
+/// Isolated widget for sticker observation to prevent unnecessary rebuilds
+class _StickerObserver extends StatelessWidget {
+  const _StickerObserver({
+    required this.messageParts,
+    required this.stickers,
+    required this.part,
+    required this.cvController,
+  });
+
+  final List<MessagePart> messageParts;
+  final List<Message> stickers;
+  final MessagePart part;
+  final ConversationViewController cvController;
+
+  @override
+  Widget build(BuildContext context) {
+    final stickersForPart = messageParts.length == 1 
+        ? stickers 
+        : stickers.where((s) => (s.associatedMessagePart ?? 0) == part.part);
+    
+    if (stickersForPart.isEmpty) return const SizedBox.shrink();
+    
+    return StickerHolder(
+      stickerMessages: stickersForPart,
+      controller: cvController,
+    );
+  }
+}
+
+/// Isolated widget for reaction spacing calculation
+/// Only rebuilds when reactions change, not the entire message part
+class _ReactionSpacing extends StatelessWidget {
+  const _ReactionSpacing({
+    required this.controller,
+    required this.messageParts,
+    required this.part,
+    required this.getReactions,
+    required this.reactionsForPart,
+  });
+
+  final MessageWidgetController controller;
+  final List<MessagePart> messageParts;
+  final MessagePart part;
+  final List<Message> Function() getReactions;
+  final Iterable<Message> Function(int, List<Message>) reactionsForPart;
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      controller.reactionsChanged.value; // observe for reactivity
+      final reactions = getReactions();
+      if ((messageParts.length == 1 && reactions.isNotEmpty) || reactionsForPart(part.part, reactions).isNotEmpty) {
+        return const SizedBox(height: 12.5);
+      }
+      return const SizedBox.shrink();
+    });
+  }
+}
+
+/// Isolated widget for delivered indicator
+/// Only rebuilds when tapped state changes
+class _DeliveredIndicatorObserver extends StatelessWidget {
+  const _DeliveredIndicatorObserver({
+    required this.controller,
+    required this.tapped,
+  });
+
+  final MessageWidgetController controller;
+  final RxBool tapped;
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() => DeliveredIndicator(
+      parentController: controller,
+      forceShow: tapped.value,
+    ));
+  }
+}
+
+/// Isolated widget for error indicator
+/// Only rebuilds when error state changes
+class _ErrorIndicatorObserver extends StatelessWidget {
+  const _ErrorIndicatorObserver({
+    required this.controller,
+    required this.message,
+    required this.chat,
+    required this.service,
+  });
+
+  final MessageWidgetController controller;
+  final Message message;
+  final Chat chat;
+  final MessagesService service;
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      // Observe granular error state flag to minimize rebuilds
+      controller.errorChanged.value;
+      
+      if (message.error > 0 || message.guid!.startsWith("error-")) {
+        int errorCode = message.error;
+        String errorText = "An unknown internal error occurred.";
+        if (errorCode == 22) {
+          errorText = "The recipient is not registered with iMessage!";
+        } else if (message.guid!.startsWith("error-")) {
+          errorText = message.guid!.split('-')[1];
+        }
+
+        return IconButton(
+          icon: Icon(
+            SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.exclamationmark_circle : Icons.error_outline,
+            color: context.theme.colorScheme.error,
+          ),
+          onPressed: () {
+            showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  backgroundColor: context.theme.colorScheme.properSurface,
+                  title: Text("Message failed to send", style: context.theme.textTheme.titleLarge),
+                  content: Text("Error ($errorCode): $errorText", style: context.theme.textTheme.bodyLarge),
+                  actions: <Widget>[
+                    TextButton(
+                      child: Text("Retry", style: context.theme.textTheme.bodyLarge!.copyWith(color: Get.context!.theme.colorScheme.primary)),
+                      onPressed: () async {
+                        // Remove the original message and notification
+                        Navigator.of(context).pop();
+                        service.removeMessage(message);
+                        Message.delete(message.guid!);
+                        for (Attachment? a in message.attachments) {
+                          if (a == null) continue;
+                          await Attachment.deleteAsync(a.guid!);
+                          a.bytes = await File(a.path).readAsBytes();
+                        }
+                        await NotificationsSvc.clearFailedToSend(chat.id!);
+                        // Re-send
+                        message.id = null;
+                        message.error = 0;
+                        message.dateCreated = DateTime.now();
+                        if (message.attachments.isNotEmpty) {
+                          outq.queue(OutgoingItem(
+                            type: QueueType.sendAttachment,
+                            chat: chat,
+                            message: message,
+                          ));
+                        } else {
+                          outq.queue(OutgoingItem(
+                            type: QueueType.sendMessage,
+                            chat: chat,
+                            message: message,
+                          ));
+                        }
+                      },
+                    ),
+                    TextButton(
+                      child: Text("Remove", style: context.theme.textTheme.bodyLarge!.copyWith(color: Get.context!.theme.colorScheme.primary)),
+                      onPressed: () async {
+                        Navigator.of(context).pop();
+                        // Delete the message from the DB
+                        Message.delete(message.guid!);
+                        // Remove the message from the Bloc
+                        service.removeMessage(message);
+                        await NotificationsSvc.clearFailedToSend(chat.id!);
+                        // Get the "new" latest info
+                        List<Message> latest = await Chat.getMessagesAsync(chat, limit: 1);
+                        chat.latestMessage = latest.first;
+                        await chat.saveAsync();
+                      },
+                    ),
+                    TextButton(
+                      child: Text("Cancel", style: context.theme.textTheme.bodyLarge!.copyWith(color: Get.context!.theme.colorScheme.primary)),
+                      onPressed: () async {
+                        Navigator.of(context).pop();
+                        await NotificationsSvc.clearFailedToSend(chat.id!);
+                      },
+                    )
+                  ],
+                );
+              },
+            );
+          },
+        );
+      }
+      return const SizedBox.shrink();
+    });
+  }
+}
+
+/// Isolated widget for Samsung timestamp with reaction-aware padding
+/// Only rebuilds when reactions change
+class _SamsungTimestampObserver extends StatelessWidget {
+  const _SamsungTimestampObserver({
+    required this.controller,
+    required this.message,
+    required this.messageParts,
+    required this.part,
+    required this.cvController,
+    required this.getReactions,
+    required this.reactionsForPart,
+  });
+
+  final MessageWidgetController controller;
+  final Message message;
+  final List<MessagePart> messageParts;
+  final MessagePart part;
+  final ConversationViewController cvController;
+  final List<Message> Function() getReactions;
+  final Iterable<Message> Function(int, List<Message>) reactionsForPart;
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      controller.reactionsChanged.value; // observe for reactivity
+      final reactions = getReactions();
+      return Padding(
+        padding: (messageParts.length == 1 && reactions.isNotEmpty) || reactionsForPart(part.part, reactions).isNotEmpty
+            ? EdgeInsets.only(left: message.isFromMe! ? 0 : 10, right: message.isFromMe! ? 20 : 0)
+            : const EdgeInsets.only(right: 10),
+        child: MessageTimestamp(controller: controller, cvController: cvController),
+      );
+    });
+  }
+}
+
+/// Isolated widget for edit history display
+/// Only rebuilds when showEdits flag changes
+class _EditHistoryObserver extends StatelessWidget {
+  const _EditHistoryObserver({
+    required this.controller,
+    required this.message,
+    required this.part,
+    required this.newerMessage,
+    required this.showAvatar,
+    required this.alwaysShowAvatars,
+    required this.avatarScale,
+  });
+
+  final MessageWidgetController controller;
+  final Message message;
+  final MessagePart part;
+  final Message? newerMessage;
+  final bool showAvatar;
+  final bool alwaysShowAvatars;
+  final double avatarScale;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: showAvatar || alwaysShowAvatars ? EdgeInsets.only(left: 35.0 * avatarScale) : EdgeInsets.zero,
+      child: Obx(() => AnimatedSize(
+        duration: const Duration(milliseconds: 250),
+        alignment: Alignment.bottomCenter,
+        curve: controller.showEdits.value ? Curves.easeOutBack : Curves.easeOut,
+        child: controller.showEdits.value
+            ? Opacity(
+                opacity: 0.75,
+                child: Column(
+                  crossAxisAlignment: message.isFromMe! ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: part.edits
+                      .map((edit) => ClipPath(
+                            clipper: TailClipper(
+                              isFromMe: message.isFromMe!,
+                              showTail: message.showTail(newerMessage) && part.part == controller.parts.length - 1,
+                              connectLower: SettingsSvc.settings.skin.value == Skins.iOS ? false : (part.part != 0 && part.part != controller.parts.length - 1) || (part.part == 0 && controller.parts.length > 1),
+                              connectUpper: SettingsSvc.settings.skin.value == Skins.iOS ? false : part.part != 0,
+                            ),
+                            child: TextBubble(
+                              parentController: controller,
+                              message: edit,
+                            ),
+                          ))
+                      .toList(),
+                ),
+              )
+            : Container(height: 0, constraints: BoxConstraints(maxWidth: NavigationSvc.width(context) * MessageWidgetController.maxBubbleSizeFactor - 30)),
+      )),
+    );
+  }
+}
+
+/// Isolated wrapper for select mode to minimize Obx scope
+/// Only this small widget rebuilds on select mode changes
+class _SelectModeWrapper extends StatelessWidget {
+  const _SelectModeWrapper({
+    required this.cvController,
+    required this.message,
+    required this.tapped,
+    required this.child,
+  });
+
+  final ConversationViewController cvController;
+  final Message message;
+  final RxBool tapped;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() => GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: cvController.inSelectMode.value
+          ? () {
+              if (cvController.isSelected(message.guid!)) {
+                cvController.selected.remove(message);
+              } else {
+                cvController.selected.add(message);
+              }
+            }
+          : kIsDesktop || kIsWeb || SettingsSvc.settings.skin.value == Skins.iOS || SettingsSvc.settings.skin.value == Skins.Material
+              ? () => tapped.value = !tapped.value
+              : null,
+      child: IgnorePointer(
+        ignoring: cvController.inSelectMode.value,
+        child: child,
+      ),
+    ));
   }
 }
 

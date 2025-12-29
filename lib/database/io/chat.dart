@@ -607,15 +607,11 @@ class Chat {
     final supplementalStopwatch = Stopwatch()..start();
 
     try {
-      final result = await ChatInterface.loadSupplementalData(
+      var associatedMessages = await ChatInterface.loadSupplementalData(
         messageGuids: messageGuids,
       );
 
       Logger.debug("[getMessagesAsync] Phase 2 - Supplemental query: ${supplementalStopwatch.elapsedMilliseconds}ms");
-
-      // Deserialize reactions on main thread
-      var associatedMessages =
-          (result['reactions'] as List).map((e) => Message.fromMap(e as Map<String, dynamic>)).toList();
 
       // Normalize reactions
       associatedMessages = MessageHelper.normalizedAssociatedMessages(associatedMessages);

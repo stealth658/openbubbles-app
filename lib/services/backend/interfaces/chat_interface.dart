@@ -136,19 +136,29 @@ class ChatInterface {
     return Tuple2(message, isNewer);
   }
 
-  static Future<Map<String, dynamic>> loadSupplementalData({
+  static Future<List<Message>> loadSupplementalData({
     required List<String> messageGuids,
   }) async {
     final data = {
       'messageGuids': messageGuids,
     };
 
-    if (isIsolate) {
-      return await ChatActions.loadSupplementalData(data);
-    } else {
-      return await GetIt.I<GlobalIsolate>()
-          .send<Map<String, dynamic>>(IsolateRequestType.loadSupplementalData, input: data);
+    // Get reaction IDs from isolate
+    final reactionIds = isIsolate
+        ? await ChatActions.loadSupplementalData(data)
+        : await GetIt.I<GlobalIsolate>()
+            .send<List<int>>(IsolateRequestType.loadSupplementalData, input: data);
+
+    // Hydrate the reaction messages on the main thread with proper DB connection
+    // This ensures handleRelation and other ToOne relationships are loaded correctly
+    if (reactionIds.isEmpty) {
+      return <Message>[];
     }
+
+    // Use getMany to load messages with their relationships
+    // This automatically loads ToMany relationships like dbAttachments and ToOne like handleRelation
+    final reactions = Database.messages.getMany(reactionIds);
+    return reactions.whereType<Message>().toList();
   }
 
   static Future<List<Chat>> syncLatestMessages({

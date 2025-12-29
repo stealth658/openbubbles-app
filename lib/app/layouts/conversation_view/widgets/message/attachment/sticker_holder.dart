@@ -32,9 +32,9 @@ class _StickerHolderState extends OptimizedState<StickerHolder> with AutomaticKe
 
   Future<void> loadStickers() async {
     for (Message msg in messages) {
-      for (Attachment? attachment in msg.attachments) {
+      for (Attachment attachment in msg.dbAttachments) {
         // If we've already loaded it, don't try again
-        if (controller.stickerData.keys.contains(attachment!.guid)) continue;
+        if (controller.stickerData.keys.contains(attachment.guid)) continue;
 
         final pathName = attachment.path;
         if (await FileSystemEntity.type(pathName) == FileSystemEntityType.notFound) {
