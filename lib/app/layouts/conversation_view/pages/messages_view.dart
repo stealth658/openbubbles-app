@@ -268,6 +268,9 @@ class MessagesViewState extends OptimizedState<MessagesView> {
   }
 
   void handleNewMessage(Message message) async {
+    // Check if widget is still mounted before processing
+    if (!mounted) return;
+    
     Logger.debug("handleNewMessage: Received new message ${message.guid}, current count: ${_messages.length}");
     
     // Check if message already exists to prevent duplicates
@@ -325,6 +328,9 @@ class MessagesViewState extends OptimizedState<MessagesView> {
   }
 
   void handleUpdatedMessage(Message message, {String? oldGuid}) {
+    // Check if widget is still mounted before processing
+    if (!mounted) return;
+    
     Logger.debug("handleUpdatedMessage: Updating message ${message.guid ?? oldGuid}");
     final index = _messages.indexWhere((e) => e.guid == (oldGuid ?? message.guid));
     if (index != -1) {
@@ -343,6 +349,9 @@ class MessagesViewState extends OptimizedState<MessagesView> {
   }
 
   void handleDeletedMessage(Message message) {
+    // Check if widget is still mounted before processing
+    if (!mounted) return;
+    
     Logger.debug("handleDeletedMessage: Deleting message ${message.guid}");
     final index = _messages.indexWhere((e) => e.guid == message.guid);
     if (index != -1) {
