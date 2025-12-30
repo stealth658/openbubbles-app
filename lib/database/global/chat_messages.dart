@@ -34,7 +34,7 @@ class ChatMessages {
         // add thread 'originator'
         _threads[m.guid]![m.guid!] = m;
       }
-      _attachments.addEntries(m.attachments.map((e) => MapEntry(e!.guid!, e)));
+      _attachments.addEntries(m.dbAttachments.map((e) => MapEntry(e.guid!, e)));
     }
   }
 
