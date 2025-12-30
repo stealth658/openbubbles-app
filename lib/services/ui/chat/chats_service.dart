@@ -387,7 +387,7 @@ class ChatsService {
       }
       
       if (sortOrderChanged || override) {
-        _repositionChat(updated);
+        _repositionChat(state.chat);
       }
       
       return true;
