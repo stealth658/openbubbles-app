@@ -396,8 +396,21 @@ class MessageWidgetController extends StatefulController with GetSingleTickerPro
     ));
   }
 
-  void updateAssociatedMessage(Message newItem, {bool updateHolder = true}) {
-    final index = message.associatedMessages.indexWhere((e) => e.id == newItem.id);
+  void updateAssociatedMessage(Message newItem, {bool updateHolder = true, String? tempGuid}) {
+    // First try to find by ID (for normal updates)
+    int index = message.associatedMessages.indexWhere((e) => (e.id == newItem.id && e.id != null) || (tempGuid != null && e.guid == tempGuid));
+    
+    // If not found by ID or temp GUID, check if this is replacing a temp reaction
+    // Temp reactions have GUID starting with "temp-" or "error-" and no database ID
+    // The only alternative to this would be to
+    if (index < 0) {
+      index = message.associatedMessages.indexWhere((e) => 
+        (e.guid?.startsWith("temp-") == true || e.guid?.startsWith("error-") == true) &&
+        e.associatedMessageType == newItem.associatedMessageType &&
+        (e.associatedMessagePart ?? 0) == (newItem.associatedMessagePart ?? 0)
+      );
+    }
+    
     if (index >= 0) {
       message.associatedMessages[index] = newItem;
       Logger.debug("[MWC] Updated existing reaction for ${message.guid}: ${newItem.associatedMessageType}", tag: "MessageReactivity");

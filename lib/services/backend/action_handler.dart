@@ -253,7 +253,7 @@ class ActionHandler extends GetxService {
             // Update the parent message's controller with the real reaction
             final parentMwc = getActiveMwc(newMessage.associatedMessageGuid!);
             if (parentMwc != null) {
-              parentMwc.updateAssociatedMessage(newMessage, updateHolder: true);
+              parentMwc.updateAssociatedMessage(newMessage, updateHolder: true, tempGuid: m.guid);
               Logger.debug(
                 "[ActionHandler] Updated parent controller for ${newMessage.associatedMessageGuid} with real reaction ${newMessage.guid}",
                 tag: "MessageReactivity"
