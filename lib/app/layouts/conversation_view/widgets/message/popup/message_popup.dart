@@ -1124,7 +1124,7 @@ class ReactionDetails extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 10),
                       child: ContactAvatarWidget(
-                        handle: message.handle,
+                        handle: message.handleRelation.target,
                         borderThickness: 0.1,
                         editable: false,
                         fontSize: 22,
