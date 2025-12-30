@@ -981,20 +981,37 @@ class _ErrorIndicatorObserver extends StatelessWidget {
                     TextButton(
                       child: Text("Retry", style: context.theme.textTheme.bodyLarge!.copyWith(color: Get.context!.theme.colorScheme.primary)),
                       onPressed: () async {
-                        // Remove the original message and notification
                         Navigator.of(context).pop();
-                        service.removeMessage(message);
-                        Message.delete(message.guid!);
+                        
+                        // Save old GUID and generate new temp GUID for retry
+                        final oldGuid = message.guid!;
+                        message.generateTempGuid();
+                        
+                        // Clear error, delivery status, and update timestamp
+                        message.error = 0;
+                        message.dateCreated = DateTime.now();
+                        message.dateDelivered = null;
+                        message.dateRead = null;
+                        
+                        // Delete old errored message from DB and save with new temp GUID
+                        await Message.delete(oldGuid);
+                        message.id = null;
+                        message.save(chat: chat);
+                        
+                        // Clear notification
+                        await NotificationsSvc.clearFailedToSend(chat.id!);
+                        
+                        // Force UI rebuild to show unsent color
+                        controller.update();
+                        
+                        // Reload attachment bytes if needed
                         for (Attachment? a in message.attachments) {
                           if (a == null) continue;
                           await Attachment.deleteAsync(a.guid!);
                           a.bytes = await File(a.path).readAsBytes();
                         }
-                        await NotificationsSvc.clearFailedToSend(chat.id!);
-                        // Re-send
-                        message.id = null;
-                        message.error = 0;
-                        message.dateCreated = DateTime.now();
+                        
+                        // Queue for sending (message already in UI, just updated)
                         if (message.attachments.isNotEmpty) {
                           outq.queue(OutgoingItem(
                             type: QueueType.sendAttachment,
