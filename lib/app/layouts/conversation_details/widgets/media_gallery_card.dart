@@ -14,6 +14,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:tuple/tuple.dart';
 import 'package:universal_io/io.dart';
 import 'package:video_player/video_player.dart';
 
@@ -25,7 +26,8 @@ class MediaGalleryCard extends StatefulWidget {
   State<MediaGalleryCard> createState() => _MediaGalleryCardState();
 }
 
-class _MediaGalleryCardState extends OptimizedState<MediaGalleryCard> with AutomaticKeepAliveClientMixin {
+class _MediaGalleryCardState extends OptimizedState<MediaGalleryCard>
+    with AutomaticKeepAliveClientMixin {
   Uint8List? videoPreview;
   Duration? duration;
   late dynamic content;
@@ -38,10 +40,20 @@ class _MediaGalleryCardState extends OptimizedState<MediaGalleryCard> with Autom
     updateContent();
   }
 
+  @override
+  void didUpdateWidget(MediaGalleryCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // If the attachment GUID changed (e.g., temp -> real GUID after send), update content
+    if (oldWidget.attachment.guid != widget.attachment.guid) {
+      updateContent();
+    }
+  }
+
   void updateContent() {
     // Use the attachment service to get the content properly
-    content = AttachmentsSvc.getContent(attachment, autoDownload: false, onComplete: onComplete);
-    
+    content = AttachmentsSvc.getContent(attachment,
+        autoDownload: false, onComplete: onComplete);
+
     // If getContent returned a controller, listen to it
     if (content is AttachmentDownloadController) {
       (content as AttachmentDownloadController).completeFuncs.add(onComplete);
@@ -51,7 +63,7 @@ class _MediaGalleryCardState extends OptimizedState<MediaGalleryCard> with Autom
         }
       });
     }
-    
+
     // If content is a PlatformFile with a path, generate video preview if needed
     if (content is PlatformFile && (content as PlatformFile).path != null) {
       if (attachment.mimeType?.contains("video") ?? false) {
@@ -73,7 +85,8 @@ class _MediaGalleryCardState extends OptimizedState<MediaGalleryCard> with Autom
 
   void downloadAttachment() {
     setState(() {
-      content = AttachmentDownloader.startDownload(attachment, onComplete: onComplete);
+      content = AttachmentDownloader.startDownload(attachment,
+          onComplete: onComplete);
       if (content is AttachmentDownloadController) {
         (content as AttachmentDownloadController).errorFuncs.add(() {
           if (mounted) {
@@ -115,7 +128,8 @@ class _MediaGalleryCardState extends OptimizedState<MediaGalleryCard> with Autom
   Widget build(BuildContext context) {
     super.build(context);
 
-    final bool hideAttachments = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideAttachments.value;
+    final bool hideAttachments = SettingsSvc.settings.redactedMode.value &&
+        SettingsSvc.settings.hideAttachments.value;
 
     late Widget child;
     bool addPadding = true;
@@ -124,6 +138,65 @@ class _MediaGalleryCardState extends OptimizedState<MediaGalleryCard> with Autom
       child = Text(
         attachment.mimeType ?? "Unknown",
         textAlign: TextAlign.center,
+      );
+    } else if (content is AttachmentWithProgress) {
+      // Attachment being sent - show image with progress overlay
+      final attachmentWithProgress = content as AttachmentWithProgress;
+      final file = attachmentWithProgress.file;
+      final progress = attachmentWithProgress.progress;
+
+      addPadding = false;
+      child = Stack(
+        fit: StackFit.expand,
+        children: [
+          // Background image with lower opacity
+          Opacity(
+            opacity: 0.3,
+            child: file.path != null
+                ? (attachment.mimeType?.startsWith("image") ?? false)
+                    ? ImageDisplay(attachment: attachment, file: file)
+                    : (attachment.mimeType?.startsWith("video") ?? false)
+                        ? ImageDisplay(
+                            attachment: attachment,
+                            image: videoPreview ?? Uint8List(0))
+                        : const SizedBox.shrink()
+                : const SizedBox.shrink(),
+          ),
+          // Progress overlay
+          Container(
+            color:
+                context.theme.colorScheme.properSurface.withValues(alpha: 0.5),
+            child: Center(
+              child: Obx(() {
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      height: 40,
+                      width: 40,
+                      child: CircleProgressBar(
+                        foregroundColor: context.theme.colorScheme.primary,
+                        backgroundColor: context.theme.colorScheme.outline,
+                        value: progress.item2.value,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      progress.item2.value < 1
+                          ? "${(progress.item2.value * 100).toStringAsFixed(0)}%"
+                          : "Waiting for iMessage...",
+                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                            color: context.theme.colorScheme.properOnSurface,
+                            fontWeight: FontWeight.bold,
+                          ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                );
+              }),
+            ),
+          ),
+        ],
       );
     } else if (content is AttachmentDownloadController) {
       child = SizedBox(
@@ -142,6 +215,33 @@ class _MediaGalleryCardState extends OptimizedState<MediaGalleryCard> with Autom
                 );
         }),
       );
+    } else if (content is Tuple2<String, RxDouble>) {
+      // Fallback: Progress without file preview (shouldn't normally happen but handle it)
+      final progress = content as Tuple2<String, RxDouble>;
+      child = Obx(() {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              height: 40,
+              width: 40,
+              child: CircleProgressBar(
+                foregroundColor: context.theme.colorScheme.primary,
+                backgroundColor: context.theme.colorScheme.outline,
+                value: progress.item2.value,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              progress.item2.value < 1
+                  ? "${(progress.item2.value * 100).toStringAsFixed(0)}%"
+                  : "Waiting for iMessage...",
+              style: Theme.of(context).textTheme.bodyMedium,
+              textAlign: TextAlign.center,
+            ),
+          ],
+        );
+      });
     } else if (content is Attachment) {
       // Attachment not downloaded yet
       child = InkWell(
@@ -154,12 +254,12 @@ class _MediaGalleryCardState extends OptimizedState<MediaGalleryCard> with Autom
               style: Theme.of(context).textTheme.bodyLarge,
             ),
             const SizedBox(height: 5),
-            Icon(SettingsSvc.settings.skin.value == Skins.iOS
-                ? CupertinoIcons.cloud_download
-                : Icons.cloud_download,
-              size: 28.0,
-              color: context.theme.colorScheme.properOnSurface
-            ),
+            Icon(
+                SettingsSvc.settings.skin.value == Skins.iOS
+                    ? CupertinoIcons.cloud_download
+                    : Icons.cloud_download,
+                size: 28.0,
+                color: context.theme.colorScheme.properOnSurface),
             const SizedBox(height: 5),
             Text(
               attachment.mimeType ?? "Unknown File Type",
@@ -174,9 +274,12 @@ class _MediaGalleryCardState extends OptimizedState<MediaGalleryCard> with Autom
       if (attachment.mimeType?.startsWith("image") ?? false) {
         child = ImageDisplay(attachment: attachment, file: file);
         addPadding = false;
-      } else if ((attachment.mimeType?.startsWith("video") ?? false) && !kIsDesktop && !kIsWeb) {
+      } else if ((attachment.mimeType?.startsWith("video") ?? false) &&
+          !kIsDesktop &&
+          !kIsWeb) {
         if (videoPreview != null) {
-          child = ImageDisplay(attachment: attachment, image: videoPreview!, duration: duration);
+          child = ImageDisplay(
+              attachment: attachment, image: videoPreview!, duration: duration);
           addPadding = false;
         } else {
           child = const Text(
@@ -239,8 +342,10 @@ class ImageDisplay extends StatelessWidget {
             openContainer();
           },
           child: SizedBox(
-            width: NavigationSvc.width(context) / max(2, NavigationSvc.width(context) ~/ 200),
-            height: NavigationSvc.width(context) / max(2, NavigationSvc.width(context) ~/ 200),
+            width: NavigationSvc.width(context) /
+                max(2, NavigationSvc.width(context) ~/ 200),
+            height: NavigationSvc.width(context) /
+                max(2, NavigationSvc.width(context) ~/ 200),
             child: Stack(
               children: [
                 if (file != null && file!.path != null)
@@ -248,41 +353,62 @@ class ImageDisplay extends StatelessWidget {
                     File(file!.path!),
                     fit: BoxFit.cover,
                     alignment: Alignment.center,
-                    cacheWidth: NavigationSvc.width(context) ~/ max(2, NavigationSvc.width(context) ~/ 200) * 2,
-                    width: NavigationSvc.width(context) / max(2, NavigationSvc.width(context) ~/ 200),
-                    height: NavigationSvc.width(context) / max(2, NavigationSvc.width(context) ~/ 200),
+                    cacheWidth: NavigationSvc.width(context) ~/
+                        max(2, NavigationSvc.width(context) ~/ 200) *
+                        2,
+                    width: NavigationSvc.width(context) /
+                        max(2, NavigationSvc.width(context) ~/ 200),
+                    height: NavigationSvc.width(context) /
+                        max(2, NavigationSvc.width(context) ~/ 200),
                   )
                 else if (image != null)
                   Image.memory(
                     image!,
                     fit: BoxFit.cover,
                     alignment: Alignment.center,
-                    cacheWidth: NavigationSvc.width(context) ~/ max(2, NavigationSvc.width(context) ~/ 200) * 2,
-                    width: NavigationSvc.width(context) / max(2, NavigationSvc.width(context) ~/ 200),
-                    height: NavigationSvc.width(context) / max(2, NavigationSvc.width(context) ~/ 200),
+                    cacheWidth: NavigationSvc.width(context) ~/
+                        max(2, NavigationSvc.width(context) ~/ 200) *
+                        2,
+                    width: NavigationSvc.width(context) /
+                        max(2, NavigationSvc.width(context) ~/ 200),
+                    height: NavigationSvc.width(context) /
+                        max(2, NavigationSvc.width(context) ~/ 200),
                   )
                 else
                   SizedBox(
-                    width: NavigationSvc.width(context) / max(2, NavigationSvc.width(context) ~/ 200),
-                    height: NavigationSvc.width(context) / max(2, NavigationSvc.width(context) ~/ 200),
+                    width: NavigationSvc.width(context) /
+                        max(2, NavigationSvc.width(context) ~/ 200),
+                    height: NavigationSvc.width(context) /
+                        max(2, NavigationSvc.width(context) ~/ 200),
                   ),
-                if ((attachment.mimeType?.contains("video") ?? false) && duration != null)
+                if ((attachment.mimeType?.contains("video") ?? false) &&
+                    duration != null)
                   Positioned(
                     bottom: 10,
                     right: 10,
-                    child: Text(duration.toString().split('.').first
-                        .padLeft(8, "0").padLeft(9, "a")
-                        .replaceFirst("a00:", "").replaceFirst("a", ""),
-                      style: context.theme.textTheme.bodyMedium!.copyWith(fontWeight: FontWeight.bold),
+                    child: Text(
+                      duration
+                          .toString()
+                          .split('.')
+                          .first
+                          .padLeft(8, "0")
+                          .padLeft(9, "a")
+                          .replaceFirst("a00:", "")
+                          .replaceFirst("a", ""),
+                      style: context.theme.textTheme.bodyMedium!
+                          .copyWith(fontWeight: FontWeight.bold),
                     ),
                   ),
-                if (!(attachment.message.target?.isFromMe ?? true)
-                    && attachment.message.target?.handleRelation.hasValue == true
-                    && SettingsSvc.settings.skin.value == Skins.iOS)
+                if (!(attachment.message.target?.isFromMe ?? true) &&
+                    attachment.message.target?.handleRelation.hasValue ==
+                        true &&
+                    SettingsSvc.settings.skin.value == Skins.iOS)
                   Positioned(
                     top: 10,
                     right: 10,
-                    child: ContactAvatarWidget(handle: attachment.message.target?.handleRelation.target),
+                    child: ContactAvatarWidget(
+                        handle:
+                            attachment.message.target?.handleRelation.target),
                   ),
               ],
             ),
