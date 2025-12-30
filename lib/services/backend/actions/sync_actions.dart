@@ -15,7 +15,6 @@ class SyncActions {
       );
       
       await incrementalSyncManager.start();
-      ChatsSvc.sort();
     } catch (ex, s) {
       Logger.error('Incremental sync failed!', error: ex, trace: s);
     }

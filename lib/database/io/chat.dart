@@ -654,7 +654,6 @@ class Chat {
     _pinIndex.value = null;
     await saveAsync(updateIsPinned: true, updatePinIndex: true);
     ChatsSvc.updateChat(this);
-    ChatsSvc.sort();
     return this;
   }
 
@@ -672,7 +671,6 @@ class Chat {
     this.isArchived = isArchived;
     await saveAsync(updateIsPinned: true, updateIsArchived: true);
     ChatsSvc.updateChat(this);
-    ChatsSvc.sort();
     return this;
   }
 

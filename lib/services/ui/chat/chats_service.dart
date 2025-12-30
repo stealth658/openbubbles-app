@@ -361,14 +361,6 @@ class ChatsService {
     }
   }
 
-  /// Public sort method for external callers
-  /// Sorting is now implicit in the map structure and accessed via getSortedChats()
-  void sort() {
-    if (headless) return;
-    Logger.info('[SORT] Chat order maintained via sorted list', tag: 'ChatBloc');
-    // No-op since sorted list is maintained on add/update
-  }
-
   bool updateChat(Chat updated, {bool override = false}) {
     if (headless) return false;
     final state = chatStates[updated.guid];
