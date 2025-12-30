@@ -149,6 +149,9 @@ class ActionHandler extends GetxService {
 
   Future<void> sendMessage(Chat c, Message m, Message? selected, String? r) async {
     final completer = Completer<void>();
+
+    // Update the position of the chat in the chat list
+    ChatsSvc.updateChat(c);
     
     // For reactions, add to UI immediately before sending to server
     if (r != null && m.associatedMessageGuid != null) {

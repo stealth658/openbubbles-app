@@ -340,10 +340,25 @@ class ChatsService {
   
   /// Reposition a chat in the sorted list (used when chat is updated)
   void _repositionChat(Chat chat) {
-    // Remove from current position
-    _sortedChats.removeWhere((c) => c.guid == chat.guid);
-    // Insert at correct position
-    _insertChatSorted(chat);
+    // Find current position
+    final currentIndex = _sortedChats.indexWhere((c) => c.guid == chat.guid);
+    if (currentIndex == -1) {
+      // Chat not found, just insert it
+      _insertChatSorted(chat);
+      return;
+    }
+    
+    // Find where it should be (excluding current position)
+    _sortedChats.removeAt(currentIndex);
+    final newIndex = _findInsertionIndex(chat);
+    
+    // Only reposition if the index actually changed
+    if (newIndex != currentIndex) {
+      _sortedChats.insert(newIndex, chat);
+    } else {
+      // Put it back in the same position
+      _sortedChats.insert(currentIndex, chat);
+    }
   }
 
   /// Public sort method for external callers
@@ -358,18 +373,23 @@ class ChatsService {
     if (headless) return false;
     final state = chatStates[updated.guid];
     if (state != null) {
-      final toUpdate = state.chat;
-      final merged = override ? updated : updated.merge(toUpdate);
+      final currentLatestMessage = state.latestMessage.value;
+      final currentPinIndex = state.pinIndex.value;
       
-      // Only update if actually different to avoid unnecessary rebuilds
-      if (merged != toUpdate) {
-        // Update the chat state which will trigger reactive updates
-        state.updateFromChat(merged);
-        
-        // Reposition in sorted list if sort order might have changed
-        // (e.g., new message updates latestMessage.dateCreated, or pin status changed)
-        _repositionChat(merged);
+      // Check if sort-order-relevant fields have changed
+      final latestMessageChanged = updated.latestMessage.guid != currentLatestMessage?.guid ||
+          updated.latestMessage.dateCreated != currentLatestMessage?.dateCreated;
+      final pinIndexChanged = updated.pinIndex != currentPinIndex;
+      final sortOrderChanged = latestMessageChanged || pinIndexChanged;
+      
+      if (updated != state.chat || override) {
+        state.updateFromChat(updated);
       }
+      
+      if (sortOrderChanged || override) {
+        _repositionChat(updated);
+      }
+      
       return true;
     }
 
