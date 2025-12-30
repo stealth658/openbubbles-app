@@ -20,10 +20,8 @@ class SetupService extends GetxService {
   Future<void> _finishSetup() async {
     SettingsSvc.settings.finishedSetup.value = true;
     await SettingsSvc.settings.saveOneAsync('finishedSetup');
+    await SettingsSvc.fetchServerDetails();
     await StartupTasks.onStartup();
     await NetworkTasks.onConnect();
-    
-    // Trigger a full UI update for the chat list
-    // No longer need to refresh since chatStates is not reactive
   }
 }
