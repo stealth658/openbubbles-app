@@ -311,14 +311,14 @@ class MessagesViewState extends OptimizedState<MessagesView> {
     }
 
     if (insertIndex == 0 && !message.isFromMe! && SettingsSvc.settings.receiveSoundPath.value != null) {
-      if (kIsDesktop && (cm.getChatController(chat.guid)?.isActive ?? false)) {
+      if (kIsDesktop && (ChatsSvc.getChatState(chat.guid)?.isActive.value ?? false)) {
         Player player = Player();
         player.stream.completed
             .firstWhere((completed) => completed)
             .then((_) async => Future.delayed(const Duration(milliseconds: 500), () async => await player.dispose()));
         await player.setVolume(SettingsSvc.settings.soundVolume.value.toDouble());
         await player.open(Media(SettingsSvc.settings.receiveSoundPath.value!));
-      } else if (cm.isChatActive(chat.guid)) {
+      } else if (ChatsSvc.isChatActive(chat.guid)) {
         PlayerController controller = PlayerController();
         await controller
             .preparePlayer(path: SettingsSvc.settings.receiveSoundPath.value!, volume: SettingsSvc.settings.soundVolume.value / 100)

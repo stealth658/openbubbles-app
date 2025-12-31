@@ -7,6 +7,7 @@ export 'backend/notifications/notifications_service.dart';
 export 'backend/queue/incoming_queue.dart';
 export 'backend/queue/outgoing_queue.dart';
 export 'backend/settings/settings_service.dart';
+export 'backend/settings/shared_preferences_service.dart';
 export 'backend/setup/setup_service.dart';
 export 'backend/sync/full_sync_manager.dart';
 export 'backend/sync/handle_sync_manager.dart';
@@ -23,7 +24,6 @@ export 'network/downloads_service.dart';
 export 'network/http_service.dart';
 export 'network/socket_service.dart';
 export 'ui/chat/chat_lifecycle_manager.dart';
-export 'ui/chat/chat_manager.dart';
 export 'ui/chat/chats_service.dart';
 export 'ui/chat/conversation_view_controller.dart';
 // GlobalChatService merged into ChatsService

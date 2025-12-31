@@ -69,9 +69,9 @@ class _TabletModeWrapperState extends OptimizedState<TabletModeWrapper> {
   Widget build(BuildContext context) {
     if (!showAltLayout) {
       // this forcefully closes the chat controller if rotating from landscape -> portrait
-      if ((altLayoutCache ?? false) && cm.activeChat != null) {
+      if ((altLayoutCache ?? false) && ChatsSvc.activeChat != null) {
         altLayoutCache = false;
-        cvc(cm.activeChat!.chat).close();
+        cvc(ChatsSvc.activeChat!.chat).close();
       }
       return TitleBarWrapper(child: widget.left);
     }

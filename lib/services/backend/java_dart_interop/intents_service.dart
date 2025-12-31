@@ -173,7 +173,7 @@ class IntentsService {
       );
     } else if (guid == "-1") {
       Logger.debug("Popping all routes...", tag: "IntentsService");
-      if (cm.activeChat != null) {
+      if (ChatsSvc.activeChat != null) {
         Navigator.of(Get.context!).popUntil((route) => route.isFirst);
       }
     } else if (guid == "-2") {
@@ -202,7 +202,7 @@ class IntentsService {
         return;
       }
 
-      bool chatIsOpen = cm.activeChat?.chat.guid == guid;
+      bool chatIsOpen = ChatsSvc.activeChat?.chat.guid == guid;
       Logger.debug("Chat is active: $chatIsOpen", tag: "IntentsService");
 
       setPickedAttachments() {

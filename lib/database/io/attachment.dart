@@ -124,7 +124,7 @@ class Attachment {
     }
 
     // Handle cm/cvc services on main thread BEFORE calling isolate
-    if (cm.activeChat != null) {
+    if (ChatsSvc.activeChat != null) {
       // Image caching is now handled by Flutter's image cache automatically
     }
 

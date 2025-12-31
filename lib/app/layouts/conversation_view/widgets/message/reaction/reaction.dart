@@ -252,13 +252,13 @@ class ReactionWidgetState extends OptimizedState<ReactionWidget> {
                                 // Remove the original message and notification
                                 Navigator.of(context).pop();
                                 Message.delete(reaction.guid!);
-                                await NotificationsSvc.clearFailedToSend(cm.activeChat!.chat.id!);
+                                await NotificationsSvc.clearFailedToSend(ChatsSvc.activeChat!.chat.id!);
                                 getActiveMwc(reaction.associatedMessageGuid!)?.removeAssociatedMessage(reaction);
                                 // Re-send
                                 final selected = getActiveMwc(reaction.associatedMessageGuid!)!.message;
                                 outq.queue(OutgoingItem(
                                   type: QueueType.sendMessage,
-                                  chat: cm.activeChat!.chat,
+                                  chat: ChatsSvc.activeChat!.chat,
                                   message: Message(
                                     associatedMessageGuid: selected.guid,
                                     associatedMessageType: reaction.associatedMessageType,
@@ -284,7 +284,7 @@ class ReactionWidgetState extends OptimizedState<ReactionWidget> {
                                 Message.delete(reaction.guid!);
                                 // Remove the message from the Bloc
                                 getActiveMwc(reaction.associatedMessageGuid!)?.removeAssociatedMessage(reaction);
-                                final chat = cm.activeChat!.chat;
+                                final chat = ChatsSvc.activeChat!.chat;
                                 await NotificationsSvc.clearFailedToSend(chat.id!);
                                 // Get the "new" latest info
                                 List<Message> latest = await Chat.getMessagesAsync(chat, limit: 1);
@@ -299,7 +299,7 @@ class ReactionWidgetState extends OptimizedState<ReactionWidget> {
                               ),
                               onPressed: () async {
                                 Navigator.of(context).pop();
-                                await NotificationsSvc.clearFailedToSend(cm.activeChat!.chat.id!);
+                                await NotificationsSvc.clearFailedToSend(ChatsSvc.activeChat!.chat.id!);
                               },
                             )
                           ],

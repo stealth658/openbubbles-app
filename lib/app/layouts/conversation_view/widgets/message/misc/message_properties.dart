@@ -27,7 +27,7 @@ class MessageProperties extends CustomStateful<MessageWidgetController> {
 
 class _MessagePropertiesState extends CustomState<MessageProperties, void, MessageWidgetController> {
   Message get message => controller.message;
-  MessagesService get service => MessagesSvc(controller.cvController?.chat.guid ?? cm.activeChat!.chat.guid);
+  MessagesService get service => MessagesSvc(controller.cvController?.chat.guid ?? ChatsSvc.activeChat!.chat.guid);
 
   @override
   void initState() {
@@ -88,7 +88,7 @@ class _MessagePropertiesState extends CustomState<MessageProperties, void, Messa
       // Also observe showEdits since that's toggled directly
       controller.showEdits.value;
       // Watch coordinator trigger for immediate thread reply updates (bypasses ObjectBox latency)
-      muc.getUpdateTrigger(controller.cvController?.chat.guid ?? cm.activeChat!.chat.guid, message.guid!)?.value;
+      muc.getUpdateTrigger(controller.cvController?.chat.guid ?? ChatsSvc.activeChat!.chat.guid, message.guid!)?.value;
       
       final props = getProperties();
       return AnimatedSize(

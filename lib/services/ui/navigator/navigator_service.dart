@@ -87,9 +87,9 @@ class NavigatorService {
   Future<void> pushAndRemoveUntil(BuildContext context, Widget widget, bool Function(Route) predicate,
       {bool closeActiveChat = true, PageRoute? customRoute}) async {
     if (Get.keys.containsKey(2) && isTabletMode(context)) {
-      if (closeActiveChat && cm.activeChat != null) {
-        Logger.debug("Closing active chat: ${cm.activeChat!.chat.guid}", tag: "NavigatorService");
-        cvc(cm.activeChat!.chat).close();
+      if (closeActiveChat && ChatsSvc.activeChat != null) {
+        Logger.debug("Closing active chat: ${ChatsSvc.activeChat!.chat.guid}", tag: "NavigatorService");
+        cvc(ChatsSvc.activeChat!.chat).close();
       }
 
       await Get.offUntil(
@@ -155,8 +155,8 @@ class NavigatorService {
             id2result = true;
           }
           if (!(Get.global(2).currentState?.canPop() ?? true)) {
-            if (cm.activeChat != null) {
-              cvc(cm.activeChat!.chat).close();
+            if (ChatsSvc.activeChat != null) {
+              cvc(ChatsSvc.activeChat!.chat).close();
             }
             EventDispatcherSvc.emit('update-highlight', null);
           }
@@ -181,7 +181,7 @@ class NavigatorService {
     }
   }
 
-  /// Remember to call `await cm.setAllInactive()` after calling this function
+  /// Remember to call `await ChatsSvc.setAllInactive()` after calling this function
   void closeAllConversationView(BuildContext context) {
     if (Get.keys.containsKey(2) && Get.keys[2]?.currentContext != null && NavigationSvc.isTabletMode(context)) {
       Get.until((route) {

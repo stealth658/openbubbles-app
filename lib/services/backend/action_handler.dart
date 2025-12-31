@@ -265,7 +265,7 @@ class ActionHandler extends GetxService {
         final tempGuid = m.guid;
         m = handleSendError(error, m);
 
-        if (!LifecycleSvc.isAlive || !(cm.getChatController(c.guid)?.isAlive ?? false)) {
+        if (!LifecycleSvc.isAlive || !(ChatsSvc.getChatController(c.guid)?.isAlive.value ?? false)) {
           await NotificationsSvc.createFailedToSend(c);
         }
         await Message.replaceMessage(tempGuid, m);
@@ -328,7 +328,7 @@ class ActionHandler extends GetxService {
         // Clean up send progress tracker
         _sendProgressTrackers.remove(tempGuid);
 
-        if (!LifecycleSvc.isAlive || !(cm.getChatController(c.guid)?.isAlive ?? false)) {
+        if (!LifecycleSvc.isAlive || !(ChatsSvc.getChatController(c.guid)?.isAlive.value ?? false)) {
           await NotificationsSvc.createFailedToSend(c);
         }
         await Message.replaceMessage(tempGuid, m);
@@ -386,7 +386,7 @@ class ActionHandler extends GetxService {
       // Clean up send progress tracker
       _sendProgressTrackers.remove(tempGuid);
 
-      if (!LifecycleSvc.isAlive || !(cm.getChatController(c.guid)?.isAlive ?? false)) {
+      if (!LifecycleSvc.isAlive || !(ChatsSvc.getChatController(c.guid)?.isAlive.value ?? false)) {
         await NotificationsSvc.createFailedToSend(c);
       }
       await Message.replaceMessage(tempGuid, m);
@@ -481,7 +481,7 @@ class ActionHandler extends GetxService {
       // Clean up send progress tracker
       _sendProgressTrackers.remove(tempGuid);
 
-      if (!LifecycleSvc.isAlive || !(cm.getChatController(c.guid)?.isAlive ?? false)) {
+      if (!LifecycleSvc.isAlive || !(ChatsSvc.getChatController(c.guid)?.isAlive.value ?? false)) {
         await NotificationsSvc.createFailedToSend(c);
       }
       await Message.replaceMessage(tempGuid, m);
@@ -560,7 +560,7 @@ class ActionHandler extends GetxService {
 
     bool isAppInactive = !LifecycleSvc.isAlive;
     bool hasUnifiedPushEndpoint = SettingsSvc.settings.endpointUnifiedPush.value != "";
-    bool isNotInActiveChat = cm.activeChat == null && Get.rawRoute?.settings.name != "/";
+    bool isNotInActiveChat = ChatsSvc.activeChat == null && Get.rawRoute?.settings.name != "/";
     bool shouldSendNotification = (isAppInactive || hasUnifiedPushEndpoint || isNotInActiveChat) && shouldNotify;
 
     if (shouldSendNotification) {
@@ -613,7 +613,7 @@ class ActionHandler extends GetxService {
   Future<Chat> handleNewOrUpdatedChat(Chat partialData) async {
     // Contact fetching is now handled automatically by ContactServiceV2 on startup
     // get and return the chat from server
-    return await cm.fetchChat(partialData.guid) ?? partialData;
+    return await ChatsSvc.fetchChat(partialData.guid) ?? partialData;
   }
 
   Future<void> handleFaceTimeStatusChange(Map<String, dynamic> data) async {

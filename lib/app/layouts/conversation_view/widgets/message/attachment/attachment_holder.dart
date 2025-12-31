@@ -43,7 +43,7 @@ class _AttachmentHolderState
       message.attachments
           .firstWhereOrNull((e) => e?.id == part.attachments.first.id) ??
       MessagesSvc(
-              controller.cvController?.chat.guid ?? cm.activeChat!.chat.guid)
+              controller.cvController?.chat.guid ?? ChatsSvc.activeChat!.chat.guid)
           .struct
           .attachments
           .firstWhereOrNull((e) => e.id == part.attachments.first.id) ??
@@ -552,7 +552,7 @@ class _AttachmentHolderState
                                   useRootNavigator: false,
                                   openBuilder: (context, closeContainer) {
                                     return FullscreenMediaHolder(
-                                      currentChat: cm.activeChat,
+                                      currentChat: ChatsSvc.activeChat?.chat,
                                       attachment: attachment,
                                       showInteractions: true,
                                     );
@@ -562,7 +562,7 @@ class _AttachmentHolderState
                                       onTap: () {
                                         final _controller =
                                             controller.cvController ??
-                                                cvc(cm.activeChat!.chat);
+                                                cvc(ChatsSvc.activeChat!.chat);
                                         _controller.focusNode.unfocus();
                                         _controller.subjectFocusNode.unfocus();
                                         openContainer();

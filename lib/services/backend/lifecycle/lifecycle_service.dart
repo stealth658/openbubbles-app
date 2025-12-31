@@ -106,11 +106,12 @@ class LifecycleService with WidgetsBindingObserver {
   void open() {
     // Observer is permanently registered in init() and should never be removed
     if (!kIsDesktop || wasActiveAliveBefore != false) {
-      cm.setActiveToAlive();
+      ChatsSvc.setActiveToAlive();
     }
-    final activeChat = cm.activeChat;
+
+    final activeChat = ChatsSvc.activeChat;
     if (activeChat != null) {
-      activeChat.chat.toggleHasUnreadAsync(false);
+      activeChat.setHasUnread(false);
       ConversationViewController _cvc = cvc(activeChat.chat);
       if (!_cvc.showingOverlays && _cvc.editing.isEmpty) {
         _cvc.lastFocusedNode.requestFocus();
@@ -146,16 +147,16 @@ class LifecycleService with WidgetsBindingObserver {
     // WidgetsBinding.instance.removeObserver(this);
 
     if (kIsDesktop) {
-      wasActiveAliveBefore = cm.activeChat?.isAlive;
+      wasActiveAliveBefore = ChatsSvc.activeChat?.isAlive.value;
     }
     if (!kIsDesktop || wasActiveAliveBefore != false) {
-      cm.setActiveToDead();
+      ChatsSvc.setActiveToDead();
     }
     if (!kIsDesktop && !kIsWeb) {
       IsolateNameServer.removePortNameMapping('bg_isolate');
       SocketSvc.disconnect();
     }
-    final activeChat = cm.activeChat;
+    final activeChat = ChatsSvc.activeChat;
     if (activeChat != null) {
       ConversationViewController _cvc = cvc(activeChat.chat);
       _cvc.lastFocusedNode.unfocus();
@@ -166,7 +167,7 @@ class LifecycleService with WidgetsBindingObserver {
   }
 
   void closeBubble() {
-    cm.setActiveToDead();
+    ChatsSvc.setActiveToDead();
     SocketSvc.disconnect();
   }
 }

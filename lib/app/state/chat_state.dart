@@ -1,4 +1,5 @@
 import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 
@@ -28,6 +29,11 @@ class ChatState {
   final RxBool lockChatIcon;
   final RxnString lastReadMessageGuid;
 
+  /// Lifecycle state fields (previously in ChatLifecycleManager)
+  final RxBool isActive;
+  final RxBool isAlive;
+  ConversationViewController? controller;
+
   ChatState(this.chat)
       : isPinned = (chat.isPinned ?? false).obs,
         pinIndex = RxnInt(chat.pinIndex),
@@ -45,7 +51,9 @@ class ChatState {
         autoSendTypingIndicators = RxnBool(chat.autoSendTypingIndicators),
         lockChatName = chat.lockChatName.obs,
         lockChatIcon = chat.lockChatIcon.obs,
-        lastReadMessageGuid = RxnString(chat.lastReadMessageGuid);
+        lastReadMessageGuid = RxnString(chat.lastReadMessageGuid),
+        isActive = false.obs,
+        isAlive = false.obs;
 
   /// Update the state from a chat object (useful when chat is updated from DB)
   void updateFromChat(Chat updatedChat) {
@@ -249,5 +257,26 @@ class ChatState {
     if (title.value != newTitle) {
       title.value = newTitle;
     }
+  }
+
+  // ========== Lifecycle Management Methods ==========
+
+  /// Check if this chat is currently active and alive
+  bool get isChatActive => isActive.value && isAlive.value;
+
+  /// Set the chat as active
+  void setActive(bool value) {
+    isActive.value = value;
+  }
+
+  /// Set the chat as alive
+  void setAlive(bool value) {
+    isAlive.value = value;
+  }
+
+  /// Set both active and alive to the same value
+  void setActiveAndAlive(bool value) {
+    isActive.value = value;
+    isAlive.value = value;
   }
 }

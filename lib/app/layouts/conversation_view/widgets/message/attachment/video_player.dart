@@ -324,7 +324,7 @@ class _VideoPlayerState extends OptimizedState<VideoPlayer> with AutomaticKeepAl
                     await Navigator.of(Get.context!).push(
                       ThemeSwitcher.buildPageRoute(
                         builder: (context) => FullscreenMediaHolder(
-                          currentChat: cm.activeChat,
+                          currentChat: ChatsSvc.activeChat?.chat,
                           attachment: attachment,
                           showInteractions: true,
                           videoController: videoController,
@@ -340,7 +340,7 @@ class _VideoPlayerState extends OptimizedState<VideoPlayer> with AutomaticKeepAl
                   await Navigator.of(Get.context!).push(
                     ThemeSwitcher.buildPageRoute(
                       builder: (context) => FullscreenMediaHolder(
-                        currentChat: cm.activeChat,
+                        currentChat: ChatsSvc.activeChat?.chat,
                         attachment: attachment,
                         showInteractions: true,
                         mute: muted,
@@ -389,7 +389,7 @@ class _VideoPlayerState extends OptimizedState<VideoPlayer> with AutomaticKeepAl
             await Navigator.of(Get.context!).push(
               ThemeSwitcher.buildPageRoute(
                 builder: (context) => FullscreenMediaHolder(
-                  currentChat: cm.activeChat,
+                  currentChat: ChatsSvc.activeChat?.chat,
                   attachment: attachment,
                   showInteractions: true,
                   mute: muted,
@@ -523,7 +523,7 @@ class FullscreenButton extends StatelessWidget {
               await Navigator.of(Get.context!).push(
                 ThemeSwitcher.buildPageRoute(
                   builder: (context) => FullscreenMediaHolder(
-                    currentChat: cm.activeChat,
+                    currentChat: ChatsSvc.activeChat?.chat,
                     attachment: attachment,
                     showInteractions: true,
                     videoController: videoController,

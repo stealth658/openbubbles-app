@@ -195,7 +195,7 @@ class MessageActions {
           isNewer = first.dateCreated!.isAfter(inputChat.latestMessage.dateCreated!);
           if (isNewer) {
             inputChat.latestMessage = first;
-            if (!first.isFromMe! && !cm.isChatActive(inputChat.guid)) {
+            if (!first.isFromMe! && !ChatsSvc.isChatActive(inputChat.guid)) {
               inputChat.toggleHasUnreadAsync(true);
             }
           }

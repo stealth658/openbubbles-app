@@ -307,9 +307,9 @@ class Chat {
   static Future<void> deleteChat(Chat chat) async {
     if (kIsWeb) return;
     // close the convo view page if open and wait for it to be disposed before deleting
-    if (cm.activeChat?.chat.guid == chat.guid) {
+    if (ChatsSvc.activeChat?.chat.guid == chat.guid) {
       NavigationSvc.closeAllConversationView(Get.context!);
-      await cm.setAllInactive();
+      await ChatsSvc.setAllInactive();
       await Future.delayed(const Duration(milliseconds: 500));
     }
     List<Message> messages = Chat.getMessages(chat);
@@ -322,9 +322,9 @@ class Chat {
   static Future<void> softDelete(Chat chat) async {
     if (kIsWeb) return;
     // close the convo view page if open and wait for it to be disposed before deleting
-    if (cm.activeChat?.chat.guid == chat.guid) {
+    if (ChatsSvc.activeChat?.chat.guid == chat.guid) {
       NavigationSvc.closeAllConversationView(Get.context!);
-      await cm.setAllInactive();
+      await ChatsSvc.setAllInactive();
       await Future.delayed(const Duration(milliseconds: 500));
     }
     await ChatInterface.softDeleteChat(chatData: chat.toMap());
@@ -343,11 +343,11 @@ class Chat {
     }
 
     if (hasUnreadMessage == hasUnread && !force) return this;
-    if (!cm.isChatActive(guid) || !hasUnread || force) {
+    if (!ChatsSvc.isChatActive(guid) || !hasUnread || force) {
       hasUnreadMessage = hasUnread;
       await saveAsync(updateHasUnreadMessage: true);
     }
-    if (cm.isChatActive(guid) && hasUnread && !force) {
+    if (ChatsSvc.isChatActive(guid) && hasUnread && !force) {
       hasUnread = false;
       clearLocalNotifications = false;
     }
@@ -432,14 +432,14 @@ class Chat {
     if (checkForMessageText && changeUnreadStatus && isNewer) {
       // If the message is from me, mark it unread
       // If the message is not from the same chat as the current chat, mark unread
-      if (message.isFromMe! || cm.isChatActive(guid)) {
+      if (message.isFromMe! || ChatsSvc.isChatActive(guid)) {
         // force if the chat is active to ensure private api mark read
         toggleHasUnreadAsync(false,
             clearLocalNotifications: clearNotificationsIfFromMe,
-            force: cm.isChatActive(guid),
+            force: ChatsSvc.isChatActive(guid),
             // only private mark if the chat is active
-            privateMark: cm.isChatActive(guid));
-      } else if (!cm.isChatActive(guid)) {
+            privateMark: ChatsSvc.isChatActive(guid));
+      } else if (!ChatsSvc.isChatActive(guid)) {
         toggleHasUnreadAsync(true, privateMark: false);
       }
     }
@@ -456,7 +456,7 @@ class Chat {
 
   Future<void> serverSyncParticipantsAsync() async {
     // Send message to server to get the participants
-    final chat = await cm.fetchChat(guid);
+    final chat = await ChatsSvc.fetchChat(guid);
     if (chat != null) {
       await chat.saveAsync();
     }

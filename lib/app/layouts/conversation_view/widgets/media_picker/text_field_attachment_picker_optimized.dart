@@ -376,7 +376,7 @@ class _FeatureButton extends StatelessWidget {
   }
 
   Future<void> _handleLocation() async {
-    await Share.location(cm.activeChat!.chat);
+    await Share.location(ChatsSvc.activeChat!.chat);
   }
 
   Future<void> _handleSchedule(BuildContext context) async {

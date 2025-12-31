@@ -256,7 +256,7 @@ class _AttachmentPickerState extends OptimizedState<AttachmentPicker> {
                                 }
                                 return;
                               case 3:
-                                await Share.location(cm.activeChat!.chat);
+                                await Share.location(ChatsSvc.activeChat!.chat);
                                 return;
                               case 4:
                                 if (controller.pickedAttachments.isNotEmpty) {

@@ -42,7 +42,7 @@ class _ConversationDetailsState extends OptimizedState<ConversationDetails> with
   void initState() {
     super.initState();
 
-    cm.setActiveToDead();
+    ChatsSvc.setActiveToDead();
 
     if (!kIsWeb) {
       final chatQuery = Database.chats.query(Chat_.guid.equals(chat.guid)).watch();
@@ -72,9 +72,9 @@ class _ConversationDetailsState extends OptimizedState<ConversationDetails> with
   @override
   void dispose() {
     sub.cancel();
-    if (cm.activeChat != null) {
-      cm.setActiveToAlive();
-      cvc(cm.activeChat!.chat).lastFocusedNode.requestFocus();
+    if (ChatsSvc.activeChat != null) {
+      ChatsSvc.setActiveToAlive();
+      cvc(ChatsSvc.activeChat!.chat).lastFocusedNode.requestFocus();
     }
     super.dispose();
   }

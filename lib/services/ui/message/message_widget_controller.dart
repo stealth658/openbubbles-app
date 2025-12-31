@@ -218,14 +218,14 @@ class MessageWidgetController extends StatefulController with GetSingleTickerPro
         }
       } else {
         Attachment? foundAttachment;
-        if (e.isAttachment && (cvController?.chat != null || cm.activeChat != null)) {
+        if (e.isAttachment && (cvController?.chat != null || ChatsSvc.activeChat != null)) {
           final attachmentGuid = e.attributes!.attachmentGuid!;
           
           // First check message.attachments (loaded by Phase 1)
           foundAttachment = message.attachments.firstWhereOrNull((a) => a?.guid == attachmentGuid);
           if (foundAttachment == null) {
             // Then check struct cache
-            foundAttachment = MessagesSvc(cvController?.chat.guid ?? cm.activeChat!.chat.guid)
+            foundAttachment = MessagesSvc(cvController?.chat.guid ?? ChatsSvc.activeChat!.chat.guid)
                 .struct
                 .getAttachment(attachmentGuid);
             foundAttachment ??= await Attachment.findOneAsync(attachmentGuid);
@@ -252,7 +252,7 @@ class MessageWidgetController extends StatefulController with GetSingleTickerPro
   }
 
   void updateMessage(Message newItem) {
-    final chat = message.chat.target?.guid ?? cvController?.chat.guid ?? cm.activeChat!.chat.guid;
+    final chat = message.chat.target?.guid ?? cvController?.chat.guid ?? ChatsSvc.activeChat!.chat.guid;
     final oldGuid = message.guid;
     
     // Handle temp message guid replacement - requires full rebuild for color change

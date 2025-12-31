@@ -287,7 +287,7 @@ class MessagesService extends GetxController {
       Logger.debug("[loadChunk] Loaded ${_messages.length} messages from local DB");
       if (_messages.isEmpty) {
         // get from server and save
-        final fromServer = await cm.getMessages(chat.guid, offset: offset, limit: limit);
+        final fromServer = await ChatsSvc.getMessages(chat.guid, offset: offset, limit: limit);
         final temp = await MessageHelper.bulkAddMessages(chat, fromServer, checkForLatestMessageText: false);
         if (!kIsWeb) {
           // re-fetch from the DB because it will find handles / associated messages for us
@@ -346,12 +346,12 @@ class MessagesService extends GetxController {
       _messages.sort(Message.sort);
       struct.addMessages(_messages);
     } else {
-      final beforeResponse = await cm.getMessages(
+      final beforeResponse = await ChatsSvc.getMessages(
         chat.guid,
         limit: 25,
         before: around.dateCreated!.millisecondsSinceEpoch,
       );
-      final afterResponse = await cm.getMessages(
+      final afterResponse = await ChatsSvc.getMessages(
         chat.guid,
         limit: 25,
         sort: "ASC",

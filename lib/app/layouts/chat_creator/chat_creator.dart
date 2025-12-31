@@ -93,7 +93,7 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
             oldText = addressController.text;
             // if user has typed stuff, remove the message view and show filtered results
             if (addressController.text.isNotEmpty && fakeController.value != null) {
-              await cm.setAllInactive();
+              await ChatsSvc.setAllInactive();
               oldController = fakeController.value;
               fakeController.value = null;
             }
@@ -182,7 +182,7 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
   Future<Chat?> findExistingChat({bool checkDeleted = false, bool update = true}) async {
     // no selected items, remove message view
     if (selectedContacts.isEmpty) {
-      await cm.setAllInactive();
+      await ChatsSvc.setAllInactive();
       fakeController.value = null;
       return null;
     }
@@ -242,26 +242,26 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
     // if match, show message view, otherwise hide it
     if (update) {
       if (existingChat != null) {
-        await cm.setActiveChat(existingChat, clearNotifications: false);
-        cm.activeChat!.controller = cvc(existingChat);
+        await ChatsSvc.setActiveChat(existingChat, clearNotifications: false);
+        ChatsSvc.activeChat!.controller = cvc(existingChat);
 
         if (widget.initialAttachments.isNotEmpty) {
-          cm.activeChat!.controller!.pickedAttachments.value = widget.initialAttachments;
+          ChatsSvc.activeChat!.controller!.pickedAttachments.value = widget.initialAttachments;
         } else if (fakeController.value != null && fakeController.value!.pickedAttachments.isNotEmpty) {
-          cm.activeChat!.controller!.pickedAttachments.value = fakeController.value!.pickedAttachments;
+          ChatsSvc.activeChat!.controller!.pickedAttachments.value = fakeController.value!.pickedAttachments;
         }
 
         if (widget.initialText != null && widget.initialText!.isNotEmpty) {
-          cm.activeChat!.controller!.textController.text = widget.initialText!;
+          ChatsSvc.activeChat!.controller!.textController.text = widget.initialText!;
         } else if (fakeController.value?.textController.text != null && fakeController.value!.textController.text.isNotEmpty) {
-          cm.activeChat!.controller!.textController.text = fakeController.value!.textController.text;
+          ChatsSvc.activeChat!.controller!.textController.text = fakeController.value!.textController.text;
         } else if (textController.text.isNotEmpty) {
-          cm.activeChat!.controller!.textController.text = textController.text;
+          ChatsSvc.activeChat!.controller!.textController.text = textController.text;
         }
 
-        fakeController.value = cm.activeChat!.controller;
+        fakeController.value = ChatsSvc.activeChat!.controller;
       } else {
-        await cm.setAllInactive();
+        await ChatsSvc.setAllInactive();
         fakeController.value = null;
       }
     }
@@ -467,7 +467,7 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
                       sms = false;
                       filteredChats = List<Chat>.from(existingChats.where((e) => e.isIMessage));
                     });
-                    await cm.setAllInactive();
+                    await ChatsSvc.setAllInactive();
                     fakeController.value = null;
                   } else {
                     setState(() {
@@ -475,7 +475,7 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
                       sms = true;
                       filteredChats = List<Chat>.from(existingChats.where((e) => !e.isIMessage));
                     });
-                    await cm.setAllInactive();
+                    await ChatsSvc.setAllInactive();
                     fakeController.value = null;
                   }
                 },
@@ -569,10 +569,10 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
                           if (chat != null && existsOnServer) {
                             sendInitialMessage() async {
                               if (fakeController.value == null) {
-                                await cm.setActiveChat(chat, clearNotifications: false);
-                                cm.activeChat!.controller = cvc(chat);
-                                cm.activeChat!.controller!.pickedAttachments.value = [];
-                                fakeController.value = cm.activeChat!.controller;
+                                await ChatsSvc.setActiveChat(chat, clearNotifications: false);
+                                ChatsSvc.activeChat!.controller = cvc(chat);
+                                ChatsSvc.activeChat!.controller!.pickedAttachments.value = [];
+                                fakeController.value = ChatsSvc.activeChat!.controller;
                               } else {
                                 fakeController.value!.textController.text = textController.text;
                                 fakeController.value!.pickedAttachments.value = widget.initialAttachments;
@@ -650,7 +650,7 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
 
                               // Fetch the newly saved chat data from the DB
                               // Throw an error if it wasn't saved correctly.
-                              final saved = await cm.fetchChat(newChat.guid);
+                              final saved = await ChatsSvc.fetchChat(newChat.guid);
                               if (saved == null) {
                                 return showSnackbar("Error", "Failed to save chat!");
                               }

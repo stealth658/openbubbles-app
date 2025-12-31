@@ -148,7 +148,7 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
                       child: Icon(iOS ? CupertinoIcons.chat_bubble : Icons.sms),
                     ),
                     onTap: () async {
-                      await cm.fetchChat(chat.guid);
+                      await ChatsSvc.fetchChat(chat.guid);
                       showSnackbar("Notice", "Fetched details!");
                     }),
                 SettingsTile(

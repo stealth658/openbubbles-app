@@ -70,8 +70,8 @@ class AttachmentDownloadService extends GetxService {
     if (_downloaders.values.flattened.where((e) => e.state.value == AttachmentDownloadState.downloading).length < maxDownloads) {
       AttachmentDownloadController? activeChatDownloader;
       // first check if we have an active chat that needs downloads, if so prioritize that chat
-      if (cm.activeChat != null && _downloaders.containsKey(cm.activeChat!.chat.guid)) {
-        activeChatDownloader = _downloaders[cm.activeChat!.chat.guid]!.firstWhereOrNull((e) => e.state.value == AttachmentDownloadState.queued);
+      if (ChatsSvc.activeChat != null && _downloaders.containsKey(ChatsSvc.activeChat!.chat.guid)) {
+        activeChatDownloader = _downloaders[ChatsSvc.activeChat!.chat.guid]!.firstWhereOrNull((e) => e.state.value == AttachmentDownloadState.queued);
         activeChatDownloader?.fetchAttachment();
       }
       // otherwise just grab a random attachment that needs fetching

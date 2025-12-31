@@ -25,7 +25,7 @@ class FullscreenMediaHolder extends StatefulWidget {
     this.mute
   });
 
-  final ChatLifecycleManager? currentChat;
+  final Chat? currentChat;
   final Attachment attachment;
   final bool showInteractions;
   final VideoController? videoController;
@@ -38,7 +38,7 @@ class FullscreenMediaHolder extends StatefulWidget {
 class FullscreenMediaHolderState extends OptimizedState<FullscreenMediaHolder> {
   final focusNode = FocusNode();
   late final PageController controller;
-  late final messageService = widget.currentChat == null ? null : MessagesSvc(widget.currentChat!.chat.guid);
+  late final messageService = widget.currentChat == null ? null : MessagesSvc(widget.currentChat!.guid);
   late List<Attachment> attachments = widget.currentChat == null
       ? [attachment]
       : messageService!.struct.attachments.where((e) => e.mimeStart == "image").toList();

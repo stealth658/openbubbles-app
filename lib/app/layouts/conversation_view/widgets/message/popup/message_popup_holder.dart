@@ -131,7 +131,7 @@ class _MessagePopupHolderState extends OptimizedState<MessagePopupHolder> {
     
     outq.queue(OutgoingItem(
       type: QueueType.sendMessage,
-      chat: message.getChat() ?? cm.activeChat!.chat,
+      chat: message.getChat() ?? ChatsSvc.activeChat!.chat,
       message: tempMessage,
       selected: message,
       reaction: reaction,

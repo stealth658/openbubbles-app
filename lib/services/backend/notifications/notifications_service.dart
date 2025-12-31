@@ -120,7 +120,7 @@ class NotificationsService {
       countSub = countQuery.listen((event) {
         if (!SettingsSvc.settings.finishedSetup.value) return;
         final newCount = event.count();
-        final activeChat = cm.activeChat;
+        final activeChat = ChatsSvc.activeChat;
         final activeChatFetching = activeChat != null ? MessagesSvc(activeChat.chat.guid).isFetching : false;
         if (LifecycleSvc.isAlive &&
             (!SyncSvc.isIncrementalSyncing.value && !kIsDesktop) &&
@@ -148,7 +148,7 @@ class NotificationsService {
       });
     } else {
       countSub = WebListeners.newMessage.listen((tuple) {
-        final activeChat = cm.activeChat;
+        final activeChat = ChatsSvc.activeChat;
         final activeChatFetching = activeChat != null ? MessagesSvc(activeChat.chat.guid).isFetching : false;
         if (LifecycleSvc.isAlive && !activeChatFetching && tuple.item2 != null) {
           MessageHelper.handleNotification(tuple.item1, tuple.item2!, findExisting: false);
@@ -576,7 +576,7 @@ class NotificationsService {
   }
 
   Future<void> _openChat(Chat chat) async {
-    if (cm.isChatActive(chat.guid) && Get.context != null) {
+    if (ChatsSvc.isChatActive(chat.guid) && Get.context != null) {
       NavigationSvc.pushAndRemoveUntil(
         Get.context!,
         ConversationView(chat: chat),
@@ -732,7 +732,7 @@ class NotificationsService {
             ),
           );
         } else {
-          bool chatIsOpen = cm.activeChat?.chat.guid == chat.guid;
+          bool chatIsOpen = ChatsSvc.activeChat?.chat.guid == chat.guid;
           if (!chatIsOpen) {
             NavigationSvc.pushAndRemoveUntil(
               Get.context!,

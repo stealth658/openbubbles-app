@@ -383,9 +383,9 @@ Future<void> goToSearch(BuildContext context) async {
 }
 
 Future<void> goToFindMy(BuildContext context) async {
-  final currentChat = cm.activeChat?.chat;
+  final currentChat = ChatsSvc.activeChat?.chat;
   NavigationSvc.closeAllConversationView(context);
-  await cm.setAllInactive();
+  await ChatsSvc.setAllInactive();
   await Navigator.of(Get.context!).push(
     ThemeSwitcher.buildPageRoute(
       builder: (BuildContext context) {
@@ -394,7 +394,7 @@ Future<void> goToFindMy(BuildContext context) async {
     ),
   );
   if (currentChat != null) {
-    await cm.setActiveChat(currentChat);
+    await ChatsSvc.setActiveChat(currentChat);
     if (SettingsSvc.settings.tabletMode.value) {
       NavigationSvc.pushAndRemoveUntil(
         context,
@@ -460,9 +460,9 @@ void goToUnknownSenders(BuildContext context) {
 }
 
 Future<void> goToSettings(BuildContext context) async {
-  final currentChat = cm.activeChat?.chat;
+  final currentChat = ChatsSvc.activeChat?.chat;
   NavigationSvc.closeAllConversationView(context);
-  await cm.setAllInactive();
+  await ChatsSvc.setAllInactive();
   await Navigator.of(Get.context!).push(
     ThemeSwitcher.buildPageRoute(
       builder: (BuildContext context) {
@@ -471,7 +471,7 @@ Future<void> goToSettings(BuildContext context) async {
     ),
   );
   if (currentChat != null) {
-    await cm.setActiveChat(currentChat);
+    await ChatsSvc.setActiveChat(currentChat);
     if (SettingsSvc.settings.tabletMode.value) {
         NavigationSvc.pushAndRemoveUntil(
           context,
@@ -479,7 +479,7 @@ Future<void> goToSettings(BuildContext context) async {
             chat: currentChat,
           ),
               (route) => route.isFirst,
-        ).onError((error, stackTrace) => cm.setAllInactiveSync());
+        ).onError((error, stackTrace) => ChatsSvc.setAllInactiveSync());
     } else {
       cvc(currentChat).close();
     }

@@ -59,9 +59,9 @@ class MessageHelper {
     // if needing to mute
     if (chat.shouldMuteNotification(message)) return;
     // if the chat is active
-    if (LifecycleSvc.isAlive && cm.isChatActive(chat.guid)) return;
+    if (LifecycleSvc.isAlive && ChatsSvc.isChatActive(chat.guid)) return;
     // if app is alive, on chat list, but notifying on chat list is disabled
-    if (LifecycleSvc.isAlive && cm.activeChat == null && Get.rawRoute?.settings.name == "/" && !SettingsSvc.settings.notifyOnChatList.value) return;
+    if (LifecycleSvc.isAlive && ChatsSvc.activeChat == null && Get.rawRoute?.settings.name == "/" && !SettingsSvc.settings.notifyOnChatList.value) return;
     await NotificationsSvc.createNotification(chat, message);
   }
 

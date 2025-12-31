@@ -271,7 +271,7 @@ class Chat {
 
   Chat toggleHasUnread(bool hasUnread, {bool force = false, bool clearLocalNotifications = true, bool privateMark = true}) {
     if (hasUnreadMessage == hasUnread && !force) return this;
-    if (!cm.isChatActive(guid) || !hasUnread || force) {
+    if (!ChatsSvc.isChatActive(guid) || !hasUnread || force) {
       hasUnreadMessage = hasUnread;
       save(updateHasUnreadMessage: true);
     }
@@ -332,8 +332,8 @@ class Chat {
       // If the message is from me, mark it unread
       // If the message is not from the same chat as the current chat, mark unread
       if (message.isFromMe!) {
-        toggleHasUnread(false, clearLocalNotifications: clearNotificationsIfFromMe, force: cm.isChatActive(guid));
-      } else if (!cm.isChatActive(guid)) {
+        toggleHasUnread(false, clearLocalNotifications: clearNotificationsIfFromMe, force: ChatsSvc.isChatActive(guid));
+      } else if (!ChatsSvc.isChatActive(guid)) {
         toggleHasUnread(true);
       }
     }
@@ -351,7 +351,7 @@ class Chat {
   void serverSyncParticipants() async {
     // Send message to server to get the participants
     // Send message to server to get the participants
-    final chat = await cm.fetchChat(guid);
+    final chat = await ChatsSvc.fetchChat(guid);
     if (chat != null) {
       await chat.saveAsync();
     }

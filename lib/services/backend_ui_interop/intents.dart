@@ -23,9 +23,9 @@ class OpenSettingsAction extends Action<OpenSettingsIntent> {
   @override
   Object? invoke(covariant OpenSettingsIntent intent) async {
     if (SettingsSvc.settings.finishedSetup.value) {
-      final currentChat = cm.activeChat?.chat;
+      final currentChat = ChatsSvc.activeChat?.chat;
       NavigationSvc.closeAllConversationView(context);
-      await cm.setAllInactive();
+      await ChatsSvc.setAllInactive();
       await Navigator.of(Get.context!).push(
         ThemeSwitcher.buildPageRoute(
           builder: (BuildContext context) {
@@ -240,7 +240,7 @@ class OpenNextChatAction extends Action<OpenNextChatIntent> {
 
   @override
   Object? invoke(covariant OpenNextChatIntent intent) {
-    final chat = cm.activeChat?.chat;
+    final chat = ChatsSvc.activeChat?.chat;
     if (chat != null) {
       final _chat = ChatsSvc.getNextChat(chat.guid);
       if (_chat != null) {
@@ -268,7 +268,7 @@ class OpenPreviousChatAction extends Action<OpenPreviousChatIntent> {
 
   @override
   Object? invoke(covariant OpenPreviousChatIntent intent) {
-    final chat = cm.activeChat?.chat;
+    final chat = ChatsSvc.activeChat?.chat;
     if (chat != null) {
       final _chat = ChatsSvc.getPreviousChat(chat.guid);
       if (_chat != null) {

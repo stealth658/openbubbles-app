@@ -6,6 +6,7 @@ import 'package:bluebubbles/app/state/chat_state.dart';
 import 'package:bluebubbles/helpers/backend/startup_tasks.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/services/backend/interfaces/chat_interface.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:collection/collection.dart';
@@ -37,6 +38,9 @@ class ChatsService {
   /// Key is the chat GUID, value is the ChatState
   /// The map itself doesn't need to be Rx because the underlying ChatState fields are
   final Map<String, ChatState> chatStates = {};
+  
+  /// Currently active chat state (previously ChatLifecycleManager in ChatManager)
+  ChatState? activeChat;
   
   /// Sorted list of chats maintained for efficient access
   /// Updated on add/update using binary search insertion O(log n + n)
@@ -219,26 +223,16 @@ class ChatsService {
 
     final batches = (currentCount / batchSize).ceil();
     for (int i = 0; i < batches; i++) {
-      List<Chat> temp;
+      final chatBatch = await Chat.getChatsAsync(limit: batchSize, offset: i * batchSize);
       if (kIsWeb) {
-        temp = await cm.getChats(withLastMessage: true, limit: batchSize, offset: i * batchSize);
-      } else {
-        temp = await Chat.getChatsAsync(limit: batchSize, offset: i * batchSize);
-      }
-
-      if (kIsWeb) {
-        webCachedHandles.addAll(temp.map((e) => e.handles).flattened.toList());
+        webCachedHandles.addAll(chatBatch.map((e) => e.handles).flattened.toList());
         final ids = webCachedHandles.map((e) => e.address).toSet();
         webCachedHandles.retainWhere((element) => ids.remove(element.address));
       }
 
       // Insert each chat at the correct position using binary search
       // This maintains proper ordering including pinIndex which DB queries cannot handle
-      for (Chat c in temp) {
-        if (!headless) {
-          cm.createChatController(c, active: cm.activeChat?.chat.guid == c.guid);
-        }
-        
+      for (Chat c in chatBatch) {
         // Create ChatState and add to map
         chatStates[c.guid] = ChatState(c);
         _setupChatStateListeners(chatStates[c.guid]!);
@@ -403,10 +397,6 @@ class ChatsService {
     
     // Insert into sorted list at correct position
     _insertChatSorted(toAdd);
-    
-    if (!headless) {
-      cm.createChatController(toAdd);
-    }
   }
 
   void removeChat(Chat toRemove) {
@@ -497,9 +487,177 @@ class ChatsService {
     }
   }
 
+  /// Fetch chat information from the server
+  Future<Chat?> fetchChat(String chatGuid, {withParticipants = true, withLastMessage = false}) async {
+    Logger.info("Fetching full chat metadata from server.", tag: "Fetch-Chat");
+
+    final withQuery = <String>[];
+    if (withParticipants) withQuery.add("participants");
+    if (withLastMessage) withQuery.add("lastmessage");
+
+    final response = await HttpSvc.singleChat(chatGuid, withQuery: withQuery.join(",")).catchError((err, stack) {
+      if (err is! Response) {
+        Logger.error("Failed to fetch chat metadata!", error: err, trace: stack, tag: "Fetch-Chat");
+        return err;
+      }
+      return Response(requestOptions: RequestOptions(path: ''));
+    });
+
+    if (response.statusCode == 200 && response.data["data"] != null) {
+      Map<String, dynamic> chatData = response.data["data"];
+
+      Logger.info("Got updated chat metadata from server. Saving.", tag: "Fetch-Chat");
+      return (await ChatInterface.bulkSyncChats(chatsData: [chatData])).first;
+    }
+
+    return null;
+  }
+
+  Future<List<Chat>> getChats({bool withParticipants = false, bool withLastMessage = false, int offset = 0, int limit = 100,}) async {
+    final withQuery = <String>[];
+    if (withParticipants) withQuery.add("participants");
+    if (withLastMessage) withQuery.add("lastmessage");
+
+    final response = await HttpSvc.chats(withQuery: withQuery, offset: offset, limit: limit, sort: withLastMessage ? "lastmessage" : null).catchError((err, stack) {
+      if (err is! Response) {
+        Logger.error("Failed to fetch chat metadata!", error: err, trace: stack, tag: "Fetch-Chat");
+        return err;
+      }
+      return Response(requestOptions: RequestOptions(path: ''));
+    });
+
+    // parse chats from the response
+    final chats = <Chat>[];
+    for (var item in response.data["data"]) {
+      try {
+        var chat = Chat.fromMap(item);
+        chats.add(chat);
+      } catch (ex) {
+        chats.add(Chat(guid: "ERROR", displayName: item.toString()));
+      }
+    }
+
+    return chats;
+  }
+
+  Future<List<dynamic>> getMessages(String guid, {bool withAttachment = true, bool withHandle = true, int offset = 0, int limit = 25, String sort = "DESC", int? after, int? before}) async {
+    Completer<List<dynamic>> completer = Completer();
+    final withQuery = <String>["message.attributedBody", "message.messageSummaryInfo", "message.payloadData"];
+    if (withAttachment) withQuery.add("attachment");
+    if (withHandle) withQuery.add("handle");
+
+    HttpSvc.chatMessages(guid, withQuery: withQuery.join(","), offset: offset, limit: limit, sort: sort, after: after, before: before).then((response) {
+      if (!completer.isCompleted) completer.complete(response.data["data"]);
+    }).catchError((err) {
+      late final dynamic error;
+      if (err is Response) {
+        error = err.data["error"]["message"];
+      } else {
+        error = err.toString();
+      }
+      if (!completer.isCompleted) completer.completeError(error);
+    });
+
+    return completer.future;
+  }
+
+  // ========== Chat Lifecycle Management Methods (migrated from ChatManager) ==========
+
+  /// Set all chats to inactive synchronously
+  void setAllInactiveSync({bool save = true, bool clearActive = true}) {
+    Logger.debug('Setting chats to inactive (save: $save, clearActive: $clearActive)');
+
+    String? skip;
+    if (clearActive) {
+      activeChat?.controller = null;
+      activeChat = null;
+    } else {
+      skip = activeChat?.chat.guid;
+    }
+
+    chatStates.forEach((key, state) {
+      if (key == skip) return;
+      state.setActive(false);
+      state.setAlive(false);
+    });
+
+    if (save) {
+      EventDispatcherSvc.emit("update-highlight", null);
+      Future(() async => await PrefsSvc.i.remove('lastOpenedChat'));
+    }
+  }
+
+  /// Set all chats to inactive asynchronously
+  Future<void> setAllInactive() async {
+    Logger.debug('Setting all chats to inactive');
+    await PrefsSvc.i.remove('lastOpenedChat');
+    setAllInactiveSync(save: false);
+  }
+
+  /// Set a chat as the active chat
+  Future<void> setActiveChat(Chat chat, {bool clearNotifications = true}) async {
+    await PrefsSvc.i.setString('lastOpenedChat', chat.guid);
+    setActiveChatSync(chat, clearNotifications: clearNotifications, save: false);
+  }
+
+  /// Set a chat as the active chat synchronously
+  void setActiveChatSync(Chat chat, {bool clearNotifications = true, bool save = true}) {
+    EventDispatcherSvc.emit("update-highlight", chat.guid);
+    Logger.debug('Setting active chat to ${chat.guid} (${chat.displayName})');
+
+    // Get or create the chat state
+    final chatState = getChatState(chat.guid);
+    if (chatState != null) {
+      // Set this chat as active
+      activeChat = chatState;
+      chatState.setActiveAndAlive(true);
+
+      // Clear all other chats to inactive
+      setAllInactiveSync(save: false, clearActive: false);
+
+      if (clearNotifications) {
+        // Defer the observable update to avoid updating during build phase
+        Future.microtask(() {
+          chatState.setHasUnread(false, force: true);
+        });
+      }
+
+      if (save) {
+        Future(() async => await PrefsSvc.i.setString('lastOpenedChat', chat.guid));
+      }
+    }
+  }
+
+  /// Set the active chat to dead (not alive)
+  void setActiveToDead() {
+    Logger.debug('Setting active chat to dead: ${activeChat?.chat.guid}');
+    activeChat?.setAlive(false);
+  }
+
+  /// Set the active chat to alive
+  void setActiveToAlive() {
+    Logger.info('Setting active chat to alive: ${activeChat?.chat.guid}');
+    EventDispatcherSvc.emit("update-highlight", activeChat?.chat.guid);
+    activeChat?.setAlive(true);
+  }
+
+  /// Check if a chat is currently active (both active and alive)
+  bool isChatActive(String guid) {
+    final state = getChatState(guid);
+    return state?.isChatActive ?? false;
+  }
+
+  /// Get the chat controller for a specific chat
+  ChatState? getChatController(String guid) {
+    return getChatState(guid);
+  }
+
+  // ========== End Chat Lifecycle Management ==========
+
   void reset({bool reinitWatchers = false}) {
     currentCount = 0;
     hasChats.value = false;
+    activeChat = null;
     chatStates.clear();
     _sortedChats.clear();
     loadedAllChats = Completer();

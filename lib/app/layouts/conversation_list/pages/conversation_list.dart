@@ -152,7 +152,7 @@ class _ConversationListState extends CustomState<ConversationList, void, Convers
     if (kIsDesktop || kIsWeb) {
       if (PrefsSvc.i.getString('lastOpenedChat') != null &&
           showAltLayoutContextless &&
-          cm.activeChat?.chat.guid != PrefsSvc.i.getString('lastOpenedChat') &&
+          ChatsSvc.activeChat?.chat.guid != PrefsSvc.i.getString('lastOpenedChat') &&
           !LifecycleSvc.isBubble) {
         WidgetsBinding.instance.addPostFrameCallback((_) async {
           if (kIsWeb) {
@@ -216,8 +216,8 @@ class _ConversationListState extends CustomState<ConversationList, void, Convers
                           id2result = true;
                         }
                         if (!(Get.global(2).currentState?.canPop() ?? true)) {
-                          if (cm.activeChat != null) {
-                            cvc(cm.activeChat!.chat).close();
+                          if (ChatsSvc.activeChat != null) {
+                            cvc(ChatsSvc.activeChat!.chat).close();
                           }
                           EventDispatcherSvc.emit('update-highlight', null);
                         }

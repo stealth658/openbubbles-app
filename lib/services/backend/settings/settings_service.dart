@@ -392,7 +392,7 @@ class SettingsService {
                         Navigator.of(context).pop();
                         NavigationSvc.closeSettings(context);
                         NavigationSvc.closeAllConversationView(context);
-                        await cm.setAllInactive();
+                        await ChatsSvc.setAllInactive();
                         await Navigator.of(Get.context!).push(
                           ThemeSwitcher.buildPageRoute(
                             builder: (BuildContext context) {

@@ -49,7 +49,7 @@ class ConversationTileController extends StatefulController {
   void onTap(BuildContext context) {
     if ((inSelectMode || listController.selectedChats.isNotEmpty) && onSelect != null) {
       onLongPress();
-    } else if ((!kIsDesktop && !kIsWeb) || cm.activeChat?.chat.guid != chat.guid) {
+    } else if ((!kIsDesktop && !kIsWeb) || ChatsSvc.activeChat?.chat.guid != chat.guid) {
       NavigationSvc.pushAndRemoveUntil(
         context,
         ConversationView(
@@ -57,7 +57,7 @@ class ConversationTileController extends StatefulController {
         ),
         (route) => route.isFirst,
       );
-    } else if (NavigationSvc.isTabletMode(context) && cm.activeChat?.isAlive == false) {
+    } else if (NavigationSvc.isTabletMode(context) && ChatsSvc.activeChat?.isAlive == false) {
       // Pops chat details
       Get.back(id: 2);
     } else {
@@ -135,7 +135,7 @@ class _ConversationTileState extends CustomState<ConversationTile, void, Convers
 
     if (kIsDesktop || kIsWeb) {
       controller.shouldHighlight.value =
-          cm.activeChat?.chat.guid == controller.chat.guid;
+          ChatsSvc.activeChat?.chat.guid == controller.chat.guid;
     }
 
     EventDispatcherSvc.stream.listen((event) {

@@ -50,7 +50,7 @@ class _PinnedConversationTileState extends CustomState<PinnedConversationTile, v
     forceDelete = false;
 
     if (kIsDesktop || kIsWeb) {
-      controller.shouldHighlight.value = cm.activeChat?.chat.guid == controller.chat.guid;
+      controller.shouldHighlight.value = ChatsSvc.activeChat?.chat.guid == controller.chat.guid;
     }
 
     EventDispatcherSvc.stream.listen((event) {

@@ -42,7 +42,7 @@ class _ChatSyncDialogState extends OptimizedState<ChatSyncDialog> {
       offset = Message.countForChat(widget.chat) ?? 0;
     }
 
-    cm.getMessages(widget.chat.guid, offset: offset, limit: widget.limit).then((dynamic messages) {
+    ChatsSvc.getMessages(widget.chat.guid, offset: offset, limit: widget.limit).then((dynamic messages) {
       if (mounted) {
         setState(() {
           message = "Adding ${messages.length} messages...";
