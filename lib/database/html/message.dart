@@ -261,7 +261,7 @@ class Message {
     return this;
   }
 
-  List<Attachment?>? fetchAttachments({ChatLifecycleManager? currentChat}) {
+  List<Attachment?>? fetchAttachments() {
     return attachments;
   }
 

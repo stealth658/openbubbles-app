@@ -39,7 +39,6 @@ class ChatsService {
   /// The map itself doesn't need to be Rx because the underlying ChatState fields are
   final Map<String, ChatState> chatStates = {};
   
-  /// Currently active chat state (previously ChatLifecycleManager in ChatManager)
   ChatState? activeChat;
   
   /// Sorted list of chats maintained for efficient access

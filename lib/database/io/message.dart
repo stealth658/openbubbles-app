@@ -375,7 +375,7 @@ class Message {
 
   /// Fetch attachments for a single message. Prefer using [fetchAttachmentsByMessages]
   /// or [fetchAttachmentsByMessagesAsync] when working with a list of messages.
-  List<Attachment?>? fetchAttachments({ChatLifecycleManager? currentChat}) {
+  List<Attachment?>? fetchAttachments() {
     if (attachments.isNotEmpty) {
       return attachments;
     }

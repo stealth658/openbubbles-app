@@ -29,7 +29,6 @@ class ChatState {
   final RxBool lockChatIcon;
   final RxnString lastReadMessageGuid;
 
-  /// Lifecycle state fields (previously in ChatLifecycleManager)
   final RxBool isActive;
   final RxBool isAlive;
   ConversationViewController? controller;
