@@ -57,8 +57,10 @@ class _ImageViewerState extends OptimizedState<ImageViewer> with AutomaticKeepAl
           height: min((attachment.height?.toDouble() ?? NavigationSvc.width(context) * 0.5 / attachment.aspectRatio), NavigationSvc.width(context) * 0.5 / attachment.aspectRatio),
         );
       } else {
-        final calculatedWidth = (min((attachment.width ?? 0), NavigationSvc.width(context) * 0.5) * Get.pixelRatio / 2).round().abs().nonZero;
-        final calculatedHeight = (min((attachment.height ?? 0), NavigationSvc.width(context) * 0.5 / attachment.aspectRatio) * Get.pixelRatio / 2).round().abs().nonZero;
+        final displayWidth = min((attachment.width?.toDouble() ?? NavigationSvc.width(context) * 0.5), NavigationSvc.width(context) * 0.5);
+        final displayHeight = min((attachment.height?.toDouble() ?? NavigationSvc.width(context) * 0.5 / attachment.aspectRatio), NavigationSvc.width(context) * 0.5 / attachment.aspectRatio);
+        final calculatedWidth = (displayWidth * Get.pixelRatio / 2).round().abs().nonZero;
+        final calculatedHeight = (displayHeight * Get.pixelRatio / 2).round().abs().nonZero;
         imageWidget = Image.memory(
           file.bytes!,
           gaplessPlayback: true,
@@ -66,6 +68,24 @@ class _ImageViewerState extends OptimizedState<ImageViewer> with AutomaticKeepAl
           cacheWidth: calculatedWidth,
           cacheHeight: calculatedHeight,
           fit: BoxFit.contain,
+          frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+            if (wasSynchronouslyLoaded) return child;
+            if (frame == null) {
+              // Show placeholder while loading
+              return Container(
+                width: displayWidth,
+                height: displayHeight,
+                color: context.theme.colorScheme.properSurface.withOpacity(0.3),
+                child: Center(
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(context.theme.colorScheme.outline),
+                  ),
+                ),
+              );
+            }
+            return child;
+          },
           errorBuilder: (context, object, stacktrace) => Center(
             heightFactor: 1,
             child: Text("Failed to display image", style: context.theme.textTheme.bodyLarge),
@@ -77,8 +97,10 @@ class _ImageViewerState extends OptimizedState<ImageViewer> with AutomaticKeepAl
       // Note: For HEIC/TIFF, the path might point to unconverted file initially.
       // Image.file will handle it on iOS/macOS (native support), or fail gracefully
       // and trigger errorBuilder where we can attempt conversion.
-      final calculatedWidth = (min((attachment.width ?? 0), NavigationSvc.width(context) * 0.5) * Get.pixelRatio / 2).round().abs().nonZero;
-      final calculatedHeight = (min((attachment.height ?? 0), NavigationSvc.width(context) * 0.5 / attachment.aspectRatio) * Get.pixelRatio / 2).round().abs().nonZero;
+      final displayWidth = min((attachment.width?.toDouble() ?? NavigationSvc.width(context) * 0.5), NavigationSvc.width(context) * 0.5);
+      final displayHeight = min((attachment.height?.toDouble() ?? NavigationSvc.width(context) * 0.5 / attachment.aspectRatio), NavigationSvc.width(context) * 0.5 / attachment.aspectRatio);
+      final calculatedWidth = (displayWidth * Get.pixelRatio / 2).round().abs().nonZero;
+      final calculatedHeight = (displayHeight * Get.pixelRatio / 2).round().abs().nonZero;
       imageWidget = Image.file(
         File(file.path!),
         gaplessPlayback: true,
@@ -86,6 +108,24 @@ class _ImageViewerState extends OptimizedState<ImageViewer> with AutomaticKeepAl
         cacheWidth: calculatedWidth,
         cacheHeight: calculatedHeight,
         fit: BoxFit.contain,
+        frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+          if (wasSynchronouslyLoaded) return child;
+          if (frame == null) {
+            // Show placeholder while loading
+            return Container(
+              width: displayWidth,
+              height: displayHeight,
+              color: context.theme.colorScheme.properSurface.withOpacity(0.3),
+              child: Center(
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(context.theme.colorScheme.outline),
+                ),
+              ),
+            );
+          }
+          return child;
+        },
         errorBuilder: (context, object, stacktrace) => FutureBuilder<String?>(
           future: AttachmentsSvc.ensureImageCompatibility(attachment, actualPath: file.path),
           builder: (context, snapshot) {
@@ -99,14 +139,31 @@ class _ImageViewerState extends OptimizedState<ImageViewer> with AutomaticKeepAl
             
             if (snapshot.hasData && snapshot.data != null && snapshot.data != file.path) {
               // Conversion successful, display converted image
-              final calculatedWidth = (min((attachment.width ?? 0), NavigationSvc.width(context) * 0.5) * Get.pixelRatio / 2).round().abs().nonZero;
-              final calculatedHeight = (min((attachment.height ?? 0), NavigationSvc.width(context) * 0.5 / attachment.aspectRatio) * Get.pixelRatio / 2).round().abs().nonZero;              return Image.file(
+              return Image.file(
                 File(snapshot.data!),
                 gaplessPlayback: true,
                 filterQuality: FilterQuality.none,
                 cacheWidth: calculatedWidth,
                 cacheHeight: calculatedHeight,
                 fit: BoxFit.contain,
+                frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+                  if (wasSynchronouslyLoaded) return child;
+                  if (frame == null) {
+                    // Show placeholder while loading converted image
+                    return Container(
+                      width: displayWidth,
+                      height: displayHeight,
+                      color: context.theme.colorScheme.properSurface.withOpacity(0.3),
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(context.theme.colorScheme.outline),
+                        ),
+                      ),
+                    );
+                  }
+                  return child;
+                },
               );
             }
             
@@ -155,7 +212,7 @@ class _ImageViewerState extends OptimizedState<ImageViewer> with AutomaticKeepAl
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         if (isDownloadingLivePhoto)
-                          SizedBox(
+                          const SizedBox(
                             width: 12,
                             height: 12,
                             child: CircularProgressIndicator(
@@ -164,13 +221,13 @@ class _ImageViewerState extends OptimizedState<ImageViewer> with AutomaticKeepAl
                             ),
                           )
                         else
-                          Icon(
+                          const Icon(
                             Icons.album_outlined,
                             size: 12,
                             color: Colors.white,
                           ),
                         const SizedBox(width: 3),
-                        Text(
+                        const Text(
                           'LIVE',
                           style: TextStyle(
                             color: Colors.white,

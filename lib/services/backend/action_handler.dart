@@ -23,6 +23,9 @@ class ActionHandler extends GetxService {
   final List<String> outOfOrderTempGuids = [];
   final List<String> handledNewMessages = [];
   CancelToken? latestCancelToken;
+  
+  /// Tracks tempGUID -> (Chat, Completer) for completing send progress when events arrive before HTTP responses
+  final Map<String, Tuple2<Chat, Completer<void>>> _sendProgressTrackers = {};
 
   /// Checks if a GUID has been handled.
   /// After each check, before returning, trim the list of GUIDs to the last 100.
@@ -35,6 +38,33 @@ class ActionHandler extends GetxService {
     }
 
     return true;
+  }
+  
+  /// Register a send progress tracker for a tempGUID
+  void registerSendProgressTracker(String tempGuid, Chat chat, Completer<void> completer) {
+    _sendProgressTrackers[tempGuid] = Tuple2(chat, completer);
+    Logger.debug("Registered send progress tracker for $tempGuid", tag: "SendProgress");
+  }
+  
+  /// Complete send progress if a tracker exists for this tempGUID
+  void completeSendProgressIfExists(String tempGuid) {
+    final tracker = _sendProgressTrackers.remove(tempGuid);
+    if (tracker != null) {
+      Logger.debug("Event arrived before HTTP response for $tempGuid, completing send progress early", tag: "SendProgress");
+      final chat = tracker.item1;
+      final completer = tracker.item2;
+      
+      if (chat.sendProgress.value != 0) {
+        chat.sendProgress.value = 1;
+        Timer(const Duration(milliseconds: 500), () {
+          chat.sendProgress.value = 0;
+        });
+      }
+      
+      if (!completer.isCompleted) {
+        completer.complete();
+      }
+    }
   }
   
   Future<List<Message>> prepMessage(Chat c, Message m, Message? selected, String? r, {bool clearNotificationsIfFromMe = true}) async {
@@ -149,6 +179,9 @@ class ActionHandler extends GetxService {
 
   Future<void> sendMessage(Chat c, Message m, Message? selected, String? r) async {
     final completer = Completer<void>();
+    
+    // Register send progress tracker for this message
+    registerSendProgressTracker(m.guid!, c, completer);
 
     // Update the position of the chat in the chat list
     ChatsSvc.updateChat(c);
@@ -219,8 +252,13 @@ class ActionHandler extends GetxService {
         } catch (ex) {
           Logger.warn("Failed to find message match for ${m.guid} -> ${newMessage.guid}!", error: ex, tag: "MessageStatus");
         }
+        
+        // Clean up send progress tracker (event may have already completed it)
+        _sendProgressTrackers.remove(m.guid!);
 
-        completer.complete();
+        if (!completer.isCompleted) {
+          completer.complete();
+        }
       }).catchError((error, stack) async {
         Logger.error('Failed to send message!', error: error, trace: stack);
 
@@ -274,18 +312,30 @@ class ActionHandler extends GetxService {
         } catch (ex) {
           Logger.warn("Failed to find message match for ${m.guid} -> ${newMessage.guid}!", error: ex, tag: "MessageStatus");
         }
-        completer.complete();
+        
+        // Clean up send progress tracker (event may have already completed it)
+        _sendProgressTrackers.remove(m.guid!);
+        
+        if (!completer.isCompleted) {
+          completer.complete();
+        }
       }).catchError((error, stack) async {
         Logger.error('Failed to send message!', error: error, trace: stack);
 
         final tempGuid = m.guid;
         m = handleSendError(error, m);
+        
+        // Clean up send progress tracker
+        _sendProgressTrackers.remove(tempGuid);
 
         if (!LifecycleSvc.isAlive || !(cm.getChatController(c.guid)?.isAlive ?? false)) {
           await NotificationsSvc.createFailedToSend(c);
         }
         await Message.replaceMessage(tempGuid, m);
-        completer.completeError(error);
+        
+        if (!completer.isCompleted) {
+          completer.completeError(error);
+        }
       });
     }
 
@@ -294,6 +344,9 @@ class ActionHandler extends GetxService {
 
   Future<void> sendMultipart(Chat c, Message m, Message? selected, String? r) async {
     final completer = Completer<void>();
+    
+    // Register send progress tracker for this message
+    registerSendProgressTracker(m.guid!, c, completer);
 
     List<Map<String, dynamic>> parts = m.attributedBody.first.runs.map((e) => {
       "text": m.attributedBody.first.string.substring(e.range.first, e.range.first + e.range.last),
@@ -317,18 +370,30 @@ class ActionHandler extends GetxService {
       } catch (ex) {
         Logger.warn("Failed to find message match for ${m.guid} -> ${newMessage.guid}!", error: ex, tag: "MessageStatus");
       }
-      completer.complete();
+      
+      // Clean up send progress tracker (event may have already completed it)
+      _sendProgressTrackers.remove(m.guid!);
+      
+      if (!completer.isCompleted) {
+        completer.complete();
+      }
     }).catchError((error, stack) async {
       Logger.error('Failed to send message!', error: error, trace: stack);
 
       final tempGuid = m.guid;
       m = handleSendError(error, m);
+      
+      // Clean up send progress tracker
+      _sendProgressTrackers.remove(tempGuid);
 
       if (!LifecycleSvc.isAlive || !(cm.getChatController(c.guid)?.isAlive ?? false)) {
         await NotificationsSvc.createFailedToSend(c);
       }
       await Message.replaceMessage(tempGuid, m);
-      completer.completeError(error);
+      
+      if (!completer.isCompleted) {
+        completer.completeError(error);
+      }
     });
 
     return completer.future;
@@ -355,6 +420,10 @@ class ActionHandler extends GetxService {
     final attachment = m.attachments.first!;
     final progress = attachmentProgress.firstWhere((e) => e.item1 == attachment.guid);
     final completer = Completer<void>();
+    
+    // Register send progress tracker for this message
+    registerSendProgressTracker(m.guid!, c, completer);
+    
     latestCancelToken = CancelToken();
     HttpSvc.sendAttachment(
       c.guid,
@@ -395,21 +464,32 @@ class ActionHandler extends GetxService {
         Logger.warn("Failed to find message match for ${m.guid} -> ${newMessage.guid}!", error: e, tag: "MessageStatus");
       }
       attachmentProgress.removeWhere((e) => e.item1 == m.guid || e.item2 >= 1);
+      
+      // Clean up send progress tracker (event may have already completed it)
+      _sendProgressTrackers.remove(m.guid!);
 
-      completer.complete();
+      if (!completer.isCompleted) {
+        completer.complete();
+      }
     }).catchError((error, stack) async {
       latestCancelToken = null;
       Logger.error('Failed to send message!', error: error, trace: stack);
 
       final tempGuid = m.guid;
       m = handleSendError(error, m);
+      
+      // Clean up send progress tracker
+      _sendProgressTrackers.remove(tempGuid);
 
       if (!LifecycleSvc.isAlive || !(cm.getChatController(c.guid)?.isAlive ?? false)) {
         await NotificationsSvc.createFailedToSend(c);
       }
       await Message.replaceMessage(tempGuid, m);
       attachmentProgress.removeWhere((e) => e.item1 == m.guid || e.item2 >= 1);
-      completer.completeError(error);
+      
+      if (!completer.isCompleted) {
+        completer.completeError(error);
+      }
     });
 
     return completer.future;
@@ -425,7 +505,11 @@ class ActionHandler extends GetxService {
     }
 
     // should have been handled by the sanity check
-    if (tempGuid != null) return;
+    if (tempGuid != null) {
+      // Complete send progress if this event arrived before the HTTP response
+      completeSendProgressIfExists(tempGuid);
+      return;
+    }
 
     // Gets the chat from the db or server (if new).
     // If the participant list is empty, we should fetch the chat from the server to populate it.

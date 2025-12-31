@@ -11,9 +11,9 @@ OutgoingQueue outq = Get.isRegistered<OutgoingQueue>() ? Get.find<OutgoingQueue>
 class OutgoingQueue extends Queue {
 
   @override
-  Future<dynamic> prepItem(QueueItem _) async {
-    assert(_ is OutgoingItem);
-    final item = _ as OutgoingItem;
+  Future<dynamic> prepItem(QueueItem queueItem) async {
+    assert(queueItem is OutgoingItem);
+    final item = queueItem as OutgoingItem;
 
     switch (item.type) {
       case QueueType.sendMultipart:
@@ -34,7 +34,8 @@ class OutgoingQueue extends Queue {
     var t = process();
     t.then((c) {
       timer.cancel();
-      if (chat.sendProgress.value != 0) {
+      // Only update progress if it hasn't been completed by an early event
+      if (chat.sendProgress.value != 0 && chat.sendProgress.value != 1) {
         chat.sendProgress.value = 1;
         Timer(const Duration(milliseconds: 500), () {
           chat.sendProgress.value = 0;
@@ -42,7 +43,8 @@ class OutgoingQueue extends Queue {
       }
     }).catchError((c) {
       timer.cancel();
-      if (chat.sendProgress.value != 0) {
+      // Only update progress if it hasn't been completed by an early event
+      if (chat.sendProgress.value != 0 && chat.sendProgress.value != 1) {
         chat.sendProgress.value = 1;
         Timer(const Duration(milliseconds: 500), () {
           chat.sendProgress.value = 0;
@@ -53,9 +55,9 @@ class OutgoingQueue extends Queue {
   }
 
   @override
-  Future<void> handleQueueItem(QueueItem _) async {
-    assert(_ is OutgoingItem);
-    final item = _ as OutgoingItem;
+  Future<void> handleQueueItem(QueueItem queueItem) async {
+    assert(queueItem is OutgoingItem);
+    final item = queueItem as OutgoingItem;
 
     switch (item.type) {
       case QueueType.sendMessage:
