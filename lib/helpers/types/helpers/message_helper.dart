@@ -8,7 +8,6 @@ import 'package:bluebubbles/services/backend/interfaces/message_interface.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
-import 'package:get/get.dart';
 
 class MessageHelper {
   static Future<List<Message>> bulkAddMessages(Chat? chat, List<dynamic> messages,
@@ -48,21 +47,6 @@ class MessageHelper {
       Logger.error('Failed to bulk add messages', error: ex, trace: stacktrace, tag: "BulkIngest");
       rethrow;
     }
-  }
-
-  static Future<void> handleNotification(Message message, Chat chat, {bool findExisting = true}) async {
-    if (message.isFromMe! || !message.handleRelation.hasValue) return;
-    // if it is a "kept audio" message
-    if (message.itemType == 5 && message.subject != null) return;
-    // See if there is an existing message for the given GUID
-    if (findExisting && Message.findOne(guid: message.guid) != null) return;
-    // if needing to mute
-    if (chat.shouldMuteNotification(message)) return;
-    // if the chat is active
-    if (LifecycleSvc.isAlive && ChatsSvc.isChatActive(chat.guid)) return;
-    // if app is alive, on chat list, but notifying on chat list is disabled
-    if (LifecycleSvc.isAlive && ChatsSvc.activeChat == null && Get.rawRoute?.settings.name == "/" && !SettingsSvc.settings.notifyOnChatList.value) return;
-    await NotificationsSvc.createNotification(chat, message);
   }
 
   static String getNotificationText(Message message, {bool withSender = false}) {

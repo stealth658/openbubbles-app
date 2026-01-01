@@ -9,7 +9,6 @@ import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/helpers/ui/facetime_helpers.dart';
 import 'package:bluebubbles/database/models.dart';
-import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
@@ -54,6 +53,8 @@ class NotificationsService {
   StreamSubscription? countSub;
   int currentCount = 0;
 
+  bool headless = false;
+
   /// For desktop use only
   static LocalNotification? failedToast;
   static LocalNotification? socketToast;
@@ -70,7 +71,8 @@ class NotificationsService {
 
   bool get hideContent => SettingsSvc.settings.hideTextPreviews.value;
 
-  Future<void> init() async {
+  Future<void> init({bool headless = false}) async {
+    this.headless = headless;
     if (!kIsWeb && !kIsDesktop) {
       const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('ic_stat_icon');
       const InitializationSettings initializationSettings =
@@ -84,89 +86,58 @@ class NotificationsService {
       if (details != null && details.didNotificationLaunchApp && details.notificationResponse?.payload != null) {
         IntentsSvc.openChat(details.notificationResponse!.payload!);
       }
-      // Create notification channels - Android automatically checks if they exist
-      // and skips creation if they already exist, so no need to check first
-      createNotificationChannel(
-        NEW_MESSAGE_CHANNEL,
-        "New Messages",
-        "Displays all received new messages",
-      );
-      createNotificationChannel(
-        ERROR_CHANNEL,
-        "Errors",
-        "Displays message send failures, connection failures, and more",
-      );
-      createNotificationChannel(
-        REMINDER_CHANNEL,
-        "Message Reminders",
-        "Displays message reminders set through the app",
-      );
-      createNotificationChannel(
-        FACETIME_CHANNEL,
-        "Incoming FaceTimes",
-        "Displays incoming FaceTimes detected by the server",
-      );
-      createNotificationChannel(
-        FOREGROUND_SERVICE_CHANNEL,
-        "Foreground Service",
-        "Allows BlueBubbles to stay open in the background for notifications if FCM is not being used",
-      );
     }
 
     // watch for new messages and handle the notification
-    if (!kIsWeb) {
-      final countQuery =
-          (Database.messages.query()..order(Message_.id, flags: Order.descending)).watch(triggerImmediately: true);
-      countSub = countQuery.listen((event) {
-        if (!SettingsSvc.settings.finishedSetup.value) return;
-        final newCount = event.count();
-        final activeChat = ChatsSvc.activeChat;
-        final activeChatFetching = activeChat != null ? MessagesSvc(activeChat.chat.guid).isFetching : false;
-        if (LifecycleSvc.isAlive &&
-            (!SyncSvc.isIncrementalSyncing.value && !kIsDesktop) &&
-            !activeChatFetching &&
-            newCount > currentCount &&
-            currentCount != 0) {
-          final messagesToFetch = newCount - currentCount;
-          event.limit = messagesToFetch;
-          final messages = event.find();
-          event.limit = 0;
-          // Pre-load relationships for all messages
-          for (Message message in messages) {
-            if (message.chat.target == null) continue;
-            message.attachments = List<Attachment>.from(message.dbAttachments);
-          }
-          // Handle notifications for messages with valid chat targets
-          for (Message message in messages) {
-            final chatTarget = message.chat.target;
-            if (chatTarget != null) {
-              MessageHelper.handleNotification(message, chatTarget, findExisting: false);
-            }
-          }
-        }
-        currentCount = newCount;
-      });
-    } else {
-      countSub = WebListeners.newMessage.listen((tuple) {
-        final activeChat = ChatsSvc.activeChat;
-        final activeChatFetching = activeChat != null ? MessagesSvc(activeChat.chat.guid).isFetching : false;
-        if (LifecycleSvc.isAlive && !activeChatFetching && tuple.item2 != null) {
-          MessageHelper.handleNotification(tuple.item1, tuple.item2!, findExisting: false);
-        }
-      });
-    }
+    // TODO: See if this is even needed. The ActionHandler.handleNewMessage should
+    // already be taking care of this. We also want to avoid services needing to depend
+    // on each other when they don't have to. It creates a messy web of dependencies.
+    // If anything, this should be moved to the MessagesService.
+    // if (!kIsWeb) {
+    //   final countQuery =
+    //       (Database.messages.query()..order(Message_.id, flags: Order.descending)).watch(triggerImmediately: true);
+    //   countSub = countQuery.listen((event) {
+    //     if (!SettingsSvc.settings.finishedSetup.value) return;
+    //     final newCount = event.count();
+    //     final activeChat = ChatsSvc.activeChat;
+    //     final activeChatFetching = activeChat != null ? MessagesSvc(activeChat.chat.guid).isFetching : false;
+    //     if (LifecycleSvc.isAlive &&
+    //         (!SyncSvc.isIncrementalSyncing.value && !kIsDesktop) &&
+    //         !activeChatFetching &&
+    //         newCount > currentCount &&
+    //         currentCount != 0) {
+    //       final messagesToFetch = newCount - currentCount;
+    //       event.limit = messagesToFetch;
+    //       final messages = event.find();
+    //       event.limit = 0;
+    //       // Pre-load relationships for all messages
+    //       for (Message message in messages) {
+    //         if (message.chat.target == null) continue;
+    //         message.attachments = List<Attachment>.from(message.dbAttachments);
+    //       }
+    //       // Handle notifications for messages with valid chat targets
+    //       for (Message message in messages) {
+    //         final chatTarget = message.chat.target;
+    //         if (chatTarget != null) {
+    //           MessageHelper.handleNotification(message, chatTarget, findExisting: false);
+    //         }
+    //       }
+    //     }
+    //     currentCount = newCount;
+    //   });
+    // } else {
+    //   countSub = WebListeners.newMessage.listen((tuple) {
+    //     final activeChat = ChatsSvc.activeChat;
+    //     final activeChatFetching = activeChat != null ? MessagesSvc(activeChat.chat.guid).isFetching : false;
+    //     if (LifecycleSvc.isAlive && !activeChatFetching && tuple.item2 != null) {
+    //       MessageHelper.handleNotification(tuple.item1, tuple.item2!, findExisting: false);
+    //     }
+    //   });
+    // }
   }
 
   void close() {
     countSub?.cancel();
-  }
-
-  Future<void> createNotificationChannel(String channelID, String channelName, String channelDescription) async {
-    await MethodChannelSvc.invokeMethod("create-notification-channel", {
-      "channel_name": channelName,
-      "channel_description": channelDescription,
-      "channel_id": channelID,
-    });
   }
 
   Future<void> createReminder(Chat? chat, Message? message, DateTime time,
@@ -244,6 +215,18 @@ class NotificationsService {
         });
       }
     }
+  }
+
+  Future<void> tryCreateNewMessageNotification(Message message, Chat chat) async {
+    if (message.isFromMe! || !message.handleRelation.hasValue) return;
+    if (message.isKeptAudio) return;
+    if (chat.shouldMuteNotification(message)) return;
+    if (!headless && LifecycleSvc.isAlive) {
+      if (ChatsSvc.isChatActive(chat.guid)) return;
+      if (ChatsSvc.activeChat == null && Get.rawRoute?.settings.name == "/" && !SettingsSvc.settings.notifyOnChatList.value) return;
+    }
+
+    await createNotification(chat, message);
   }
 
   Future<void> createIncomingFaceTimeNotification(

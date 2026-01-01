@@ -3,7 +3,6 @@ import 'dart:convert';
 
 import 'package:bluebubbles/helpers/backend/settings_helpers.dart';
 import 'package:bluebubbles/database/database.dart';
-import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
@@ -18,18 +17,20 @@ MethodChannelService get MethodChannelSvc => GetIt.I<MethodChannelService>();
 
 class MethodChannelService {
   late final MethodChannel channel;
-  bool background = false;
+  bool headless = false;
   bool isBubble = false;
 
   // music theme
   bool isRunning = false;
   Uint8List? previousArt;
 
+  bool get shouldIgnoreMessage => !headless && !LifecycleSvc.isAlive && SettingsSvc.settings.keepAppAlive.value;
+
   Future<void> init({bool headless = false, bool isBubble = false, BinaryMessenger? binaryMessenger}) async {
     if (kIsWeb || kIsDesktop) return;
     Logger.debug("Initializing MethodChannelService${headless ? " in headless mode" : ""}");
 
-    background = headless;
+    this.headless = headless;
     this.isBubble = isBubble;
     channel = MethodChannel(
       'com.bluebubbles.messaging',
@@ -45,7 +46,7 @@ class MethodChannelService {
     if (!kIsWeb && !kIsDesktop && !headless) {
       try {
         if (SettingsSvc.settings.colorsFromMedia.value) {
-          await MethodChannelSvc.invokeMethod("start-notification-listener");
+          await invokeMethod("start-notification-listener");
         }
         if (!this.isBubble) {
           BackgroundIsolate.initialize();
@@ -53,6 +54,9 @@ class MethodChannelService {
         // chromeOS = await mcs().invokeMethod("check-chromeos") ?? false;
       } catch (_) {}
     }
+
+    // Don't await this
+    createAllNotificationChannels();
 
     Logger.debug("MethodChannelService initialized");
   }
@@ -71,35 +75,36 @@ class MethodChannelService {
 
         String address = arguments["server_url"];
         bool updated = await saveNewServerUrl(address, restartSocket: false);
-        if (updated && !background) {
+        if (updated && !headless) {
           SocketSvc.restartSocket();
         }
         return Future.value(true);
       case "new-message":  // FCM message
         await Database.waitForInit();
         Logger.info("Received new message from MethodChannel");
-
-        // The socket will handle this event if the app is alive and unifiedpush is not enabled
-        if (LifecycleSvc.isAlive && (SocketSvc.socket?.connected ?? false) && SettingsSvc.settings.endpointUnifiedPush.value == "") {
-          Logger.debug("App is alive, ignoring new message...");
-          return Future.value(true);
-        } else if (!LifecycleSvc.isAlive && SettingsSvc.settings.keepAppAlive.value) {
-          Logger.debug("Ignoring FCM message while app is not alive, but keepAppAlive is enabled");
-          return Future.value(true);
-        }
-
         try {
+          // The socket will handle this event if the app is alive and unifiedpush is not enabled
+          if (!headless && LifecycleSvc.isAlive && (SocketSvc.socket?.connected ?? false) && SettingsSvc.settings.endpointUnifiedPush.value == "") {
+            Logger.debug("App is alive, ignoring new message...");
+            return Future.value(true);
+          } else if (!headless && !LifecycleSvc.isAlive && SettingsSvc.settings.keepAppAlive.value) {
+            Logger.debug("Ignoring FCM message while app is not alive, but keepAppAlive is enabled");
+            return Future.value(true);
+          }
+        
           Map<String, dynamic>? data = arguments;
           if (!isNullOrEmpty(data)) {
             final payload = ServerPayload.fromJson(data!);
             final item = IncomingItem.fromMap(QueueType.newMessage, payload.data);
-            if (LifecycleSvc.isAlive && SettingsSvc.settings.endpointUnifiedPush.value == "") {
+            if (!headless &&LifecycleSvc.isAlive && SettingsSvc.settings.endpointUnifiedPush.value == "") {
               await inq.queue(item);
             } else {
               await MessageHandlerSvc.handleNewMessage(item.chat, item.message, item.tempGuid);
             }
           }
         } catch (e, s) {
+          debugPrint("Error processing new message: $e");
+          debugPrint(s.toString());
           Logger.error("Error processing new message: $e", trace: s);
           return Future.error(e, s);
         }
@@ -111,7 +116,7 @@ class MethodChannelService {
 
         // Don't ignore message updates when app is alive - they contain important info like delivery status
         // The socket might not always send these events, or there could be timing issues
-        if (!LifecycleSvc.isAlive && SettingsSvc.settings.keepAppAlive.value) {
+        if (!headless && !LifecycleSvc.isAlive && SettingsSvc.settings.keepAppAlive.value) {
           Logger.debug("Ignoring FCM message while app is not alive, but keepAppAlive is enabled");
           return Future.value(true);
         }
@@ -136,7 +141,7 @@ class MethodChannelService {
             }
 
             final item = IncomingItem.fromMap(QueueType.updatedMessage, payload.data);
-            if (LifecycleSvc.isAlive) {
+            if (!headless && LifecycleSvc.isAlive) {
               await inq.queue(item);
             } else {
               await MessageHandlerSvc.handleUpdatedMessage(item.chat, item.message, item.tempGuid);
@@ -155,7 +160,7 @@ class MethodChannelService {
         Logger.info("Received ${call.method} from MethodChannel");
 
         // Don't ignore chat updates when app is alive - they need to be processed
-        if (!LifecycleSvc.isAlive && SettingsSvc.settings.keepAppAlive.value) {
+        if (shouldIgnoreMessage) {
           Logger.debug("Ignoring FCM message while app is not alive, but keepAppAlive is enabled");
           return Future.value(true);
         }
@@ -177,7 +182,7 @@ class MethodChannelService {
         Logger.info("Received group icon change from MethodChannel");
 
         // Don't ignore icon changes when app is alive - they need to be processed
-        if (!LifecycleSvc.isAlive && SettingsSvc.settings.keepAppAlive.value) {
+        if (shouldIgnoreMessage) {
           Logger.debug("Ignoring FCM message while app is not alive, but keepAppAlive is enabled");
           return Future.value(true);
         }
@@ -246,7 +251,7 @@ class MethodChannelService {
           return Future.value(true);
         }
       case "MarkChatRead":
-        if (LifecycleSvc.isAlive) return Future.value(true);
+        if (!headless && LifecycleSvc.isAlive) return Future.value(true);
         await Database.waitForInit();
         Logger.info("Received markAsRead from Kotlin");
 
@@ -266,7 +271,7 @@ class MethodChannelService {
 
         return Future.value(false);
       case "chat-read-status-changed":
-        if (LifecycleSvc.isAlive) return Future.value(true);
+        if (!headless && LifecycleSvc.isAlive) return Future.value(true);
         await Database.waitForInit();
         Logger.info("Received chat status change from FCM");
 
@@ -313,7 +318,7 @@ class MethodChannelService {
 
         return Future.value(true);
       case "ft-call-status-changed":
-        if (LifecycleSvc.isAlive) return Future.value(true);
+        if (!headless &&LifecycleSvc.isAlive) return Future.value(true);
         await Database.waitForInit();
         Logger.info("Received facetime call status change from FCM");
 
@@ -382,5 +387,44 @@ class MethodChannelService {
     if (kIsWeb || kIsDesktop) return;
     Logger.info("Sending method $method to Kotlin");
     return await channel.invokeMethod(method, arguments);
+  }
+
+  /// Not in the NotificationService to avoid circular dependency.
+  /// The method channel service handles kotlin messages, which may
+  /// invoke actions that use notifications (i.e. new-message events).
+  Future<void> createAllNotificationChannels() async {
+    await createNotificationChannel(
+      NotificationsService.NEW_MESSAGE_CHANNEL,
+      "New Messages",
+      "Displays all received new messages",
+    );
+    await createNotificationChannel(
+      NotificationsService.ERROR_CHANNEL,
+      "Errors",
+      "Displays message send failures, connection failures, and more",
+    );
+    await createNotificationChannel(
+      NotificationsService.REMINDER_CHANNEL,
+      "Message Reminders",
+      "Displays message reminders set through the app",
+    );
+    await createNotificationChannel(
+      NotificationsService.FACETIME_CHANNEL,
+      "Incoming FaceTimes",
+      "Displays incoming FaceTimes detected by the server",
+    );
+    await createNotificationChannel(
+      NotificationsService.FOREGROUND_SERVICE_CHANNEL,
+      "Foreground Service",
+      "Allows BlueBubbles to stay open in the background for notifications if FCM is not being used",
+    );
+  }
+
+  Future<void> createNotificationChannel(String channelID, String channelName, String channelDescription) async {
+    await invokeMethod("create-notification-channel", {
+      "channel_name": channelName,
+      "channel_description": channelDescription,
+      "channel_id": channelID,
+    });
   }
 }

@@ -25,222 +25,228 @@ class MaterialHeader extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Rx<Color> _backgroundColor = context.theme.colorScheme.background.withValues(alpha: (kIsDesktop && SettingsSvc.settings.windowEffect.value != WindowEffect.disabled) ? 0.4 : 1).obs;
+    final Rx<Color> _backgroundColor = context.theme.colorScheme.background
+        .withValues(alpha: (kIsDesktop && SettingsSvc.settings.windowEffect.value != WindowEffect.disabled) ? 0.4 : 1)
+        .obs;
 
-    return Stack(
-          children: [Obx(() => AppBar(
-      backgroundColor: _backgroundColor.value,
-      systemOverlayStyle: context.theme.colorScheme.brightness == Brightness.dark
-          ? SystemUiOverlayStyle.light
-          : SystemUiOverlayStyle.dark,
-      automaticallyImplyLeading: false,
-      toolbarHeight: (kIsDesktop ? 25 : 0) + kToolbarHeight,
-      leadingWidth: 30,
-      leading: Padding(
-        padding: EdgeInsets.only(left: 5.0, top: kIsDesktop ? 20 : 0),
-        child: BackButton(
-          color: context.theme.colorScheme.onBackground,
-          onPressed: () {
-            if (controller.inSelectMode.value) {
-              controller.inSelectMode.value = false;
-              controller.selected.clear();
-              return true;
-            }
-            if (LifecycleSvc.isBubble) {
-              SystemNavigator.pop();
-              return true;
-            }
-            controller.close();
-            return false;
-          },
-        ),
-      ),
-      title: Padding(
-        padding: EdgeInsets.only(top: kIsDesktop ? 20 : 0),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(10),
-          onTap: controller.chat.isGroup ? () {
-            Navigator.of(context).push(
-              ThemeSwitcher.buildPageRoute(
-                builder: (context) => ConversationDetails(
-                  chat: controller.chat,
-                ),
+    return Stack(children: [
+      Obx(() => AppBar(
+            backgroundColor: _backgroundColor.value,
+            systemOverlayStyle: context.theme.colorScheme.brightness == Brightness.dark
+                ? SystemUiOverlayStyle.light
+                : SystemUiOverlayStyle.dark,
+            automaticallyImplyLeading: false,
+            toolbarHeight: (kIsDesktop ? 25 : 0) + kToolbarHeight,
+            leadingWidth: 30,
+            leading: Padding(
+              padding: EdgeInsets.only(left: 5.0, top: kIsDesktop ? 20 : 0),
+              child: BackButton(
+                color: context.theme.colorScheme.onBackground,
+                onPressed: () {
+                  if (controller.inSelectMode.value) {
+                    controller.inSelectMode.value = false;
+                    controller.selected.clear();
+                    return true;
+                  }
+                  if (LifecycleSvc.isBubble) {
+                    SystemNavigator.pop();
+                    return true;
+                  }
+                  controller.close();
+                  return false;
+                },
               ),
-            );
-          } : () async {
-            final handle = controller.chat.handles.first;
-            final contactV2 = handle.contactsV2.firstOrNull;
-            final contact = handle.contact;
-            if (contactV2 == null && contact == null) {
-              await MethodChannelSvc.invokeMethod("open-contact-form", {'address': handle.address, 'address_type': handle.address.isEmail ? 'email' : 'phone'});
-            } else {
-              try {
-                final contactId = contactV2?.nativeContactId ?? contact!.id;
-                await MethodChannelSvc.invokeMethod("view-contact-form", {'id': contactId});
-              } catch (_) {
-                showSnackbar("Error", "Failed to find contact on device!");
-              }
-            }
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(5.0),
-            child: _ChatIconAndTitle(parentController: controller),
-          ),
-        ),
-      ),
-      actions: [
-        Padding(
-          padding: EdgeInsets.only(top: kIsDesktop ? 20 : 0),
-          child: ManualMark(controller: controller),
-        ),
-        if (Platform.isAndroid && !controller.chat.isGroup && controller.chat.handles.first.address.isPhoneNumber)
-          IconButton(
-            icon: Icon(Icons.call_outlined, color: context.theme.colorScheme.onBackground),
-            onPressed: () {
-              launchUrl(Uri(scheme: "tel", path: controller.chat.handles.first.address));
-            },
-          ),
-        if (Platform.isAndroid && !controller.chat.isGroup && controller.chat.handles.first.address.isEmail)
-          IconButton(
-            icon: Icon(Icons.mail_outlined, color: context.theme.colorScheme.onBackground),
-            onPressed: () {
-              launchUrl(Uri(scheme: "mailto", path: controller.chat.handles.first.address));
-            },
-          ),
-        Padding(
-          padding: EdgeInsets.only(top: kIsDesktop ? 20 : 0),
-          child: PopupMenuButton<int>(
-            color: context.theme.colorScheme.properSurface,
-            shape: SettingsSvc.settings.skin.value != Skins.Material ? const RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(
-                Radius.circular(20.0),
-              ),
-            ) : null,
-            onSelected: (int value) {
-              if (value == 0) {
-                Navigator.of(context).push(
-                  ThemeSwitcher.buildPageRoute(
-                    builder: (context) => ConversationDetails(
-                      chat: controller.chat,
-                    ),
-                  ),
-                );
-              } else if (value == 1) {
-                final chatState = ChatsSvc.getChatState(controller.chat.guid);
-                if (chatState != null) {
-                  chatState.setArchived(!controller.chat.isArchived!);
-                } else {
-                  controller.chat.toggleArchivedAsync(!controller.chat.isArchived!);
-                }
-                if (Get.isSnackbarOpen) {
-                  Get.closeAllSnackbars();
-                }
-                Navigator.of(context).pop();
-              } else if (value == 2) {
-                showDialog(
-                  barrierDismissible: false,
-                  context: context,
-                  builder: (BuildContext context) {
-                    return AlertDialog(
-                      title: Text(
-                        "Are you sure?",
-                        style: context.theme.textTheme.titleLarge,
-                      ),
-                      content: Text(
-                        "This chat will be deleted from this device only",
-                        style: context.theme.textTheme.bodyLarge
-                      ),
-                      backgroundColor: context.theme.colorScheme.properSurface,
-                      actions: <Widget>[
-                        TextButton(
-                          child: Text("No", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
-                          onPressed: () {
-                            if (Get.isSnackbarOpen) {
-                              Get.closeAllSnackbars();
-                            }
-                            Navigator.of(context).pop();
-                          },
-                        ),
-                        TextButton(
-                          child: Text("Yes", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
-                          onPressed: () async {
-                            ChatsSvc.removeChat(controller.chat);
-                            Chat.softDelete(controller.chat);
-                            if (Get.isSnackbarOpen) {
-                              Get.closeAllSnackbars();
-                            }
-                            Navigator.of(context).pop();
-                          },
-                        ),
-                      ],
-                    );
-                  },
-                );
-              } else if (value == 3) {
-                showBookmarksThread(controller, context);
-              }
-            },
-            itemBuilder: (context) {
-              return <PopupMenuItem<int>>[
-                PopupMenuItem(
-                  value: 0,
-                  child: Text(
-                    'Details',
-                    style: context.textTheme.bodyLarge!.apply(color: context.theme.colorScheme.properOnSurface),
-                  ),
-                ),
-                if (!LifecycleSvc.isBubble)
-                  PopupMenuItem(
-                    value: 1,
-                    child: Text(
-                      controller.chat.isArchived! ? 'Unarchive' : 'Archive',
-                      style: context.textTheme.bodyLarge!.apply(color: context.theme.colorScheme.properOnSurface),
-                    ),
-                  ),
-                if (!LifecycleSvc.isBubble)
-                  PopupMenuItem(
-                    value: 2,
-                    child: Text(
-                      'Delete',
-                      style: context.textTheme.bodyLarge!.apply(color: context.theme.colorScheme.properOnSurface),
-                    ),
-                  ),
-                PopupMenuItem(
-                  value: 3,
-                  child: Text(
-                    'Bookmarks',
-                    style: context.textTheme.bodyLarge!.apply(color: context.theme.colorScheme.properOnSurface),
-                  ),
-                ),
-              ];
-            },
-            icon: Icon(
-              Icons.more_vert,
-              color: context.theme.colorScheme.onBackground,
             ),
-          ),
-        )
-      ],
-    )),
-      Positioned(
-        child: Obx(() => TweenAnimationBuilder<double>(
-          duration: controller.chat.sendProgress.value == 0 ? Duration.zero : controller.chat.sendProgress.value == 1 ? const Duration(milliseconds: 250) : const Duration(seconds: 10),
-          curve: controller.chat.sendProgress.value == 1 ? Curves.easeInOut : Curves.easeOutExpo,
-          tween: Tween<double>(
-              begin: 0,
-              end: controller.chat.sendProgress.value,
-          ),
-          builder: (context, value, _) =>
-              AnimatedOpacity(
-                opacity: value == 1 ? 0 : 1,
-                duration: const Duration(milliseconds: 250),
-                child: LinearProgressIndicator(
-                  value: value,
-                  backgroundColor: Colors.transparent,
-                  minHeight: 3,
+            title: Padding(
+              padding: EdgeInsets.only(top: kIsDesktop ? 20 : 0),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(10),
+                onTap: controller.chat.isGroup
+                    ? () {
+                        Navigator.of(context).push(
+                          ThemeSwitcher.buildPageRoute(
+                            builder: (context) => ConversationDetails(
+                              chat: controller.chat,
+                            ),
+                          ),
+                        );
+                      }
+                    : () async {
+                        final handle = controller.chat.handles.first;
+                        final contactV2 = handle.contactsV2.firstOrNull;
+                        final contact = handle.contact;
+                        if (contactV2 == null && contact == null) {
+                          await MethodChannelSvc.invokeMethod("open-contact-form",
+                              {'address': handle.address, 'address_type': handle.address.isEmail ? 'email' : 'phone'});
+                        } else {
+                          try {
+                            final contactId = contactV2?.nativeContactId ?? contact!.id;
+                            await MethodChannelSvc.invokeMethod("view-contact-form", {'id': contactId});
+                          } catch (_) {
+                            showSnackbar("Error", "Failed to find contact on device!");
+                          }
+                        }
+                      },
+                child: Padding(
+                  padding: const EdgeInsets.all(5.0),
+                  child: _ChatIconAndTitle(parentController: controller),
+                ),
+              ),
+            ),
+            actions: [
+              Padding(
+                padding: EdgeInsets.only(top: kIsDesktop ? 20 : 0),
+                child: ManualMark(controller: controller),
+              ),
+              if (Platform.isAndroid && !controller.chat.isGroup && controller.chat.handles.first.address.isPhoneNumber)
+                IconButton(
+                  icon: Icon(Icons.call_outlined, color: context.theme.colorScheme.onBackground),
+                  onPressed: () {
+                    launchUrl(Uri(scheme: "tel", path: controller.chat.handles.first.address));
+                  },
+                ),
+              if (Platform.isAndroid && !controller.chat.isGroup && controller.chat.handles.first.address.isEmail)
+                IconButton(
+                  icon: Icon(Icons.mail_outlined, color: context.theme.colorScheme.onBackground),
+                  onPressed: () {
+                    launchUrl(Uri(scheme: "mailto", path: controller.chat.handles.first.address));
+                  },
+                ),
+              Padding(
+                padding: EdgeInsets.only(top: kIsDesktop ? 20 : 0),
+                child: PopupMenuButton<int>(
+                  color: context.theme.colorScheme.properSurface,
+                  shape: SettingsSvc.settings.skin.value != Skins.Material
+                      ? const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.all(
+                            Radius.circular(20.0),
+                          ),
+                        )
+                      : null,
+                  onSelected: (int value) {
+                    if (value == 0) {
+                      Navigator.of(context).push(
+                        ThemeSwitcher.buildPageRoute(
+                          builder: (context) => ConversationDetails(
+                            chat: controller.chat,
+                          ),
+                        ),
+                      );
+                    } else if (value == 1) {
+                      ChatsSvc.setChatArchived(controller.chat, !controller.chat.isArchived!);
+                      if (Get.isSnackbarOpen) {
+                        Get.closeAllSnackbars();
+                      }
+                      Navigator.of(context).pop();
+                    } else if (value == 2) {
+                      showDialog(
+                        barrierDismissible: false,
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            title: Text(
+                              "Are you sure?",
+                              style: context.theme.textTheme.titleLarge,
+                            ),
+                            content: Text("This chat will be deleted from this device only",
+                                style: context.theme.textTheme.bodyLarge),
+                            backgroundColor: context.theme.colorScheme.properSurface,
+                            actions: <Widget>[
+                              TextButton(
+                                child: Text("No",
+                                    style: context.theme.textTheme.bodyLarge!
+                                        .copyWith(color: context.theme.colorScheme.primary)),
+                                onPressed: () {
+                                  if (Get.isSnackbarOpen) {
+                                    Get.closeAllSnackbars();
+                                  }
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                              TextButton(
+                                child: Text("Yes",
+                                    style: context.theme.textTheme.bodyLarge!
+                                        .copyWith(color: context.theme.colorScheme.primary)),
+                                onPressed: () async {
+                                  ChatsSvc.removeChat(controller.chat);
+                                  ChatsSvc.softDeleteChat(controller.chat);
+                                  if (Get.isSnackbarOpen) {
+                                    Get.closeAllSnackbars();
+                                  }
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    } else if (value == 3) {
+                      showBookmarksThread(controller, context);
+                    }
+                  },
+                  itemBuilder: (context) {
+                    return <PopupMenuItem<int>>[
+                      PopupMenuItem(
+                        value: 0,
+                        child: Text(
+                          'Details',
+                          style: context.textTheme.bodyLarge!.apply(color: context.theme.colorScheme.properOnSurface),
+                        ),
+                      ),
+                      if (!LifecycleSvc.isBubble)
+                        PopupMenuItem(
+                          value: 1,
+                          child: Text(
+                            controller.chat.isArchived! ? 'Unarchive' : 'Archive',
+                            style: context.textTheme.bodyLarge!.apply(color: context.theme.colorScheme.properOnSurface),
+                          ),
+                        ),
+                      if (!LifecycleSvc.isBubble)
+                        PopupMenuItem(
+                          value: 2,
+                          child: Text(
+                            'Delete',
+                            style: context.textTheme.bodyLarge!.apply(color: context.theme.colorScheme.properOnSurface),
+                          ),
+                        ),
+                      PopupMenuItem(
+                        value: 3,
+                        child: Text(
+                          'Bookmarks',
+                          style: context.textTheme.bodyLarge!.apply(color: context.theme.colorScheme.properOnSurface),
+                        ),
+                      ),
+                    ];
+                  },
+                  icon: Icon(
+                    Icons.more_vert,
+                    color: context.theme.colorScheme.onBackground,
+                  ),
                 ),
               )
-        )),
+            ],
+          )),
+      Positioned(
+        child: Obx(() => TweenAnimationBuilder<double>(
+            duration: controller.chat.sendProgress.value == 0
+                ? Duration.zero
+                : controller.chat.sendProgress.value == 1
+                    ? const Duration(milliseconds: 250)
+                    : const Duration(seconds: 10),
+            curve: controller.chat.sendProgress.value == 1 ? Curves.easeInOut : Curves.easeOutExpo,
+            tween: Tween<double>(
+              begin: 0,
+              end: controller.chat.sendProgress.value,
+            ),
+            builder: (context, value, _) => AnimatedOpacity(
+                  opacity: value == 1 ? 0 : 1,
+                  duration: const Duration(milliseconds: 250),
+                  child: LinearProgressIndicator(
+                    value: value,
+                    backgroundColor: Colors.transparent,
+                    minHeight: 3,
+                  ),
+                ))),
         bottom: 0,
         left: 0,
         right: 0,
@@ -278,15 +284,13 @@ class _ChatIconAndTitleState extends CustomState<_ChatIconAndTitle, void, Conver
     // run query after render has completed
     if (!kIsWeb) {
       updateObx(() {
-        final titleQuery = Database.chats.query(Chat_.guid.equals(controller.chat.guid))
-            .watch();
+        final titleQuery = Database.chats.query(Chat_.guid.equals(controller.chat.guid)).watch();
         sub = titleQuery.listen((Query<Chat> query) async {
           final chat = await runAsync(() {
             return Database.chats.get(controller.chat.id!)!;
           });
           // check if we really need to update this widget
-          if (chat.displayName != cachedDisplayName
-              || chat.handles.length != cachedParticipants.length) {
+          if (chat.displayName != cachedDisplayName || chat.handles.length != cachedParticipants.length) {
             final newTitle = chat.getTitle();
             if (newTitle != title) {
               setState(() {
@@ -302,8 +306,7 @@ class _ChatIconAndTitleState extends CustomState<_ChatIconAndTitle, void, Conver
       sub = WebListeners.chatUpdate.listen((chat) {
         if (chat.guid == controller.chat.guid) {
           // check if we really need to update this widget
-          if (chat.displayName != cachedDisplayName
-              || chat.handles.length != cachedParticipants.length) {
+          if (chat.displayName != cachedDisplayName || chat.handles.length != cachedParticipants.length) {
             final newTitle = chat.getTitle();
             if (newTitle != title) {
               setState(() {
@@ -353,7 +356,8 @@ class _ChatIconAndTitleState extends CustomState<_ChatIconAndTitle, void, Conver
                 }
                 return Text(
                   _title,
-                  style: context.theme.textTheme.titleLarge!.apply(color: context.theme.colorScheme.onBackground, fontSizeFactor: 0.85),
+                  style: context.theme.textTheme.titleLarge!
+                      .apply(color: context.theme.colorScheme.onBackground, fontSizeFactor: 0.85),
                   maxLines: 1,
                   overflow: TextOverflow.fade,
                 );
@@ -361,8 +365,8 @@ class _ChatIconAndTitleState extends CustomState<_ChatIconAndTitle, void, Conver
               if (samsung && (controller.chat.isGroup || (!title.isPhoneNumber && !title.isEmail)) && !hideInfo)
                 Text(
                   controller.chat.isGroup
-                    ? "${controller.chat.handles.length} recipients"
-                    : controller.chat.handles[0].address,
+                      ? "${controller.chat.handles.length} recipients"
+                      : controller.chat.handles[0].address,
                   style: context.theme.textTheme.labelLarge!.apply(color: context.theme.colorScheme.outline),
                   maxLines: 1,
                   overflow: TextOverflow.fade,

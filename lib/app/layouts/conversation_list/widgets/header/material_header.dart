@@ -155,7 +155,7 @@ class _MaterialHeaderState extends CustomState<MaterialHeader, void, Conversatio
                                   for (Chat element in controller.selectedChats) {
                                     final chatState = ChatsSvc.getChatState(element.guid);
                                     if (chatState != null) {
-                                      chatState.setHasUnread(!element.hasUnreadMessage!);
+                                      ChatsSvc.setChatHasUnread(chatState.chat, !element.hasUnreadMessage!);
                                     } else {
                                       element.toggleHasUnreadAsync(!element.hasUnreadMessage!);
                                     }
@@ -174,7 +174,7 @@ class _MaterialHeaderState extends CustomState<MaterialHeader, void, Conversatio
                                   for (Chat element in controller.selectedChats) {
                                     final chatState = ChatsSvc.getChatState(element.guid);
                                     if (chatState != null) {
-                                      chatState.setMuted(element.muteType != "mute");
+                                      ChatsSvc.setChatMuted(chatState.chat, element.muteType != "mute");
                                     } else {
                                       element.toggleMuteAsync(element.muteType != "mute");
                                     }
@@ -195,9 +195,9 @@ class _MaterialHeaderState extends CustomState<MaterialHeader, void, Conversatio
                                   for (Chat element in controller.selectedChats) {
                                     final chatState = ChatsSvc.getChatState(element.guid);
                                     if (chatState != null) {
-                                      chatState.setIsPinned(!element.isPinned!);
+                                      ChatsSvc.setChatPinned(chatState.chat, !element.isPinned!);
                                     } else {
-                                      element.togglePinAsync(!element.isPinned!);
+                                      ChatsSvc.toggleChatPin(element, !element.isPinned!);
                                     }
                                   }
                                   controller.clearSelectedChats();
@@ -212,9 +212,9 @@ class _MaterialHeaderState extends CustomState<MaterialHeader, void, Conversatio
                                 for (Chat element in controller.selectedChats) {
                                   final chatState = ChatsSvc.getChatState(element.guid);
                                   if (chatState != null) {
-                                    chatState.setArchived(!element.isArchived!);
+                                    ChatsSvc.setChatArchived(chatState.chat, !element.isArchived!);
                                   } else {
-                                    element.toggleArchivedAsync(!element.isArchived!);
+                                    ChatsSvc.toggleChatArchive(element, !element.isArchived!);
                                   }
                                 }
                                 controller.clearSelectedChats();
@@ -228,7 +228,7 @@ class _MaterialHeaderState extends CustomState<MaterialHeader, void, Conversatio
                               onPressed: () {
                                 for (Chat element in controller.selectedChats) {
                                   ChatsSvc.removeChat(element);
-                                  Chat.softDelete(element);
+                                  ChatsSvc.softDeleteChat(element);
                                 }
                                 controller.clearSelectedChats();
                               },

@@ -120,6 +120,8 @@ class Message {
   set dbMetadata(String? json) => metadata = json == null
       ? null : jsonDecode(json) as Map<String, dynamic>;
 
+  bool get isKeptAudio => itemType == 5 && subject != null;
+
   Message({
     this.id,
     this.originalROWID,

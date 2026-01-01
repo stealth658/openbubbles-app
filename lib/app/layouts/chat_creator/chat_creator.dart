@@ -266,7 +266,7 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
       }
     }
     if (checkDeleted && existingChat?.dateDeleted != null) {
-      Chat.unDelete(existingChat!);
+      ChatsSvc.unDeleteChat(existingChat!);
       // ignore: argument_type_not_assignable, return_of_invalid_type, invalid_assignment, for_in_of_invalid_element_type
       await ChatsSvc.addChat(existingChat);
     }
@@ -616,7 +616,7 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
                             // hard delete a chat that exists on BB but not on the server to make way for the proper server data
                             if (chat != null) {
                               ChatsSvc.removeChat(chat);
-                              Chat.deleteChat(chat);
+                              ChatsSvc.deleteChat(chat);
                             }
                             createCompleter = Completer();
                             final participants = selectedContacts

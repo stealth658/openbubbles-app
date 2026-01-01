@@ -23,7 +23,6 @@ export 'network/firebase/firebase_database_service.dart';
 export 'network/downloads_service.dart';
 export 'network/http_service.dart';
 export 'network/socket_service.dart';
-export 'ui/chat/chat_lifecycle_manager.dart';
 export 'ui/chat/chats_service.dart';
 export 'ui/chat/conversation_view_controller.dart';
 // GlobalChatService merged into ChatsService

@@ -138,7 +138,8 @@ class Chat {
       id: json["ROWID"] ?? json["id"],
       guid: json["guid"],
       chatIdentifier: json["chatIdentifier"],
-      participants: (json['participants'] as List? ?? []).map((e) => Handle.fromMap(e!.cast<String, Object>())).toList(),
+      participants:
+          (json['participants'] as List? ?? []).map((e) => Handle.fromMap(e!.cast<String, Object>())).toList(),
       isArchived: json['isArchived'] ?? false,
       muteType: json["muteType"],
       muteArgs: json["muteArgs"],
@@ -303,39 +304,11 @@ class Chat {
         ReactionTypes.toList().contains(message?.associatedMessageType ?? "");
   }
 
-  /// Delete a chat locally. Prefer using softDelete so the chat doesn't come back
-  static Future<void> deleteChat(Chat chat) async {
-    if (kIsWeb) return;
-    // close the convo view page if open and wait for it to be disposed before deleting
-    if (ChatsSvc.activeChat?.chat.guid == chat.guid) {
-      NavigationSvc.closeAllConversationView(Get.context!);
-      await ChatsSvc.setAllInactive();
-      await Future.delayed(const Duration(milliseconds: 500));
-    }
-    List<Message> messages = Chat.getMessages(chat);
-    await ChatInterface.deleteChat(
-      chatId: chat.id!,
-      messageIds: messages.map((e) => e.id!).toList(),
-    );
-  }
+  // Static methods moved to ChatsService for proper separation of concerns
+  // Use ChatsSvc.deleteChat(), ChatsSvc.softDeleteChat(), ChatsSvc.unDeleteChat(), etc.
 
-  static Future<void> softDelete(Chat chat) async {
-    if (kIsWeb) return;
-    // close the convo view page if open and wait for it to be disposed before deleting
-    if (ChatsSvc.activeChat?.chat.guid == chat.guid) {
-      NavigationSvc.closeAllConversationView(Get.context!);
-      await ChatsSvc.setAllInactive();
-      await Future.delayed(const Duration(milliseconds: 500));
-    }
-    await ChatInterface.softDeleteChat(chatData: chat.toMap());
-    chat.clearTranscript();
-  }
-
-  static Future<void> unDelete(Chat chat) async {
-    if (kIsWeb) return;
-    await ChatInterface.unDeleteChat(chatData: chat.toMap());
-  }
-
+  /// Toggle unread status - pure DB operation
+  /// Note: For full unread toggle with active chat awareness, use ChatsSvc.toggleChatHasUnread
   Future<Chat> toggleHasUnreadAsync(bool hasUnread,
       {bool force = false, bool clearLocalNotifications = true, bool privateMark = true}) async {
     if (kIsDesktop && !hasUnread) {
@@ -343,14 +316,8 @@ class Chat {
     }
 
     if (hasUnreadMessage == hasUnread && !force) return this;
-    if (!ChatsSvc.isChatActive(guid) || !hasUnread || force) {
-      hasUnreadMessage = hasUnread;
-      await saveAsync(updateHasUnreadMessage: true);
-    }
-    if (ChatsSvc.isChatActive(guid) && hasUnread && !force) {
-      hasUnread = false;
-      clearLocalNotifications = false;
-    }
+    hasUnreadMessage = hasUnread;
+    await saveAsync(updateHasUnreadMessage: true);
 
     try {
       if (clearLocalNotifications && !hasUnread) {
@@ -371,6 +338,8 @@ class Chat {
     return this;
   }
 
+  /// Add message to chat - pure DB operation
+  /// Note: For full message add with service updates, use ChatsSvc.addMessageToChat
   Future<Tuple2<Message, bool>> addMessage(Message message,
       {bool changeUnreadStatus = true, bool checkForMessageText = true, bool clearNotificationsIfFromMe = true}) async {
     // If this is a message preview and we don't already have metadata for this, get it
@@ -405,8 +374,8 @@ class Chat {
     } catch (ex, stacktrace) {
       newMessage = Message.findOne(guid: message.guid);
       if (newMessage == null) {
-        Logger
-            .error("Failed to add message (GUID: ${message.guid}) to chat (GUID: $guid)", error: ex, trace: stacktrace);
+        Logger.error("Failed to add message (GUID: ${message.guid}) to chat (GUID: $guid)",
+            error: ex, trace: stacktrace);
       }
     }
 
@@ -416,10 +385,9 @@ class Chat {
       if (dateDeleted != null) {
         dateDeleted = null;
         await saveAsync(updateDateDeleted: true);
-        await ChatsSvc.addChat(this);
       }
       if (isArchived! && !_latestMessage!.isFromMe! && SettingsSvc.settings.unarchiveOnNewMessage.value) {
-        toggleArchivedAsync(false);
+        await toggleArchivedAsync(false);
       }
     }
 
@@ -430,17 +398,11 @@ class Chat {
 
     // If the incoming message was newer than the "last" one, set the unread status accordingly
     if (checkForMessageText && changeUnreadStatus && isNewer) {
-      // If the message is from me, mark it unread
-      // If the message is not from the same chat as the current chat, mark unread
-      if (message.isFromMe! || ChatsSvc.isChatActive(guid)) {
-        // force if the chat is active to ensure private api mark read
-        toggleHasUnreadAsync(false,
-            clearLocalNotifications: clearNotificationsIfFromMe,
-            force: ChatsSvc.isChatActive(guid),
-            // only private mark if the chat is active
-            privateMark: ChatsSvc.isChatActive(guid));
-      } else if (!ChatsSvc.isChatActive(guid)) {
-        toggleHasUnreadAsync(true, privateMark: false);
+      // Simple logic: mark read if from me, mark unread if not
+      if (message.isFromMe!) {
+        await toggleHasUnreadAsync(false, clearLocalNotifications: clearNotificationsIfFromMe, privateMark: false);
+      } else {
+        await toggleHasUnreadAsync(true, privateMark: false);
       }
     }
 
@@ -455,16 +417,23 @@ class Chat {
   }
 
   Future<void> serverSyncParticipantsAsync() async {
-    // Send message to server to get the participants
-    final chat = await ChatsSvc.fetchChat(guid);
-    if (chat != null) {
-      await chat.saveAsync();
+    // Sync participants from server - delegates to service layer
+    // Note: For full sync with service updates, this is called by ChatsSvc.addMessageToChat
+    try {
+      final response = await HttpSvc.singleChat(guid, withQuery: "participants");
+      if (response.statusCode == 200 && response.data["data"] != null) {
+        final chatData = response.data["data"];
+        final updatedChat = await ChatInterface.bulkSyncChats(chatsData: [chatData]);
+        if (updatedChat.isNotEmpty) {
+          await updatedChat.first.saveAsync();
+        }
+      }
+    } catch (ex, stacktrace) {
+      Logger.error("Failed to sync participants", error: ex, trace: stacktrace);
     }
   }
 
-  static int? count() {
-    return Database.chats.count();
-  }
+  // count() method moved to ChatsService
 
   Future<List<Attachment>> getAttachmentsAsync({bool fetchDeleted = false}) async {
     if (kIsWeb || id == null) return [];
@@ -531,8 +500,8 @@ class Chat {
       for (int i = 0; i < messages.length; i++) {
         Message message = messages[i];
         if (chat.handles.isNotEmpty && !message.isFromMe! && message.handleId != null && message.handleId != 0) {
-          Handle? handle =
-              chat.handles.firstWhereOrNull((e) => e.originalROWID == message.handleId) ?? message.handleRelation.target;
+          Handle? handle = chat.handles.firstWhereOrNull((e) => e.originalROWID == message.handleId) ??
+              message.handleRelation.target;
           if (handle == null) {
             messages.remove(message);
             i--;
@@ -623,10 +592,8 @@ class Chat {
         m.associatedMessages = messageReactions;
         if (messageReactions.isNotEmpty) {
           messagesWithReactions++;
-          Logger.debug(
-            "[getMessagesAsync] Phase 2 - Added ${messageReactions.length} reactions to message ${m.guid}",
-            tag: "MessageReactivity"
-          );
+          Logger.debug("[getMessagesAsync] Phase 2 - Added ${messageReactions.length} reactions to message ${m.guid}",
+              tag: "MessageReactivity");
         }
       }
 
@@ -648,12 +615,13 @@ class Chat {
 
   void webSyncParticipants() {}
 
+  /// Toggle pin status - pure DB operation
+  /// Note: For full pin toggle with service updates, use ChatsSvc.toggleChatPin
   Future<Chat> togglePinAsync(bool isPinned) async {
     if (id == null) return this;
     this.isPinned = isPinned;
     _pinIndex.value = null;
     await saveAsync(updateIsPinned: true, updatePinIndex: true);
-    ChatsSvc.updateChat(this);
     return this;
   }
 
@@ -665,12 +633,13 @@ class Chat {
     return this;
   }
 
+  /// Toggle archive status - pure DB operation
+  /// Note: For full archive toggle with service updates, use ChatsSvc.toggleChatArchive
   Future<Chat> toggleArchivedAsync(bool isArchived) async {
     if (id == null) return this;
     isPinned = false;
     this.isArchived = isArchived;
     await saveAsync(updateIsPinned: true, updateIsArchived: true);
-    ChatsSvc.updateChat(this);
     return this;
   }
 
@@ -724,7 +693,7 @@ class Chat {
       offset: offset,
       ids: ids,
     );
-    
+
     // Populate contact name cache on main thread for ALL chats in one transaction
     // The cache populated in the isolate doesn't transfer through JSON serialization
     // Database.runInTransaction(TxMode.read, () {
@@ -736,7 +705,7 @@ class Chat {
     //         final handlesBox = Database.handles;
     //         final fetchedHandles = handlesBox.getMany(handleIds).whereType<Handle>().toList();
     //         c._participants = fetchedHandles;
-            
+
     //         // Cache contact names while in transaction
     //         for (final handle in c._participants) {
     //           Logger.debug('[TEST] Handle has formatted address: ${handle.formattedAddress}');
@@ -751,7 +720,7 @@ class Chat {
     //     }
     //   }
     // });
-    
+
     // Generate titles on the main thread (lightweight operation)
     for (Chat c in chats) {
       final generatedTitle = c.getTitle();
@@ -784,7 +753,7 @@ class Chat {
 
   static Future<List<Message>> bulkSyncMessages(Chat chat, List<Message> messages) async {
     if (kIsWeb) throw Exception("Web does not support saving messages!");
-    
+
     if (messages.isEmpty) return [];
     return await ChatInterface.bulkSyncMessages(
       chatData: chat.toMap(),

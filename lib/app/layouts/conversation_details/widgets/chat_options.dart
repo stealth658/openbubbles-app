@@ -271,9 +271,9 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
                     onChanged: (value) {
                       final chatState = ChatsSvc.getChatState(chat.guid);
                       if (chatState != null) {
-                        chatState.setIsPinned(!chat.isPinned!);
+                        ChatsSvc.setChatPinned(chatState.chat, !chat.isPinned!);
                       } else {
-                        chat.togglePinAsync(!chat.isPinned!);
+                        ChatsSvc.toggleChatPin(chat, !chat.isPinned!);
                       }
                       setState(() {});
                     },
@@ -286,7 +286,7 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
                     onChanged: (value) {
                       final chatState = ChatsSvc.getChatState(chat.guid);
                       if (chatState != null) {
-                        chatState.setMuted(value);
+                        ChatsSvc.setChatMuted(chatState.chat, value);
                       } else {
                         chat.toggleMuteAsync(value);
                       }
@@ -301,9 +301,9 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
                     onChanged: (value) {
                       final chatState = ChatsSvc.getChatState(chat.guid);
                       if (chatState != null) {
-                        chatState.setArchived(value);
+                        ChatsSvc.setChatArchived(chatState.chat, value);
                       } else {
-                        chat.toggleArchivedAsync(value);
+                        ChatsSvc.toggleChatArchive(chat, value);
                       }
                       setState(() {});
                     },

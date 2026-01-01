@@ -3,9 +3,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:bitsdojo_window/bitsdojo_window.dart';
+import 'package:bluebubbles/env.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/database.dart';
-import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
 import 'package:bluebubbles/services/isolates/global_isolate.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
@@ -147,11 +147,7 @@ class StartupTasks {
       await notificationsService.init();
       return notificationsService;
     });
-
-    await Future.wait([
-      GetIt.I.isReady<NotificationsService>()
-    ]);
-
+    await GetIt.I.isReady<NotificationsService>();
 
     GetIt.I.registerSingleton<EventDispatcher>(EventDispatcher());
 
@@ -208,6 +204,22 @@ class StartupTasks {
     Logger.info("Initializing database...");
     await Database.init();
     Logger.info("Database initialized");
+
+    // Since we are starting it headless, it can safely be started early on in the startup.
+    Logger.info("Registering ContactServiceV2...");
+    GetIt.I.registerSingletonAsync<ContactServiceV2>(() async {
+      final contactServiceV2 = ContactServiceV2();
+      await contactServiceV2.init(headless: true);
+      return contactServiceV2;
+    });
+    await GetIt.I.isReady<ContactServiceV2>();
+    Logger.info("ContactServiceV2 ready");
+
+    // Since we are starting it headless, it can safely be started early on in the startup.
+    Logger.info("Registering ChatsService...");
+    GetIt.I.registerSingleton<ChatsService>(ChatsService());
+    await ChatsSvc.init(headless: true);
+    Logger.info("ChatsService ready");
     
     Logger.info("Registering MethodChannelService...");
     GetIt.I.registerSingletonAsync<MethodChannelService>(() async {
@@ -221,26 +233,17 @@ class StartupTasks {
     Logger.info("Registering HttpService...");
     GetIt.I.registerSingleton<HttpService>(HttpService());
     HttpSvc.init();
-
-    Logger.info("Registering ContactServiceV2...");
-    GetIt.I.registerSingletonAsync<ContactServiceV2>(() async {
-      final contactServiceV2 = ContactServiceV2();
-      await contactServiceV2.init(headless: true);
-      return contactServiceV2;
-    });
-    await GetIt.I.isReady<ContactServiceV2>();
-    Logger.info("ContactServiceV2 ready");
-
-    Logger.info("Registering ChatsService...");
-    GetIt.I.registerSingleton<ChatsService>(ChatsService());
-    await ChatsSvc.init(headless: true);
-    Logger.info("ChatsService ready");
     
     Logger.info("Global isolate services initialization complete");
   }
 
   static Future<void> initBackgroundIsolate() async {
     debugPrint("Initializing background isolate services...");
+
+    // When the DartWorker spins up the isolate, the Isolate.current.debugName == "main".
+    // While this might be the only flutter engine/instance running, it's still not technically the "main" isolate.
+    // So we set isIsolateOverride to true to force isIsolate to return true.
+    isIsolateOverride = true;
 
     debugPrint("Registering FilesystemService...");
     GetIt.I.registerSingletonAsync<FilesystemService>(() async {
@@ -282,6 +285,31 @@ class StartupTasks {
     Logger.info("Initializing database...");
     await Database.init();
     Logger.info("Database initialized");
+
+    // Since we are starting it headless, it can safely be started early on in the startup.
+    Logger.info("Registering ContactServiceV2...");
+    GetIt.I.registerSingletonAsync<ContactServiceV2>(() async {
+      final contactServiceV2 = ContactServiceV2();
+      await contactServiceV2.init(headless: true);
+      return contactServiceV2;
+    });
+    await GetIt.I.isReady<ContactServiceV2>();
+    Logger.info("ContactServiceV2 ready");
+
+    // Since we are starting it headless, it can safely be started early on in the startup.
+    Logger.info("Registering ChatsService...");
+    GetIt.I.registerSingleton<ChatsService>(ChatsService());
+    await ChatsSvc.init(headless: true);
+    Logger.info("ChatsService ready");
+
+    Logger.info("Registering NotificationsService...");
+    GetIt.I.registerSingletonAsync<NotificationsService>(() async {
+      final notificationsService = NotificationsService();
+      await notificationsService.init(headless: true);
+      return notificationsService;
+    });
+    await GetIt.I.isReady<NotificationsService>();
+    Logger.info("NotificationsService ready");
     
     Logger.info("Registering MethodChannelService...");
     GetIt.I.registerSingletonAsync<MethodChannelService>(() async {
@@ -291,6 +319,19 @@ class StartupTasks {
     });
     await GetIt.I.isReady<MethodChannelService>();
     Logger.info("MethodChannelService ready");
+
+    Logger.info("Registering LifecycleService...");
+    GetIt.I.registerSingletonAsync<LifecycleService>(() async {
+      final lifecycleService = LifecycleService();
+      await lifecycleService.init(headless: true);
+      return lifecycleService;
+    });
+    await GetIt.I.isReady<LifecycleService>();
+
+    Logger.info("Registering HttpService...");
+    GetIt.I.registerSingleton<HttpService>(HttpService());
+    HttpSvc.init();
+
     Logger.info("Background isolate services initialization complete");
   }
 
@@ -301,7 +342,6 @@ class StartupTasks {
       Logger.info("Setup not finished, skipping onStartup tasks");
       return;
     }
-
 
     if (!kIsDesktop) {
       Logger.info("Initializing ChatsService and SocketService...");

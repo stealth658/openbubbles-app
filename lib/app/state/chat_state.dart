@@ -54,44 +54,95 @@ class ChatState {
         isActive = false.obs,
         isAlive = false.obs;
 
+  // ========== Internal State Update Methods ==========
+  // These are called by ChatsService after DB operations complete
+  // Do NOT call these directly - use ChatsService methods instead
+
+  void updateIsPinnedInternal(bool value) {
+    if (isPinned.value != value) {
+      isPinned.value = value;
+    }
+  }
+
+  void updatePinIndexInternal(int? value) {
+    if (pinIndex.value != value) {
+      pinIndex.value = value;
+    }
+  }
+
+  void updateHasUnreadInternal(bool value) {
+    if (hasUnreadMessage.value != value) {
+      hasUnreadMessage.value = value;
+    }
+  }
+
+  void updateMutedInternal(String? muteType, String? muteArgs) {
+    if (this.muteType.value != muteType) {
+      this.muteType.value = muteType;
+    }
+    if (this.muteArgs.value != muteArgs) {
+      this.muteArgs.value = muteArgs;
+    }
+  }
+
+  void updateArchivedInternal(bool value) {
+    if (isArchived.value != value) {
+      isArchived.value = value;
+    }
+  }
+
+  void updateDisplayNameInternal(String? value) {
+    if (displayName.value != value) {
+      displayName.value = value;
+    }
+  }
+
+  void updateCustomAvatarPathInternal(String? value) {
+    if (customAvatarPath.value != value) {
+      customAvatarPath.value = value;
+    }
+  }
+
+  void updateTitleInternal(String? value) {
+    if (title.value != value) {
+      title.value = value;
+    }
+  }
+
+  void updateLatestMessageInternal(Message? value) {
+    if (latestMessage.value?.guid != value?.guid) {
+      latestMessage.value = value;
+    }
+  }
+
+  void updateTextFieldTextInternal(String? value) {
+    if (textFieldText.value != value) {
+      textFieldText.value = value;
+    }
+  }
+
+  void updateTextFieldAttachmentsInternal(List<String> value) {
+    if (!listEquals(textFieldAttachments, value)) {
+      textFieldAttachments.value = value;
+    }
+  }
+
   /// Update the state from a chat object (useful when chat is updated from DB)
   void updateFromChat(Chat updatedChat) {
-    if (isPinned.value != (updatedChat.isPinned ?? false)) {
-      isPinned.value = updatedChat.isPinned ?? false;
-    }
-    if (pinIndex.value != updatedChat.pinIndex) {
-      pinIndex.value = updatedChat.pinIndex;
-    }
-    if (hasUnreadMessage.value != (updatedChat.hasUnreadMessage ?? false)) {
-      hasUnreadMessage.value = updatedChat.hasUnreadMessage ?? false;
-    }
-    if (muteType.value != updatedChat.muteType) {
-      muteType.value = updatedChat.muteType;
-    }
-    if (muteArgs.value != updatedChat.muteArgs) {
-      muteArgs.value = updatedChat.muteArgs;
-    }
-    if (isArchived.value != (updatedChat.isArchived ?? false)) {
-      isArchived.value = updatedChat.isArchived ?? false;
-    }
-    if (displayName.value != updatedChat.displayName) {
-      displayName.value = updatedChat.displayName;
-    }
-    if (customAvatarPath.value != updatedChat.customAvatarPath) {
-      customAvatarPath.value = updatedChat.customAvatarPath;
-    }
-    if (title.value != updatedChat.title) {
-      title.value = updatedChat.title;
-    }
-    if (latestMessage.value?.guid != updatedChat.latestMessage.guid) {
-      latestMessage.value = updatedChat.latestMessage;
-    }
-    if (textFieldText.value != updatedChat.textFieldText) {
-      textFieldText.value = updatedChat.textFieldText;
-    }
-    if (!listEquals(textFieldAttachments, updatedChat.textFieldAttachments)) {
-      textFieldAttachments.value = updatedChat.textFieldAttachments;
-    }
+    // Update observables using internal methods
+    updateIsPinnedInternal(updatedChat.isPinned ?? false);
+    updatePinIndexInternal(updatedChat.pinIndex);
+    updateHasUnreadInternal(updatedChat.hasUnreadMessage ?? false);
+    updateMutedInternal(updatedChat.muteType, updatedChat.muteArgs);
+    updateArchivedInternal(updatedChat.isArchived ?? false);
+    updateDisplayNameInternal(updatedChat.displayName);
+    updateCustomAvatarPathInternal(updatedChat.customAvatarPath);
+    updateTitleInternal(updatedChat.title);
+    updateLatestMessageInternal(updatedChat.latestMessage);
+    updateTextFieldTextInternal(updatedChat.textFieldText);
+    updateTextFieldAttachmentsInternal(updatedChat.textFieldAttachments);
+
+    // Update other properties directly
     if (autoSendReadReceipts.value != updatedChat.autoSendReadReceipts) {
       autoSendReadReceipts.value = updatedChat.autoSendReadReceipts;
     }
@@ -128,154 +179,30 @@ class ChatState {
     chat.lastReadMessageGuid = updatedChat.lastReadMessageGuid;
   }
 
-  // Setters that update both the observable and save to the database
-
-  Future<void> setIsPinned(bool value) async {
-    if (isPinned.value == value) return;
-    isPinned.value = value;
-    pinIndex.value = null;
-    await chat.togglePinAsync(value);
-  }
-
-  Future<void> setPinIndex(int? value) async {
-    if (pinIndex.value == value) return;
-    pinIndex.value = value;
-    chat.pinIndex = value;
-    await chat.saveAsync(updatePinIndex: true);
-  }
-
-  Future<void> setHasUnread(bool value, {
-    bool force = false,
-    bool clearLocalNotifications = true,
-    bool privateMark = true,
-  }) async {
-    if (hasUnreadMessage.value == value && !force) return;
-    hasUnreadMessage.value = value;
-    await chat.toggleHasUnreadAsync(
-      value,
-      force: force,
-      clearLocalNotifications: clearLocalNotifications,
-      privateMark: privateMark,
-    );
-  }
-
-  Future<void> setMuted(bool isMuted) async {
-    final newMuteType = isMuted ? "mute" : null;
-    if (muteType.value == newMuteType) return;
-    muteType.value = newMuteType;
-    muteArgs.value = null;
-    await chat.toggleMuteAsync(isMuted);
-  }
-
-  Future<void> setArchived(bool value) async {
-    if (isArchived.value == value) return;
-    isArchived.value = value;
-    isPinned.value = false;
-    await chat.toggleArchivedAsync(value);
-  }
-
-  Future<void> setDisplayName(String? value) async {
-    if (displayName.value == value) return;
-    displayName.value = value;
-    chat.displayName = value;
-    await chat.saveAsync(updateDisplayName: true);
-  }
-
-  Future<void> setCustomAvatarPath(String? value) async {
-    if (customAvatarPath.value == value) return;
-    customAvatarPath.value = value;
-    chat.customAvatarPath = value;
-    await chat.saveAsync(updateCustomAvatarPath: true);
-  }
-
-  Future<void> setTitle(String? value) async {
-    if (title.value == value) return;
-    title.value = value;
-    chat.title = value;
-  }
-
-  Future<void> setLatestMessage(Message? value) async {
-    if (latestMessage.value?.guid == value?.guid) return;
-    latestMessage.value = value;
-    chat.latestMessage = value ?? Message(
-      dateCreated: DateTime.fromMillisecondsSinceEpoch(0),
-      guid: chat.guid,
-    );
-  }
-
-  Future<void> setTextFieldText(String? value) async {
-    if (textFieldText.value == value) return;
-    textFieldText.value = value;
-    chat.textFieldText = value;
-    await chat.saveAsync(updateTextFieldText: true);
-  }
-
-  Future<void> setTextFieldAttachments(List<String> value) async {
-    if (listEquals(textFieldAttachments, value)) return;
-    textFieldAttachments.value = value;
-    chat.textFieldAttachments = value;
-    await chat.saveAsync(updateTextFieldAttachments: true);
-  }
-
-  Future<void> setAutoSendReadReceipts(bool? value) async {
-    if (autoSendReadReceipts.value == value) return;
-    autoSendReadReceipts.value = value;
-    await chat.toggleAutoReadAsync(value);
-  }
-
-  Future<void> setAutoSendTypingIndicators(bool? value) async {
-    if (autoSendTypingIndicators.value == value) return;
-    autoSendTypingIndicators.value = value;
-    await chat.toggleAutoTypeAsync(value);
-  }
-
-  Future<void> setLockChatName(bool value) async {
-    if (lockChatName.value == value) return;
-    lockChatName.value = value;
-    chat.lockChatName = value;
-    await chat.saveAsync(updateLockChatName: true);
-  }
-
-  Future<void> setLockChatIcon(bool value) async {
-    if (lockChatIcon.value == value) return;
-    lockChatIcon.value = value;
-    chat.lockChatIcon = value;
-    await chat.saveAsync(updateLockChatIcon: true);
-  }
-
-  Future<void> setLastReadMessageGuid(String? value) async {
-    if (lastReadMessageGuid.value == value) return;
-    lastReadMessageGuid.value = value;
-    chat.lastReadMessageGuid = value;
-    await chat.saveAsync(updateLastReadMessageGuid: true);
-  }
-
-  /// Refresh the title from the chat
-  void refreshTitle() {
-    final newTitle = chat.getTitle();
-    if (title.value != newTitle) {
-      title.value = newTitle;
-    }
-  }
-
-  // ========== Lifecycle Management Methods ==========
+  // ========== Internal Lifecycle State Update Methods ==========
+  // These are called by ChatsService - do NOT call directly
 
   /// Check if this chat is currently active and alive
   bool get isChatActive => isActive.value && isAlive.value;
 
-  /// Set the chat as active
-  void setActive(bool value) {
-    isActive.value = value;
+  void updateActiveInternal(bool value) {
+    if (isActive.value != value) {
+      isActive.value = value;
+    }
   }
 
-  /// Set the chat as alive
-  void setAlive(bool value) {
-    isAlive.value = value;
+  void updateAliveInternal(bool value) {
+    if (isAlive.value != value) {
+      isAlive.value = value;
+    }
   }
 
-  /// Set both active and alive to the same value
-  void setActiveAndAlive(bool value) {
-    isActive.value = value;
-    isAlive.value = value;
+  void updateActiveAndAliveInternal(bool value) {
+    if (isActive.value != value) {
+      isActive.value = value;
+    }
+    if (isAlive.value != value) {
+      isAlive.value = value;
+    }
   }
 }

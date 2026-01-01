@@ -147,7 +147,7 @@ Future<void> showConversationTileMenu(
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: () {
-              chat.togglePinAsync(!chat.isPinned!);
+              ChatsSvc.toggleChatPin(chat, !chat.isPinned!);
               Navigator.pop(context);
             },
             child: Padding(
@@ -206,7 +206,7 @@ Future<void> showConversationTileMenu(
           onTap: () {
             final chatState = ChatsSvc.getChatState(chat.guid);
             if (chatState != null) {
-              chatState.setHasUnread(!chat.hasUnreadMessage!);
+              ChatsSvc.setChatHasUnread(chatState.chat, !chat.hasUnreadMessage!);
             } else {
               chat.toggleHasUnreadAsync(!chat.hasUnreadMessage!);
             }
@@ -238,7 +238,7 @@ Future<void> showConversationTileMenu(
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: () {
-              chat.toggleArchivedAsync(!chat.isArchived!);
+              ChatsSvc.toggleChatArchive(chat, !chat.isArchived!);
               Navigator.pop(context);
             },
             child: Padding(
@@ -292,7 +292,7 @@ Future<void> showConversationTileMenu(
                         child: Text("Yes", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
                         onPressed: () async {
                           ChatsSvc.removeChat(chat);
-                          Chat.softDelete(chat);
+                          ChatsSvc.softDeleteChat(chat);
                           Navigator.pop(context); //Remove AlertDialog
                         },
                       ),

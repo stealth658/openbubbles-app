@@ -236,9 +236,9 @@ class _ConversationPeekViewState extends OptimizedState<ConversationPeekView> wi
           onTap: () async {
             final chatState = ChatsSvc.getChatState(widget.chat.guid);
             if (chatState != null) {
-              await chatState.setIsPinned(!widget.chat.isPinned!);
+              await ChatsSvc.setChatPinned(chatState.chat, !widget.chat.isPinned!);
             } else {
-              await widget.chat.togglePinAsync(!widget.chat.isPinned!);
+              await ChatsSvc.toggleChatPin(widget.chat, !widget.chat.isPinned!);
             }
             popPeekView();
           },
@@ -264,7 +264,7 @@ class _ConversationPeekViewState extends OptimizedState<ConversationPeekView> wi
           onTap: () async {
             final chatState = ChatsSvc.getChatState(widget.chat.guid);
             if (chatState != null) {
-              await chatState.setMuted(widget.chat.muteType != "mute");
+              await ChatsSvc.setChatMuted(chatState.chat, widget.chat.muteType != "mute");
             } else {
               await widget.chat.toggleMuteAsync(widget.chat.muteType != "mute");
             }
@@ -292,7 +292,7 @@ class _ConversationPeekViewState extends OptimizedState<ConversationPeekView> wi
           onTap: () async {
             final chatState = ChatsSvc.getChatState(widget.chat.guid);
             if (chatState != null) {
-              await chatState.setHasUnread(!widget.chat.hasUnreadMessage!, force: true);
+              await ChatsSvc.setChatHasUnread(chatState.chat, !widget.chat.hasUnreadMessage!, force: true);
             } else {
               await widget.chat.toggleHasUnreadAsync(!widget.chat.hasUnreadMessage!, force: true);
             }
@@ -320,9 +320,9 @@ class _ConversationPeekViewState extends OptimizedState<ConversationPeekView> wi
           onTap: () async {
             final chatState = ChatsSvc.getChatState(widget.chat.guid);
             if (chatState != null) {
-              await chatState.setArchived(!widget.chat.isArchived!);
+              await ChatsSvc.setChatArchived(chatState.chat, !widget.chat.isArchived!);
             } else {
-              await widget.chat.toggleArchivedAsync(!widget.chat.isArchived!);
+              await ChatsSvc.toggleChatArchive(widget.chat, !widget.chat.isArchived!);
             }
             popPeekView();
           },
@@ -371,7 +371,7 @@ class _ConversationPeekViewState extends OptimizedState<ConversationPeekView> wi
                       child: Text("Yes", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
                       onPressed: () async {
                         ChatsSvc.removeChat(widget.chat);
-                        Chat.softDelete(widget.chat);
+                        ChatsSvc.softDeleteChat(widget.chat);
                         popPeekView();
                       },
                     ),

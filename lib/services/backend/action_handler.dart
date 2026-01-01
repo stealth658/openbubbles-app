@@ -504,11 +504,9 @@ class ActionHandler extends GetxService {
       }
     }
 
-    // should have been handled by the sanity check
     if (tempGuid != null) {
       // Complete send progress if this event arrived before the HTTP response
       completeSendProgressIfExists(tempGuid);
-      return;
     }
 
     // Gets the chat from the db or server (if new).
@@ -558,15 +556,9 @@ class ActionHandler extends GetxService {
       }
     }
 
-    bool isAppInactive = !LifecycleSvc.isAlive;
-    bool hasUnifiedPushEndpoint = SettingsSvc.settings.endpointUnifiedPush.value != "";
-    bool isNotInActiveChat = ChatsSvc.activeChat == null && Get.rawRoute?.settings.name != "/";
-    bool shouldSendNotification = (isAppInactive || hasUnifiedPushEndpoint || isNotInActiveChat) && shouldNotify;
-
-    if (shouldSendNotification) {
-      // We don't need to await this
-      MessageHelper.handleNotification(m, c, findExisting: false);
-    }
+    // Create notification
+    // This will no-op if notifications aren't allowed, the message is from me, or other conditions aren't met
+    NotificationsSvc.tryCreateNewMessageNotification(m, c);
     
     // Reload the latest message from the database to ensure we have the most up-to-date data
     c.dbLatestMessage;
@@ -604,7 +596,6 @@ class ActionHandler extends GetxService {
 
     // update the message in the DB
     await matchMessageWithExisting(c, tempGuid ?? m.guid!, m);
-    EventDispatcherSvc.emit("message-updated-${m.guid}");
     
     // Trigger immediate UI update via coordinator (bypasses ObjectBox watch latency)
     muc.notifyMessageUpdate(c.guid, m.guid!);

@@ -30,59 +30,57 @@ class ChatsService {
   final RxBool hasChats = false.obs;
   Completer<void> loadedAllChats = Completer();
   final RxBool loadedChatBatch = false.obs;
-  
+
   /// Global unread count across all chats
   final RxInt unreadCount = 0.obs;
-  
+
   /// Map of chat states for granular reactivity
   /// Key is the chat GUID, value is the ChatState
   /// The map itself doesn't need to be Rx because the underlying ChatState fields are
   final Map<String, ChatState> chatStates = {};
-  
+
   ChatState? activeChat;
-  
+
   /// Sorted list of chats maintained for efficient access
   /// Updated on add/update using binary search insertion O(log n + n)
   /// instead of sorting entire list O(n log n) on every access
   final List<Chat> _sortedChats = [];
-  
+
   // ========== Helper Getters (replacing direct chats access) ==========
-  
+
   /// Get all chats as a list (non-reactive), sorted by pin index and latest message date
   /// Returns the pre-sorted list for O(1) access instead of O(n log n) sorting
   List<Chat> get allChats {
     return _sortedChats;
   }
-  
+
   /// Check if chats list is empty
   bool get isEmpty {
     return chatStates.isEmpty;
   }
-  
+
   /// Get number of chats
   int get length {
     return chatStates.length;
   }
-  
+
   /// Find chat by GUID
   Chat? findChatByGuid(String guid) {
     return chatStates[guid]?.chat;
   }
-  
+
   /// Find chat by chat identifier
   Chat? findChatByChatIdentifier(String chatIdentifier) {
-    return chatStates.values
-        .map((state) => state.chat)
-        .firstWhereOrNull((c) => c.chatIdentifier == chatIdentifier);
+    return chatStates.values.map((state) => state.chat).firstWhereOrNull((c) => c.chatIdentifier == chatIdentifier);
   }
-  
+
   /// Get chat at specific index (from sorted list)
   Chat? getChatAtIndex(int index) {
     final sortedChats = getSortedChats();
     if (index < 0 || index >= sortedChats.length) return null;
     return sortedChats[index];
   }
-  
+
   /// Get filtered chats (archived, unknown senders, pinned)
   List<Chat> getFilteredChats({
     bool? showArchived,
@@ -91,7 +89,7 @@ class ChatsService {
     bool? excludePinned,
   }) {
     var chats = allChats;
-    
+
     // Apply archived filter
     if (showArchived != null) {
       if (showArchived) {
@@ -100,7 +98,7 @@ class ChatsService {
         chats = chats.where((e) => !(e.isArchived ?? false)).toList();
       }
     }
-    
+
     // Apply unknown senders filter
     if (showUnknown != null && SettingsSvc.settings.filterUnknownSenders.value) {
       if (showUnknown) {
@@ -109,35 +107,35 @@ class ChatsService {
         chats = chats.where((e) => e.isGroup || (!e.isGroup && e.handles.firstOrNull?.contact != null)).toList();
       }
     }
-    
+
     // Apply pinned filter
     if (pinnedOnly == true) {
       chats = chats.where((e) => e.isPinned ?? false).toList();
     } else if (excludePinned == true) {
       chats = chats.where((e) => !(e.isPinned ?? false)).toList();
     }
-    
+
     return chats;
   }
-  
+
   /// Get only group chats
   List<Chat> get groupChats {
     return allChats.where((c) => c.isGroup).toList();
   }
-  
+
   /// Get pinned chats
   List<Chat> get pinnedChats {
     return getSortedChats().where((c) => (c.pinIndex ?? -1) >= 0).toList()
       ..sort((a, b) => (a.pinIndex ?? 0).compareTo(b.pinIndex ?? 0));
   }
-  
+
   /// Search chats by title
   List<Chat> searchChats(String query) {
-    return allChats.where((element) => 
-      element.getTitle().toLowerCase().replaceAll(" ", "").contains(query.toLowerCase())
-    ).toList();
+    return allChats
+        .where((element) => element.getTitle().toLowerCase().replaceAll(" ", "").contains(query.toLowerCase()))
+        .toList();
   }
-  
+
   /// Get next chat in sorted list (for keyboard navigation)
   Chat? getNextChat(String currentGuid) {
     final sortedChats = getSortedChats();
@@ -147,7 +145,7 @@ class ChatsService {
     }
     return null;
   }
-  
+
   /// Get previous chat in sorted list (for keyboard navigation)
   Chat? getPreviousChat(String currentGuid) {
     final sortedChats = getSortedChats();
@@ -157,7 +155,7 @@ class ChatsService {
     }
     return null;
   }
-  
+
   final List<Handle> webCachedHandles = [];
 
   void initDbWatchers() {
@@ -195,16 +193,16 @@ class ChatsService {
     Logger.info("Fetching chats...", tag: "ChatBloc");
 
     reset();
-    
+
     // Get current count from database or server
-    currentCount = Chat.count() ??
+    currentCount = getChatCount() ??
         (await HttpSvc.chatCount().catchError((err) {
           Logger.info("Error when fetching chat count!", tag: "ChatBloc");
           return Response(requestOptions: RequestOptions(path: ''));
         }))
             .data['data']['total'] ??
         0;
-    
+
     loadedAllChats = Completer();
     if (currentCount != 0) {
       hasChats.value = true;
@@ -235,7 +233,7 @@ class ChatsService {
         // Create ChatState and add to map
         chatStates[c.guid] = ChatState(c);
         _setupChatStateListeners(chatStates[c.guid]!);
-        
+
         // Add to sorted list
         _insertChatSorted(c);
       }
@@ -244,7 +242,7 @@ class ChatsService {
 
     loadedAllChats.complete();
     Logger.info("Finished fetching chats (${chatStates.length}).", tag: "ChatBloc");
-    
+
     // Initialize watchers AFTER loading all chats to avoid duplicates
     initDbWatchers();
 
@@ -278,7 +276,7 @@ class ChatsService {
   ChatState? getChatState(String guid) {
     return chatStates[guid];
   }
-  
+
   /// Set up listeners on a ChatState to track unread count changes
   void _setupChatStateListeners(ChatState chatState) {
     // Listen to hasUnreadMessage changes to update global unread count
@@ -286,7 +284,7 @@ class ChatsService {
       _recalculateUnreadCount();
     });
   }
-  
+
   /// Recalculate the global unread count based on all chat states
   void _recalculateUnreadCount() {
     final count = chatStates.values.where((state) => state.hasUnreadMessage.value).length;
@@ -304,33 +302,33 @@ class ChatsService {
   List<Chat> getSortedChats() {
     return _sortedChats;
   }
-  
+
   /// Find the correct insertion index for a chat using binary search
   /// Returns the index where the chat should be inserted to maintain sort order
   int _findInsertionIndex(Chat chat) {
     int left = 0;
     int right = _sortedChats.length;
-    
+
     while (left < right) {
       final mid = (left + right) ~/ 2;
       final comparison = Chat.sort(chat, _sortedChats[mid]);
-      
+
       if (comparison < 0) {
         right = mid;
       } else {
         left = mid + 1;
       }
     }
-    
+
     return left;
   }
-  
+
   /// Insert a chat into the sorted list at the correct position
   void _insertChatSorted(Chat chat) {
     final index = _findInsertionIndex(chat);
     _sortedChats.insert(index, chat);
   }
-  
+
   /// Reposition a chat in the sorted list (used when chat is updated)
   void _repositionChat(Chat chat) {
     // Find current position
@@ -340,11 +338,11 @@ class ChatsService {
       _insertChatSorted(chat);
       return;
     }
-    
+
     // Find where it should be (excluding current position)
     _sortedChats.removeAt(currentIndex);
     final newIndex = _findInsertionIndex(chat);
-    
+
     // Only reposition if the index actually changed
     if (newIndex != currentIndex) {
       _sortedChats.insert(newIndex, chat);
@@ -360,21 +358,21 @@ class ChatsService {
     if (state != null) {
       final currentLatestMessage = state.latestMessage.value;
       final currentPinIndex = state.pinIndex.value;
-      
+
       // Check if sort-order-relevant fields have changed
       final latestMessageChanged = updated.latestMessage.guid != currentLatestMessage?.guid ||
           updated.latestMessage.dateCreated != currentLatestMessage?.dateCreated;
       final pinIndexChanged = updated.pinIndex != currentPinIndex;
       final sortOrderChanged = latestMessageChanged || pinIndexChanged;
-      
+
       if (updated != state.chat || override) {
         state.updateFromChat(updated);
       }
-      
+
       if (sortOrderChanged || override) {
         _repositionChat(state.chat);
       }
-      
+
       return true;
     }
 
@@ -389,11 +387,11 @@ class ChatsService {
       updateChat(toAdd, override: true);
       return;
     }
-    
+
     // Create new ChatState and add to map
     chatStates[toAdd.guid] = ChatState(toAdd);
     _setupChatStateListeners(chatStates[toAdd.guid]!);
-    
+
     // Insert into sorted list at correct position
     _insertChatSorted(toAdd);
   }
@@ -409,16 +407,11 @@ class ChatsService {
     for (Chat c in _chats) {
       c.hasUnreadMessage = false;
       MethodChannelSvc.invokeMethod(
-        "delete-notification",
-        {
-          "notification_id": c.id,
-          "tag": NotificationsService.NEW_MESSAGE_TAG
-        }
-      );
+          "delete-notification", {"notification_id": c.id, "tag": NotificationsService.NEW_MESSAGE_TAG});
       if (SettingsSvc.settings.enablePrivateAPI.value && SettingsSvc.settings.privateMarkChatAsRead.value) {
         HttpSvc.markChatRead(c.guid);
       }
-      
+
       // Update chat state if it exists
       final state = chatStates[c.guid];
       if (state != null) {
@@ -432,7 +425,7 @@ class ChatsService {
     final chatList = getSortedChats();
     final items = List<Chat>.from(chatList.where((c) => (c.pinIndex ?? -1) >= 0));
     items.sort((a, b) => (a.pinIndex ?? 0).compareTo(b.pinIndex ?? 0));
-    
+
     final item = items[oldIndex];
 
     // Remove the item at the old index, and re-add it at the newIndex
@@ -444,7 +437,7 @@ class ChatsService {
     items.forEachIndexed((i, e) async {
       e.pinIndex = i;
       await e.saveAsync(updatePinIndex: true);
-      
+
       // Update chat state
       final state = chatStates[e.guid];
       if (state != null) {
@@ -460,7 +453,7 @@ class ChatsService {
     for (var element in pinnedChats) {
       element.pinIndex = null;
       element.saveAsync(updatePinIndex: true);
-      
+
       // Update chat state
       final state = chatStates[element.guid];
       if (state != null) {
@@ -512,12 +505,19 @@ class ChatsService {
     return null;
   }
 
-  Future<List<Chat>> getChats({bool withParticipants = false, bool withLastMessage = false, int offset = 0, int limit = 100,}) async {
+  Future<List<Chat>> getChats({
+    bool withParticipants = false,
+    bool withLastMessage = false,
+    int offset = 0,
+    int limit = 100,
+  }) async {
     final withQuery = <String>[];
     if (withParticipants) withQuery.add("participants");
     if (withLastMessage) withQuery.add("lastmessage");
 
-    final response = await HttpSvc.chats(withQuery: withQuery, offset: offset, limit: limit, sort: withLastMessage ? "lastmessage" : null).catchError((err, stack) {
+    final response = await HttpSvc.chats(
+            withQuery: withQuery, offset: offset, limit: limit, sort: withLastMessage ? "lastmessage" : null)
+        .catchError((err, stack) {
       if (err is! Response) {
         Logger.error("Failed to fetch chat metadata!", error: err, trace: stack, tag: "Fetch-Chat");
         return err;
@@ -539,13 +539,22 @@ class ChatsService {
     return chats;
   }
 
-  Future<List<dynamic>> getMessages(String guid, {bool withAttachment = true, bool withHandle = true, int offset = 0, int limit = 25, String sort = "DESC", int? after, int? before}) async {
+  Future<List<dynamic>> getMessages(String guid,
+      {bool withAttachment = true,
+      bool withHandle = true,
+      int offset = 0,
+      int limit = 25,
+      String sort = "DESC",
+      int? after,
+      int? before}) async {
     Completer<List<dynamic>> completer = Completer();
     final withQuery = <String>["message.attributedBody", "message.messageSummaryInfo", "message.payloadData"];
     if (withAttachment) withQuery.add("attachment");
     if (withHandle) withQuery.add("handle");
 
-    HttpSvc.chatMessages(guid, withQuery: withQuery.join(","), offset: offset, limit: limit, sort: sort, after: after, before: before).then((response) {
+    HttpSvc.chatMessages(guid,
+            withQuery: withQuery.join(","), offset: offset, limit: limit, sort: sort, after: after, before: before)
+        .then((response) {
       if (!completer.isCompleted) completer.complete(response.data["data"]);
     }).catchError((err) {
       late final dynamic error;
@@ -576,8 +585,8 @@ class ChatsService {
 
     chatStates.forEach((key, state) {
       if (key == skip) return;
-      state.setActive(false);
-      state.setAlive(false);
+      state.updateActiveInternal(false);
+      state.updateAliveInternal(false);
     });
 
     if (save) {
@@ -609,7 +618,7 @@ class ChatsService {
     if (chatState != null) {
       // Set this chat as active
       activeChat = chatState;
-      chatState.setActiveAndAlive(true);
+      chatState.updateActiveAndAliveInternal(true);
 
       // Clear all other chats to inactive
       setAllInactiveSync(save: false, clearActive: false);
@@ -617,7 +626,7 @@ class ChatsService {
       if (clearNotifications) {
         // Defer the observable update to avoid updating during build phase
         Future.microtask(() {
-          chatState.setHasUnread(false, force: true);
+          setChatHasUnread(chatState.chat, false, force: true);
         });
       }
 
@@ -630,14 +639,14 @@ class ChatsService {
   /// Set the active chat to dead (not alive)
   void setActiveToDead() {
     Logger.debug('Setting active chat to dead: ${activeChat?.chat.guid}');
-    activeChat?.setAlive(false);
+    activeChat?.updateAliveInternal(false);
   }
 
   /// Set the active chat to alive
   void setActiveToAlive() {
     Logger.info('Setting active chat to alive: ${activeChat?.chat.guid}');
     EventDispatcherSvc.emit("update-highlight", activeChat?.chat.guid);
-    activeChat?.setAlive(true);
+    activeChat?.updateAliveInternal(true);
   }
 
   /// Check if a chat is currently active (both active and alive)
@@ -652,6 +661,328 @@ class ChatsService {
   }
 
   // ========== End Chat Lifecycle Management ==========
+
+  // ========== Chat Operations with Service Orchestration ==========
+
+  /// Get chat count
+  int? getChatCount() {
+    return Database.chats.count();
+  }
+
+  /// Delete a chat with full UI cleanup and service state management
+  Future<void> deleteChat(Chat chat) async {
+    if (kIsWeb) return;
+
+    // Handle active chat cleanup
+    if (activeChat?.chat.guid == chat.guid) {
+      NavigationSvc.closeAllConversationView(Get.context!);
+      await setAllInactive();
+      await Future.delayed(const Duration(milliseconds: 500));
+    }
+
+    // Perform the actual DB deletion
+    List<Message> messages = Chat.getMessages(chat);
+    await ChatInterface.deleteChat(
+      chatId: chat.id!,
+      messageIds: messages.map((e) => e.id!).toList(),
+    );
+
+    // Remove from service state
+    removeChat(chat);
+  }
+
+  /// Soft delete a chat with full UI cleanup and service state management
+  Future<void> softDeleteChat(Chat chat) async {
+    if (kIsWeb) return;
+
+    // Handle active chat cleanup
+    if (activeChat?.chat.guid == chat.guid) {
+      NavigationSvc.closeAllConversationView(Get.context!);
+      await setAllInactive();
+      await Future.delayed(const Duration(milliseconds: 500));
+    }
+
+    // Perform the actual DB soft delete
+    await ChatInterface.softDeleteChat(chatData: chat.toMap());
+    chat.clearTranscript();
+
+    // Remove from service state
+    removeChat(chat);
+  }
+
+  /// Undelete a chat
+  Future<void> unDeleteChat(Chat chat) async {
+    if (kIsWeb) return;
+    await ChatInterface.unDeleteChat(chatData: chat.toMap());
+  }
+
+  /// Toggle chat pin status with service updates
+  Future<Chat> toggleChatPin(Chat chat, bool isPinned) async {
+    // Perform DB operation
+    await chat.togglePinAsync(isPinned);
+
+    // Update service state
+    updateChat(chat);
+
+    return chat;
+  }
+
+  /// Toggle chat archive status with service updates
+  Future<Chat> toggleChatArchive(Chat chat, bool isArchived) async {
+    // Perform DB operation
+    await chat.toggleArchivedAsync(isArchived);
+
+    // Update service state
+    updateChat(chat);
+
+    return chat;
+  }
+
+  /// Toggle chat unread status with active chat awareness
+  Future<Chat> toggleChatHasUnread(Chat chat, bool hasUnread,
+      {bool force = false, bool clearLocalNotifications = true, bool privateMark = true}) async {
+    // Check if chat is active and adjust behavior
+    final isActive = isChatActive(chat.guid);
+
+    if (isActive && hasUnread && !force) {
+      // Don't mark as unread if chat is active (unless forced)
+      return chat;
+    }
+
+    // Determine actual parameters based on active status
+    bool actualClearNotifications = clearLocalNotifications;
+    bool actualPrivateMark = privateMark;
+    bool actualForce = force;
+
+    if (isActive) {
+      // Force mark as read if chat is active
+      actualForce = true;
+      actualPrivateMark = true;
+    }
+
+    // Perform DB operation with adjusted parameters
+    await chat.toggleHasUnreadAsync(hasUnread,
+        force: actualForce, clearLocalNotifications: actualClearNotifications, privateMark: actualPrivateMark);
+
+    // Update service state
+    updateChat(chat);
+
+    return chat;
+  }
+
+  /// Add message to chat with full service orchestration
+  Future<Tuple2<Message, bool>> addMessageToChat(Chat chat, Message message,
+      {bool changeUnreadStatus = true, bool checkForMessageText = true, bool clearNotificationsIfFromMe = true}) async {
+    // Perform the DB operation to add the message
+    final result = await chat.addMessage(message,
+        changeUnreadStatus: false, // We'll handle this with service awareness
+        checkForMessageText: checkForMessageText,
+        clearNotificationsIfFromMe: clearNotificationsIfFromMe);
+
+    final isNewer = result.item2;
+
+    // Handle service-level operations if this is a newer message
+    if (isNewer) {
+      // Add chat to service if it was previously deleted
+      if (chat.dateDeleted != null) {
+        await addChat(chat);
+      } else {
+        // Just update the existing chat in service
+        updateChat(chat);
+      }
+    }
+
+    // Handle unread status with active chat awareness
+    if (checkForMessageText && changeUnreadStatus && isNewer) {
+      final isActive = isChatActive(chat.guid);
+
+      if (message.isFromMe! || isActive) {
+        // Mark as read if from me or chat is active
+        await toggleChatHasUnread(chat, false,
+            clearLocalNotifications: clearNotificationsIfFromMe, force: isActive, privateMark: isActive);
+      } else {
+        // Mark as unread if not from me and chat is not active
+        await toggleChatHasUnread(chat, true, privateMark: false);
+      }
+    }
+
+    return result;
+  }
+
+  // ========== Chat Property Setters ==========
+  // These update both the Chat model (DB) and ChatState (UI reactivity)
+
+  /// Set chat pinned status
+  Future<void> setChatPinned(Chat chat, bool value) async {
+    final state = getChatState(chat.guid);
+
+    if (state != null && state.isPinned.value == value) return;
+
+    // Update DB
+    await toggleChatPin(chat, value);
+
+    // Update state if available
+    state?.updateIsPinnedInternal(value);
+  }
+
+  /// Set chat pin index
+  Future<void> setChatPinIndex(Chat chat, int? value) async {
+    final state = getChatState(chat.guid);
+
+    if (state != null && state.pinIndex.value == value) return;
+
+    // Update Chat model (use state.chat if available, otherwise use passed in chat)
+    final chatToUpdate = state?.chat ?? chat;
+    chatToUpdate.pinIndex = value;
+    await chatToUpdate.saveAsync(updatePinIndex: true);
+
+    // Update state if available
+    state?.updatePinIndexInternal(value);
+  }
+
+  /// Set chat unread status
+  Future<void> setChatHasUnread(
+    Chat chat,
+    bool value, {
+    bool force = false,
+    bool clearLocalNotifications = true,
+    bool privateMark = true,
+  }) async {
+    final state = getChatState(chat.guid);
+
+    if (state != null && state.hasUnreadMessage.value == value && !force) return;
+
+    // Update DB with active chat awareness
+    await toggleChatHasUnread(chat, value,
+        force: force, clearLocalNotifications: clearLocalNotifications, privateMark: privateMark);
+
+    // Update state if available
+    state?.updateHasUnreadInternal(value);
+  }
+
+  /// Set chat muted status
+  Future<void> setChatMuted(Chat chat, bool isMuted) async {
+    final state = getChatState(chat.guid);
+
+    final newMuteType = isMuted ? "mute" : null;
+    if (state != null && state.muteType.value == newMuteType) return;
+
+    // Update Chat model (use state.chat if available, otherwise use passed in chat)
+    final chatToUpdate = state?.chat ?? chat;
+    await chatToUpdate.toggleMuteAsync(isMuted);
+
+    // Update state if available
+    state?.updateMutedInternal(newMuteType, null);
+  }
+
+  /// Set chat archived status
+  Future<void> setChatArchived(Chat chat, bool value) async {
+    final state = getChatState(chat.guid);
+
+    if (state != null && state.isArchived.value == value) return;
+
+    // Update DB
+    await toggleChatArchive(chat, value);
+
+    // Update state if available
+    state?.updateArchivedInternal(value);
+  }
+
+  /// Set chat display name
+  Future<void> setChatDisplayName(Chat chat, String? value) async {
+    final state = getChatState(chat.guid);
+
+    if (state != null && state.displayName.value == value) return;
+
+    // Update Chat model (use state.chat if available, otherwise use passed in chat)
+    final chatToUpdate = state?.chat ?? chat;
+    chatToUpdate.displayName = value;
+    await chatToUpdate.saveAsync(updateDisplayName: true);
+
+    // Update state if available
+    state?.updateDisplayNameInternal(value);
+  }
+
+  /// Set chat custom avatar path
+  Future<void> setChatCustomAvatarPath(Chat chat, String? value) async {
+    final state = getChatState(chat.guid);
+
+    if (state != null && state.customAvatarPath.value == value) return;
+
+    // Update Chat model (use state.chat if available, otherwise use passed in chat)
+    final chatToUpdate = state?.chat ?? chat;
+    chatToUpdate.customAvatarPath = value;
+    await chatToUpdate.saveAsync(updateCustomAvatarPath: true);
+
+    // Update state if available
+    state?.updateCustomAvatarPathInternal(value);
+  }
+
+  /// Set chat title
+  Future<void> setChatTitle(Chat chat, String? value) async {
+    final state = getChatState(chat.guid);
+
+    if (state != null && state.title.value == value) return;
+
+    // Update Chat model (use state.chat if available, otherwise use passed in chat)
+    final chatToUpdate = state?.chat ?? chat;
+    chatToUpdate.title = value;
+
+    // Update state if available
+    state?.updateTitleInternal(value);
+  }
+
+  /// Set chat latest message
+  Future<void> setChatLatestMessage(Chat chat, Message? value) async {
+    final state = getChatState(chat.guid);
+
+    if (state != null && state.latestMessage.value?.guid == value?.guid) return;
+
+    // Update Chat model (use state.chat if available, otherwise use passed in chat)
+    final chatToUpdate = state?.chat ?? chat;
+    chatToUpdate.latestMessage = value ??
+        Message(
+          dateCreated: DateTime.fromMillisecondsSinceEpoch(0),
+          guid: chatToUpdate.guid,
+        );
+
+    // Update state if available
+    state?.updateLatestMessageInternal(value);
+  }
+
+  /// Set chat text field text
+  Future<void> setChatTextFieldText(Chat chat, String? value) async {
+    final state = getChatState(chat.guid);
+
+    if (state != null && state.textFieldText.value == value) return;
+
+    // Update Chat model (use state.chat if available, otherwise use passed in chat)
+    final chatToUpdate = state?.chat ?? chat;
+    chatToUpdate.textFieldText = value;
+    await chatToUpdate.saveAsync(updateTextFieldText: true);
+
+    // Update state if available
+    state?.updateTextFieldTextInternal(value);
+  }
+
+  /// Set chat text field attachments
+  Future<void> setChatTextFieldAttachments(Chat chat, List<String> value) async {
+    final state = getChatState(chat.guid);
+
+    if (state != null && listEquals(state.textFieldAttachments, value)) return;
+
+    // Update Chat model (use state.chat if available, otherwise use passed in chat)
+    final chatToUpdate = state?.chat ?? chat;
+    chatToUpdate.textFieldAttachments = value;
+    await chatToUpdate.saveAsync(updateTextFieldAttachments: true);
+
+    // Update state if available
+    state?.updateTextFieldAttachmentsInternal(value);
+  }
+
+  // ========== End Chat Property Setters ==========
+
+  // ========== End Chat Operations ==========
 
   void reset({bool reinitWatchers = false}) {
     currentCount = 0;

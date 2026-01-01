@@ -117,33 +117,33 @@ class ListItem extends StatelessWidget {
           if (action == MaterialSwipeAction.pin) {
             final chatState = ChatsSvc.getChatState(chat.guid);
             if (chatState != null) {
-              chatState.setIsPinned(!chat.isPinned!);
+              ChatsSvc.setChatPinned(chatState.chat, !chat.isPinned!);
             } else {
-              chat.togglePinAsync(!chat.isPinned!);
+              ChatsSvc.toggleChatPin(chat, !chat.isPinned!);
             }
           } else if (action == MaterialSwipeAction.alerts) {
             final chatState = ChatsSvc.getChatState(chat.guid);
             if (chatState != null) {
-              chatState.setMuted(chat.muteType != "mute");
+              ChatsSvc.setChatMuted(chatState.chat, chat.muteType != "mute");
             } else {
               chat.toggleMuteAsync(chat.muteType != "mute");
             }
           } else if (action == MaterialSwipeAction.delete) {
             ChatsSvc.removeChat(chat);
-            Chat.softDelete(chat);
+            ChatsSvc.softDeleteChat(chat);
           } else if (action == MaterialSwipeAction.mark_read) {
             final chatState = ChatsSvc.getChatState(chat.guid);
             if (chatState != null) {
-              chatState.setHasUnread(!chat.hasUnreadMessage!);
+              ChatsSvc.setChatHasUnread(chatState.chat, !chat.hasUnreadMessage!);
             } else {
               chat.toggleHasUnreadAsync(!chat.hasUnreadMessage!);
             }
           } else if (action == MaterialSwipeAction.archive) {
             final chatState = ChatsSvc.getChatState(chat.guid);
             if (chatState != null) {
-              chatState.setArchived(!chat.isArchived!);
+              ChatsSvc.setChatArchived(chatState.chat, !chat.isArchived!);
             } else {
-              chat.toggleArchivedAsync(!chat.isArchived!);
+              ChatsSvc.toggleChatArchive(chat, !chat.isArchived!);
             }
           }
           update.call();
