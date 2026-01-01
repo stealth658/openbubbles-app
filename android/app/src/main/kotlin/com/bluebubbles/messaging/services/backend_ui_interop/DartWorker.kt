@@ -9,7 +9,7 @@ import androidx.work.ListenableWorker
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.bluebubbles.messaging.Constants
-import com.bluebubbles.messaging.MainActivity.Companion.engine
+import com.bluebubbles.messaging.MainActivity
 import com.bluebubbles.messaging.R
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
@@ -50,14 +50,15 @@ class DartWorker(context: Context, workerParams: WorkerParameters): ListenableWo
                 .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
                 .create()
 
-        if (engine != null) {
+        val mainEngine = MainActivity.getEngine()
+        if (mainEngine != null) {
             Log.d(Constants.logTag, "Using MainActivity engine to send to Dart")
         } else {
             Log.d(Constants.logTag, "Using DartWorker engine to send to Dart")
         }
         return CoroutineScope(Dispatchers.Main).future {
             engineReady.withLock {
-                if (engine == null && workerEngine == null) {
+                if (MainActivity.getEngine() == null && workerEngine == null) {
                     Log.d(Constants.logTag, "Initializing engine for worker with method $method")
                     initNewEngine()
                 }
@@ -65,7 +66,7 @@ class DartWorker(context: Context, workerParams: WorkerParameters): ListenableWo
             Log.d(Constants.logTag, "Sending event, '$method' to Dart")
 
             try {
-                var engineToUse: FlutterEngine? = engine ?: workerEngine
+                var engineToUse: FlutterEngine? = MainActivity.getEngine() ?: workerEngine
                 if (engineToUse == null) {
                     Log.d(Constants.logTag, "Engine is null, cannot send method $method to Dart")
                     return@future Result.failure()

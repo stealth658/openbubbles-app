@@ -23,6 +23,7 @@ import io.flutter.plugin.common.MethodChannel
 class CreateIncomingMessageNotification: MethodCallHandlerImpl() {
     companion object {
         const val tag = "create-incoming-message-notification"
+        private val notificationLock = Any()
     }
 
     override fun handleMethodCall(
@@ -52,12 +53,17 @@ class CreateIncomingMessageNotification: MethodCallHandlerImpl() {
         val notificationId: Int = call.argument("chat_id")!!
 
         val notificationManager = context.getSystemService(NotificationManager::class.java)
-        // check if the message has already been posted as a notification
-        val notificationPostedAlready = notificationManager.activeNotifications.firstOrNull { it.notification.extras.getString("chatGuid") == chatGuid && it.notification.extras.getString("messageGuid") == messageGuid } != null
+        
+        // Synchronize to prevent duplicate notifications from concurrent calls
+        synchronized(notificationLock) {
+            // check if the message has already been posted as a notification
+            val notificationPostedAlready = notificationManager.activeNotifications.firstOrNull { it.notification.extras.getString("chatGuid") == chatGuid && it.notification.extras.getString("messageGuid") == messageGuid } != null
+            // don't double post a notification
+            if (notificationPostedAlready) return result.success(null)
+        }
+        
         // this is used to copy the style, since the notification already exists
         val chatNotification = notificationManager.activeNotifications.lastOrNull { it.notification.extras.getString("chatGuid") == chatGuid && it.notification.extras.getString("channelId") == channelId }
-        // don't double post a notification
-        if (notificationPostedAlready) return result.success(null)
 
         // build the sender object and push the share target again
         val sender = Person.Builder()

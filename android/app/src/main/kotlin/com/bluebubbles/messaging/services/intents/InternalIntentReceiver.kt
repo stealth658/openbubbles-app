@@ -51,7 +51,11 @@ class InternalIntentReceiver: BroadcastReceiver() {
                     val notificationManager = context.getSystemService(NotificationManager::class.java)
                     // this is used to copy the style, since the notification already exists
                     Log.d(Constants.logTag, "Fetching existing notification values")
-                    val chatNotification = notificationManager.activeNotifications.last { it.id == notificationId }
+                    val chatNotification = notificationManager.activeNotifications.lastOrNull { it.id == notificationId }
+                    if (chatNotification == null) {
+                        Log.e(Constants.logTag, "Could not find notification with ID $notificationId")
+                        return@createWorker
+                    }
                     val oldBuilder = Notification.Builder.recoverBuilder(context, chatNotification.notification)
                     val oldStyle = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                         oldBuilder.style as Notification.MessagingStyle
