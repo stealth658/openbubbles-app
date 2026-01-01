@@ -58,22 +58,31 @@ class InternalIntentReceiver: BroadcastReceiver() {
                     }
                     val oldBuilder = Notification.Builder.recoverBuilder(context, chatNotification.notification)
                     val oldStyle = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                        oldBuilder.style as Notification.MessagingStyle
+                        oldBuilder.style as? Notification.MessagingStyle
                     } else {
                         val temp = NotificationCompat.MessagingStyle.extractMessagingStyleFromNotification(chatNotification.notification)
-                        Notification.MessagingStyle(Person.Builder()
-                            .setName(temp!!.user.name)
-                            .setIcon(temp.user.icon?.toIcon(context))
-                            .setImportant(true)
-                            .build()
-                        )
+                        if (temp != null) {
+                            Notification.MessagingStyle(Person.Builder()
+                                .setName(temp.user.name)
+                                .setIcon(temp.user.icon?.toIcon(context))
+                                .build()
+                            )
+                        } else null
                     }
 
                     Log.d(Constants.logTag, "Creating sender and message object for the user-created reply")
                     val prefs = context.getSharedPreferences("FlutterSharedPreferences", 0)
+                    
+                    // If we couldn't extract the old style, create a new one so the user still sees their reply
+                    val messagingStyle = oldStyle ?: run {
+                        Log.w(Constants.logTag, "Could not extract MessagingStyle, creating new one for reply")
+                        Notification.MessagingStyle(Person.Builder()
+                            .setName(prefs.getString("flutter.userName", "You"))
+                            .build()
+                        )
+                    }
                     val sender = Person.Builder()
                         .setName(prefs.getString("flutter.userName", "You"))
-                        .setImportant(true)
                     val avatarPath = prefs.getString("flutter.userAvatarPath", "")
                     if (avatarPath!!.isNotEmpty()) {
                         val file = File(avatarPath)
@@ -87,14 +96,14 @@ class InternalIntentReceiver: BroadcastReceiver() {
                             e.printStackTrace()
                         }
                     }
-                    oldStyle.addMessage(Notification.MessagingStyle.Message(
+                    messagingStyle.addMessage(Notification.MessagingStyle.Message(
                         replyText,
-                        System.currentTimeMillis() / 1000,
+                        System.currentTimeMillis(),
                         sender.build()
                     ))
 
                     Log.d(Constants.logTag, "Posting the user-created reply")
-                    oldBuilder.setStyle(oldStyle)
+                    oldBuilder.setStyle(messagingStyle)
                     oldBuilder.setOnlyAlertOnce(true)
                     oldBuilder.setGroupAlertBehavior(Notification.GROUP_ALERT_SUMMARY)
                     notificationManager.notify(Constants.newMessageNotificationTag, notificationId, oldBuilder.build())

@@ -4,6 +4,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import androidx.core.app.NotificationCompat
 import androidx.core.app.Person
@@ -74,7 +75,12 @@ class CreateIncomingMessageNotification: MethodCallHandlerImpl() {
         PushShareTargetsHandler().pushShareTarget(context, chatTitle, chatGuid, chatIcon)
 
         // get or create a messaging style
-        val style = if (chatNotification != null) NotificationCompat.MessagingStyle.extractMessagingStyleFromNotification(chatNotification.notification)!! else NotificationCompat.MessagingStyle(Person.Builder().setName("You").build())
+        val style = if (chatNotification != null) {
+            NotificationCompat.MessagingStyle.extractMessagingStyleFromNotification(chatNotification.notification)
+                ?: NotificationCompat.MessagingStyle(Person.Builder().setName("You").build())
+        } else {
+            NotificationCompat.MessagingStyle(Person.Builder().setName("You").build())
+        }
         if (chatIsGroup) {
             style.isGroupConversation = true
             style.conversationTitle = chatTitle
@@ -149,7 +155,7 @@ class CreateIncomingMessageNotification: MethodCallHandlerImpl() {
             .addRemoteInput(RemoteInput.Builder("text_reply").setLabel("Reply").build())
             .build()
 
-        // intent and metadata for bubbling
+        // intent for bubbling (create it even if not used, for future compatibility)
         val bubbleIntent = PendingIntent.getActivity(
             context,
             notificationId + Constants.pendingIntentOpenBubbleOffset,
@@ -160,11 +166,8 @@ class CreateIncomingMessageNotification: MethodCallHandlerImpl() {
                 .setType("OpenChat"),
             PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
-        val bubbleMetadata = NotificationCompat.BubbleMetadata.Builder(bubbleIntent, chatBitmap ?: IconCompat.createWithResource(context, R.mipmap.ic_stat_icon))
-            .setDesiredHeight(600)
-            .setDeleteIntent(deleteNotificationIntent)
-            .build()
 
+        // Build the notification
         val notificationBuilder = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(R.mipmap.ic_stat_icon)
             .setGroup(Constants.notificationGroupKey)
@@ -178,13 +181,25 @@ class CreateIncomingMessageNotification: MethodCallHandlerImpl() {
             .setStyle(style)
             .setAllowSystemGeneratedContextualActions(true)
             .setColor(4888294)
-            .setBubbleMetadata(bubbleMetadata)
-            .setShortcutId(chatGuid)
             .addAction(markAsReadAction)
             .addAction(replyAction)
             .addPerson(sender)
             .addExtras(extras)
             .extend(NotificationCompat.WearableExtender().addAction(markAsReadAction).addAction(replyAction))
+
+        // Only set bubble metadata on Android 11+ (API 29+) where it's supported
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val bubbleMetadata = NotificationCompat.BubbleMetadata.Builder(bubbleIntent, chatBitmap ?: IconCompat.createWithResource(context, R.mipmap.ic_stat_icon))
+                .setDesiredHeight(600)
+                .setDeleteIntent(deleteNotificationIntent)
+                .build()
+            notificationBuilder.setBubbleMetadata(bubbleMetadata)
+        }
+        
+        // Only set shortcut ID on API 29+ where dynamic shortcuts are better supported
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            notificationBuilder.setShortcutId(chatGuid)
+        }
 
         // intent to open the main app
         val openSummaryIntent = PendingIntent.getActivity(
