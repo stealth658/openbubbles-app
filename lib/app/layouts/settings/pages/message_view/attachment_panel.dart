@@ -81,6 +81,23 @@ class _AttachmentPanelState extends OptimizedState<AttachmentPanel> {
                             backgroundColor: tileColor,
                             isThreeLine: true,
                           )),
+                    const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
+                    Obx(() => SettingsTile(
+                          title: "Image Preview Quality",
+                          subtitle: "Adjust quality for image previews (${(SettingsSvc.settings.previewImageQuality.value * 100).toInt()}%)",
+                          backgroundColor: tileColor,
+                        )),
+                    Obx(() => SettingsSlider(
+                          startingVal: SettingsSvc.settings.previewImageQuality.value,
+                          min: 0.25,
+                          max: 1.0,
+                          divisions: 15,
+                          formatValue: (val) => "${(val * 100).toInt()}%",
+                          update: (val) => SettingsSvc.settings.previewImageQuality.value = val,
+                          onChangeEnd: (val) async {
+                            await SettingsSvc.settings.saveOneAsync('imageQuality');
+                          },
+                        )),
                     if (!kIsWeb && !kIsDesktop)
                       const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     if (!kIsWeb && !kIsDesktop)

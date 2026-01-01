@@ -29,6 +29,7 @@ class Settings {
   final RxBool autoSave = false.obs;
   final RxString autoSavePicsLocation = "Pictures".obs;
   final RxString autoSaveDocsLocation = "/storage/emulated/0/Download/".obs;
+  final RxDouble previewImageQuality = 0.75.obs; // 0.25 to 1.0
   final RxBool autoOpenKeyboard = true.obs;
   final RxBool hideTextPreviews = false.obs;
   final RxBool showIncrementalSync = false.obs;
@@ -280,6 +281,7 @@ class Settings {
       'autoSave': autoSave.value,
       'autoSavePicsLocation': autoSavePicsLocation.value,
       'autoSaveDocsLocation': autoSaveDocsLocation.value,
+      'imageQuality': previewImageQuality.value,
       'autoOpenKeyboard': autoOpenKeyboard.value,
       'hideTextPreviews': hideTextPreviews.value,
       'showIncrementalSync': showIncrementalSync.value,
@@ -424,6 +426,7 @@ class Settings {
     SettingsSvc.settings.autoSave.value = map['autoSave'] ?? SettingsSvc.settings.autoSave.value;
     SettingsSvc.settings.autoSavePicsLocation.value = map['autoSavePicsLocation'] ?? SettingsSvc.settings.autoSavePicsLocation.value;
     SettingsSvc.settings.autoSaveDocsLocation.value = map['autoSaveDocsLocation'] ?? SettingsSvc.settings.autoSaveDocsLocation.value;
+    SettingsSvc.settings.previewImageQuality.value = map['imageQuality']?.toDouble() ?? SettingsSvc.settings.previewImageQuality.value;
     SettingsSvc.settings.autoOpenKeyboard.value = map['autoOpenKeyboard'] ?? SettingsSvc.settings.autoOpenKeyboard.value;
     SettingsSvc.settings.hideTextPreviews.value = map['hideTextPreviews'] ?? SettingsSvc.settings.hideTextPreviews.value;
     SettingsSvc.settings.showIncrementalSync.value = map['showIncrementalSync'] ?? SettingsSvc.settings.showIncrementalSync.value;
@@ -571,6 +574,7 @@ class Settings {
     s.onlyWifiDownload.value = map['onlyWifiDownload'] ?? false;
     s.maxConcurrentDownloads.value = map['maxConcurrentDownloads'] ?? 2;
     s.autoSave.value = map['autoSave'] ?? false;
+    s.previewImageQuality.value = map['imageQuality']?.toDouble() ?? 1.0;
     s.autoOpenKeyboard.value = map['autoOpenKeyboard'] ?? true;
     s.hideTextPreviews.value = map['hideTextPreviews'] ?? false;
     s.showIncrementalSync.value = map['showIncrementalSync'] ?? false;
