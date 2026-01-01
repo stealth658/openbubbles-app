@@ -353,33 +353,18 @@ class ImageDisplay extends StatelessWidget {
                     File(file!.path!),
                     fit: BoxFit.cover,
                     alignment: Alignment.center,
-                    cacheWidth: NavigationSvc.width(context) ~/
-                        max(2, NavigationSvc.width(context) ~/ 200) *
-                        2,
-                    width: NavigationSvc.width(context) /
-                        max(2, NavigationSvc.width(context) ~/ 200),
-                    height: NavigationSvc.width(context) /
-                        max(2, NavigationSvc.width(context) ~/ 200),
+                    cacheWidth: (NavigationSvc.width(context) ~/
+                      max(2, NavigationSvc.width(context) ~/ 200) *
+                      MediaQuery.of(context).devicePixelRatio).toInt(),
                   )
                 else if (image != null)
                   Image.memory(
                     image!,
                     fit: BoxFit.cover,
                     alignment: Alignment.center,
-                    cacheWidth: NavigationSvc.width(context) ~/
-                        max(2, NavigationSvc.width(context) ~/ 200) *
-                        2,
-                    width: NavigationSvc.width(context) /
-                        max(2, NavigationSvc.width(context) ~/ 200),
-                    height: NavigationSvc.width(context) /
-                        max(2, NavigationSvc.width(context) ~/ 200),
-                  )
-                else
-                  SizedBox(
-                    width: NavigationSvc.width(context) /
-                        max(2, NavigationSvc.width(context) ~/ 200),
-                    height: NavigationSvc.width(context) /
-                        max(2, NavigationSvc.width(context) ~/ 200),
+                    cacheWidth: (NavigationSvc.width(context) ~/
+                      max(2, NavigationSvc.width(context) ~/ 200) *
+                      MediaQuery.of(context).devicePixelRatio).toInt(),
                   ),
                 if ((attachment.mimeType?.contains("video") ?? false) &&
                     duration != null)

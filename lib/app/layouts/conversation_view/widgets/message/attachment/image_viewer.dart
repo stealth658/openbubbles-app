@@ -59,8 +59,10 @@ class _ImageViewerState extends OptimizedState<ImageViewer> with AutomaticKeepAl
       } else {
         final displayWidth = min((attachment.width?.toDouble() ?? NavigationSvc.width(context) * 0.5), NavigationSvc.width(context) * 0.5);
         final displayHeight = min((attachment.height?.toDouble() ?? NavigationSvc.width(context) * 0.5 / attachment.aspectRatio), NavigationSvc.width(context) * 0.5 / attachment.aspectRatio);
-        final calculatedWidth = (displayWidth * Get.pixelRatio / 2).round().abs().nonZero;
-        final calculatedHeight = (displayHeight * Get.pixelRatio / 2).round().abs().nonZero;
+        // Quality factor: adjust to reduce resolution on Android (e.g., 0.5 = half resolution, 0.75 = 75% resolution)
+        final qualityFactor = Platform.isAndroid ? 0.75 : 1.0;
+        final calculatedWidth = (displayWidth * Get.pixelRatio * qualityFactor).round().abs().nonZero;
+        final calculatedHeight = (displayHeight * Get.pixelRatio * qualityFactor).round().abs().nonZero;
         imageWidget = Image.memory(
           file.bytes!,
           gaplessPlayback: true,
@@ -99,8 +101,10 @@ class _ImageViewerState extends OptimizedState<ImageViewer> with AutomaticKeepAl
       // and trigger errorBuilder where we can attempt conversion.
       final displayWidth = min((attachment.width?.toDouble() ?? NavigationSvc.width(context) * 0.5), NavigationSvc.width(context) * 0.5);
       final displayHeight = min((attachment.height?.toDouble() ?? NavigationSvc.width(context) * 0.5 / attachment.aspectRatio), NavigationSvc.width(context) * 0.5 / attachment.aspectRatio);
-      final calculatedWidth = (displayWidth * Get.pixelRatio / 2).round().abs().nonZero;
-      final calculatedHeight = (displayHeight * Get.pixelRatio / 2).round().abs().nonZero;
+      // Quality factor: adjust to reduce resolution on Android (e.g., 0.5 = half resolution, 0.75 = 75% resolution)
+      final qualityFactor = Platform.isAndroid ? (SettingsSvc.settings.highPerfMode.value ? 0.5 : 0.75) : 1.0;
+      final calculatedWidth = (displayWidth * Get.pixelRatio * qualityFactor).round().abs().nonZero;
+      final calculatedHeight = (displayHeight * Get.pixelRatio * qualityFactor).round().abs().nonZero;
       imageWidget = Image.file(
         File(file.path!),
         gaplessPlayback: true,
