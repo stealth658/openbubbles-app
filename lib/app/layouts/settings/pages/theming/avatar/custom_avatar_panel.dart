@@ -29,7 +29,7 @@ class _CustomAvatarPanelState extends OptimizedState<CustomAvatarPanel> {
       headerColor: headerColor,
       bodySlivers: [
         Obx(() {
-          if (!ChatsSvc.loadedChatBatch.value) {
+          if (!ChatsSvc.loadedFirstChatBatch.value) {
             return SliverToBoxAdapter(
               child: Center(
                 child: Padding(
@@ -50,7 +50,7 @@ class _CustomAvatarPanelState extends OptimizedState<CustomAvatarPanel> {
               ),
             );
           }
-          if (ChatsSvc.loadedChatBatch.value && ChatsSvc.isEmpty) {
+          if (ChatsSvc.loadedFirstChatBatch.value && ChatsSvc.isEmpty) {
             return SliverToBoxAdapter(
               child: Center(
                 child: Padding(

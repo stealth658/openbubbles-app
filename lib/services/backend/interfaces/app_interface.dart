@@ -24,23 +24,4 @@ class AppInterface {
       buildNumber: (response['parsedVersion'] as Map<String, String>)['build']!,
     );
   }
-
-  static Future<FCMDataInfo> getFcmData() async {
-    late Map<String, dynamic> dataDict;
-    if (isIsolate) {
-      dataDict = AppActions.getFcmData();
-    } else {
-      dataDict = await GetIt.I<GlobalIsolate>()
-          .send<Map<String, dynamic>>(IsolateRequestType.getFcmData);
-    }
-
-    return FCMDataInfo(
-      projectID: dataDict['projectID'] as String?,
-      storageBucket: dataDict['storageBucket'] as String?,
-      apiKey: dataDict['apiKey'] as String?,
-      firebaseURL: dataDict['firebaseURL'] as String?,
-      clientID: dataDict['clientID'] as String?,
-      applicationID: dataDict['applicationID'] as String?,
-    );
-  }
 }

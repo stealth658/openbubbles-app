@@ -154,8 +154,8 @@ class Handle {
   /// 
   /// This should be called in isolate actions before saving handles to the database.
   Future<void> updateFormattedAddress() async {
-    if (formattedAddress != null) return;
-    
+    if (!isNullOrEmpty(formattedAddress)) return;
+
     if (address.contains('@') || address.startsWith('urn:biz')) {
       formattedAddress = address;
     } else {

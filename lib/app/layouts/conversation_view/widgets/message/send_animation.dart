@@ -69,6 +69,7 @@ class _SendAnimationState
 
     for (int i = 0; i < attachments.length; i++) {
       final file = attachments[i];
+      
       final message = Message(
         text: "",
         dateCreated: DateTime.now(),
@@ -78,9 +79,10 @@ class _SendAnimationState
             isOutgoing: true,
             mimeType: mime(file.path),
             uti: "public.jpg",
-            bytes: file.bytes,
             transferName: file.name,
             totalBytes: file.size,
+            // Store the original source path in metadata so prepAttachment can copy it
+            metadata: file.path != null ? {'source_path': file.path} : null,
           ),
         ],
         isFromMe: true,

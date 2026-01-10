@@ -80,7 +80,7 @@ class PinnedOrderPanel extends StatelessWidget {
                 mainAxisSize: MainAxisSize.max,
                 children: <Widget>[
                   Obx(() {
-                    if (!ChatsSvc.loadedChatBatch.value) {
+                    if (!ChatsSvc.loadedFirstChatBatch.value) {
                       return Center(
                         child: Padding(
                           padding: const EdgeInsets.only(top: 50.0),

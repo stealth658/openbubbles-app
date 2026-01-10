@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:isolate';
 import 'dart:ui' hide window;
 
 import 'package:bluebubbles/database/database.dart';
+import 'package:bluebubbles/helpers/backend/startup_tasks.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
@@ -34,6 +36,8 @@ class LifecycleService with WidgetsBindingObserver {
   bool get wasPaused => statesSinceLastResume.contains(AppLifecycleState.paused);
   bool get wasHidden => statesSinceLastResume.contains(AppLifecycleState.inactive) || statesSinceLastResume.contains(AppLifecycleState.detached);
   bool get hasResumed => statesSinceLastResume.contains(AppLifecycleState.resumed);
+
+  bool incrementalSyncShouldRun = false;
 
   Future<void> init({bool headless = false, bool isBubble = false}) async {
     Logger.debug("Initializing LifecycleService${headless ? " in headless mode" : ""}");
@@ -104,34 +108,9 @@ class LifecycleService with WidgetsBindingObserver {
   }
 
   void open() {
-    // Observer is permanently registered in init() and should never be removed
-    if (!kIsDesktop || wasActiveAliveBefore != false) {
-      ChatsSvc.setActiveToAlive();
-    }
-
-    final activeChat = ChatsSvc.activeChat;
-    if (activeChat != null) {
-      ChatsSvc.setChatHasUnread(activeChat.chat, false);
-      ConversationViewController _cvc = cvc(activeChat.chat);
-      if (!_cvc.showingOverlays && _cvc.editing.isEmpty) {
-        _cvc.lastFocusedNode.requestFocus();
-      }
-    }
-
-    if (HttpSvc.originOverride == null) {
-      NetworkTasks.detectLocalhost();
-    }
-    if (!kIsDesktop && !kIsWeb) {
-      if (!isBubble) {
-        createFakePort();
-      }
-      
-      SocketSvc.reconnect();
-    }
-
-    if (kIsDesktop) {
-      windowFocused = true;
-    }
+    // If we haven't finished setup, don't do anything
+    if (!SettingsSvc.settings.finishedSetup.value) return;
+    StartupTasks.onAppResume();
   }
 
   // clever trick so we can see if the app is active in an isolate or not

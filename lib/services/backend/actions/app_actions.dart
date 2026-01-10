@@ -4,8 +4,4 @@ class AppActions {
   static Future<Map<String, dynamic>> checkForUpdate() async {
     return await SettingsSvc.getAppUpdateDict();
   }
-
-  static Map<String, dynamic> getFcmData() {
-    return SettingsSvc.getFcmDataDict();
-  }
 }

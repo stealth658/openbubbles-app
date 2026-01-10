@@ -9,6 +9,7 @@ import 'package:bluebubbles/app/layouts/conversation_list/widgets/header/cuperti
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/app/wrappers/scrollbar_wrapper.dart';
 import 'package:bluebubbles/services/services.dart';
+import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -202,7 +203,7 @@ class CupertinoConversationListState extends OptimizedState<CupertinoConversatio
                     Obx(() {
                       final _chats = ChatsSvc.getFilteredChats(showArchived: showArchived, showUnknown: showUnknown, excludePinned: true);
 
-                      if (!ChatsSvc.loadedChatBatch.value || _chats.isEmpty) {
+                      if (!ChatsSvc.loadedFirstChatBatch.value || _chats.isEmpty) {
                         return SliverToBoxAdapter(
                           child: Center(
                             child: Padding(
@@ -212,7 +213,7 @@ class CupertinoConversationListState extends OptimizedState<CupertinoConversatio
                                   Padding(
                                     padding: const EdgeInsets.all(8.0),
                                     child: Text(
-                                      !ChatsSvc.loadedChatBatch.value
+                                      !ChatsSvc.loadedFirstChatBatch.value
                                           ? "Loading chats..."
                                           : showArchived
                                               ? "You have no archived chats"
@@ -223,7 +224,7 @@ class CupertinoConversationListState extends OptimizedState<CupertinoConversatio
                                       textAlign: TextAlign.center,
                                     ),
                                   ),
-                                  if (!ChatsSvc.loadedChatBatch.value) buildProgressIndicator(context, size: 15),
+                                  if (!ChatsSvc.loadedFirstChatBatch.value) buildProgressIndicator(context, size: 15),
                                 ],
                               ),
                             ),

@@ -29,7 +29,7 @@ class ChatsService {
 
   final RxBool hasChats = false.obs;
   Completer<void> loadedAllChats = Completer();
-  final RxBool loadedChatBatch = false.obs;
+  final RxBool loadedFirstChatBatch = false.obs;
 
   /// Global unread count across all chats
   final RxInt unreadCount = 0.obs;
@@ -207,7 +207,7 @@ class ChatsService {
     if (currentCount != 0) {
       hasChats.value = true;
     } else {
-      loadedChatBatch.value = true;
+      loadedFirstChatBatch.value = true;
       initDbWatchers();
       return;
     }
@@ -237,7 +237,7 @@ class ChatsService {
         // Add to sorted list
         _insertChatSorted(c);
       }
-      loadedChatBatch.value = true;
+      loadedFirstChatBatch.value = true;
     }
 
     loadedAllChats.complete();
@@ -377,6 +377,12 @@ class ChatsService {
     }
 
     return false;
+  }
+
+  void updateChats(List<Chat> updatedChats, {bool override = false}) {
+    for (Chat c in updatedChats) {
+      updateChat(c, override: override);
+    }
   }
 
   Future<void> addChat(Chat toAdd) async {
@@ -991,7 +997,7 @@ class ChatsService {
     chatStates.clear();
     _sortedChats.clear();
     loadedAllChats = Completer();
-    loadedChatBatch.value = false;
+    loadedFirstChatBatch.value = false;
     webCachedHandles.clear();
 
     countSub?.cancel();

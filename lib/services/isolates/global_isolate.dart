@@ -3,15 +3,15 @@ import 'dart:isolate';
 import 'dart:ui';
 
 import 'package:bluebubbles/utils/logger/logger.dart';
-import 'package:flutter/services.dart';
 import 'package:bluebubbles/helpers/backend/startup_tasks.dart';
 import 'package:bluebubbles/services/isolates/isolate_actions.dart';
 import 'package:bluebubbles/services/isolates/isolate_event.dart';
 
-/// A global isolate manager for handling background tasks
+/// A base isolate manager for handling background tasks
+/// This class can be extended to create specialized isolates with different entry points
 class GlobalIsolate {
   Isolate? _isolate;
-  final ReceivePort _receivePort = ReceivePort();
+  ReceivePort? _receivePort;
   SendPort? _sendPort;
   final Map<String, _RequestInfo> _pendingRequests = {};
   final StreamController<dynamic> _controller = StreamController.broadcast();
@@ -19,18 +19,40 @@ class GlobalIsolate {
   bool _isRunning = false;
   bool _isStarting = false;
   Completer<void> _startCompleter = Completer<void>();
-  static const String _isolatePortName = 'GlobalIsolate';
+  
+  /// Timer for tracking isolate inactivity
+  Timer? _idleTimer;
+  DateTime? _lastActivityTime;
 
-  /// Default timeout duration for requests
-  final Duration timeout;
+  /// Timeout duration for individual task requests
+  final Duration taskTimeout;
+  
+  /// Timeout duration for isolate startup
+  final Duration startupTimeout;
+  
+  /// Duration of inactivity before the isolate is automatically killed
+  /// Set to null to disable auto-shutdown
+  final Duration? idleTimeout;
 
   /// Stream of outputs from the isolate
   Stream<dynamic> get outputStream => _controller.stream;
 
   /// Whether the isolate is currently running
   bool get isRunning => _isRunning;
+  
+  /// The name used for registering the isolate port
+  /// Can be overridden by subclasses to have unique ports
+  String get isolatePortName => 'GlobalIsolate';
+  
+  /// The debug name for the isolate
+  /// Can be overridden by subclasses for better debugging
+  String get isolateDebugName => 'GlobalIsolate';
 
-  GlobalIsolate({this.timeout = const Duration(seconds: 30)});
+  GlobalIsolate({
+    this.taskTimeout = Duration.zero,
+    this.startupTimeout = const Duration(seconds: 30),
+    this.idleTimeout = const Duration(minutes: 5),
+  });
 
   /// Starts the isolate if not already running
   Future<void> _ensureStarted() async {
@@ -43,26 +65,35 @@ class GlobalIsolate {
     _isStarting = true;
 
     try {
-      // Register the receive port with a name so it can be found by other isolates
-      IsolateNameServer.registerPortWithName(_receivePort.sendPort, _isolatePortName);
+      // Create a new ReceivePort for this isolate instance
+      _receivePort = ReceivePort();
+      
+      // Set up listener for the new port
+      _receivePort!.listen(_handleIsolateMessage);
 
-      Logger.debug('Starting GlobalIsolate...');
+      // Register the receive port with a name so it can be found by other isolates
+      IsolateNameServer.registerPortWithName(_receivePort!.sendPort, isolatePortName);
+
+      Logger.debug('Starting $isolateDebugName...');
       // Pass the RootIsolateToken from the main isolate so the spawned isolate can initialize BackgroundIsolateBinaryMessenger
       final rootToken = RootIsolateToken.instance;
-      _isolate = await Isolate.spawn(GlobalIsolate._isolateEntryPoint, [_receivePort.sendPort, rootToken],
-          debugName: 'GlobalIsolate');
-      Logger.debug('GlobalIsolate started.');
-
-      _isRunning = true;
-
-      _receivePort.listen(_handleIsolateMessage);
+      _isolate = await Isolate.spawn(
+        getIsolateEntryPoint as void Function(List<dynamic>), 
+        [_receivePort!.sendPort, rootToken, getActionMap()],
+        debugName: isolateDebugName,
+      );
+      Logger.debug('$isolateDebugName started.');
 
       // Wait for the SendPort from the spawned isolate
       await _waitForSendPort();
 
+      _isRunning = true;
+      _lastActivityTime = DateTime.now();
       _startCompleter.complete();
     } catch (e) {
-      _startCompleter.completeError(e);
+      if (!_startCompleter.isCompleted) {
+        _startCompleter.completeError(e);
+      }
       rethrow;
     } finally {
       _isStarting = false;
@@ -71,25 +102,47 @@ class GlobalIsolate {
 
   Future<void> _waitForSendPort() async {
     final completer = Completer<void>();
+    final startTime = DateTime.now();
+    final maxWaitTime = startupTimeout;
 
     Timer.periodic(const Duration(milliseconds: 10), (timer) {
       if (_sendPort != null) {
         timer.cancel();
         completer.complete();
+      } else if (DateTime.now().difference(startTime) > maxWaitTime) {
+        timer.cancel();
+        if (!completer.isCompleted) {
+          completer.completeError('Timeout waiting for isolate SendPort after ${maxWaitTime.inSeconds}s');
+        }
       }
     });
 
-    return completer.future;
+    try {
+      await completer.future;
+      Logger.debug('Received SendPort from isolate');
+    } catch (e) {
+      Logger.error('Failed to receive SendPort: $e');
+      // Clean up the isolate if we failed to get the SendPort
+      _isolate?.kill(priority: Isolate.immediate);
+      _isolate = null;
+      _isRunning = false;
+      rethrow;
+    }
   }
 
   /// Stops the isolate
   void stop() {
     if (!_isRunning) return;
 
+    // Cancel the idle timer
+    _idleTimer?.cancel();
+    _idleTimer = null;
+
     // Unregister the named port when stopping
-    IsolateNameServer.removePortNameMapping(_isolatePortName);
+    IsolateNameServer.removePortNameMapping(isolatePortName);
     _isolate?.kill(priority: Isolate.immediate);
-    _receivePort.close();
+    _receivePort?.close();
+    _receivePort = null;
     _controller.close();
 
     // Complete all pending requests with an error
@@ -105,6 +158,7 @@ class GlobalIsolate {
     _isolate = null;
     _sendPort = null;
     _isRunning = false;
+    _lastActivityTime = null;
 
     // Reset the start completer
     if (_startCompleter.isCompleted) {
@@ -158,15 +212,18 @@ class GlobalIsolate {
     final requestId = DateTime.now().microsecondsSinceEpoch.toString();
     final completer = Completer<T>();
 
-    // Set up timeout
-    final timer = Timer(customTimeout ?? timeout, () {
-      if (_pendingRequests.containsKey(requestId)) {
-        final requestInfo = _pendingRequests.remove(requestId)!;
-        if (!requestInfo.completer.isCompleted) {
-          requestInfo.completer.completeError('Request timeout after ${customTimeout ?? timeout}');
+    // Set up timeout if not disabled (zero duration means no timeout)
+    Timer? timer;
+    if ((customTimeout ?? taskTimeout) != Duration.zero) {
+      timer = Timer(customTimeout ?? taskTimeout, () {
+        if (_pendingRequests.containsKey(requestId)) {
+          final requestInfo = _pendingRequests.remove(requestId)!;
+          if (!requestInfo.completer.isCompleted) {
+            requestInfo.completer.completeError('Request timeout after ${customTimeout ?? taskTimeout}');
+          }
         }
-      }
-    });
+      });
+    }
 
     _pendingRequests[requestId] = _RequestInfo(completer: completer, timer: timer, type: type);
 
@@ -214,6 +271,10 @@ class GlobalIsolate {
         final requestInfo = _pendingRequests.remove(uuid)!;
         requestInfo.timer?.cancel();
 
+        // Track activity when work completes
+        _lastActivityTime = DateTime.now();
+        _resetIdleTimer();
+
         if (isolateResponse.ok) {
           requestInfo.completer.complete(isolateResponse.data);
         } else {
@@ -245,14 +306,69 @@ class GlobalIsolate {
     }
   }
 
-  /// The isolate entry point - should be implemented by the service using this class
-  static Future<void> _isolateEntryPoint(List<dynamic> args) async {
+  /// Start the idle timer to automatically shutdown the isolate after a period of inactivity
+  void _startIdleTimer() {
+    if (idleTimeout == null) return;
+    
+    _idleTimer?.cancel();
+    _idleTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
+      if (_lastActivityTime == null) return;
+      
+      final idleDuration = DateTime.now().difference(_lastActivityTime!);
+      if (idleDuration >= idleTimeout!) {
+        Logger.info('$isolateDebugName has been idle for ${idleDuration.inMinutes} minutes. Shutting down...');
+        timer.cancel();
+        stop();
+      }
+    });
+  }
+
+  /// Reset the idle timer after activity
+  void _resetIdleTimer() {
+    if (idleTimeout == null) return;
+    
+    _lastActivityTime = DateTime.now();
+    
+    // Start the idle timer if it's not already running (starts after first work completion)
+    if (_idleTimer == null || !_idleTimer!.isActive) {
+      _startIdleTimer();
+    }
+    
+    // Special handling for Duration.zero - shutdown immediately after work completes
+    if (idleTimeout == Duration.zero) {
+      // Use a short delay to allow any pending cleanup
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (_isRunning && _pendingRequests.isEmpty) {
+          Logger.info('$isolateDebugName idleTimeout is zero. Shutting down after work completion...');
+          stop();
+        }
+      });
+    }
+  }
+
+  /// Get the isolate entry point function
+  /// Override this in subclasses to provide a different entry point
+  Function get getIsolateEntryPoint => _isolateEntryPoint;
+
+  /// Get the action map for this isolate
+  /// Override this in subclasses to provide a different action map
+  Map<IsolateRequestType, dynamic> getActionMap() => IsolateActons.actions;
+
+  /// Shared entry point logic for all isolates
+  /// Accepts a custom initialization function to allow specialized isolates to load different services
+  static Future<void> sharedIsolateEntryPoint(
+    List<dynamic> args,
+    Future<void> Function(RootIsolateToken?) initServices,
+    Map<IsolateRequestType, dynamic> defaultActionMap,
+  ) async {
     final SendPort sendPort = args[0];
     final RootIsolateToken? rootIsolateToken = args.length > 1 ? args[1] : null;
-    await StartupTasks.initGlobalIsolateServices(rootIsolateToken);
+    final Map<IsolateRequestType, dynamic> actionMap = args.length > 2 ? args[2] : defaultActionMap;
+    
+    await initServices(rootIsolateToken);
 
     // Store the send port for event emission
-    IsolateEventEmitter._setSendPort(sendPort);
+    IsolateEventEmitter.setSendPort(sendPort);
 
     // Create a receiver for the isolate
     final receivePort = ReceivePort();
@@ -268,7 +384,7 @@ class GlobalIsolate {
       print('Received request: $type');
 
       try {
-        final action = IsolateActons.actions[type];
+        final action = actionMap[type];
         if (action == null) {
           throw Exception('Unknown request type: $type');
         }
@@ -328,6 +444,15 @@ class GlobalIsolate {
         );
       }
     });
+  }
+
+  /// The isolate entry point - uses shared logic with global service initialization
+  static Future<void> _isolateEntryPoint(List<dynamic> args) async {
+    await sharedIsolateEntryPoint(
+      args,
+      StartupTasks.initGlobalIsolateServices,
+      IsolateActons.actions,
+    );
   }
 }
 
@@ -513,7 +638,8 @@ class IsolateEventEmitter {
   static SendPort? _sendPort;
 
   /// Internal method to set the send port (called from isolate entry point)
-  static void _setSendPort(SendPort port) {
+  /// This method is public so it can be used by specialized isolate implementations
+  static void setSendPort(SendPort port) {
     _sendPort = port;
   }
 

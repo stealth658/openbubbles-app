@@ -239,6 +239,8 @@ class ActionHandler extends GetxService {
         partIndex: int.tryParse(m.threadOriginatorPart?.split(":").firstOrNull ?? ""),
         ddScan: !SettingsSvc.isMinSonomaSync && m.text!.hasUrl,
       ).then((response) async {
+        completeSendProgressIfExists(m.guid!);
+
         final newMessage = Message.fromMap(response.data['data']);
         try {
           await matchMessageWithExisting(c, m.guid!, newMessage, existing: m);
@@ -252,14 +254,13 @@ class ActionHandler extends GetxService {
         } catch (ex) {
           Logger.warn("Failed to find message match for ${m.guid} -> ${newMessage.guid}!", error: ex, tag: "MessageStatus");
         }
-        
-        // Clean up send progress tracker (event may have already completed it)
-        _sendProgressTrackers.remove(m.guid!);
 
         if (!completer.isCompleted) {
           completer.complete();
         }
       }).catchError((error, stack) async {
+        completeSendProgressIfExists(m.guid!);
+
         Logger.error('Failed to send message!', error: error, trace: stack);
 
         final tempGuid = m.guid;
@@ -273,11 +274,14 @@ class ActionHandler extends GetxService {
       });
     } else {
       HttpSvc.sendTapback(c.guid, selected!.text ?? "", selected.guid!, r, partIndex: m.associatedMessagePart).then((response) async {
+        completeSendProgressIfExists(m.guid!);
+
         final newMessage = Message.fromMap(response.data['data']);
         Logger.debug(
           "[ActionHandler] Reaction sent successfully: temp=${m.guid}, real=${newMessage.guid}, parent=${selected.guid}",
           tag: "MessageReactivity"
         );
+
         try {
           await matchMessageWithExisting(c, m.guid!, newMessage, existing: m);
           
@@ -313,25 +317,20 @@ class ActionHandler extends GetxService {
           Logger.warn("Failed to find message match for ${m.guid} -> ${newMessage.guid}!", error: ex, tag: "MessageStatus");
         }
         
-        // Clean up send progress tracker (event may have already completed it)
-        _sendProgressTrackers.remove(m.guid!);
-        
         if (!completer.isCompleted) {
           completer.complete();
         }
       }).catchError((error, stack) async {
+        completeSendProgressIfExists(m.guid!);
+
         Logger.error('Failed to send message!', error: error, trace: stack);
 
-        final tempGuid = m.guid;
         m = handleSendError(error, m);
-        
-        // Clean up send progress tracker
-        _sendProgressTrackers.remove(tempGuid);
 
         if (!LifecycleSvc.isAlive || !(ChatsSvc.getChatController(c.guid)?.isAlive.value ?? false)) {
           await NotificationsSvc.createFailedToSend(c);
         }
-        await Message.replaceMessage(tempGuid, m);
+        await Message.replaceMessage(m.guid, m);
         
         if (!completer.isCompleted) {
           completer.completeError(error);
@@ -364,6 +363,8 @@ class ActionHandler extends GetxService {
       partIndex: int.tryParse(m.threadOriginatorPart?.split(":").firstOrNull ?? ""),
       ddScan: !SettingsSvc.isMinSonomaSync && parts.any((e) => e["text"].toString().hasUrl)
     ).then((response) async {
+      completeSendProgressIfExists(m.guid!);
+
       final newMessage = Message.fromMap(response.data['data']);
       try {
         await matchMessageWithExisting(c, m.guid!, newMessage, existing: m);
@@ -371,25 +372,19 @@ class ActionHandler extends GetxService {
         Logger.warn("Failed to find message match for ${m.guid} -> ${newMessage.guid}!", error: ex, tag: "MessageStatus");
       }
       
-      // Clean up send progress tracker (event may have already completed it)
-      _sendProgressTrackers.remove(m.guid!);
-      
       if (!completer.isCompleted) {
         completer.complete();
       }
     }).catchError((error, stack) async {
+      completeSendProgressIfExists(m.guid!);
       Logger.error('Failed to send message!', error: error, trace: stack);
 
-      final tempGuid = m.guid;
       m = handleSendError(error, m);
-      
-      // Clean up send progress tracker
-      _sendProgressTrackers.remove(tempGuid);
 
       if (!LifecycleSvc.isAlive || !(ChatsSvc.getChatController(c.guid)?.isAlive.value ?? false)) {
         await NotificationsSvc.createFailedToSend(c);
       }
-      await Message.replaceMessage(tempGuid, m);
+      await Message.replaceMessage(m.guid!, m);
       
       if (!completer.isCompleted) {
         completer.completeError(error);
@@ -405,31 +400,69 @@ class ActionHandler extends GetxService {
     attachmentProgress.add(progress);
     // Save the attachment to storage and DB
     if (!kIsWeb) {
-      String pathName = "${FilesystemSvc.appDocDir.path}/attachments/${attachment.guid}/${attachment.transferName}";
-      final file = await File(pathName).create(recursive: true);
-      if (attachment.mimeType == "image/gif") {
-        attachment.bytes = await fixSpeedyGifs(attachment.bytes!);
+      // Get source path from metadata
+      final sourcePath = attachment.metadata?['source_path'] as String?;
+      if (sourcePath == null) {
+        throw Exception("Attachment has no source_path in metadata");
       }
-      await file.writeAsBytes(attachment.bytes!);
+      
+      // Use attachment.path getter for destination
+      final destinationPath = attachment.path;
+      final destinationFile = await File(destinationPath).create(recursive: true);
+      
+      // Copy file from source to destination (avoid loading into memory)
+      if (attachment.mimeType == "image/gif") {
+        // GIFs need processing, so we load bytes only for this case
+        final bytes = await File(sourcePath).readAsBytes();
+        final optimizedBytes = await fixSpeedyGifs(bytes);
+        await destinationFile.writeAsBytes(optimizedBytes);
+      } else {
+        // For all other files, just copy without loading into memory
+        await File(sourcePath).copy(destinationPath);
+      }
+      
+      // Load image properties for outgoing attachments to ensure proper display in UI
+      if (attachment.mimeStart == "image") {
+        try {
+          await AttachmentsSvc.loadImageProperties(attachment, actualPath: destinationPath);
+        } catch (ex) {
+          Logger.warn("Failed to load image properties for outgoing attachment", error: ex);
+        }
+      }
     }
     await c.addMessage(m);
   }
 
   Future<void> sendAttachment(Chat c, Message m, bool isAudioMessage) async {
-    if (m.attachments.isEmpty || m.attachments.firstOrNull?.bytes == null) return;
+    if (m.attachments.isEmpty) return;
     final attachment = m.attachments.first!;
+    
+    // Read bytes from attachment.path (where prepAttachment copied it)
+    Uint8List? bytes;
+    if (!kIsWeb) {
+      try {
+        bytes = await File(attachment.path).readAsBytes();
+      } catch (ex) {
+        Logger.error("Failed to read attachment bytes from path for sending", error: ex);
+        return;
+      }
+    }
+    
+    if (bytes == null) return;
+    
     final progress = attachmentProgress.firstWhere((e) => e.item1 == attachment.guid);
     final completer = Completer<void>();
     
     // Register send progress tracker for this message
     registerSendProgressTracker(m.guid!, c, completer);
+    return;
     
     latestCancelToken = CancelToken();
     HttpSvc.sendAttachment(
       c.guid,
       attachment.guid!,
-      PlatformFile(name: attachment.transferName!, bytes: attachment.bytes, path: kIsWeb ? null : attachment.path, size: attachment.totalBytes ?? 0),
-      onSendProgress: (count, total) => progress.item2.value = count / attachment.bytes!.length,
+      PlatformFile(name: attachment.transferName!, bytes: bytes, path: kIsWeb ? null : attachment.path, size: attachment.totalBytes ?? 0),
+      onSendProgress: (count, total) => progress.item2.value = count / bytes!.length,
       method: (SettingsSvc.settings.enablePrivateAPI.value
           && SettingsSvc.settings.privateAPIAttachmentSend.value)
           || (m.subject?.isNotEmpty ?? false)
@@ -442,6 +475,8 @@ class ActionHandler extends GetxService {
       isAudioMessage: isAudioMessage,
       cancelToken: latestCancelToken,
     ).then((response) async {
+      completeSendProgressIfExists(m.guid!);
+
       latestCancelToken = null;
       final newMessage = Message.fromMap(response.data['data']);
 
@@ -464,27 +499,22 @@ class ActionHandler extends GetxService {
         Logger.warn("Failed to find message match for ${m.guid} -> ${newMessage.guid}!", error: e, tag: "MessageStatus");
       }
       attachmentProgress.removeWhere((e) => e.item1 == m.guid || e.item2 >= 1);
-      
-      // Clean up send progress tracker (event may have already completed it)
-      _sendProgressTrackers.remove(m.guid!);
 
       if (!completer.isCompleted) {
         completer.complete();
       }
     }).catchError((error, stack) async {
+      completeSendProgressIfExists(m.guid!);
+
       latestCancelToken = null;
       Logger.error('Failed to send message!', error: error, trace: stack);
 
-      final tempGuid = m.guid;
       m = handleSendError(error, m);
-      
-      // Clean up send progress tracker
-      _sendProgressTrackers.remove(tempGuid);
 
       if (!LifecycleSvc.isAlive || !(ChatsSvc.getChatController(c.guid)?.isAlive.value ?? false)) {
         await NotificationsSvc.createFailedToSend(c);
       }
-      await Message.replaceMessage(tempGuid, m);
+      await Message.replaceMessage(m.guid!, m);
       attachmentProgress.removeWhere((e) => e.item1 == m.guid || e.item2 >= 1);
       
       if (!completer.isCompleted) {
@@ -496,17 +526,16 @@ class ActionHandler extends GetxService {
   }
 
   Future<void> handleNewMessage(Chat c, Message m, String? tempGuid, {bool checkExisting = true}) async {
+    if (tempGuid != null) {
+      completeSendProgressIfExists(tempGuid);
+    }
+    
     // sanity check
     if (checkExisting) {
       final existing = Message.findOne(guid: tempGuid ?? m.guid);
       if (existing != null) {
         return await handleUpdatedMessage(c, m, tempGuid, checkExisting: false);
       }
-    }
-
-    if (tempGuid != null) {
-      // Complete send progress if this event arrived before the HTTP response
-      completeSendProgressIfExists(tempGuid);
     }
 
     // Gets the chat from the db or server (if new).
@@ -571,6 +600,10 @@ class ActionHandler extends GetxService {
   }
 
   Future<void> handleUpdatedMessage(Chat c, Message m, String? tempGuid, {bool checkExisting = true}) async {
+    if (tempGuid != null) {
+      completeSendProgressIfExists(tempGuid);
+    }
+    
     // sanity check
     if (checkExisting) {
       final existing = Message.findOne(guid: tempGuid ?? m.guid);
@@ -578,6 +611,7 @@ class ActionHandler extends GetxService {
         return await handleNewMessage(c, m, tempGuid, checkExisting: false);
       }
     }
+
     Logger.info("Updated message: [${m.text}] ${m.getLastUpdate().toLowerCase()} - for chat [${c.guid}]", tag: "ActionHandler");
 
     // update any attachments

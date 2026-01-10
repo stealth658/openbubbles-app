@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:bluebubbles/app/wrappers/scrollbar_wrapper.dart';
@@ -20,6 +21,7 @@ class _LiveLoggingPanel extends State<LiveLoggingPanel> {
   final List<String> _logs = [];
   final ScrollController scrollController = ScrollController();
   bool _shouldAutoScroll = true;
+  StreamSubscription<String>? _logSubscription;
 
   @override
   void initState() {
@@ -35,7 +37,7 @@ class _LiveLoggingPanel extends State<LiveLoggingPanel> {
       }
     });
 
-    Logger.logStream.stream.listen((event) {
+    _logSubscription = Logger.logStream.stream.listen((event) {
       if (_shouldAutoScroll) {
         _scrollToBottom();
       }
@@ -49,6 +51,7 @@ class _LiveLoggingPanel extends State<LiveLoggingPanel> {
 
   @override
   void dispose() {
+    _logSubscription?.cancel();
     scrollController.dispose();
     Logger.disableLiveLogging();
     super.dispose();
@@ -64,28 +67,23 @@ class _LiveLoggingPanel extends State<LiveLoggingPanel> {
 
   @override
   Widget build(BuildContext context) {
-    final Rx<Color> _backgroundColor =
-        (kIsDesktop && SettingsSvc.settings.windowEffect.value == WindowEffect.disabled
-                ? Colors.transparent
-                : context.theme.colorScheme.background)
-            .obs;
+    final Rx<Color> _backgroundColor = (kIsDesktop && SettingsSvc.settings.windowEffect.value == WindowEffect.disabled
+            ? Colors.transparent
+            : context.theme.colorScheme.background)
+        .obs;
 
     if (kIsDesktop) {
-      SettingsSvc.settings.windowEffect.listen((WindowEffect effect) =>
-          _backgroundColor.value = effect != WindowEffect.disabled
-              ? Colors.transparent
-              : context.theme.colorScheme.background);
+      SettingsSvc.settings.windowEffect.listen((WindowEffect effect) => _backgroundColor.value =
+          effect != WindowEffect.disabled ? Colors.transparent : context.theme.colorScheme.background);
     }
     return AnnotatedRegion<SystemUiOverlayStyle>(
         value: SystemUiOverlayStyle(
           systemNavigationBarColor: SettingsSvc.settings.immersiveMode.value
               ? Colors.transparent
               : context.theme.colorScheme.background, // navigation bar color
-          systemNavigationBarIconBrightness:
-              context.theme.colorScheme.brightness.opposite,
+          systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
           statusBarColor: Colors.transparent, // status bar color
-          statusBarIconBrightness:
-              context.theme.colorScheme.brightness.opposite,
+          statusBarIconBrightness: context.theme.colorScheme.brightness.opposite,
         ),
         child: Obx(
           () => Scaffold(
@@ -95,11 +93,10 @@ class _LiveLoggingPanel extends State<LiveLoggingPanel> {
               child: ClipRRect(
                 child: BackdropFilter(
                   child: AppBar(
-                    systemOverlayStyle: ThemeData.estimateBrightnessForColor(
-                                context.theme.colorScheme.background) ==
-                            Brightness.dark
-                        ? SystemUiOverlayStyle.light
-                        : SystemUiOverlayStyle.dark,
+                    systemOverlayStyle:
+                        ThemeData.estimateBrightnessForColor(context.theme.colorScheme.background) == Brightness.dark
+                            ? SystemUiOverlayStyle.light
+                            : SystemUiOverlayStyle.dark,
                     toolbarHeight: kIsDesktop ? 80 : 50,
                     elevation: 0,
                     scrolledUnderElevation: 3,
@@ -152,46 +149,46 @@ class _LiveLoggingPanel extends State<LiveLoggingPanel> {
               showScrollbar: true,
               controller: scrollController,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                child: StreamBuilder<String>(
-                  stream: Logger.logStream.stream,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: Text('Waiting for logs...'));
-                    } else if (snapshot.hasError) {
-                      return Center(child: Text('Error: ${snapshot.error}'));
-                    } else if (snapshot.hasData) {
-                      _logs.add(snapshot.data!);
-                    }
+                  padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                  child: StreamBuilder<String>(
+                    stream: Logger.logStream.stream,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: Text('Waiting for logs...'));
+                      } else if (snapshot.hasError) {
+                        return Center(child: Text('Error: ${snapshot.error}'));
+                      } else if (snapshot.hasData) {
+                        _logs.add(snapshot.data!);
+                      }
 
-                    return ListView.separated(
-                      itemCount: _logs.length,
-                      shrinkWrap: true,
-                      controller: scrollController,
-                      separatorBuilder: (context, index) => Divider(thickness: 0.25, color: context.theme.colorScheme.onSurface),
-                      itemBuilder: (context, index) {
-                        Color textColor = Colors.black;
-                        if (_logs[index].startsWith('[ERROR]')) {
-                          textColor = Colors.red;
-                        } else if (_logs[index].startsWith('[WARNING]')) {
-                          textColor = Colors.orange;
-                        } else if (_logs[index].startsWith('[TRACE]')) {
-                          textColor = context.theme.colorScheme.primary;
-                        } else if (_logs[index].startsWith('[FATAL]')) {
-                          textColor = Colors.red;
-                        } else if (_logs[index].startsWith('[DEBUG]')) {
-                          textColor = context.theme.colorScheme.secondary;
-                        }
+                      return ListView.separated(
+                        itemCount: _logs.length,
+                        shrinkWrap: true,
+                        controller: scrollController,
+                        separatorBuilder: (context, index) =>
+                            Divider(thickness: 0.25, color: context.theme.colorScheme.onSurface),
+                        itemBuilder: (context, index) {
+                          Color textColor = Colors.black;
+                          if (_logs[index].startsWith('[ERROR]')) {
+                            textColor = Colors.red;
+                          } else if (_logs[index].startsWith('[WARNING]')) {
+                            textColor = Colors.orange;
+                          } else if (_logs[index].startsWith('[TRACE]')) {
+                            textColor = context.theme.colorScheme.primary;
+                          } else if (_logs[index].startsWith('[FATAL]')) {
+                            textColor = Colors.red;
+                          } else if (_logs[index].startsWith('[DEBUG]')) {
+                            textColor = context.theme.colorScheme.secondary;
+                          }
 
-                        return Text(
-                          _logs[index].trim(),
-                          style: TextStyle(fontSize: 12.0, color: textColor),
-                        );
-                      },
-                    );
-                  },
-                )
-              ),
+                          return Text(
+                            _logs[index].trim(),
+                            style: TextStyle(fontSize: 12.0, color: textColor),
+                          );
+                        },
+                      );
+                    },
+                  )),
             ),
           ),
         ));

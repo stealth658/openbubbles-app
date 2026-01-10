@@ -6,6 +6,7 @@ import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -89,9 +90,51 @@ class _ImageViewerState extends OptimizedState<ImageViewer> with AutomaticKeepAl
           },
           errorBuilder: (context, object, stacktrace) => Center(
             heightFactor: 1,
-            child: Text("Failed to display image", style: context.theme.textTheme.bodyLarge),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 2.0, vertical: 5.0),
+              child: Row(
+                children: [
+                  Text("Failed to display image", style: context.theme.textTheme.bodyLarge),
+                  const SizedBox(width: 2.0),
+                  IconButton(
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: Text(
+                            "Image Stacktrace",
+                            style: context.theme.textTheme.titleLarge,
+                          ),
+                          backgroundColor: context.theme.colorScheme.properSurface,
+                          content: SizedBox(
+                            width: NavigationSvc.width(context) * 3 / 5,
+                            height: context.height * 1 / 4,
+                            child: Container(
+                              padding: const EdgeInsets.all(10.0),
+                              decoration: BoxDecoration(color: context.theme.colorScheme.background, borderRadius: const BorderRadius.all(Radius.circular(10))),
+                              child: SingleChildScrollView(
+                                child: SelectableText(
+                                  stacktrace.toString(),
+                                  style: context.theme.textTheme.bodyLarge,
+                                ),
+                              ),
+                            ),
+                          ),
+                          actions: [
+                            TextButton(
+                              child: Text("Close", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+                              onPressed: () => Navigator.of(context).pop(),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                    icon: const Icon(CupertinoIcons.info_circle)
+                  )
+                ]
+            ),
           ),
-        );
+        ));
       }
     } else {
       // Non-web with file path - use file image (much more efficient)

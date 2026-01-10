@@ -474,8 +474,9 @@ class AttachmentsService extends GetxService {
   Future<Size> getImageSizing(String filePath, Attachment attachment) async {
     try {
       dynamic file = File(filePath);
-      isg.Size size =
-          await isg.ImageSizeGetter.getSizeAsync(AsyncInput(FileInput(file)));
+      final sizeResult =
+          await isg.ImageSizeGetter.getSizeResultAsync(AsyncInput(FileInput(file)));
+      final size = sizeResult.size;
       return Size(
           size.needRotate ? size.height.toDouble() : size.width.toDouble(),
           size.needRotate ? size.width.toDouble() : size.height.toDouble());
@@ -511,11 +512,10 @@ class AttachmentsService extends GetxService {
   /// Converts HEIC/TIFF images to PNG if needed (only on platforms that don't support them natively).
   /// Also extracts image dimensions and metadata lazily.
   /// Returns the path to use (converted or original), or null if conversion failed.
-  Future<String?> ensureImageCompatibility(Attachment attachment,
-      {String? actualPath}) async {
-    if (kIsWeb ||
-        attachment.mimeType == null ||
-        attachment.mimeStart != "image") return actualPath ?? attachment.path;
+  Future<String?> ensureImageCompatibility(Attachment attachment, {String? actualPath}) async {
+    if (kIsWeb || attachment.mimeType == null || attachment.mimeStart != "image") {
+      return actualPath ?? attachment.path;
+    }
 
     final filePath = actualPath ?? attachment.path;
     File originalFile = File(filePath);
@@ -594,17 +594,19 @@ class AttachmentsService extends GetxService {
 
   Future<String?> loadImageProperties(Attachment attachment,
       {String? actualPath}) async {
-    if (kIsWeb ||
-        attachment.mimeType == null ||
-        attachment.mimeStart != "image") return null;
+    if (kIsWeb || attachment.mimeType == null || attachment.mimeStart != "image") {
+      return null;
+    }
+
     final filePath = actualPath ?? attachment.path;
 
     // Check if dimensions have already been processed.
     // We don't want to rely on the height/width or metadata alone because
     // it doesn't give the full picture of how to display the image (orientation, etc).
     // We need to "double-check" by reading EXIF and image properties directly.
-    if (attachment.metadata?['_dimensions_processed'] == 'true')
+    if (attachment.metadata?['_dimensions_processed'] == 'true') {
       return filePath;
+    }
 
     // Ensure we have a compatible image file first
     final compatiblePath =

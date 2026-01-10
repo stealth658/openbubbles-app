@@ -98,7 +98,7 @@ class _SamsungConversationListState extends OptimizedState<SamsungConversationLi
                   controller: controller.samsungScrollController,
                   slivers: [
                     SamsungHeader(parentController: controller),
-                    if (!ChatsSvc.loadedChatBatch.value || _unpinnedChats.isEmpty)
+                    if (!ChatsSvc.loadedFirstChatBatch.value || _unpinnedChats.isEmpty)
                       SliverToBoxAdapter(
                         child: Center(
                           child: Padding(
@@ -108,7 +108,7 @@ class _SamsungConversationListState extends OptimizedState<SamsungConversationLi
                                 Padding(
                                   padding: const EdgeInsets.all(8.0),
                                   child: Text(
-                                    !ChatsSvc.loadedChatBatch.value
+                                    !ChatsSvc.loadedFirstChatBatch.value
                                         ? "Loading chats..."
                                         : showArchived
                                             ? "You have no archived chats"
@@ -119,7 +119,7 @@ class _SamsungConversationListState extends OptimizedState<SamsungConversationLi
                                     textAlign: TextAlign.center,
                                   ),
                                 ),
-                                if (!ChatsSvc.loadedChatBatch.value) buildProgressIndicator(context, size: 15),
+                                if (!ChatsSvc.loadedFirstChatBatch.value) buildProgressIndicator(context, size: 15),
                               ],
                             ),
                           ),

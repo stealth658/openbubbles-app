@@ -31,7 +31,10 @@ class PickedAttachment extends StatefulWidget {
 }
 
 class _PickedAttachmentState extends OptimizedState<PickedAttachment> with AutomaticKeepAliveClientMixin {
-  Uint8List? image;
+  Uint8List? imageBytes;
+  String? imagePath;
+  bool isLoading = true;
+  bool isEmpty = false;
 
   @override
   void initState() {
@@ -44,41 +47,51 @@ class _PickedAttachmentState extends OptimizedState<PickedAttachment> with Autom
     final mimeType = mime(widget.data.name) ?? "";
     if (mimeType.startsWith("video/") && Platform.isAndroid) {
       try {
-        image = await AttachmentsSvc.getVideoThumbnail(file.path!, useCachedFile: false);
+        imageBytes = await AttachmentsSvc.getVideoThumbnail(file.path!, useCachedFile: false);
       } catch (ex) {
-        image = FilesystemSvc.noVideoPreviewIcon;
+        imageBytes = FilesystemSvc.noVideoPreviewIcon;
       }
-      setState(() {});
+      setState(() {
+        isLoading = false;
+      });
     } else if (mimeType == "image/heic"
         || mimeType == "image/heif"
         || mimeType == "image/tif"
         || mimeType == "image/tiff") {
-      // Use ensureImageCompatibility instead of deprecated loadAndGetProperties
+      // Use ensureImageCompatibility to get a compatible file path
       try {
         final fakeAttachment = Attachment(
           transferName: file.path,
           mimeType: mimeType,
         );
-        final convertedPath = await AttachmentsSvc.ensureImageCompatibility(fakeAttachment);
-        if (convertedPath != null) {
-          final convertedFile = File(convertedPath);
-          image = await convertedFile.readAsBytes();
-        } else {
-          // Fallback to original bytes if conversion returns null
-          image = file.bytes;
+        imagePath = await AttachmentsSvc.ensureImageCompatibility(fakeAttachment);
+        if (imagePath == null && file.bytes != null) {
+          // Fallback to bytes if conversion returns null
+          imageBytes = file.bytes;
         }
       } catch (ex) {
-        // Fallback to original bytes if conversion fails
-        image = file.bytes;
+        // Fallback to bytes if conversion fails
+        imageBytes = file.bytes;
       }
-      setState(() {});
-    } else if (mimeType.startsWith("image/")) {
       setState(() {
-        image = file.bytes;
+        isLoading = false;
+      });
+    } else if (mimeType.startsWith("image/")) {
+      // Use file path if available, otherwise use bytes
+      if (file.path != null) {
+        imagePath = file.path;
+      } else if (file.bytes != null) {
+        imageBytes = file.bytes;
+      } else {
+        isEmpty = true;
+      }
+      setState(() {
+        isLoading = false;
       });
     } else {
       setState(() {
-        image = Uint8List.fromList([]);
+        isEmpty = true;
+        isLoading = false;
       });
     }
   }
@@ -95,7 +108,7 @@ class _PickedAttachmentState extends OptimizedState<PickedAttachment> with Autom
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
             ),
-            constraints: BoxConstraints(maxWidth: image == null ? 0 : (image?.isEmpty ?? false) ? 100 : 200),
+            constraints: BoxConstraints(maxWidth: isLoading ? 0 : isEmpty ? 100 : 200),
             clipBehavior: Clip.antiAlias,
             child: OpenContainer(
               tappable: false,
@@ -119,17 +132,9 @@ class _PickedAttachmentState extends OptimizedState<PickedAttachment> with Autom
                     clipBehavior: Clip.none,
                     alignment: Alignment.topRight,
                     children: <Widget>[
-                      if (image?.isNotEmpty ?? false)
-                        Image.memory(
-                          image!,
-                          key: ValueKey(widget.data.path),
-                          gaplessPlayback: true,
-                          fit: iOS ? BoxFit.fitHeight : BoxFit.cover,
-                          height: iOS ? 150 : 75,
-                          width: iOS ? null : 75,
-                          cacheWidth: 300,
-                        ),
-                      if (image?.isEmpty ?? false)
+                      if (!isEmpty && !isLoading)
+                        _buildImage(),
+                      if (isEmpty)
                         Positioned.fill(
                           child: Container(
                             color: context.theme.colorScheme.properSurface,
@@ -144,7 +149,7 @@ class _PickedAttachmentState extends OptimizedState<PickedAttachment> with Autom
                             ),
                           ),
                         ),
-                      if (image != null && iOS)
+                      if (!isLoading && iOS)
                         Positioned(
                           top: 5,
                           right: 5,
@@ -221,6 +226,36 @@ class _PickedAttachmentState extends OptimizedState<PickedAttachment> with Autom
         ],
       ),
     );
+  }
+
+  Widget _buildImage() {
+    // Use Image.file when we have a path (memory efficient)
+    if (imagePath != null) {
+      return Image.file(
+        File(imagePath!),
+        key: ValueKey(widget.data.path),
+        gaplessPlayback: true,
+        fit: iOS ? BoxFit.fitHeight : BoxFit.cover,
+        height: iOS ? 150 : 75,
+        width: iOS ? null : 75,
+        cacheWidth: 300,
+      );
+    }
+    
+    // Fall back to Image.memory when we have bytes
+    if (imageBytes != null) {
+      return Image.memory(
+        imageBytes!,
+        key: ValueKey(widget.data.path),
+        gaplessPlayback: true,
+        fit: iOS ? BoxFit.fitHeight : BoxFit.cover,
+        height: iOS ? 150 : 75,
+        width: iOS ? null : 75,
+        cacheWidth: 300,
+      );
+    }
+    
+    return const SizedBox.shrink();
   }
 
   @override

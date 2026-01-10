@@ -44,44 +44,64 @@ class SyncService {
 
   Future<void> startIncrementalSync() async {
     isIncrementalSyncing.value = true;
-
-    List<List<int>> result = [];
-    Logger.info('[Incremental Sync] Starting incremental sync...');
+    int errors = 0;
     
     try {
-      // Use the GlobalIsolate to perform the sync
-      result = await SyncInterface.performIncrementalSync();
+      Logger.info('Starting incremental chat sync...', tag: 'Incremental Chat Sync');
+      final chatStopwatch = Stopwatch()..start();
+      final syncedChats = await SyncInterface.performIncrementalSync();
+      if (syncedChats.isNotEmpty) {
+        ChatsSvc.updateChats(syncedChats, override: true);
+      }
+      chatStopwatch.stop();
+      Logger.info('Incremental chat sync completed! Synced ${syncedChats.length} chats in ${chatStopwatch.elapsedMilliseconds}ms', tag: 'Incremental Chat Sync');
+    } catch (e, stack) {
+      Logger.error('Incremental chat sync failed!', error: e, trace: stack, tag: 'Incremental Chat Sync');
+      errors += 1;
+    }
+
+    try {
+      Logger.info('Starting contact refresh', tag: 'Incremental Contact Sync');
+      final contactStopwatch = Stopwatch()..start();
+      final refreshedHandleIds = await ContactsSvcV2.syncContactsToHandles();
+      contactStopwatch.stop();
+      Logger.info('Finished contact refresh, refreshed ${refreshedHandleIds.length} handles in ${contactStopwatch.elapsedMilliseconds}ms', tag: 'Incremental Contact Sync');
       
-      if (result.isNotEmpty && (result.first.isNotEmpty || result.last.isNotEmpty)) {
-        // Auto upload contacts if requested
-        if (SettingsSvc.settings.syncContactsAutomatically.value) {
-          Logger.debug("Contact changes detected, uploading to server...");
-          
-          // Get all contacts from ContactServiceV2
-          final contactsV2 = await ContactsSvcV2.getAllContacts();
-          final _contacts = <Map<String, dynamic>>[];
-          for (final c in contactsV2) {
-            _contacts.add(c.toMap());
-          }
-          
-          try {
-            await ContactInterface.uploadContacts(_contacts);
-          } catch (err, stack) {
-            Logger.error("Failed to upload contacts!", error: err, trace: stack);
-          }
+      if (refreshedHandleIds.isNotEmpty) {
+        ContactsSvcV2.notifyHandlesUpdated(refreshedHandleIds);
+      }
+    } catch (ex, stack) {
+      Logger.error('Contacts refresh failed!', error: ex, trace: stack, tag: 'Incremental Contact Sync');
+      errors += 1;
+    }
+
+    try {
+      // Auto upload contacts if requested
+      if (SettingsSvc.settings.syncContactsAutomatically.value) {
+        Logger.debug("Starting contact upload to server...", tag: "Contact Upload");
+        final contactUploadStopwatch = Stopwatch()..start();
+        // Get all contacts from ContactServiceV2
+        final contactsV2 = await ContactsSvcV2.getAllContacts();
+        final _contacts = <Map<String, dynamic>>[];
+        for (final c in contactsV2) {
+          _contacts.add(c.toMap());
         }
         
-        // Notify UI about contact changes via handle IDs
-        if (result.last.isNotEmpty) {
-          ContactsSvcV2.notifyHandlesUpdated(result.last);
-        }
-      }
-
-      if (SettingsSvc.settings.showIncrementalSync.value) {
-        showSnackbar('Success', '🔄 Incremental sync complete 🔄');
+        await ContactInterface.uploadContacts(_contacts);
+        contactUploadStopwatch.stop();
+        Logger.debug("Contact upload complete in ${contactUploadStopwatch.elapsedMilliseconds}ms", tag: "Contact Upload");
       }
     } catch (e, stack) {
-      Logger.error('Incremental sync failed!', error: e, trace: stack);
+      Logger.error("Failed to upload contacts!", error: e, trace: stack, tag: "Contact Upload");
+      errors += 1;
+    }
+
+    if (SettingsSvc.settings.showIncrementalSync.value) {
+      if (errors > 0) {
+        showSnackbar('Error', '⚠️ Incremental sync completed with $errors errors ⚠️');
+      } else {
+        showSnackbar('Success', '🔄 Incremental sync complete 🔄');
+      }
     }
 
     isIncrementalSyncing.value = false;

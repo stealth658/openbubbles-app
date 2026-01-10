@@ -160,8 +160,10 @@ class _AttachmentHolderState
                     }
                   } else if (content is AttachmentDownloadController) {
                     final AttachmentDownloadController _content = content;
-                    if (_content.state.value != AttachmentDownloadState.error)
+                    if (_content.state.value != AttachmentDownloadState.error) {
                       return;
+                    }
+
                     Get.delete<AttachmentDownloadController>(
                         tag: _content.attachment.guid);
                     setState(() {
@@ -202,11 +204,14 @@ class _AttachmentHolderState
                             .add(EdgeInsets.only(
                                 left: message.isFromMe! ? 0 : 10,
                                 right: message.isFromMe! ? 10 : 0))
-                        : const EdgeInsets.symmetric(
+                        // Outgoing message with progress indicator
+                        : content is AttachmentWithProgress && message.isFromMe!
+                            ? EdgeInsets.zero
+                            : const EdgeInsets.symmetric(
                                 vertical: 10, horizontal: 15)
-                            .add(EdgeInsets.only(
-                                left: message.isFromMe! ? 0 : 10,
-                                right: message.isFromMe! ? 10 : 0)),
+                                  .add(EdgeInsets.only(
+                                      left: message.isFromMe! ? 0 : 10,
+                                      right: message.isFromMe! ? 10 : 0)),
                 child: AnimatedSize(
                   duration: const Duration(milliseconds: 150),
                   child: Center(
@@ -223,7 +228,6 @@ class _AttachmentHolderState
 
                             // Display the image/video with lower opacity and progress overlay
                             return Stack(
-                              fit: StackFit.passthrough,
                               children: [
                                 // Background image/video with lower opacity
                                 Opacity(
@@ -237,14 +241,15 @@ class _AttachmentHolderState
                                     color: context
                                         .theme.colorScheme.properSurface
                                         .withValues(alpha: 0.5),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(10.0),
-                                      child: Obx(() {
-                                        return Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: <Widget>[
+                                    child: Center(
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(10.0),
+                                        child: Obx(() {
+                                          return Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: <Widget>[
                                             SizedBox(
                                               height: 40,
                                               width: 40,
@@ -312,6 +317,7 @@ class _AttachmentHolderState
                                           ],
                                         );
                                       }),
+                                      ),
                                     ),
                                   ),
                                 ),

@@ -21,7 +21,6 @@ class IsolateActons {
 
     // App
     IsolateRequestType.checkForUpdate: AppActions.checkForUpdate,
-    IsolateRequestType.getFcmData: AppActions.getFcmData,
 
     // Server
     IsolateRequestType.checkForServerUpdate: ServerActions.checkForServerUpdate,

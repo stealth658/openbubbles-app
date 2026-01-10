@@ -192,45 +192,8 @@ class SettingsService {
     return true;
   }
 
-  // this is a separate method because objectbox needs to be initialized
-  Future<void> getFcmData() async {
-    if (Platform.isAndroid) {
-      final fcmInfo = await AppInterface.getFcmData();
-      fcmData = FCMData(
-        projectID: fcmInfo.projectID,
-        storageBucket: fcmInfo.storageBucket,
-        apiKey: fcmInfo.apiKey,
-        firebaseURL: fcmInfo.firebaseURL,
-        clientID: fcmInfo.clientID,
-        applicationID: fcmInfo.applicationID,
-      );
-    } else {
-      fcmData = FCMData.getFCM();
-    }
-  }
-
-  Map<String, dynamic> getFcmDataDict() {
-    final data = FCMData.getFCM();
-    return {
-      'projectID': data.projectID,
-      'storageBucket': data.storageBucket,
-      'apiKey': data.apiKey,
-      'firebaseURL': data.firebaseURL,
-      'clientID': data.clientID,
-      'applicationID': data.applicationID,
-    };
-  }
-
-  FCMDataInfo fetchFcmData() {
-    final dataDict = getFcmDataDict();
-    return FCMDataInfo(
-      projectID: dataDict['projectID'] as String?,
-      storageBucket: dataDict['storageBucket'] as String?,
-      apiKey: dataDict['apiKey'] as String?,
-      firebaseURL: dataDict['firebaseURL'] as String?,
-      clientID: dataDict['clientID'] as String?,
-      applicationID: dataDict['applicationID'] as String?,
-    );
+  void loadFcmDataFromDatabase() {
+    fcmData = FCMData.getFCM();
   }
 
   Future<void> updateDisplayMode() async {

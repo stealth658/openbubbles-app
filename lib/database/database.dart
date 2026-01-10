@@ -219,7 +219,7 @@ class Database {
           
         // Version 4 saves FCM Data to the shared preferences for use in Tasker integration
         case 4:
-          SettingsSvc.getFcmData();
+          SettingsSvc.loadFcmDataFromDatabase();
           SettingsSvc.fcmData.save();
           break;
           

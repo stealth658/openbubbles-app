@@ -1,12 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui' show AppLifecycleState;
 
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:bluebubbles/env.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/services/isolates/global_isolate.dart';
+import 'package:bluebubbles/services/isolates/incremental_sync_isolate.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:flutter/foundation.dart';
@@ -78,13 +80,14 @@ class StartupTasks {
     Logger.info("Database initialized");
 
     // Register the global isolate
-    Logger.info("Registering GlobalIsolate...");
+    Logger.info("Registering isolates...");
     GetIt.I.registerSingleton<GlobalIsolate>(GlobalIsolate());
+    GetIt.I.registerSingleton<IncrementalSyncIsolate>(IncrementalSyncIsolate());
 
     // Load FCM data into settings from the database
     // We only need to do this for the main startup
     Logger.info("Loading FCM data...");
-    await SettingsSvc.getFcmData();
+    SettingsSvc.loadFcmDataFromDatabase();
 
     Logger.info("Registering HttpService...");
     GetIt.I.registerSingleton<HttpService>(HttpService());
@@ -151,7 +154,8 @@ class StartupTasks {
 
     GetIt.I.registerSingleton<EventDispatcher>(EventDispatcher());
 
-    Logger.info("Startup services initialization complete");
+    Logger.info("Startup services initialization complete! Starting incremental sync...");
+    SyncSvc.startIncrementalSync();
   }
 
   static Future<void> initGlobalIsolateServices(RootIsolateToken? rootIsolateToken) async {
@@ -235,6 +239,80 @@ class StartupTasks {
     HttpSvc.init();
     
     Logger.info("Global isolate services initialization complete");
+  }
+
+  /// Initialize only the services required for sync operations (lighter than full global isolate)
+  static Future<void> initSyncIsolateServices(RootIsolateToken? rootIsolateToken) async {
+    debugPrint("Initializing sync isolate services...");
+
+    if (Platform.isAndroid && rootIsolateToken != null) {
+      debugPrint("Initializing Background Isolate Binary Messenger");
+      BackgroundIsolateBinaryMessenger.ensureInitialized(rootIsolateToken);
+    }
+
+    debugPrint("Registering FilesystemService...");
+    GetIt.I.registerSingletonAsync<FilesystemService>(() async {
+      final fsService = FilesystemService();
+      await fsService.init(headless: true);
+      return fsService;
+    });
+    await GetIt.I.isReady<FilesystemService>();
+    debugPrint("FilesystemService ready");
+
+    debugPrint("Registering SharedPreferencesService...");
+    GetIt.I.registerSingletonAsync<SharedPreferencesService>(() async {
+      final prefsService = SharedPreferencesService();
+      await prefsService.init();
+      return prefsService;
+    });
+    await GetIt.I.isReady<SharedPreferencesService>();
+    debugPrint("SharedPreferencesService ready");
+
+    debugPrint("Registering SettingsService...");
+    GetIt.I.registerSingletonAsync<SettingsService>(() async {
+      final settingsService = SettingsService();
+      await settingsService.init(headless: true);
+      return settingsService;
+    });
+    await GetIt.I.isReady<SettingsService>();
+    debugPrint("SettingsService ready");
+
+    // Initialize the logger so we can start logging things immediately
+    debugPrint("Registering BaseLogger...");
+    GetIt.I.registerSingletonAsync<BaseLogger>(() async {
+      final logService = BaseLogger();
+      await logService.init();
+      return logService;
+    });
+    await GetIt.I.isReady<BaseLogger>();
+    Logger.info("BaseLogger ready - switching to Logger for remaining logs");
+
+    Logger.info("Initializing database...");
+    await Database.init();
+    Logger.info("Database initialized");
+
+    // Sync operations need ContactServiceV2
+    Logger.info("Registering ContactServiceV2...");
+    GetIt.I.registerSingletonAsync<ContactServiceV2>(() async {
+      final contactServiceV2 = ContactServiceV2();
+      await contactServiceV2.init(headless: true);
+      return contactServiceV2;
+    });
+    await GetIt.I.isReady<ContactServiceV2>();
+    Logger.info("ContactServiceV2 ready");
+
+    // Sync operations need ChatsService
+    Logger.info("Registering ChatsService...");
+    GetIt.I.registerSingleton<ChatsService>(ChatsService());
+    await ChatsSvc.init(headless: true);
+    Logger.info("ChatsService ready");
+
+    Logger.info("Registering HttpService...");
+    GetIt.I.registerSingleton<HttpService>(HttpService());
+    HttpSvc.init();
+    Logger.info("HttpService ready");
+    
+    Logger.info("Sync isolate services initialization complete");
   }
 
   static Future<void> initBackgroundIsolate() async {
@@ -397,6 +475,47 @@ class StartupTasks {
     }
     
     Logger.info("onStartup tasks complete");
+  }
+
+  static Future<void> onAppResume() async {
+    // Observer is permanently registered in init() and should never be removed
+    if (!kIsDesktop || LifecycleSvc.wasActiveAliveBefore != false) {
+      ChatsSvc.setActiveToAlive();
+    }
+
+    final activeChat = ChatsSvc.activeChat;
+    if (activeChat != null) {
+      ChatsSvc.setChatHasUnread(activeChat.chat, false);
+      ConversationViewController _cvc = cvc(activeChat.chat);
+      if (!_cvc.showingOverlays && _cvc.editing.isEmpty) {
+        _cvc.lastFocusedNode.requestFocus();
+      }
+    }
+
+    if (HttpSvc.originOverride == null && SettingsSvc.settings.localhostPort.value != null) {
+      NetworkTasks.detectLocalhost();
+    }
+
+    // Start the incremental sync on open, rather than on the socket connection.
+    // Separate functionality for android vs. other.
+    // Don't need to await these calls
+    if (!Platform.isAndroid) {
+      SyncSvc.startIncrementalSync();
+    } else if (!LifecycleSvc.hasResumed || (LifecycleSvc.currentState == AppLifecycleState.resumed && LifecycleSvc.wasPaused)) {
+      SyncSvc.startIncrementalSync();
+    }
+
+    if (!kIsDesktop && !kIsWeb) {
+      if (!LifecycleSvc.isBubble) {
+        LifecycleSvc.createFakePort();
+      }
+      
+      SocketSvc.reconnect();
+    }
+
+    if (kIsDesktop) {
+      LifecycleSvc.windowFocused = true;
+    }
   }
 
   static Future<void> checkInstanceLock() async {

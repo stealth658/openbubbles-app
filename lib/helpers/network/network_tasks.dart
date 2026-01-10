@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:io';
-import 'dart:ui';
 
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -17,30 +15,18 @@ class NetworkTasks {
   static Future<void>? _configureNetworkToolsFuture;
 
   static Future<void> onConnect() async {
+    if (!SettingsSvc.settings.finishedSetup.value) return;
     Logger.info('[NetworkTasks] Handling onConnect tasks. Finished Setup: ${SettingsSvc.settings.finishedSetup.value}');
-    if (SettingsSvc.settings.finishedSetup.value) {
-      // Separate functionality for android vs. other
-      if (!Platform.isAndroid) {
-        await SyncSvc.startIncrementalSync();
-      } else {
-        // Only start incremental sync if the app is active and the previous state wasn't just hidden
-        // or if the app was never resumed before
-        Logger.info('[Checks] Lifecycle State: ${LifecycleSvc.currentState}, Has Resumed: ${LifecycleSvc.hasResumed}, Was Paused: ${LifecycleSvc.wasPaused}');
-        if (!LifecycleSvc.hasResumed || (LifecycleSvc.currentState == AppLifecycleState.resumed && LifecycleSvc.wasPaused)) {
-          await SyncSvc.startIncrementalSync();
-        }
-      }
 
-      // scan if server is on localhost
-      if (!kIsWeb && SettingsSvc.settings.localhostPort.value != null) {
-        detectLocalhost();
-      }
+    // scan if server is on localhost
+    if (!kIsWeb && SettingsSvc.settings.localhostPort.value != null) {
+      detectLocalhost();
+    }
 
-      if (kIsWeb) {
-        if (ChatsSvc.isEmpty) {
-          ChatsSvc.reset();
-          await ChatsSvc.init();
-        }
+    if (kIsWeb) {
+      if (ChatsSvc.isEmpty) {
+        ChatsSvc.reset();
+        await ChatsSvc.init();
       }
     }
   }

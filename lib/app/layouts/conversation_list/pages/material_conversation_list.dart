@@ -77,7 +77,7 @@ class _MaterialConversationListState extends OptimizedState<MaterialConversation
               showUnknown: showUnknown,
             );
 
-            if (!ChatsSvc.loadedChatBatch.value || _chats.isEmpty) {
+            if (!ChatsSvc.loadedFirstChatBatch.value || _chats.isEmpty) {
               return Center(
                 child: Padding(
                   padding: const EdgeInsets.only(top: 100),
@@ -86,7 +86,7 @@ class _MaterialConversationListState extends OptimizedState<MaterialConversation
                       Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: Text(
-                          !ChatsSvc.loadedChatBatch.value
+                          !ChatsSvc.loadedFirstChatBatch.value
                               ? "Loading chats..."
                               : showArchived
                                   ? "You have no archived chats"
@@ -97,7 +97,7 @@ class _MaterialConversationListState extends OptimizedState<MaterialConversation
                           textAlign: TextAlign.center,
                         ),
                       ),
-                      if (!ChatsSvc.loadedChatBatch.value) buildProgressIndicator(context, size: 15),
+                      if (!ChatsSvc.loadedFirstChatBatch.value) buildProgressIndicator(context, size: 15),
                     ],
                   ),
                 ),

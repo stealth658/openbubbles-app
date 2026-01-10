@@ -135,34 +135,38 @@ class _AttachmentPickerFileState extends OptimizedState<AttachmentPickerFile> {
   Widget _buildImage() {
     // Use memory image only for videos and incompatible formats
     if (thumbnailBytes != null) {
-      return Image.memory(
-        thumbnailBytes!,
-        fit: BoxFit.cover,
-        cacheWidth: (150 * MediaQuery.of(context).devicePixelRatio).toInt(),
-        frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-          if (frame == null) {
-            return _buildPlaceholder(context);
-          }
-          return child;
-        },
+      return Positioned.fill(
+        child: Image.memory(
+          thumbnailBytes!,
+          fit: BoxFit.cover,
+          cacheWidth: (150 * MediaQuery.of(context).devicePixelRatio).toInt(),
+          frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+            if (frame == null) {
+              return _buildPlaceholderContent(context);
+            }
+            return child;
+          },
+        ),
       );
     }
 
     if (filePath != null) {
-      return Image.file(
-        File(filePath!),
-        fit: BoxFit.cover,
-        cacheWidth: (150 * MediaQuery.of(context).devicePixelRatio).toInt(),
-        filterQuality: FilterQuality.low, // Low quality is fine for thumbnails
-        frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-          if (frame == null) {
-            return _buildPlaceholder(context);
-          }
-          return child;
-        },
-        errorBuilder: (context, error, stackTrace) {
-          return _buildPlaceholder(context);
-        },
+      return Positioned.fill(
+        child: Image.file(
+          File(filePath!),
+          fit: BoxFit.cover,
+          cacheWidth: (150 * MediaQuery.of(context).devicePixelRatio).toInt(),
+          filterQuality: FilterQuality.low, // Low quality is fine for thumbnails
+          frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+            if (frame == null) {
+              return _buildPlaceholderContent(context);
+            }
+            return child;
+          },
+          errorBuilder: (context, error, stackTrace) {
+            return _buildPlaceholderContent(context);
+          },
+        ),
       );
     }
 
@@ -171,16 +175,20 @@ class _AttachmentPickerFileState extends OptimizedState<AttachmentPickerFile> {
 
   Widget _buildPlaceholder(BuildContext context) {
     return Positioned.fill(
-      child: Container(
-        color: context.theme.colorScheme.properSurface,
-        alignment: Alignment.center,
-        child: isLoading
-            ? const CupertinoActivityIndicator()
-            : Text(
-                mime(filePath) ?? "",
-                textAlign: TextAlign.center,
-              ),
-      ),
+      child: _buildPlaceholderContent(context),
+    );
+  }
+
+  Widget _buildPlaceholderContent(BuildContext context) {
+    return Container(
+      color: context.theme.colorScheme.properSurface,
+      alignment: Alignment.center,
+      child: isLoading
+          ? const CupertinoActivityIndicator()
+          : Text(
+              mime(filePath) ?? "",
+              textAlign: TextAlign.center,
+            ),
     );
   }
 

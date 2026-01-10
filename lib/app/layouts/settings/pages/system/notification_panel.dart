@@ -364,7 +364,7 @@ class ChatListState extends OptimizedState<ChatList> {
       physics: ThemeSwitcher.getScrollPhysics(),
       slivers: <Widget>[
         Obx(() {
-          if (!ChatsSvc.loadedChatBatch.value) {
+          if (!ChatsSvc.loadedFirstChatBatch.value) {
             return SliverToBoxAdapter(
               child: Center(
                 child: Padding(
@@ -385,7 +385,7 @@ class ChatListState extends OptimizedState<ChatList> {
               ),
             );
           }
-          if (ChatsSvc.loadedChatBatch.value && ChatsSvc.isEmpty) {
+          if (ChatsSvc.loadedFirstChatBatch.value && ChatsSvc.isEmpty) {
             return SliverToBoxAdapter(
               child: Center(
                 child: Padding(

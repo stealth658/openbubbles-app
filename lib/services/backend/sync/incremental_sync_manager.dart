@@ -260,6 +260,34 @@ class IncrementalSyncManager extends SyncManager {
       }
     }
 
+    // Check which chats need full participant data from the server
+    // This is needed because message API responses don't include participants for efficiency
+    List<String> chatsNeedingParticipants = [];
+    for (var chatGuid in chatCache.keys) {
+      final existingChat = Chat.findOne(guid: chatGuid);
+      // If chat doesn't exist or has no handles, we need to fetch participants
+      if (existingChat == null || existingChat.handles.isEmpty) {
+        chatsNeedingParticipants.add(chatGuid);
+      }
+    }
+
+    // Fetch full chat data with participants for chats that need it
+    if (chatsNeedingParticipants.isNotEmpty) {
+      addToOutput('Fetching participant data for ${chatsNeedingParticipants.length} chat(s)...', level: LogLevel.DEBUG);
+      for (var chatGuid in chatsNeedingParticipants) {
+        try {
+          final response = await HttpSvc.singleChat(chatGuid, withQuery: "participants");
+          if (response.statusCode == 200 && response.data["data"] != null) {
+            final chatData = response.data["data"];
+            // Update the cache with the full chat data from the server
+            chatCache[chatGuid] = Chat.fromMap(chatData);
+          }
+        } catch (ex) {
+          Logger.warn("Failed to fetch participants for chat $chatGuid", error: ex, tag: tag);
+        }
+      }
+    }
+
     // Sync the chats
     List<Chat> theChats = await Chat.bulkSyncChats(chatCache.values.toList());
 
