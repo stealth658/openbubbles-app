@@ -458,7 +458,6 @@ class ActionHandler extends GetxService {
 
     // Register send progress tracker for this message
     registerSendProgressTracker(m.guid!, c, completer);
-    return;
 
     latestCancelToken = CancelToken();
     HttpSvc.sendAttachment(
