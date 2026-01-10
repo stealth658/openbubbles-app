@@ -269,41 +269,48 @@ class ChatActions {
         messageId = retryResult?.id;
       }
 
-      // Now that message exists in DB, set the handle relationship on the DB-connected object
-      if (messageId != null && handleToLink != null) {
+      // Fetch the DB-connected message object once to set all relationships
+      if (messageId != null) {
         final dbMessage = messageBox.get(messageId);
         if (dbMessage != null) {
-          // Only set if not already set
-          if (dbMessage.handleRelation.target == null) {
+          bool needsUpdate = false;
+
+          // Set handle relationship if needed
+          if (handleToLink != null && dbMessage.handleRelation.target == null) {
             dbMessage.handleRelation.target = handleToLink;
+            needsUpdate = true;
+          }
+
+          // Process and link attachments if present
+          if (inputMessage.attachments.isNotEmpty) {
+            for (Attachment? attachment in inputMessage.attachments) {
+              if (attachment == null) continue;
+
+              // Find existing attachment
+              final attachQuery = attachmentBox.query(Attachment_.guid.equals(attachment.guid ?? '')).build();
+              attachQuery.limit = 1;
+              final existingAttach = attachQuery.findFirst();
+              attachQuery.close();
+
+              if (existingAttach != null) {
+                attachment.id = existingAttach.id;
+              }
+
+              // Link the DB-connected message to attachment
+              attachment.message.target = dbMessage;
+
+              try {
+                attachmentBox.put(attachment);
+              } on UniqueViolationException catch (_) {
+                Logger.warn('[addMessageToChat] UniqueViolationException for attachment ${attachment.guid}');
+              }
+            }
+          }
+
+          // Single final put if any relationships were modified
+          if (needsUpdate) {
             messageBox.put(dbMessage);
           }
-        }
-      }
-
-      // Save attachments
-      for (Attachment? attachment in inputMessage.attachments) {
-        if (attachment == null) continue;
-
-        // Find existing attachment
-        final attachQuery = attachmentBox.query(Attachment_.guid.equals(attachment.guid ?? '')).build();
-        attachQuery.limit = 1;
-        final existingAttach = attachQuery.findFirst();
-        attachQuery.close();
-
-        if (existingAttach != null) {
-          attachment.id = existingAttach.id;
-        }
-
-        // Link message to attachment
-        if (messageId != null) {
-          attachment.message.target = inputMessage;
-        }
-
-        try {
-          attachmentBox.put(attachment);
-        } on UniqueViolationException catch (_) {
-          Logger.warn('[addMessageToChat] UniqueViolationException for attachment ${attachment.guid}');
         }
       }
 
