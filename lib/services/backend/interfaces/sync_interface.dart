@@ -9,12 +9,12 @@ import 'package:bluebubbles/services/isolates/global_isolate.dart';
 class SyncInterface {
   /// Performs an incremental sync in the isolate
   static Future<List<Chat>> performIncrementalSync() async {
-    late List<int>chatIds = [];
+    late List<int> chatIds = [];
     if (isIsolate) {
       chatIds = await SyncActions.performIncrementalSync({});
     } else {
-      chatIds = await GetIt.I<IncrementalSyncIsolate>()
-          .send<List<int>>(IsolateRequestType.performIncrementalSync, input: {});
+      chatIds =
+          await GetIt.I<IncrementalSyncIsolate>().send<List<int>>(IsolateRequestType.performIncrementalSync, input: {});
     }
 
     return Database.chats.getMany(chatIds).whereType<Chat>().toList();

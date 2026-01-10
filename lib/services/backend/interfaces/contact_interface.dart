@@ -55,8 +55,7 @@ class ContactInterface {
     if (isIsolate) {
       return await ContactActions.uploadContacts(data);
     } else {
-      return await GetIt.I<GlobalIsolate>()
-          .send<void>(IsolateRequestType.uploadContacts, input: data);
+      return await GetIt.I<GlobalIsolate>().send<void>(IsolateRequestType.uploadContacts, input: data);
     }
   }
 }

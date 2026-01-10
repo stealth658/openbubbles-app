@@ -10,7 +10,7 @@ import 'package:get_it/get_it.dart';
 class ContactV2Interface {
   /// Fetch all contacts from the device and match them to existing handles
   /// This operation is executed in the GlobalIsolate to prevent UI jank
-  /// 
+  ///
   /// Returns a list of handle IDs that were affected by the matching
   static Future<List<int>> syncContactsToHandles() async {
     if (isIsolate) {
@@ -43,8 +43,7 @@ class ContactV2Interface {
     if (isIsolate) {
       return await ContactV2Actions.findOneContact(data);
     } else {
-      return await GetIt.I<GlobalIsolate>()
-          .send<Map<String, dynamic>?>(IsolateRequestType.findOneContact, input: data);
+      return await GetIt.I<GlobalIsolate>().send<Map<String, dynamic>?>(IsolateRequestType.findOneContact, input: data);
     }
   }
 
@@ -111,8 +110,7 @@ class ContactV2Interface {
     if (isIsolate) {
       return await ContactV2Actions.getContactAvatar(data);
     } else {
-      return await GetIt.I<GlobalIsolate>()
-          .send<Uint8List?>(IsolateRequestType.getContactAvatar, input: data);
+      return await GetIt.I<GlobalIsolate>().send<Uint8List?>(IsolateRequestType.getContactAvatar, input: data);
     }
   }
 }

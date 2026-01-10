@@ -9,7 +9,6 @@ import 'package:get/get.dart';
 OutgoingQueue outq = Get.isRegistered<OutgoingQueue>() ? Get.find<OutgoingQueue>() : Get.put(OutgoingQueue());
 
 class OutgoingQueue extends Queue {
-
   @override
   Future<dynamic> prepItem(QueueItem queueItem) async {
     assert(queueItem is OutgoingItem);
@@ -18,7 +17,8 @@ class OutgoingQueue extends Queue {
     switch (item.type) {
       case QueueType.sendMultipart:
       case QueueType.sendMessage:
-        return await MessageHandlerSvc.prepMessage(item.chat, item.message, item.selected, item.reaction, clearNotificationsIfFromMe: !(item.customArgs?['notifReply'] ?? false));
+        return await MessageHandlerSvc.prepMessage(item.chat, item.message, item.selected, item.reaction,
+            clearNotificationsIfFromMe: !(item.customArgs?['notifReply'] ?? false));
       case QueueType.sendAttachment:
         return await MessageHandlerSvc.prepAttachment(item.chat, item.message);
       default:
@@ -61,13 +61,17 @@ class OutgoingQueue extends Queue {
 
     switch (item.type) {
       case QueueType.sendMessage:
-        await handleSend(() => MessageHandlerSvc.sendMessage(item.chat, item.message, item.selected, item.reaction), item.chat);
+        await handleSend(
+            () => MessageHandlerSvc.sendMessage(item.chat, item.message, item.selected, item.reaction), item.chat);
         break;
       case QueueType.sendMultipart:
-        await handleSend(() => MessageHandlerSvc.sendMultipart(item.chat, item.message, item.selected, item.reaction), item.chat);
+        await handleSend(
+            () => MessageHandlerSvc.sendMultipart(item.chat, item.message, item.selected, item.reaction), item.chat);
         break;
       case QueueType.sendAttachment:
-        await handleSend(() => MessageHandlerSvc.sendAttachment(item.chat, item.message, item.customArgs?['audio'] ?? false), item.chat);
+        await handleSend(
+            () => MessageHandlerSvc.sendAttachment(item.chat, item.message, item.customArgs?['audio'] ?? false),
+            item.chat);
         break;
       default:
         Logger.info("Unhandled queue event: ${item.type.name}");

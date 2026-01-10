@@ -39,19 +39,24 @@ class SettingsSwitch extends StatelessWidget {
             title,
             style: context.theme.textTheme.bodyLarge,
           ),
-          leading: leading == null ? null : Padding(
-            padding: EdgeInsets.only(bottom: isThreeLine ? 10 : 0.0, right: 5, left: 5),
-            child: leading,
-          ),
+          leading: leading == null
+              ? null
+              : Padding(
+                  padding: EdgeInsets.only(bottom: isThreeLine ? 10 : 0.0, right: 5, left: 5),
+                  child: leading,
+                ),
           trailing: Switch(
             value: initialVal,
             activeThumbColor: context.theme.colorScheme.primary.lightenOrDarken(15),
             onChanged: onChanged,
           ),
-          subtitle: subtitle != null ? Text(
-            subtitle!,
-            style: context.theme.textTheme.bodySmall!.copyWith(color: context.theme.colorScheme.properOnSurface.withValues(alpha: 0.75), height: 1.5),
-          ) : null,
+          subtitle: subtitle != null
+              ? Text(
+                  subtitle!,
+                  style: context.theme.textTheme.bodySmall!
+                      .copyWith(color: context.theme.colorScheme.properOnSurface.withValues(alpha: 0.75), height: 1.5),
+                )
+              : null,
           contentPadding: const EdgeInsets.symmetric(horizontal: 16.0),
         ),
       ),

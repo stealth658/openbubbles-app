@@ -29,7 +29,7 @@ class _ReplyHolderState extends OptimizedState<ReplyHolder> {
       final part = widget.controller.replyToMessage?.item2 ?? 0;
       final reply = message?.guid == null ? message : (getActiveMwc(message!.guid!)?.parts[part] ?? message);
       final date = widget.controller.scheduledDate.value;
-      
+
       if (reply == null && date == null) {
         return const SizedBox.shrink();
       }
@@ -67,7 +67,7 @@ class _ReplyContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isIOS = SettingsSvc.settings.skin.value == Skins.iOS;
-    
+
     return Container(
       color: context.theme.colorScheme.properSurface,
       padding: EdgeInsets.only(left: !isIOS ? 20.0 : 0, right: isIOS ? 8.0 : 0),
@@ -159,8 +159,7 @@ class _ReplyText extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text.rich(
       TextSpan(children: [
-        if (isIOS && reply != null)
-          const TextSpan(text: "Replying to "),
+        if (isIOS && reply != null) const TextSpan(text: "Replying to "),
         if (reply != null)
           TextSpan(
             text: message!.handleRelation.target?.displayName ?? 'You',
@@ -173,8 +172,7 @@ class _ReplyText extends StatelessWidget {
             text: "Scheduling for ${buildFullDate(date!)}",
             style: context.textTheme.bodyMedium!.copyWith(fontWeight: FontWeight.bold),
           ),
-        if (!isIOS)
-          const TextSpan(text: "\n"),
+        if (!isIOS) const TextSpan(text: "\n"),
         if (reply != null)
           TextSpan(
             text: "${isIOS ? " - " : ""}${_getNotificationText()}",

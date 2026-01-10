@@ -317,7 +317,7 @@ class BaseLogger {
       logger.f("${DateTime.now().toUtc().toIso8601String()} [FATAL] [$_isolateName] [${tag ?? "BlueBubblesApp"}] $log",
           error: error, stackTrace: trace);
 
-    void test(dynamic log, {String? tag, Object? error, StackTrace? trace}) =>
+  void test(dynamic log, {String? tag, Object? error, StackTrace? trace}) =>
       logger.f("${DateTime.now().toUtc().toIso8601String()} [TEST] [$_isolateName] [${tag ?? "BlueBubblesApp"}] $log",
           error: error, stackTrace: trace);
 }

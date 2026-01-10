@@ -86,12 +86,12 @@ class _FullscreenVideoState extends OptimizedState<FullscreenVideo> with Automat
       } else {
         media = Media(widget.file.path!);
       }
-      
+
       await videoController.player.setPlaylistMode(PlaylistMode.none);
       await videoController.player.open(media, play: false);
       await videoController.player.setVolume(muted.value ? 0 : 100);
     }
-    
+
     createListener(videoController);
     showPlayPauseOverlay.value = true;
     setState(() {});
@@ -123,12 +123,12 @@ class _FullscreenVideoState extends OptimizedState<FullscreenVideo> with Automat
     hasDisposed = true;
     hideOverlayTimer?.cancel();
     _setFullscreen(false);
-    
+
     // Sync mute state back to parent
     if (widget.mute != null) {
       widget.mute!.value = muted.value;
     }
-    
+
     // Only dispose the player if one was not passed in (via a controller)
     if (widget.videoController == null) {
       videoController.player.dispose();
@@ -168,24 +168,30 @@ class _FullscreenVideoState extends OptimizedState<FullscreenVideo> with Automat
       color: Colors.black,
       child: Obx(
         () => MouseRegion(
-            onEnter: (event) => showPlayPauseOverlay.value = true,
-            onExit: (event) => showPlayPauseOverlay.value = !videoController.player.state.playing,
-            child: SafeArea(
-              child: Center(
-                child: Theme(
-                  data: context.theme.copyWith(
-                      platform: iOS ? TargetPlatform.iOS : TargetPlatform.android,
-                      dialogBackgroundColor: context.theme.colorScheme.properSurface,
-                      iconTheme: context.theme.iconTheme.copyWith(color: context.theme.textTheme.bodyMedium?.color)),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: <Widget>[
-                      Video(controller: videoController, controls: (state) => Padding(
-                        padding: EdgeInsets.all(!kIsWeb && !kIsDesktop ? 0 : 20).copyWith(bottom: !kIsWeb && !kIsDesktop ? 10 : 0),
-                        child: kIsDesktop ? media_kit_video_controls.MaterialDesktopVideoControls(state) : media_kit_video_controls.MaterialVideoControls(state),
-                      ), filterQuality: FilterQuality.medium),
-                      if (kIsWeb || kIsDesktop)
-                        Obx(() {
+          onEnter: (event) => showPlayPauseOverlay.value = true,
+          onExit: (event) => showPlayPauseOverlay.value = !videoController.player.state.playing,
+          child: SafeArea(
+            child: Center(
+              child: Theme(
+                data: context.theme.copyWith(
+                    platform: iOS ? TargetPlatform.iOS : TargetPlatform.android,
+                    dialogBackgroundColor: context.theme.colorScheme.properSurface,
+                    iconTheme: context.theme.iconTheme.copyWith(color: context.theme.textTheme.bodyMedium?.color)),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: <Widget>[
+                    Video(
+                        controller: videoController,
+                        controls: (state) => Padding(
+                              padding: EdgeInsets.all(!kIsWeb && !kIsDesktop ? 0 : 20)
+                                  .copyWith(bottom: !kIsWeb && !kIsDesktop ? 10 : 0),
+                              child: kIsDesktop
+                                  ? media_kit_video_controls.MaterialDesktopVideoControls(state)
+                                  : media_kit_video_controls.MaterialVideoControls(state),
+                            ),
+                        filterQuality: FilterQuality.medium),
+                    if (kIsWeb || kIsDesktop)
+                      Obx(() {
                         return MouseRegion(
                           onEnter: (event) => _hover.value = true,
                           onExit: (event) => _hover.value = false,
@@ -221,7 +227,10 @@ class _FullscreenVideoState extends OptimizedState<FullscreenVideo> with Automat
                                     clipBehavior: Clip.antiAlias,
                                     child: Padding(
                                       padding: EdgeInsets.only(
-                                        left: SettingsSvc.settings.skin.value == Skins.iOS && !videoController.player.state.playing ? 17 : 10,
+                                        left: SettingsSvc.settings.skin.value == Skins.iOS &&
+                                                !videoController.player.state.playing
+                                            ? 17
+                                            : 10,
                                         top: SettingsSvc.settings.skin.value == Skins.iOS ? 13 : 10,
                                         right: 10,
                                         bottom: 10,
@@ -229,12 +238,16 @@ class _FullscreenVideoState extends OptimizedState<FullscreenVideo> with Automat
                                       child: Obx(
                                         () => videoController.player.state.playing
                                             ? Icon(
-                                                SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.pause : Icons.pause,
+                                                SettingsSvc.settings.skin.value == Skins.iOS
+                                                    ? CupertinoIcons.pause
+                                                    : Icons.pause,
                                                 color: context.iconColor,
                                                 size: 45,
                                               )
                                             : Icon(
-                                                SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.play : Icons.play_arrow,
+                                                SettingsSvc.settings.skin.value == Skins.iOS
+                                                    ? CupertinoIcons.play
+                                                    : Icons.play_arrow,
                                                 color: context.iconColor,
                                                 size: 45,
                                               ),
@@ -247,106 +260,107 @@ class _FullscreenVideoState extends OptimizedState<FullscreenVideo> with Automat
                           ),
                         );
                       }),
-                      if (!iOS && (kIsWeb || kIsDesktop))
-                        Positioned(
-                          top: 10,
-                          left: 10,
-                          child: Obx(() {
-                            return MouseRegion(
-                              onEnter: (event) => _hover.value = true,
-                              onExit: (event) => _hover.value = false,
-                              child: AbsorbPointer(
-                                absorbing: !showPlayPauseOverlay.value && !_hover.value,
-                                child: AnimatedOpacity(
-                                  opacity: _hover.value
-                                      ? 1
-                                      : showPlayPauseOverlay.value
-                                      ? 1
-                                      : 0,
-                                  duration: const Duration(milliseconds: 100),
-                                  child: Material(
-                                    color: Colors.transparent,
-                                    child: InkWell(
-                                      borderRadius: BorderRadius.circular(40),
-                                      onTap: () async {
-                                        Navigator.of(context).pop();
-                                      },
-                                      child: const Padding(
-                                        padding: EdgeInsets.all(8.0),
-                                        child: Icon(
-                                          Icons.arrow_back,
-                                          color: Colors.white,
-                                          size: 25,
-                                        ),
+                    if (!iOS && (kIsWeb || kIsDesktop))
+                      Positioned(
+                        top: 10,
+                        left: 10,
+                        child: Obx(() {
+                          return MouseRegion(
+                            onEnter: (event) => _hover.value = true,
+                            onExit: (event) => _hover.value = false,
+                            child: AbsorbPointer(
+                              absorbing: !showPlayPauseOverlay.value && !_hover.value,
+                              child: AnimatedOpacity(
+                                opacity: _hover.value
+                                    ? 1
+                                    : showPlayPauseOverlay.value
+                                        ? 1
+                                        : 0,
+                                duration: const Duration(milliseconds: 100),
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    borderRadius: BorderRadius.circular(40),
+                                    onTap: () async {
+                                      Navigator.of(context).pop();
+                                    },
+                                    child: const Padding(
+                                      padding: EdgeInsets.all(8.0),
+                                      child: Icon(
+                                        Icons.arrow_back,
+                                        color: Colors.white,
+                                        size: 25,
                                       ),
                                     ),
                                   ),
                                 ),
                               ),
-                            );
-                          }),
-                        ),
-                      // Bottom action bar for iOS
-                      if (iOS && widget.showInteractions)
-                        Positioned(
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          child: AnimatedOpacity(
-                            opacity: showPlayPauseOverlay.value ? 1.0 : 0.0,
-                            duration: const Duration(milliseconds: 200),
-                            child: SafeArea(
-                              top: false,
-                              child: Container(
-                                height: 60,
-                                decoration: BoxDecoration(
-                                  color: samsung ? Colors.black : context.theme.colorScheme.properSurface.withOpacity(0.9),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                  children: [
-                                    IconButton(
-                                      icon: Icon(
-                                        CupertinoIcons.cloud_download,
-                                        color: samsung ? Colors.white : context.theme.colorScheme.primary,
-                                      ),
-                                      onPressed: () => AttachmentsSvc.saveToDisk(widget.file),
+                            ),
+                          );
+                        }),
+                      ),
+                    // Bottom action bar for iOS
+                    if (iOS && widget.showInteractions)
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        child: AnimatedOpacity(
+                          opacity: showPlayPauseOverlay.value ? 1.0 : 0.0,
+                          duration: const Duration(milliseconds: 200),
+                          child: SafeArea(
+                            top: false,
+                            child: Container(
+                              height: 60,
+                              decoration: BoxDecoration(
+                                color:
+                                    samsung ? Colors.black : context.theme.colorScheme.properSurface.withOpacity(0.9),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  IconButton(
+                                    icon: Icon(
+                                      CupertinoIcons.cloud_download,
+                                      color: samsung ? Colors.white : context.theme.colorScheme.primary,
                                     ),
-                                    IconButton(
-                                      icon: Icon(
-                                        CupertinoIcons.info,
-                                        color: samsung ? Colors.white : context.theme.colorScheme.primary,
-                                      ),
-                                      onPressed: () => showMetadataDialog(widget.attachment, context),
+                                    onPressed: () => AttachmentsSvc.saveToDisk(widget.file),
+                                  ),
+                                  IconButton(
+                                    icon: Icon(
+                                      CupertinoIcons.info,
+                                      color: samsung ? Colors.white : context.theme.colorScheme.primary,
                                     ),
-                                    IconButton(
-                                      icon: Icon(
-                                        CupertinoIcons.refresh,
-                                        color: samsung ? Colors.white : context.theme.colorScheme.primary,
-                                      ),
-                                      onPressed: () => refreshAttachment(),
+                                    onPressed: () => showMetadataDialog(widget.attachment, context),
+                                  ),
+                                  IconButton(
+                                    icon: Icon(
+                                      CupertinoIcons.refresh,
+                                      color: samsung ? Colors.white : context.theme.colorScheme.primary,
                                     ),
-                                    IconButton(
-                                      icon: Icon(
-                                        muted.value ? CupertinoIcons.volume_mute : CupertinoIcons.volume_up,
-                                        color: samsung ? Colors.white : context.theme.colorScheme.primary,
-                                      ),
-                                      onPressed: () async {
-                                        muted.toggle();
-                                        await videoController.player.setVolume(muted.value ? 0.0 : 100.0);
-                                      },
+                                    onPressed: () => refreshAttachment(),
+                                  ),
+                                  IconButton(
+                                    icon: Icon(
+                                      muted.value ? CupertinoIcons.volume_mute : CupertinoIcons.volume_up,
+                                      color: samsung ? Colors.white : context.theme.colorScheme.primary,
                                     ),
-                                  ],
-                                ),
+                                    onPressed: () async {
+                                      muted.toggle();
+                                      await videoController.player.setVolume(muted.value ? 0.0 : 100.0);
+                                    },
+                                  ),
+                                ],
                               ),
                             ),
                           ),
                         ),
-                    ],
-                  ),
+                      ),
+                  ],
                 ),
               ),
             ),
+          ),
         ),
       ),
     );

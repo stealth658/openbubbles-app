@@ -44,7 +44,9 @@ class SyncSettings extends StatelessWidget {
                 children: [
                   Text(
                     "Skip empty chats",
-                    style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.properOnSurface).copyWith(height: 1.5),
+                    style: context.theme.textTheme.bodyLarge!
+                        .copyWith(color: context.theme.colorScheme.properOnSurface)
+                        .copyWith(height: 1.5),
                     textAlign: TextAlign.center,
                   ),
                   StatefulSwitch(
@@ -66,7 +68,9 @@ class SyncSettings extends StatelessWidget {
                   children: [
                     Text(
                       "Save sync log to downloads",
-                      style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.properOnSurface).copyWith(height: 1.5),
+                      style: context.theme.textTheme.bodyLarge!
+                          .copyWith(color: context.theme.colorScheme.properOnSurface)
+                          .copyWith(height: 1.5),
                       textAlign: TextAlign.center,
                     ),
                     StatefulSwitch(
@@ -108,7 +112,7 @@ class SyncSettings extends StatelessWidget {
             final skipEmptyChats = controller.skipEmptyChats;
             final saveToDownloads = controller.saveToDownloads;
             final syncTimeFilter = controller.syncTimeFilter;
-            
+
             // Init the full sync first so when we go to the next page,
             // the manager is already created (since we don't await)
             setup.startSetup(numberOfMessagesPerPage, skipEmptyChats, saveToDownloads, syncTimeFilter);
@@ -126,10 +130,8 @@ class SyncSettings extends StatelessWidget {
                 color: Colors.white,
               ),
               const SizedBox(width: 10),
-              Text(
-                  "Start Sync",
-                  style: context.theme.textTheme.bodyLarge!.apply(fontSizeFactor: 1.1, color: Colors.white)
-              ),
+              Text("Start Sync",
+                  style: context.theme.textTheme.bodyLarge!.apply(fontSizeFactor: 1.1, color: Colors.white)),
             ],
           ),
         ),
@@ -146,7 +148,6 @@ class NumberOfMessagesText extends CustomStateful<SetupViewController> {
 }
 
 class _NumberOfMessagesTextState extends CustomState<NumberOfMessagesText, int, SetupViewController> {
-
   @override
   void updateWidget(int newVal) {
     controller.numberToDownload = newVal;
@@ -164,10 +165,12 @@ class _NumberOfMessagesTextState extends CustomState<NumberOfMessagesText, int, 
             alignment: Alignment.centerLeft,
             child: Text(
               "We will now download the first ${controller.numberToDownload == 0 ? "message" : "${controller.numberToDownload.toString().split(".").first} messages"} for each of your chats.\nYou can see more messages by simply scrolling up in the chat.",
-              style: context.theme.textTheme.bodyLarge!.apply(
-                fontSizeDelta: 1.5,
-                color: context.theme.colorScheme.outline,
-              ).copyWith(height: 1),
+              style: context.theme.textTheme.bodyLarge!
+                  .apply(
+                    fontSizeDelta: 1.5,
+                    color: context.theme.colorScheme.outline,
+                  )
+                  .copyWith(height: 1),
             ),
           ),
         ),
@@ -177,9 +180,11 @@ class _NumberOfMessagesTextState extends CustomState<NumberOfMessagesText, int, 
             alignment: Alignment.centerLeft,
             child: Text(
               "Note: If the syncing gets stuck, try reducing the number of messages to sync to 1.",
-              style: context.theme.textTheme.bodyLarge!.apply(
-                color: context.theme.colorScheme.outline,
-              ).copyWith(height: 1),
+              style: context.theme.textTheme.bodyLarge!
+                  .apply(
+                    color: context.theme.colorScheme.outline,
+                  )
+                  .copyWith(height: 1),
             ),
           ),
         ),
@@ -207,7 +212,9 @@ class _NumberOfMessagesSliderState extends CustomState<NumberOfMessagesSlider, i
           padding: const EdgeInsets.all(8.0),
           child: Text(
             "Number of Messages to Sync Per Chat: $numberOfMessages",
-            style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.properOnSurface).copyWith(height: 1.5),
+            style: context.theme.textTheme.bodyLarge!
+                .copyWith(color: context.theme.colorScheme.properOnSurface)
+                .copyWith(height: 1.5),
             textAlign: TextAlign.center,
           ),
         ),
@@ -231,11 +238,7 @@ class _NumberOfMessagesSliderState extends CustomState<NumberOfMessagesSlider, i
 }
 
 class StatefulSwitch extends CustomStateful<SetupViewController> {
-  StatefulSwitch({
-    required super.parentController,
-    required this.initial,
-    required this.update
-  });
+  StatefulSwitch({required super.parentController, required this.initial, required this.update});
 
   final bool initial;
   final Function(bool) update;
@@ -277,12 +280,12 @@ class TimeFilterDropdown extends CustomStateful<SetupViewController> {
 class _TimeFilterDropdownState extends CustomState<TimeFilterDropdown, int?, SetupViewController> {
   // Time filter options in milliseconds
   final Map<String, int?> timeOptions = {
-    '1 week': 604800000,           // 7 days
-    '1 month': 2592000000,          // 30 days
-    '3 months': 7776000000,         // 90 days
-    '6 months': 15552000000,        // 180 days (default)
-    '1 year': 31536000000,          // 365 days
-    'All time': null,               // No filter
+    '1 week': 604800000, // 7 days
+    '1 month': 2592000000, // 30 days
+    '3 months': 7776000000, // 90 days
+    '6 months': 15552000000, // 180 days (default)
+    '1 year': 31536000000, // 365 days
+    'All time': null, // No filter
   };
 
   late int? selectedValue;
@@ -304,7 +307,9 @@ class _TimeFilterDropdownState extends CustomState<TimeFilterDropdown, int?, Set
           Expanded(
             child: Text(
               "Sync Active Chats Within",
-              style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.properOnSurface).copyWith(height: 1.5),
+              style: context.theme.textTheme.bodyLarge!
+                  .copyWith(color: context.theme.colorScheme.properOnSurface)
+                  .copyWith(height: 1.5),
               textAlign: TextAlign.left,
             ),
           ),

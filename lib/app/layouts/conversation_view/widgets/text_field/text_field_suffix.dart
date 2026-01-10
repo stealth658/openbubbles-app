@@ -1,4 +1,3 @@
-
 import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:bluebubbles/app/components/custom_text_editing_controllers.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/effects/send_effect_picker.dart';
@@ -43,11 +42,12 @@ class TextFieldSuffix extends StatefulWidget {
 
 class _TextFieldSuffixState extends OptimizedState<TextFieldSuffix> {
   final AudioRecorder audioRecorder = AudioRecorder();
-  
+
   // Cache these values at init to avoid repeated platform checks
   late final bool _isWeb = kIsWeb;
   late final bool _isDesktop = kIsDesktop;
-  late final bool _isLinuxArm64 = kIsDesktop && Platform.isLinux && SysInfo.kernelArchitecture == ProcessorArchitecture.arm64;
+  late final bool _isLinuxArm64 =
+      kIsDesktop && Platform.isLinux && SysInfo.kernelArchitecture == ProcessorArchitecture.arm64;
 
   bool get isChatCreator => widget.isChatCreator;
 
@@ -63,7 +63,7 @@ class _TextFieldSuffixState extends OptimizedState<TextFieldSuffix> {
         // Extract text checks outside Obx - these are already reactive via MultiValueListenableBuilder
         final hasText = widget.textController.text.isNotEmpty;
         final hasSubject = widget.subjectTextController?.text.isNotEmpty ?? false;
-        
+
         // For chat creator, we don't have a controller, so skip Obx
         if (isChatCreator) {
           return Padding(
@@ -74,19 +74,17 @@ class _TextFieldSuffixState extends OptimizedState<TextFieldSuffix> {
             ),
           );
         }
-        
+
         return Obx(() {
           // Only reactive values in Obx scope - controller is guaranteed non-null here
           final hasAttachments = widget.controller!.pickedAttachments.isNotEmpty;
           final showRecording = widget.controller!.showRecording.value && widget.recorderController != null;
           final canSend = hasText || hasSubject || hasAttachments;
-          
+
           return Padding(
             padding: const EdgeInsets.all(3.0),
             child: AnimatedCrossFade(
-              crossFadeState: canSend && !showRecording
-                  ? CrossFadeState.showSecond
-                  : CrossFadeState.showFirst,
+              crossFadeState: canSend && !showRecording ? CrossFadeState.showSecond : CrossFadeState.showFirst,
               duration: const Duration(milliseconds: 150),
               firstChild: _RecordingButton(
                 isWeb: _isWeb,
@@ -112,7 +110,9 @@ class _TextFieldSuffixState extends OptimizedState<TextFieldSuffix> {
                     widget.controller!.replyToMessage?.item2,
                     widget.controller!.chat.guid,
                     widget.sendMessage,
-                    widget.textController is MentionTextEditingController ? (widget.textController as MentionTextEditingController).mentionables : [],
+                    widget.textController is MentionTextEditingController
+                        ? (widget.textController as MentionTextEditingController).mentionables
+                        : [],
                   );
                 },
               ),
@@ -169,8 +169,8 @@ class _RecordingButton extends StatelessWidget {
         backgroundColor: !isIOS || (isIOS && !isChatCreator && !showRecording)
             ? null
             : !isChatCreator && !showRecording
-            ? context.theme.colorScheme.outline
-            : context.theme.colorScheme.primary.withValues(alpha: 0.4),
+                ? context.theme.colorScheme.outline
+                : context.theme.colorScheme.primary.withValues(alpha: 0.4),
         shape: const CircleBorder(),
         padding: const EdgeInsets.all(0),
         maximumSize: isDesktop ? const Size(40, 40) : const Size(32, 32),
@@ -197,7 +197,7 @@ class _RecordingButton extends StatelessWidget {
       onPressed: () async {
         if (controller == null) return;
         controller!.showRecording.toggle();
-        
+
         if (controller!.showRecording.value) {
           // Start recording
           if (isDesktop) {
@@ -219,7 +219,7 @@ class _RecordingButton extends StatelessWidget {
           // Stop recording and show dialog
           late final String? path;
           late final PlatformFile file;
-          
+
           if (isDesktop) {
             path = await audioRecorder.stop();
             if (path == null) return;
@@ -241,7 +241,7 @@ class _RecordingButton extends StatelessWidget {
               size: await _file.length(),
             );
           }
-          
+
           await showDialog(
             context: context,
             barrierDismissible: false,
@@ -290,7 +290,12 @@ class _RecordingButton extends StatelessWidget {
                     onPressed: () async {
                       await controller!.send(
                         [file],
-                        "", "", null, null, null, true,
+                        "",
+                        "",
+                        null,
+                        null,
+                        null,
+                        true,
                       );
                       onDeleteRecording(file.path!);
                       Navigator.of(context, rootNavigator: true).pop();

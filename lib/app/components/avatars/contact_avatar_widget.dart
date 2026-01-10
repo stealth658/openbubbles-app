@@ -40,7 +40,7 @@ class _ContactAvatarWidgetState extends OptimizedState<ContactAvatarWidget> {
   Contact? get contact => widget.contact ?? widget.handle?.contact;
   ContactV2? get contactV2 => widget.contactV2 ?? widget.handle?.contactsV2.firstOrNull;
   late final String keyPrefix = widget.handle?.address ?? randomString(8);
-  
+
   // Cache computed values to avoid recalculating on every build
   String? _cachedAvatarPath;
   String? _cachedInitials;
@@ -50,7 +50,7 @@ class _ContactAvatarWidgetState extends OptimizedState<ContactAvatarWidget> {
   void initState() {
     super.initState();
     _updateCachedValues();
-    
+
     // Observe handle updates from ContactServiceV2
     if (widget.handle?.id != null) {
       ever(ContactsSvcV2.handleUpdateStatus, (_) {
@@ -62,21 +62,20 @@ class _ContactAvatarWidgetState extends OptimizedState<ContactAvatarWidget> {
       });
     }
   }
-  
+
   @override
   void didUpdateWidget(ContactAvatarWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     // Update cache if widget properties changed
-    if (oldWidget.handle?.id != widget.handle?.id ||
-        oldWidget.contact?.id != widget.contact?.id) {
+    if (oldWidget.handle?.id != widget.handle?.id || oldWidget.contact?.id != widget.contact?.id) {
       _updateCachedValues();
     }
   }
-  
+
   void _updateCachedValues() {
     _cachedAvatarPath = contactV2?.avatarPath;
     _cachedInitials = contactV2?.initials ?? widget.handle?.initials;
-    
+
     // Cache color gradient
     if (widget.handle?.color == null) {
       _cachedColors = toColorGradient(widget.handle?.address);
@@ -129,7 +128,8 @@ class _ContactAvatarWidgetState extends OptimizedState<ContactAvatarWidget> {
       actionButtons: const ColorPickerActionButtons(
         dialogActionButtons: true,
       ),
-      constraints: BoxConstraints(minHeight: 480, minWidth: NavigationSvc.width(context) - 70, maxWidth: NavigationSvc.width(context) - 70),
+      constraints: BoxConstraints(
+          minHeight: 480, minWidth: NavigationSvc.width(context) - 70, maxWidth: NavigationSvc.width(context) - 70),
     );
 
     if (didReset) return;
@@ -150,155 +150,157 @@ class _ContactAvatarWidgetState extends OptimizedState<ContactAvatarWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final tileColor = ThemeSvc.inDarkMode(context) 
-        ? context.theme.colorScheme.properSurface 
-        : context.theme.colorScheme.background;
+    final tileColor =
+        ThemeSvc.inDarkMode(context) ? context.theme.colorScheme.properSurface : context.theme.colorScheme.background;
 
     // Build once with all reactive values in outer Obx
     return Obx(() {
-      final size = ((widget.size ?? 40) * (widget.scaleSize ? SettingsSvc.settings.avatarScale.value : 1)).roundToDouble();
+      final size =
+          ((widget.size ?? 40) * (widget.scaleSize ? SettingsSvc.settings.avatarScale.value : 1)).roundToDouble();
       final colors = _cachedColors ?? toColorGradient(widget.handle?.address);
       final hideContactInfo = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
       final genAvatars = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.generateFakeAvatars.value;
       final iOS = SettingsSvc.settings.skin.value == Skins.iOS;
       final colorfulAvatars = SettingsSvc.settings.colorfulAvatars.value;
       final userAvatarPath = SettingsSvc.settings.userAvatarPath.value;
-      
+
       return MouseRegion(
-          cursor: !widget.editable || !colorfulAvatars || widget.handle == null
-              ? MouseCursor.defer
-              : SystemMouseCursors.click,
-          child: GestureDetector(
-            onTap: !widget.editable || (widget.handle == null && contact == null && contactV2 == null)
-                ? null
-                : () async {
-                    // Prefer ContactV2, then fall back to Contact
-                    if (contactV2 != null) {
-                      await MethodChannelSvc.invokeMethod("view-contact-form", {'id': contactV2!.nativeContactId});
-                    } else if (contact != null) {
-                      await MethodChannelSvc.invokeMethod("view-contact-form", {'id': contact!.id});
-                    } else {
-                      await MethodChannelSvc.invokeMethod("open-contact-form", {
-                        'address': widget.handle!.address,
-                        'address_type': widget.handle!.address.isEmail ? 'email' : 'phone'
-                      });
-                    }
-                  },
-            onLongPress: !widget.editable || widget.handle == null ? null : onAvatarTap,
-            child: Container(
-              key: Key("$keyPrefix-avatar-container"),
-              width: size,
-              height: size,
-              padding: widget.padding,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: AlignmentDirectional.topStart,
-                  end: AlignmentDirectional.bottomEnd,
-                  colors: [
-                    !colorfulAvatars ? HexColor("928E8E") : (iOS ? colors[1] : colors[0]),
-                    !colorfulAvatars ? HexColor("686868") : colors[0]
-                  ],
-                  stops: [0.3, 0.9],
-                ),
-                border: Border.all(
-                    color: iOS || SettingsSvc.settings.skin.value == Skins.Samsung ? tileColor : context.theme.colorScheme.background,
-                    width: widget.borderThickness,
-                    strokeAlign: BorderSide.strokeAlignOutside),
-                shape: BoxShape.circle,
-              ),
-              clipBehavior: Clip.antiAlias,
-              alignment: Alignment.center,
-              child: () {
-                // Use cached values to avoid getter calls
-                final contactV2Avatar = _cachedAvatarPath;
-                final avatar = contact?.avatar;
-                
-                if (!hideContactInfo && widget.handle == null && userAvatarPath != null) {
-                  dynamic file = File(userAvatarPath);
-                  return CircleAvatar(
-                    key: ValueKey(userAvatarPath),
-                    radius: size / 2,
-                    backgroundImage: Image.file(file).image,
-                    backgroundColor: Colors.transparent,
-                  );
-                } else if (!hideContactInfo && contactV2Avatar != null) {
-                  // Use ContactV2 avatar (from file path)
-                  return SizedBox.expand(
-                    child: Image.file(
-                      File(contactV2Avatar),
-                      cacheHeight: size.toInt() * 2,
-                      cacheWidth: size.toInt() * 2,
-                      filterQuality: FilterQuality.none,
-                      fit: BoxFit.cover,
-                      gaplessPlayback: true,
-                      errorBuilder: (context, error, stackTrace) {
-                        // If file doesn't exist, show initials instead
-                        String? initials = _cachedInitials?.substring(0, iOS ? null : 1);
-                        if (!isNullOrEmpty(initials)) {
-                          return Text(
-                            initials!,
-                            key: Key("$keyPrefix-avatar-text"),
-                            style: TextStyle(
-                              fontSize: (widget.fontSize ?? 18).roundToDouble() * (material ? 1.25 : 1),
-                              color: material ? context.theme.colorScheme.background : Colors.white,
-                            ),
-                            textAlign: TextAlign.center,
-                          );
-                        }
-                        return Icon(
-                          iOS ? CupertinoIcons.person_fill : Icons.person,
-                          color: material ? context.theme.colorScheme.background : Colors.white,
-                          size: size / 2 * (material ? 1.25 : 1),
-                        );
-                      },
-                    ),
-                  );
-                } else if (isNullOrEmpty(avatar) || hideContactInfo) {
-                  // Use cached initials
-                  String? initials = _cachedInitials?.substring(0, iOS ? null : 1);
-                  if (!isNullOrEmpty(initials) && !hideContactInfo) {
-                    return Text(
-                      initials!,
-                      key: Key("$keyPrefix-avatar-text"),
-                      style: TextStyle(
-                        fontSize: (widget.fontSize ?? 18).roundToDouble() * (material ? 1.25 : 1),
-                        color: material ? context.theme.colorScheme.background : Colors.white,
-                      ),
-                      textAlign: TextAlign.center,
-                    );
-                  } else if (genAvatars && widget.handle?.fakeAvatar != null) {
-                    return widget.handle!.fakeAvatar;
-                  } else if (genAvatars && contactV2?.fakeAvatar != null) {
-                    return contactV2!.fakeAvatar;
-                  } else if (genAvatars && widget.contact?.fakeAvatar != null) {
-                    return widget.contact!.fakeAvatar;
+        cursor: !widget.editable || !colorfulAvatars || widget.handle == null
+            ? MouseCursor.defer
+            : SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: !widget.editable || (widget.handle == null && contact == null && contactV2 == null)
+              ? null
+              : () async {
+                  // Prefer ContactV2, then fall back to Contact
+                  if (contactV2 != null) {
+                    await MethodChannelSvc.invokeMethod("view-contact-form", {'id': contactV2!.nativeContactId});
+                  } else if (contact != null) {
+                    await MethodChannelSvc.invokeMethod("view-contact-form", {'id': contact!.id});
                   } else {
-                    return Padding(
-                        padding: const EdgeInsets.only(left: 1),
-                        child: Icon(
-                          iOS ? CupertinoIcons.person_fill : Icons.person,
-                          color: material ? context.theme.colorScheme.background : Colors.white,
-                          key: Key("$keyPrefix-avatar-icon"),
-                          size: size / 2 * (material ? 1.25 : 1),
-                        ));
+                    await MethodChannelSvc.invokeMethod("open-contact-form", {
+                      'address': widget.handle!.address,
+                      'address_type': widget.handle!.address.isEmail ? 'email' : 'phone'
+                    });
                   }
-                } else {
-                  // Use old Contact avatar (from memory)
-                  return SizedBox.expand(
-                    child: Image.memory(
-                      avatar!,
-                      cacheHeight: size.toInt() * 2,
-                      cacheWidth: size.toInt() * 2,
-                      filterQuality: FilterQuality.none,
-                      fit: BoxFit.cover,
-                      gaplessPlayback: true,
-                    ),
-                  );
-                }
-              }(),
+                },
+          onLongPress: !widget.editable || widget.handle == null ? null : onAvatarTap,
+          child: Container(
+            key: Key("$keyPrefix-avatar-container"),
+            width: size,
+            height: size,
+            padding: widget.padding,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: AlignmentDirectional.topStart,
+                end: AlignmentDirectional.bottomEnd,
+                colors: [
+                  !colorfulAvatars ? HexColor("928E8E") : (iOS ? colors[1] : colors[0]),
+                  !colorfulAvatars ? HexColor("686868") : colors[0]
+                ],
+                stops: [0.3, 0.9],
+              ),
+              border: Border.all(
+                  color: iOS || SettingsSvc.settings.skin.value == Skins.Samsung
+                      ? tileColor
+                      : context.theme.colorScheme.background,
+                  width: widget.borderThickness,
+                  strokeAlign: BorderSide.strokeAlignOutside),
+              shape: BoxShape.circle,
             ),
+            clipBehavior: Clip.antiAlias,
+            alignment: Alignment.center,
+            child: () {
+              // Use cached values to avoid getter calls
+              final contactV2Avatar = _cachedAvatarPath;
+              final avatar = contact?.avatar;
+
+              if (!hideContactInfo && widget.handle == null && userAvatarPath != null) {
+                dynamic file = File(userAvatarPath);
+                return CircleAvatar(
+                  key: ValueKey(userAvatarPath),
+                  radius: size / 2,
+                  backgroundImage: Image.file(file).image,
+                  backgroundColor: Colors.transparent,
+                );
+              } else if (!hideContactInfo && contactV2Avatar != null) {
+                // Use ContactV2 avatar (from file path)
+                return SizedBox.expand(
+                  child: Image.file(
+                    File(contactV2Avatar),
+                    cacheHeight: size.toInt() * 2,
+                    cacheWidth: size.toInt() * 2,
+                    filterQuality: FilterQuality.none,
+                    fit: BoxFit.cover,
+                    gaplessPlayback: true,
+                    errorBuilder: (context, error, stackTrace) {
+                      // If file doesn't exist, show initials instead
+                      String? initials = _cachedInitials?.substring(0, iOS ? null : 1);
+                      if (!isNullOrEmpty(initials)) {
+                        return Text(
+                          initials!,
+                          key: Key("$keyPrefix-avatar-text"),
+                          style: TextStyle(
+                            fontSize: (widget.fontSize ?? 18).roundToDouble() * (material ? 1.25 : 1),
+                            color: material ? context.theme.colorScheme.background : Colors.white,
+                          ),
+                          textAlign: TextAlign.center,
+                        );
+                      }
+                      return Icon(
+                        iOS ? CupertinoIcons.person_fill : Icons.person,
+                        color: material ? context.theme.colorScheme.background : Colors.white,
+                        size: size / 2 * (material ? 1.25 : 1),
+                      );
+                    },
+                  ),
+                );
+              } else if (isNullOrEmpty(avatar) || hideContactInfo) {
+                // Use cached initials
+                String? initials = _cachedInitials?.substring(0, iOS ? null : 1);
+                if (!isNullOrEmpty(initials) && !hideContactInfo) {
+                  return Text(
+                    initials!,
+                    key: Key("$keyPrefix-avatar-text"),
+                    style: TextStyle(
+                      fontSize: (widget.fontSize ?? 18).roundToDouble() * (material ? 1.25 : 1),
+                      color: material ? context.theme.colorScheme.background : Colors.white,
+                    ),
+                    textAlign: TextAlign.center,
+                  );
+                } else if (genAvatars && widget.handle?.fakeAvatar != null) {
+                  return widget.handle!.fakeAvatar;
+                } else if (genAvatars && contactV2?.fakeAvatar != null) {
+                  return contactV2!.fakeAvatar;
+                } else if (genAvatars && widget.contact?.fakeAvatar != null) {
+                  return widget.contact!.fakeAvatar;
+                } else {
+                  return Padding(
+                      padding: const EdgeInsets.only(left: 1),
+                      child: Icon(
+                        iOS ? CupertinoIcons.person_fill : Icons.person,
+                        color: material ? context.theme.colorScheme.background : Colors.white,
+                        key: Key("$keyPrefix-avatar-icon"),
+                        size: size / 2 * (material ? 1.25 : 1),
+                      ));
+                }
+              } else {
+                // Use old Contact avatar (from memory)
+                return SizedBox.expand(
+                  child: Image.memory(
+                    avatar!,
+                    cacheHeight: size.toInt() * 2,
+                    cacheWidth: size.toInt() * 2,
+                    filterQuality: FilterQuality.none,
+                    fit: BoxFit.cover,
+                    gaplessPlayback: true,
+                  ),
+                );
+              }
+            }(),
           ),
-        );
+        ),
+      );
     });
   }
 }

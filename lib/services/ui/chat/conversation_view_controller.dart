@@ -16,8 +16,10 @@ import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:tuple/tuple.dart';
 import 'package:unicode_emojis/unicode_emojis.dart';
 
-ConversationViewController cvc(Chat chat, {String? tag}) => Get.isRegistered<ConversationViewController>(tag: tag ?? chat.guid)
-? Get.find<ConversationViewController>(tag: tag ?? chat.guid) : Get.put(ConversationViewController(chat, tag_: tag), tag: tag ?? chat.guid);
+ConversationViewController cvc(Chat chat, {String? tag}) =>
+    Get.isRegistered<ConversationViewController>(tag: tag ?? chat.guid)
+        ? Get.find<ConversationViewController>(tag: tag ?? chat.guid)
+        : Get.put(ConversationViewController(chat, tag_: tag), tag: tag ?? chat.guid);
 
 class ConversationViewController extends StatefulController with GetSingleTickerProviderStateMixin {
   final Chat chat;
@@ -44,14 +46,16 @@ class ConversationViewController extends StatefulController with GetSingleTicker
   final RxDouble timestampOffset = 0.0.obs;
   final RxBool inSelectMode = false.obs;
   final RxList<Message> selected = <Message>[].obs;
-  final RxList<Tuple3<Message, MessagePart, SpellCheckTextEditingController>> editing = <Tuple3<Message, MessagePart, SpellCheckTextEditingController>>[].obs;
+  final RxList<Tuple3<Message, MessagePart, SpellCheckTextEditingController>> editing =
+      <Tuple3<Message, MessagePart, SpellCheckTextEditingController>>[].obs;
   final GlobalKey focusInfoKey = GlobalKey();
   final RxBool recipientNotifsSilenced = false.obs;
   bool showingOverlays = false;
   bool _subjectWasLastFocused = false; // If this is false, then message field was last focused (default)
 
   FocusNode get lastFocusedNode => _subjectWasLastFocused ? subjectFocusNode : focusNode;
-  SpellCheckTextEditingController get lastFocusedTextController => _subjectWasLastFocused ? subjectTextController : textController;
+  SpellCheckTextEditingController get lastFocusedTextController =>
+      _subjectWasLastFocused ? subjectTextController : textController;
 
   // text field items
   bool showAttachmentPicker = false;
@@ -77,9 +81,12 @@ class ConversationViewController extends StatefulController with GetSingleTicker
       lastFocusedNode.requestFocus();
     }
   }
-  late final mentionables = chat.handles.map((e) => Mentionable(
-    handle: e,
-  )).toList();
+
+  late final mentionables = chat.handles
+      .map((e) => Mentionable(
+            handle: e,
+          ))
+      .toList();
 
   bool keyboardOpen = false;
   double _keyboardOffset = 0;
@@ -100,9 +107,9 @@ class ConversationViewController extends StatefulController with GetSingleTicker
 
     scrollController.addListener(() {
       if (!scrollController.hasClients) return;
-      if (keyboardOpen
-          && SettingsSvc.settings.hideKeyboardOnScroll.value
-          && scrollController.offset > _keyboardOffset + 100) {
+      if (keyboardOpen &&
+          SettingsSvc.settings.hideKeyboardOnScroll.value &&
+          scrollController.offset > _keyboardOffset + 100) {
         focusNode.unfocus();
         subjectFocusNode.unfocus();
       }
@@ -165,7 +172,8 @@ class ConversationViewController extends StatefulController with GetSingleTicker
     }
   }
 
-  Future<void> send(List<PlatformFile> attachments, String text, String subject, String? replyGuid, int? replyPart, String? effectId, bool isAudioMessage) async {
+  Future<void> send(List<PlatformFile> attachments, String text, String subject, String? replyGuid, int? replyPart,
+      String? effectId, bool isAudioMessage) async {
     sendFunc?.call(Tuple6(attachments, text, subject, replyGuid, replyPart, effectId), isAudioMessage);
   }
 

@@ -14,7 +14,6 @@ class ConnectingDialog extends StatefulWidget {
 }
 
 class _ConnectingDialogState extends OptimizedState<ConnectingDialog> {
-
   @override
   void initState() {
     super.initState();

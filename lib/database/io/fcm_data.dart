@@ -113,18 +113,14 @@ class FCMData {
   }
 
   Map<String, dynamic> toMap() => {
-    "project_id": projectID,
-    "storage_bucket": storageBucket,
-    "api_key": apiKey,
-    "firebase_url": firebaseURL,
-    "client_id": clientID,
-    "application_id": applicationID,
-  };
+        "project_id": projectID,
+        "storage_bucket": storageBucket,
+        "api_key": apiKey,
+        "firebase_url": firebaseURL,
+        "client_id": clientID,
+        "application_id": applicationID,
+      };
 
   bool get isNull =>
-      projectID == null ||
-      storageBucket == null ||
-      apiKey == null ||
-      clientID == null ||
-      applicationID == null;
+      projectID == null || storageBucket == null || apiKey == null || clientID == null || applicationID == null;
 }

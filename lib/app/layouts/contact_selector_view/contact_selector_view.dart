@@ -45,8 +45,10 @@ class ContactSelectorViewState extends OptimizedState<ContactSelectorView> {
         final searchContacts = await SchedulerBinding.instance.scheduleTask(() async {
           final query = slugify(searchController.text, delimiter: "");
           final allContacts = await ContactsSvcV2.getAllContacts();
-          return allContacts.where((element) =>
-              slugify(element.displayName, delimiter: "").contains(query) || element.hasMatchingAddress(query)).toList();
+          return allContacts
+              .where((element) =>
+                  slugify(element.displayName, delimiter: "").contains(query) || element.hasMatchingAddress(query))
+              .toList();
         }, Priority.animation);
 
         _debounce = null;
@@ -154,7 +156,8 @@ class ContactSelectorViewState extends OptimizedState<ContactSelectorView> {
                                     );
                                   }
                                   final contact = filteredContacts[index];
-                                  final hideInfo = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
+                                  final hideInfo = SettingsSvc.settings.redactedMode.value &&
+                                      SettingsSvc.settings.hideContactInfo.value;
                                   String _title = contact.displayName;
                                   if (hideInfo) {
                                     _title = "Contact";

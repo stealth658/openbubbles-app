@@ -11,8 +11,7 @@ class AppInterface {
     if (isIsolate) {
       response = await AppActions.checkForUpdate();
     } else {
-      response = await GetIt.I<GlobalIsolate>()
-          .send<Map<String, dynamic>>(IsolateRequestType.checkForUpdate);
+      response = await GetIt.I<GlobalIsolate>().send<Map<String, dynamic>>(IsolateRequestType.checkForUpdate);
     }
 
     return AppUpdateInfo(

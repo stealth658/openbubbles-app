@@ -43,10 +43,8 @@ void showMetadataDialog(Attachment a, BuildContext context) {
         height: context.height * 1 / 4,
         child: Container(
           padding: const EdgeInsets.all(10.0),
-          decoration: BoxDecoration(
-            color: context.theme.colorScheme.background,
-            borderRadius: BorderRadius.circular(10)
-          ),
+          decoration:
+              BoxDecoration(color: context.theme.colorScheme.background, borderRadius: BorderRadius.circular(10)),
           child: ListView(
             physics: ThemeSwitcher.getScrollPhysics(),
             children: metaWidgets,
@@ -55,10 +53,8 @@ void showMetadataDialog(Attachment a, BuildContext context) {
       ),
       actions: [
         TextButton(
-          child: Text(
-            "Close",
-            style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)
-          ),
+          child: Text("Close",
+              style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ],

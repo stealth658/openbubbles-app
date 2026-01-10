@@ -9,7 +9,7 @@ EventDispatcher get EventDispatcherSvc => GetIt.I<EventDispatcher>();
 class EventDispatcher {
   final StreamController<Tuple2<String, dynamic>> _stream = StreamController<Tuple2<String, dynamic>>.broadcast();
   Stream<Tuple2<String, dynamic>> get stream => _stream.stream;
-  
+
   void close() {
     _stream.close();
   }

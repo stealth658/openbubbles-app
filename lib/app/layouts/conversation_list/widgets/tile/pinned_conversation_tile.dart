@@ -103,14 +103,19 @@ class _PinnedConversationTileState extends CustomState<PinnedConversationTile, v
                         : controller.hoverHighlight.value
                             ? context.theme.colorScheme.properSurface
                             : null,
-                borderRadius: BorderRadius.circular(
-                    controller.shouldHighlight.value || controller.shouldPartialHighlight.value || controller.hoverHighlight.value ? 8 : 0),
+                borderRadius: BorderRadius.circular(controller.shouldHighlight.value ||
+                        controller.shouldPartialHighlight.value ||
+                        controller.hoverHighlight.value
+                    ? 8
+                    : 0),
               ),
               child: LayoutBuilder(
                 builder: (BuildContext context, BoxConstraints constraints) {
                   // Great math right here
                   final availableWidth = constraints.maxWidth;
-                  final colCount = kIsDesktop ? SettingsSvc.settings.pinColumnsLandscape.value : SettingsSvc.settings.pinColumnsPortrait.value;
+                  final colCount = kIsDesktop
+                      ? SettingsSvc.settings.pinColumnsLandscape.value
+                      : SettingsSvc.settings.pinColumnsPortrait.value;
                   final spaceBetween = (colCount - 1) * 30;
                   final maxWidth = max(((availableWidth - spaceBetween) / colCount).floorToDouble(), 0).toDouble();
 
@@ -186,19 +191,21 @@ class _UnreadIconState extends CustomState<UnreadIcon, void, ConversationTileCon
   Widget build(BuildContext context) {
     return Obx(() {
       final unread = ChatsSvc.getChatState(controller.chat.guid)?.hasUnreadMessage.value ?? false;
-      return unread ? Positioned(
-        left: sqrt(widget.width) - widget.width * 0.05 * sqrt(2),
-        top: sqrt(widget.width) - widget.width * 0.05 * sqrt(2),
-        child: Container(
-          width: widget.width * 0.2,
-          height: widget.width * 0.2,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: context.theme.colorScheme.primary,
-          ),
-          margin: const EdgeInsets.only(right: 3),
-        ),
-      ) : const SizedBox.shrink();
+      return unread
+          ? Positioned(
+              left: sqrt(widget.width) - widget.width * 0.05 * sqrt(2),
+              top: sqrt(widget.width) - widget.width * 0.05 * sqrt(2),
+              child: Container(
+                width: widget.width * 0.2,
+                height: widget.width * 0.2,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: context.theme.colorScheme.primary,
+                ),
+                margin: const EdgeInsets.only(right: 3),
+              ),
+            )
+          : const SizedBox.shrink();
     });
   }
 }
@@ -213,7 +220,6 @@ class MuteIcon extends CustomStateful<ConversationTileController> {
 }
 
 class _MuteIconState extends CustomState<MuteIcon, void, ConversationTileController> {
-
   @override
   void initState() {
     super.initState();
@@ -238,12 +244,15 @@ class _MuteIconState extends CustomState<MuteIcon, void, ConversationTileControl
                 height: widget.width * 0.2,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: unread ? context.theme.colorScheme.primaryContainer : context.theme.colorScheme.tertiaryContainer,
+                  color:
+                      unread ? context.theme.colorScheme.primaryContainer : context.theme.colorScheme.tertiaryContainer,
                 ),
                 child: Icon(
                   CupertinoIcons.bell_slash_fill,
                   size: widget.width * 0.14,
-                  color: unread ? context.theme.colorScheme.onPrimaryContainer : context.theme.colorScheme.onTertiaryContainer,
+                  color: unread
+                      ? context.theme.colorScheme.onPrimaryContainer
+                      : context.theme.colorScheme.onTertiaryContainer,
                 ),
               ),
             )
@@ -305,8 +314,7 @@ class _ChatTitleState extends CustomState<ChatTitle, void, ConversationTileContr
       sub = WebListeners.chatUpdate.listen((chat) {
         if (chat.guid == controller.chat.guid) {
           // check if we really need to update this widget
-          if (chat.displayName != cachedDisplayName
-              || chat.handles.length != cachedParticipants.length) {
+          if (chat.displayName != cachedDisplayName || chat.handles.length != cachedParticipants.length) {
             final newTitle = chat.getTitle();
             if (newTitle != title) {
               setState(() {
@@ -397,7 +405,9 @@ class PinnedIndicators extends StatelessWidget {
       }
 
       final showMarker = controller.chat.latestMessage.indicatorToShow;
-      if (SettingsSvc.settings.statusIndicatorsOnChats.value && !controller.chat.isGroup && showMarker != Indicator.NONE) {
+      if (SettingsSvc.settings.statusIndicatorsOnChats.value &&
+          !controller.chat.isGroup &&
+          showMarker != Indicator.NONE) {
         return Positioned(
           left: sqrt(width) - width * 0.05 * sqrt(2),
           top: width - width * 0.13 * 2,
@@ -440,7 +450,6 @@ class ReactionIcon extends CustomStateful<ConversationTileController> {
 }
 
 class _ReactionIconState extends CustomState<ReactionIcon, void, ConversationTileController> {
-
   @override
   void initState() {
     super.initState();
@@ -454,7 +463,9 @@ class _ReactionIconState extends CustomState<ReactionIcon, void, ConversationTil
   Widget build(BuildContext context) {
     return Obx(() {
       final unread = ChatsSvc.getChatState(controller.chat.guid)?.hasUnreadMessage.value ?? false;
-      return unread && !isNullOrEmpty(controller.chat.latestMessage.associatedMessageGuid) && !controller.chat.latestMessage.isFromMe!
+      return unread &&
+              !isNullOrEmpty(controller.chat.latestMessage.associatedMessageGuid) &&
+              !controller.chat.latestMessage.isFromMe!
           ? Positioned(
               top: -sqrt(widget.width / 2) + widget.width * 0.05,
               right: -sqrt(widget.width / 2) + widget.width * 0.025,

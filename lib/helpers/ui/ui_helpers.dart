@@ -30,20 +30,22 @@ class BackButton extends StatelessWidget {
         width: 48,
         child: XGestureDetector(
           supportTouch: true,
-          onTap: !kIsDesktop ? null : (details) {
-            final result = onPressed?.call() ?? false;
-            if (!result) {
-              if (Get.isSnackbarOpen) {
-                Get.closeAllSnackbars();
-              }
-              Navigator.of(context).pop();
-            }
-          },
+          onTap: !kIsDesktop
+              ? null
+              : (details) {
+                  final result = onPressed?.call() ?? false;
+                  if (!result) {
+                    if (Get.isSnackbarOpen) {
+                      Get.closeAllSnackbars();
+                    }
+                    Navigator.of(context).pop();
+                  }
+                },
           child: IconButton(
             icon: Obx(() => Icon(
-              SettingsSvc.settings.skin.value != Skins.Material ? CupertinoIcons.back : Icons.arrow_back,
-              color: color ?? context.theme.colorScheme.primary,
-            )),
+                  SettingsSvc.settings.skin.value != Skins.Material ? CupertinoIcons.back : Icons.arrow_back,
+                  color: color ?? context.theme.colorScheme.primary,
+                )),
             iconSize: SettingsSvc.settings.skin.value != Skins.Material ? 30 : 24,
             onPressed: () {
               if (kIsDesktop) return;
@@ -63,7 +65,8 @@ class BackButton extends StatelessWidget {
 }
 
 // todo remove
-Widget buildBackButton(BuildContext context, {EdgeInsets padding = EdgeInsets.zero, double? iconSize, Skins? skin, bool Function()? callback}) {
+Widget buildBackButton(BuildContext context,
+    {EdgeInsets padding = EdgeInsets.zero, double? iconSize, Skins? skin, bool Function()? callback}) {
   return Material(
     color: Colors.transparent,
     child: Container(
@@ -71,20 +74,24 @@ Widget buildBackButton(BuildContext context, {EdgeInsets padding = EdgeInsets.ze
       width: 48,
       child: XGestureDetector(
         supportTouch: true,
-        onTap: !kIsDesktop ? null : (details) {
-          final result = callback?.call() ?? true;
-          if (result) {
-            if (Get.isSnackbarOpen) {
-              Get.closeAllSnackbars();
-            }
-            Navigator.of(context).pop();
-          }
-        },
+        onTap: !kIsDesktop
+            ? null
+            : (details) {
+                final result = callback?.call() ?? true;
+                if (result) {
+                  if (Get.isSnackbarOpen) {
+                    Get.closeAllSnackbars();
+                  }
+                  Navigator.of(context).pop();
+                }
+              },
         child: IconButton(
           iconSize: iconSize ?? (SettingsSvc.settings.skin.value != Skins.Material ? 30 : 24),
           icon: skin != null
-              ? Icon(skin != Skins.Material ? CupertinoIcons.back : Icons.arrow_back, color: context.theme.colorScheme.primary)
-              : Obx(() => Icon(SettingsSvc.settings.skin.value != Skins.Material ? CupertinoIcons.back : Icons.arrow_back,
+              ? Icon(skin != Skins.Material ? CupertinoIcons.back : Icons.arrow_back,
+                  color: context.theme.colorScheme.primary)
+              : Obx(() => Icon(
+                  SettingsSvc.settings.skin.value != Skins.Material ? CupertinoIcons.back : Icons.arrow_back,
                   color: context.theme.colorScheme.primary)),
           onPressed: () {
             if (kIsDesktop) return;
@@ -106,7 +113,8 @@ Widget buildProgressIndicator(BuildContext context, {double size = 20, double st
   return SettingsSvc.settings.skin.value == Skins.iOS
       ? Theme(
           data: ThemeData(
-            cupertinoOverrideTheme: CupertinoThemeData(brightness: ThemeData.estimateBrightnessForColor(context.theme.colorScheme.background)),
+            cupertinoOverrideTheme: CupertinoThemeData(
+                brightness: ThemeData.estimateBrightnessForColor(context.theme.colorScheme.background)),
           ),
           child: CupertinoActivityIndicator(
             radius: size / 2,
@@ -157,7 +165,9 @@ Future<void> showConversationTileMenu(
                   Padding(
                     padding: const EdgeInsets.only(right: 10),
                     child: Icon(
-                      chat.isPinned! ? (ios ? CupertinoIcons.pin_slash : Icons.star_outline) : (ios ? CupertinoIcons.pin : Icons.star),
+                      chat.isPinned!
+                          ? (ios ? CupertinoIcons.pin_slash : Icons.star_outline)
+                          : (ios ? CupertinoIcons.pin : Icons.star),
                       color: context.theme.colorScheme.properOnSurface,
                     ),
                   ),
@@ -279,17 +289,22 @@ Future<void> showConversationTileMenu(
                       "Are you sure?",
                       style: context.theme.textTheme.titleLarge,
                     ),
-                    content: Text("This chat will be deleted from this device only", style: context.theme.textTheme.bodyLarge),
+                    content: Text("This chat will be deleted from this device only",
+                        style: context.theme.textTheme.bodyLarge),
                     backgroundColor: context.theme.colorScheme.properSurface,
                     actions: <Widget>[
                       TextButton(
-                        child: Text("No", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+                        child: Text("No",
+                            style:
+                                context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
                         onPressed: () {
                           Navigator.of(context).pop(); //Remove AlertDialog
                         },
                       ),
                       TextButton(
-                        child: Text("Yes", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+                        child: Text("Yes",
+                            style:
+                                context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
                         onPressed: () async {
                           ChatsSvc.removeChat(chat);
                           ChatsSvc.softDeleteChat(chat);
@@ -345,7 +360,8 @@ IconData getAttachmentIcon(String mimeType) {
   return SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.arrow_up_right_square : Icons.open_in_new;
 }
 
-void showSnackbar(String title, String message, {int animationMs = 250, int durationMs = 1500, Function(GetSnackBar)? onTap, TextButton? button}) {
+void showSnackbar(String title, String message,
+    {int animationMs = 250, int durationMs = 1500, Function(GetSnackBar)? onTap, TextButton? button}) {
   Get.snackbar(
     title,
     message,
@@ -366,7 +382,8 @@ void showSnackbar(String title, String message, {int animationMs = 250, int dura
 }
 
 Widget getIndicatorIcon(SocketState socketState, {double size = 24, bool showAlpha = true}) {
-  return Icon(Icons.fiber_manual_record, color: getIndicatorColor(socketState).withAlpha(showAlpha ? 200 : 255), size: size);
+  return Icon(Icons.fiber_manual_record,
+      color: getIndicatorColor(socketState).withAlpha(showAlpha ? 200 : 255), size: size);
 }
 
 Color getIndicatorColor(SocketState socketState) {
@@ -389,7 +406,11 @@ Future<Uint8List> avatarAsBytes({
   Canvas canvas = Canvas(pictureRecorder);
 
   await paintGroupAvatar(
-      chat: chat, participants: participants, canvas: canvas, size: quality, usingParticipantsOverride: participantsOverride != null);
+      chat: chat,
+      participants: participants,
+      canvas: canvas,
+      size: quality,
+      usingParticipantsOverride: participantsOverride != null);
 
   ui.Picture picture = pictureRecorder.endRecording();
   ui.Image image = await picture.toImage(quality.toInt(), quality.toInt());
@@ -482,11 +503,17 @@ Future<void> paintGroupAvatar({
         ..textAlign = TextAlign.center
         ..text = TextSpan(
             text: String.fromCharCode(icon.codePoint),
-            style: TextStyle(fontSize: adjustedWidth * 0.3, fontFamily: icon.fontFamily, color: theme.colorScheme.properOnSurface.withValues(alpha: 0.8)))
+            style: TextStyle(
+                fontSize: adjustedWidth * 0.3,
+                fontFamily: icon.fontFamily,
+                color: theme.colorScheme.properOnSurface.withValues(alpha: 0.8)))
         ..layout()
         ..paint(canvas, Offset(left + realSize * 0.25, top + realSize * 0.25));
     } else {
-      Paint paint = Paint()..color = SettingsSvc.settings.skin.value == Skins.Samsung ? theme.colorScheme.secondary : theme.colorScheme.background;
+      Paint paint = Paint()
+        ..color = SettingsSvc.settings.skin.value == Skins.Samsung
+            ? theme.colorScheme.secondary
+            : theme.colorScheme.background;
       canvas.drawCircle(Offset(left + realSize * 0.5, top + realSize * 0.5), realSize * 0.5, paint);
       await paintAvatar(
         handle: participants[index],
@@ -511,7 +538,7 @@ Future<void> paintAvatar(
     bool inGroup = false}) async {
   fontSize ??= size * 0.5;
   borderWidth ??= size * 0.05;
-  
+
   // Check ContactV2 avatars from disk first (more efficient)
   ContactV2? contactV2 = handle?.contactsV2.firstOrNull;
   if (contactV2?.avatarPath != null) {
@@ -526,11 +553,12 @@ Future<void> paintAvatar(
       // Fall through to old contact or gradient
     }
   }
-  
+
   // Fall back to old Contact avatar for backwards compatibility
   Contact? contact = handle?.contact;
   if (contact?.avatar != null) {
-    Uint8List? contactAvatar = await clip(contact!.avatar ?? contact.avatar!, size: size.toInt(), circle: kIsDesktop || inGroup);
+    Uint8List? contactAvatar =
+        await clip(contact!.avatar ?? contact.avatar!, size: size.toInt(), circle: kIsDesktop || inGroup);
     if (contactAvatar != null) {
       canvas.drawImage(await loadImage(contactAvatar), offset, Paint());
       return;
@@ -552,7 +580,8 @@ Future<void> paintAvatar(
 
   Paint paint = Paint();
   paint.isAntiAlias = true;
-  paint.shader = ui.Gradient.linear(Offset(dx + size * 0.5, dy + size * 0.5), Offset(size.toDouble(), size.toDouble()), [
+  paint.shader =
+      ui.Gradient.linear(Offset(dx + size * 0.5, dy + size * 0.5), Offset(size.toDouble(), size.toDouble()), [
     !SettingsSvc.settings.colorfulAvatars.value
         ? HexColor("928E8E")
         : colors.isNotEmpty
@@ -581,7 +610,8 @@ Future<void> paintAvatar(
     TextPainter()
       ..textDirection = TextDirection.rtl
       ..textAlign = TextAlign.center
-      ..text = TextSpan(text: String.fromCharCode(icon.codePoint), style: TextStyle(fontSize: fontSize, fontFamily: icon.fontFamily))
+      ..text = TextSpan(
+          text: String.fromCharCode(icon.codePoint), style: TextStyle(fontSize: fontSize, fontFamily: icon.fontFamily))
       ..layout()
       ..paint(canvas, Offset(dx + size * 0.25, dy + size * 0.25));
   } else {
@@ -640,7 +670,8 @@ Future<ui.Image> loadImage(Uint8List data) async {
   return completer.future;
 }
 
-AlertDialog areYouSure(BuildContext context, {Widget? content, String? title = "Are you sure?", required Function onNo, required Function onYes}) {
+AlertDialog areYouSure(BuildContext context,
+    {Widget? content, String? title = "Are you sure?", required Function onNo, required Function onYes}) {
   return AlertDialog(
     title: Text(
       title ?? "Are you sure?",
@@ -656,7 +687,8 @@ AlertDialog areYouSure(BuildContext context, {Widget? content, String? title = "
         },
       ),
       TextButton(
-        child: Text("Yes", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+        child:
+            Text("Yes", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
         onPressed: () async {
           onYes.call();
         },

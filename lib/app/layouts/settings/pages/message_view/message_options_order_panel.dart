@@ -28,19 +28,24 @@ class _MessageOptionsOrderPanelState extends OptimizedState<MessageOptionsOrderP
 
   @override
   Widget build(BuildContext context) {
-    final Rx<Color> _backgroundColor =
-        (kIsDesktop && SettingsSvc.settings.windowEffect.value != WindowEffect.disabled ? Colors.transparent : context.theme.colorScheme.background).obs;
+    final Rx<Color> _backgroundColor = (kIsDesktop && SettingsSvc.settings.windowEffect.value != WindowEffect.disabled
+            ? Colors.transparent
+            : context.theme.colorScheme.background)
+        .obs;
 
-    final Color tileColor = (ThemeSvc.inDarkMode(context) ? context.theme.colorScheme.properSurface : context.theme.colorScheme.background)
-        .withAlpha(SettingsSvc.settings.windowEffect.value != WindowEffect.disabled ? 100 : 255);
+    final Color tileColor =
+        (ThemeSvc.inDarkMode(context) ? context.theme.colorScheme.properSurface : context.theme.colorScheme.background)
+            .withAlpha(SettingsSvc.settings.windowEffect.value != WindowEffect.disabled ? 100 : 255);
 
     if (kIsDesktop) {
-      SettingsSvc.settings.windowEffect.listen((WindowEffect effect) =>
-          _backgroundColor.value = effect != WindowEffect.disabled ? Colors.transparent : context.theme.colorScheme.background);
+      SettingsSvc.settings.windowEffect.listen((WindowEffect effect) => _backgroundColor.value =
+          effect != WindowEffect.disabled ? Colors.transparent : context.theme.colorScheme.background);
     }
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
-        systemNavigationBarColor: SettingsSvc.settings.immersiveMode.value ? Colors.transparent : context.theme.colorScheme.background, // navigation bar color
+        systemNavigationBarColor: SettingsSvc.settings.immersiveMode.value
+            ? Colors.transparent
+            : context.theme.colorScheme.background, // navigation bar color
         systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
         statusBarColor: Colors.transparent, // status bar color
         statusBarIconBrightness: context.theme.colorScheme.brightness.opposite,
@@ -53,9 +58,10 @@ class _MessageOptionsOrderPanelState extends OptimizedState<MessageOptionsOrderP
             child: ClipRRect(
               child: BackdropFilter(
                 child: AppBar(
-                  systemOverlayStyle: ThemeData.estimateBrightnessForColor(context.theme.colorScheme.background) == Brightness.dark
-                      ? SystemUiOverlayStyle.light
-                      : SystemUiOverlayStyle.dark,
+                  systemOverlayStyle:
+                      ThemeData.estimateBrightnessForColor(context.theme.colorScheme.background) == Brightness.dark
+                          ? SystemUiOverlayStyle.light
+                          : SystemUiOverlayStyle.dark,
                   toolbarHeight: kIsDesktop ? 80 : 50,
                   elevation: 0,
                   scrolledUnderElevation: 3,
@@ -69,7 +75,8 @@ class _MessageOptionsOrderPanelState extends OptimizedState<MessageOptionsOrderP
                   ),
                   actions: [
                     TextButton(
-                      child: Text("Reset", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+                      child: Text("Reset",
+                          style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
                       onPressed: () {
                         actionList.value = DetailsMenuAction.values.platformSupportedActions;
                         SettingsSvc.settings.resetDetailsMenuActions();

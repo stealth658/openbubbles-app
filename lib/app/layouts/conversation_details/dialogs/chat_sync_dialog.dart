@@ -6,13 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class ChatSyncDialog extends StatefulWidget {
-  ChatSyncDialog({
-    super.key,
-    required this.chat,
-    this.initialMessage,
-    this.withOffset = false,
-    this.limit = 100
-  });
+  ChatSyncDialog({super.key, required this.chat, this.initialMessage, this.withOffset = false, this.limit = 100});
 
   final Chat chat;
   final String? initialMessage;
@@ -92,7 +86,8 @@ class _ChatSyncDialogState extends OptimizedState<ChatSyncDialog> {
             Navigator.of(context).pop();
           },
           child: Text(
-            "OK", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary),
+            "OK",
+            style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary),
           ),
         )
       ],

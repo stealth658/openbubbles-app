@@ -29,7 +29,8 @@ class _SamsungConversationListState extends OptimizedState<SamsungConversationLi
   bool get showUnknown => widget.parentController.showUnknownSenders;
   Color get backgroundColor =>
       SettingsSvc.settings.windowEffect.value == WindowEffect.disabled ? headerColor : Colors.transparent;
-  Color get _tileColor => SettingsSvc.settings.windowEffect.value == WindowEffect.disabled ? tileColor : Colors.transparent;
+  Color get _tileColor =>
+      SettingsSvc.settings.windowEffect.value == WindowEffect.disabled ? tileColor : Colors.transparent;
   ConversationListController get controller => widget.parentController;
 
   @override
@@ -62,9 +63,8 @@ class _SamsungConversationListState extends OptimizedState<SamsungConversationLi
       },
       child: Scaffold(
         backgroundColor: backgroundColor,
-        floatingActionButton: !showArchived && !showUnknown
-            ? ConversationListFAB(parentController: controller)
-            : const SizedBox.shrink(),
+        floatingActionButton:
+            !showArchived && !showUnknown ? ConversationListFAB(parentController: controller) : const SizedBox.shrink(),
         body: SafeArea(
           child: NotificationListener<ScrollEndNotification>(
             onNotification: (_) {

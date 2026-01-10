@@ -27,8 +27,7 @@ class RedactedModeTile extends StatelessWidget {
               Text(
                 SettingsSvc.settings.redactedMode.value ? "Enabled" : "Disabled",
                 style: context.theme.textTheme.bodyMedium!.apply(
-                  color: context.theme.colorScheme.outline
-                      .withValues(alpha: 0.85),
+                  color: context.theme.colorScheme.outline.withValues(alpha: 0.85),
                 ),
               ),
               const SizedBox(width: 5),
@@ -45,9 +44,7 @@ class RedactedModeTile extends StatelessWidget {
           leading: SettingsLeadingIcon(
             iosIcon: CupertinoIcons.wand_stars,
             materialIcon: Icons.auto_fix_high,
-            containerColor: SettingsSvc.settings.redactedMode.value
-                ? Colors.green
-                : Colors.redAccent,
+            containerColor: SettingsSvc.settings.redactedMode.value ? Colors.green : Colors.redAccent,
           ),
         ));
   }

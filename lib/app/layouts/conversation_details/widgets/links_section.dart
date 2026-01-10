@@ -55,7 +55,7 @@ class _LinksSectionState extends OptimizedState<LinksSection> {
             ..order(Message_.dateCreated, flags: Order.descending))
           .build();
       query.limit = 20;
-      
+
       final fetchedLinks = await query.findAsync();
       query.close();
 
@@ -126,42 +126,42 @@ class _LinksSectionState extends OptimizedState<LinksSection> {
             ),
             sliver: SliverToBoxAdapter(
               child: MasonryGridView.count(
-              crossAxisCount: max(2, NavigationSvc.width(context) ~/ 200),
-              mainAxisSpacing: 10,
-              crossAxisSpacing: 10,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemBuilder: (context, index) {
-                if (links[index].payloadData?.urlData?.firstOrNull == null) {
-                  return const Text("Failed to load link!");
-                }
-                return Material(
-                  color: context.theme.colorScheme.properSurface,
-                  borderRadius: BorderRadius.circular(20),
-                  clipBehavior: Clip.antiAlias,
-                  child: InkWell(
+                crossAxisCount: max(2, NavigationSvc.width(context) ~/ 200),
+                mainAxisSpacing: 10,
+                crossAxisSpacing: 10,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemBuilder: (context, index) {
+                  if (links[index].payloadData?.urlData?.firstOrNull == null) {
+                    return const Text("Failed to load link!");
+                  }
+                  return Material(
+                    color: context.theme.colorScheme.properSurface,
                     borderRadius: BorderRadius.circular(20),
-                    onTap: () async {
-                      final data = links[index].payloadData!.urlData!.first;
-                      if ((data.url ?? data.originalUrl) == null) return;
-                      await launchUrl(
-                        Uri.parse((data.url ?? data.originalUrl)!),
-                        mode: LaunchMode.externalApplication,
-                      );
-                    },
-                    child: Center(
-                      child: UrlPreview(
-                        data: links[index].payloadData!.urlData!.first,
-                        message: links[index],
+                    clipBehavior: Clip.antiAlias,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(20),
+                      onTap: () async {
+                        final data = links[index].payloadData!.urlData!.first;
+                        if ((data.url ?? data.originalUrl) == null) return;
+                        await launchUrl(
+                          Uri.parse((data.url ?? data.originalUrl)!),
+                          mode: LaunchMode.externalApplication,
+                        );
+                      },
+                      child: Center(
+                        child: UrlPreview(
+                          data: links[index].payloadData!.urlData!.first,
+                          message: links[index],
+                        ),
                       ),
                     ),
-                  ),
-                );
-              },
-              itemCount: links.length,
+                  );
+                },
+                itemCount: links.length,
+              ),
             ),
           ),
-        ),
       ],
     );
   }

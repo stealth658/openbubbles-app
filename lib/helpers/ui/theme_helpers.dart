@@ -126,15 +126,16 @@ mixin ThemeHelpers<T extends StatefulWidget> on State<T> {
       fontWeight: FontWeight.w300);
 
   /// Material / Samsung skin [ListTile] subtitle [TextStyle]s
-  TextStyle get materialSubtitle =>
-      context.theme.textTheme.labelLarge!.copyWith(color: context.theme.colorScheme.primary, fontWeight: FontWeight.bold);
+  TextStyle get materialSubtitle => context.theme.textTheme.labelLarge!
+      .copyWith(color: context.theme.colorScheme.primary, fontWeight: FontWeight.bold);
 
-  Color get _headerColor => (ThemeSvc.inDarkMode(context)
-      ? context.theme.colorScheme.background
-      : context.theme.colorScheme.properSurface).withAlpha(SettingsSvc.settings.windowEffect.value != WindowEffect.disabled ? 20 : 255);
+  Color get _headerColor =>
+      (ThemeSvc.inDarkMode(context) ? context.theme.colorScheme.background : context.theme.colorScheme.properSurface)
+          .withAlpha(SettingsSvc.settings.windowEffect.value != WindowEffect.disabled ? 20 : 255);
 
-  Color get _tileColor => (ThemeSvc.inDarkMode(context) ? context.theme.colorScheme.properSurface : context.theme.colorScheme.background)
-      .withAlpha(SettingsSvc.settings.windowEffect.value != WindowEffect.disabled ? 100 : 255);
+  Color get _tileColor =>
+      (ThemeSvc.inDarkMode(context) ? context.theme.colorScheme.properSurface : context.theme.colorScheme.background)
+          .withAlpha(SettingsSvc.settings.windowEffect.value != WindowEffect.disabled ? 100 : 255);
 
   /// Header / background color on settings pages
   Color get headerColor => reverseMapping ? _tileColor : _headerColor;
@@ -144,7 +145,10 @@ mixin ThemeHelpers<T extends StatefulWidget> on State<T> {
 
   /// Whether or not to use tablet mode
   bool get showAltLayout =>
-      SettingsSvc.settings.tabletMode.value && (!context.isPhone || context.width / context.height > 0.8) && context.width > 600 && !LifecycleSvc.isBubble;
+      SettingsSvc.settings.tabletMode.value &&
+      (!context.isPhone || context.width / context.height > 0.8) &&
+      context.width > 600 &&
+      !LifecycleSvc.isBubble;
 
   bool get showAltLayoutContextless =>
       SettingsSvc.settings.tabletMode.value &&
@@ -167,11 +171,15 @@ extension ColorSchemeHelpers on ColorScheme {
   Color get properOnSurface => surface.computeDifference(background) < 8 ? onSurfaceVariant : onSurface;
 
   Color get iMessageBubble =>
-      HSLColor.fromColor(primary).colorfulness < HSLColor.fromColor(primaryContainer).colorfulness ? primary : primaryContainer;
+      HSLColor.fromColor(primary).colorfulness < HSLColor.fromColor(primaryContainer).colorfulness
+          ? primary
+          : primaryContainer;
 
   Color get oniMessageBubble => iMessageBubble == primary ? onPrimary : onPrimaryContainer;
 
-  Color get smsBubble => HSLColor.fromColor(primary).colorfulness > HSLColor.fromColor(primaryContainer).colorfulness ? primary : primaryContainer;
+  Color get smsBubble => HSLColor.fromColor(primary).colorfulness > HSLColor.fromColor(primaryContainer).colorfulness
+      ? primary
+      : primaryContainer;
 
   Color get onSmsBubble => iMessageBubble == primary ? onPrimaryContainer : onPrimary;
 
@@ -198,7 +206,8 @@ extension ColorHelpers on Color {
   Color lightenPercent([double percent = 10]) {
     assert(1 <= percent && percent <= 100);
     var p = percent / 100;
-    return Color.fromARGB(alpha, red + ((255 - red) * p).round(), green + ((255 - green) * p).round(), blue + ((255 - blue) * p).round());
+    return Color.fromARGB(
+        alpha, red + ((255 - red) * p).round(), green + ((255 - green) * p).round(), blue + ((255 - blue) * p).round());
   }
 
   Color lightenOrDarken([double percent = 10]) {

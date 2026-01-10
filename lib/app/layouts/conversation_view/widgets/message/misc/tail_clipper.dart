@@ -2,7 +2,7 @@ import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/material.dart';
 
-class TailClipper extends CustomClipper<Path>{
+class TailClipper extends CustomClipper<Path> {
   final bool isFromMe;
   final bool showTail;
   final bool connectUpper;

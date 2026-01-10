@@ -111,7 +111,9 @@ class PinnedTileTextBubbleState extends CustomState<PinnedTileTextBubble, void, 
       context.theme.colorScheme.bubble(context, chat.isIMessage)
     ];
     if (lastMessage == null) return bubbleColors;
-    if (!SettingsSvc.settings.colorfulAvatars.value && SettingsSvc.settings.colorfulBubbles.value && !lastMessage!.isFromMe!) {
+    if (!SettingsSvc.settings.colorfulAvatars.value &&
+        SettingsSvc.settings.colorfulBubbles.value &&
+        !lastMessage!.isFromMe!) {
       if (lastMessage!.handleRelation.target?.color == null) {
         bubbleColors = toColorGradient(lastMessage!.handleRelation.target?.address);
       } else {

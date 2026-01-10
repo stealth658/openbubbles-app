@@ -10,8 +10,7 @@ class ServerInterface {
     if (isIsolate) {
       response = await ServerActions.checkForServerUpdate();
     } else {
-      response = await GetIt.I<GlobalIsolate>()
-          .send<Map<String, dynamic>>(IsolateRequestType.checkForServerUpdate);
+      response = await GetIt.I<GlobalIsolate>().send<Map<String, dynamic>>(IsolateRequestType.checkForServerUpdate);
     }
 
     final metadata = response['metadata'] as Map<String, dynamic>;
@@ -29,8 +28,7 @@ class ServerInterface {
     if (isIsolate) {
       response = await ServerActions.getServerDetails();
     } else {
-      response = await GetIt.I<GlobalIsolate>()
-          .send<Map<String, dynamic>>(IsolateRequestType.getServerDetails);
+      response = await GetIt.I<GlobalIsolate>().send<Map<String, dynamic>>(IsolateRequestType.getServerDetails);
     }
 
     return ServerDetailsInfo(

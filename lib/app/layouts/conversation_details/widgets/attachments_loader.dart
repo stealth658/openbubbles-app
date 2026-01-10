@@ -34,9 +34,9 @@ class _AttachmentsLoaderState extends OptimizedState<AttachmentsLoader> {
   Future<void> _fetchAttachments() async {
     try {
       final attachments = await widget.chat.getAttachmentsAsync();
-      
+
       if (!mounted) return;
-      
+
       final media = attachments
           .where((e) =>
               !(e.message.target?.isGroupEvent ?? true) &&
@@ -44,7 +44,7 @@ class _AttachmentsLoaderState extends OptimizedState<AttachmentsLoader> {
               (e.mimeStart == "image" || e.mimeStart == "video"))
           .take(24)
           .toList();
-          
+
       final docs = attachments
           .where((e) =>
               !(e.message.target?.isGroupEvent ?? true) &&
@@ -54,11 +54,8 @@ class _AttachmentsLoaderState extends OptimizedState<AttachmentsLoader> {
               !(e.mimeType ?? "").contains("location"))
           .take(24)
           .toList();
-          
-      final locations = attachments
-          .where((e) => (e.mimeType ?? "").contains("location"))
-          .take(10)
-          .toList();
+
+      final locations = attachments.where((e) => (e.mimeType ?? "").contains("location")).take(10).toList();
 
       setState(() {
         isLoading = false;

@@ -83,8 +83,9 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
         View.of(context).devicePixelRatio,
       ).bottom;
   late int numberToShow = 5;
-  late Chat? dmChat = ChatsSvc.allChats
-      .firstWhereOrNull((chat) => !chat.isGroup && chat.handles.firstWhereOrNull((handle) => handle.address == message.handleRelation.target?.address) != null);
+  late Chat? dmChat = ChatsSvc.allChats.firstWhereOrNull((chat) =>
+      !chat.isGroup &&
+      chat.handles.firstWhereOrNull((handle) => handle.address == message.handleRelation.target?.address) != null);
   String? selfReaction;
   String? currentlySelectedReaction = "init";
 
@@ -101,7 +102,9 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
   bool get isSent => !message.guid!.startsWith('temp') && !message.guid!.startsWith('error');
 
   bool get showDownload =>
-      (isSent && part.attachments.isNotEmpty && part.attachments.where((element) => AttachmentsSvc.getContent(element) is PlatformFile).isNotEmpty) ||
+      (isSent &&
+          part.attachments.isNotEmpty &&
+          part.attachments.where((element) => AttachmentsSvc.getContent(element) is PlatformFile).isNotEmpty) ||
       isEmbeddedMedia;
 
   late bool isEmbeddedMedia = (message.balloonBundleId == "com.apple.Handwriting.HandwritingProvider" ||
@@ -131,7 +134,9 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
     updateObx(() {
       currentlySelectedReaction = null;
       reactions = getUniqueReactionMessages(message.associatedMessages
-          .where((e) => ReactionTypes.toList().contains(e.associatedMessageType?.replaceAll("-", "")) && (e.associatedMessagePart ?? 0) == part.part)
+          .where((e) =>
+              ReactionTypes.toList().contains(e.associatedMessageType?.replaceAll("-", "")) &&
+              (e.associatedMessagePart ?? 0) == part.part)
           .toList());
       final self = reactions.firstWhereOrNull((e) => e.isFromMe!)?.associatedMessageType;
       if (!(self?.contains("-") ?? true)) {
@@ -163,7 +168,9 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
-        systemNavigationBarColor: SettingsSvc.settings.immersiveMode.value ? Colors.transparent : context.theme.colorScheme.background, // navigation bar color
+        systemNavigationBarColor: SettingsSvc.settings.immersiveMode.value
+            ? Colors.transparent
+            : context.theme.colorScheme.background, // navigation bar color
         systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
         statusBarColor: Colors.transparent, // status bar color
         statusBarIconBrightness: context.theme.colorScheme.brightness.opposite,
@@ -175,8 +182,9 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
           colorScheme: context.theme.colorScheme.copyWith(
             primary: context.theme.colorScheme.bubble(context, chat.isIMessage),
             onPrimary: context.theme.colorScheme.onBubble(context, chat.isIMessage),
-            surface:
-                SettingsSvc.settings.monetTheming.value == Monet.full ? null : (context.theme.extensions[BubbleColors] as BubbleColors?)?.receivedBubbleColor,
+            surface: SettingsSvc.settings.monetTheming.value == Monet.full
+                ? null
+                : (context.theme.extensions[BubbleColors] as BubbleColors?)?.receivedBubbleColor,
             onSurface: SettingsSvc.settings.monetTheming.value == Monet.full
                 ? null
                 : (context.theme.extensions[BubbleColors] as BubbleColors?)?.onReceivedBubbleColor,
@@ -192,8 +200,9 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
                     ? null
                     : AppBar(
                         backgroundColor: context.theme.colorScheme.background.oppositeLightenOrDarken(5),
-                        systemOverlayStyle:
-                            context.theme.colorScheme.brightness == Brightness.dark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+                        systemOverlayStyle: context.theme.colorScheme.brightness == Brightness.dark
+                            ? SystemUiOverlayStyle.light
+                            : SystemUiOverlayStyle.dark,
                         automaticallyImplyLeading: false,
                         leadingWidth: 40,
                         toolbarHeight: kIsDesktop ? 80 : null,
@@ -208,7 +217,7 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
                           ),
                         ),
                         actions: buildMaterialDetailsMenu(context),
-                ),
+                      ),
                 body: Stack(
                   fit: StackFit.expand,
                   children: [
@@ -219,8 +228,14 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
                               ? Container(color: context.theme.colorScheme.background.withValues(alpha: 0.8))
                               : BackdropFilter(
                                   filter: ImageFilter.blur(
-                                      sigmaX: kIsDesktop && SettingsSvc.settings.windowEffect.value != WindowEffect.disabled ? 10 : 30,
-                                      sigmaY: kIsDesktop && SettingsSvc.settings.windowEffect.value != WindowEffect.disabled ? 10 : 30),
+                                      sigmaX:
+                                          kIsDesktop && SettingsSvc.settings.windowEffect.value != WindowEffect.disabled
+                                              ? 10
+                                              : 30,
+                                      sigmaY:
+                                          kIsDesktop && SettingsSvc.settings.windowEffect.value != WindowEffect.disabled
+                                              ? 10
+                                              : 30),
                                   child: Container(
                                     color: context.theme.colorScheme.properSurface.withValues(alpha: 0.3),
                                   ),
@@ -237,7 +252,8 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
                           tween: Tween<double>(begin: 0.8, end: 1),
                           curve: Curves.easeOutBack,
                           duration: const Duration(milliseconds: 500),
-                          child: ConstrainedBox(constraints: BoxConstraints(maxWidth: widget.size.width), child: widget.child),
+                          child: ConstrainedBox(
+                              constraints: BoxConstraints(maxWidth: widget.size.width), child: widget.child),
                           builder: (context, size, child) {
                             return Transform.scale(
                               scale: size.clamp(1, double.infinity),
@@ -261,7 +277,9 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
                       ),
                     if (SettingsSvc.settings.enablePrivateAPI.value && isSent && minSierra && chat.isIMessage)
                       Positioned(
-                        bottom: (iOS ? itemHeight * numberToShow + 35 + widget.size.height : context.height - materialOffset)
+                        bottom: (iOS
+                                ? itemHeight * numberToShow + 35 + widget.size.height
+                                : context.height - materialOffset)
                             .clamp(0, context.height - (narrowScreen ? 200 : 125)),
                         right: message.isFromMe! ? 15 : null,
                         left: !message.isFromMe! ? widget.childPosition.dx + 10 : null,
@@ -274,7 +292,9 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
                               : ClipShadowPath(
                                   shadow: iOS
                                       ? BoxShadow(
-                                          color: context.theme.colorScheme.properSurface.withAlpha(iOS ? 150 : 255).lightenOrDarken(iOS ? 0 : 10))
+                                          color: context.theme.colorScheme.properSurface
+                                              .withAlpha(iOS ? 150 : 255)
+                                              .lightenOrDarken(iOS ? 0 : 10))
                                       : BoxShadow(
                                           color: context.theme.colorScheme.shadow,
                                           blurRadius: 2,
@@ -287,7 +307,9 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
                                     filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
                                     child: Container(
                                       padding: const EdgeInsets.all(5).add(const EdgeInsets.only(bottom: 15)),
-                                      color: context.theme.colorScheme.properSurface.withAlpha(iOS ? 150 : 255).lightenOrDarken(iOS ? 0 : 10),
+                                      color: context.theme.colorScheme.properSurface
+                                          .withAlpha(iOS ? 150 : 255)
+                                          .lightenOrDarken(iOS ? 0 : 10),
                                       child: Column(
                                           mainAxisSize: MainAxisSize.min,
                                           children: List.generate(narrowScreen ? 2 : 1, (index) {
@@ -295,12 +317,17 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
                                               mainAxisSize: MainAxisSize.min,
                                               mainAxisAlignment: MainAxisAlignment.start,
                                               children: ReactionTypes.toList()
-                                                  .slice(narrowScreen && index == 1 ? 3 : 0, narrowScreen && index == 0 ? 3 : null)
+                                                  .slice(narrowScreen && index == 1 ? 3 : 0,
+                                                      narrowScreen && index == 0 ? 3 : null)
                                                   .map((e) {
                                                 return Padding(
-                                                  padding: iOS ? const EdgeInsets.all(5.0) : const EdgeInsets.symmetric(horizontal: 5),
+                                                  padding: iOS
+                                                      ? const EdgeInsets.all(5.0)
+                                                      : const EdgeInsets.symmetric(horizontal: 5),
                                                   child: Material(
-                                                    color: currentlySelectedReaction == e ? context.theme.colorScheme.primary : Colors.transparent,
+                                                    color: currentlySelectedReaction == e
+                                                        ? context.theme.colorScheme.primary
+                                                        : Colors.transparent,
                                                     borderRadius: BorderRadius.circular(20),
                                                     child: SizedBox(
                                                       width: iOS ? 35 : null,
@@ -319,7 +346,8 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
                                                           popDetails();
                                                         },
                                                         child: Padding(
-                                                          padding: const EdgeInsets.all(6.5).add(EdgeInsets.only(right: e == "emphasize" ? 2.5 : 0)),
+                                                          padding: const EdgeInsets.all(6.5)
+                                                              .add(EdgeInsets.only(right: e == "emphasize" ? 2.5 : 0)),
                                                           child: iOS
                                                               ? SvgPicture.asset(
                                                                   'assets/reactions/$e-black.svg',
@@ -335,7 +363,9 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
                                                                   child: Builder(builder: (context) {
                                                                     final text = Text(
                                                                       ReactionTypes.reactionToEmoji[e] ?? "X",
-                                                                      style: const TextStyle(fontSize: 18, fontFamily: 'Apple Color Emoji'),
+                                                                      style: const TextStyle(
+                                                                          fontSize: 18,
+                                                                          fontFamily: 'Apple Color Emoji'),
                                                                       textAlign: TextAlign.center,
                                                                     );
                                                                     // rotate thumbs down to match iOS
@@ -438,7 +468,8 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
       }
       if (content is PlatformFile) {
         popDetails();
-        await AttachmentsSvc.saveToDisk(content, isDocument: part.attachments.first.mimeStart != "image" && part.attachments.first.mimeStart != "video");
+        await AttachmentsSvc.saveToDisk(content,
+            isDocument: part.attachments.first.mimeStart != "image" && part.attachments.first.mimeStart != "video");
       }
     } catch (ex, trace) {
       Logger.error("Error downloading attachment: ${ex.toString()}", error: ex, trace: trace);
@@ -546,7 +577,9 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
             () => downloadingAttachments.value
                 ? Container(height: 0, width: 0)
                 : TextButton(
-                    child: Text("Close", style: context.theme.textTheme.bodyLarge!.copyWith(color: Get.context!.theme.colorScheme.primary)),
+                    child: Text("Close",
+                        style:
+                            context.theme.textTheme.bodyLarge!.copyWith(color: Get.context!.theme.colorScheme.primary)),
                     onPressed: () async {
                       Get.closeAllSnackbars();
                       Navigator.of(context).pop();
@@ -561,7 +594,9 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
       for (Attachment? element in toDownload) {
         attachmentObs.value = element;
         final response = await HttpSvc.downloadAttachment(element!.guid!,
-            original: true, onReceiveProgress: (count, total) => progress.value = kIsWeb ? (count / total) : (count / element.totalBytes!));
+            original: true,
+            onReceiveProgress: (count, total) =>
+                progress.value = kIsWeb ? (count / total) : (count / element.totalBytes!));
         final file = PlatformFile(
           name: element.transferName!,
           size: response.data.length,
@@ -625,7 +660,9 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
             () => downloadingAttachments.value
                 ? Container(height: 0, width: 0)
                 : TextButton(
-                    child: Text("Close", style: context.theme.textTheme.bodyLarge!.copyWith(color: Get.context!.theme.colorScheme.primary)),
+                    child: Text("Close",
+                        style:
+                            context.theme.textTheme.bodyLarge!.copyWith(color: Get.context!.theme.colorScheme.primary)),
                     onPressed: () async {
                       Get.closeAllSnackbars();
                       Navigator.of(context).pop();
@@ -639,7 +676,8 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
     try {
       for (Attachment? element in toDownload) {
         attachmentObs.value = element;
-        final response = await HttpSvc.downloadLivePhoto(element!.guid!, onReceiveProgress: (count, total) => progress.value = count);
+        final response = await HttpSvc.downloadLivePhoto(element!.guid!,
+            onReceiveProgress: (count, total) => progress.value = count);
         final nameSplit = element.transferName!.split(".");
         final file = PlatformFile(
           name: "${nameSplit.take(nameSplit.length - 1).join(".")}.mov",
@@ -671,8 +709,10 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
 
   void createContact() async {
     popDetails();
-    await MethodChannelSvc
-        .invokeMethod("open-contact-form", {'address': message.handleRelation.target!.address, 'address_type': message.handleRelation.target!.address.isEmail ? 'email' : 'phone'});
+    await MethodChannelSvc.invokeMethod("open-contact-form", {
+      'address': message.handleRelation.target!.address,
+      'address_type': message.handleRelation.target!.address.isEmail ? 'email' : 'phone'
+    });
   }
 
   void showThread() {
@@ -814,16 +854,20 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
     const encoder = JsonEncoder.withIndent("     ");
     Map map = message.toMap();
     if (map["dateCreated"] is int) {
-      map["dateCreated"] = DateFormat("MMMM d, yyyy h:mm:ss a").format(DateTime.fromMillisecondsSinceEpoch(map["dateCreated"]));
+      map["dateCreated"] =
+          DateFormat("MMMM d, yyyy h:mm:ss a").format(DateTime.fromMillisecondsSinceEpoch(map["dateCreated"]));
     }
     if (map["dateDelivered"] is int) {
-      map["dateDelivered"] = DateFormat("MMMM d, yyyy h:mm:ss a").format(DateTime.fromMillisecondsSinceEpoch(map["dateDelivered"]));
+      map["dateDelivered"] =
+          DateFormat("MMMM d, yyyy h:mm:ss a").format(DateTime.fromMillisecondsSinceEpoch(map["dateDelivered"]));
     }
     if (map["dateRead"] is int) {
-      map["dateRead"] = DateFormat("MMMM d, yyyy h:mm:ss a").format(DateTime.fromMillisecondsSinceEpoch(map["dateRead"]));
+      map["dateRead"] =
+          DateFormat("MMMM d, yyyy h:mm:ss a").format(DateTime.fromMillisecondsSinceEpoch(map["dateRead"]));
     }
     if (map["dateEdited"] is int) {
-      map["dateEdited"] = DateFormat("MMMM d, yyyy h:mm:ss a").format(DateTime.fromMillisecondsSinceEpoch(map["dateEdited"]));
+      map["dateEdited"] =
+          DateFormat("MMMM d, yyyy h:mm:ss a").format(DateTime.fromMillisecondsSinceEpoch(map["dateEdited"]));
     }
     String str = encoder.convert(map);
     showDialog(
@@ -839,7 +883,8 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
           height: context.height * 1 / 4,
           child: Container(
             padding: const EdgeInsets.all(10.0),
-            decoration: BoxDecoration(color: context.theme.colorScheme.background, borderRadius: const BorderRadius.all(Radius.circular(10))),
+            decoration: BoxDecoration(
+                color: context.theme.colorScheme.background, borderRadius: const BorderRadius.all(Radius.circular(10))),
             child: SingleChildScrollView(
               child: SelectableText(
                 str,
@@ -850,7 +895,8 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
         ),
         actions: [
           TextButton(
-            child: Text("Close", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+            child: Text("Close",
+                style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
             onPressed: () => Navigator.of(context).pop(),
           ),
         ],
@@ -861,138 +907,150 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
   get _allActions {
     final canEdit = (message.dateCreated?.toUtc().isWithin(DateTime.now().toUtc(), minutes: 15) ?? false);
     return [
-        if (SettingsSvc.settings.enablePrivateAPI.value && minBigSur && chat.isIMessage && isSent)
-          DetailsMenuActionWidget(
-            onTap: reply,
-            action: DetailsMenuAction.Reply,
-          ),
-        if (showDownload)
-          DetailsMenuActionWidget(
-            onTap: download,
-            action: DetailsMenuAction.Save,
-          ),
-        if ((part.text?.hasUrl ?? false) && !kIsWeb && !kIsDesktop && !LifecycleSvc.isBubble)
-          DetailsMenuActionWidget(
-            onTap: openLink,
-            action: DetailsMenuAction.OpenInBrowser,
-          ),
-        if (showDownload && kIsWeb && part.attachments.firstOrNull?.webUrl != null)
-          DetailsMenuActionWidget(
-            onTap: openAttachmentWeb,
-            action: DetailsMenuAction.OpenInNewTab,
-          ),
-        if (!isNullOrEmptyString(part.fullText))
-          DetailsMenuActionWidget(
-            onTap: copyText,
-            action: DetailsMenuAction.CopyText,
-          ),
-        if (showDownload && kIsDesktop)
-          DetailsMenuActionWidget(
-            onTap: copyAttachment,
-            action: DetailsMenuAction.CopyAttachment,
-          ),
-        if (showDownload &&
-            supportsOriginalDownload &&
-            part.attachments
-                .where((element) =>
-                    (element.uti?.contains("heic") ?? false) ||
-                    (element.uti?.contains("heif") ?? false) ||
-                    (element.uti?.contains("quicktime") ?? false) ||
-                    (element.uti?.contains("coreaudio") ?? false) ||
-                    (element.uti?.contains("tiff") ?? false))
-                .isNotEmpty)
-          DetailsMenuActionWidget(
-            onTap: downloadOriginal,
-            action: DetailsMenuAction.SaveOriginal,
-          ),
-        if (showDownload && part.attachments.where((e) => e.hasLivePhoto).isNotEmpty)
-          DetailsMenuActionWidget(
-            onTap: downloadLivePhoto,
-            action: DetailsMenuAction.SaveLivePhoto,
-          ),
-        if (chat.isGroup && !message.isFromMe! && dmChat != null && !LifecycleSvc.isBubble)
-          DetailsMenuActionWidget(
-            onTap: openDm,
-            action: DetailsMenuAction.OpenDirectMessage,
-          ),
-        if (message.threadOriginatorGuid != null || service.struct.threads(message.guid!, part.part, returnOriginator: false).isNotEmpty)
-          DetailsMenuActionWidget(
-            onTap: showThread,
-            action: DetailsMenuAction.ViewThread,
-          ),
-        if ((part.attachments.isNotEmpty && !kIsWeb && !(kIsDesktop && Platform.isLinux)) || (!kIsWeb && !(kIsDesktop && Platform.isLinux) && !isNullOrEmpty(part.text)))
-          DetailsMenuActionWidget(
-            onTap: share,
-            action: DetailsMenuAction.Share,
-          ),
-        if (showDownload)
-          DetailsMenuActionWidget(
-            onTap: redownload,
-            action: DetailsMenuAction.ReDownloadFromServer,
-          ),
-        if (!kIsWeb && !kIsDesktop)
-          DetailsMenuActionWidget(
-            onTap: remindLater,
-            action: DetailsMenuAction.RemindLater,
-          ),
-        if (!kIsWeb && !kIsDesktop && !message.isFromMe! && message.handleRelation.target != null && message.handleRelation.target!.contact == null)
-          DetailsMenuActionWidget(
-            onTap: createContact,
-            action: DetailsMenuAction.CreateContact,
-          ),
-        if (SettingsSvc.isMinVenturaSync && message.isFromMe! && !message.guid!.startsWith("temp") && SettingsSvc.serverDetailsSync().item4 >= 148)
-          DetailsMenuActionWidget(
-            onTap: unsend,
-            action: DetailsMenuAction.UndoSend,
-          ),
-        if (SettingsSvc.isMinVenturaSync &&
-            message.isFromMe! &&
-            !message.guid!.startsWith("temp") &&
-            SettingsSvc.serverDetailsSync().item4 >= 148 &&
-            (part.text?.isNotEmpty ?? false))
-          DetailsMenuActionWidget(
-            onTap: edit,
-            customTitle: canEdit ? 'Edit' : 'Edit (too old)',
-            shouldDisableBtn: !canEdit,
-            action: DetailsMenuAction.Edit,
-          ),
-        if (!LifecycleSvc.isBubble && !message.isInteractive)
-          DetailsMenuActionWidget(
-            onTap: forward,
-            action: DetailsMenuAction.Forward,
-          ),
-        if (chat.isGroup && !message.isFromMe! && dmChat == null && !LifecycleSvc.isBubble)
-          DetailsMenuActionWidget(
-            onTap: newConvo,
-            action: DetailsMenuAction.StartConversation,
-          ),
-        if (!isNullOrEmptyString(part.fullText) && (kIsDesktop || kIsWeb))
-          DetailsMenuActionWidget(
-            onTap: copySelection,
-            action: DetailsMenuAction.CopySelection,
-          ),
+      if (SettingsSvc.settings.enablePrivateAPI.value && minBigSur && chat.isIMessage && isSent)
         DetailsMenuActionWidget(
-          onTap: delete,
-          action: DetailsMenuAction.Delete,
+          onTap: reply,
+          action: DetailsMenuAction.Reply,
         ),
+      if (showDownload)
         DetailsMenuActionWidget(
-          onTap: toggleBookmark,
-          action: DetailsMenuAction.Bookmark,
-          customTitle: message.isBookmarked ? "Remove Bookmark" : "Add Bookmark",
+          onTap: download,
+          action: DetailsMenuAction.Save,
         ),
+      if ((part.text?.hasUrl ?? false) && !kIsWeb && !kIsDesktop && !LifecycleSvc.isBubble)
         DetailsMenuActionWidget(
-          onTap: selectMultiple,
-          action: DetailsMenuAction.SelectMultiple,
+          onTap: openLink,
+          action: DetailsMenuAction.OpenInBrowser,
         ),
+      if (showDownload && kIsWeb && part.attachments.firstOrNull?.webUrl != null)
         DetailsMenuActionWidget(
-          onTap: messageInfo,
-          action: DetailsMenuAction.MessageInfo,
+          onTap: openAttachmentWeb,
+          action: DetailsMenuAction.OpenInNewTab,
         ),
-      ].sorted((a, b) => SettingsSvc.settings.detailsMenuActions.indexOf(a.action).compareTo(SettingsSvc.settings.detailsMenuActions.indexOf(b.action)));
+      if (!isNullOrEmptyString(part.fullText))
+        DetailsMenuActionWidget(
+          onTap: copyText,
+          action: DetailsMenuAction.CopyText,
+        ),
+      if (showDownload && kIsDesktop)
+        DetailsMenuActionWidget(
+          onTap: copyAttachment,
+          action: DetailsMenuAction.CopyAttachment,
+        ),
+      if (showDownload &&
+          supportsOriginalDownload &&
+          part.attachments
+              .where((element) =>
+                  (element.uti?.contains("heic") ?? false) ||
+                  (element.uti?.contains("heif") ?? false) ||
+                  (element.uti?.contains("quicktime") ?? false) ||
+                  (element.uti?.contains("coreaudio") ?? false) ||
+                  (element.uti?.contains("tiff") ?? false))
+              .isNotEmpty)
+        DetailsMenuActionWidget(
+          onTap: downloadOriginal,
+          action: DetailsMenuAction.SaveOriginal,
+        ),
+      if (showDownload && part.attachments.where((e) => e.hasLivePhoto).isNotEmpty)
+        DetailsMenuActionWidget(
+          onTap: downloadLivePhoto,
+          action: DetailsMenuAction.SaveLivePhoto,
+        ),
+      if (chat.isGroup && !message.isFromMe! && dmChat != null && !LifecycleSvc.isBubble)
+        DetailsMenuActionWidget(
+          onTap: openDm,
+          action: DetailsMenuAction.OpenDirectMessage,
+        ),
+      if (message.threadOriginatorGuid != null ||
+          service.struct.threads(message.guid!, part.part, returnOriginator: false).isNotEmpty)
+        DetailsMenuActionWidget(
+          onTap: showThread,
+          action: DetailsMenuAction.ViewThread,
+        ),
+      if ((part.attachments.isNotEmpty && !kIsWeb && !(kIsDesktop && Platform.isLinux)) ||
+          (!kIsWeb && !(kIsDesktop && Platform.isLinux) && !isNullOrEmpty(part.text)))
+        DetailsMenuActionWidget(
+          onTap: share,
+          action: DetailsMenuAction.Share,
+        ),
+      if (showDownload)
+        DetailsMenuActionWidget(
+          onTap: redownload,
+          action: DetailsMenuAction.ReDownloadFromServer,
+        ),
+      if (!kIsWeb && !kIsDesktop)
+        DetailsMenuActionWidget(
+          onTap: remindLater,
+          action: DetailsMenuAction.RemindLater,
+        ),
+      if (!kIsWeb &&
+          !kIsDesktop &&
+          !message.isFromMe! &&
+          message.handleRelation.target != null &&
+          message.handleRelation.target!.contact == null)
+        DetailsMenuActionWidget(
+          onTap: createContact,
+          action: DetailsMenuAction.CreateContact,
+        ),
+      if (SettingsSvc.isMinVenturaSync &&
+          message.isFromMe! &&
+          !message.guid!.startsWith("temp") &&
+          SettingsSvc.serverDetailsSync().item4 >= 148)
+        DetailsMenuActionWidget(
+          onTap: unsend,
+          action: DetailsMenuAction.UndoSend,
+        ),
+      if (SettingsSvc.isMinVenturaSync &&
+          message.isFromMe! &&
+          !message.guid!.startsWith("temp") &&
+          SettingsSvc.serverDetailsSync().item4 >= 148 &&
+          (part.text?.isNotEmpty ?? false))
+        DetailsMenuActionWidget(
+          onTap: edit,
+          customTitle: canEdit ? 'Edit' : 'Edit (too old)',
+          shouldDisableBtn: !canEdit,
+          action: DetailsMenuAction.Edit,
+        ),
+      if (!LifecycleSvc.isBubble && !message.isInteractive)
+        DetailsMenuActionWidget(
+          onTap: forward,
+          action: DetailsMenuAction.Forward,
+        ),
+      if (chat.isGroup && !message.isFromMe! && dmChat == null && !LifecycleSvc.isBubble)
+        DetailsMenuActionWidget(
+          onTap: newConvo,
+          action: DetailsMenuAction.StartConversation,
+        ),
+      if (!isNullOrEmptyString(part.fullText) && (kIsDesktop || kIsWeb))
+        DetailsMenuActionWidget(
+          onTap: copySelection,
+          action: DetailsMenuAction.CopySelection,
+        ),
+      DetailsMenuActionWidget(
+        onTap: delete,
+        action: DetailsMenuAction.Delete,
+      ),
+      DetailsMenuActionWidget(
+        onTap: toggleBookmark,
+        action: DetailsMenuAction.Bookmark,
+        customTitle: message.isBookmarked ? "Remove Bookmark" : "Add Bookmark",
+      ),
+      DetailsMenuActionWidget(
+        onTap: selectMultiple,
+        action: DetailsMenuAction.SelectMultiple,
+      ),
+      DetailsMenuActionWidget(
+        onTap: messageInfo,
+        action: DetailsMenuAction.MessageInfo,
+      ),
+    ].sorted((a, b) => SettingsSvc.settings.detailsMenuActions
+        .indexOf(a.action)
+        .compareTo(SettingsSvc.settings.detailsMenuActions.indexOf(b.action)));
   }
 
   Widget buildDetailsMenu(BuildContext context) {
-    double maxMenuWidth = min(max(NavigationSvc.width(widthContext) * 3 / 5, 200), NavigationSvc.width(widthContext) * 4 / 5);
+    double maxMenuWidth =
+        min(max(NavigationSvc.width(widthContext) * 3 / 5, 200), NavigationSvc.width(widthContext) * 4 / 5);
 
     List<DetailsMenuActionWidget> allActions = _allActions;
 
@@ -1048,40 +1106,41 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
         if (action.action == DetailsMenuAction.Edit) {
           isDisabled = !((message.dateCreated?.toUtc().isWithin(DateTime.now().toUtc(), minutes: 15) ?? false));
         }
-  
-        Color color = isDisabled ? context.theme.colorScheme.properOnSurface.withValues(alpha: 0.5) : context.theme.colorScheme.properOnSurface;
+
+        Color color = isDisabled
+            ? context.theme.colorScheme.properOnSurface.withValues(alpha: 0.5)
+            : context.theme.colorScheme.properOnSurface;
         return Padding(
-          padding: EdgeInsets.only(top: kIsDesktop ? 20 : 0),
-          child: IconButton(
-            icon: Icon(action.nonIosIcon, color: color),
-            onPressed: isDisabled ? null : action.onTap,
-            tooltip: action.title,
-          )
-        );
+            padding: EdgeInsets.only(top: kIsDesktop ? 20 : 0),
+            child: IconButton(
+              icon: Icon(action.nonIosIcon, color: color),
+              onPressed: isDisabled ? null : action.onTap,
+              tooltip: action.title,
+            ));
       }),
       Padding(
-        padding: EdgeInsets.only(top: kIsDesktop ? 20 : 0),
-        child: PopupMenuButton<int>(
-          color: context.theme.colorScheme.properSurface,
-          shape: SettingsSvc.settings.skin.value != Skins.Material ? const RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(20.0)),
-          ) : null,
-          onSelected: (int value) {
-            allActions[value + numberToShow - 1].onTap?.call();
-          },
-          itemBuilder: (context) {
-            return allActions.slice(numberToShow - 1).mapIndexed((index, action) {
-              return PopupMenuItem(
-                value: index,
-                child: Text(
-                  action.title,
-                  style: context.textTheme.bodyLarge!.apply(color: context.theme.colorScheme.properOnSurface),
-                ),
-              );
-            }).toList();
-          }
-        )
-      )
+          padding: EdgeInsets.only(top: kIsDesktop ? 20 : 0),
+          child: PopupMenuButton<int>(
+              color: context.theme.colorScheme.properSurface,
+              shape: SettingsSvc.settings.skin.value != Skins.Material
+                  ? const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(20.0)),
+                    )
+                  : null,
+              onSelected: (int value) {
+                allActions[value + numberToShow - 1].onTap?.call();
+              },
+              itemBuilder: (context) {
+                return allActions.slice(numberToShow - 1).mapIndexed((index, action) {
+                  return PopupMenuItem(
+                    value: index,
+                    child: Text(
+                      action.title,
+                      style: context.textTheme.bodyLarge!.apply(color: context.theme.colorScheme.properOnSurface),
+                    ),
+                  );
+                }).toList();
+              }))
     ];
   }
 }
@@ -1105,7 +1164,8 @@ class ReactionDetails extends StatelessWidget {
         child: Container(
           alignment: Alignment.center,
           height: 120,
-          color: context.theme.colorScheme.properSurface.withAlpha(SettingsSvc.settings.skin.value == Skins.iOS ? 150 : 255),
+          color: context.theme.colorScheme.properSurface
+              .withAlpha(SettingsSvc.settings.skin.value == Skins.iOS ? 150 : 255),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10.0),
             child: ListView.separated(
@@ -1116,7 +1176,8 @@ class ReactionDetails extends StatelessWidget {
               separatorBuilder: (context, index) => const SizedBox(width: 10),
               itemBuilder: (context, index) {
                 final message = reactions[index];
-                final hideContactInfo = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
+                final hideContactInfo =
+                    SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
                 return Column(
                   key: ValueKey(message.guid!),
                   mainAxisSize: MainAxisSize.min,
@@ -1134,8 +1195,11 @@ class ReactionDetails extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.only(bottom: 8.0),
                         child: Text(
-                          message.isFromMe! ? SettingsSvc.settings.userName.value : (message.handleRelation.target?.displayName ?? "Unknown"),
-                          style: context.theme.textTheme.bodySmall!.copyWith(color: context.theme.colorScheme.properOnSurface),
+                          message.isFromMe!
+                              ? SettingsSvc.settings.userName.value
+                              : (message.handleRelation.target?.displayName ?? "Unknown"),
+                          style: context.theme.textTheme.bodySmall!
+                              .copyWith(color: context.theme.colorScheme.properOnSurface),
                         ),
                       ),
                     if (SettingsSvc.settings.hideNamesForReactions.value)
@@ -1146,8 +1210,11 @@ class ReactionDetails extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.only(bottom: 8.0),
                         child: Text(
-                          message.isFromMe! ? SettingsSvc.settings.userName.value : (message.handleRelation.target?.fakeName ?? "Friend"),
-                          style: context.theme.textTheme.bodySmall!.copyWith(color: context.theme.colorScheme.properOnSurface),
+                          message.isFromMe!
+                              ? SettingsSvc.settings.userName.value
+                              : (message.handleRelation.target?.fakeName ?? "Friend"),
+                          style: context.theme.textTheme.bodySmall!
+                              .copyWith(color: context.theme.colorScheme.properOnSurface),
                         ),
                       ),
                     Container(
@@ -1155,7 +1222,9 @@ class ReactionDetails extends StatelessWidget {
                       width: 28,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(100),
-                        color: message.isFromMe! ? context.theme.colorScheme.primary : context.theme.colorScheme.properSurface,
+                        color: message.isFromMe!
+                            ? context.theme.colorScheme.primary
+                            : context.theme.colorScheme.properSurface,
                         boxShadow: [
                           BoxShadow(
                             blurRadius: 1.0,

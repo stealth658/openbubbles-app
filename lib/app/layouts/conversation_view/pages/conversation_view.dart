@@ -35,7 +35,7 @@ class ConversationView extends StatefulWidget {
 
 class ConversationViewState extends OptimizedState<ConversationView> {
   late final ConversationViewController controller = cvc(chat, tag: widget.customService?.tag);
-  
+
   // Cache actions map to avoid rebuilding on every frame
   late final Map<Type, Action<Intent>> _actionsMap;
 
@@ -56,16 +56,16 @@ class ConversationViewState extends OptimizedState<ConversationView> {
     }
 
     controller.loadReplyToMessageState(); // P224b
-    
+
     // Build actions map once
     _buildActionsMap();
   }
-  
+
   void _buildActionsMap() {
     _actionsMap = {
       OpenChatDetailsIntent: OpenChatDetailsAction(context, widget.chat),
     };
-    
+
     if (SettingsSvc.settings.enablePrivateAPI.value) {
       _actionsMap.addAll({
         ReplyRecentIntent: ReplyRecentAction(widget.chat),
@@ -97,7 +97,7 @@ class ConversationViewState extends OptimizedState<ConversationView> {
     final bubbleColor = colorScheme.bubble(context, chat.isIMessage);
     final onBubbleColor = colorScheme.onBubble(context, chat.isIMessage);
     final bubbleColorsExt = theme.extensions[BubbleColors] as BubbleColors?;
-    
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
         systemNavigationBarColor: immersiveMode ? Colors.transparent : colorScheme.background,
@@ -106,75 +106,78 @@ class ConversationViewState extends OptimizedState<ConversationView> {
         statusBarIconBrightness: colorScheme.brightness.opposite,
       ),
       child: Theme(
-        data: theme.copyWith(
-          // in case some components still use legacy theming
-          primaryColor: bubbleColor,
-          colorScheme: colorScheme.copyWith(
-            primary: bubbleColor,
-            onPrimary: onBubbleColor,
-            surface: monetTheming == Monet.full ? null : bubbleColorsExt?.receivedBubbleColor,
-            onSurface: monetTheming == Monet.full ? null : bubbleColorsExt?.onReceivedBubbleColor,
+          data: theme.copyWith(
+            // in case some components still use legacy theming
+            primaryColor: bubbleColor,
+            colorScheme: colorScheme.copyWith(
+              primary: bubbleColor,
+              onPrimary: onBubbleColor,
+              surface: monetTheming == Monet.full ? null : bubbleColorsExt?.receivedBubbleColor,
+              onSurface: monetTheming == Monet.full ? null : bubbleColorsExt?.onReceivedBubbleColor,
+            ),
           ),
-        ),
-        child: PopScope(
-          canPop: false,
-          onPopInvoked: (didPop) async {
-            if (didPop) return;
-            if (controller.inSelectMode.value) {
-              controller.inSelectMode.value = false;
-              controller.selected.clear();
-              return;
-            }
-            if (controller.showAttachmentPicker) {
-              controller.showAttachmentPicker = false;
-              controller.updateWidgets<ConversationTextField>(null);
-              return;
-            }
-            if (LifecycleSvc.isBubble) {
-              SystemNavigator.pop();
-            }
-            controller.close();
-            if (LifecycleSvc.isBubble) return;
-            return Navigator.of(context).pop();
-          },
-          child: SafeArea(
-            top: false,
-            bottom: false,
-            child: Scaffold(
-              backgroundColor: windowEffect != WindowEffect.disabled ? Colors.transparent : colorScheme.background,
-              extendBodyBehindAppBar: true,
-              appBar: PreferredSize(
-                  preferredSize: Size(NavigationSvc.width(context), (kIsDesktop ? (!iOS ? 25 : 5) : 0) + 90 * (iOS ? avatarScale : 0) + (!iOS ? kToolbarHeight : 0)),
-                  child: iOS
-                  ? CupertinoHeader(controller: controller)
-                  : MaterialHeader(controller: controller) as PreferredSizeWidget),
-              body: Actions(
-                actions: _actionsMap,
-                child: GradientBackground(
-                  controller: controller,
-                  child: SizedBox(
-                    height: context.height,
-                    child: Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        const Positioned.fill(child: ScreenEffectsWidget()),
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            Expanded(
-                              child: Stack(
-                                children: [
-                                  MessagesView(
-                                    key: Key(chat.guid),
-                                    customService: widget.customService,
-                                    controller: controller,
-                                  ),
-                                  ScrollDownButton(controller: controller)
-                                ],
+          child: PopScope(
+            canPop: false,
+            onPopInvoked: (didPop) async {
+              if (didPop) return;
+              if (controller.inSelectMode.value) {
+                controller.inSelectMode.value = false;
+                controller.selected.clear();
+                return;
+              }
+              if (controller.showAttachmentPicker) {
+                controller.showAttachmentPicker = false;
+                controller.updateWidgets<ConversationTextField>(null);
+                return;
+              }
+              if (LifecycleSvc.isBubble) {
+                SystemNavigator.pop();
+              }
+              controller.close();
+              if (LifecycleSvc.isBubble) return;
+              return Navigator.of(context).pop();
+            },
+            child: SafeArea(
+              top: false,
+              bottom: false,
+              child: Scaffold(
+                backgroundColor: windowEffect != WindowEffect.disabled ? Colors.transparent : colorScheme.background,
+                extendBodyBehindAppBar: true,
+                appBar: PreferredSize(
+                    preferredSize: Size(
+                        NavigationSvc.width(context),
+                        (kIsDesktop ? (!iOS ? 25 : 5) : 0) +
+                            90 * (iOS ? avatarScale : 0) +
+                            (!iOS ? kToolbarHeight : 0)),
+                    child: iOS
+                        ? CupertinoHeader(controller: controller)
+                        : MaterialHeader(controller: controller) as PreferredSizeWidget),
+                body: Actions(
+                  actions: _actionsMap,
+                  child: GradientBackground(
+                    controller: controller,
+                    child: SizedBox(
+                      height: context.height,
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          const Positioned.fill(child: ScreenEffectsWidget()),
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              Expanded(
+                                child: Stack(
+                                  children: [
+                                    MessagesView(
+                                      key: Key(chat.guid),
+                                      customService: widget.customService,
+                                      controller: controller,
+                                    ),
+                                    ScrollDownButton(controller: controller)
+                                  ],
+                                ),
                               ),
-                            ),
-                            Stack(
-                              children: [
+                              Stack(children: [
                                 Align(
                                   alignment: Alignment.bottomCenter,
                                   child: GestureDetector(
@@ -196,19 +199,17 @@ class ConversationViewState extends OptimizedState<ConversationView> {
                                     ),
                                   ),
                                 )
-                              ]
-                            ),
-                          ],
-                        ),
-                      ],
+                              ]),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-        )
-      ),
+          )),
     );
   }
 }

@@ -69,9 +69,7 @@ class BackButtonWithBadge extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(top: 3.0, right: 3),
           child: Obx(() {
-            final icon = controller.inSelectMode.value 
-                ? CupertinoIcons.xmark 
-                : CupertinoIcons.back;
+            final icon = controller.inSelectMode.value ? CupertinoIcons.xmark : CupertinoIcons.back;
             return Text(
               String.fromCharCode(icon.codePoint),
               style: TextStyle(
@@ -85,11 +83,9 @@ class BackButtonWithBadge extends StatelessWidget {
         ),
         const SizedBox(width: 2),
         Obx(() {
-          final count = controller.inSelectMode.value
-              ? controller.selected.length
-              : ChatsSvc.unreadCount.value;
+          final count = controller.inSelectMode.value ? controller.selected.length : ChatsSvc.unreadCount.value;
           if (count == 0) return const SizedBox.shrink();
-          
+
           return Padding(
             padding: const EdgeInsets.only(top: 3),
             child: Container(
@@ -102,9 +98,7 @@ class BackButtonWithBadge extends StatelessWidget {
               ),
               alignment: Alignment.center,
               child: Padding(
-                padding: count > 99 
-                    ? const EdgeInsets.symmetric(horizontal: 2.5) 
-                    : EdgeInsets.zero,
+                padding: count > 99 ? const EdgeInsets.symmetric(horizontal: 2.5) : EdgeInsets.zero,
                 child: Text(
                   count.toString(),
                   style: context.textTheme.bodyMedium!.copyWith(
@@ -159,8 +153,7 @@ class _ChatTitleAndAvatarState extends State<ChatTitleAndAvatar> {
 
   @override
   Widget build(BuildContext context) {
-    final hideInfo = SettingsSvc.settings.redactedMode.value && 
-                     SettingsSvc.settings.hideContactInfo.value;
+    final hideInfo = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
 
     if (widget.layout == HeaderLayout.cupertino) {
       return _buildCupertinoLayout(hideInfo);
@@ -190,11 +183,9 @@ class _ChatTitleAndAvatarState extends State<ChatTitleAndAvatar> {
             child: Obx(() {
               String displayTitle = title.value;
               if (hideInfo) {
-                displayTitle = widget.chat.isGroup 
-                    ? widget.chat.fakeName 
-                    : widget.chat.handles[0].fakeName;
+                displayTitle = widget.chat.isGroup ? widget.chat.fakeName : widget.chat.handles[0].fakeName;
               }
-              
+
               return RichText(
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -254,15 +245,13 @@ class _ChatTitleAndAvatarState extends State<ChatTitleAndAvatar> {
             children: [
               Obx(() {
                 String displayTitle = title.value;
-                
+
                 if (widget.controller.inSelectMode.value) {
                   displayTitle = "${widget.controller.selected.length} selected";
                 } else if (hideInfo) {
-                  displayTitle = widget.chat.isGroup
-                      ? widget.chat.fakeName
-                      : widget.chat.handles[0].fakeName;
+                  displayTitle = widget.chat.isGroup ? widget.chat.fakeName : widget.chat.handles[0].fakeName;
                 }
-                
+
                 return Text(
                   displayTitle,
                   style: context.theme.textTheme.titleLarge!.apply(
@@ -273,13 +262,11 @@ class _ChatTitleAndAvatarState extends State<ChatTitleAndAvatar> {
                   overflow: TextOverflow.fade,
                 );
               }),
-              if (widget.showSubtitle && 
-                  (widget.chat.isGroup || (!title.value.isPhoneNumber && !title.value.isEmail)) && 
+              if (widget.showSubtitle &&
+                  (widget.chat.isGroup || (!title.value.isPhoneNumber && !title.value.isEmail)) &&
                   !hideInfo)
                 Text(
-                  widget.chat.isGroup
-                      ? "${widget.chat.handles.length} recipients"
-                      : widget.chat.handles[0].address,
+                  widget.chat.isGroup ? "${widget.chat.handles.length} recipients" : widget.chat.handles[0].address,
                   style: context.theme.textTheme.labelLarge!.apply(
                     color: context.theme.colorScheme.outline,
                   ),

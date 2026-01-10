@@ -34,7 +34,7 @@ class _ImageViewerState extends OptimizedState<ImageViewer> with AutomaticKeepAl
   Attachment get attachment => widget.attachment;
   PlatformFile get file => widget.file;
   ConversationViewController? get controller => widget.controller;
-  
+
   // Implement required getter for LivePhotoMixin
   @override
   Attachment get livePhotoAttachment => attachment;
@@ -42,7 +42,7 @@ class _ImageViewerState extends OptimizedState<ImageViewer> with AutomaticKeepAl
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    
+
     // Handle demo attachments
     if (attachment.guid!.contains("demo")) {
       return Image.asset(attachment.transferName!, fit: BoxFit.cover);
@@ -54,95 +54,103 @@ class _ImageViewerState extends OptimizedState<ImageViewer> with AutomaticKeepAl
       // Web or no path - use memory image
       if (file.bytes == null) {
         imageWidget = SizedBox(
-          width: min((attachment.width?.toDouble() ?? NavigationSvc.width(context) * 0.5), NavigationSvc.width(context) * 0.5),
-          height: min((attachment.height?.toDouble() ?? NavigationSvc.width(context) * 0.5 / attachment.aspectRatio), NavigationSvc.width(context) * 0.5 / attachment.aspectRatio),
+          width: min(
+              (attachment.width?.toDouble() ?? NavigationSvc.width(context) * 0.5), NavigationSvc.width(context) * 0.5),
+          height: min((attachment.height?.toDouble() ?? NavigationSvc.width(context) * 0.5 / attachment.aspectRatio),
+              NavigationSvc.width(context) * 0.5 / attachment.aspectRatio),
         );
       } else {
-        final displayWidth = min((attachment.width?.toDouble() ?? NavigationSvc.width(context) * 0.5), NavigationSvc.width(context) * 0.5);
-        final displayHeight = min((attachment.height?.toDouble() ?? NavigationSvc.width(context) * 0.5 / attachment.aspectRatio), NavigationSvc.width(context) * 0.5 / attachment.aspectRatio);
+        final displayWidth = min(
+            (attachment.width?.toDouble() ?? NavigationSvc.width(context) * 0.5), NavigationSvc.width(context) * 0.5);
+        final displayHeight = min(
+            (attachment.height?.toDouble() ?? NavigationSvc.width(context) * 0.5 / attachment.aspectRatio),
+            NavigationSvc.width(context) * 0.5 / attachment.aspectRatio);
         final qualityFactor = SettingsSvc.settings.previewImageQuality.value;
         final calculatedWidth = (displayWidth * Get.pixelRatio * qualityFactor).round().abs().nonZero;
         final calculatedHeight = (displayHeight * Get.pixelRatio * qualityFactor).round().abs().nonZero;
-        imageWidget = Image.memory(
-          file.bytes!,
-          gaplessPlayback: true,
-          filterQuality: FilterQuality.none,
-          cacheWidth: calculatedWidth,
-          cacheHeight: calculatedHeight,
-          fit: BoxFit.contain,
-          frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-            if (wasSynchronouslyLoaded) return child;
-            if (frame == null) {
-              // Show placeholder while loading
-              return Container(
-                width: displayWidth,
-                height: displayHeight,
-                color: context.theme.colorScheme.properSurface.withOpacity(0.3),
-                child: Center(
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(context.theme.colorScheme.outline),
+        imageWidget = Image.memory(file.bytes!,
+            gaplessPlayback: true,
+            filterQuality: FilterQuality.none,
+            cacheWidth: calculatedWidth,
+            cacheHeight: calculatedHeight,
+            fit: BoxFit.contain,
+            frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+              if (wasSynchronouslyLoaded) return child;
+              if (frame == null) {
+                // Show placeholder while loading
+                return Container(
+                  width: displayWidth,
+                  height: displayHeight,
+                  color: context.theme.colorScheme.properSurface.withOpacity(0.3),
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(context.theme.colorScheme.outline),
+                    ),
                   ),
-                ),
-              );
-            }
-            return child;
-          },
-          errorBuilder: (context, object, stacktrace) => Center(
-            heightFactor: 1,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 2.0, vertical: 5.0),
-              child: Row(
-                children: [
-                  Text("Failed to display image", style: context.theme.textTheme.bodyLarge),
-                  const SizedBox(width: 2.0),
-                  IconButton(
-                    onPressed: () {
-                      showDialog(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                          title: Text(
-                            "Image Stacktrace",
-                            style: context.theme.textTheme.titleLarge,
-                          ),
-                          backgroundColor: context.theme.colorScheme.properSurface,
-                          content: SizedBox(
-                            width: NavigationSvc.width(context) * 3 / 5,
-                            height: context.height * 1 / 4,
-                            child: Container(
-                              padding: const EdgeInsets.all(10.0),
-                              decoration: BoxDecoration(color: context.theme.colorScheme.background, borderRadius: const BorderRadius.all(Radius.circular(10))),
-                              child: SingleChildScrollView(
-                                child: SelectableText(
-                                  stacktrace.toString(),
-                                  style: context.theme.textTheme.bodyLarge,
+                );
+              }
+              return child;
+            },
+            errorBuilder: (context, object, stacktrace) => Center(
+                  heightFactor: 1,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 2.0, vertical: 5.0),
+                    child: Row(children: [
+                      Text("Failed to display image", style: context.theme.textTheme.bodyLarge),
+                      const SizedBox(width: 2.0),
+                      IconButton(
+                          onPressed: () {
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: Text(
+                                  "Image Stacktrace",
+                                  style: context.theme.textTheme.titleLarge,
                                 ),
+                                backgroundColor: context.theme.colorScheme.properSurface,
+                                content: SizedBox(
+                                  width: NavigationSvc.width(context) * 3 / 5,
+                                  height: context.height * 1 / 4,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(10.0),
+                                    decoration: BoxDecoration(
+                                        color: context.theme.colorScheme.background,
+                                        borderRadius: const BorderRadius.all(Radius.circular(10))),
+                                    child: SingleChildScrollView(
+                                      child: SelectableText(
+                                        stacktrace.toString(),
+                                        style: context.theme.textTheme.bodyLarge,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                actions: [
+                                  TextButton(
+                                    child: Text("Close",
+                                        style: context.theme.textTheme.bodyLarge!
+                                            .copyWith(color: context.theme.colorScheme.primary)),
+                                    onPressed: () => Navigator.of(context).pop(),
+                                  ),
+                                ],
                               ),
-                            ),
-                          ),
-                          actions: [
-                            TextButton(
-                              child: Text("Close", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
-                              onPressed: () => Navigator.of(context).pop(),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                    icon: const Icon(CupertinoIcons.info_circle)
-                  )
-                ]
-            ),
-          ),
-        ));
+                            );
+                          },
+                          icon: const Icon(CupertinoIcons.info_circle))
+                    ]),
+                  ),
+                ));
       }
     } else {
       // Non-web with file path - use file image (much more efficient)
       // Note: For HEIC/TIFF, the path might point to unconverted file initially.
       // Image.file will handle it on iOS/macOS (native support), or fail gracefully
       // and trigger errorBuilder where we can attempt conversion.
-      final displayWidth = min((attachment.width?.toDouble() ?? NavigationSvc.width(context) * 0.5), NavigationSvc.width(context) * 0.5);
-      final displayHeight = min((attachment.height?.toDouble() ?? NavigationSvc.width(context) * 0.5 / attachment.aspectRatio), NavigationSvc.width(context) * 0.5 / attachment.aspectRatio);
+      final displayWidth =
+          min((attachment.width?.toDouble() ?? NavigationSvc.width(context) * 0.5), NavigationSvc.width(context) * 0.5);
+      final displayHeight = min(
+          (attachment.height?.toDouble() ?? NavigationSvc.width(context) * 0.5 / attachment.aspectRatio),
+          NavigationSvc.width(context) * 0.5 / attachment.aspectRatio);
       // Use configured quality factor from settings (25% to 100%)
       final qualityFactor = SettingsSvc.settings.previewImageQuality.value;
       final calculatedWidth = (displayWidth * Get.pixelRatio * qualityFactor).round().abs().nonZero;
@@ -177,12 +185,15 @@ class _ImageViewerState extends OptimizedState<ImageViewer> with AutomaticKeepAl
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return SizedBox(
-                width: min((attachment.width?.toDouble() ?? NavigationSvc.width(context) * 0.5), NavigationSvc.width(context) * 0.5),
-                height: min((attachment.height?.toDouble() ?? NavigationSvc.width(context) * 0.5 / attachment.aspectRatio), NavigationSvc.width(context) * 0.5 / attachment.aspectRatio),
+                width: min((attachment.width?.toDouble() ?? NavigationSvc.width(context) * 0.5),
+                    NavigationSvc.width(context) * 0.5),
+                height: min(
+                    (attachment.height?.toDouble() ?? NavigationSvc.width(context) * 0.5 / attachment.aspectRatio),
+                    NavigationSvc.width(context) * 0.5 / attachment.aspectRatio),
                 child: const Center(child: CircularProgressIndicator()),
               );
             }
-            
+
             if (snapshot.hasData && snapshot.data != null && snapshot.data != file.path) {
               // Conversion successful, display converted image
               return Image.file(
@@ -212,7 +223,7 @@ class _ImageViewerState extends OptimizedState<ImageViewer> with AutomaticKeepAl
                 },
               );
             }
-            
+
             // Conversion failed or not needed
             return Center(
               heightFactor: 1,

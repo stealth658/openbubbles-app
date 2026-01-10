@@ -17,8 +17,7 @@ class ImageInterface {
     if (isIsolate) {
       return ImageActions.convertToPng(fileData);
     } else {
-      return await GetIt.I<GlobalIsolate>()
-          .send<Uint8List?>(IsolateRequestType.convertImageToPng, input: fileData);
+      return await GetIt.I<GlobalIsolate>().send<Uint8List?>(IsolateRequestType.convertImageToPng, input: fileData);
     }
   }
 
@@ -30,8 +29,7 @@ class ImageInterface {
     if (isIsolate) {
       return await ImageActions.readExifData(input);
     } else {
-      return await GetIt.I<GlobalIsolate>()
-          .send<Map<String, String>?>(IsolateRequestType.readExifData, input: input);
+      return await GetIt.I<GlobalIsolate>().send<Map<String, String>?>(IsolateRequestType.readExifData, input: input);
     }
   }
 
@@ -43,8 +41,7 @@ class ImageInterface {
     if (isIsolate) {
       return await ImageActions.getGifDimensions(input);
     } else {
-      return await GetIt.I<GlobalIsolate>()
-          .send<Map<String, int>?>(IsolateRequestType.getGifDimensions, input: input);
+      return await GetIt.I<GlobalIsolate>().send<Map<String, int>?>(IsolateRequestType.getGifDimensions, input: input);
     }
   }
 }

@@ -92,8 +92,9 @@ class PlayPauseButton extends StatelessWidget {
                   clipBehavior: Clip.antiAlias,
                   child: Padding(
                     padding: EdgeInsets.only(
-                      left:
-                          SettingsSvc.settings.skin.value == Skins.iOS && !(controller?.player.state.playing ?? false) ? 17 : 10,
+                      left: SettingsSvc.settings.skin.value == Skins.iOS && !(controller?.player.state.playing ?? false)
+                          ? 17
+                          : 10,
                       top: SettingsSvc.settings.skin.value == Skins.iOS ? 13 : 10,
                       right: 10,
                       bottom: 10,
@@ -201,7 +202,7 @@ class _VideoPlayerState extends OptimizedState<VideoPlayer> with AutomaticKeepAl
   @override
   void initState() {
     super.initState();
-    
+
     // Check for cached controller first
     VideoController? cachedController = cvController?.videoPlayers[attachment.guid];
 
@@ -227,7 +228,7 @@ class _VideoPlayerState extends OptimizedState<VideoPlayer> with AutomaticKeepAl
   Future<void> initializeController() async {
     // Don't initialize if we already have a controller
     if (videoController != null) return;
-    
+
     late final Media media;
     if (widget.file.path == null) {
       final blob = html.Blob([widget.file.bytes]);
@@ -242,12 +243,12 @@ class _VideoPlayerState extends OptimizedState<VideoPlayer> with AutomaticKeepAl
     await videoController!.player.open(media, play: false);
     await videoController!.player.setVolume(muted.value ? 0 : 100);
     createListener(videoController!);
-    
+
     // Cache the controller for reuse
     if (cvController != null) {
       cvController!.videoPlayers[attachment.guid!] = videoController!;
     }
-    
+
     if (mounted) {
       setState(() {});
     }
@@ -275,7 +276,7 @@ class _VideoPlayerState extends OptimizedState<VideoPlayer> with AutomaticKeepAl
 
   void getThumbnail() async {
     if (kIsWeb || kIsDesktop) return;
-    
+
     try {
       // If we already errored, use fallback immediately
       if (attachment.metadata?['thumbnail_status'] == 'error') {
@@ -283,14 +284,14 @@ class _VideoPlayerState extends OptimizedState<VideoPlayer> with AutomaticKeepAl
         if (mounted) setState(() {});
         return;
       }
-      
+
       // Fetch the thumbnail
       thumbnail = await AttachmentsSvc.getVideoThumbnail(file.path!);
       if (mounted) setState(() {});
     } catch (ex) {
       // If an error occurs, set the thumbnail to the cached no preview image
       thumbnail = FilesystemSvc.noVideoPreviewIcon;
-      
+
       // Only save error status to DB if not already set
       if (attachment.metadata?['thumbnail_status'] != 'error') {
         attachment.metadata ??= {};
@@ -299,7 +300,7 @@ class _VideoPlayerState extends OptimizedState<VideoPlayer> with AutomaticKeepAl
           attachment.saveAsync(null);
         }
       }
-      
+
       if (mounted) setState(() {});
     }
   }
@@ -368,12 +369,7 @@ class _VideoPlayerState extends OptimizedState<VideoPlayer> with AutomaticKeepAl
                   muted: muted,
                   controller: videoController,
                   isFromMe: widget.isFromMe),
-              if (kIsDesktop)
-                FullscreenButton(
-                  attachment: attachment,
-                  isFromMe: widget.isFromMe,
-                  muted: muted
-                ),
+              if (kIsDesktop) FullscreenButton(attachment: attachment, isFromMe: widget.isFromMe, muted: muted),
             ],
           ),
         ),
@@ -451,12 +447,13 @@ class _VideoPlayerState extends OptimizedState<VideoPlayer> with AutomaticKeepAl
                       .round()
                       .abs()
                       .nonZero,
-                  cacheHeight: (min((attachment.height ?? 0), NavigationSvc.width(context) * 0.5 / attachment.aspectRatio) *
-                          Get.pixelRatio /
-                          2)
-                      .round()
-                      .abs()
-                      .nonZero,
+                  cacheHeight:
+                      (min((attachment.height ?? 0), NavigationSvc.width(context) * 0.5 / attachment.aspectRatio) *
+                              Get.pixelRatio /
+                              2)
+                          .round()
+                          .abs()
+                          .nonZero,
                   fit: BoxFit.contain,
                   frameBuilder: (context, widget, frame, wasSyncLoaded) {
                     return AnimatedCrossFade(
@@ -485,10 +482,11 @@ class _VideoPlayerState extends OptimizedState<VideoPlayer> with AutomaticKeepAl
                           ],
                         ),
                         firstChild: SizedBox(
-                          width:
-                              min((attachment.width?.toDouble() ?? NavigationSvc.width(context) * 0.5), NavigationSvc.width(context) * 0.5),
+                          width: min((attachment.width?.toDouble() ?? NavigationSvc.width(context) * 0.5),
+                              NavigationSvc.width(context) * 0.5),
                           height: min(
-                              (attachment.height?.toDouble() ?? NavigationSvc.width(context) * 0.5 / attachment.aspectRatio),
+                              (attachment.height?.toDouble() ??
+                                  NavigationSvc.width(context) * 0.5 / attachment.aspectRatio),
                               NavigationSvc.width(context) * 0.5 / attachment.aspectRatio),
                         ));
                   },
@@ -501,7 +499,8 @@ class _VideoPlayerState extends OptimizedState<VideoPlayer> with AutomaticKeepAl
 }
 
 class FullscreenButton extends StatelessWidget {
-  const FullscreenButton({super.key, required this.attachment, required this.isFromMe, this.videoController, this.muted});
+  const FullscreenButton(
+      {super.key, required this.attachment, required this.isFromMe, this.videoController, this.muted});
 
   final Attachment attachment;
   final bool isFromMe;
@@ -523,12 +522,11 @@ class FullscreenButton extends StatelessWidget {
               await Navigator.of(Get.context!).push(
                 ThemeSwitcher.buildPageRoute(
                   builder: (context) => FullscreenMediaHolder(
-                    currentChat: ChatsSvc.activeChat?.chat,
-                    attachment: attachment,
-                    showInteractions: true,
-                    videoController: videoController,
-                    mute: muted
-                  ),
+                      currentChat: ChatsSvc.activeChat?.chat,
+                      attachment: attachment,
+                      showInteractions: true,
+                      videoController: videoController,
+                      mute: muted),
                 ),
               );
             },

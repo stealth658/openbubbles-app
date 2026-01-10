@@ -19,17 +19,17 @@ class GlobalIsolate {
   bool _isRunning = false;
   bool _isStarting = false;
   Completer<void> _startCompleter = Completer<void>();
-  
+
   /// Timer for tracking isolate inactivity
   Timer? _idleTimer;
   DateTime? _lastActivityTime;
 
   /// Timeout duration for individual task requests
   final Duration taskTimeout;
-  
+
   /// Timeout duration for isolate startup
   final Duration startupTimeout;
-  
+
   /// Duration of inactivity before the isolate is automatically killed
   /// Set to null to disable auto-shutdown
   final Duration? idleTimeout;
@@ -39,11 +39,11 @@ class GlobalIsolate {
 
   /// Whether the isolate is currently running
   bool get isRunning => _isRunning;
-  
+
   /// The name used for registering the isolate port
   /// Can be overridden by subclasses to have unique ports
   String get isolatePortName => 'GlobalIsolate';
-  
+
   /// The debug name for the isolate
   /// Can be overridden by subclasses for better debugging
   String get isolateDebugName => 'GlobalIsolate';
@@ -67,7 +67,7 @@ class GlobalIsolate {
     try {
       // Create a new ReceivePort for this isolate instance
       _receivePort = ReceivePort();
-      
+
       // Set up listener for the new port
       _receivePort!.listen(_handleIsolateMessage);
 
@@ -78,7 +78,7 @@ class GlobalIsolate {
       // Pass the RootIsolateToken from the main isolate so the spawned isolate can initialize BackgroundIsolateBinaryMessenger
       final rootToken = RootIsolateToken.instance;
       _isolate = await Isolate.spawn(
-        getIsolateEntryPoint as void Function(List<dynamic>), 
+        getIsolateEntryPoint as void Function(List<dynamic>),
         [_receivePort!.sendPort, rootToken, getActionMap()],
         debugName: isolateDebugName,
       );
@@ -293,7 +293,7 @@ class GlobalIsolate {
   /// Handle an event from the isolate
   void _handleEvent(IsolateEventMessage eventMessage) {
     Logger.debug('Received event from isolate: ${eventMessage.type.name}');
-    
+
     if (_eventListeners.containsKey(eventMessage.type)) {
       final listeners = List.from(_eventListeners[eventMessage.type]!);
       for (final listener in listeners) {
@@ -309,11 +309,11 @@ class GlobalIsolate {
   /// Start the idle timer to automatically shutdown the isolate after a period of inactivity
   void _startIdleTimer() {
     if (idleTimeout == null) return;
-    
+
     _idleTimer?.cancel();
     _idleTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
       if (_lastActivityTime == null) return;
-      
+
       final idleDuration = DateTime.now().difference(_lastActivityTime!);
       if (idleDuration >= idleTimeout!) {
         Logger.info('$isolateDebugName has been idle for ${idleDuration.inMinutes} minutes. Shutting down...');
@@ -326,14 +326,14 @@ class GlobalIsolate {
   /// Reset the idle timer after activity
   void _resetIdleTimer() {
     if (idleTimeout == null) return;
-    
+
     _lastActivityTime = DateTime.now();
-    
+
     // Start the idle timer if it's not already running (starts after first work completion)
     if (_idleTimer == null || !_idleTimer!.isActive) {
       _startIdleTimer();
     }
-    
+
     // Special handling for Duration.zero - shutdown immediately after work completes
     if (idleTimeout == Duration.zero) {
       // Use a short delay to allow any pending cleanup
@@ -364,7 +364,7 @@ class GlobalIsolate {
     final SendPort sendPort = args[0];
     final RootIsolateToken? rootIsolateToken = args.length > 1 ? args[1] : null;
     final Map<IsolateRequestType, dynamic> actionMap = args.length > 2 ? args[2] : defaultActionMap;
-    
+
     await initServices(rootIsolateToken);
 
     // Store the send port for event emission

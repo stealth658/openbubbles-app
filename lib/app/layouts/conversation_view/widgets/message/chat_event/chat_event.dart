@@ -28,23 +28,19 @@ class ChatEvent extends StatelessWidget {
             Map map = message.toMap();
             if (map["dateCreated"] is int) {
               map["dateCreated"] =
-                  DateFormat("MMMM d, yyyy h:mm:ss a").format(
-                      DateTime.fromMillisecondsSinceEpoch(map["dateCreated"]));
+                  DateFormat("MMMM d, yyyy h:mm:ss a").format(DateTime.fromMillisecondsSinceEpoch(map["dateCreated"]));
             }
             if (map["dateDelivered"] is int) {
-              map["dateDelivered"] =
-                  DateFormat("MMMM d, yyyy h:mm:ss a").format(
-                      DateTime.fromMillisecondsSinceEpoch(map["dateDelivered"]));
+              map["dateDelivered"] = DateFormat("MMMM d, yyyy h:mm:ss a")
+                  .format(DateTime.fromMillisecondsSinceEpoch(map["dateDelivered"]));
             }
             if (map["dateRead"] is int) {
               map["dateRead"] =
-                  DateFormat("MMMM d, yyyy h:mm:ss a").format(
-                      DateTime.fromMillisecondsSinceEpoch(map["dateRead"]));
+                  DateFormat("MMMM d, yyyy h:mm:ss a").format(DateTime.fromMillisecondsSinceEpoch(map["dateRead"]));
             }
             if (map["dateEdited"] is int) {
               map["dateEdited"] =
-                  DateFormat("MMMM d, yyyy h:mm:ss a").format(
-                      DateTime.fromMillisecondsSinceEpoch(map["dateEdited"]));
+                  DateFormat("MMMM d, yyyy h:mm:ss a").format(DateTime.fromMillisecondsSinceEpoch(map["dateEdited"]));
             }
             String str = encoder.convert(map);
             showDialog(
@@ -62,8 +58,7 @@ class ChatEvent extends StatelessWidget {
                     padding: const EdgeInsets.all(10.0),
                     decoration: BoxDecoration(
                         color: context.theme.colorScheme.background,
-                        borderRadius: const BorderRadius.all(Radius.circular(10))
-                    ),
+                        borderRadius: const BorderRadius.all(Radius.circular(10))),
                     child: SingleChildScrollView(
                       child: SelectableText(
                         str,
@@ -74,10 +69,8 @@ class ChatEvent extends StatelessWidget {
                 ),
                 actions: [
                   TextButton(
-                    child: Text(
-                        "Close",
-                        style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)
-                    ),
+                    child: Text("Close",
+                        style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],
@@ -86,7 +79,9 @@ class ChatEvent extends StatelessWidget {
           },
           child: Text(
             part.isUnsent
-                ? (message.isFromMe! ? "You unsent a message. Others may still see the message on devices where the software hasn't been updated" : "${message.handleRelation.target?.displayName ?? "Unknown"} unsent a message")
+                ? (message.isFromMe!
+                    ? "You unsent a message. Others may still see the message on devices where the software hasn't been updated"
+                    : "${message.handleRelation.target?.displayName ?? "Unknown"} unsent a message")
                 : message.groupEventText,
             style: context.theme.textTheme.bodySmall!.copyWith(color: context.theme.colorScheme.outline),
             overflow: TextOverflow.ellipsis,

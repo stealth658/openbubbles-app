@@ -168,7 +168,8 @@ class _OauthPanelState extends OptimizedState<OauthPanel> {
                           ),
                         const SizedBox(width: 10),
                         Text(googleName ?? "Unknown",
-                            style: context.theme.textTheme.bodyLarge!.apply(fontSizeFactor: 1.1, color: context.theme.colorScheme.onBackground)),
+                            style: context.theme.textTheme.bodyLarge!
+                                .apply(fontSizeFactor: 1.1, color: context.theme.colorScheme.onBackground)),
                       ],
                     ),
                   ),
@@ -190,7 +191,9 @@ class _OauthPanelState extends OptimizedState<OauthPanel> {
                             children: [
                               Padding(
                                 padding: const EdgeInsets.all(10.0),
-                                child: Text(fetchingFirebase ? "Loading Firebase projects" : "Select the Firebase project to use"),
+                                child: Text(fetchingFirebase
+                                    ? "Loading Firebase projects"
+                                    : "Select the Firebase project to use"),
                               ),
                               if (!fetchingFirebase)
                                 ConstrainedBox(
@@ -200,7 +203,8 @@ class _OauthPanelState extends OptimizedState<OauthPanel> {
                                   child: ListView.builder(
                                     shrinkWrap: true,
                                     itemCount: usableProjects.length,
-                                    findChildIndexCallback: (key) => findChildIndexByKey(usableProjects, key, (item) => item['projectId']),
+                                    findChildIndexCallback: (key) =>
+                                        findChildIndexByKey(usableProjects, key, (item) => item['projectId']),
                                     itemBuilder: (context, index) {
                                       return Obx(() {
                                         if (!triedConnecting[index].value) {
@@ -219,14 +223,17 @@ class _OauthPanelState extends OptimizedState<OauthPanel> {
                                           clipBehavior: Clip.antiAlias,
                                           borderRadius: BorderRadius.circular(20),
                                           child: ListTile(
-                                            tileColor: context.theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+                                            tileColor:
+                                                context.theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
                                             enabled: triedConnecting[index].value && reachable[index].value,
                                             title: Text.rich(TextSpan(children: [
                                               TextSpan(text: usableProjects[index]['displayName']),
                                               TextSpan(
-                                                text: " ${triedConnecting[index].value ? "${reachable[index].value ? "R" : "Unr"}eachable" : "Checking"}",
+                                                text:
+                                                    " ${triedConnecting[index].value ? "${reachable[index].value ? "R" : "Unr"}eachable" : "Checking"}",
                                                 style: TextStyle(
-                                                    fontWeight: reachable[index].value ? FontWeight.bold : FontWeight.normal,
+                                                    fontWeight:
+                                                        reachable[index].value ? FontWeight.bold : FontWeight.normal,
                                                     color: triedConnecting[index].value
                                                         ? reachable[index].value
                                                             ? Colors.green
@@ -238,7 +245,8 @@ class _OauthPanelState extends OptimizedState<OauthPanel> {
                                               "${usableProjects[index]['projectId']}\n${usableProjects[index]['serverUrl']}",
                                             ),
                                             onTap: () async {
-                                              await requestPassword(context, usableProjects[index]['serverUrl'], connect);
+                                              await requestPassword(
+                                                  context, usableProjects[index]['serverUrl'], connect);
                                               if (error == "") {
                                                 Navigator.of(context).pop();
                                               }
@@ -308,7 +316,8 @@ class _OauthPanelState extends OptimizedState<OauthPanel> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text("Choose a different account",
-                          style: context.theme.textTheme.bodyLarge!.apply(fontSizeFactor: 1.1, color: context.theme.colorScheme.primary)),
+                          style: context.theme.textTheme.bodyLarge!
+                              .apply(fontSizeFactor: 1.1, color: context.theme.colorScheme.primary)),
                     ],
                   ),
                 ),
@@ -360,7 +369,8 @@ class _OauthPanelState extends OptimizedState<OauthPanel> {
                       const SizedBox(width: 10),
                       Padding(
                         padding: const EdgeInsets.only(right: 0.0, left: 5.0),
-                        child: Text("Sign in with Google", style: context.theme.textTheme.bodyLarge!.apply(fontSizeFactor: 1.1, color: Colors.white)),
+                        child: Text("Sign in with Google",
+                            style: context.theme.textTheme.bodyLarge!.apply(fontSizeFactor: 1.1, color: Colors.white)),
                       ),
                     ],
                   ),

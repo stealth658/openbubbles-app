@@ -31,7 +31,9 @@ class CupertinoConversationListState extends OptimizedState<CupertinoConversatio
 
   bool get showUnknown => widget.parentController.showUnknownSenders;
 
-  Color get backgroundColor => SettingsSvc.settings.windowEffect.value == WindowEffect.disabled ? context.theme.colorScheme.background : Colors.transparent;
+  Color get backgroundColor => SettingsSvc.settings.windowEffect.value == WindowEffect.disabled
+      ? context.theme.colorScheme.background
+      : Colors.transparent;
 
   ConversationListController get controller => widget.parentController;
 
@@ -50,16 +52,20 @@ class CupertinoConversationListState extends OptimizedState<CupertinoConversatio
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: SettingsSvc.settings.windowEffect.value != WindowEffect.disabled ? Colors.transparent : context.theme.colorScheme.background,
+      backgroundColor: SettingsSvc.settings.windowEffect.value != WindowEffect.disabled
+          ? Colors.transparent
+          : context.theme.colorScheme.background,
       extendBodyBehindAppBar: !showArchived && !showUnknown,
-      floatingActionButton: Obx(() => !SettingsSvc.settings.moveChatCreatorToHeader.value && !showArchived && !showUnknown
-          ? ConversationListFAB(parentController: controller)
-          : const SizedBox.shrink()),
+      floatingActionButton: Obx(() =>
+          !SettingsSvc.settings.moveChatCreatorToHeader.value && !showArchived && !showUnknown
+              ? ConversationListFAB(parentController: controller)
+              : const SizedBox.shrink()),
       appBar: showArchived || showUnknown
           ? AppBar(
               leading: buildBackButton(context),
               elevation: 0,
-              systemOverlayStyle: brightness == Brightness.dark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+              systemOverlayStyle:
+                  brightness == Brightness.dark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
               centerTitle: true,
               backgroundColor: Colors.transparent,
               title: Text(showArchived ? "Archive" : "Unknown Senders", style: context.theme.textTheme.titleLarge),
@@ -77,7 +83,8 @@ class CupertinoConversationListState extends OptimizedState<CupertinoConversatio
                     if (!showArchived && !showUnknown) CupertinoHeader(controller: controller),
                     Obx(() {
                       NavigationSvc.listener.value;
-                      final _chats = ChatsSvc.getFilteredChats(showArchived: showArchived, showUnknown: showUnknown, pinnedOnly: true);
+                      final _chats = ChatsSvc.getFilteredChats(
+                          showArchived: showArchived, showUnknown: showUnknown, pinnedOnly: true);
 
                       if (_chats.isEmpty) {
                         return const SliverToBoxAdapter(child: SizedBox.shrink());
@@ -86,7 +93,9 @@ class CupertinoConversationListState extends OptimizedState<CupertinoConversatio
                       int rowCount = context.mediaQuery.orientation == Orientation.portrait || kIsDesktop
                           ? SettingsSvc.settings.pinRowsPortrait.value
                           : SettingsSvc.settings.pinRowsLandscape.value;
-                      int colCount = kIsDesktop ? SettingsSvc.settings.pinColumnsLandscape.value : SettingsSvc.settings.pinColumnsPortrait.value;
+                      int colCount = kIsDesktop
+                          ? SettingsSvc.settings.pinColumnsLandscape.value
+                          : SettingsSvc.settings.pinColumnsPortrait.value;
                       int pinCount = _chats.length;
                       int usedRowCount = min((pinCount / colCount).ceil(), rowCount);
                       int maxOnPage = rowCount * colCount;
@@ -111,7 +120,8 @@ class CupertinoConversationListState extends OptimizedState<CupertinoConversatio
                                   ListView.builder(
                                     shrinkWrap: true,
                                     itemCount: _chats.length,
-                                    findChildIndexCallback: (key) => findChildIndexByKey(_chats, key, (item) => item.guid),
+                                    findChildIndexCallback: (key) =>
+                                        findChildIndexByKey(_chats, key, (item) => item.guid),
                                     itemBuilder: (context, index) {
                                       final chat = _chats[index];
                                       return Center(
@@ -201,7 +211,8 @@ class CupertinoConversationListState extends OptimizedState<CupertinoConversatio
                       );
                     }),
                     Obx(() {
-                      final _chats = ChatsSvc.getFilteredChats(showArchived: showArchived, showUnknown: showUnknown, excludePinned: true);
+                      final _chats = ChatsSvc.getFilteredChats(
+                          showArchived: showArchived, showUnknown: showUnknown, excludePinned: true);
 
                       if (!ChatsSvc.loadedFirstChatBatch.value || _chats.isEmpty) {
                         return SliverToBoxAdapter(
@@ -236,14 +247,14 @@ class CupertinoConversationListState extends OptimizedState<CupertinoConversatio
                         delegate: SliverChildBuilderDelegate(
                           (context, index) {
                             final chat = ChatsSvc.findChatByGuid(_chats[index].guid)!;
-                            
+
                             // No need for Obx here - ConversationTile handles its own reactivity
                             final child = ConversationTile(
                               key: Key(chat.guid),
                               chat: chat,
                               controller: controller,
                             );
-                            
+
                             final separator = Obx(() => !SettingsSvc.settings.hideDividers.value
                                 ? Padding(
                                     padding: const EdgeInsets.only(left: 20),

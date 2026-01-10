@@ -194,7 +194,8 @@ class HandleSelectorViewState extends OptimizedState<HandleSelectorView> {
                                     );
                                   }
                                   final handle = filteredHandles[index];
-                                  final hideInfo = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
+                                  final hideInfo = SettingsSvc.settings.redactedMode.value &&
+                                      SettingsSvc.settings.hideContactInfo.value;
                                   String _title = handle.displayName;
                                   if (hideInfo) {
                                     _title = handle.fakeName;

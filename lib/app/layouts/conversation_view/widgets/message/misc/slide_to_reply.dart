@@ -9,7 +9,7 @@ import 'package:get/get.dart';
 
 class SlideToReply extends StatelessWidget {
   const SlideToReply({super.key, required this.width, required this.isFromMe});
-  
+
   final double width;
   final bool isFromMe;
   static const double replyThreshold = 40;

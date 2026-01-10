@@ -71,22 +71,22 @@ class DocumentsSection extends StatelessWidget {
               bottom: 10,
             ),
             sliver: SliverGrid(
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: max(2, NavigationSvc.width(context) ~/ 200),
-              mainAxisSpacing: 10,
-              crossAxisSpacing: 10,
-              childAspectRatio: 1.75,
-            ),
-            delegate: SliverChildBuilderDelegate(
-              (context, int index) {
-                return MediaGalleryCard(
-                  attachment: docs[index],
-                );
-              },
-              childCount: docs.length,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: max(2, NavigationSvc.width(context) ~/ 200),
+                mainAxisSpacing: 10,
+                crossAxisSpacing: 10,
+                childAspectRatio: 1.75,
+              ),
+              delegate: SliverChildBuilderDelegate(
+                (context, int index) {
+                  return MediaGalleryCard(
+                    attachment: docs[index],
+                  );
+                },
+                childCount: docs.length,
+              ),
             ),
           ),
-        ),
       ],
     );
   }

@@ -29,7 +29,8 @@ class PrivateAPIPanelController extends StatefulController {
 }
 
 class PrivateAPIPanel extends CustomStateful<PrivateAPIPanelController> {
-  PrivateAPIPanel({this.enablePrivateAPIonInit = false}) : super(parentController: Get.put(PrivateAPIPanelController()));
+  PrivateAPIPanel({this.enablePrivateAPIonInit = false})
+      : super(parentController: Get.put(PrivateAPIPanelController()));
 
   final bool enablePrivateAPIonInit;
 
@@ -74,7 +75,8 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
                   () => SettingsSection(
                     backgroundColor: tileColor,
                     children: [
-                      if (!SettingsSvc.settings.enablePrivateAPI.value || SettingsSvc.settings.serverPrivateAPI.value != true)
+                      if (!SettingsSvc.settings.enablePrivateAPI.value ||
+                          SettingsSvc.settings.serverPrivateAPI.value != true)
                         Padding(
                           padding: const EdgeInsets.only(bottom: 8.0, left: 15, top: 8.0, right: 15),
                           child: RichText(
@@ -85,20 +87,25 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
                                 const TextSpan(text: " - Send messages with subject lines\n"),
                                 if (SettingsSvc.isMinBigSurSync) const TextSpan(text: " - Send replies\n"),
                                 if (SettingsSvc.isMinVenturaSync) const TextSpan(text: " - Edit & Unsend messages\n"),
-                                if (SettingsSvc.isMinBigSurSync) const TextSpan(text: " - Receive Digital Touch messages\n"),
+                                if (SettingsSvc.isMinBigSurSync)
+                                  const TextSpan(text: " - Receive Digital Touch messages\n"),
                                 const TextSpan(text: "\n"),
                                 const TextSpan(text: " - Mark chats read on the Mac server\n"),
-                                if (SettingsSvc.isMinVenturaSync) const TextSpan(text: " - Mark chats as unread on the Mac server\n"),
+                                if (SettingsSvc.isMinVenturaSync)
+                                  const TextSpan(text: " - Mark chats as unread on the Mac server\n"),
                                 const TextSpan(text: "\n"),
                                 const TextSpan(text: " - Rename group chats\n"),
                                 const TextSpan(text: " - Add & remove people from group chats\n"),
-                                if (SettingsSvc.isMinBigSurSync) const TextSpan(text: " - Change the group chat photo\n"),
+                                if (SettingsSvc.isMinBigSurSync)
+                                  const TextSpan(text: " - Change the group chat photo\n"),
                                 const TextSpan(text: "\n"),
                                 const TextSpan(text: " - Know if a recipient is registered with iMessage\n"),
                                 if (SettingsSvc.isMinMontereySync) const TextSpan(text: " - View Focus statuses\n"),
                                 if (SettingsSvc.isMinBigSurSync) const TextSpan(text: " - Use Find My Friends\n"),
-                                if (SettingsSvc.isMinBigSurSync) const TextSpan(text: " - Be notified of incoming FaceTime calls\n"),
-                                if (SettingsSvc.isMinVenturaSync) const TextSpan(text: " - Answer FaceTime calls (experimental)\n"),
+                                if (SettingsSvc.isMinBigSurSync)
+                                  const TextSpan(text: " - Be notified of incoming FaceTime calls\n"),
+                                if (SettingsSvc.isMinVenturaSync)
+                                  const TextSpan(text: " - Answer FaceTime calls (experimental)\n"),
                                 const TextSpan(text: "\n"),
                                 const TextSpan(
                                     text:
@@ -114,7 +121,8 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
                           title: "Set up Private API Features",
                           subtitle: "View instructions on how to set up these features",
                           onTap: () async {
-                            await launchUrl(Uri(scheme: "https", host: "docs.bluebubbles.app", path: "helper-bundle/installation"),
+                            await launchUrl(
+                                Uri(scheme: "https", host: "docs.bluebubbles.app", path: "helper-bundle/installation"),
                                 mode: LaunchMode.externalApplication);
                           },
                           leading: const SettingsLeadingIcon(
@@ -122,8 +130,7 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
                             materialIcon: Icons.privacy_tip,
                           ),
                         ),
-                      if (SettingsSvc.settings.serverPrivateAPI.value != true)
-                        const SettingsDivider(),
+                      if (SettingsSvc.settings.serverPrivateAPI.value != true) const SettingsDivider(),
                       Obx(
                         () => SettingsSwitch(
                           onChanged: (bool val) async {
@@ -145,7 +152,8 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
                   () => AnimatedSizeAndFade.showHide(
                     show: SettingsSvc.settings.enablePrivateAPI.value,
                     child: Column(mainAxisSize: MainAxisSize.min, children: [
-                      SettingsHeader(iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Private API Settings"),
+                      SettingsHeader(
+                          iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Private API Settings"),
                       SettingsSection(
                         backgroundColor: tileColor,
                         children: [
@@ -171,28 +179,27 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
                                     children: [
                                       const SettingsDivider(),
                                       SettingsSwitch(
-                                        onChanged: (bool val) async {
-                                          SettingsSvc.settings.privateMarkChatAsRead.value = val;
-                                          final toSave = ['privateMarkChatAsRead'];
-                                          if (val) {
-                                            SettingsSvc.settings.privateManualMarkAsRead.value = false;
-                                            toSave.add('privateManualMarkAsRead');
-                                          }
+                                          onChanged: (bool val) async {
+                                            SettingsSvc.settings.privateMarkChatAsRead.value = val;
+                                            final toSave = ['privateMarkChatAsRead'];
+                                            if (val) {
+                                              SettingsSvc.settings.privateManualMarkAsRead.value = false;
+                                              toSave.add('privateManualMarkAsRead');
+                                            }
 
-                                          await SettingsSvc.settings.saveManyAsync(toSave);
-                                        },
-                                        initialVal: SettingsSvc.settings.privateMarkChatAsRead.value,
-                                        title: "Automatic Mark Read / Send Read Receipts",
-                                        subtitle:
-                                            "Marks chats read in the iMessage app on your server and sends read receipts to other iMessage users",
-                                        backgroundColor: tileColor,
-                                        isThreeLine: true,
-                                        leading: const SettingsLeadingIcon(
-                                          iosIcon: CupertinoIcons.rectangle_fill_badge_checkmark,
-                                          materialIcon: Icons.playlist_add_check,
-                                          containerColor: Colors.blueAccent,
-                                        )
-                                      ),
+                                            await SettingsSvc.settings.saveManyAsync(toSave);
+                                          },
+                                          initialVal: SettingsSvc.settings.privateMarkChatAsRead.value,
+                                          title: "Automatic Mark Read / Send Read Receipts",
+                                          subtitle:
+                                              "Marks chats read in the iMessage app on your server and sends read receipts to other iMessage users",
+                                          backgroundColor: tileColor,
+                                          isThreeLine: true,
+                                          leading: const SettingsLeadingIcon(
+                                            iosIcon: CupertinoIcons.rectangle_fill_badge_checkmark,
+                                            materialIcon: Icons.playlist_add_check,
+                                            containerColor: Colors.blueAccent,
+                                          )),
                                     ],
                                   )
                                 : const SizedBox.shrink(),
@@ -236,7 +243,8 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
 
                               await SettingsSvc.settings.saveManyAsync(toSave);
                             },
-                            subtitle: "Send a tapback of your choosing when double ${kIsWeb || kIsDesktop ? "click" : "tapp"}ing a message",
+                            subtitle:
+                                "Send a tapback of your choosing when double ${kIsWeb || kIsDesktop ? "click" : "tapp"}ing a message",
                             backgroundColor: tileColor,
                             isThreeLine: true,
                             leading: const SettingsLeadingIcon(
@@ -279,7 +287,8 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
                                       reaction: Message(
                                           guid: "",
                                           associatedMessageType: ReactionTypes.DISLIKE,
-                                          isFromMe: SettingsSvc.settings.quickTapbackType.value != ReactionTypes.DISLIKE),
+                                          isFromMe:
+                                              SettingsSvc.settings.quickTapbackType.value != ReactionTypes.DISLIKE),
                                       message: null,
                                     ),
                                   ),
@@ -299,7 +308,8 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
                                       reaction: Message(
                                           guid: "",
                                           associatedMessageType: ReactionTypes.EMPHASIZE,
-                                          isFromMe: SettingsSvc.settings.quickTapbackType.value != ReactionTypes.EMPHASIZE),
+                                          isFromMe:
+                                              SettingsSvc.settings.quickTapbackType.value != ReactionTypes.EMPHASIZE),
                                       message: null,
                                     ),
                                   ),
@@ -309,7 +319,8 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
                                       reaction: Message(
                                           guid: "",
                                           associatedMessageType: ReactionTypes.QUESTION,
-                                          isFromMe: SettingsSvc.settings.quickTapbackType.value != ReactionTypes.QUESTION),
+                                          isFromMe:
+                                              SettingsSvc.settings.quickTapbackType.value != ReactionTypes.QUESTION),
                                       message: null,
                                     ),
                                   ),

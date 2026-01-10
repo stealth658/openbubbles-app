@@ -20,14 +20,14 @@ class _ConversationListFABState extends CustomState<ConversationListFAB, void, C
   // Cache these values to prevent rebuild on every scroll event
   double _lastScrollOffset = 0;
   ScrollDirection _lastScrollDirection = ScrollDirection.idle;
-  
+
   @override
   void initState() {
     super.initState();
 
     // Optimize scroll listener to reduce setState calls
     controller.materialScrollController.addListener(_handleScroll);
-    
+
     NavigationSvc.listener.stream.listen((event) {
       if (!mounted) return;
       if (NavigationSvc.isAvatarOnly(context) && controller.showMaterialFABText) {
@@ -40,20 +40,20 @@ class _ConversationListFABState extends CustomState<ConversationListFAB, void, C
 
   void _handleScroll() {
     if (!material) return;
-    
+
     final offset = controller.materialScrollController.offset;
     final direction = controller.materialScrollController.position.userScrollDirection;
-    
+
     // Only process if direction actually changed (reduces unnecessary checks)
     if (direction == _lastScrollDirection && (offset - _lastScrollOffset).abs() < 75) {
       return;
     }
-    
+
     _lastScrollOffset = offset;
     _lastScrollDirection = direction;
-    
+
     final scrollDelta = controller.materialScrollStartPosition - offset;
-    
+
     if (scrollDelta < -75 && direction == ScrollDirection.reverse && controller.showMaterialFABText) {
       setState(() {
         controller.showMaterialFABText = false;
@@ -113,26 +113,25 @@ class _IOSAndSamsungFAB extends StatelessWidget {
   Widget build(BuildContext context) {
     final isIOS = SettingsSvc.settings.skin.value == Skins.iOS;
     return Obx(() => Column(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        // Camera FAB (iOS only)
-        if (SettingsSvc.settings.cameraFAB.value && isIOS && !kIsWeb && !kIsDesktop)
-          _CameraFAB(
-            controller: controller,
-            context: context,
-            isIOS: isIOS,
-          ),
-        if (SettingsSvc.settings.cameraFAB.value && isIOS && !kIsWeb && !kIsDesktop)
-          const SizedBox(height: 10),
-        // Main compose FAB
-        _ComposeFAB(
-          controller: controller,
-          context: context,
-          isIOS: isIOS,
-          showLongPress: isIOS || !SettingsSvc.settings.cameraFAB.value || kIsWeb || kIsDesktop,
-        ),
-      ],
-    ));
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            // Camera FAB (iOS only)
+            if (SettingsSvc.settings.cameraFAB.value && isIOS && !kIsWeb && !kIsDesktop)
+              _CameraFAB(
+                controller: controller,
+                context: context,
+                isIOS: isIOS,
+              ),
+            if (SettingsSvc.settings.cameraFAB.value && isIOS && !kIsWeb && !kIsDesktop) const SizedBox(height: 10),
+            // Main compose FAB
+            _ComposeFAB(
+              controller: controller,
+              context: context,
+              isIOS: isIOS,
+              showLongPress: isIOS || !SettingsSvc.settings.cameraFAB.value || kIsWeb || kIsDesktop,
+            ),
+          ],
+        ));
   }
 }
 
@@ -213,9 +212,7 @@ class _MaterialFAB extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedCrossFade(
-      crossFadeState: controller.selectedChats.isEmpty
-          ? CrossFadeState.showFirst
-          : CrossFadeState.showSecond,
+      crossFadeState: controller.selectedChats.isEmpty ? CrossFadeState.showFirst : CrossFadeState.showSecond,
       alignment: Alignment.center,
       duration: const Duration(milliseconds: 300),
       secondChild: const SizedBox.shrink(),
@@ -282,9 +279,8 @@ class _MaterialComposeFAB extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onLongPress: SettingsSvc.settings.cameraFAB.value && !kIsWeb && !kIsDesktop
-          ? () => controller.openCamera(context)
-          : null,
+      onLongPress:
+          SettingsSvc.settings.cameraFAB.value && !kIsWeb && !kIsDesktop ? () => controller.openCamera(context) : null,
       child: Container(
         height: 65,
         padding: const EdgeInsets.only(right: 4.5, bottom: 9),

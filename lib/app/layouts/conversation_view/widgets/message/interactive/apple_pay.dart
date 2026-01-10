@@ -54,10 +54,12 @@ class _ApplePayState extends OptimizedState<ApplePay> with AutomaticKeepAliveCli
           padding: const EdgeInsets.all(40.0),
           child: Text(
             str?.contains("Request") ?? false ? str! : data.userInfo?.subcaption?.split(" ").first ?? "\$ ??",
-            style: str?.contains("Request") ?? false ? context.theme.textTheme.bodyLarge : context.theme.textTheme.displayLarge!.copyWith(
-              color: context.theme.textTheme.bodyLarge!.color,
-              fontWeight: FontWeight.w600,
-            ),
+            style: str?.contains("Request") ?? false
+                ? context.theme.textTheme.bodyLarge
+                : context.theme.textTheme.displayLarge!.copyWith(
+                    color: context.theme.textTheme.bodyLarge!.color,
+                    fontWeight: FontWeight.w600,
+                  ),
           ),
         ),
       ],

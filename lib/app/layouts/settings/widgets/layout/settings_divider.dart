@@ -18,13 +18,12 @@ class SettingsDivider extends StatelessWidget {
   Widget build(BuildContext context) {
     if (SettingsSvc.settings.skin.value == Skins.iOS) {
       return Padding(
-        padding: padding,
-        child: Divider(
-          color: color ?? context.theme.colorScheme.outline.withValues(alpha: 0.5),
-          thickness: 0.5,
-          height: 0.5,
-        )
-      );
+          padding: padding,
+          child: Divider(
+            color: color ?? context.theme.colorScheme.outline.withValues(alpha: 0.5),
+            thickness: 0.5,
+            height: 0.5,
+          ));
     } else {
       return const SizedBox.shrink();
     }

@@ -26,10 +26,10 @@ class HandleActions {
       if (!updateColor) {
         handle.color = existing?.color ?? handle.color;
       }
-      
+
       // Format the address if not already formatted
       await handle.updateFormattedAddress();
-      
+
       try {
         handle.id = Database.handles.put(handle);
       } on UniqueViolationException catch (_) {}
@@ -59,7 +59,7 @@ class HandleActions {
           h.id = existing.id;
         }
         // Contact matching is now handled automatically by ContactServiceV2
-        
+
         // Format the address if not already formatted
         await h.updateFormattedAddress();
       }

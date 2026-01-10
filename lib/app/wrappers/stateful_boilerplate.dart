@@ -25,21 +25,25 @@ abstract class CustomStateful<T extends StatefulController> extends StatefulWidg
 
 /// [State] with support for optimized state management using a custom
 /// [GetxController]
-abstract class CustomState<T extends CustomStateful, R, S extends StatefulController> extends State<T> with ThemeHelpers {
+abstract class CustomState<T extends CustomStateful, R, S extends StatefulController> extends State<T>
+    with ThemeHelpers {
   // completer to check if the page animation is complete
   final animCompleted = Completer<void>();
 
   @protected
+
   /// Convenience getter for the [GetxController]
   S get controller => widget.parentController as S;
 
   @protected
   String? _tag;
+
   /// Set tag of associated [GetxController] if needed
   set tag(String t) => _tag = t;
 
   @protected
   bool _forceDelete = true;
+
   /// Set forceDelete false if needed
   set forceDelete(bool fd) => _forceDelete = fd;
 
@@ -80,6 +84,7 @@ abstract class CustomState<T extends CustomStateful, R, S extends StatefulContro
   }
 
   @override
+
   /// Force delete the [GetxController] when the page has disposed (unless we
   /// don't want to)
   void dispose() {
@@ -90,6 +95,7 @@ abstract class CustomState<T extends CustomStateful, R, S extends StatefulContro
   @protected
   @mustCallSuper
   @optionalTypeArgs
+
   /// Override this method to update the widget easily
   /// ```
   /// @override
@@ -103,6 +109,7 @@ abstract class CustomState<T extends CustomStateful, R, S extends StatefulContro
   }
 
   @override
+
   /// Optimized [setState] function
   void setState(VoidCallback fn) {
     _optimizedUpdate(() {

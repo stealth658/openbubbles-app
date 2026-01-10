@@ -19,11 +19,13 @@ class CreateNewThemeDialog extends StatelessWidget {
       backgroundColor: context.theme.colorScheme.properSurface,
       actions: [
         TextButton(
-          child: Text("Cancel", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+          child: Text("Cancel",
+              style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
           onPressed: () => Navigator.of(context).pop(),
         ),
         TextButton(
-          child: Text("OK", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+          child:
+              Text("OK", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
           onPressed: () {
             if (ThemeStruct.findOne(controller.text) != null || controller.text.isEmpty) {
               showSnackbar("Error", "Please use a unique name for your new theme");
@@ -52,19 +54,16 @@ class CreateNewThemeDialog extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Icon(
-                  SettingsSvc.settings.skin.value == Skins.iOS
-                      ? CupertinoIcons.info
-                      : Icons.info_outline,
+                  SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.info : Icons.info_outline,
                   size: 20,
                   color: context.theme.colorScheme.primary,
                 ),
                 const SizedBox(width: 20),
                 Expanded(
                     child: Text(
-                      "Your new theme will copy the colors currently displayed in the advanced theming menu",
-                      style: context.theme.textTheme.bodySmall!.copyWith(color: context.theme.colorScheme.properOnSurface),
-                    )
-                ),
+                  "Your new theme will copy the colors currently displayed in the advanced theming menu",
+                  style: context.theme.textTheme.bodySmall!.copyWith(color: context.theme.colorScheme.properOnSurface),
+                )),
               ],
             ),
           ),
@@ -74,12 +73,12 @@ class CreateNewThemeDialog extends StatelessWidget {
               labelText: "Theme Name",
               enabledBorder: OutlineInputBorder(
                   borderSide: BorderSide(
-                    color: context.theme.colorScheme.outline,
-                  )),
+                color: context.theme.colorScheme.outline,
+              )),
               focusedBorder: OutlineInputBorder(
                   borderSide: BorderSide(
-                    color: context.theme.colorScheme.primary,
-                  )),
+                color: context.theme.colorScheme.primary,
+              )),
             ),
           ),
         ],

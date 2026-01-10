@@ -27,7 +27,7 @@ class AttachmentPicker extends StatefulWidget {
     super.key,
     required this.controller,
   });
-  
+
   final ConversationViewController controller;
 
   @override
@@ -48,7 +48,7 @@ class _AttachmentPickerState extends OptimizedState<AttachmentPicker> {
 
   Future<void> getAttachments() async {
     if (kIsDesktop || kIsWeb || _isLoadingImages) return;
-    
+
     setState(() {
       _isLoadingImages = true;
     });
@@ -56,7 +56,7 @@ class _AttachmentPickerState extends OptimizedState<AttachmentPicker> {
     try {
       // Wait for opening animation to complete
       await Future.delayed(const Duration(milliseconds: 250));
-      
+
       final PermissionState ps = await PhotoManager.requestPermissionExtend();
       if (!ps.hasAccess) {
         showSnackbar("Error", "Storage permission not granted!");
@@ -66,19 +66,20 @@ class _AttachmentPickerState extends OptimizedState<AttachmentPicker> {
       List<AssetPathEntity> list = await PhotoManager.getAssetPathList(onlyAll: true);
       if (list.isNotEmpty) {
         _images = await list.first.getAssetListRange(start: 0, end: 24);
-        
+
         // See if there is a recent attachment
-        if (_images.isNotEmpty && 
-            DateTime.now().toLocal().isWithin(_images.first.modifiedDateTime, minutes: 2)) {
+        if (_images.isNotEmpty && DateTime.now().toLocal().isWithin(_images.first.modifiedDateTime, minutes: 2)) {
           final file = await _images.first.file;
           if (file != null) {
             // Don't load bytes here - let the attachment service handle it when needed
-            EventDispatcherSvc.emit('add-custom-smartreply', PlatformFile(
-              path: file.path,
-              name: file.path.split('/').last,
-              size: await file.length(),
-              bytes: null, // Don't preload bytes
-            ));
+            EventDispatcherSvc.emit(
+                'add-custom-smartreply',
+                PlatformFile(
+                  path: file.path,
+                  name: file.path.split('/').last,
+                  size: await file.length(),
+                  bytes: null, // Don't preload bytes
+                ));
           }
         }
       }
@@ -106,7 +107,7 @@ class _AttachmentPickerState extends OptimizedState<AttachmentPicker> {
     } else {
       file = await ImagePicker().pickVideo(source: ImageSource.camera);
     }
-    
+
     if (file != null) {
       // Don't preload bytes - only store the path
       controller.pickedAttachments.add(PlatformFile(
@@ -172,7 +173,7 @@ class _AttachmentPickerState extends OptimizedState<AttachmentPicker> {
         (context, index) {
           final isIOS = SettingsSvc.settings.skin.value == Skins.iOS;
           return _ActionButton(
-            icon: index == 0 
+            icon: index == 0
                 ? (isIOS ? CupertinoIcons.camera : Icons.photo_camera_outlined)
                 : (isIOS ? CupertinoIcons.videocam : Icons.videocam_outlined),
             label: index == 0 ? "Photo" : "Video",
@@ -229,12 +230,12 @@ class _AttachmentPickerState extends OptimizedState<AttachmentPicker> {
             onTap: () async {
               final file = await element.file;
               if (file == null) return;
-              
+
               if ((await file.length()) / 1024000 > 1000) {
                 showSnackbar("Error", "This file is over 1 GB! Please compress it before sending.");
                 return;
               }
-              
+
               if (controller.pickedAttachments.firstWhereOrNull((e) => e.path == file.path) != null) {
                 controller.pickedAttachments.removeWhere((e) => e.path == file.path);
               } else {
@@ -287,8 +288,7 @@ class _ActionButton extends StatelessWidget {
           const SizedBox(height: 8.0),
           Text(
             label,
-            style: context.theme.textTheme.labelLarge!
-                .copyWith(color: context.theme.colorScheme.properOnSurface),
+            style: context.theme.textTheme.labelLarge!.copyWith(color: context.theme.colorScheme.properOnSurface),
           ),
         ],
       ),
@@ -309,17 +309,25 @@ class _FeatureButton extends StatelessWidget {
   IconData getIcon() {
     if (SettingsSvc.settings.skin.value == Skins.iOS) {
       switch (index) {
-        case 0: return CupertinoIcons.folder_open;
-        case 1: return CupertinoIcons.location;
-        case 2: return CupertinoIcons.calendar_today;
-        case 3: return CupertinoIcons.pencil_outline;
+        case 0:
+          return CupertinoIcons.folder_open;
+        case 1:
+          return CupertinoIcons.location;
+        case 2:
+          return CupertinoIcons.calendar_today;
+        case 3:
+          return CupertinoIcons.pencil_outline;
       }
     } else {
       switch (index) {
-        case 0: return Icons.folder_open_outlined;
-        case 1: return Icons.location_on_outlined;
-        case 2: return Icons.schedule;
-        case 3: return Icons.draw;
+        case 0:
+          return Icons.folder_open_outlined;
+        case 1:
+          return Icons.location_on_outlined;
+        case 2:
+          return Icons.schedule;
+        case 3:
+          return Icons.draw;
       }
     }
     return Icons.abc;
@@ -327,10 +335,14 @@ class _FeatureButton extends StatelessWidget {
 
   String getText() {
     switch (index) {
-      case 0: return "Files";
-      case 1: return "Location";
-      case 2: return "Schedule";
-      case 3: return "Handwritten";
+      case 0:
+        return "Files";
+      case 1:
+        return "Location";
+      case 2:
+        return "Schedule";
+      case 3:
+        return "Handwritten";
     }
     return "";
   }
@@ -364,7 +376,7 @@ class _FeatureButton extends StatelessWidget {
         showSnackbar("Error", "This file is over 1 GB! Please compress it before sending.");
         continue;
       }
-      
+
       // Don't preload bytes for files - use readStream when sending
       controller.pickedAttachments.add(PlatformFile(
         path: file.path,
@@ -382,11 +394,10 @@ class _FeatureButton extends StatelessWidget {
   Future<void> _handleSchedule(BuildContext context) async {
     if (controller.pickedAttachments.isNotEmpty) {
       return showSnackbar("Error", "Remove all attachments before scheduling!");
-    } else if (controller.replyToMessage != null || 
-               controller.subjectTextController.text.isNotEmpty) {
+    } else if (controller.replyToMessage != null || controller.subjectTextController.text.isNotEmpty) {
       return showSnackbar("Error", "Private API features are not supported when scheduling!");
     }
-    
+
     final date = await showTimeframePicker("Pick date and time", context, presetsAhead: true);
     if (date != null && date.isAfter(DateTime.now())) {
       controller.scheduledDate.value = date;
@@ -395,7 +406,7 @@ class _FeatureButton extends StatelessWidget {
 
   Future<void> _handleHandwritten(BuildContext context) async {
     Color selectedColor = context.theme.colorScheme.bubble(context, controller.chat.isIMessage);
-    
+
     final result = await ColorPicker(
       color: selectedColor,
       onColorChanged: (Color newColor) {
@@ -460,8 +471,7 @@ class _FeatureButton extends StatelessWidget {
               TextButton(
                 child: Text(
                   "Cancel",
-                  style: context.theme.textTheme.bodyLarge!
-                      .copyWith(color: Get.context!.theme.colorScheme.primary),
+                  style: context.theme.textTheme.bodyLarge!.copyWith(color: Get.context!.theme.colorScheme.primary),
                 ),
                 onPressed: () {
                   Navigator.of(context).pop();
@@ -470,8 +480,7 @@ class _FeatureButton extends StatelessWidget {
               TextButton(
                 child: Text(
                   "OK",
-                  style: context.theme.textTheme.bodyLarge!
-                      .copyWith(color: Get.context!.theme.colorScheme.primary),
+                  style: context.theme.textTheme.bodyLarge!.copyWith(color: Get.context!.theme.colorScheme.primary),
                 ),
                 onPressed: () async {
                   Navigator.of(context).pop();
@@ -516,8 +525,7 @@ class _FeatureButton extends StatelessWidget {
           const SizedBox(height: 8.0),
           Text(
             getText(),
-            style: context.theme.textTheme.labelLarge!
-                .copyWith(color: context.theme.colorScheme.properOnSurface),
+            style: context.theme.textTheme.labelLarge!.copyWith(color: context.theme.colorScheme.properOnSurface),
           ),
         ],
       ),

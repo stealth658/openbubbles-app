@@ -13,7 +13,8 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
 
-void showReplyThread(BuildContext context, Message message, MessagePart part, MessagesService service, ConversationViewController cvController) {
+void showReplyThread(BuildContext context, Message message, MessagePart part, MessagesService service,
+    ConversationViewController cvController) {
   final originatorPart = message.threadOriginatorGuid != null ? message.normalizedThreadPart : part.part;
   final _messages = service.struct.threads(message.threadOriginatorGuid ?? message.guid!, originatorPart);
   _messages.sort((a, b) => Message.sort(a, b, descending: false));
@@ -22,8 +23,10 @@ void showReplyThread(BuildContext context, Message message, MessagePart part, Me
 
 void showBookmarksThread(ConversationViewController cvController, BuildContext context) async {
   final _messages = (Database.messages.query(Message_.isBookmarked.equals(true))
-    ..link(Message_.chat, Chat_.guid.equals(cvController.chat.guid))
-    ..order(Message_.dateCreated, flags: Order.descending)).build().find();
+        ..link(Message_.chat, Chat_.guid.equals(cvController.chat.guid))
+        ..order(Message_.dateCreated, flags: Order.descending))
+      .build()
+      .find();
   if (_messages.isEmpty) {
     return showSnackbar("Error", "There are no bookmarked messages in this chat!");
   }
@@ -35,7 +38,8 @@ void showBookmarksThread(ConversationViewController cvController, BuildContext c
   _buildThreadView(_messages, null, cvController, context);
 }
 
-void _buildThreadView(List<Message> _messages, int? originatorPart, ConversationViewController cvController, BuildContext context) {
+void _buildThreadView(
+    List<Message> _messages, int? originatorPart, ConversationViewController cvController, BuildContext context) {
   final controller = ScrollController();
   Navigator.push(
     context,
@@ -67,7 +71,9 @@ void _buildThreadView(List<Message> _messages, int? originatorPart, Conversation
                   },
                   child: AnnotatedRegion<SystemUiOverlayStyle>(
                     value: SystemUiOverlayStyle(
-                      systemNavigationBarColor: SettingsSvc.settings.immersiveMode.value ? Colors.transparent : context.theme.colorScheme.background,
+                      systemNavigationBarColor: SettingsSvc.settings.immersiveMode.value
+                          ? Colors.transparent
+                          : context.theme.colorScheme.background,
                       // navigation bar color
                       systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
                       statusBarColor: Colors.transparent,
@@ -83,8 +89,12 @@ void _buildThreadView(List<Message> _messages, int? originatorPart, Conversation
                         children: [
                           BackdropFilter(
                             filter: ImageFilter.blur(
-                                sigmaX: kIsDesktop && SettingsSvc.settings.windowEffect.value != WindowEffect.disabled ? 0 : 30,
-                                sigmaY: kIsDesktop && SettingsSvc.settings.windowEffect.value != WindowEffect.disabled ? 0 : 30),
+                                sigmaX: kIsDesktop && SettingsSvc.settings.windowEffect.value != WindowEffect.disabled
+                                    ? 0
+                                    : 30,
+                                sigmaY: kIsDesktop && SettingsSvc.settings.windowEffect.value != WindowEffect.disabled
+                                    ? 0
+                                    : 30),
                             child: Container(
                               color: context.theme.colorScheme.properSurface.withValues(alpha: 0.3),
                             ),
@@ -97,30 +107,35 @@ void _buildThreadView(List<Message> _messages, int? originatorPart, Conversation
                                   child: SingleChildScrollView(
                                     controller: controller,
                                     child: Column(
-                                      children: _messages.mapIndexed((index, e) => GestureDetector(
-                                        onTap: () {
-                                          Navigator.of(context).pop();
-                                          if (originatorPart == null && SettingsSvc.settings.skin.value == Skins.iOS) {
-                                            // pop twice to remove convo details page
-                                            Navigator.of(context).pop();
-                                          }
-                                          MessagesSvc(cvController.chat.guid).jumpToMessage.call(e.guid!);
-                                        },
-                                        child: AbsorbPointer(
-                                          absorbing: true,
-                                          child: Padding(
-                                              padding: const EdgeInsets.only(left: 5.0, right: 5.0),
-                                              child: MessageHolder(
-                                                cvController: cvController,
-                                                message: _messages[index],
-                                                oldMessageGuid: index > 0 ? _messages[index - 1].guid : null,
-                                                newMessageGuid: index < _messages.length - 1 ? _messages[index + 1].guid : null,
-                                                isReplyThread: true,
-                                                replyPart: index == 0 ? originatorPart : null,
-                                              ),
-                                          ),
-                                        ),
-                                      )).toList(),
+                                      children: _messages
+                                          .mapIndexed((index, e) => GestureDetector(
+                                                onTap: () {
+                                                  Navigator.of(context).pop();
+                                                  if (originatorPart == null &&
+                                                      SettingsSvc.settings.skin.value == Skins.iOS) {
+                                                    // pop twice to remove convo details page
+                                                    Navigator.of(context).pop();
+                                                  }
+                                                  MessagesSvc(cvController.chat.guid).jumpToMessage.call(e.guid!);
+                                                },
+                                                child: AbsorbPointer(
+                                                  absorbing: true,
+                                                  child: Padding(
+                                                    padding: const EdgeInsets.only(left: 5.0, right: 5.0),
+                                                    child: MessageHolder(
+                                                      cvController: cvController,
+                                                      message: _messages[index],
+                                                      oldMessageGuid: index > 0 ? _messages[index - 1].guid : null,
+                                                      newMessageGuid: index < _messages.length - 1
+                                                          ? _messages[index + 1].guid
+                                                          : null,
+                                                      isReplyThread: true,
+                                                      replyPart: index == 0 ? originatorPart : null,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ))
+                                          .toList(),
                                     ),
                                   ),
                                 ),

@@ -114,7 +114,8 @@ class CloudMessagingService {
           return;
         }
       } else {
-        Logger.error('Failed to register with FCM - API error ${response.statusCode}: ${response.data}', tag: 'FCM-Auth');
+        Logger.error('Failed to register with FCM - API error ${response.statusCode}: ${response.data}',
+            tag: 'FCM-Auth');
         completer?.completeError("API Error ${response.statusCode}");
         return;
       }

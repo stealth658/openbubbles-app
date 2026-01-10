@@ -28,12 +28,12 @@ class ListItem extends StatelessWidget {
       color: action == MaterialSwipeAction.pin
           ? Colors.yellow[800]
           : action == MaterialSwipeAction.alerts
-          ? Colors.purple
-          : action == MaterialSwipeAction.delete
-          ? Colors.red
-          : action == MaterialSwipeAction.mark_read
-          ? Colors.blue
-          : Colors.red,
+              ? Colors.purple
+              : action == MaterialSwipeAction.delete
+                  ? Colors.red
+                  : action == MaterialSwipeAction.mark_read
+                      ? Colors.blue
+                      : Colors.red,
       child: Align(
         child: Row(
           mainAxisAlignment: left ? MainAxisAlignment.end : MainAxisAlignment.start,
@@ -45,24 +45,24 @@ class ListItem extends StatelessWidget {
               action == MaterialSwipeAction.pin
                   ? (chat.isPinned! ? Icons.star_outline : Icons.star)
                   : action == MaterialSwipeAction.alerts
-                  ? (chat.muteType == "mute" ? Icons.notifications_active : Icons.notifications_off)
-                  : action == MaterialSwipeAction.delete
-                  ? Icons.delete_forever_outlined
-                  : action == MaterialSwipeAction.mark_read
-                  ? (chat.hasUnreadMessage! ? Icons.mark_chat_read : Icons.mark_chat_unread)
-                  : (chat.isArchived! ? Icons.unarchive : Icons.archive),
+                      ? (chat.muteType == "mute" ? Icons.notifications_active : Icons.notifications_off)
+                      : action == MaterialSwipeAction.delete
+                          ? Icons.delete_forever_outlined
+                          : action == MaterialSwipeAction.mark_read
+                              ? (chat.hasUnreadMessage! ? Icons.mark_chat_read : Icons.mark_chat_unread)
+                              : (chat.isArchived! ? Icons.unarchive : Icons.archive),
               color: Colors.white,
             ),
             Text(
               action == MaterialSwipeAction.pin
                   ? (chat.isPinned! ? " Unpin" : " Pin")
                   : action == MaterialSwipeAction.alerts
-                  ? (chat.muteType == "mute" ? ' Show Alerts' : ' Hide Alerts')
-                  : action == MaterialSwipeAction.delete
-                  ? " Delete"
-                  : action == MaterialSwipeAction.mark_read
-                  ? (chat.hasUnreadMessage! ? ' Mark Read' : ' Mark Unread')
-                  : (chat.isArchived! ? ' Unarchive' : ' Archive'),
+                      ? (chat.muteType == "mute" ? ' Show Alerts' : ' Hide Alerts')
+                      : action == MaterialSwipeAction.delete
+                          ? " Delete"
+                          : action == MaterialSwipeAction.mark_read
+                              ? (chat.hasUnreadMessage! ? ' Mark Read' : ' Mark Unread')
+                              : (chat.isArchived! ? ' Unarchive' : ' Archive'),
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w700,
@@ -99,12 +99,8 @@ class ListItem extends StatelessWidget {
 
     if (SettingsSvc.settings.swipableConversationTiles.value) {
       return Dismissible(
-        background: (kIsDesktop || kIsWeb)
-            ? null
-            : Obx(() => slideBackground(chat, false)),
-        secondaryBackground: (kIsDesktop || kIsWeb)
-            ? null
-            : Obx(() => slideBackground(chat, true)),
+        background: (kIsDesktop || kIsWeb) ? null : Obx(() => slideBackground(chat, false)),
+        secondaryBackground: (kIsDesktop || kIsWeb) ? null : Obx(() => slideBackground(chat, true)),
         key: UniqueKey(),
         onDismissed: (direction) {
           MaterialSwipeAction action;

@@ -95,7 +95,8 @@ class _ConversationPeekViewState extends OptimizedState<ConversationPeekView> wi
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
         systemNavigationBarColor: SettingsSvc.settings.immersiveMode.value
-            ? Colors.transparent : context.theme.colorScheme.background, // navigation bar color
+            ? Colors.transparent
+            : context.theme.colorScheme.background, // navigation bar color
         systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
         statusBarColor: Colors.transparent, // status bar color
         statusBarIconBrightness: context.theme.colorScheme.brightness.opposite,
@@ -116,111 +117,116 @@ class _ConversationPeekViewState extends OptimizedState<ConversationPeekView> wi
           ),
         ),
         child: TitleBarWrapper(
-          child: Container(
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                GestureDetector(
-                  onTap: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-                    child: Container(
-                      color: context.theme.colorScheme.properSurface.darkenPercent(30).withValues(alpha: 0.2),
-                    ),
+            child: Container(
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              GestureDetector(
+                onTap: () {
+                  Navigator.of(context).pop();
+                },
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+                  child: Container(
+                    color: context.theme.colorScheme.properSurface.darkenPercent(30).withValues(alpha: 0.2),
                   ),
                 ),
-                Positioned(
-                  left: min(widget.position.dx, context.width - min(context.width - 50, 500) - 25),
-                  top: min(widget.position.dy, context.height - min(context.height / 2, context.height - itemHeight * 5) - itemHeight * 5 - 25),
-                  child: TweenAnimationBuilder<double>(
-                    tween: Tween<double>(begin: 0.8, end: 1),
-                    curve: Curves.easeOutBack,
-                    duration: const Duration(milliseconds: 400),
-                    child: FadeTransition(
-                      opacity: CurvedAnimation(
-                        parent: controller,
-                        curve: const Interval(0.0, .9, curve: Curves.ease),
-                        reverseCurve: Curves.easeInCubic,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          GestureDetector(
-                            onTap: () async {
-                              cvController.close();
-                              MessagesSvc(widget.chat.guid).close();
-                              for (Message m in widget.messages) {
-                                getActiveMwc(m.guid!)?.close();
-                              }
-                              controller.dispose();
-                              disposed = true;
-                              Navigator.of(context).pop();
-                              NavigationSvc.pushAndRemoveUntil(
-                                Get.context!,
-                                ConversationView(
-                                  chat: widget.chat,
-                                ),
-                                (route) => route.isFirst,
-                              );
-                            },
-                            child: DeferredPointerHandler(
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: ThemeSvc.inDarkMode(context) ? context.theme.colorScheme.properSurface.darkenPercent(30) : context.theme.colorScheme.background,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                width: min(context.width - 50, 500),
-                                height: min(context.height / 2, context.height - itemHeight * 5),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: ListView.builder(
-                                    shrinkWrap: true,
-                                    reverse: true,
-                                    physics: ThemeSwitcher.getScrollPhysics(),
-                                    findChildIndexCallback: (key) => findChildIndexByKey(widget.messages, key, (item) => item.guid),
-                                    itemBuilder: (context, index) {
-                                      return AbsorbPointer(
-                                        absorbing: true,
-                                        child: Material(
-                                          color: Colors.transparent,
-                                          child: Padding(
-                                            padding: const EdgeInsets.only(left: 5.0, right: 5.0),
-                                            child: MessageHolder(
-                                              key: Key(widget.messages[index].guid!),
-                                              cvController: cvController,
-                                              message: widget.messages[index],
-                                              oldMessageGuid: index == widget.messages.length - 1 ? null : widget.messages[index + 1].guid,
-                                              newMessageGuid: index == 0 ? null : widget.messages[index - 1].guid,
-                                            ),
+              ),
+              Positioned(
+                left: min(widget.position.dx, context.width - min(context.width - 50, 500) - 25),
+                top: min(widget.position.dy,
+                    context.height - min(context.height / 2, context.height - itemHeight * 5) - itemHeight * 5 - 25),
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween<double>(begin: 0.8, end: 1),
+                  curve: Curves.easeOutBack,
+                  duration: const Duration(milliseconds: 400),
+                  child: FadeTransition(
+                    opacity: CurvedAnimation(
+                      parent: controller,
+                      curve: const Interval(0.0, .9, curve: Curves.ease),
+                      reverseCurve: Curves.easeInCubic,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        GestureDetector(
+                          onTap: () async {
+                            cvController.close();
+                            MessagesSvc(widget.chat.guid).close();
+                            for (Message m in widget.messages) {
+                              getActiveMwc(m.guid!)?.close();
+                            }
+                            controller.dispose();
+                            disposed = true;
+                            Navigator.of(context).pop();
+                            NavigationSvc.pushAndRemoveUntil(
+                              Get.context!,
+                              ConversationView(
+                                chat: widget.chat,
+                              ),
+                              (route) => route.isFirst,
+                            );
+                          },
+                          child: DeferredPointerHandler(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: ThemeSvc.inDarkMode(context)
+                                    ? context.theme.colorScheme.properSurface.darkenPercent(30)
+                                    : context.theme.colorScheme.background,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              width: min(context.width - 50, 500),
+                              height: min(context.height / 2, context.height - itemHeight * 5),
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: ListView.builder(
+                                  shrinkWrap: true,
+                                  reverse: true,
+                                  physics: ThemeSwitcher.getScrollPhysics(),
+                                  findChildIndexCallback: (key) =>
+                                      findChildIndexByKey(widget.messages, key, (item) => item.guid),
+                                  itemBuilder: (context, index) {
+                                    return AbsorbPointer(
+                                      absorbing: true,
+                                      child: Material(
+                                        color: Colors.transparent,
+                                        child: Padding(
+                                          padding: const EdgeInsets.only(left: 5.0, right: 5.0),
+                                          child: MessageHolder(
+                                            key: Key(widget.messages[index].guid!),
+                                            cvController: cvController,
+                                            message: widget.messages[index],
+                                            oldMessageGuid: index == widget.messages.length - 1
+                                                ? null
+                                                : widget.messages[index + 1].guid,
+                                            newMessageGuid: index == 0 ? null : widget.messages[index - 1].guid,
                                           ),
                                         ),
-                                      );
-                                    },
-                                    itemCount: widget.messages.length,
-                                  ),
+                                      ),
+                                    );
+                                  },
+                                  itemCount: widget.messages.length,
                                 ),
                               ),
                             ),
                           ),
-                          const SizedBox(height: 5),
-                          buildDetailsMenu(context),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(height: 5),
+                        buildDetailsMenu(context),
+                      ],
                     ),
-                    builder: (context, size, child) {
-                      return Transform.scale(
-                        scale: size,
-                        child: child,
-                      );
-                    },
                   ),
+                  builder: (context, size, child) {
+                    return Transform.scale(
+                      scale: size,
+                      child: child,
+                    );
+                  },
                 ),
-              ],
-            ),
-          )
-        ),
+              ),
+            ],
+          ),
+        )),
       ),
     );
   }
@@ -250,11 +256,10 @@ class _ConversationPeekViewState extends OptimizedState<ConversationPeekView> wi
               style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.properOnSurface),
             ),
             trailing: Icon(
-              widget.chat.isPinned!
-                  ? (ios ? cupertino.CupertinoIcons.pin_slash : Icons.star_outline)
-                  : (ios ? cupertino.CupertinoIcons.pin : Icons.star),
-              color: context.theme.colorScheme.properOnSurface
-            ),
+                widget.chat.isPinned!
+                    ? (ios ? cupertino.CupertinoIcons.pin_slash : Icons.star_outline)
+                    : (ios ? cupertino.CupertinoIcons.pin : Icons.star),
+                color: context.theme.colorScheme.properOnSurface),
           ),
         ),
       ),
@@ -278,11 +283,10 @@ class _ConversationPeekViewState extends OptimizedState<ConversationPeekView> wi
               style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.properOnSurface),
             ),
             trailing: Icon(
-              widget.chat.muteType == "mute"
-                  ? (ios ? cupertino.CupertinoIcons.bell : Icons.notifications_active)
-                  : (ios ? cupertino.CupertinoIcons.bell_slash : Icons.notifications_off),
-              color: context.theme.colorScheme.properOnSurface
-            ),
+                widget.chat.muteType == "mute"
+                    ? (ios ? cupertino.CupertinoIcons.bell : Icons.notifications_active)
+                    : (ios ? cupertino.CupertinoIcons.bell_slash : Icons.notifications_off),
+                color: context.theme.colorScheme.properOnSurface),
           ),
         ),
       ),
@@ -306,11 +310,10 @@ class _ConversationPeekViewState extends OptimizedState<ConversationPeekView> wi
               style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.properOnSurface),
             ),
             trailing: Icon(
-              widget.chat.hasUnreadMessage!
-                  ? (ios ? cupertino.CupertinoIcons.person_crop_circle_badge_xmark : Icons.mark_chat_unread)
-                  : (ios ? cupertino.CupertinoIcons.person_crop_circle_badge_checkmark : Icons.mark_chat_read),
-              color: context.theme.colorScheme.properOnSurface
-            ),
+                widget.chat.hasUnreadMessage!
+                    ? (ios ? cupertino.CupertinoIcons.person_crop_circle_badge_xmark : Icons.mark_chat_unread)
+                    : (ios ? cupertino.CupertinoIcons.person_crop_circle_badge_checkmark : Icons.mark_chat_read),
+                color: context.theme.colorScheme.properOnSurface),
           ),
         ),
       ),
@@ -334,11 +337,10 @@ class _ConversationPeekViewState extends OptimizedState<ConversationPeekView> wi
               style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.properOnSurface),
             ),
             trailing: Icon(
-              widget.chat.isArchived!
-                  ? (ios ? cupertino.CupertinoIcons.tray_arrow_up : Icons.unarchive)
-                  : (ios ? cupertino.CupertinoIcons.tray_arrow_down : Icons.archive),
-              color: context.theme.colorScheme.properOnSurface
-            ),
+                widget.chat.isArchived!
+                    ? (ios ? cupertino.CupertinoIcons.tray_arrow_up : Icons.unarchive)
+                    : (ios ? cupertino.CupertinoIcons.tray_arrow_down : Icons.archive),
+                color: context.theme.colorScheme.properOnSurface),
           ),
         ),
       ),
@@ -355,20 +357,20 @@ class _ConversationPeekViewState extends OptimizedState<ConversationPeekView> wi
                     "Are you sure?",
                     style: context.theme.textTheme.titleLarge,
                   ),
-                  content: Text(
-                      "This chat will be deleted from this device only",
-                      style: context.theme.textTheme.bodyLarge
-                  ),
+                  content:
+                      Text("This chat will be deleted from this device only", style: context.theme.textTheme.bodyLarge),
                   backgroundColor: context.theme.colorScheme.properSurface,
                   actions: <Widget>[
                     TextButton(
-                      child: Text("No", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+                      child: Text("No",
+                          style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
                       onPressed: () {
                         popPeekView();
                       },
                     ),
                     TextButton(
-                      child: Text("Yes", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+                      child: Text("Yes",
+                          style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
                       onPressed: () async {
                         ChatsSvc.removeChat(widget.chat);
                         ChatsSvc.softDeleteChat(widget.chat);
@@ -388,10 +390,7 @@ class _ConversationPeekViewState extends OptimizedState<ConversationPeekView> wi
               'Delete',
               style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.properOnSurface),
             ),
-            trailing: Icon(
-              cupertino.CupertinoIcons.trash,
-              color: context.theme.colorScheme.properOnSurface
-            ),
+            trailing: Icon(cupertino.CupertinoIcons.trash, color: context.theme.colorScheme.properOnSurface),
           ),
         ),
       ),
@@ -402,13 +401,13 @@ class _ConversationPeekViewState extends OptimizedState<ConversationPeekView> wi
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
-          color: (ThemeSvc.inDarkMode(context) ? context.theme.colorScheme.properSurface : context.theme.colorScheme.background).withAlpha(150),
+          color: (ThemeSvc.inDarkMode(context)
+                  ? context.theme.colorScheme.properSurface
+                  : context.theme.colorScheme.background)
+              .withAlpha(150),
           width: maxMenuWidth,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: allActions
-          ),
+          child:
+              Column(mainAxisSize: MainAxisSize.min, mainAxisAlignment: MainAxisAlignment.center, children: allActions),
         ),
       ),
     );

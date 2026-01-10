@@ -121,15 +121,13 @@ class _MaterialConversationListState extends OptimizedState<MaterialConversation
                       itemBuilder: (context, index) {
                         final chat = _chats[index];
                         return Container(
-                          key: ValueKey(chat.guid),
-                          child: ListItem(
-                            chat: chat,
-                            controller: controller,
-                            update: () {
-                              setState(() {});
-                            }
-                          )
-                        );
+                            key: ValueKey(chat.guid),
+                            child: ListItem(
+                                chat: chat,
+                                controller: controller,
+                                update: () {
+                                  setState(() {});
+                                }));
                       },
                       itemCount: _chats.length,
                     )),

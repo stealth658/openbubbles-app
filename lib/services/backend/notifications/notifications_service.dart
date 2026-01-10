@@ -26,7 +26,7 @@ import 'package:window_manager/window_manager.dart';
 import 'package:get_it/get_it.dart';
 
 // ignore: non_constant_identifier_names
-NotificationsService get NotificationsSvc => GetIt.I<NotificationsService>(); 
+NotificationsService get NotificationsSvc => GetIt.I<NotificationsService>();
 
 class PendingToastItem {
   final String? sender;
@@ -177,8 +177,9 @@ class NotificationsService {
     Uint8List contactIcon = isFromMe
         ? personIcon
         : await avatarAsBytes(
-            participantsOverride:
-                !chat.isGroup ? null : chat.handles.where((e) => e.address == message.handleRelation.target?.address).toList(),
+            participantsOverride: !chat.isGroup
+                ? null
+                : chat.handles.where((e) => e.address == message.handleRelation.target?.address).toList(),
             chat: chat,
             quality: 256);
     if (chatIcon.isEmpty) {
@@ -223,7 +224,9 @@ class NotificationsService {
     if (chat.shouldMuteNotification(message)) return;
     if (!headless && LifecycleSvc.isAlive) {
       if (ChatsSvc.isChatActive(chat.guid)) return;
-      if (ChatsSvc.activeChat == null && Get.rawRoute?.settings.name == "/" && !SettingsSvc.settings.notifyOnChatList.value) return;
+      if (ChatsSvc.activeChat == null &&
+          Get.rawRoute?.settings.name == "/" &&
+          !SettingsSvc.settings.notifyOnChatList.value) return;
     }
 
     await createNotification(chat, message);
@@ -365,7 +368,7 @@ class NotificationsService {
 
     String path;
     bool isTemporaryFile = false;
-    
+
     // Optimization: For single-participant chats, use existing ContactV2 avatar if available
     if (chat.handles.length == 1 && chat.customAvatarPath == null) {
       final contactV2 = chat.handles.first.contactsV2.firstOrNull;
@@ -479,7 +482,8 @@ class NotificationsService {
   }
 
   void _attachToastHandlers(LocalNotification toast, Chat chat, Message message, String avatarPath,
-      List<String> actions, bool multipleMessages, {bool deleteFileOnClose = true}) {
+      List<String> actions, bool multipleMessages,
+      {bool deleteFileOnClose = true}) {
     toast.onClick = () async {
       _cleanNotificationState(chat.guid);
       await _openChat(chat);

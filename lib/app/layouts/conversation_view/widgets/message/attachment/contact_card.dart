@@ -99,50 +99,50 @@ class _ContactCardState extends OptimizedState<ContactCard> with AutomaticKeepAl
           onTap: () async {
             if (kIsWeb || widget.file.path == null) {
               final content = base64.encode(widget.file.bytes!);
-              html.AnchorElement(
-                  href: "data:application/octet-stream;charset=utf-16le;base64,$content")
+              html.AnchorElement(href: "data:application/octet-stream;charset=utf-16le;base64,$content")
                 ..setAttribute("download", widget.file.name)
                 ..click();
             } else {
-              await OpenFilex.open("${FilesystemSvc.appDocDir.path}/attachments/${widget.attachment.guid!}/${basename(widget.file.path!)}", type: widget.attachment.mimeType);
+              await OpenFilex.open(
+                  "${FilesystemSvc.appDocDir.path}/attachments/${widget.attachment.guid!}/${basename(widget.file.path!)}",
+                  type: widget.attachment.mimeType);
             }
           },
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 15.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
-                Expanded(
-                  child:  Text(
-                    contact?.displayName ?? 'Unknown',
-                    style: context.theme.textTheme.bodyLarge!.copyWith(fontWeight: FontWeight.bold),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 2,
-                    softWrap: true,
-                  ),
-                ),
-                const SizedBox(width: 2),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    ContactAvatarWidget(
-                      handle: Handle(),
-                      contact: contact,
-                      borderThickness: 0.5,
+              padding: const EdgeInsets.symmetric(horizontal: 15.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: <Widget>[
+                  Expanded(
+                    child: Text(
+                      contact?.displayName ?? 'Unknown',
+                      style: context.theme.textTheme.bodyLarge!.copyWith(fontWeight: FontWeight.bold),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 2,
+                      softWrap: true,
                     ),
-                    Padding(
-                      padding: const EdgeInsets.only(left: 5.0),
-                      child: Icon(
-                        iOS ? CupertinoIcons.forward : Icons.arrow_forward,
-                        color: context.theme.colorScheme.outline,
-                        size: 15,
+                  ),
+                  const SizedBox(width: 2),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      ContactAvatarWidget(
+                        handle: Handle(),
+                        contact: contact,
+                        borderThickness: 0.5,
                       ),
-                    )
-                  ],
-                )
-              ],
-            )
-          ),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 5.0),
+                        child: Icon(
+                          iOS ? CupertinoIcons.forward : Icons.arrow_forward,
+                          color: context.theme.colorScheme.outline,
+                          size: 15,
+                        ),
+                      )
+                    ],
+                  )
+                ],
+              )),
         ),
       ),
     );

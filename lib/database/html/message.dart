@@ -187,7 +187,8 @@ class Message {
       groupActionType: json["groupActionType"] ?? 0,
       balloonBundleId: json["balloonBundleId"],
       associatedMessageGuid: json["associatedMessageGuid"]?.toString().replaceAll("bp:", "").split("/").last,
-      associatedMessagePart: json["associatedMessagePart"] ?? int.tryParse(json["associatedMessageGuid"].toString().replaceAll("p:", "").split("/").first),
+      associatedMessagePart: json["associatedMessagePart"] ??
+          int.tryParse(json["associatedMessageGuid"].toString().replaceAll("p:", "").split("/").first),
       associatedMessageType: json["associatedMessageType"],
       expressiveSendStyleId: json["expressiveSendStyleId"],
       handle: json['handle'] != null ? Handle.fromMap(json['handle']) : null,
@@ -243,7 +244,8 @@ class Message {
     return [];
   }
 
-  static Future<Message> replaceMessage(String? oldGuid, Message newMessage, {bool awaitNewMessageEvent = true, Chat? chat}) async {
+  static Future<Message> replaceMessage(String? oldGuid, Message newMessage,
+      {bool awaitNewMessageEvent = true, Chat? chat}) async {
     if (newMessage.handle == null && newMessage.handleId != null) {
       newMessage.handle = Handle.findOne(originalROWID: newMessage.handleId);
     }
@@ -256,7 +258,7 @@ class Message {
     return this;
   }
 
-  Message setPlayedDate({ DateTime? timestamp }) {
+  Message setPlayedDate({DateTime? timestamp}) {
     datePlayed = timestamp ?? DateTime.now().toUtc();
     return this;
   }
@@ -270,7 +272,9 @@ class Message {
   }
 
   Message fetchAssociatedMessages({MessagesService? service, bool shouldRefresh = false}) {
-    associatedMessages = (service?.struct.reactions.where((element) => element.associatedMessageGuid == guid).toList() ?? []).cast<Message>();
+    associatedMessages =
+        (service?.struct.reactions.where((element) => element.associatedMessageGuid == guid).toList() ?? [])
+            .cast<Message>();
     if (threadOriginatorGuid != null) {
       final existing = service?.struct.getMessage(threadOriginatorGuid!);
       final threadOriginator = existing;
@@ -306,8 +310,9 @@ class Message {
   String get fullText => sanitizeString([subject, text].where((e) => !isNullOrEmpty(e)).join("\n"));
 
   // first condition is for macOS < 11 and second condition is for macOS >= 11
-  bool get isLegacyUrlPreview => (balloonBundleId == "com.apple.messages.URLBalloonProvider" && hasDdResults!)
-      || (hasDdResults! && (text ?? "").trim().isURL);
+  bool get isLegacyUrlPreview =>
+      (balloonBundleId == "com.apple.messages.URLBalloonProvider" && hasDdResults!) ||
+      (hasDdResults! && (text ?? "").trim().isURL);
 
   String? get url => text?.replaceAll("\n", " ").split(" ").firstWhereOrNull((String e) => e.hasUrl);
 
@@ -315,7 +320,8 @@ class Message {
 
   String get interactiveText {
     String text = "";
-    final temp = balloonBundleIdMap[balloonBundleId?.split(":").first] ?? (balloonBundleId?.split(":").first ?? "Unknown");
+    final temp =
+        balloonBundleIdMap[balloonBundleId?.split(":").first] ?? (balloonBundleId?.split(":").first ?? "Unknown");
     if (temp is Map) {
       text = temp[balloonBundleId?.split(":").last] ?? ((balloonBundleId?.split(":").last ?? "Unknown"));
     } else {
@@ -359,16 +365,20 @@ class Message {
     return text;
   }
 
-  bool get isParticipantEvent => isGroupEvent && ((itemType == 1 && [0, 1].contains(groupActionType)) || [2, 3].contains(itemType));
+  bool get isParticipantEvent =>
+      isGroupEvent && ((itemType == 1 && [0, 1].contains(groupActionType)) || [2, 3].contains(itemType));
 
   bool get isBigEmoji => bigEmoji ?? MessageHelper.shouldShowBigEmoji(fullText);
 
-  List<Attachment> get realAttachments => attachments.where((e) => e != null && e.mimeType != null).cast<Attachment>().toList();
+  List<Attachment> get realAttachments =>
+      attachments.where((e) => e != null && e.mimeType != null).cast<Attachment>().toList();
 
-  List<Attachment> get previewAttachments => attachments.where((e) => e != null && e.mimeType == null).cast<Attachment>().toList();
+  List<Attachment> get previewAttachments =>
+      attachments.where((e) => e != null && e.mimeType == null).cast<Attachment>().toList();
 
-  List<Message> get reactions => associatedMessages.where((item) =>
-      ReactionTypes.toList().contains(item.associatedMessageType?.replaceAll("-", ""))).toList();
+  List<Message> get reactions => associatedMessages
+      .where((item) => ReactionTypes.toList().contains(item.associatedMessageType?.replaceAll("-", "")))
+      .toList();
 
   Indicator get indicatorToShow {
     if (!isFromMe!) return Indicator.NONE;
@@ -386,7 +396,8 @@ class Message {
   }
 
   bool sameSender(Message? other) {
-    return (isFromMe! && isFromMe == other?.isFromMe) || (!isFromMe! && !(other?.isFromMe ?? true) && handleId == other?.handleId);
+    return (isFromMe! && isFromMe == other?.isFromMe) ||
+        (!isFromMe! && !(other?.isFromMe ?? true) && handleId == other?.handleId);
   }
 
   void generateTempGuid() {
@@ -443,9 +454,9 @@ class Message {
     // OR
     // 1) It is the thread originator but the part is not the last part of the older message
     // 2) It is part of the thread but has multiple parts
-    return (olderMessage.guid != threadOriginatorGuid && olderMessage.threadOriginatorGuid != threadOriginatorGuid)
-        || (olderMessage.guid == threadOriginatorGuid && normalizedThreadPart != olderPartCount - 1)
-        || (olderMessage.threadOriginatorGuid == threadOriginatorGuid && olderPartCount > 1);
+    return (olderMessage.guid != threadOriginatorGuid && olderMessage.threadOriginatorGuid != threadOriginatorGuid) ||
+        (olderMessage.guid == threadOriginatorGuid && normalizedThreadPart != olderPartCount - 1) ||
+        (olderMessage.threadOriginatorGuid == threadOriginatorGuid && olderPartCount > 1);
   }
 
   bool connectToLower(Message newerMessage) {
@@ -616,7 +627,7 @@ class Message {
       "_error": _error.value,
       "dateCreated": dateCreated?.millisecondsSinceEpoch,
       "dateRead": _dateRead.value?.millisecondsSinceEpoch,
-      "dateDelivered":  _dateDelivered.value?.millisecondsSinceEpoch,
+      "dateDelivered": _dateDelivered.value?.millisecondsSinceEpoch,
       "isFromMe": isFromMe!,
       "hasDdResults": hasDdResults!,
       "datePlayed": datePlayed?.millisecondsSinceEpoch,

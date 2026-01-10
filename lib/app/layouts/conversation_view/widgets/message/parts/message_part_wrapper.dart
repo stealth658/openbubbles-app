@@ -50,7 +50,10 @@ class MessagePartWrapper extends StatelessWidget {
   final Iterable<Message> reactions;
   final VoidCallback onHapticFeedback;
 
-  bool get isEditing => message.isFromMe! && cvController.editing.firstWhereOrNull((e2) => e2.item1.guid == message.guid! && e2.item2.part == part.part) != null;
+  bool get isEditing =>
+      message.isFromMe! &&
+      cvController.editing.firstWhereOrNull((e2) => e2.item1.guid == message.guid! && e2.item2.part == part.part) !=
+          null;
 
   void completeEdit(String newEdit) async {
     cvController.editing.removeWhere((e2) => e2.item1.guid == message.guid! && e2.item2.part == part.part);
@@ -211,7 +214,10 @@ class _MessageContentBubble extends StatelessWidget {
       clipper: TailClipper(
         isFromMe: message.isFromMe!,
         showTail: message.showTail(newerMessage) && part.part == controller.parts.length - 1,
-        connectLower: SettingsSvc.settings.skin.value == Skins.iOS ? false : (part.part != 0 && part.part != controller.parts.length - 1) || (part.part == 0 && controller.parts.length > 1),
+        connectLower: SettingsSvc.settings.skin.value == Skins.iOS
+            ? false
+            : (part.part != 0 && part.part != controller.parts.length - 1) ||
+                (part.part == 0 && controller.parts.length > 1),
         connectUpper: SettingsSvc.settings.skin.value == Skins.iOS ? false : part.part != 0,
       ),
       child: Stack(
@@ -235,7 +241,8 @@ class _MessageContentBubble extends StatelessWidget {
                       : const SizedBox.shrink(),
           if (message.isFromMe!)
             Obx(() {
-              final editStuff = cvController.editing.firstWhereOrNull((e2) => e2.item1.guid == message.guid! && e2.item2.part == part.part);
+              final editStuff = cvController.editing
+                  .firstWhereOrNull((e2) => e2.item1.guid == message.guid! && e2.item2.part == part.part);
               return AnimatedSize(
                 duration: const Duration(milliseconds: 250),
                 alignment: Alignment.centerRight,
@@ -331,9 +338,12 @@ class _EditModeTextField extends StatelessWidget {
             minLines: 1,
             autofocus: !(kIsDesktop || kIsWeb),
             enableIMEPersonalizedLearning: !SettingsSvc.settings.incognitoKeyboard.value,
-            textInputAction: SettingsSvc.settings.sendWithReturn.value && !kIsWeb && !kIsDesktop ? TextInputAction.send : TextInputAction.newline,
+            textInputAction: SettingsSvc.settings.sendWithReturn.value && !kIsWeb && !kIsDesktop
+                ? TextInputAction.send
+                : TextInputAction.newline,
             cursorColor: context.theme.extension<BubbleText>()!.bubbleText.color,
-            cursorHeight: context.theme.extension<BubbleText>()!.bubbleText.fontSize! * 1.25 * (message.isBigEmoji ? 3 : 1),
+            cursorHeight:
+                context.theme.extension<BubbleText>()!.bubbleText.fontSize! * 1.25 * (message.isBigEmoji ? 3 : 1),
             decoration: InputDecoration(
               contentPadding: EdgeInsets.all(SettingsSvc.settings.skin.value == Skins.iOS ? 10 : 12.5),
               isDense: true,
@@ -352,7 +362,8 @@ class _EditModeTextField extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
               ),
               fillColor: Colors.transparent,
-              hintStyle: context.theme.extension<BubbleText>()!.bubbleText.copyWith(color: context.theme.colorScheme.outline),
+              hintStyle:
+                  context.theme.extension<BubbleText>()!.bubbleText.copyWith(color: context.theme.colorScheme.outline),
               prefixIconConstraints: const BoxConstraints(minHeight: 0, minWidth: 40),
               prefixIcon: IconButton(
                 constraints: const BoxConstraints(maxWidth: 27),
@@ -364,7 +375,8 @@ class _EditModeTextField extends StatelessWidget {
                   size: 22,
                 ),
                 onPressed: () {
-                  cvController.editing.removeWhere((e2) => e2.item1.guid == message.guid! && e2.item2.part == part.part);
+                  cvController.editing
+                      .removeWhere((e2) => e2.item1.guid == message.guid! && e2.item2.part == part.part);
                   cvController.lastFocusedNode.requestFocus();
                 },
                 iconSize: 22,
@@ -402,7 +414,9 @@ class _EditModeTextField extends StatelessWidget {
                         alignment: Alignment.center,
                         child: Icon(
                           SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.arrow_up : Icons.send_outlined,
-                          color: SettingsSvc.settings.skin.value != Skins.iOS ? context.theme.extension<BubbleText>()!.bubbleText.color : context.theme.colorScheme.bubble(context, chat.isIMessage),
+                          color: SettingsSvc.settings.skin.value != Skins.iOS
+                              ? context.theme.extension<BubbleText>()!.bubbleText.color
+                              : context.theme.colorScheme.bubble(context, chat.isIMessage),
                           size: SettingsSvc.settings.skin.value == Skins.iOS ? 18 : 26,
                         ),
                       ),

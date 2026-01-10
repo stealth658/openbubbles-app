@@ -46,21 +46,27 @@ class IncrementalSyncManager extends SyncManager {
 
   // The default extra fields to fetch with the messages
   List<String> defaultWithQuery = [
-    "chats", "chats.participants", "attachments", "attributedBody", "messageSummaryInfo", "payloadData"];
+    "chats",
+    "chats.participants",
+    "attachments",
+    "attributedBody",
+    "messageSummaryInfo",
+    "payloadData"
+  ];
 
-  IncrementalSyncManager({
-      this.startRowId,
+  IncrementalSyncManager(
+      {this.startRowId,
       this.endRowId,
       this.startTimestamp,
       this.endTimestamp,
       this.batchSize = 1000,
       this.saveMarker = false,
       this.onComplete,
-      bool saveLogs = false
-  }) : super("Incremental", saveLogs: saveLogs) {
-      if (startRowId == null && startTimestamp == null) {
-        throw Exception("Must provide either a startRowId or startTimestamp");
-      }
+      bool saveLogs = false})
+      : super("Incremental", saveLogs: saveLogs) {
+    if (startRowId == null && startTimestamp == null) {
+      throw Exception("Must provide either a startRowId or startTimestamp");
+    }
   }
 
   @override
@@ -215,8 +221,7 @@ class IncrementalSyncManager extends SyncManager {
       }
 
       int messageCount = messagesResponse.data['data'].length;
-      addToOutput('Page ${i + 1} returned $messageCount message(s)...',
-          level: LogLevel.DEBUG);
+      addToOutput('Page ${i + 1} returned $messageCount message(s)...', level: LogLevel.DEBUG);
 
       if (messageCount == 0) break;
       await syncMessages(messagesResponse.data['data'], total);
@@ -254,7 +259,8 @@ class IncrementalSyncManager extends SyncManager {
         }
 
         // Save the last synced timestamp
-        if (msg.dateCreated != null && lastSyncedTimestamp == null || msg.dateCreated!.millisecondsSinceEpoch > lastSyncedTimestamp!) {
+        if (msg.dateCreated != null && lastSyncedTimestamp == null ||
+            msg.dateCreated!.millisecondsSinceEpoch > lastSyncedTimestamp!) {
           lastSyncedTimestamp = msg.dateCreated!.millisecondsSinceEpoch;
         }
       }
@@ -315,18 +321,14 @@ class IncrementalSyncManager extends SyncManager {
     List<Map<String, dynamic>> whereArgs = [
       {
         'statement': 'message.ROWID > :startRowId',
-        'args': {
-          'startRowId': startRowId
-        }
+        'args': {'startRowId': startRowId}
       }
     ];
 
     if (endRowId != null && endRowId > startRowId) {
       whereArgs.add({
         'statement': 'message.ROWID <= :endRowId',
-        'args': {
-          'endRowId': endRowId
-        }
+        'args': {'endRowId': endRowId}
       });
     }
 

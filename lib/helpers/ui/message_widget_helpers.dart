@@ -18,12 +18,14 @@ class MentionEntity extends Entity {
   MentionEntity(String rawValue) : super(rawValue: rawValue, type: EntityType.unknown);
 }
 
-List<InlineSpan> buildMessageSpans(BuildContext context, MessagePart part, Message message, {Color? colorOverride, bool hideBodyText = false}) {
+List<InlineSpan> buildMessageSpans(BuildContext context, MessagePart part, Message message,
+    {Color? colorOverride, bool hideBodyText = false}) {
   final textSpans = <InlineSpan>[];
   final textStyle = (context.theme.extensions[BubbleText] as BubbleText).bubbleText.apply(
-    color: colorOverride ?? (message.isFromMe! ? context.theme.colorScheme.onPrimary : context.theme.colorScheme.properOnSurface),
-    fontSizeFactor: message.isBigEmoji ? 3 : 1,
-  );
+        color: colorOverride ??
+            (message.isFromMe! ? context.theme.colorScheme.onPrimary : context.theme.colorScheme.properOnSurface),
+        fontSizeFactor: message.isBigEmoji ? 3 : 1,
+      );
 
   if (!isNullOrEmpty(part.subject)) {
     textSpans.addAll(MessageHelper.buildEmojiText(
@@ -39,22 +41,23 @@ List<InlineSpan> buildMessageSpans(BuildContext context, MessagePart part, Messa
         textStyle,
       ));
       textSpans.addAll(MessageHelper.buildEmojiText(
-        part.displayText!.substring(range.first, range.last),
-        textStyle.apply(fontWeightDelta: 2),
-        recognizer: TapGestureRecognizer()..onTap = () async {
-          if (kIsDesktop || kIsWeb) return;
-          final handle = ChatsSvc.activeChat!.chat.handles.firstWhereOrNull((e) => e.address == part.mentions[i].mentionedAddress);
-          if (handle?.contact == null && handle != null) {
-            await MethodChannelSvc.invokeMethod("open-contact-form", {'address': handle.address, 'address_type': handle.address.isEmail ? 'email' : 'phone'});
-          } else if (handle?.contact != null) {
-            try {
-              await MethodChannelSvc.invokeMethod("view-contact-form", {'id': handle!.contact!.id});
-            } catch (_) {
-              showSnackbar("Error", "Failed to find contact on device!");
-            }
-          }
-        }
-      ));
+          part.displayText!.substring(range.first, range.last), textStyle.apply(fontWeightDelta: 2),
+          recognizer: TapGestureRecognizer()
+            ..onTap = () async {
+              if (kIsDesktop || kIsWeb) return;
+              final handle = ChatsSvc.activeChat!.chat.handles
+                  .firstWhereOrNull((e) => e.address == part.mentions[i].mentionedAddress);
+              if (handle?.contact == null && handle != null) {
+                await MethodChannelSvc.invokeMethod("open-contact-form",
+                    {'address': handle.address, 'address_type': handle.address.isEmail ? 'email' : 'phone'});
+              } else if (handle?.contact != null) {
+                try {
+                  await MethodChannelSvc.invokeMethod("view-contact-form", {'id': handle!.contact!.id});
+                } catch (_) {
+                  showSnackbar("Error", "Failed to find contact on device!");
+                }
+              }
+            }));
       if (i == part.mentions.length - 1) {
         textSpans.addAll(MessageHelper.buildEmojiText(
           part.displayText!.substring(range.last),
@@ -72,35 +75,39 @@ List<InlineSpan> buildMessageSpans(BuildContext context, MessagePart part, Messa
   return textSpans;
 }
 
-Future<List<InlineSpan>> buildEnrichedMessageSpans(BuildContext context, MessagePart part, Message message, {Color? colorOverride, bool hideBodyText = false}) async {
+Future<List<InlineSpan>> buildEnrichedMessageSpans(BuildContext context, MessagePart part, Message message,
+    {Color? colorOverride, bool hideBodyText = false}) async {
   final textSpans = <InlineSpan>[];
   final textStyle = (context.theme.extensions[BubbleText] as BubbleText).bubbleText.apply(
-    color: colorOverride ?? (message.isFromMe! ? context.theme.colorScheme.onPrimary : context.theme.colorScheme.properOnSurface),
-    fontSizeFactor: message.isBigEmoji ? 3 : 1,
-  );
+        color: colorOverride ??
+            (message.isFromMe! ? context.theme.colorScheme.onPrimary : context.theme.colorScheme.properOnSurface),
+        fontSizeFactor: message.isBigEmoji ? 3 : 1,
+      );
   // extract rich content
-  final urlRegex = RegExp(r'((https?://)|(www\.))[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}([-a-zA-Z0-9/()@:%_.~#?&=*\[\]]*)\b');
+  final urlRegex = RegExp(
+      r'((https?://)|(www\.))[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}([-a-zA-Z0-9/()@:%_.~#?&=*\[\]]*)\b');
   final linkIndexMatches = <Tuple3<String, List<int>, List?>>[];
   final controller = cvc(message.chat.target ?? ChatsSvc.activeChat!.chat);
   if (!isNullOrEmpty(part.text)) {
     if (!kIsWeb && !kIsDesktop && SettingsSvc.settings.smartReply.value) {
       if (controller.mlKitParsedText["${message.guid!}-${part.part}"] == null) {
         try {
-          controller.mlKitParsedText["${message.guid!}-${part.part}"] = await GoogleMlKit.nlp.entityExtractor(EntityExtractorLanguage.english)
-              .annotateText(part.text!);
+          controller.mlKitParsedText["${message.guid!}-${part.part}"] =
+              await GoogleMlKit.nlp.entityExtractor(EntityExtractorLanguage.english).annotateText(part.text!);
         } catch (ex, stack) {
           Logger.warn('Failed to extract entities using mlkit!', error: ex, trace: stack);
         }
       }
       final entities = controller.mlKitParsedText["${message.guid!}-${part.part}"] ?? [];
-      entities.insertAll(0, part.mentions.map((e) => EntityAnnotation(
-          start: e.range.first,
-          end: e.range.last,
-          text: message.text!.substring(e.range.first, e.range.last),
-          entities: [
-            MentionEntity(e.mentionedAddress ?? ""),
-          ]
-      )));
+      entities.insertAll(
+          0,
+          part.mentions.map((e) => EntityAnnotation(
+                  start: e.range.first,
+                  end: e.range.last,
+                  text: message.text!.substring(e.range.first, e.range.last),
+                  entities: [
+                    MentionEntity(e.mentionedAddress ?? ""),
+                  ])));
       List<EntityAnnotation> normalizedEntities = [];
       if (entities.isNotEmpty) {
         // detect the longest amount of the message text as possible
@@ -141,7 +148,8 @@ Future<List<InlineSpan>> buildEnrichedMessageSpans(BuildContext context, Message
       for (RegExpMatch match in matches) {
         linkIndexMatches.add(Tuple3("link", [match.start, match.end], null));
       }
-      linkIndexMatches.addAll(part.mentions.map((e) => Tuple3("mention", [e.range.first, e.range.last], [e.mentionedAddress ?? ""])));
+      linkIndexMatches.addAll(
+          part.mentions.map((e) => Tuple3("mention", [e.range.first, e.range.last], [e.mentionedAddress ?? ""])));
     }
   }
   // render subject
@@ -164,24 +172,29 @@ Future<List<InlineSpan>> buildEnrichedMessageSpans(BuildContext context, Message
         textStyle,
       ));
       if (type == "mention") {
-        textSpans.addAll(MessageHelper.buildEmojiText(
-          text,
-          textStyle.apply(fontWeightDelta: 2),
-          recognizer: TapGestureRecognizer()..onTap = () async {
-            if (kIsDesktop || kIsWeb) return;
-            final handle = ChatsSvc.activeChat!.chat.handles.firstWhereOrNull((e) => e.address == data!.first);
-            if (handle?.contact == null && handle != null) {
-              await MethodChannelSvc.invokeMethod("open-contact-form", {'address': handle.address, 'address_type': handle.address.isEmail ? 'email' : 'phone'});
-            } else if (handle?.contact != null) {
-              try {
-                await MethodChannelSvc.invokeMethod("view-contact-form", {'id': handle!.contact!.id});
-              } catch (_) {
-                showSnackbar("Error", "Failed to find contact on device!");
-              }
-            }
-          }
-        ));
-      } else if (urlRegex.hasMatch(text) || type == "map" || text.isPhoneNumber || text.isEmail || type == "date" || type == "tracking" || type == "flight") {
+        textSpans.addAll(MessageHelper.buildEmojiText(text, textStyle.apply(fontWeightDelta: 2),
+            recognizer: TapGestureRecognizer()
+              ..onTap = () async {
+                if (kIsDesktop || kIsWeb) return;
+                final handle = ChatsSvc.activeChat!.chat.handles.firstWhereOrNull((e) => e.address == data!.first);
+                if (handle?.contact == null && handle != null) {
+                  await MethodChannelSvc.invokeMethod("open-contact-form",
+                      {'address': handle.address, 'address_type': handle.address.isEmail ? 'email' : 'phone'});
+                } else if (handle?.contact != null) {
+                  try {
+                    await MethodChannelSvc.invokeMethod("view-contact-form", {'id': handle!.contact!.id});
+                  } catch (_) {
+                    showSnackbar("Error", "Failed to find contact on device!");
+                  }
+                }
+              }));
+      } else if (urlRegex.hasMatch(text) ||
+          type == "map" ||
+          text.isPhoneNumber ||
+          text.isEmail ||
+          type == "date" ||
+          type == "tracking" ||
+          type == "flight") {
         textSpans.add(
           TextSpan(
             text: text,
@@ -205,11 +218,13 @@ Future<List<InlineSpan>> buildEnrichedMessageSpans(BuildContext context, Message
                   final TrackingCarrier c = data!.first;
                   final String number = data.last;
                   Clipboard.setData(ClipboardData(text: number));
-                  await launchUrl(Uri.parse("https://www.google.com/search?q=${c.name} $number"), mode: LaunchMode.externalApplication);
+                  await launchUrl(Uri.parse("https://www.google.com/search?q=${c.name} $number"),
+                      mode: LaunchMode.externalApplication);
                 } else if (type == "flight") {
                   final String c = data!.first;
                   final String number = data.last;
-                  await launchUrl(Uri.parse("https://www.google.com/search?q=flight $c$number"), mode: LaunchMode.externalApplication);
+                  await launchUrl(Uri.parse("https://www.google.com/search?q=flight $c$number"),
+                      mode: LaunchMode.externalApplication);
                 }
               },
             style: textStyle.apply(decoration: TextDecoration.underline),

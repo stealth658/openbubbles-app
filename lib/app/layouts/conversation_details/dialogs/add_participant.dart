@@ -10,141 +10,142 @@ import 'package:tuple/tuple.dart';
 void showAddParticipant(BuildContext context, Chat chat) {
   final TextEditingController participantController = TextEditingController();
   showDialog(
-    context: context,
-    builder: (_) {
-      return AlertDialog(
-        actions: [
-          TextButton(
-            child: Text("Cancel", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
-            onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
-          ),
-          TextButton(
-            child: Text("Pick Contact", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
-            onPressed: () async {
-              final contacts = <Tuple2<String, String>>[];
-              final cache = [];
-              String slugText(String text) {
-                return slugify(text, delimiter: '').toString().replaceAll('-', '');
-              }
+      context: context,
+      builder: (_) {
+        return AlertDialog(
+          actions: [
+            TextButton(
+              child: Text("Cancel",
+                  style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+              onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
+            ),
+            TextButton(
+              child: Text("Pick Contact",
+                  style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+              onPressed: () async {
+                final contacts = <Tuple2<String, String>>[];
+                final cache = [];
+                String slugText(String text) {
+                  return slugify(text, delimiter: '').toString().replaceAll('-', '');
+                }
 
-              final allContacts = await ContactsSvcV2.getAllContacts();
-              for (ContactV2 contact in allContacts) {
-                // ContactV2 stores all addresses (phones and emails) in a single list
-                for (String address in contact.addresses) {
-                  String cleansed = slugText(address);
+                final allContacts = await ContactsSvcV2.getAllContacts();
+                for (ContactV2 contact in allContacts) {
+                  // ContactV2 stores all addresses (phones and emails) in a single list
+                  for (String address in contact.addresses) {
+                    String cleansed = slugText(address);
 
-                  if (!cache.contains(cleansed)) {
-                    cache.add(cleansed);
-                    contacts.add(Tuple2(address, contact.displayName));
+                    if (!cache.contains(cleansed)) {
+                      cache.add(cleansed);
+                      contacts.add(Tuple2(address, contact.displayName));
+                    }
                   }
                 }
-              }
-              contacts.sort((c1, c2) => c1.item2.compareTo(c2.item2));
-              Tuple2<String, String>? selected;
-              await showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: Text("Pick Contact", style: context.theme.textTheme.titleLarge),
-                    backgroundColor: context.theme.colorScheme.properSurface,
-                    content: SingleChildScrollView(
-                      child: Container(
-                        width: double.maxFinite,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Padding(
-                              padding: EdgeInsets.all(8.0),
-                              child: Text("Select the contact you would like to add"),
-                            ),
-                            ConstrainedBox(
-                              constraints: BoxConstraints(
-                                maxHeight: context.mediaQuery.size.height * 0.4,
+                contacts.sort((c1, c2) => c1.item2.compareTo(c2.item2));
+                Tuple2<String, String>? selected;
+                await showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                          title: Text("Pick Contact", style: context.theme.textTheme.titleLarge),
+                          backgroundColor: context.theme.colorScheme.properSurface,
+                          content: SingleChildScrollView(
+                            child: Container(
+                              width: double.maxFinite,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Padding(
+                                    padding: EdgeInsets.all(8.0),
+                                    child: Text("Select the contact you would like to add"),
+                                  ),
+                                  ConstrainedBox(
+                                    constraints: BoxConstraints(
+                                      maxHeight: context.mediaQuery.size.height * 0.4,
+                                    ),
+                                    child: ListView.builder(
+                                      shrinkWrap: true,
+                                      itemCount: contacts.length,
+                                      findChildIndexCallback: (key) =>
+                                          findChildIndexByKey(contacts, key, (item) => "${item.item1}-${item.item2}"),
+                                      itemBuilder: (context, index) {
+                                        return ListTile(
+                                          key: ValueKey("${contacts[index].item1}-${contacts[index].item2}"),
+                                          mouseCursor: MouseCursor.defer,
+                                          title: Text(contacts[index].item2),
+                                          subtitle: Text(contacts[index].item1),
+                                          onTap: () {
+                                            selected = contacts[index];
+                                            Navigator.of(context).pop();
+                                          },
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ],
                               ),
-                              child: ListView.builder(
-                                shrinkWrap: true,
-                                itemCount: contacts.length,
-                                findChildIndexCallback: (key) => findChildIndexByKey(contacts, key, (item) => "${item.item1}-${item.item2}"),
-                                itemBuilder: (context, index) {
-                                  return ListTile(
-                                    key: ValueKey("${contacts[index].item1}-${contacts[index].item2}"),
-                                    mouseCursor: MouseCursor.defer,
-                                    title: Text(contacts[index].item2),
-                                    subtitle: Text(contacts[index].item1),
-                                    onTap: () {
-                                      selected = contacts[index];
-                                      Navigator.of(context).pop();
-                                    },
-                                  );
-                                },
-                              ),
                             ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  )
-              );
-              if (selected?.item1 != null) {
-                if (!selected!.item1.isEmail) {
-                  participantController.text = cleansePhoneNumber(selected!.item1);
-                } else {
-                  participantController.text = selected!.item1;
+                          ),
+                        ));
+                if (selected?.item1 != null) {
+                  if (!selected!.item1.isEmail) {
+                    participantController.text = cleansePhoneNumber(selected!.item1);
+                  } else {
+                    participantController.text = selected!.item1;
+                  }
                 }
-              }
-            },
-          ),
-          TextButton(
-            child: Text("OK", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
-            onPressed: () async {
-              if (participantController.text.isEmpty
-                  || (!participantController.text.isEmail && !participantController.text.isPhoneNumber)) {
-                showSnackbar("Error", "Enter a valid address!");
-                return;
-              }
-              showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return AlertDialog(
-                      backgroundColor: context.theme.colorScheme.properSurface,
-                      title: Text(
-                        "Adding ${participantController.text}...",
-                        style: context.theme.textTheme.titleLarge,
-                      ),
-                      content: Container(
-                        height: 70,
-                        child: Center(
-                          child: CircularProgressIndicator(
-                            backgroundColor: context.theme.colorScheme.properSurface,
-                            valueColor: AlwaysStoppedAnimation<Color>(context.theme.colorScheme.primary),
+              },
+            ),
+            TextButton(
+              child: Text("OK",
+                  style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+              onPressed: () async {
+                if (participantController.text.isEmpty ||
+                    (!participantController.text.isEmail && !participantController.text.isPhoneNumber)) {
+                  showSnackbar("Error", "Enter a valid address!");
+                  return;
+                }
+                showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        backgroundColor: context.theme.colorScheme.properSurface,
+                        title: Text(
+                          "Adding ${participantController.text}...",
+                          style: context.theme.textTheme.titleLarge,
+                        ),
+                        content: Container(
+                          height: 70,
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              backgroundColor: context.theme.colorScheme.properSurface,
+                              valueColor: AlwaysStoppedAnimation<Color>(context.theme.colorScheme.primary),
+                            ),
                           ),
                         ),
-                      ),
-                    );
-                  }
-              );
-              final response = await HttpSvc.chatParticipant("add", chat.guid, participantController.text);
-              if (response.statusCode == 200) {
-                Navigator.of(context, rootNavigator: true).pop();
-                Navigator.of(context, rootNavigator: true).pop();
-                showSnackbar("Notice", "Added ${participantController.text} successfully!");
-              } else {
-                Navigator.of(context, rootNavigator: true).pop();
-                showSnackbar("Error", "Failed to add ${participantController.text}!");
-              }
-            },
+                      );
+                    });
+                final response = await HttpSvc.chatParticipant("add", chat.guid, participantController.text);
+                if (response.statusCode == 200) {
+                  Navigator.of(context, rootNavigator: true).pop();
+                  Navigator.of(context, rootNavigator: true).pop();
+                  showSnackbar("Notice", "Added ${participantController.text} successfully!");
+                } else {
+                  Navigator.of(context, rootNavigator: true).pop();
+                  showSnackbar("Error", "Failed to add ${participantController.text}!");
+                }
+              },
+            ),
+          ],
+          content: TextField(
+            controller: participantController,
+            decoration: const InputDecoration(
+              labelText: "Phone Number / Email",
+              border: OutlineInputBorder(),
+            ),
+            autofillHints: [AutofillHints.telephoneNumber, AutofillHints.email],
           ),
-        ],
-        content: TextField(
-          controller: participantController,
-          decoration: const InputDecoration(
-            labelText: "Phone Number / Email",
-            border: OutlineInputBorder(),
-          ),
-          autofillHints: [AutofillHints.telephoneNumber, AutofillHints.email],
-        ),
-        title: Text("Add Participant", style: context.theme.textTheme.titleLarge),
-        backgroundColor: context.theme.colorScheme.properSurface,
-      );
-    }
-  );
+          title: Text("Add Participant", style: context.theme.textTheme.titleLarge),
+          backgroundColor: context.theme.colorScheme.properSurface,
+        );
+      });
 }

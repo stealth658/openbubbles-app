@@ -25,7 +25,13 @@ class FullSyncManager extends SyncManager {
   int? syncTimeFilter;
   String? origin;
 
-  FullSyncManager({int? endTimestamp, this.messageCount = 25, this.skipEmptyChats = true, bool saveLogs = false, this.syncTimeFilter, String? origin})
+  FullSyncManager(
+      {int? endTimestamp,
+      this.messageCount = 25,
+      this.skipEmptyChats = true,
+      bool saveLogs = false,
+      this.syncTimeFilter,
+      String? origin})
       : super("Full", saveLogs: saveLogs);
 
   @override
@@ -70,7 +76,7 @@ class FullSyncManager extends SyncManager {
         double chatProgress = chatEvent.item1;
         List<Chat> newChats = chatEvent.item2;
         int filteredInBatch = chatEvent.item3;
-        
+
         // Update total filtered chats count
         filteredChatsCount += filteredInBatch;
 
@@ -188,11 +194,10 @@ class FullSyncManager extends SyncManager {
       // Fetch the chats and throw an error if we don't get back a good response.
       // Throwing an error should cancel the sync
       Response chatPage = await HttpSvc.chats(
-        offset: i * countPerBatch,
-        limit: countPerBatch,
-        sort: kIsWeb ? "lastmessage" : null,
-        withQuery: ["lastMessage"]
-      );
+          offset: i * countPerBatch,
+          limit: countPerBatch,
+          sort: kIsWeb ? "lastmessage" : null,
+          withQuery: ["lastMessage"]);
 
       dynamic data = chatPage.data;
       if (chatPage.statusCode != 200) {
@@ -215,13 +220,13 @@ class FullSyncManager extends SyncManager {
           if (latestMessage.dateCreated != null) {
             return latestMessage.dateCreated!.isAfter(cutoffDate);
           }
-          
+
           // If no latestMessage date, exclude the chat (it's likely empty)
           return false;
         }).toList();
         filteredCount = originalCount - chats.length;
       }
-      
+
       yield Tuple3<double, List<Chat>, int>((i + 1) / batches, chats, filteredCount);
     }
   }
@@ -242,7 +247,11 @@ class FullSyncManager extends SyncManager {
       // Fetch the messages and throw an error if we don't get back a good response.
       // Throwing an error should _not_ cancel the sync
       Response messagePage = await HttpSvc.chatMessages(chatGuid,
-          after: 0, before: endTimestamp, offset: i * countPerBatch, limit: countPerBatch, withQuery: "attachments,message.attributedBody,message.messageSummaryInfo,message.payloadData");
+          after: 0,
+          before: endTimestamp,
+          offset: i * countPerBatch,
+          limit: countPerBatch,
+          withQuery: "attachments,message.attributedBody,message.messageSummaryInfo,message.payloadData");
       dynamic data = messagePage.data;
       if (messagePage.statusCode != 200) {
         throw MessageRequestException(

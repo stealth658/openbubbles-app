@@ -22,8 +22,7 @@ class ContactUploadProgress extends StatelessWidget {
   Widget build(BuildContext context) {
     return AlertDialog(
       backgroundColor: context.theme.colorScheme.properSurface,
-      title: Text("Uploading contacts...",
-          style: context.theme.textTheme.titleLarge),
+      title: Text("Uploading contacts...", style: context.theme.textTheme.titleLarge),
       content: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
@@ -64,8 +63,7 @@ class ContactUploadProgress extends StatelessWidget {
               : TextButton(
                   child: Text(
                     "Close",
-                    style: context.theme.textTheme.bodyLarge!.copyWith(
-                        color: context.theme.colorScheme.primary),
+                    style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary),
                   ),
                   onPressed: onClose,
                 ),

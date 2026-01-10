@@ -28,6 +28,7 @@ class MessagePart {
     }
     return subject;
   }
+
   String? text;
   late final String fakeText = faker.lorem.words(text?.split(" ").length ?? 0).join(" ");
   String? get displayText {
@@ -37,6 +38,7 @@ class MessagePart {
     }
     return text;
   }
+
   List<Attachment> attachments;
   List<Mention> mentions;
   bool isUnsent;

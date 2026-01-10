@@ -189,7 +189,8 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                                   recognizer: TapGestureRecognizer()
                                     ..onTap = () {
                                       Clipboard.setData(ClipboardData(text: HttpSvc.origin));
-                                      if (!Platform.isAndroid || (FilesystemSvc.androidInfo?.version.sdkInt ?? 0) < 33) {
+                                      if (!Platform.isAndroid ||
+                                          (FilesystemSvc.androidInfo?.version.sdkInt ?? 0) < 33) {
                                         showSnackbar("Copied", "Server address copied to clipboard!");
                                       }
                                     }),
@@ -505,8 +506,7 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                             }
                           },
                   ),
-                  if (!kIsWeb)
-                    const SettingsDivider(),
+                  if (!kIsWeb) const SettingsDivider(),
                   if (!kIsWeb)
                     Obx(
                       () => SettingsTile(
@@ -545,8 +545,7 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                             }
                           }),
                     ),
-                  if (!kIsWeb)
-                    const SettingsDivider(),
+                  if (!kIsWeb) const SettingsDivider(),
                   SettingsTile(
                       leading: const SettingsLeadingIcon(
                           iosIcon: CupertinoIcons.pencil, materialIcon: Icons.edit, containerColor: Colors.teal),
@@ -559,8 +558,7 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                           SocketSvc.restartSocket();
                         }
                       }),
-                  if (Platform.isAndroid)
-                    const SettingsDivider(),
+                  if (Platform.isAndroid) const SettingsDivider(),
                   if (Platform.isAndroid)
                     Obx(() => SettingsSwitch(
                           initialVal: SettingsSvc.settings.syncContactsAutomatically.value,
@@ -577,40 +575,41 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                             containerColor: Colors.green,
                           ),
                         )),
-                  if (!isSnap)
-                    const SettingsDivider(),
+                  if (!isSnap) const SettingsDivider(),
                   if (!isSnap)
                     SettingsTile(
                       leading: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                         Obx(() => Material(
                             shape: SettingsSvc.settings.skin.value == Skins.Samsung
                                 ? SquircleBorder(
-                                    side: BorderSide(color: context.theme.colorScheme.outline.withValues(alpha: 0.5), width: 1.0),
+                                    side: BorderSide(
+                                        color: context.theme.colorScheme.outline.withValues(alpha: 0.5), width: 1.0),
                                   )
                                 : null,
                             color: Colors.transparent,
-                            borderRadius: SettingsSvc.settings.skin.value == Skins.iOS ? BorderRadius.circular(6) : null,
+                            borderRadius:
+                                SettingsSvc.settings.skin.value == Skins.iOS ? BorderRadius.circular(6) : null,
                             child: SizedBox(
                                 width: 31,
                                 height: 31,
                                 child: Center(
                                     child: Container(
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(6),
-                                        color: Colors.white,
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.grey.withValues(alpha: 0.5),
-                                            blurRadius: 0,
-                                            spreadRadius: 0.5,
-                                            offset: const Offset(0, 0),
-                                          ),
-                                        ],
-                                      ),
-                                      child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(6),
-                                        child: Image.asset("assets/images/google-sign-in.png",
-                                            width: 33, fit: BoxFit.contain)))))))
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(6),
+                                          color: Colors.white,
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.grey.withValues(alpha: 0.5),
+                                              blurRadius: 0,
+                                              spreadRadius: 0.5,
+                                              offset: const Offset(0, 0),
+                                            ),
+                                          ],
+                                        ),
+                                        child: ClipRRect(
+                                            borderRadius: BorderRadius.circular(6),
+                                            child: Image.asset("assets/images/google-sign-in.png",
+                                                width: 33, fit: BoxFit.contain)))))))
                       ]),
                       title: "Sign in with Google",
                       subtitle: "Fetch Firebase Config by Signing in with Google",
@@ -638,8 +637,7 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                         showSnackbar("Notice", "Fetched URL: $newUrl");
                         SocketSvc.restartSocket();
                       }),
-                  if (!kIsWeb)
-                    const SettingsDivider(),
+                  if (!kIsWeb) const SettingsDivider(),
                   if (!kIsWeb)
                     Obx(() => SettingsSwitch(
                           initialVal: SettingsSvc.settings.localhostPort.value != null,
@@ -705,8 +703,7 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                             }
                           },
                         )),
-                  if (!kIsWeb)
-                    const SettingsDivider(),
+                  if (!kIsWeb) const SettingsDivider(),
                   if (!kIsWeb)
                     Obx(() => SettingsSvc.settings.localhostPort.value != null
                         ? SettingsSwitch(
@@ -718,7 +715,8 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                               SettingsSvc.settings.useLocalIpv6.value = val;
                               NetworkTasks.detectLocalhost(createSnackbar: true);
                             },
-                      leading: const SettingsLeadingIcon(iosIcon: CupertinoIcons.globe, materialIcon: Icons.network_check_outlined),
+                            leading: const SettingsLeadingIcon(
+                                iosIcon: CupertinoIcons.globe, materialIcon: Icons.network_check_outlined),
                           )
                         : const SizedBox.shrink()),
                 ]),
@@ -783,11 +781,12 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                     const SettingsDivider(),
                     Obx(() => SettingsTile(
                         title: "Restart iMessage",
-                        subtitle: controller.isRestartingMessages.value && SocketSvc.state.value == SocketState.connected
-                            ? "Restart in progress..."
-                            : SocketSvc.state.value == SocketState.connected
-                                ? "Restart the iMessage app"
-                                : "Disconnected, cannot restart",
+                        subtitle:
+                            controller.isRestartingMessages.value && SocketSvc.state.value == SocketState.connected
+                                ? "Restart in progress..."
+                                : SocketSvc.state.value == SocketState.connected
+                                    ? "Restart the iMessage app"
+                                    : "Disconnected, cannot restart",
                         backgroundColor: tileColor,
                         leading: const SettingsLeadingIcon(
                           iosIcon: CupertinoIcons.chat_bubble,
@@ -829,7 +828,8 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                                 ))))),
                     const SettingsDivider(),
                     Obx(() => AnimatedSizeAndFade.showHide(
-                          show: SettingsSvc.settings.enablePrivateAPI.value && (controller.serverVersionCode.value ?? 0) >= 41,
+                          show: SettingsSvc.settings.enablePrivateAPI.value &&
+                              (controller.serverVersionCode.value ?? 0) >= 41,
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [

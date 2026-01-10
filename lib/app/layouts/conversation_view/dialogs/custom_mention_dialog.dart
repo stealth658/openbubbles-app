@@ -14,11 +14,13 @@ Future<String?> showCustomMentionDialog(BuildContext context, Mentionable? menti
         return AlertDialog(
           actions: [
             TextButton(
-              child: Text("Cancel", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+              child: Text("Cancel",
+                  style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
               onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
             ),
             TextButton(
-              child: Text("OK", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+              child: Text("OK",
+                  style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
               onPressed: () {
                 if (isNullOrEmptyString(mentionController.text)) {
                   changed = mention?.handle.displayName ?? "";
@@ -52,7 +54,6 @@ Future<String?> showCustomMentionDialog(BuildContext context, Mentionable? menti
           title: Text("Custom Mention", style: context.theme.textTheme.titleLarge),
           backgroundColor: context.theme.colorScheme.properSurface,
         );
-      }
-  );
+      });
   return changed;
 }

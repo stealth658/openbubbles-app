@@ -9,10 +9,10 @@ class WebsocketAdapter implements HttpClientAdapter {
     // Get context with system certs + user certs (Android only)
     final context = await UserCertificates().getContext();
     final client = HttpClient(context: context);
-    
+
     // Add custom certificate validation for self-signed certs and hostname mismatches
     client.badCertificateCallback = shouldAcceptCertificate;
-    
+
     return WebSocket.connect(
       uri,
       headers: headers?.map((key, value) => MapEntry(key, value.toString())) ?? {},

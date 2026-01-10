@@ -54,10 +54,10 @@ class _PickedAttachmentState extends OptimizedState<PickedAttachment> with Autom
       setState(() {
         isLoading = false;
       });
-    } else if (mimeType == "image/heic"
-        || mimeType == "image/heif"
-        || mimeType == "image/tif"
-        || mimeType == "image/tiff") {
+    } else if (mimeType == "image/heic" ||
+        mimeType == "image/heif" ||
+        mimeType == "image/tif" ||
+        mimeType == "image/tiff") {
       // Use ensureImageCompatibility to get a compatible file path
       try {
         final fakeAttachment = Attachment(
@@ -108,85 +108,89 @@ class _PickedAttachmentState extends OptimizedState<PickedAttachment> with Autom
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
             ),
-            constraints: BoxConstraints(maxWidth: isLoading ? 0 : isEmpty ? 100 : 200),
+            constraints: BoxConstraints(
+                maxWidth: isLoading
+                    ? 0
+                    : isEmpty
+                        ? 100
+                        : 200),
             clipBehavior: Clip.antiAlias,
             child: OpenContainer(
-              tappable: false,
-              openColor: Colors.black,
-              closedColor: context.theme.colorScheme.background,
-              openBuilder: (_, closeContainer) {
-                final fakeAttachment = Attachment(
-                  transferName: widget.data.name,
-                  mimeType: mime(widget.data.name) ?? "",
-                  bytes: widget.data.bytes,
-                );
-                return FullscreenMediaHolder(
-                  attachment: fakeAttachment,
-                  showInteractions: false,
-                );
-              },
-              closedBuilder: (_, openContainer) {
-                return InkWell(
-                  onTap: mime(widget.data.name)?.startsWith("image") ?? false ? openContainer : null,
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    alignment: Alignment.topRight,
-                    children: <Widget>[
-                      if (!isEmpty && !isLoading)
-                        _buildImage(),
-                      if (isEmpty)
-                        Positioned.fill(
-                          child: Container(
-                            color: context.theme.colorScheme.properSurface,
-                            alignment: Alignment.center,
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Text(
-                                widget.data.name,
-                                maxLines: 3,
-                                textAlign: TextAlign.center,
+                tappable: false,
+                openColor: Colors.black,
+                closedColor: context.theme.colorScheme.background,
+                openBuilder: (_, closeContainer) {
+                  final fakeAttachment = Attachment(
+                    transferName: widget.data.name,
+                    mimeType: mime(widget.data.name) ?? "",
+                    bytes: widget.data.bytes,
+                  );
+                  return FullscreenMediaHolder(
+                    attachment: fakeAttachment,
+                    showInteractions: false,
+                  );
+                },
+                closedBuilder: (_, openContainer) {
+                  return InkWell(
+                    onTap: mime(widget.data.name)?.startsWith("image") ?? false ? openContainer : null,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      alignment: Alignment.topRight,
+                      children: <Widget>[
+                        if (!isEmpty && !isLoading) _buildImage(),
+                        if (isEmpty)
+                          Positioned.fill(
+                            child: Container(
+                              color: context.theme.colorScheme.properSurface,
+                              alignment: Alignment.center,
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text(
+                                  widget.data.name,
+                                  maxLines: 3,
+                                  textAlign: TextAlign.center,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      if (!isLoading && iOS)
-                        Positioned(
-                          top: 5,
-                          right: 5,
-                          child: TextButton(
-                            style: TextButton.styleFrom(
-                              backgroundColor: context.theme.colorScheme.outline,
-                              shape: const CircleBorder(),
-                              padding: const EdgeInsets.all(0),
-                              maximumSize: const Size(32, 32),
-                              minimumSize: const Size(32, 32),
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                            child: const Icon(
-                              CupertinoIcons.xmark,
-                              color: Colors.white,
-                              size: 18,
-                            ),
-                            onPressed: () {
-                              if (widget.controller != null) {
-                                widget.controller!.pickedAttachments.removeAt(widget.pickedAttachmentIndex);
-                                widget.controller!.chat.textFieldAttachments.removeWhere((e) => e == widget.data.path);
-                                widget.controller!.chat.saveAsync(updateTextFieldAttachments: true);
-                                // Don't request focus if attachment picker is open
-                                if (!widget.controller!.showAttachmentPicker) {
-                                  widget.controller!.lastFocusedNode.requestFocus();
+                        if (!isLoading && iOS)
+                          Positioned(
+                            top: 5,
+                            right: 5,
+                            child: TextButton(
+                              style: TextButton.styleFrom(
+                                backgroundColor: context.theme.colorScheme.outline,
+                                shape: const CircleBorder(),
+                                padding: const EdgeInsets.all(0),
+                                maximumSize: const Size(32, 32),
+                                minimumSize: const Size(32, 32),
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              child: const Icon(
+                                CupertinoIcons.xmark,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                              onPressed: () {
+                                if (widget.controller != null) {
+                                  widget.controller!.pickedAttachments.removeAt(widget.pickedAttachmentIndex);
+                                  widget.controller!.chat.textFieldAttachments
+                                      .removeWhere((e) => e == widget.data.path);
+                                  widget.controller!.chat.saveAsync(updateTextFieldAttachments: true);
+                                  // Don't request focus if attachment picker is open
+                                  if (!widget.controller!.showAttachmentPicker) {
+                                    widget.controller!.lastFocusedNode.requestFocus();
+                                  }
+                                } else {
+                                  widget.onRemove.call(widget.data);
                                 }
-                              } else {
-                                widget.onRemove.call(widget.data);
-                              }
-                            },
+                              },
+                            ),
                           ),
-                        ),
-                    ],
-                  ),
-                );
-              }
-            ),
+                      ],
+                    ),
+                  );
+                }),
           ),
           if (!iOS)
             Positioned(
@@ -195,9 +199,7 @@ class _PickedAttachmentState extends OptimizedState<PickedAttachment> with Autom
               child: TextButton(
                 style: TextButton.styleFrom(
                   backgroundColor: context.theme.colorScheme.secondary,
-                  shape: CircleBorder(
-                    side: BorderSide(color: context.theme.colorScheme.properSurface)
-                  ),
+                  shape: CircleBorder(side: BorderSide(color: context.theme.colorScheme.properSurface)),
                   padding: const EdgeInsets.all(0),
                   maximumSize: const Size(25, 25),
                   minimumSize: const Size(25, 25),
@@ -241,7 +243,7 @@ class _PickedAttachmentState extends OptimizedState<PickedAttachment> with Autom
         cacheWidth: 300,
       );
     }
-    
+
     // Fall back to Image.memory when we have bytes
     if (imageBytes != null) {
       return Image.memory(
@@ -254,7 +256,7 @@ class _PickedAttachmentState extends OptimizedState<PickedAttachment> with Autom
         cacheWidth: 300,
       );
     }
-    
+
     return const SizedBox.shrink();
   }
 

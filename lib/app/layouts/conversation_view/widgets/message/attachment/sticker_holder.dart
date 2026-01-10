@@ -19,7 +19,7 @@ class StickerHolder extends StatefulWidget {
 class _StickerHolderState extends OptimizedState<StickerHolder> with AutomaticKeepAliveClientMixin {
   Iterable<Message> get messages => widget.stickerMessages;
   ConversationViewController get controller => widget.controller;
-  
+
   bool _visible = true;
 
   @override
@@ -51,7 +51,9 @@ class _StickerHolderState extends OptimizedState<StickerHolder> with AutomaticKe
   Future<void> checkImage(Message message, Attachment attachment) async {
     final pathName = attachment.path;
     // Check via the image package to make sure this is a valid, render-able image
-    final image = await compute(decodeIsolate, PlatformFile(
+    final image = await compute(
+      decodeIsolate,
+      PlatformFile(
         path: pathName,
         name: attachment.transferName!,
         bytes: attachment.bytes,
@@ -60,9 +62,7 @@ class _StickerHolderState extends OptimizedState<StickerHolder> with AutomaticKe
     );
     if (image != null) {
       final bytes = await File(pathName).readAsBytes();
-      controller.stickerData[message.guid!] = {
-        attachment.guid!: bytes
-      };
+      controller.stickerData[message.guid!] = {attachment.guid!: bytes};
       setState(() {});
     }
   }
@@ -95,12 +95,14 @@ class _StickerHolderState extends OptimizedState<StickerHolder> with AutomaticKe
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               mainAxisSize: MainAxisSize.min,
-              children: data.map((e) => Image.memory(
-                e,
-                gaplessPlayback: true,
-                cacheHeight: 200,
-                filterQuality: FilterQuality.none,
-              )).toList(),
+              children: data
+                  .map((e) => Image.memory(
+                        e,
+                        gaplessPlayback: true,
+                        cacheHeight: 200,
+                        filterQuality: FilterQuality.none,
+                      ))
+                  .toList(),
             ),
           ),
         ),

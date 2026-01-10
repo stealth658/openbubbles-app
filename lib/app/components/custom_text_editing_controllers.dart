@@ -38,9 +38,9 @@ class Mentionable {
 class SpellCheckTextEditingController extends TextEditingController {
   SpellCheckTextEditingController({super.text, this.focusNode}) {
     assert(focusNode != null || !(kIsDesktop || kIsWeb));
-    _languageCheckService =
-        DebounceLangToolService(LangToolService(LanguageToolClient(language: SettingsSvc.settings.spellcheckLanguage.value)),
-            const Duration(milliseconds: 1000));
+    _languageCheckService = DebounceLangToolService(
+        LangToolService(LanguageToolClient(language: SettingsSvc.settings.spellcheckLanguage.value)),
+        const Duration(milliseconds: 1000));
     _processMistakes(text);
   }
 
@@ -197,7 +197,7 @@ class SpellCheckTextEditingController extends TextEditingController {
     _mistakes = filteredMistakes.toList();
 
     final mistakesWrapper = await _latestResponseService.processLatestOperation(
-          () => _languageCheckService.findMistakes(newText),
+      () => _languageCheckService.findMistakes(newText),
     );
     if (mistakesWrapper == null || !mistakesWrapper.hasResult) return;
 
@@ -219,13 +219,13 @@ class SpellCheckTextEditingController extends TextEditingController {
 
       newMistake = isSelectionRangeEmpty
           ? _adjustMistakeOffsetWithCaretCursor(
-        mistake: mistake,
-        lengthDiscrepancy: lengthDiscrepancy,
-      )
+              mistake: mistake,
+              lengthDiscrepancy: lengthDiscrepancy,
+            )
           : _adjustMistakeOffsetWithSelectionRange(
-        mistake: mistake,
-        lengthDiscrepancy: lengthDiscrepancy,
-      );
+              mistake: mistake,
+              lengthDiscrepancy: lengthDiscrepancy,
+            );
 
       if (newMistake != null) yield newMistake;
     }
@@ -295,67 +295,66 @@ class SpellCheckTextEditingController extends TextEditingController {
     final Color color = _getMistakeColor(mistake.type);
     Iterable<String> replacements = mistake.replacements.take(15);
     return OverlayEntry(
-      builder: (context) =>
-          Positioned(
-            left: offset.dx - 100,
-            width: 200,
-            bottom: (context.height - offset.dy) ~/ 60 * 60 + 60,
-            child: Center(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: context.theme.colorScheme.properSurface,
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                padding: const EdgeInsets.all(8.0),
-                child: Material(
-                  color: Colors.transparent,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(mistake.type.value.capitalizeFirst!,
-                          style: context.textTheme.titleSmall!.copyWith(color: color)),
-                      Text(
-                        "\"$mistakeText\"",
-                        style: context.textTheme.bodySmall!.copyWith(color: context.theme.colorScheme.outline),
-                      ),
-                      const SizedBox(height: 8.0),
-                      replacements.isEmpty
-                          ? Text(
-                        "No Replacements",
-                        style: context.textTheme.bodySmall!.copyWith(color: context.theme.colorScheme.outline),
-                      )
-                          : Wrap(
-                        alignment: WrapAlignment.center,
-                        spacing: 4.0,
-                        runSpacing: 4.0,
-                        children: List.generate(replacements.length, (index) {
-                          final replacement = mistake.replacements[index];
-                          return InkWell(
-                            borderRadius: BorderRadius.circular(8.0),
-                            hoverColor: color.withValues(alpha: 0.2),
-                            onTapDown: (_) {
-                              replaceMistake(mistake, replacement);
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.all(4.0),
-                              decoration: BoxDecoration(
-                                border: Border.all(color: context.theme.colorScheme.outline),
-                                borderRadius: BorderRadius.circular(8.0),
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(4.0),
-                                child: Text(replacement, style: context.textTheme.bodySmall),
-                              ),
-                            ),
-                          );
-                        }),
-                      ),
-                    ],
+      builder: (context) => Positioned(
+        left: offset.dx - 100,
+        width: 200,
+        bottom: (context.height - offset.dy) ~/ 60 * 60 + 60,
+        child: Center(
+          child: Container(
+            decoration: BoxDecoration(
+              color: context.theme.colorScheme.properSurface,
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+            padding: const EdgeInsets.all(8.0),
+            child: Material(
+              color: Colors.transparent,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(mistake.type.value.capitalizeFirst!,
+                      style: context.textTheme.titleSmall!.copyWith(color: color)),
+                  Text(
+                    "\"$mistakeText\"",
+                    style: context.textTheme.bodySmall!.copyWith(color: context.theme.colorScheme.outline),
                   ),
-                ),
+                  const SizedBox(height: 8.0),
+                  replacements.isEmpty
+                      ? Text(
+                          "No Replacements",
+                          style: context.textTheme.bodySmall!.copyWith(color: context.theme.colorScheme.outline),
+                        )
+                      : Wrap(
+                          alignment: WrapAlignment.center,
+                          spacing: 4.0,
+                          runSpacing: 4.0,
+                          children: List.generate(replacements.length, (index) {
+                            final replacement = mistake.replacements[index];
+                            return InkWell(
+                              borderRadius: BorderRadius.circular(8.0),
+                              hoverColor: color.withValues(alpha: 0.2),
+                              onTapDown: (_) {
+                                replaceMistake(mistake, replacement);
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(4.0),
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: context.theme.colorScheme.outline),
+                                  borderRadius: BorderRadius.circular(8.0),
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(4.0),
+                                  child: Text(replacement, style: context.textTheme.bodySmall),
+                                ),
+                              ),
+                            );
+                          }),
+                        ),
+                ],
               ),
             ),
           ),
+        ),
+      ),
     );
   }
 
@@ -392,7 +391,8 @@ class SpellCheckTextEditingController extends TextEditingController {
 
           final prevMistakeEnd = i == 0 ? 0 : mistakes[i - 1].endOffset - offset;
           final leadingNonMistakeText = chunk.substring(prevMistakeEnd, mistakeStart);
-          if (leadingNonMistakeText.isNotEmpty) spans.addAll(buildAppleEmojiTextSpans(text: leadingNonMistakeText, style: style));
+          if (leadingNonMistakeText.isNotEmpty)
+            spans.addAll(buildAppleEmojiTextSpans(text: leadingNonMistakeText, style: style));
 
           spans.add(
             TextSpan(
@@ -402,8 +402,11 @@ class SpellCheckTextEditingController extends TextEditingController {
                 if (_mistakeTooltip != null) {
                   _mistakeTooltip!.remove();
                 }
-                _mistakeTooltip = _createTooltip(context,
-                    Offset(event.position.dx - NavigationSvc.widthChatListLeft(context), event.position.dy), mistake, mistakeText);
+                _mistakeTooltip = _createTooltip(
+                    context,
+                    Offset(event.position.dx - NavigationSvc.widthChatListLeft(context), event.position.dy),
+                    mistake,
+                    mistakeText);
                 Overlay.of(context).insert(_mistakeTooltip!);
               },
             ),
@@ -412,7 +415,8 @@ class SpellCheckTextEditingController extends TextEditingController {
           if (i == mistakes.length - 1) {
             final nextMistakeStart = i == mistakes.length - 1 ? chunk.length : mistakes[i + 1].offset - offset;
             final trailingNonMistakeText = chunk.substring(mistakeEnd, nextMistakeStart);
-            if (trailingNonMistakeText.isNotEmpty) spans.addAll(buildAppleEmojiTextSpans(text: trailingNonMistakeText, style: style));
+            if (trailingNonMistakeText.isNotEmpty)
+              spans.addAll(buildAppleEmojiTextSpans(text: trailingNonMistakeText, style: style));
           }
         }
         return TextSpan(children: spans);
@@ -438,9 +442,9 @@ class SpellCheckTextEditingController extends TextEditingController {
       }
       spans.add(
         TextSpan(
-          text: match.group(0),
-          style: style?.copyWith(fontFamily: "Apple Color Emoji") ?? const TextStyle(fontFamily: "Apple Color Emoji")
-        ),
+            text: match.group(0),
+            style:
+                style?.copyWith(fontFamily: "Apple Color Emoji") ?? const TextStyle(fontFamily: "Apple Color Emoji")),
       );
       lastIndex = match.end;
     }
@@ -627,10 +631,7 @@ class MentionTextEditingController extends SpellCheckTextEditingController {
     int mentionIndexLength = 0;
     return TextSpan(
       children: textSplit.mapIndexed((idx, word) {
-        int offset = textSplit
-            .slice(0, idx)
-            .join("")
-            .length;
+        int offset = textSplit.slice(0, idx).join("").length;
 
         if (word == escapingChar) flag = !flag;
         int? index = flag ? int.tryParse(word) : null;
@@ -648,15 +649,14 @@ class MentionTextEditingController extends SpellCheckTextEditingController {
               },
               child: ShaderMask(
                 blendMode: BlendMode.srcIn,
-                shaderCallback: (bounds) =>
-                    LinearGradient(
-                      colors: <Color>[
-                        context.theme.colorScheme.primary.darkenPercent(20),
-                        context.theme.colorScheme.primary.lightenPercent(20)
-                      ],
-                    ).createShader(
-                      Rect.fromLTWH(0, 0, bounds.width, bounds.height),
-                    ),
+                shaderCallback: (bounds) => LinearGradient(
+                  colors: <Color>[
+                    context.theme.colorScheme.primary.darkenPercent(20),
+                    context.theme.colorScheme.primary.lightenPercent(20)
+                  ],
+                ).createShader(
+                  Rect.fromLTWH(0, 0, bounds.width, bounds.height),
+                ),
                 child: Text(
                   mention.displayName,
                   style: style!.copyWith(fontWeight: FontWeight.bold).apply(heightFactor: 1.1),

@@ -294,7 +294,8 @@ class SearchViewState extends OptimizedState<SearchView> {
                         maxLines: 1,
                         prefix: Padding(
                           padding: const EdgeInsets.only(left: 15),
-                          child: Icon(SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.search : Icons.search,
+                          child: Icon(
+                              SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.search : Icons.search,
                               color: context.theme.colorScheme.outline),
                         ),
                         suffix: Padding(

@@ -20,7 +20,7 @@ class AttachmentPickerFile extends StatefulWidget {
     required this.data,
     required this.controller,
   });
-  
+
   final AssetEntity data;
   final Function() onTap;
   final ConversationViewController controller;
@@ -94,13 +94,11 @@ class _AttachmentPickerFileState extends OptimizedState<AttachmentPickerFile> {
 
   @override
   Widget build(BuildContext context) {
-    final hideAttachments = SettingsSvc.settings.redactedMode.value && 
-                            SettingsSvc.settings.hideAttachments.value;
+    final hideAttachments = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideAttachments.value;
 
     return Obx(() {
-      bool containsThis = widget.controller.pickedAttachments
-          .firstWhereOrNull((e) => e.path == filePath) != null;
-      
+      bool containsThis = widget.controller.pickedAttachments.firstWhereOrNull((e) => e.path == filePath) != null;
+
       return AnimatedContainer(
         duration: const Duration(milliseconds: 250),
         margin: EdgeInsets.all(containsThis ? 10 : 0),
@@ -115,16 +113,13 @@ class _AttachmentPickerFileState extends OptimizedState<AttachmentPickerFile> {
             alignment: Alignment.center,
             children: <Widget>[
               // Show image/thumbnail
-              if (!isLoading && !hasError && !hideAttachments)
-                _buildImage(),
-              
+              if (!isLoading && !hasError && !hideAttachments) _buildImage(),
+
               // Show placeholder while loading or on error
-              if (isLoading || hasError || hideAttachments)
-                _buildPlaceholder(context),
-              
+              if (isLoading || hasError || hideAttachments) _buildPlaceholder(context),
+
               // Show selection indicator or video icon
-              if (containsThis || widget.data.type == AssetType.video)
-                _buildOverlayIcon(context, containsThis),
+              if (containsThis || widget.data.type == AssetType.video) _buildOverlayIcon(context, containsThis),
             ],
           ),
         ),
@@ -205,7 +200,9 @@ class _AttachmentPickerFileState extends OptimizedState<AttachmentPickerFile> {
         child: Icon(
           containsThis
               ? (SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.check_mark : Icons.check)
-              : (SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.play_circle_fill : Icons.play_circle_filled),
+              : (SettingsSvc.settings.skin.value == Skins.iOS
+                  ? CupertinoIcons.play_circle_fill
+                  : Icons.play_circle_filled),
           color: context.theme.colorScheme.onPrimary,
           size: containsThis ? 18 : 50,
         ),

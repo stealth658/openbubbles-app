@@ -128,7 +128,10 @@ class _ChatInfoState extends OptimizedState<ChatInfo> {
     } catch (_) {}
     chat.customAvatarPath = null;
     await chat.saveAsync(updateCustomAvatarPath: true);
-    if (papi && SettingsSvc.settings.enablePrivateAPI.value && (await SettingsSvc.isMinBigSur) && SettingsSvc.serverDetailsSync().item4 >= 226) {
+    if (papi &&
+        SettingsSvc.settings.enablePrivateAPI.value &&
+        (await SettingsSvc.isMinBigSur) &&
+        SettingsSvc.serverDetailsSync().item4 >= 226) {
       final response = await HttpSvc.deleteChatIcon(chat.guid);
       if (response.statusCode == 200) {
         showSnackbar("Notice", "Deleted group photo successfully!");
@@ -150,8 +153,7 @@ class _ChatInfoState extends OptimizedState<ChatInfo> {
         !kIsDesktop &&
         !chat.chatIdentifier!.startsWith("urn:biz") &&
         (chat.handles.isNotEmpty &&
-            ((chat.handles.first.contact?.phones.isNotEmpty ?? false) ||
-                !chat.handles.first.address.contains("@")));
+            ((chat.handles.first.contact?.phones.isNotEmpty ?? false) || !chat.handles.first.address.contains("@")));
 
     return DeferredPointerHandler(
       child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [

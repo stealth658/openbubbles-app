@@ -69,7 +69,7 @@ class ChatSyncManager extends SyncManager {
 
         await Chat.bulkSyncChats(serverChats);
         chatsSynced += serverChats.length;
-        
+
         addToOutput('Fetching group chat icons from the server...');
         for (Chat chat in serverChats) {
           if (!chat.isGroup) continue;
@@ -140,13 +140,9 @@ class ChatSyncManager extends SyncManager {
     for (int i = 0; i < batches; i++) {
       // Fetch the handles and throw an error if we don't get back a good response.
       // Throwing an error should cancel the sync
-      Response chatPage = await HttpSvc.chats(
-        offset: i * countPerBatch,
-        limit: countPerBatch,
-        withQuery: [
-          "participants",
-        ]
-      );
+      Response chatPage = await HttpSvc.chats(offset: i * countPerBatch, limit: countPerBatch, withQuery: [
+        "participants",
+      ]);
       dynamic data = chatPage.data;
       if (chatPage.statusCode != 200) {
         throw ChatRequestException(

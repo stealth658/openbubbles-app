@@ -20,11 +20,7 @@ import 'package:tuple/tuple.dart';
 import 'package:universal_io/io.dart';
 
 class AdvancedThemingContent extends StatefulWidget {
-  AdvancedThemingContent({
-    super.key,
-    required this.isDarkMode,
-    required this.controller
-  });
+  AdvancedThemingContent({super.key, required this.isDarkMode, required this.controller});
   final bool isDarkMode;
   final StreamController controller;
 
@@ -53,26 +49,25 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
     widget.controller.stream.listen((event) {
       BuildContext _context = context;
       showDialog(
-        context: context,
-        builder: (context) => CreateNewThemeDialog(_context, widget.isDarkMode, currentTheme, (newTheme) async {
-          allThemes.add(newTheme);
-          currentTheme = newTheme;
-          if (widget.isDarkMode) {
-            await ThemeSvc.changeTheme(_context, dark: currentTheme);
-          } else {
-            await ThemeSvc.changeTheme(_context, light: currentTheme);
-          }
-        })
-      );
+          context: context,
+          builder: (context) => CreateNewThemeDialog(_context, widget.isDarkMode, currentTheme, (newTheme) async {
+                allThemes.add(newTheme);
+                currentTheme = newTheme;
+                if (widget.isDarkMode) {
+                  await ThemeSvc.changeTheme(_context, dark: currentTheme);
+                } else {
+                  await ThemeSvc.changeTheme(_context, light: currentTheme);
+                }
+              }));
     });
   }
 
   @override
   Widget build(BuildContext context) {
     editable = !currentTheme.isPreset && SettingsSvc.settings.monetTheming.value == Monet.none;
-    final length = currentTheme
-        .colors(widget.isDarkMode, returnMaterialYou: false).keys
-        .where((e) => e != "outline").length ~/ 2 + 1;
+    final length =
+        currentTheme.colors(widget.isDarkMode, returnMaterialYou: false).keys.where((e) => e != "outline").length ~/ 2 +
+            1;
 
     return ScrollbarWrapper(
       controller: _controller,
@@ -81,260 +76,259 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
         physics: ThemeSwitcher.getScrollPhysics(),
         slivers: <Widget>[
           SliverToBoxAdapter(
-            child: SettingsSection(
-              backgroundColor: tileColor,
-              children: [
-                SettingsOptions<ThemeStruct>(
-                  title: "Selected Theme",
-                  initial: currentTheme,
-                  clampWidth: false,
-                  options: allThemes
-                      .where((a) => !a.name.contains("🌙") && !a.name.contains("☀")).toList()
-                    ..add(ThemeStruct(name: "Divider1"))
-                    ..addAll(allThemes.where((a) => widget.isDarkMode ? a.name.contains("🌙") : a.name.contains("☀")))
-                    ..add(ThemeStruct(name: "Divider2"))
-                    ..addAll(allThemes.where((a) => !widget.isDarkMode ? a.name.contains("🌙") : a.name.contains("☀"))),
-                  textProcessing: (struct) => struct.name.toUpperCase(),
-                  secondaryColor: headerColor,
-                  useCupertino: false,
-                  materialCustomWidgets: (struct) => struct.name.contains("Divider")
-                      ? Divider(color: context.theme.colorScheme.outline, thickness: 2, height: 2)
-                      : Row(
-                    children: [
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: <Widget>[
-                          Row(
+            child: SettingsSection(backgroundColor: tileColor, children: [
+              SettingsOptions<ThemeStruct>(
+                title: "Selected Theme",
+                initial: currentTheme,
+                clampWidth: false,
+                options: allThemes.where((a) => !a.name.contains("🌙") && !a.name.contains("☀")).toList()
+                  ..add(ThemeStruct(name: "Divider1"))
+                  ..addAll(allThemes.where((a) => widget.isDarkMode ? a.name.contains("🌙") : a.name.contains("☀")))
+                  ..add(ThemeStruct(name: "Divider2"))
+                  ..addAll(allThemes.where((a) => !widget.isDarkMode ? a.name.contains("🌙") : a.name.contains("☀"))),
+                textProcessing: (struct) => struct.name.toUpperCase(),
+                secondaryColor: headerColor,
+                useCupertino: false,
+                materialCustomWidgets: (struct) => struct.name.contains("Divider")
+                    ? Divider(color: context.theme.colorScheme.outline, thickness: 2, height: 2)
+                    : Row(
+                        children: [
+                          Column(
                             mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: <Widget>[
-                              Padding(
-                                padding: const EdgeInsets.all(3),
-                                child: Container(
-                                  height: 12,
-                                  width: 12,
-                                  decoration: BoxDecoration(
-                                    color: struct.data.colorScheme.primary,
-                                    borderRadius: const BorderRadius.all(Radius.circular(4)),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: <Widget>[
+                                  Padding(
+                                    padding: const EdgeInsets.all(3),
+                                    child: Container(
+                                      height: 12,
+                                      width: 12,
+                                      decoration: BoxDecoration(
+                                        color: struct.data.colorScheme.primary,
+                                        borderRadius: const BorderRadius.all(Radius.circular(4)),
+                                      ),
+                                    ),
                                   ),
-                                ),
+                                  Padding(
+                                    padding: const EdgeInsets.all(3),
+                                    child: Container(
+                                      height: 12,
+                                      width: 12,
+                                      decoration: BoxDecoration(
+                                        color: struct.data.colorScheme.secondary,
+                                        borderRadius: const BorderRadius.all(Radius.circular(4)),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                              Padding(
-                                padding: const EdgeInsets.all(3),
-                                child: Container(
-                                  height: 12,
-                                  width: 12,
-                                  decoration: BoxDecoration(
-                                    color: struct.data.colorScheme.secondary,
-                                    borderRadius: const BorderRadius.all(Radius.circular(4)),
+                              Row(
+                                children: <Widget>[
+                                  Padding(
+                                    padding: const EdgeInsets.all(3),
+                                    child: Container(
+                                      height: 12,
+                                      width: 12,
+                                      decoration: BoxDecoration(
+                                        color: struct.data.colorScheme.primaryContainer,
+                                        borderRadius: const BorderRadius.all(Radius.circular(4)),
+                                      ),
+                                    ),
                                   ),
-                                ),
+                                  Padding(
+                                    padding: const EdgeInsets.all(3),
+                                    child: Container(
+                                      height: 12,
+                                      width: 12,
+                                      decoration: BoxDecoration(
+                                        color: struct.data.colorScheme.tertiary,
+                                        borderRadius: const BorderRadius.all(Radius.circular(4)),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
-                          Row(
-                            children: <Widget>[
-                              Padding(
-                                padding: const EdgeInsets.all(3),
-                                child: Container(
-                                  height: 12,
-                                  width: 12,
-                                  decoration: BoxDecoration(
-                                    color: struct.data.colorScheme.primaryContainer,
-                                    borderRadius: const BorderRadius.all(Radius.circular(4)),
-                                  ),
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.all(3),
-                                child: Container(
-                                  height: 12,
-                                  width: 12,
-                                  decoration: BoxDecoration(
-                                    color: struct.data.colorScheme.tertiary,
-                                    borderRadius: const BorderRadius.all(Radius.circular(4)),
-                                  ),
-                                ),
-                              ),
-                            ],
+                          Padding(
+                            padding: const EdgeInsets.only(left: 8.0),
+                            child: Text(
+                              struct.name,
+                              style: context.theme.textTheme.bodyLarge,
+                            ),
                           ),
                         ],
                       ),
-                      Padding(
-                        padding: const EdgeInsets.only(left: 8.0),
-                        child: Text(
-                          struct.name,
-                          style: context.theme.textTheme.bodyLarge,
-                        ),
-                      ),
-                    ],
-                  ),
-                  onChanged: (value) async {
-                    if (value == null || value.name.contains("Divider")) return;
-                    value.save();
+                onChanged: (value) async {
+                  if (value == null || value.name.contains("Divider")) return;
+                  value.save();
 
-                    final List<String> toSave = [];
-                    if (value.name == "Music Theme ☀" || value.name == "Music Theme 🌙") {
-                      // disable monet theming if music theme enabled
-                      SettingsSvc.settings.monetTheming.value = Monet.none;
-                      toSave.add('monetTheming');
-                      await MethodChannelSvc.invokeMethod("request-notification-listener-permission");
-                      try {
-                        await MethodChannelSvc.invokeMethod("start-notification-listener");
-                        SettingsSvc.settings.colorsFromMedia.value = true;
-                        toSave.add('colorsFromMedia');
-                      } catch (e) {
-                        showSnackbar("Error", "Something went wrong, please ensure you granted the permission correctly!");
-                        return;
-                      }
-                    } else {
-                      SettingsSvc.settings.colorsFromMedia.value = false;
+                  final List<String> toSave = [];
+                  if (value.name == "Music Theme ☀" || value.name == "Music Theme 🌙") {
+                    // disable monet theming if music theme enabled
+                    SettingsSvc.settings.monetTheming.value = Monet.none;
+                    toSave.add('monetTheming');
+                    await MethodChannelSvc.invokeMethod("request-notification-listener-permission");
+                    try {
+                      await MethodChannelSvc.invokeMethod("start-notification-listener");
+                      SettingsSvc.settings.colorsFromMedia.value = true;
                       toSave.add('colorsFromMedia');
+                    } catch (e) {
+                      showSnackbar(
+                          "Error", "Something went wrong, please ensure you granted the permission correctly!");
+                      return;
                     }
+                  } else {
+                    SettingsSvc.settings.colorsFromMedia.value = false;
+                    toSave.add('colorsFromMedia');
+                  }
 
-                    if (toSave.isNotEmpty) {
-                      await SettingsSvc.settings.saveManyAsync(toSave);
-                    }
+                  if (toSave.isNotEmpty) {
+                    await SettingsSvc.settings.saveManyAsync(toSave);
+                  }
 
-                    if (value.name == "Music Theme ☀" || value.name == "Music Theme 🌙") {
-                      var allThemes = ThemeStruct.getThemes();
-                      var currentLight = ThemeStruct.getLightTheme();
-                      var currentDark = ThemeStruct.getDarkTheme();
-                      await PrefsSvc.i.setString("previous-light", currentLight.name);
-                      await PrefsSvc.i.setString("previous-dark", currentDark.name);
-                      await ThemeSvc.changeTheme(
-                          context,
-                          light: allThemes.firstWhere((element) => element.name == "Music Theme ☀"),
-                          dark: allThemes.firstWhere((element) => element.name == "Music Theme 🌙")
-                      );
-                    } else if (currentTheme.name == "Music Theme ☀" ||
-                        currentTheme.name == "Music Theme 🌙") {
-                      if (!widget.isDarkMode) {
-                        ThemeStruct previousDark = await ThemeSvc.revertToPreviousDarkTheme();
-                        await ThemeSvc.changeTheme(context, light: value, dark: previousDark);
-                      } else {
-                        ThemeStruct previousLight = await ThemeSvc.revertToPreviousLightTheme();
-                        await ThemeSvc.changeTheme(context, light: previousLight, dark: value);
-                      }
-                    } else if (widget.isDarkMode) {
-                      await ThemeSvc.changeTheme(context, dark: value);
+                  if (value.name == "Music Theme ☀" || value.name == "Music Theme 🌙") {
+                    var allThemes = ThemeStruct.getThemes();
+                    var currentLight = ThemeStruct.getLightTheme();
+                    var currentDark = ThemeStruct.getDarkTheme();
+                    await PrefsSvc.i.setString("previous-light", currentLight.name);
+                    await PrefsSvc.i.setString("previous-dark", currentDark.name);
+                    await ThemeSvc.changeTheme(context,
+                        light: allThemes.firstWhere((element) => element.name == "Music Theme ☀"),
+                        dark: allThemes.firstWhere((element) => element.name == "Music Theme 🌙"));
+                  } else if (currentTheme.name == "Music Theme ☀" || currentTheme.name == "Music Theme 🌙") {
+                    if (!widget.isDarkMode) {
+                      ThemeStruct previousDark = await ThemeSvc.revertToPreviousDarkTheme();
+                      await ThemeSvc.changeTheme(context, light: value, dark: previousDark);
                     } else {
-                      await ThemeSvc.changeTheme(context, light: value);
+                      ThemeStruct previousLight = await ThemeSvc.revertToPreviousLightTheme();
+                      await ThemeSvc.changeTheme(context, light: previousLight, dark: value);
                     }
-                    currentTheme = value;
-                    editable = !currentTheme.isPreset;
-                    setState(() {});
+                  } else if (widget.isDarkMode) {
+                    await ThemeSvc.changeTheme(context, dark: value);
+                  } else {
+                    await ThemeSvc.changeTheme(context, light: value);
+                  }
+                  currentTheme = value;
+                  editable = !currentTheme.isPreset;
+                  setState(() {});
 
-                    EventDispatcherSvc.emit('theme-update', null);
-                  },
-                ),
-                SettingsSwitch(
-                  onChanged: (bool val) async {
-                    currentTheme.gradientBg = val;
-                    currentTheme.save();
-                    if (widget.isDarkMode) {
-                      await ThemeSvc.changeTheme(context, dark: currentTheme);
-                    } else {
-                      await ThemeSvc.changeTheme(context, light: currentTheme);
-                    }
-                  },
-                  initialVal: currentTheme.gradientBg,
-                  title: "Gradient Message View Background",
-                  backgroundColor: tileColor,
-                  subtitle:
-                  "Make the background of the messages view an animated gradient based on the background and primary colors",
-                  isThreeLine: true,
-                ),
-                AnimatedSizeAndFade.showHide(
-                  show: editable,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        color: tileColor,
-                        child: Padding(
-                          padding: const EdgeInsets.only(left: 15.0),
-                          child: SettingsDivider(color: context.theme.colorScheme.surfaceVariant),
-                        ),
+                  EventDispatcherSvc.emit('theme-update', null);
+                },
+              ),
+              SettingsSwitch(
+                onChanged: (bool val) async {
+                  currentTheme.gradientBg = val;
+                  currentTheme.save();
+                  if (widget.isDarkMode) {
+                    await ThemeSvc.changeTheme(context, dark: currentTheme);
+                  } else {
+                    await ThemeSvc.changeTheme(context, light: currentTheme);
+                  }
+                },
+                initialVal: currentTheme.gradientBg,
+                title: "Gradient Message View Background",
+                backgroundColor: tileColor,
+                subtitle:
+                    "Make the background of the messages view an animated gradient based on the background and primary colors",
+                isThreeLine: true,
+              ),
+              AnimatedSizeAndFade.showHide(
+                show: editable,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      color: tileColor,
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 15.0),
+                        child: SettingsDivider(color: context.theme.colorScheme.surfaceVariant),
                       ),
-                      SettingsTile(
-                        title: "Generate From Image",
-                        subtitle: "Overwrite this theme by generating a color palette from an image",
-                        backgroundColor: tileColor,
-                        onTap: () async {
-                          final res = await FilePicker.platform.pickFiles(withData: true, type: FileType.custom, allowedExtensions: ['png', 'jpg', 'jpeg']);
-                          if (res == null || res.files.isEmpty || res.files.first.bytes == null) return;
-                          final image = MemoryImage(res.files.first.bytes!);
-                          final swatch = await ColorScheme.fromImageProvider(provider: image, brightness: widget.isDarkMode ? Brightness.dark : Brightness.light);
-                          oldData = currentTheme.data;
-                          setState(() {});
-                          currentTheme.data = currentTheme.data.copyWith(colorScheme: swatch);
-                          currentTheme.save();
-                          if (widget.isDarkMode) {
-                            await ThemeSvc.changeTheme(context, dark: currentTheme);
-                          } else {
-                            await ThemeSvc.changeTheme(context, light: currentTheme);
-                          }
-                        },
-                        trailing: oldData == null ? null : TextButton(
-                          style: TextButton.styleFrom(
-                            backgroundColor: context.theme.colorScheme.secondary,
-                          ),
-                          onPressed: () async {
-                            currentTheme.data = oldData!;
-                            setState(() {
-                              oldData = null;
-                            });
-                            currentTheme.save();
-                            if (widget.isDarkMode) {
-                              await ThemeSvc.changeTheme(context, dark: currentTheme);
-                            } else {
-                              await ThemeSvc.changeTheme(context, light: currentTheme);
-                            }
-                          },
-                          child: Text("UNDO", style: TextStyle(color: context.theme.colorScheme.onSecondary)),
+                    ),
+                    SettingsTile(
+                      title: "Generate From Image",
+                      subtitle: "Overwrite this theme by generating a color palette from an image",
+                      backgroundColor: tileColor,
+                      onTap: () async {
+                        final res = await FilePicker.platform.pickFiles(
+                            withData: true, type: FileType.custom, allowedExtensions: ['png', 'jpg', 'jpeg']);
+                        if (res == null || res.files.isEmpty || res.files.first.bytes == null) return;
+                        final image = MemoryImage(res.files.first.bytes!);
+                        final swatch = await ColorScheme.fromImageProvider(
+                            provider: image, brightness: widget.isDarkMode ? Brightness.dark : Brightness.light);
+                        oldData = currentTheme.data;
+                        setState(() {});
+                        currentTheme.data = currentTheme.data.copyWith(colorScheme: swatch);
+                        currentTheme.save();
+                        if (widget.isDarkMode) {
+                          await ThemeSvc.changeTheme(context, dark: currentTheme);
+                        } else {
+                          await ThemeSvc.changeTheme(context, light: currentTheme);
+                        }
+                      },
+                      trailing: oldData == null
+                          ? null
+                          : TextButton(
+                              style: TextButton.styleFrom(
+                                backgroundColor: context.theme.colorScheme.secondary,
+                              ),
+                              onPressed: () async {
+                                currentTheme.data = oldData!;
+                                setState(() {
+                                  oldData = null;
+                                });
+                                currentTheme.save();
+                                if (widget.isDarkMode) {
+                                  await ThemeSvc.changeTheme(context, dark: currentTheme);
+                                } else {
+                                  await ThemeSvc.changeTheme(context, light: currentTheme);
+                                }
+                              },
+                              child: Text("UNDO", style: TextStyle(color: context.theme.colorScheme.onSecondary)),
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+              const SettingsSubtitle(
+                subtitle:
+                    "Tap to edit the base color\nLong press to edit the color for elements displayed on top of the base color\nDouble tap to learn how the colors are used",
+                unlimitedSpace: true,
+              ),
+              if (SettingsSvc.settings.monetTheming.value != Monet.none || SettingsSvc.settings.useDesktopAccent.value)
+                Padding(
+                  padding: const EdgeInsets.only(left: 20.0, right: 20.0, bottom: 15.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Icon(
+                        iOS ? CupertinoIcons.info : Icons.info_outline,
+                        size: 20,
+                        color: context.theme.colorScheme.primary,
+                      ),
+                      const SizedBox(width: 20),
+                      Expanded(
+                        child: Text(
+                          Platform.isWindows
+                              ? "Some of these colors are generated from your Windows accent color. Disable using the Windows accent color to view the original theme colors."
+                              : "You have Material You theming enabled, so some or all of these colors may be generated by Monet. Disable Material You to view the original theme colors.",
+                          style: context.theme.textTheme.bodySmall!
+                              .copyWith(color: context.theme.colorScheme.properOnSurface),
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SettingsSubtitle(
-                  subtitle: "Tap to edit the base color\nLong press to edit the color for elements displayed on top of the base color\nDouble tap to learn how the colors are used",
-                  unlimitedSpace: true,
-                ),
-                if (SettingsSvc.settings.monetTheming.value != Monet.none || SettingsSvc.settings.useDesktopAccent.value)
-                  Padding(
-                    padding: const EdgeInsets.only(left: 20.0, right: 20.0, bottom: 15.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Icon(
-                          iOS
-                              ? CupertinoIcons.info
-                              : Icons.info_outline,
-                          size: 20,
-                          color: context.theme.colorScheme.primary,
-                        ),
-                        const SizedBox(width: 20),
-                        Expanded(
-                          child: Text(
-                            Platform.isWindows
-                                ? "Some of these colors are generated from your Windows accent color. Disable using the Windows accent color to view the original theme colors."
-                                : "You have Material You theming enabled, so some or all of these colors may be generated by Monet. Disable Material You to view the original theme colors.",
-                            style: context.theme.textTheme.bodySmall!.copyWith(color: context.theme.colorScheme.properOnSurface),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-              ]
-            ),
+            ]),
           ),
           SliverPadding(
             padding: const EdgeInsets.only(top: 20, bottom: 10, left: 15),
             sliver: SliverToBoxAdapter(
-              child: Text("COLORS", style: context.theme.textTheme.bodyMedium!.copyWith(color: context.theme.colorScheme.outline)),
+              child: Text("COLORS",
+                  style: context.theme.textTheme.bodyMedium!.copyWith(color: context.theme.colorScheme.outline)),
             ),
           ),
           SliverGrid(
@@ -342,9 +336,13 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
               (context, index) {
                 return AdvancedThemingTile(
                   currentTheme: currentTheme,
-                  tuple: Tuple2(currentTheme.colors(widget.isDarkMode).entries.toList()[index < length - 1
-                      ? index * 2 : currentTheme.colors(widget.isDarkMode).entries.length - (length - index)],
-                      index < length - 1 ? currentTheme.colors(widget.isDarkMode).entries.toList()[index * 2 + 1] : null),
+                  tuple: Tuple2(
+                      currentTheme.colors(widget.isDarkMode).entries.toList()[index < length - 1
+                          ? index * 2
+                          : currentTheme.colors(widget.isDarkMode).entries.length - (length - index)],
+                      index < length - 1
+                          ? currentTheme.colors(widget.isDarkMode).entries.toList()[index * 2 + 1]
+                          : null),
                   editable: editable,
                 );
               },
@@ -357,7 +355,8 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
           SliverPadding(
             padding: const EdgeInsets.only(top: 20, bottom: 10, left: 15),
             sliver: SliverToBoxAdapter(
-              child: Text("FONT", style: context.theme.textTheme.bodyMedium!.copyWith(color: context.theme.colorScheme.outline)),
+              child: Text("FONT",
+                  style: context.theme.textTheme.bodyMedium!.copyWith(color: context.theme.colorScheme.outline)),
             ),
           ),
           SliverToBoxAdapter(
@@ -386,7 +385,8 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
                   },
                 ),
                 const SettingsSubtitle(
-                  subtitle: "Font previews are not shown here since each font must be downloaded and saved from the internet. To see what a font looks like, either select it in the dropdown or visit fonts.google.com to view previews for all available fonts.",
+                  subtitle:
+                      "Font previews are not shown here since each font must be downloaded and saved from the internet. To see what a font looks like, either select it in the dropdown or visit fonts.google.com to view previews for all available fonts.",
                   unlimitedSpace: true,
                 ),
               ],
@@ -435,17 +435,20 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
                 index = index - 1;
                 return SettingsSlider(
                   leading: Text(currentTheme.textSizes.keys.toList()[index]),
-                  startingVal: currentTheme.textSizes.values.toList()[index] / ThemeStruct.defaultTextSizes.values.toList()[index],
+                  startingVal: currentTheme.textSizes.values.toList()[index] /
+                      ThemeStruct.defaultTextSizes.values.toList()[index],
                   leadingMinWidth: context.theme.textTheme.bodyMedium!.fontSize! * 6,
                   update: (double val) {
                     final map = currentTheme.toMap();
-                    map["data"]["textTheme"][currentTheme.textSizes.keys.toList()[index]]['fontSize'] = ThemeStruct.defaultTextSizes.values.toList()[index] * val;
+                    map["data"]["textTheme"][currentTheme.textSizes.keys.toList()[index]]['fontSize'] =
+                        ThemeStruct.defaultTextSizes.values.toList()[index] * val;
                     currentTheme.data = ThemeStruct.fromMap(map).data;
                     setState(() {});
                   },
                   onChangeEnd: (double val) async {
                     final map = currentTheme.toMap();
-                    map["data"]["textTheme"][currentTheme.textSizes.keys.toList()[index]]['fontSize'] = ThemeStruct.defaultTextSizes.values.toList()[index] * val;
+                    map["data"]["textTheme"][currentTheme.textSizes.keys.toList()[index]]['fontSize'] =
+                        ThemeStruct.defaultTextSizes.values.toList()[index] * val;
                     currentTheme.data = ThemeStruct.fromMap(map).data;
                     currentTheme.save();
                     if (currentTheme.name == PrefsSvc.i.getString("selected-dark")) {
@@ -479,8 +482,9 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
                   onPressed: () async {
                     allThemes.removeWhere((element) => element == currentTheme);
                     currentTheme.delete();
-                    currentTheme =
-                      await (widget.isDarkMode ? ThemeSvc.revertToPreviousDarkTheme() : ThemeSvc.revertToPreviousLightTheme());
+                    currentTheme = await (widget.isDarkMode
+                        ? ThemeSvc.revertToPreviousDarkTheme()
+                        : ThemeSvc.revertToPreviousLightTheme());
                     allThemes = ThemeStruct.getThemes();
                     if (widget.isDarkMode) {
                       await ThemeSvc.changeTheme(context, dark: currentTheme);
@@ -492,9 +496,9 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
                 ),
               ),
             ),
-            const SliverPadding(
-              padding: EdgeInsets.all(25),
-            ),
+          const SliverPadding(
+            padding: EdgeInsets.all(25),
+          ),
         ],
       ),
     );

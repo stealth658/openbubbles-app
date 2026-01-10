@@ -48,7 +48,7 @@ class _FullscreenImageState extends OptimizedState<FullscreenImage> with Automat
   PlatformFile get file => widget.file;
   Attachment get attachment => widget.attachment;
   Message? get message => attachment.message.target;
-  
+
   // Implement required getter for LivePhotoMixin
   @override
   Attachment get livePhotoAttachment => attachment;
@@ -81,7 +81,7 @@ class _FullscreenImageState extends OptimizedState<FullscreenImage> with Automat
       setState(() {});
       return;
     }
-    
+
     // For non-web platforms, ensure we have a compatible image path
     // but don't load bytes into memory - let Image.file handle it
     compatiblePath = await AttachmentsSvc.ensureImageCompatibility(attachment, actualPath: file.path!);
@@ -145,29 +145,29 @@ class _FullscreenImageState extends OptimizedState<FullscreenImage> with Automat
           children: [
             (bytes != null || compatiblePath != null)
                 ? PhotoView(
-                      gaplessPlayback: true,
-                      minScale: PhotoViewComputedScale.contained,
-                      maxScale: PhotoViewComputedScale.contained * 10,
-                      controller: controller,
-                      imageProvider: bytes != null 
-                          ? MemoryImage(bytes!) as ImageProvider
-                          : FileImage(File(compatiblePath ?? file.path!)),
-                      loadingBuilder: (BuildContext context, ImageChunkEvent? ev) {
-                        return Center(child: buildProgressIndicator(context));
-                      },
-                      scaleStateChangedCallback: (scale) {
-                        if (scale == PhotoViewScaleState.zoomedIn ||
-                            scale == PhotoViewScaleState.covering ||
-                            scale == PhotoViewScaleState.originalSize) {
-                          widget.updatePhysics(const NeverScrollableScrollPhysics());
-                        } else {
-                          widget.updatePhysics(ThemeSwitcher.getScrollPhysics());
-                        }
-                      },
-                      errorBuilder: (context, object, stacktrace) =>
-                          Center(child: Text("Failed to display image", style: context.theme.textTheme.bodyLarge)),
-                      filterQuality: FilterQuality.high,
-                    )
+                    gaplessPlayback: true,
+                    minScale: PhotoViewComputedScale.contained,
+                    maxScale: PhotoViewComputedScale.contained * 10,
+                    controller: controller,
+                    imageProvider: bytes != null
+                        ? MemoryImage(bytes!) as ImageProvider
+                        : FileImage(File(compatiblePath ?? file.path!)),
+                    loadingBuilder: (BuildContext context, ImageChunkEvent? ev) {
+                      return Center(child: buildProgressIndicator(context));
+                    },
+                    scaleStateChangedCallback: (scale) {
+                      if (scale == PhotoViewScaleState.zoomedIn ||
+                          scale == PhotoViewScaleState.covering ||
+                          scale == PhotoViewScaleState.originalSize) {
+                        widget.updatePhysics(const NeverScrollableScrollPhysics());
+                      } else {
+                        widget.updatePhysics(ThemeSwitcher.getScrollPhysics());
+                      }
+                    },
+                    errorBuilder: (context, object, stacktrace) =>
+                        Center(child: Text("Failed to display image", style: context.theme.textTheme.bodyLarge)),
+                    filterQuality: FilterQuality.high,
+                  )
                 : hasError
                     ? Center(child: Text("Failed to load image", style: context.theme.textTheme.bodyLarge))
                     : Center(child: buildProgressIndicator(context)),
@@ -286,42 +286,42 @@ class _FullscreenImageState extends OptimizedState<FullscreenImage> with Automat
                         color: samsung ? Colors.black : context.theme.colorScheme.properSurface.withOpacity(0.9),
                       ),
                       child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        IconButton(
-                          icon: Icon(
-                            CupertinoIcons.cloud_download,
-                            color: samsung ? Colors.white : context.theme.colorScheme.primary,
-                          ),
-                          onPressed: () => AttachmentsSvc.saveToDisk(widget.file),
-                        ),
-                        if (!kIsWeb && !kIsDesktop)
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
                           IconButton(
                             icon: Icon(
-                              CupertinoIcons.share,
+                              CupertinoIcons.cloud_download,
                               color: samsung ? Colors.white : context.theme.colorScheme.primary,
                             ),
-                            onPressed: () {
-                              if (widget.file.path != null) {
-                                Share.files([widget.file.path!]);
-                              }
-                            },
+                            onPressed: () => AttachmentsSvc.saveToDisk(widget.file),
                           ),
-                        IconButton(
-                          icon: Icon(
-                            CupertinoIcons.info,
-                            color: samsung ? Colors.white : context.theme.colorScheme.primary,
+                          if (!kIsWeb && !kIsDesktop)
+                            IconButton(
+                              icon: Icon(
+                                CupertinoIcons.share,
+                                color: samsung ? Colors.white : context.theme.colorScheme.primary,
+                              ),
+                              onPressed: () {
+                                if (widget.file.path != null) {
+                                  Share.files([widget.file.path!]);
+                                }
+                              },
+                            ),
+                          IconButton(
+                            icon: Icon(
+                              CupertinoIcons.info,
+                              color: samsung ? Colors.white : context.theme.colorScheme.primary,
+                            ),
+                            onPressed: () => showMetadataDialog(widget.attachment, context),
                           ),
-                          onPressed: () => showMetadataDialog(widget.attachment, context),
-                        ),
-                        IconButton(
-                          icon: Icon(
-                            CupertinoIcons.refresh,
-                            color: samsung ? Colors.white : context.theme.colorScheme.primary,
+                          IconButton(
+                            icon: Icon(
+                              CupertinoIcons.refresh,
+                              color: samsung ? Colors.white : context.theme.colorScheme.primary,
+                            ),
+                            onPressed: () => refreshAttachment(),
                           ),
-                          onPressed: () => refreshAttachment(),
-                        ),
-                      ],
+                        ],
                       ),
                     ),
                   ),
@@ -339,30 +339,30 @@ class _FullscreenImageState extends OptimizedState<FullscreenImage> with Automat
                     top: false,
                     child: Row(
                       children: [
-                      FloatingActionButton(
-                        backgroundColor: context.theme.colorScheme.secondary,
-                        child: Icon(
-                          Icons.file_download_outlined,
-                          color: context.theme.colorScheme.onSecondary,
-                        ),
-                        onPressed: () => AttachmentsSvc.saveToDisk(widget.file),
-                      ),
-                      if (!kIsWeb && !kIsDesktop)
-                        Padding(
-                          padding: const EdgeInsets.only(left: 16.0),
-                          child: FloatingActionButton(
-                            backgroundColor: context.theme.colorScheme.secondary,
-                            child: Icon(
-                              Icons.share_outlined,
-                              color: context.theme.colorScheme.onSecondary,
-                            ),
-                            onPressed: () {
-                              if (widget.file.path != null) {
-                                Share.files([widget.file.path!]);
-                              }
-                            },
+                        FloatingActionButton(
+                          backgroundColor: context.theme.colorScheme.secondary,
+                          child: Icon(
+                            Icons.file_download_outlined,
+                            color: context.theme.colorScheme.onSecondary,
                           ),
+                          onPressed: () => AttachmentsSvc.saveToDisk(widget.file),
                         ),
+                        if (!kIsWeb && !kIsDesktop)
+                          Padding(
+                            padding: const EdgeInsets.only(left: 16.0),
+                            child: FloatingActionButton(
+                              backgroundColor: context.theme.colorScheme.secondary,
+                              child: Icon(
+                                Icons.share_outlined,
+                                color: context.theme.colorScheme.onSecondary,
+                              ),
+                              onPressed: () {
+                                if (widget.file.path != null) {
+                                  Share.files([widget.file.path!]);
+                                }
+                              },
+                            ),
+                          ),
                       ],
                     ),
                   ),

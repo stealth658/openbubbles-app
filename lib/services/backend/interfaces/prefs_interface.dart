@@ -15,8 +15,7 @@ class PrefsInterface {
     if (isIsolate) {
       return await PrefsActions.saveReplyToMessageState(data);
     } else {
-      return await GetIt.I<GlobalIsolate>()
-          .send<void>(IsolateRequestType.saveReplyToMessageState, input: data);
+      return await GetIt.I<GlobalIsolate>().send<void>(IsolateRequestType.saveReplyToMessageState, input: data);
     }
   }
 
@@ -41,8 +40,7 @@ class PrefsInterface {
     if (isIsolate) {
       return await PrefsActions.syncAllSettings(data);
     } else {
-      return await GetIt.I<GlobalIsolate>()
-          .send<void>(IsolateRequestType.syncAllSettings, input: data);
+      return await GetIt.I<GlobalIsolate>().send<void>(IsolateRequestType.syncAllSettings, input: data);
     }
   }
 
@@ -50,8 +48,7 @@ class PrefsInterface {
     if (isIsolate) {
       return await PrefsActions.syncSettings(settings);
     } else {
-      return await GetIt.I<GlobalIsolate>()
-          .send<void>(IsolateRequestType.syncSettings, input: settings);
+      return await GetIt.I<GlobalIsolate>().send<void>(IsolateRequestType.syncSettings, input: settings);
     }
   }
 }

@@ -71,16 +71,18 @@ class _MaterialConversationTileState extends CustomState<MaterialConversationTil
               Obx(() {
                 final unread = ChatsSvc.getChatState(controller.chat.guid)?.hasUnreadMessage.value ?? false;
                 return ChatSubtitle(
-                    parentController: controller,
-                    style: context.theme.textTheme.bodyMedium!
-                        .copyWith(
-                          fontWeight: unread ? FontWeight.bold : null,
-                          color: controller.shouldHighlight.value || unread ? context.textTheme.bodyMedium!.color : context.theme.colorScheme.outline,
-                          height: 1.5,
-                        )
-                        .apply(fontSizeFactor: 1.05),
-                  );
-      }),
+                  parentController: controller,
+                  style: context.theme.textTheme.bodyMedium!
+                      .copyWith(
+                        fontWeight: unread ? FontWeight.bold : null,
+                        color: controller.shouldHighlight.value || unread
+                            ? context.textTheme.bodyMedium!.color
+                            : context.theme.colorScheme.outline,
+                        height: 1.5,
+                      )
+                      .apply(fontSizeFactor: 1.05),
+                );
+              }),
           contentPadding: const EdgeInsets.only(left: 6, right: 16),
           leading: leading,
           trailing: MaterialTrailing(parentController: controller),
@@ -167,7 +169,8 @@ class _MaterialTrailingState extends CustomState<MaterialTrailing, void, Convers
           });
           if (message != null &&
               SettingsSvc.settings.statusIndicatorsOnChats.value &&
-              (message.dateDelivered != cachedLatestMessage?.dateDelivered || message.dateRead != cachedLatestMessage?.dateRead)) {
+              (message.dateDelivered != cachedLatestMessage?.dateDelivered ||
+                  message.dateRead != cachedLatestMessage?.dateRead)) {
             setState(() {});
           }
           cachedLatestMessage = message;
@@ -184,7 +187,8 @@ class _MaterialTrailingState extends CustomState<MaterialTrailing, void, Convers
       });
     } else {
       sub = WebListeners.newMessage.listen((tuple) {
-        if (tuple.item2?.guid == controller.chat.guid && (dateCreated == null || tuple.item1.dateCreated!.isAfter(dateCreated!))) {
+        if (tuple.item2?.guid == controller.chat.guid &&
+            (dateCreated == null || tuple.item1.dateCreated!.isAfter(dateCreated!))) {
           cachedLatestMessage = tuple.item1;
           setState(() {
             dateCreated = tuple.item1.dateCreated;
@@ -204,84 +208,87 @@ class _MaterialTrailingState extends CustomState<MaterialTrailing, void, Convers
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(right: 3),
-      child: Obx(() {
-        final unread = ChatsSvc.getChatState(controller.chat.guid)?.hasUnreadMessage.value ?? false;
-        final muteType = ChatsSvc.getChatState(controller.chat.guid)?.muteType.value;
+        padding: const EdgeInsets.only(right: 3),
+        child: Obx(() {
+          final unread = ChatsSvc.getChatState(controller.chat.guid)?.hasUnreadMessage.value ?? false;
+          final muteType = ChatsSvc.getChatState(controller.chat.guid)?.muteType.value;
 
-        String indicatorText = "";
-        if (SettingsSvc.settings.statusIndicatorsOnChats.value && (cachedLatestMessage?.isFromMe ?? false) && !controller.chat.isGroup) {
-          Indicator show = cachedLatestMessage?.indicatorToShow ?? Indicator.NONE;
-          if (show != Indicator.NONE) {
-            indicatorText = show.name.toLowerCase().capitalizeFirst!;
+          String indicatorText = "";
+          if (SettingsSvc.settings.statusIndicatorsOnChats.value &&
+              (cachedLatestMessage?.isFromMe ?? false) &&
+              !controller.chat.isGroup) {
+            Indicator show = cachedLatestMessage?.indicatorToShow ?? Indicator.NONE;
+            if (show != Indicator.NONE) {
+              indicatorText = show.name.toLowerCase().capitalizeFirst!;
+            }
           }
-        }
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Text(
-                  (cachedLatestMessage?.error ?? 0) > 0
-                      ? "Error"
-                      : "${indicatorText.isNotEmpty ? "$indicatorText\n" : ""}${buildChatListDateMaterial(dateCreated)}",
-                  textAlign: TextAlign.right,
-                  style: context.theme.textTheme.bodySmall!
-                      .copyWith(
-                        color: (cachedLatestMessage?.error ?? 0) > 0
-                            ? context.theme.colorScheme.error
-                            : controller.shouldHighlight.value || unread
-                                ? context.theme.colorScheme.onBackground
-                                : context.theme.colorScheme.outline,
-                        fontWeight: unread
-                            ? FontWeight.w600
-                            : controller.shouldHighlight.value
-                                ? FontWeight.w500
-                                : null,
-                      )
-                      .apply(fontSizeFactor: 1.1),
-                  overflow: TextOverflow.clip,
-                ),
-                if (muteType != "mute" && unread) 
-                  Padding(
-                    padding: const EdgeInsets.only(left: 8.0),
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: context.theme.colorScheme.primary,
-                      ),
-                    ),
-                  )
-              ],
-            ),
-            const SizedBox(height: 5),
-            Obx(() => Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.end,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (controller.chatState?.isPinned.value ?? false) Icon(Icons.push_pin_outlined, size: 15, color: context.theme.colorScheme.outline),
-                if (muteType == "mute")
-                  const SizedBox(width: 5),
-                if (muteType == "mute")
-                  Icon(
-                    Icons.notifications_off_outlined,
-                    color: controller.shouldHighlight.value || unread ? context.theme.colorScheme.primary : context.theme.colorScheme.outline,
-                    size: 15,
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text(
+                    (cachedLatestMessage?.error ?? 0) > 0
+                        ? "Error"
+                        : "${indicatorText.isNotEmpty ? "$indicatorText\n" : ""}${buildChatListDateMaterial(dateCreated)}",
+                    textAlign: TextAlign.right,
+                    style: context.theme.textTheme.bodySmall!
+                        .copyWith(
+                          color: (cachedLatestMessage?.error ?? 0) > 0
+                              ? context.theme.colorScheme.error
+                              : controller.shouldHighlight.value || unread
+                                  ? context.theme.colorScheme.onBackground
+                                  : context.theme.colorScheme.outline,
+                          fontWeight: unread
+                              ? FontWeight.w600
+                              : controller.shouldHighlight.value
+                                  ? FontWeight.w500
+                                  : null,
+                        )
+                        .apply(fontSizeFactor: 1.1),
+                    overflow: TextOverflow.clip,
                   ),
-              ],
-            )),
-          ],
-        );
-    })
-    );
+                  if (muteType != "mute" && unread)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 8.0),
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: context.theme.colorScheme.primary,
+                        ),
+                      ),
+                    )
+                ],
+              ),
+              const SizedBox(height: 5),
+              Obx(() => Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (controller.chatState?.isPinned.value ?? false)
+                        Icon(Icons.push_pin_outlined, size: 15, color: context.theme.colorScheme.outline),
+                      if (muteType == "mute") const SizedBox(width: 5),
+                      if (muteType == "mute")
+                        Icon(
+                          Icons.notifications_off_outlined,
+                          color: controller.shouldHighlight.value || unread
+                              ? context.theme.colorScheme.primary
+                              : context.theme.colorScheme.outline,
+                          size: 15,
+                        ),
+                    ],
+                  )),
+            ],
+          );
+        }));
   }
 }
 
@@ -293,7 +300,6 @@ class UnreadIcon extends CustomStateful<ConversationTileController> {
 }
 
 class _UnreadIconState extends CustomState<UnreadIcon, void, ConversationTileController> {
-
   @override
   void initState() {
     super.initState();
@@ -306,17 +312,17 @@ class _UnreadIconState extends CustomState<UnreadIcon, void, ConversationTileCon
   @override
   Widget build(BuildContext context) {
     return Obx(() => Padding(
-      padding: const EdgeInsets.only(left: 5.0, right: 5.0),
-      child: (ChatsSvc.getChatState(controller.chat.guid)?.hasUnreadMessage.value ?? false)
-          ? Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(35),
-                color: context.theme.colorScheme.primary,
-              ),
-              width: 10,
-              height: 10,
-            )
-          : const SizedBox(width: 10),
-    ));
+          padding: const EdgeInsets.only(left: 5.0, right: 5.0),
+          child: (ChatsSvc.getChatState(controller.chat.guid)?.hasUnreadMessage.value ?? false)
+              ? Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(35),
+                    color: context.theme.colorScheme.primary,
+                  ),
+                  width: 10,
+                  height: 10,
+                )
+              : const SizedBox(width: 10),
+        ));
   }
 }

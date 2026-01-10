@@ -30,11 +30,23 @@ class ContactAvatarGroupWidget extends StatefulWidget {
 class _ContactAvatarGroupWidgetState extends OptimizedState<ContactAvatarGroupWidget> {
   late final List<Handle> participants;
   final Map materialGeneration = {
-    2: [24.5/40, 10.5/40, [Alignment.topRight, Alignment.bottomLeft]],
-    3: [21.5/40, 9/40, [Alignment.bottomRight, Alignment.bottomLeft, Alignment.topCenter]],
-    4: [1/2, 8.7/40, [Alignment.bottomRight, Alignment.bottomLeft, Alignment.topLeft, Alignment.topRight]],
+    2: [
+      24.5 / 40,
+      10.5 / 40,
+      [Alignment.topRight, Alignment.bottomLeft]
+    ],
+    3: [
+      21.5 / 40,
+      9 / 40,
+      [Alignment.bottomRight, Alignment.bottomLeft, Alignment.topCenter]
+    ],
+    4: [
+      1 / 2,
+      8.7 / 40,
+      [Alignment.bottomRight, Alignment.bottomLeft, Alignment.topLeft, Alignment.topRight]
+    ],
   };
-  
+
   // Cache values to prevent recalculation
   String? _cachedCustomAvatarPath;
 
@@ -42,7 +54,7 @@ class _ContactAvatarGroupWidgetState extends OptimizedState<ContactAvatarGroupWi
   void initState() {
     super.initState();
     _cachedCustomAvatarPath = widget.chat.customAvatarPath;
-    
+
     // Sort participants once during init (expensive operation)
     participants = widget.chat.handles.toList();
     participants.sort((a, b) {
@@ -53,7 +65,7 @@ class _ContactAvatarGroupWidgetState extends OptimizedState<ContactAvatarGroupWi
       if (avatarA && !avatarB) return -1;
       return 0;
     });
-    
+
     // Observe customAvatarPath changes from ChatState if available
     final chatState = ChatsSvc.getChatState(widget.chat.guid);
     if (chatState != null) {
@@ -66,7 +78,7 @@ class _ContactAvatarGroupWidgetState extends OptimizedState<ContactAvatarGroupWi
       });
     }
   }
-  
+
   @override
   void didUpdateWidget(ContactAvatarGroupWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -80,14 +92,15 @@ class _ContactAvatarGroupWidgetState extends OptimizedState<ContactAvatarGroupWi
   Widget build(BuildContext context) {
     if (participants.isEmpty) {
       return Obx(() => ContactAvatarWidget(
-        handle: Handle(address: ''),
-        size: widget.size * SettingsSvc.settings.avatarScale.value,
-        editable: false,
-        scaleSize: false,
-      ));
+            handle: Handle(address: ''),
+            size: widget.size * SettingsSvc.settings.avatarScale.value,
+            editable: false,
+            scaleSize: false,
+          ));
     }
 
-    return Obx(() {
+    return Obx(
+      () {
         final hide = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
         final avatarSize = widget.size * SettingsSvc.settings.avatarScale.value;
         final maxAvatars = SettingsSvc.settings.maxAvatarsInGroupWidget.value;
@@ -147,10 +160,10 @@ class _ContactAvatarGroupWidgetState extends OptimizedState<ContactAvatarGroupWi
                                     width: size,
                                     height: size,
                                     decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: context.theme.colorScheme.properSurface.withValues(alpha: 0.8),
-                                      border: Border.all(color: context.theme.colorScheme.background, width: avatarSize * 0.01)
-                                    ),
+                                        shape: BoxShape.circle,
+                                        color: context.theme.colorScheme.properSurface.withValues(alpha: 0.8),
+                                        border: Border.all(
+                                            color: context.theme.colorScheme.background, width: avatarSize * 0.01)),
                                     child: Icon(
                                       skin == Skins.iOS ? CupertinoIcons.group_solid : Icons.people,
                                       size: size * 0.65,
@@ -180,16 +193,18 @@ class _ContactAvatarGroupWidgetState extends OptimizedState<ContactAvatarGroupWi
                     ],
                   ),
                   materialSkin: Stack(
-                    children: List.generate(min(participants.length, 4), (index) => Align(
-                      alignment: materialGeneration[min(participants.length, 4)][2][index],
-                      child: ContactAvatarWidget(
-                        handle: participants[index],
-                        size: avatarSize * materialGeneration[min(participants.length, 4)][0],
-                        fontSize: avatarSize * materialGeneration[min(participants.length, 4)][1],
-                        editable: widget.editable,
-                        scaleSize: false,
-                      ),
-                    )),
+                    children: List.generate(
+                        min(participants.length, 4),
+                        (index) => Align(
+                              alignment: materialGeneration[min(participants.length, 4)][2][index],
+                              child: ContactAvatarWidget(
+                                handle: participants[index],
+                                size: avatarSize * materialGeneration[min(participants.length, 4)][0],
+                                fontSize: avatarSize * materialGeneration[min(participants.length, 4)][1],
+                                editable: widget.editable,
+                                scaleSize: false,
+                              ),
+                            )),
                   ),
                 )
               : ContactAvatarWidget(

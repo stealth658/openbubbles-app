@@ -19,17 +19,18 @@ class TabletModeWrapper extends StatefulWidget {
   final double? minWidthLeft;
   final double? maxWidthLeft;
 
-  const TabletModeWrapper({super.key,
-    required this.left,
-    required this.right,
-    this.initialRatio = 0.5,
-    this.allowResize = true,
-    this.dividerWidth = 7.0,
-    this.minRatio = 0,
-    this.maxRatio = 0,
-    this.minWidthLeft,
-    this.maxWidthLeft
-  }) : assert(initialRatio >= 0),
+  const TabletModeWrapper(
+      {super.key,
+      required this.left,
+      required this.right,
+      this.initialRatio = 0.5,
+      this.allowResize = true,
+      this.dividerWidth = 7.0,
+      this.minRatio = 0,
+      this.maxRatio = 0,
+      this.minWidthLeft,
+      this.maxWidthLeft})
+      : assert(initialRatio >= 0),
         assert(initialRatio <= 1);
 
   @override
@@ -42,14 +43,16 @@ class _TabletModeWrapperState extends OptimizedState<TabletModeWrapper> {
   double? _maxWidth;
   bool? altLayoutCache;
 
-  get _width1 => max(min(_ratio * _maxWidth!, widget.maxWidthLeft ?? double.infinity), widget.minWidthLeft ?? double.negativeInfinity);
+  get _width1 => max(
+      min(_ratio * _maxWidth!, widget.maxWidthLeft ?? double.infinity), widget.minWidthLeft ?? double.negativeInfinity);
 
   get _width2 => _maxWidth! - _width1;
 
   @override
   void initState() {
     super.initState();
-    _ratio = RxDouble((PrefsSvc.i.getDouble('splitRatio') ?? widget.initialRatio).clamp(widget.minRatio, widget.maxRatio));
+    _ratio =
+        RxDouble((PrefsSvc.i.getDouble('splitRatio') ?? widget.initialRatio).clamp(widget.minRatio, widget.maxRatio));
     EventDispatcherSvc.stream.listen((event) {
       if (event.item1 == 'split-refresh') {
         _ratio.value = PrefsSvc.i.getDouble('splitRatio') ?? _ratio.value;
@@ -83,56 +86,67 @@ class _TabletModeWrapperState extends OptimizedState<TabletModeWrapper> {
           child: SizedBox(
             width: constraints.maxWidth,
             child: Obx(() => Row(
-              children: <Widget>[
-                SizedBox(
-                  width: _width1,
-                  child: widget.left,
-                ),
-                (widget.allowResize) ? MouseRegion(
-                  cursor: SystemMouseCursors.resizeLeftRight,
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.translucent,
-                    child: Container(
-                      color: context.theme.colorScheme.properSurface,
-                      width: widget.dividerWidth,
-                      height: constraints.maxHeight,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(height: 4, width: 4, decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(25),
-                            color: context.theme.colorScheme.properOnSurface,
-                          )),
-                          const SizedBox(height: 20),
-                          Container(height: 4, width: 4, decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(25),
-                            color: context.theme.colorScheme.properOnSurface,
-                          )),
-                          const SizedBox(height: 20),
-                          Container(height: 4, width: 4, decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(25),
-                            color: context.theme.colorScheme.properOnSurface,
-                          )),
-                        ],
-                      ),
+                  children: <Widget>[
+                    SizedBox(
+                      width: _width1,
+                      child: widget.left,
                     ),
-                    onPanUpdate: (DragUpdateDetails details) {
-                      _ratio.value = (_ratio.value + (details.delta.dx / _maxWidth!)).clamp(widget.minRatio, widget.maxRatio);
-                      NavigationSvc.listener.refresh();
-                    },
-                  ),
-                ) : Container(
-                    width: widget.dividerWidth,
-                    height: constraints.maxHeight,
-                    color: context.theme.colorScheme.properSurface
-                ),
-                SizedBox(
-                  width: _width2,
-                  child: widget.right,
-                ),
-              ],
-            )),
+                    (widget.allowResize)
+                        ? MouseRegion(
+                            cursor: SystemMouseCursors.resizeLeftRight,
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.translucent,
+                              child: Container(
+                                color: context.theme.colorScheme.properSurface,
+                                width: widget.dividerWidth,
+                                height: constraints.maxHeight,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Container(
+                                        height: 4,
+                                        width: 4,
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(25),
+                                          color: context.theme.colorScheme.properOnSurface,
+                                        )),
+                                    const SizedBox(height: 20),
+                                    Container(
+                                        height: 4,
+                                        width: 4,
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(25),
+                                          color: context.theme.colorScheme.properOnSurface,
+                                        )),
+                                    const SizedBox(height: 20),
+                                    Container(
+                                        height: 4,
+                                        width: 4,
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(25),
+                                          color: context.theme.colorScheme.properOnSurface,
+                                        )),
+                                  ],
+                                ),
+                              ),
+                              onPanUpdate: (DragUpdateDetails details) {
+                                _ratio.value = (_ratio.value + (details.delta.dx / _maxWidth!))
+                                    .clamp(widget.minRatio, widget.maxRatio);
+                                NavigationSvc.listener.refresh();
+                              },
+                            ),
+                          )
+                        : Container(
+                            width: widget.dividerWidth,
+                            height: constraints.maxHeight,
+                            color: context.theme.colorScheme.properSurface),
+                    SizedBox(
+                      width: _width2,
+                      child: widget.right,
+                    ),
+                  ],
+                )),
           ),
         );
       },

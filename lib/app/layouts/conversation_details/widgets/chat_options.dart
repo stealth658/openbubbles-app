@@ -216,7 +216,8 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
                 if (!kIsWeb && !chat.isGroup && SettingsSvc.settings.enablePrivateAPI.value) const SettingsDivider(),
                 if (!kIsWeb && !chat.isGroup && SettingsSvc.settings.enablePrivateAPI.value)
                   SettingsSwitch(
-                    title: "${SettingsSvc.settings.privateManualMarkAsRead.value ? "Automatically " : ""}Send Read Receipts",
+                    title:
+                        "${SettingsSvc.settings.privateManualMarkAsRead.value ? "Automatically " : ""}Send Read Receipts",
                     initialVal: chat.autoSendReadReceipts ?? SettingsSvc.settings.privateMarkChatAsRead.value,
                     onChanged: (value) {
                       chat.toggleAutoReadAsync(value);
@@ -457,8 +458,9 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
                         if (m.hasAttachments) {
                           final attachments = m.attachments.where(
                               (e) => e?.guid != null && ["image/png", "image/jpg", "image/jpeg"].contains(e!.mimeType));
-                          final files =
-                              attachments.map((e) => AttachmentsSvc.getContent(e!, autoDownload: false)).whereType<PlatformFile>();
+                          final files = attachments
+                              .map((e) => AttachmentsSvc.getContent(e!, autoDownload: false))
+                              .whereType<PlatformFile>();
                           if (files.isNotEmpty) {
                             for (PlatformFile f in files) {
                               final a = attachments.firstWhere((e) => e!.transferName == f.name);

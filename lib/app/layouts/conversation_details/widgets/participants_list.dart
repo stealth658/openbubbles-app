@@ -24,10 +24,9 @@ class _ParticipantsListState extends OptimizedState<ParticipantsList> {
   bool showMoreParticipants = false;
 
   bool get shouldShowMore => widget.chat.handles.length > 5;
-  
-  List<Handle> get clippedParticipants => showMoreParticipants
-      ? widget.chat.handles
-      : widget.chat.handles.take(5).toList();
+
+  List<Handle> get clippedParticipants =>
+      showMoreParticipants ? widget.chat.handles : widget.chat.handles.take(5).toList();
 
   @override
   Widget build(BuildContext context) {
@@ -80,7 +79,7 @@ class _ParticipantsListState extends OptimizedState<ParticipantsList> {
               return const SizedBox.shrink();
             }
           }
-          
+
           if (index == clippedParticipants.length) {
             if (shouldShowMore) {
               return ListTile(
@@ -116,9 +115,7 @@ class _ParticipantsListState extends OptimizedState<ParticipantsList> {
                   ),
                 ),
               );
-            } else if (SettingsSvc.settings.enablePrivateAPI.value &&
-                widget.chat.isIMessage &&
-                widget.chat.isGroup) {
+            } else if (SettingsSvc.settings.enablePrivateAPI.value && widget.chat.isIMessage && widget.chat.isGroup) {
               return addMember;
             } else {
               return const SizedBox.shrink();
@@ -129,9 +126,7 @@ class _ParticipantsListState extends OptimizedState<ParticipantsList> {
             key: Key(widget.chat.handles[index].address),
             handle: widget.chat.handles[index],
             chat: widget.chat,
-            canBeRemoved: widget.chat.isGroup &&
-                SettingsSvc.settings.enablePrivateAPI.value &&
-                widget.chat.isIMessage,
+            canBeRemoved: widget.chat.isGroup && SettingsSvc.settings.enablePrivateAPI.value && widget.chat.isIMessage,
           );
         },
         childCount: clippedParticipants.length + 2,

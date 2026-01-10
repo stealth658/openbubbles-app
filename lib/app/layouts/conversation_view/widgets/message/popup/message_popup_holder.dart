@@ -43,7 +43,11 @@ class _MessagePopupHolderState extends OptimizedState<MessagePopupHolder> {
     final size = globalKey.currentContext?.size;
     Offset? childPos = (globalKey.currentContext?.findRenderObject() as RenderBox?)?.localToGlobal(Offset.zero);
     if (size == null || childPos == null) return;
-    childPos = Offset(childPos.dx - MediaQueryData.fromView(View.of(context)).padding.left - (iOS ? 0 : NavigationSvc.widthChatListLeft(context)), childPos.dy);
+    childPos = Offset(
+        childPos.dx -
+            MediaQueryData.fromView(View.of(context)).padding.left -
+            (iOS ? 0 : NavigationSvc.widthChatListLeft(context)),
+        childPos.dy);
     final tuple = await SettingsSvc.getServerDetails();
     final version = tuple.item4;
     final minSierra = await SettingsSvc.isMinSierra;
@@ -69,8 +73,12 @@ class _MessagePopupHolderState extends OptimizedState<MessagePopupHolder> {
                 colorScheme: ctx.theme.colorScheme.copyWith(
                   primary: ctx.theme.colorScheme.bubble(ctx, true),
                   onPrimary: ctx.theme.colorScheme.onBubble(ctx, true),
-                  surface: SettingsSvc.settings.monetTheming.value == Monet.full ? null : (ctx.theme.extensions[BubbleColors] as BubbleColors?)?.receivedBubbleColor,
-                  onSurface: SettingsSvc.settings.monetTheming.value == Monet.full ? null : (ctx.theme.extensions[BubbleColors] as BubbleColors?)?.onReceivedBubbleColor,
+                  surface: SettingsSvc.settings.monetTheming.value == Monet.full
+                      ? null
+                      : (ctx.theme.extensions[BubbleColors] as BubbleColors?)?.receivedBubbleColor,
+                  onSurface: SettingsSvc.settings.monetTheming.value == Monet.full
+                      ? null
+                      : (ctx.theme.extensions[BubbleColors] as BubbleColors?)?.onReceivedBubbleColor,
                 ),
               ),
               child: PopupScope(
@@ -104,7 +112,8 @@ class _MessagePopupHolderState extends OptimizedState<MessagePopupHolder> {
       } else {
         // This delay is necessary because there is a second instance of the focus node in the popup which gets focused otherwise
         // The autofocus doesn't seem to work on desktop
-        Future.delayed(const Duration(milliseconds: 500), () => widget.cvController.editing.last.item3.focusNode?.requestFocus());
+        Future.delayed(
+            const Duration(milliseconds: 500), () => widget.cvController.editing.last.item3.focusNode?.requestFocus());
       }
     }
   }
@@ -113,7 +122,7 @@ class _MessagePopupHolderState extends OptimizedState<MessagePopupHolder> {
     HapticFeedback.lightImpact();
     final reaction = type ?? SettingsSvc.settings.quickTapbackType.value;
     Logger.info("Sending reaction type: $reaction");
-    
+
     final tempMessage = Message(
       associatedMessageGuid: message.guid,
       associatedMessageType: reaction,
@@ -123,12 +132,10 @@ class _MessagePopupHolderState extends OptimizedState<MessagePopupHolder> {
       isFromMe: true,
       handleId: 0,
     );
-    
-    Logger.debug(
-      "[sendTapback] Creating temp reaction: type=$reaction, parent=${message.guid}",
-      tag: "MessageReactivity"
-    );
-    
+
+    Logger.debug("[sendTapback] Creating temp reaction: type=$reaction, parent=${message.guid}",
+        tag: "MessageReactivity");
+
     outq.queue(OutgoingItem(
       type: QueueType.sendMessage,
       chat: message.getChat() ?? ChatsSvc.activeChat!.chat,
@@ -142,26 +149,30 @@ class _MessagePopupHolderState extends OptimizedState<MessagePopupHolder> {
   Widget build(BuildContext context) {
     return GestureDetector(
       key: globalKey,
-      onDoubleTap: widget.isEditing ? null
-        : SettingsSvc.settings.doubleTapForDetails.value || message.guid!.startsWith('temp')
-        ? () => openPopup()
-        : SettingsSvc.settings.enableQuickTapback.value && widget.cvController.chat.isIMessage
-        ? () => sendTapback(null, widget.part.part)
-        : null,
-      onLongPress: widget.isEditing ? null
-        : SettingsSvc.settings.doubleTapForDetails.value &&
-        SettingsSvc.settings.enableQuickTapback.value &&
-        widget.cvController.chat.isIMessage &&
-        !message.guid!.startsWith('temp')
-        ? () => sendTapback(null, widget.part.part)
-        : () => openPopup(),
-      onSecondaryTapUp: widget.isEditing ? null : (details) async {
-        if (!kIsWeb && !kIsDesktop) return;
-        if (kIsWeb) {
-          (await html.document.onContextMenu.first).preventDefault();
-        }
-        openPopup();
-      },
+      onDoubleTap: widget.isEditing
+          ? null
+          : SettingsSvc.settings.doubleTapForDetails.value || message.guid!.startsWith('temp')
+              ? () => openPopup()
+              : SettingsSvc.settings.enableQuickTapback.value && widget.cvController.chat.isIMessage
+                  ? () => sendTapback(null, widget.part.part)
+                  : null,
+      onLongPress: widget.isEditing
+          ? null
+          : SettingsSvc.settings.doubleTapForDetails.value &&
+                  SettingsSvc.settings.enableQuickTapback.value &&
+                  widget.cvController.chat.isIMessage &&
+                  !message.guid!.startsWith('temp')
+              ? () => sendTapback(null, widget.part.part)
+              : () => openPopup(),
+      onSecondaryTapUp: widget.isEditing
+          ? null
+          : (details) async {
+              if (!kIsWeb && !kIsDesktop) return;
+              if (kIsWeb) {
+                (await html.document.onContextMenu.first).preventDefault();
+              }
+              openPopup();
+            },
       child: widget.child,
     );
   }

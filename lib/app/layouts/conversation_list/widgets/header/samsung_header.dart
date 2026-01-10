@@ -16,9 +16,8 @@ class SamsungHeader extends CustomStateful<ConversationListController> {
 }
 
 class _SamsungHeaderState extends CustomState<SamsungHeader, void, ConversationListController> {
-  Color get backgroundColor => SettingsSvc.settings.windowEffect.value == WindowEffect.disabled
-      ? headerColor
-      : Colors.transparent;
+  Color get backgroundColor =>
+      SettingsSvc.settings.windowEffect.value == WindowEffect.disabled ? headerColor : Colors.transparent;
   bool get showArchived => controller.showArchivedChats;
   bool get showUnknown => controller.showUnknownSenders;
 
@@ -54,7 +53,9 @@ class _SamsungHeaderState extends CustomState<SamsungHeader, void, ConversationL
         automaticallyImplyLeading: false,
         flexibleSpace: LayoutBuilder(
           builder: (context, constraints) {
-            final double expandRatio = ((constraints.maxHeight - (kToolbarHeight + (kIsDesktop ? 20 : 0))) / (context.height / 3 - (kToolbarHeight + (kIsDesktop ? 20 : 0)))).clamp(0, 1);
+            final double expandRatio = ((constraints.maxHeight - (kToolbarHeight + (kIsDesktop ? 20 : 0))) /
+                    (context.height / 3 - (kToolbarHeight + (kIsDesktop ? 20 : 0))))
+                .clamp(0, 1);
             final animation = AlwaysStoppedAnimation(expandRatio);
 
             return Stack(
@@ -107,38 +108,36 @@ class _SamsungHeaderState extends CustomState<SamsungHeader, void, ConversationL
                                   Navigator.of(context).pop();
                                 },
                                 padding: EdgeInsets.zero,
-                                icon: buildBackButton(context)
-                            ),
-                          if (!showArchived && !showUnknown)
-                            const SizedBox.shrink(),
+                                icon: buildBackButton(context)),
+                          if (!showArchived && !showUnknown) const SizedBox.shrink(),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.end,
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               if (!showArchived && !showUnknown)
                                 Padding(
-                                  padding: const EdgeInsets.only(left: 2),
-                                  child: IconButton(
-                                    onPressed: () async {
-                                      controller.openCamera(context);
-                                    },
-                                    icon: Icon(
-                                      Icons.camera_alt_outlined,
-                                      color: context.theme.colorScheme.properOnSurface,
-                                    ),
-                                  )),
+                                    padding: const EdgeInsets.only(left: 2),
+                                    child: IconButton(
+                                      onPressed: () async {
+                                        controller.openCamera(context);
+                                      },
+                                      icon: Icon(
+                                        Icons.camera_alt_outlined,
+                                        color: context.theme.colorScheme.properOnSurface,
+                                      ),
+                                    )),
                               if (!showArchived && !showUnknown)
                                 IconButton(
-                                  onPressed: () async {
-                                    NavigationSvc.pushLeft(
-                                      context,
-                                      SearchView(),
-                                    );
-                                  },
-                                  icon: Icon(
-                                    Icons.search,
-                                    color: context.theme.colorScheme.properOnSurface,
-                                  )),
+                                    onPressed: () async {
+                                      NavigationSvc.pushLeft(
+                                        context,
+                                        SearchView(),
+                                      );
+                                    },
+                                    icon: Icon(
+                                      Icons.search,
+                                      color: context.theme.colorScheme.properOnSurface,
+                                    )),
                               if (!showArchived && !showUnknown)
                                 const Padding(
                                   padding: EdgeInsets.only(right: 8.0),
@@ -181,16 +180,16 @@ class _ExpandedHeaderTextState extends CustomState<ExpandedHeaderText, void, Con
     return Obx(() {
       final unreadChats = ChatsSvc.unreadCount.value;
       return Text(
-          controller.selectedChats.isNotEmpty
-              ? "${controller.selectedChats.length} selected"
-              : controller.showArchivedChats
-              ? "Archived"
-              : controller.showUnknownSenders
-              ? "Unknown Senders"
-              : unreadChats > 0
-              ? "$unreadChats unread message${unreadChats > 1 ? "s" : ""}"
-              : "Messages",
-          style: context.theme.textTheme.displaySmall!.copyWith(color: context.theme.colorScheme.onBackground),
+        controller.selectedChats.isNotEmpty
+            ? "${controller.selectedChats.length} selected"
+            : controller.showArchivedChats
+                ? "Archived"
+                : controller.showUnknownSenders
+                    ? "Unknown Senders"
+                    : unreadChats > 0
+                        ? "$unreadChats unread message${unreadChats > 1 ? "s" : ""}"
+                        : "Messages",
+        style: context.theme.textTheme.displaySmall!.copyWith(color: context.theme.colorScheme.onBackground),
         textAlign: TextAlign.center,
       );
     });

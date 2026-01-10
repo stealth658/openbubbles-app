@@ -7,13 +7,10 @@ class SyncActions {
     try {
       int syncStart = SettingsSvc.settings.lastIncrementalSync.value;
       int startRowId = SettingsSvc.settings.lastIncrementalSyncRowId.value;
-      
-      final incrementalSyncManager = IncrementalSyncManager(
-        startTimestamp: syncStart, 
-        startRowId: startRowId, 
-        saveMarker: true
-      );
-      
+
+      final incrementalSyncManager =
+          IncrementalSyncManager(startTimestamp: syncStart, startRowId: startRowId, saveMarker: true);
+
       await incrementalSyncManager.start();
       return incrementalSyncManager.syncedChats.values.map((e) => e.id!).toList();
     } catch (ex, s) {

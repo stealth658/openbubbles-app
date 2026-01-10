@@ -34,10 +34,10 @@ class MessageWidgetController extends StatefulController with GetSingleTickerPro
   bool built = false;
 
   static const maxBubbleSizeFactor = 0.75;
-  
+
   /// Granular update flags to minimize re-renders
   /// Only triggers rebuilds for specific components that need updating
-  /// 
+  ///
   /// - addedChanged: Message added to chat (temp message)
   /// - sentChanged: HTTP request completed
   /// - deliveredChanged: Delivery status received
@@ -48,7 +48,7 @@ class MessageWidgetController extends StatefulController with GetSingleTickerPro
   /// - threadRepliesChanged: Thread reply count changed
   /// - editChanged: Message edited
   /// - recipientNotifiedChanged: Recipient notification status changed
-  /// 
+  ///
   /// This avoids unnecessary full MessageHolder rebuilds which cause scrolling jank
   final RxBool addedChanged = false.obs;
   final RxBool sentChanged = false.obs;
@@ -60,12 +60,12 @@ class MessageWidgetController extends StatefulController with GetSingleTickerPro
   final RxBool threadRepliesChanged = false.obs;
   final RxBool editChanged = false.obs;
   final RxBool recipientNotifiedChanged = false.obs;
-  
+
   /// Per-message update stream for targeted component updates
   /// Replaces global eventDispatcher to reduce O(n) listener overhead
   final StreamController<MessageUpdateEvent> _updateStream = StreamController<MessageUpdateEvent>.broadcast();
   Stream<MessageUpdateEvent> get updateStream => _updateStream.stream;
-  
+
   /// Emit a message update event
   /// Used by ActionHandler and other services to notify of message state changes
   void emitUpdateEvent(MessageUpdateType type) {
@@ -74,7 +74,7 @@ class MessageWidgetController extends StatefulController with GetSingleTickerPro
       message: message,
     ));
   }
-  
+
   /// Cache for parsed message parts to avoid repeated expensive parsing
   /// Set to false when message content changes, forcing a rebuild on next access
   bool _partsCached = false;
@@ -132,10 +132,10 @@ class MessageWidgetController extends StatefulController with GetSingleTickerPro
   void buildMessageParts({bool force = false}) {
     // Skip if already cached and not forced
     if (_partsCached && !force) return;
-    
+
     // Clear parts for fresh build
     parts.clear();
-    
+
     // go through the attributed body
     if (message.attributedBody.firstOrNull?.runs.isNotEmpty ?? false) {
       parts = attributedBodyToMessagePart(message.attributedBody.first);
@@ -220,7 +220,7 @@ class MessageWidgetController extends StatefulController with GetSingleTickerPro
         Attachment? foundAttachment;
         if (e.isAttachment && (cvController?.chat != null || ChatsSvc.activeChat != null)) {
           final attachmentGuid = e.attributes!.attachmentGuid!;
-          
+
           // First check message.attachments (loaded by Phase 1)
           foundAttachment = message.attachments.firstWhereOrNull((a) => a?.guid == attachmentGuid);
           if (foundAttachment == null) {
@@ -231,7 +231,7 @@ class MessageWidgetController extends StatefulController with GetSingleTickerPro
             foundAttachment ??= await Attachment.findOneAsync(attachmentGuid);
           }
         }
-        
+
         list.add(MessagePart(
           subject: i == 0 ? message.subject : null,
           text: e.isAttachment ? null : mainString.substring(e.range.first, e.range.first + e.range.last),
@@ -254,37 +254,37 @@ class MessageWidgetController extends StatefulController with GetSingleTickerPro
   void updateMessage(Message newItem) {
     final chat = message.chat.target?.guid ?? cvController?.chat.guid ?? ChatsSvc.activeChat!.chat.guid;
     final oldGuid = message.guid;
-    
+
     // Handle temp message guid replacement - requires full rebuild for color change
     if (newItem.guid != oldGuid && oldGuid!.contains("temp")) {
       message = Message.merge(newItem, message);
       MessagesSvc(chat).updateMessage(message, oldGuid: oldGuid);
       _partsCached = false; // Invalidate cache
       buildMessageParts(force: true);
-      
+
       // Trigger content widget rebuilds to update bubble color from dark to normal
       // This happens once per sent message, so performance impact is minimal
       updateWidgets<TextBubble>(null);
       updateWidgets<InteractiveHolder>(null);
-      
+
       if (message.isFromMe! && message.attachments.isNotEmpty) {
         updateWidgets<AttachmentHolder>(null);
       }
       return;
     }
-    
+
     // Track what changed to minimize updates
     final hasDeliveryChanged = newItem.dateDelivered != message.dateDelivered;
     final hasReadChanged = newItem.dateRead != message.dateRead;
     final hasNotifyChanged = newItem.didNotifyRecipient != message.didNotifyRecipient;
     final hasEdited = newItem.dateEdited != message.dateEdited;
     final hasErrorChanged = newItem.error != message.error;
-    
+
     // Handle delivery/read status changes (lightweight update)
     if (hasDeliveryChanged || hasReadChanged || hasNotifyChanged) {
       message = Message.merge(newItem, message);
       MessagesSvc(chat).updateMessage(message);
-      
+
       // Trigger specific update types based on what changed
       if (hasDeliveryChanged) {
         deliveredChanged.toggle();
@@ -293,7 +293,7 @@ class MessageWidgetController extends StatefulController with GetSingleTickerPro
           message: message,
         ));
       }
-      
+
       if (hasReadChanged) {
         readChanged.toggle();
         _updateStream.add(MessageUpdateEvent(
@@ -301,7 +301,7 @@ class MessageWidgetController extends StatefulController with GetSingleTickerPro
           message: message,
         ));
       }
-      
+
       if (hasNotifyChanged) {
         recipientNotifiedChanged.toggle();
         _updateStream.add(MessageUpdateEvent(
@@ -309,7 +309,7 @@ class MessageWidgetController extends StatefulController with GetSingleTickerPro
           message: message,
         ));
       }
-      
+
       // Update the latest 2 messages in case their indicators need to go away
       final messages = MessagesSvc(chat)
           .struct
@@ -336,7 +336,7 @@ class MessageWidgetController extends StatefulController with GetSingleTickerPro
           }
         }
       }
-      
+
       // If message was also edited, rebuild parts and update full holder
       if (hasEdited) {
         _partsCached = false;
@@ -354,7 +354,7 @@ class MessageWidgetController extends StatefulController with GetSingleTickerPro
       }
       return;
     }
-    
+
     // Handle content changes (edits) - requires full rebuild
     if (hasEdited) {
       message = Message.merge(newItem, message);
@@ -373,7 +373,7 @@ class MessageWidgetController extends StatefulController with GetSingleTickerPro
       ));
       return;
     }
-    
+
     // Handle error state changes (lightweight update - just icon)
     if (hasErrorChanged) {
       message = Message.merge(newItem, message);
@@ -398,25 +398,27 @@ class MessageWidgetController extends StatefulController with GetSingleTickerPro
 
   void updateAssociatedMessage(Message newItem, {bool updateHolder = true, String? tempGuid}) {
     // First try to find by ID (for normal updates)
-    int index = message.associatedMessages.indexWhere((e) => (e.id == newItem.id && e.id != null) || (tempGuid != null && e.guid == tempGuid));
-    
+    int index = message.associatedMessages
+        .indexWhere((e) => (e.id == newItem.id && e.id != null) || (tempGuid != null && e.guid == tempGuid));
+
     // If not found by ID or temp GUID, check if this is replacing a temp reaction
     // Temp reactions have GUID starting with "temp-" or "error-" and no database ID
     // The only alternative to this would be to
     if (index < 0) {
-      index = message.associatedMessages.indexWhere((e) => 
-        (e.guid?.startsWith("temp-") == true || e.guid?.startsWith("error-") == true) &&
-        e.associatedMessageType == newItem.associatedMessageType &&
-        (e.associatedMessagePart ?? 0) == (newItem.associatedMessagePart ?? 0)
-      );
+      index = message.associatedMessages.indexWhere((e) =>
+          (e.guid?.startsWith("temp-") == true || e.guid?.startsWith("error-") == true) &&
+          e.associatedMessageType == newItem.associatedMessageType &&
+          (e.associatedMessagePart ?? 0) == (newItem.associatedMessagePart ?? 0));
     }
-    
+
     if (index >= 0) {
       message.associatedMessages[index] = newItem;
-      Logger.debug("[MWC] Updated existing reaction for ${message.guid}: ${newItem.associatedMessageType}", tag: "MessageReactivity");
+      Logger.debug("[MWC] Updated existing reaction for ${message.guid}: ${newItem.associatedMessageType}",
+          tag: "MessageReactivity");
     } else {
       message.associatedMessages.add(newItem);
-      Logger.debug("[MWC] Added new reaction to ${message.guid}: ${newItem.associatedMessageType}", tag: "MessageReactivity");
+      Logger.debug("[MWC] Added new reaction to ${message.guid}: ${newItem.associatedMessageType}",
+          tag: "MessageReactivity");
     }
     if (updateHolder) {
       // Use granular update instead of full MessageHolder rebuild
@@ -425,7 +427,9 @@ class MessageWidgetController extends StatefulController with GetSingleTickerPro
         type: MessageUpdateType.reaction,
         message: message,
       ));
-      Logger.debug("[MWC] Triggered reaction update for ${message.guid} (now has ${message.associatedMessages.length} reactions)", tag: "MessageReactivity");
+      Logger.debug(
+          "[MWC] Triggered reaction update for ${message.guid} (now has ${message.associatedMessages.length} reactions)",
+          tag: "MessageReactivity");
     }
   }
 
@@ -442,16 +446,16 @@ class MessageWidgetController extends StatefulController with GetSingleTickerPro
 
 /// Enum defining types of message updates for targeted component rebuilds
 enum MessageUpdateType {
-  added,              // User sent message (temp, HTTP request not completed)
-  sent,               // HTTP request completed successfully
-  delivered,          // Delivery status received (dateDelivered set or isDelivered = true)
-  read,               // Read receipt received (dateRead set)
-  error,              // Error occurred (message.error set or HTTP request failed)
-  reaction,           // Reaction added/removed
-  threadReply,        // Thread reply added
-  edit,               // Message edited (dateEdited set)
-  recipientNotified,  // Recipient was notified (didNotifyRecipient set)
-  content,            // Message content changed (text, parts, etc.)
+  added, // User sent message (temp, HTTP request not completed)
+  sent, // HTTP request completed successfully
+  delivered, // Delivery status received (dateDelivered set or isDelivered = true)
+  read, // Read receipt received (dateRead set)
+  error, // Error occurred (message.error set or HTTP request failed)
+  reaction, // Reaction added/removed
+  threadReply, // Thread reply added
+  edit, // Message edited (dateEdited set)
+  recipientNotified, // Recipient was notified (didNotifyRecipient set)
+  content, // Message content changed (text, parts, etc.)
 }
 
 /// Event emitted when a message is updated
@@ -459,7 +463,7 @@ enum MessageUpdateType {
 class MessageUpdateEvent {
   final MessageUpdateType type;
   final Message message;
-  
+
   MessageUpdateEvent({
     required this.type,
     required this.message,

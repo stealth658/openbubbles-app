@@ -1,25 +1,25 @@
 /// Enum representing events that can be emitted from the isolate to the main thread
-/// 
+///
 /// Usage from main thread:
 /// ```dart
 /// // Register a listener
 /// GetIt.I<GlobalIsolate>().addEventListener(IsolateEvent.socketMessage, (data) {
 ///   print('Socket message received: $data');
 /// });
-/// 
+///
 /// // Remove a specific listener
 /// GetIt.I<GlobalIsolate>().removeEventListener(IsolateEvent.socketMessage, myListener);
-/// 
+///
 /// // Clear all listeners for an event
 /// GetIt.I<GlobalIsolate>().removeAllEventListeners(IsolateEvent.socketMessage);
-/// 
+///
 /// // Clear all listeners
 /// GetIt.I<GlobalIsolate>().clearAllEventListeners();
-/// 
+///
 /// // Close the isolate and clear listeners
 /// GetIt.I<GlobalIsolate>().close();
 /// ```
-/// 
+///
 /// Usage from isolate thread:
 /// ```dart
 /// // Emit an event to the main thread

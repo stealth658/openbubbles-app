@@ -11,7 +11,7 @@ class ReactionHolder extends StatefulWidget {
     required this.reactions,
     required this.message,
   });
-  
+
   final Iterable<Message> reactions;
   final Message message;
 
@@ -21,16 +21,16 @@ class ReactionHolder extends StatefulWidget {
 
 class _ReactionHolderState extends OptimizedState<ReactionHolder> {
   Iterable<Message> get reactions => getUniqueReactionMessages(widget.reactions.toList());
-  
+
   // Cache the unique reactions to prevent unnecessary rebuilds
   late List<Message> _cachedReactions;
-  
+
   @override
   void initState() {
     super.initState();
     _cachedReactions = reactions.toList();
   }
-  
+
   @override
   void didUpdateWidget(ReactionHolder oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -39,7 +39,7 @@ class _ReactionHolderState extends OptimizedState<ReactionHolder> {
       _cachedReactions = reactions.toList();
     }
   }
-  
+
   /// Check if two reaction lists are equal by comparing GUIDs
   /// This prevents unnecessary rebuilds when the same data is passed
   bool _reactionsEqual(Iterable<Message> a, Iterable<Message> b) {
@@ -64,23 +64,29 @@ class _ReactionHolderState extends OptimizedState<ReactionHolder> {
       width: 35,
       child: Stack(
         clipBehavior: Clip.none,
-        children: _cachedReactions.asMap().entries.map((entry) {
-          final i = entry.key;
-          final e = entry.value;
-          return Positioned(
-            key: ValueKey(e.guid),
-            top: 0,
-            left: !widget.message.isFromMe! ? null : -i * 2.0,
-            right: widget.message.isFromMe! ? null : -i * 2.0,
-            child: DeferPointer(
-              child: ReactionWidget(
-                message: widget.message,
-                reaction: e,
-                reactions: _cachedReactions,
-              ),
-            ),
-          );
-        }).toList().reversed.toList(),
+        children: _cachedReactions
+            .asMap()
+            .entries
+            .map((entry) {
+              final i = entry.key;
+              final e = entry.value;
+              return Positioned(
+                key: ValueKey(e.guid),
+                top: 0,
+                left: !widget.message.isFromMe! ? null : -i * 2.0,
+                right: widget.message.isFromMe! ? null : -i * 2.0,
+                child: DeferPointer(
+                  child: ReactionWidget(
+                    message: widget.message,
+                    reaction: e,
+                    reactions: _cachedReactions,
+                  ),
+                ),
+              );
+            })
+            .toList()
+            .reversed
+            .toList(),
       ),
     );
   }

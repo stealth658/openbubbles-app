@@ -83,7 +83,8 @@ class IntentsService {
         return;
       default:
         if (intent.data?.startsWith("imessage://") ?? false) {
-          final uri = Uri.tryParse(intent.data!.replaceFirst("imessage://", "imessage:").replaceFirst("&body=", "?body="));
+          final uri =
+              Uri.tryParse(intent.data!.replaceFirst("imessage://", "imessage:").replaceFirst("&body=", "?body="));
           if (uri != null) {
             final address = uri.path;
             final handle = Handle.findOne(addressAndService: Tuple2(address, "iMessage"));
@@ -133,8 +134,7 @@ class IntentsService {
                 ),
               ),
             );
-          }
-      );
+          });
       hideFaceTimeOverlay(callUuid);
     }
 
@@ -195,7 +195,8 @@ class IntentsService {
         ),
       );
     } else {
-      Logger.debug("Opening existing chat (Attachments: ${attachments.length}; Text: ${text?.shorten(10) ?? 'N/A'})", tag: "IntentsService");
+      Logger.debug("Opening existing chat (Attachments: ${attachments.length}; Text: ${text?.shorten(10) ?? 'N/A'})",
+          tag: "IntentsService");
       final chat = Chat.findOne(guid: guid);
       if (chat == null) {
         Logger.debug("Chat not found with guid: $guid", tag: "IntentsService");

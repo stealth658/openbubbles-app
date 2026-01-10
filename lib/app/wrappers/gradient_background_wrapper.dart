@@ -18,7 +18,8 @@ class GradientBackground extends CustomStateful<ConversationViewController> {
   State<StatefulWidget> createState() => _GradientBackgroundState();
 }
 
-class _GradientBackgroundState extends CustomState<GradientBackground, void, ConversationViewController> with WidgetsBindingObserver {
+class _GradientBackgroundState extends CustomState<GradientBackground, void, ConversationViewController>
+    with WidgetsBindingObserver {
   late final RxBool adjustBackground = RxBool(ThemeSvc.isGradientBg(Get.context!));
 
   @override
@@ -45,20 +46,13 @@ class _GradientBackgroundState extends CustomState<GradientBackground, void, Con
       builder: (context, anim, child) {
         return Container(
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topRight,
-              end: Alignment.bottomLeft,
-              stops: [
-                anim.get("color1"),
-                anim.get("color2")
-              ], colors: [
-                context.theme.colorScheme
-                  .bubble(context, controller.chat.isIMessage)
-                  .withValues(alpha: 0.5),
-                context.theme.colorScheme.background,
-              ]
-            )
-          ),
+              gradient: LinearGradient(begin: Alignment.topRight, end: Alignment.bottomLeft, stops: [
+            anim.get("color1"),
+            anim.get("color2")
+          ], colors: [
+            context.theme.colorScheme.bubble(context, controller.chat.isIMessage).withValues(alpha: 0.5),
+            context.theme.colorScheme.background,
+          ])),
           child: child,
         );
       },

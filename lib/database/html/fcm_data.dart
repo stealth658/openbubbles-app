@@ -76,9 +76,5 @@ class FCMData {
       };
 
   bool get isNull =>
-      projectID == null ||
-      storageBucket == null ||
-      apiKey == null ||
-      clientID == null ||
-      applicationID == null;
+      projectID == null || storageBucket == null || apiKey == null || clientID == null || applicationID == null;
 }

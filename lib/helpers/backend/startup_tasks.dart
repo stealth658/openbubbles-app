@@ -224,7 +224,7 @@ class StartupTasks {
     GetIt.I.registerSingleton<ChatsService>(ChatsService());
     await ChatsSvc.init(headless: true);
     Logger.info("ChatsService ready");
-    
+
     Logger.info("Registering MethodChannelService...");
     GetIt.I.registerSingletonAsync<MethodChannelService>(() async {
       final channelService = MethodChannelService();
@@ -237,7 +237,7 @@ class StartupTasks {
     Logger.info("Registering HttpService...");
     GetIt.I.registerSingleton<HttpService>(HttpService());
     HttpSvc.init();
-    
+
     Logger.info("Global isolate services initialization complete");
   }
 
@@ -311,7 +311,7 @@ class StartupTasks {
     GetIt.I.registerSingleton<HttpService>(HttpService());
     HttpSvc.init();
     Logger.info("HttpService ready");
-    
+
     Logger.info("Sync isolate services initialization complete");
   }
 
@@ -388,7 +388,7 @@ class StartupTasks {
     });
     await GetIt.I.isReady<NotificationsService>();
     Logger.info("NotificationsService ready");
-    
+
     Logger.info("Registering MethodChannelService...");
     GetIt.I.registerSingletonAsync<MethodChannelService>(() async {
       final channelService = MethodChannelService();
@@ -415,7 +415,7 @@ class StartupTasks {
 
   static Future<void> onStartup() async {
     Logger.info("Running onStartup tasks...");
-    
+
     if (!SettingsSvc.settings.finishedSetup.value) {
       Logger.info("Setup not finished, skipping onStartup tasks");
       return;
@@ -473,7 +473,7 @@ class StartupTasks {
         await reviewFlow();
       });
     }
-    
+
     Logger.info("onStartup tasks complete");
   }
 
@@ -501,7 +501,8 @@ class StartupTasks {
     // Don't need to await these calls
     if (!Platform.isAndroid) {
       SyncSvc.startIncrementalSync();
-    } else if (!LifecycleSvc.hasResumed || (LifecycleSvc.currentState == AppLifecycleState.resumed && LifecycleSvc.wasPaused)) {
+    } else if (!LifecycleSvc.hasResumed ||
+        (LifecycleSvc.currentState == AppLifecycleState.resumed && LifecycleSvc.wasPaused)) {
       SyncSvc.startIncrementalSync();
     }
 
@@ -509,7 +510,7 @@ class StartupTasks {
       if (!LifecycleSvc.isBubble) {
         LifecycleSvc.createFakePort();
       }
-      
+
       SocketSvc.reconnect();
     }
 

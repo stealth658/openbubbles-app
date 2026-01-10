@@ -16,14 +16,14 @@ import 'package:path/path.dart' as p;
 class ContactV2Actions {
   /// Completer to ensure syncContactsToHandles only runs once at a time
   static Completer<List<int>>? _syncCompleter;
-  
+
   /// Generate multiple normalized variants of a phone number to handle country code mismatches
-  /// 
+  ///
   /// Returns a set of normalized phone numbers including:
   /// - The original normalized number (digits + plus sign only)
   /// - Variant without country code (if one exists)
   /// - Variant with country code removed but assuming it started with +
-  /// 
+  ///
   /// This handles cases where:
   /// - Contact has "1234567890" but Handle has "+11234567890"
   /// - Contact has "+11234567890" but Handle has "1234567890"
@@ -31,16 +31,16 @@ class ContactV2Actions {
   static Set<String> _getPhoneNumberVariants(String phone) {
     final variants = <String>{};
     final normalized = ContactV2.normalizePhoneNumber(phone);
-    
+
     if (normalized.isEmpty) return variants;
-    
+
     // Always include the base normalized version
     variants.add(normalized);
-    
+
     // If it starts with +, add variant without the +
     if (normalized.startsWith('+')) {
       variants.add(normalized.substring(1));
-      
+
       // Also try removing common country codes (1-3 digits after +)
       // Country codes can be 1-3 digits (e.g., +1, +44, +852, +1246)
       for (int i = 1; i <= 3 && i < normalized.length; i++) {
@@ -53,7 +53,7 @@ class ContactV2Actions {
       // If no +, try adding + and common country code lengths
       // This handles cases where the stored number doesn't have + but the contact does
       variants.add('+$normalized');
-      
+
       // Try removing 1-3 digit prefixes as potential country codes
       for (int i = 1; i <= 3 && i < normalized.length; i++) {
         final withoutPrefix = normalized.substring(i);
@@ -63,7 +63,7 @@ class ContactV2Actions {
         }
       }
     }
-    
+
     return variants;
   }
 
@@ -75,13 +75,12 @@ class ContactV2Actions {
       Logger.info('[ContactV2] Sync already in progress, waiting for completion...');
       return await _syncCompleter!.future;
     }
-    
+
     // Create a new completer for this sync operation
     _syncCompleter = Completer<List<int>>();
-    
+
     final startTime = DateTime.now().millisecondsSinceEpoch;
     final affectedHandleIds = <int>[];
-    
 
     try {
       // Step 1: Fetch contacts using FastContacts
@@ -131,14 +130,14 @@ class ContactV2Actions {
 
         final emailHandleMap = <String, List<Handle>>{};
         final phoneHandleMap = <String, List<Handle>>{};
-        
+
         for (final handle in allHandles) {
           final isEmail = handle.address.contains('@');
-          
+
           if (isEmail) {
             final normalized = ContactV2.normalizeEmail(handle.address);
             emailHandleMap.putIfAbsent(normalized, () => []).add(handle);
-            
+
             if (handle.formattedAddress != null) {
               final formattedNormalized = ContactV2.normalizeEmail(handle.formattedAddress!);
               if (formattedNormalized != normalized) {
@@ -151,7 +150,7 @@ class ContactV2Actions {
             for (final variant in variants) {
               phoneHandleMap.putIfAbsent(variant, () => []).add(handle);
             }
-            
+
             if (handle.formattedAddress != null) {
               final formattedVariants = _getPhoneNumberVariants(handle.formattedAddress!);
               for (final variant in formattedVariants) {
@@ -161,7 +160,8 @@ class ContactV2Actions {
           }
         }
 
-        Logger.info('[ContactV2] Built lookup maps: ${emailHandleMap.length} email keys, ${phoneHandleMap.length} phone variant keys');
+        Logger.info(
+            '[ContactV2] Built lookup maps: ${emailHandleMap.length} email keys, ${phoneHandleMap.length} phone variant keys');
 
         for (final rawContact in rawContacts) {
           // Normalize addresses
@@ -189,15 +189,13 @@ class ContactV2Actions {
           final avatarPath = avatarPaths[rawContact.id];
 
           // Check if contact already exists
-          final existingQuery = contactsBox
-              .query(ContactV2_.nativeContactId.equals(rawContact.id))
-              .build();
+          final existingQuery = contactsBox.query(ContactV2_.nativeContactId.equals(rawContact.id)).build();
           final existingContact = existingQuery.findFirst();
           existingQuery.close();
 
           ContactV2 contact;
           Set<int> existingHandleIds = {};
-          
+
           if (existingContact != null) {
             // Update existing contact
             contact = existingContact;
@@ -205,10 +203,10 @@ class ContactV2Actions {
             contact.displayName = rawContact.displayName;
             contact.addresses = normalizedAddresses.toList();
             contact.avatarPath = avatarPath;
-            
+
             // Track existing handles to detect changes
             existingHandleIds = contact.handles.map((h) => h.id).whereType<int>().toSet();
-            
+
             if (nameChanged) {
               // Mark all existing handles for this contact as affected (name changed)
               affectedHandleIds.addAll(existingHandleIds);
@@ -225,10 +223,10 @@ class ContactV2Actions {
 
           // Step 3: Match contact to handles using lookup maps (O(addresses) instead of O(addresses × handles))
           final matchedHandles = <Handle>{};
-          
+
           for (final address in normalizedAddresses) {
             final isEmail = address.contains('@');
-            
+
             if (isEmail) {
               // Direct lookup for emails
               final handles = emailHandleMap[address];
@@ -249,7 +247,7 @@ class ContactV2Actions {
 
           // Compare new handles with existing handles to detect changes
           final newHandleIds = matchedHandles.map((h) => h.id).whereType<int>().toSet();
-          final hasChanges = existingContact == null || 
+          final hasChanges = existingContact == null ||
               existingHandleIds.length != newHandleIds.length ||
               !existingHandleIds.containsAll(newHandleIds);
 
@@ -257,7 +255,7 @@ class ContactV2Actions {
             // Only update if handles actually changed
             contact.handles.clear();
             contact.handles.addAll(matchedHandles);
-            
+
             // Mark all affected handles (both old and new)
             affectedHandleIds.addAll(existingHandleIds);
             affectedHandleIds.addAll(newHandleIds);
@@ -272,9 +270,7 @@ class ContactV2Actions {
             // Link handles to chats without handles
             final chatsToUpdate = <Chat>{};
             for (final handle in matchedHandles) {
-              final chatQuery = Database.chats
-                  .query(Chat_.guid.contains(';-;${handle.address}'))
-                  .build();
+              final chatQuery = Database.chats.query(Chat_.guid.contains(';-;${handle.address}')).build();
               final chats = chatQuery.find();
               chatQuery.close();
 
@@ -303,7 +299,7 @@ class ContactV2Actions {
       return affectedHandleIds;
     } catch (e, stack) {
       Logger.error('[ContactV2] Error fetching and matching contacts', error: e, trace: stack);
-      
+
       // Complete the completer with an empty list on error
       _syncCompleter?.complete([]);
       return [];
@@ -364,9 +360,7 @@ class ContactV2Actions {
 
     return await Database.runInTransaction(TxMode.read, () {
       final contactsBox = Database.contactsV2;
-      final query = contactsBox
-          .query(ContactV2_.nativeContactId.equals(nativeContactId))
-          .build();
+      final query = contactsBox.query(ContactV2_.nativeContactId.equals(nativeContactId)).build();
       query.limit = 1;
       final contact = query.findFirst();
       query.close();
@@ -375,7 +369,7 @@ class ContactV2Actions {
     });
   }
 
-    /// Get ContactV2 entities for a list of Handle IDs
+  /// Get ContactV2 entities for a list of Handle IDs
   static Future<List<Map<String, dynamic>>> getContactsForHandles(dynamic data) async {
     final dataMap = data as Map<dynamic, dynamic>;
     final handleIds = (dataMap['handleIds'] as List).cast<int>();
@@ -408,7 +402,7 @@ class ContactV2Actions {
   }
 
   /// Save a contact avatar to disk and return the file path
-  /// 
+  ///
   /// Optimizations:
   /// - Only writes if avatar doesn't exist or has changed
   /// - Uses file size comparison first (fast)
@@ -418,7 +412,7 @@ class ContactV2Actions {
       // Get the app's documents directory
       final appDocDir = Directory(Database.appDocPath);
       final avatarsDir = Directory(p.join(appDocDir.path, 'contact_avatars'));
-      
+
       // Create the directory if it doesn't exist
       if (!await avatarsDir.exists()) {
         await avatarsDir.create(recursive: true);
@@ -426,24 +420,24 @@ class ContactV2Actions {
 
       // Save the avatar with the contact ID as filename
       final avatarFile = File(p.join(avatarsDir.path, '$contactId.jpg'));
-      
+
       // Check if avatar already exists and compare it to avoid unnecessary writes
       if (await avatarFile.exists()) {
         final existingData = await avatarFile.readAsBytes();
-        
+
         // Quick size check first
         if (existingData.length == avatarData.length) {
           // If sizes match, do a hash comparison to be sure
           final existingHash = sha256.convert(existingData);
           final newHash = sha256.convert(avatarData);
-          
+
           if (existingHash == newHash) {
             // Avatar hasn't changed, return existing path without writing
             return avatarFile.path;
           }
         }
       }
-      
+
       // Avatar is new or has changed, write it to disk
       await avatarFile.writeAsBytes(avatarData);
 
@@ -461,15 +455,14 @@ class ContactV2Actions {
 
     return await Database.runInTransaction(TxMode.read, () {
       final contactsBox = Database.contactsV2;
-      
+
       // Normalize the search address
-      final normalized = address.contains('@') 
-          ? ContactV2.normalizeEmail(address)
-          : ContactV2.normalizePhoneNumber(address);
+      final normalized =
+          address.contains('@') ? ContactV2.normalizeEmail(address) : ContactV2.normalizePhoneNumber(address);
 
       // Search through all contacts for a match
       final allContacts = contactsBox.getAll();
-      
+
       for (final contact in allContacts) {
         if (contact.hasMatchingAddress(normalized)) {
           return contact.toMap();
@@ -515,7 +508,7 @@ class ContactV2Actions {
       // If not on disk, try to fetch it fresh
       if (!kIsWeb && !kIsDesktop) {
         Uint8List? avatar;
-        
+
         try {
           avatar = await FastContacts.getContactImage(nativeContactId, size: ContactImageSize.fullSize);
         } catch (e) {

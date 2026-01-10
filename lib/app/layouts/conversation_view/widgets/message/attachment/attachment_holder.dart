@@ -34,25 +34,20 @@ class AttachmentHolder extends CustomStateful<MessageWidgetController> {
   CustomState createState() => _AttachmentHolderState();
 }
 
-class _AttachmentHolderState
-    extends CustomState<AttachmentHolder, void, MessageWidgetController> {
+class _AttachmentHolderState extends CustomState<AttachmentHolder, void, MessageWidgetController> {
   MessagePart get part => widget.message;
   Message get message => controller.message;
   Message? get newerMessage => controller.newMessage;
   Attachment get attachment =>
-      message.attachments
-          .firstWhereOrNull((e) => e?.id == part.attachments.first.id) ??
-      MessagesSvc(
-              controller.cvController?.chat.guid ?? ChatsSvc.activeChat!.chat.guid)
+      message.attachments.firstWhereOrNull((e) => e?.id == part.attachments.first.id) ??
+      MessagesSvc(controller.cvController?.chat.guid ?? ChatsSvc.activeChat!.chat.guid)
           .struct
           .attachments
           .firstWhereOrNull((e) => e.id == part.attachments.first.id) ??
       part.attachments.first;
-  String? get audioTranscript =>
-      getAudioTranscriptsFromAttributedBody(message.attributedBody)[part.part];
+  String? get audioTranscript => getAudioTranscriptsFromAttributedBody(message.attributedBody)[part.part];
   late dynamic content;
-  late bool selected =
-      controller.cvController?.isSelected(message.guid!) ?? false;
+  late bool selected = controller.cvController?.isSelected(message.guid!) ?? false;
 
   @override
   void initState() {
@@ -63,8 +58,7 @@ class _AttachmentHolderState
           setState(() {
             selected = true;
           });
-        } else if (!controller.cvController!.isSelected(message.guid!) &&
-            selected) {
+        } else if (!controller.cvController!.isSelected(message.guid!) && selected) {
           setState(() {
             selected = false;
           });
@@ -77,8 +71,7 @@ class _AttachmentHolderState
 
   void updateContent() async {
     try {
-      if (content is AttachmentDownloadController && content.error != null)
-        return;
+      if (content is AttachmentDownloadController && content.error != null) return;
     } catch (ex) {/* lateInitializationException */}
     content = AttachmentsSvc.getContent(attachment, onComplete: onComplete);
 
@@ -98,8 +91,7 @@ class _AttachmentHolderState
         await AttachmentsSvc.canAutoDownload()) {
       if (mounted) {
         setState(() {
-          content = AttachmentDownloader.startDownload(content,
-              onComplete: onComplete);
+          content = AttachmentDownloader.startDownload(content, onComplete: onComplete);
         });
         // Listen to the controller's file observable for immediate updates
         if (content is AttachmentDownloadController) {
@@ -127,14 +119,11 @@ class _AttachmentHolderState
 
   @override
   Widget build(BuildContext context) {
-    final bool showTail = message.showTail(newerMessage) &&
-        part.part == controller.parts.length - 1;
-    final bool hideAttachments = SettingsSvc.settings.redactedMode.value &&
-        SettingsSvc.settings.hideAttachments.value;
+    final bool showTail = message.showTail(newerMessage) && part.part == controller.parts.length - 1;
+    final bool hideAttachments = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideAttachments.value;
     final bool isInReply = ReplyScope.maybeOf(context) != null;
     return ColorFiltered(
-      colorFilter: ColorFilter.mode(
-          context.theme.colorScheme.tertiaryContainer.withValues(alpha: 0.5),
+      colorFilter: ColorFilter.mode(context.theme.colorScheme.tertiaryContainer.withValues(alpha: 0.5),
           selected ? BlendMode.srcOver : BlendMode.dstOver),
       child: Material(
         color: Colors.transparent,
@@ -142,17 +131,13 @@ class _AttachmentHolderState
           onTap: content is PlatformFile
               ? null
               : () async {
-                  if (content is Attachment &&
-                      message.error == 0 &&
-                      !message.guid!.contains("temp")) {
+                  if (content is Attachment && message.error == 0 && !message.guid!.contains("temp")) {
                     setState(() {
-                      content = AttachmentDownloader.startDownload(content,
-                          onComplete: onComplete);
+                      content = AttachmentDownloader.startDownload(content, onComplete: onComplete);
                     });
                     // Listen to the controller's file observable for immediate updates
                     if (content is AttachmentDownloadController) {
-                      ever((content as AttachmentDownloadController).file,
-                          (file) {
+                      ever((content as AttachmentDownloadController).file, (file) {
                         if (file != null && mounted) {
                           onComplete(file);
                         }
@@ -164,17 +149,13 @@ class _AttachmentHolderState
                       return;
                     }
 
-                    Get.delete<AttachmentDownloadController>(
-                        tag: _content.attachment.guid);
+                    Get.delete<AttachmentDownloadController>(tag: _content.attachment.guid);
                     setState(() {
-                      content = AttachmentDownloader.startDownload(
-                          _content.attachment,
-                          onComplete: onComplete);
+                      content = AttachmentDownloader.startDownload(_content.attachment, onComplete: onComplete);
                     });
                     // Listen to the controller's file observable for immediate updates
                     if (content is AttachmentDownloadController) {
-                      ever((content as AttachmentDownloadController).file,
-                          (file) {
+                      ever((content as AttachmentDownloadController).file, (file) {
                         if (file != null && mounted) {
                           onComplete(file);
                         }
@@ -195,23 +176,15 @@ class _AttachmentHolderState
                 padding: content is PlatformFile && !hideAttachments
                     ? (showTail
                         ? EdgeInsets.zero
-                        : EdgeInsets.only(
-                            left: message.isFromMe! ? 0 : 10,
-                            right: message.isFromMe! ? 10 : 0))
+                        : EdgeInsets.only(left: message.isFromMe! ? 0 : 10, right: message.isFromMe! ? 10 : 0))
                     : isInReply
-                        ? const EdgeInsets.symmetric(
-                                vertical: 5, horizontal: 10)
-                            .add(EdgeInsets.only(
-                                left: message.isFromMe! ? 0 : 10,
-                                right: message.isFromMe! ? 10 : 0))
+                        ? const EdgeInsets.symmetric(vertical: 5, horizontal: 10)
+                            .add(EdgeInsets.only(left: message.isFromMe! ? 0 : 10, right: message.isFromMe! ? 10 : 0))
                         // Outgoing message with progress indicator
                         : content is AttachmentWithProgress && message.isFromMe!
                             ? EdgeInsets.zero
-                            : const EdgeInsets.symmetric(
-                                vertical: 10, horizontal: 15)
-                                  .add(EdgeInsets.only(
-                                      left: message.isFromMe! ? 0 : 10,
-                                      right: message.isFromMe! ? 10 : 0)),
+                            : const EdgeInsets.symmetric(vertical: 10, horizontal: 15).add(
+                                EdgeInsets.only(left: message.isFromMe! ? 0 : 10, right: message.isFromMe! ? 10 : 0)),
                 child: AnimatedSize(
                   duration: const Duration(milliseconds: 150),
                   child: Center(
@@ -223,8 +196,7 @@ class _AttachmentHolderState
                           if (content is AttachmentWithProgress) {
                             final AttachmentWithProgress _content = content;
                             final PlatformFile file = _content.file;
-                            final Tuple2<String, RxDouble> progress =
-                                _content.progress;
+                            final Tuple2<String, RxDouble> progress = _content.progress;
 
                             // Display the image/video with lower opacity and progress overlay
                             return Stack(
@@ -232,91 +204,62 @@ class _AttachmentHolderState
                                 // Background image/video with lower opacity
                                 Opacity(
                                   opacity: 0.3,
-                                  child: _buildAttachmentContent(
-                                      file, context, showTail),
+                                  child: _buildAttachmentContent(file, context, showTail),
                                 ),
                                 // Progress overlay
                                 Positioned.fill(
                                   child: Container(
-                                    color: context
-                                        .theme.colorScheme.properSurface
-                                        .withValues(alpha: 0.5),
+                                    color: context.theme.colorScheme.properSurface.withValues(alpha: 0.5),
                                     child: Center(
                                       child: Padding(
                                         padding: const EdgeInsets.all(10.0),
                                         child: Obx(() {
                                           return Column(
                                             mainAxisSize: MainAxisSize.min,
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
+                                            mainAxisAlignment: MainAxisAlignment.center,
                                             children: <Widget>[
-                                            SizedBox(
-                                              height: 40,
-                                              width: 40,
-                                              child: Center(
-                                                child: CircleProgressBar(
-                                                  value: progress.item2.value,
-                                                  backgroundColor: context.theme
-                                                      .colorScheme.outline,
-                                                  foregroundColor: context
-                                                      .theme
-                                                      .colorScheme
-                                                      .properOnSurface,
+                                              SizedBox(
+                                                height: 40,
+                                                width: 40,
+                                                child: Center(
+                                                  child: CircleProgressBar(
+                                                    value: progress.item2.value,
+                                                    backgroundColor: context.theme.colorScheme.outline,
+                                                    foregroundColor: context.theme.colorScheme.properOnSurface,
+                                                  ),
                                                 ),
                                               ),
-                                            ),
-                                            const SizedBox(height: 10),
-                                            Text(
-                                              "${(attachment.totalBytes! * min(progress.item2.value, 1.0)).toDouble().getFriendlySize(withSuffix: false)} / ${attachment.getFriendlySize()}",
-                                              style: context
-                                                  .theme.textTheme.bodyLarge!
-                                                  .copyWith(
-                                                      color: context
-                                                          .theme
-                                                          .colorScheme
-                                                          .properOnSurface),
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                              textAlign: TextAlign.center,
-                                            ),
-                                            if (message.error == 0)
-                                              TextButton(
-                                                style: TextButton.styleFrom(
-                                                  visualDensity:
-                                                      VisualDensity.compact,
-                                                ),
-                                                child: progress.item2.value < 1
-                                                    ? Text("Cancel",
-                                                        style: context
-                                                            .theme
-                                                            .textTheme
-                                                            .bodyLarge!
-                                                            .copyWith(
-                                                                color: context
-                                                                    .theme
-                                                                    .colorScheme
-                                                                    .primary))
-                                                    : Text(
-                                                        "Waiting for iMessage...",
-                                                        style: context
-                                                            .theme
-                                                            .textTheme
-                                                            .bodyLarge!,
-                                                        textAlign:
-                                                            TextAlign.center),
-                                                onPressed:
-                                                    progress.item2.value < 1
-                                                        ? () {
-                                                            MessageHandlerSvc
-                                                                .latestCancelToken
-                                                                ?.cancel(
-                                                                    "User cancelled send.");
-                                                          }
-                                                        : null,
+                                              const SizedBox(height: 10),
+                                              Text(
+                                                "${(attachment.totalBytes! * min(progress.item2.value, 1.0)).toDouble().getFriendlySize(withSuffix: false)} / ${attachment.getFriendlySize()}",
+                                                style: context.theme.textTheme.bodyLarge!
+                                                    .copyWith(color: context.theme.colorScheme.properOnSurface),
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                                textAlign: TextAlign.center,
                                               ),
-                                          ],
-                                        );
-                                      }),
+                                              if (message.error == 0)
+                                                TextButton(
+                                                  style: TextButton.styleFrom(
+                                                    visualDensity: VisualDensity.compact,
+                                                  ),
+                                                  child: progress.item2.value < 1
+                                                      ? Text("Cancel",
+                                                          style: context.theme.textTheme.bodyLarge!
+                                                              .copyWith(color: context.theme.colorScheme.primary))
+                                                      : Text("Waiting for iMessage...",
+                                                          style: context.theme.textTheme.bodyLarge!,
+                                                          textAlign: TextAlign.center),
+                                                  onPressed: progress.item2.value < 1
+                                                      ? () {
+                                                          MessageHandlerSvc.latestCancelToken
+                                                              ?.cancel("User cancelled send.");
+                                                        }
+                                                      : null,
+                                                ),
+                                            ],
+                                          );
+                                        }),
                                       ),
                                     ),
                                   ),
@@ -330,10 +273,7 @@ class _AttachmentHolderState
                                   left: 10.0,
                                   top: 10.0,
                                   right: 10.0,
-                                  bottom: _content.item2.value < 1 &&
-                                          message.error == 0
-                                      ? 0
-                                      : 10.0),
+                                  bottom: _content.item2.value < 1 && message.error == 0 ? 0 : 10.0),
                               child: Obx(() {
                                 return Column(
                                   mainAxisSize: MainAxisSize.min,
@@ -344,10 +284,8 @@ class _AttachmentHolderState
                                       child: Center(
                                         child: CircleProgressBar(
                                           value: _content.item2.value,
-                                          backgroundColor:
-                                              context.theme.colorScheme.outline,
-                                          foregroundColor: context.theme
-                                              .colorScheme.properOnSurface,
+                                          backgroundColor: context.theme.colorScheme.outline,
+                                          foregroundColor: context.theme.colorScheme.properOnSurface,
                                         ),
                                       ),
                                     ),
@@ -355,9 +293,7 @@ class _AttachmentHolderState
                                     Text(
                                       "${(attachment.totalBytes! * min(_content.item2.value, 1.0)).toDouble().getFriendlySize(withSuffix: false)} / ${attachment.getFriendlySize()}",
                                       style: context.theme.textTheme.bodyLarge!
-                                          .copyWith(
-                                              color: context.theme.colorScheme
-                                                  .properOnSurface),
+                                          .copyWith(color: context.theme.colorScheme.properOnSurface),
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
                                       textAlign: TextAlign.center,
@@ -369,23 +305,13 @@ class _AttachmentHolderState
                                         ),
                                         child: _content.item2.value < 1
                                             ? Text("Cancel",
-                                                style: context
-                                                    .theme.textTheme.bodyLarge!
-                                                    .copyWith(
-                                                        color: context
-                                                            .theme
-                                                            .colorScheme
-                                                            .primary))
+                                                style: context.theme.textTheme.bodyLarge!
+                                                    .copyWith(color: context.theme.colorScheme.primary))
                                             : Text("Waiting for iMessage...",
-                                                style: context
-                                                    .theme.textTheme.bodyLarge!,
-                                                textAlign: TextAlign.center),
+                                                style: context.theme.textTheme.bodyLarge!, textAlign: TextAlign.center),
                                         onPressed: _content.item2.value < 1
                                             ? () {
-                                                MessageHandlerSvc
-                                                    .latestCancelToken
-                                                    ?.cancel(
-                                                        "User cancelled send.");
+                                                MessageHandlerSvc.latestCancelToken?.cancel("User cancelled send.");
                                               }
                                             : null,
                                       ),
@@ -394,8 +320,7 @@ class _AttachmentHolderState
                               }),
                             );
                           } else if (content is Attachment || hideAttachments) {
-                            final Attachment _content =
-                                hideAttachments ? attachment : content;
+                            final Attachment _content = hideAttachments ? attachment : content;
                             return Column(
                               mainAxisSize: MainAxisSize.min,
                               children: <Widget>[
@@ -405,30 +330,18 @@ class _AttachmentHolderState
                                     width: 40,
                                     child: Center(
                                         child: Obx(() => Icon(
-                                            message.error > 0 ||
-                                                    message.guid!
-                                                        .startsWith("error-")
-                                                ? (iOS
-                                                    ? CupertinoIcons
-                                                        .exclamationmark_circle
-                                                    : Icons.error_outline)
-                                                : (iOS
-                                                    ? CupertinoIcons
-                                                        .cloud_download
-                                                    : Icons
-                                                        .cloud_download_outlined),
+                                            message.error > 0 || message.guid!.startsWith("error-")
+                                                ? (iOS ? CupertinoIcons.exclamationmark_circle : Icons.error_outline)
+                                                : (iOS ? CupertinoIcons.cloud_download : Icons.cloud_download_outlined),
                                             size: 30))),
                                   ),
                                 const SizedBox(height: 5),
                                 Obx(() => Text(
-                                      message.error > 0 ||
-                                              message.guid!.startsWith("error-")
+                                      message.error > 0 || message.guid!.startsWith("error-")
                                           ? "Send Failed!"
                                           : (_content.mimeType ?? ""),
                                       style: context.theme.textTheme.bodyLarge!
-                                          .copyWith(
-                                              color: context.theme.colorScheme
-                                                  .properOnSurface),
+                                          .copyWith(color: context.theme.colorScheme.properOnSurface),
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
                                     )),
@@ -436,16 +349,13 @@ class _AttachmentHolderState
                                 Text(
                                   _content.getFriendlySize(),
                                   style: context.theme.textTheme.bodyMedium!
-                                      .copyWith(
-                                          color: context.theme.colorScheme
-                                              .properOnSurface),
+                                      .copyWith(color: context.theme.colorScheme.properOnSurface),
                                   maxLines: 1,
                                 ),
                               ],
                             );
                           } else if (content is AttachmentDownloadController) {
-                            final AttachmentDownloadController _content =
-                                content;
+                            final AttachmentDownloadController _content = content;
                             return Padding(
                               padding: EdgeInsets.only(
                                   left: 20.0,
@@ -453,12 +363,9 @@ class _AttachmentHolderState
                                   right: 20.0,
                                   bottom: isInReply ? 10.0 : 20.0),
                               child: Obx(() {
-                                final isError = _content.state.value ==
-                                    AttachmentDownloadState.error;
-                                final isProcessing = _content.state.value ==
-                                    AttachmentDownloadState.processing;
-                                final isQueued = _content.state.value ==
-                                    AttachmentDownloadState.queued;
+                                final isError = _content.state.value == AttachmentDownloadState.error;
+                                final isProcessing = _content.state.value == AttachmentDownloadState.processing;
+                                final isQueued = _content.state.value == AttachmentDownloadState.queued;
 
                                 return Column(
                                   mainAxisSize: MainAxisSize.min,
@@ -468,43 +375,21 @@ class _AttachmentHolderState
                                       width: 40,
                                       child: Center(
                                         child: isError
-                                            ? Icon(
-                                                iOS
-                                                    ? CupertinoIcons
-                                                        .arrow_clockwise
-                                                    : Icons.refresh,
-                                                size: 30)
+                                            ? Icon(iOS ? CupertinoIcons.arrow_clockwise : Icons.refresh, size: 30)
                                             : isProcessing
                                                 ? (iOS
-                                                    ? const CupertinoActivityIndicator(
-                                                        radius: 14)
+                                                    ? const CupertinoActivityIndicator(radius: 14)
                                                     : const CircularProgressIndicator())
                                                 : isQueued
-                                                    ? Icon(
-                                                        iOS
-                                                            ? CupertinoIcons
-                                                                .clock
-                                                            : Icons.schedule,
-                                                        size: 30)
+                                                    ? Icon(iOS ? CupertinoIcons.clock : Icons.schedule, size: 30)
                                                     : CircleProgressBar(
-                                                        value: _content
-                                                                .progress.value
-                                                                ?.toDouble() ??
-                                                            0,
-                                                        backgroundColor: context
-                                                            .theme
-                                                            .colorScheme
-                                                            .outline,
-                                                        foregroundColor: context
-                                                            .theme
-                                                            .colorScheme
-                                                            .properOnSurface,
+                                                        value: _content.progress.value?.toDouble() ?? 0,
+                                                        backgroundColor: context.theme.colorScheme.outline,
+                                                        foregroundColor: context.theme.colorScheme.properOnSurface,
                                                       ),
                                       ),
                                     ),
-                                    isError
-                                        ? const SizedBox(height: 10)
-                                        : const SizedBox(height: 5),
+                                    isError ? const SizedBox(height: 10) : const SizedBox(height: 5),
                                     Text(
                                       isError
                                           ? "Failed to download!"
@@ -512,13 +397,9 @@ class _AttachmentHolderState
                                               ? "Processing"
                                               : isQueued
                                                   ? "Queued"
-                                                  : (_content.attachment
-                                                          .mimeType ??
-                                                      ""),
+                                                  : (_content.attachment.mimeType ?? ""),
                                       style: context.theme.textTheme.bodyLarge!
-                                          .copyWith(
-                                              color: context.theme.colorScheme
-                                                  .properOnSurface),
+                                          .copyWith(color: context.theme.colorScheme.properOnSurface),
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
                                       textAlign: TextAlign.center,
@@ -529,31 +410,22 @@ class _AttachmentHolderState
                             );
                           } else if (content is PlatformFile) {
                             final PlatformFile _content = content;
-                            if (attachment.mimeStart == "image" &&
-                                !SettingsSvc.settings.highPerfMode.value) {
+                            if (attachment.mimeStart == "image" && !SettingsSvc.settings.highPerfMode.value) {
                               return OpenContainer(
                                   tappable: false,
                                   openColor: Colors.black,
-                                  closedColor:
-                                      context.theme.colorScheme.properSurface,
+                                  closedColor: context.theme.colorScheme.properSurface,
                                   closedShape: iOS
                                       ? RoundedRectangleBorder(
                                           borderRadius: BorderRadius.only(
-                                            topLeft:
-                                                const Radius.circular(20.0),
-                                            topRight:
-                                                const Radius.circular(20.0),
-                                            bottomLeft: message.isFromMe!
-                                                ? const Radius.circular(20.0)
-                                                : Radius.zero,
-                                            bottomRight: !message.isFromMe!
-                                                ? const Radius.circular(20.0)
-                                                : Radius.zero,
+                                            topLeft: const Radius.circular(20.0),
+                                            topRight: const Radius.circular(20.0),
+                                            bottomLeft: message.isFromMe! ? const Radius.circular(20.0) : Radius.zero,
+                                            bottomRight: !message.isFromMe! ? const Radius.circular(20.0) : Radius.zero,
                                           ),
                                         )
                                       : const RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.all(
-                                              Radius.circular(5.0)),
+                                          borderRadius: BorderRadius.all(Radius.circular(5.0)),
                                         ),
                                   useRootNavigator: false,
                                   openBuilder: (context, closeContainer) {
@@ -566,16 +438,13 @@ class _AttachmentHolderState
                                   closedBuilder: (context, openContainer) {
                                     return GestureDetector(
                                       onTap: () {
-                                        final _controller =
-                                            controller.cvController ??
-                                                cvc(ChatsSvc.activeChat!.chat);
+                                        final _controller = controller.cvController ?? cvc(ChatsSvc.activeChat!.chat);
                                         _controller.focusNode.unfocus();
                                         _controller.subjectFocusNode.unfocus();
                                         openContainer();
                                       },
                                       child: Container(
-                                        color: context
-                                            .theme.colorScheme.properSurface,
+                                        color: context.theme.colorScheme.properSurface,
                                         child: ImageViewer(
                                           file: _content,
                                           attachment: attachment,
@@ -585,8 +454,7 @@ class _AttachmentHolderState
                                       ),
                                     );
                                   });
-                            } else if ((attachment.mimeStart == "video" ||
-                                    attachment.mimeType == "audio/mp4") &&
+                            } else if ((attachment.mimeStart == "video" || attachment.mimeType == "audio/mp4") &&
                                 !SettingsSvc.settings.highPerfMode.value &&
                                 !isSnap) {
                               return VideoPlayer(
@@ -599,8 +467,7 @@ class _AttachmentHolderState
                               return Padding(
                                 padding: showTail
                                     ? EdgeInsets.only(
-                                        left: message.isFromMe! ? 0 : 10,
-                                        right: message.isFromMe! ? 10 : 0)
+                                        left: message.isFromMe! ? 0 : 10, right: message.isFromMe! ? 10 : 0)
                                     : EdgeInsets.zero,
                                 child: AudioPlayer(
                                   transcript: audioTranscript,
@@ -609,32 +476,27 @@ class _AttachmentHolderState
                                   controller: controller.cvController,
                                 ),
                               );
-                            } else if (attachment.mimeType ==
-                                    "text/x-vlocation" ||
+                            } else if (attachment.mimeType == "text/x-vlocation" ||
                                 attachment.uti == 'public.vlocation') {
                               return Padding(
                                 padding: showTail
                                     ? EdgeInsets.only(
-                                        left: message.isFromMe! ? 0 : 10,
-                                        right: message.isFromMe! ? 10 : 0)
+                                        left: message.isFromMe! ? 0 : 10, right: message.isFromMe! ? 10 : 0)
                                     : EdgeInsets.zero,
                                 child: UrlPreview(
                                   data: UrlPreviewData(
-                                    title:
-                                        "Location from ${DateFormat.yMd().format(message.dateCreated!)}",
+                                    title: "Location from ${DateFormat.yMd().format(message.dateCreated!)}",
                                     siteName: "Tap to open",
                                   ),
                                   message: message,
                                   file: _content,
                                 ),
                               );
-                            } else if (attachment.mimeType?.contains("vcard") ??
-                                false) {
+                            } else if (attachment.mimeType?.contains("vcard") ?? false) {
                               return Padding(
                                 padding: showTail
                                     ? EdgeInsets.only(
-                                        left: message.isFromMe! ? 0 : 10,
-                                        right: message.isFromMe! ? 10 : 0)
+                                        left: message.isFromMe! ? 0 : 10, right: message.isFromMe! ? 10 : 0)
                                     : EdgeInsets.zero,
                                 child: ContactCard(
                                   attachment: attachment,
@@ -645,26 +507,20 @@ class _AttachmentHolderState
                               return Padding(
                                 padding: showTail
                                     ? EdgeInsets.only(
-                                        left: message.isFromMe! ? 0 : 10,
-                                        right: message.isFromMe! ? 10 : 0)
+                                        left: message.isFromMe! ? 0 : 10, right: message.isFromMe! ? 10 : 0)
                                     : EdgeInsets.zero,
                                 child: SizedBox(
                                   height: 80,
                                   width: 80,
-                                  child: Icon(
-                                      iOS
-                                          ? CupertinoIcons
-                                              .exclamationmark_circle
-                                          : Icons.error_outline,
-                                      size: 30),
+                                  child:
+                                      Icon(iOS ? CupertinoIcons.exclamationmark_circle : Icons.error_outline, size: 30),
                                 ),
                               );
                             } else {
                               return Padding(
                                 padding: showTail
                                     ? EdgeInsets.only(
-                                        left: message.isFromMe! ? 0 : 10,
-                                        right: message.isFromMe! ? 10 : 0)
+                                        left: message.isFromMe! ? 0 : 10, right: message.isFromMe! ? 10 : 0)
                                     : EdgeInsets.zero,
                                 child: OtherFile(
                                   attachment: attachment,
@@ -689,10 +545,8 @@ class _AttachmentHolderState
     );
   }
 
-  Widget _buildAttachmentContent(
-      PlatformFile file, BuildContext context, bool showTail) {
-    if (attachment.mimeStart == "image" &&
-        !SettingsSvc.settings.highPerfMode.value) {
+  Widget _buildAttachmentContent(PlatformFile file, BuildContext context, bool showTail) {
+    if (attachment.mimeStart == "image" && !SettingsSvc.settings.highPerfMode.value) {
       return Container(
         color: context.theme.colorScheme.properSurface,
         child: ImageViewer(
@@ -702,8 +556,7 @@ class _AttachmentHolderState
           controller: controller.cvController,
         ),
       );
-    } else if ((attachment.mimeStart == "video" ||
-            attachment.mimeType == "audio/mp4") &&
+    } else if ((attachment.mimeStart == "video" || attachment.mimeType == "audio/mp4") &&
         !SettingsSvc.settings.highPerfMode.value &&
         !isSnap) {
       return VideoPlayer(

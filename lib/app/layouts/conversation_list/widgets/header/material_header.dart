@@ -29,90 +29,94 @@ class _MaterialHeaderState extends CustomState<MaterialHeader, void, Conversatio
         Obx(() => Container(
               height: controller.selectedChats.isEmpty ? 100 : null,
               width: NavigationSvc.width(context),
-              color: SettingsSvc.settings.windowEffect.value == WindowEffect.disabled ? context.theme.colorScheme.properSurface : Colors.transparent,
+              color: SettingsSvc.settings.windowEffect.value == WindowEffect.disabled
+                  ? context.theme.colorScheme.properSurface
+                  : Colors.transparent,
             )),
         AnimatedSwitcher(
           duration: const Duration(milliseconds: 500),
           child: controller.selectedChats.isEmpty
               ? SafeArea(
                   child: Obx(() {
-                      NavigationSvc.listener.value;
-                      return Container(
-                        decoration: BoxDecoration(
-                          color: !NavigationSvc.isAvatarOnly(context) && !showArchived && !showUnknown ? context.theme.colorScheme.properSurface
-                              .withValues(alpha: SettingsSvc.settings.windowEffect.value == WindowEffect.disabled ? 1 : 0.7) : Colors.transparent,
-                        ),
-                        child: Padding(
-                              padding: const EdgeInsets.only(left: 5.0, top: 5.0, bottom: 5.0),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                children: [
-                                  if (NavigationSvc.isAvatarOnly(context))
-                                    Material(
-                                      color: Colors.transparent,
-                                      shape: const CircleBorder(),
-                                      clipBehavior: Clip.antiAlias,
-                                      child: OverflowMenu(extraItems: true, controller: controller),
-                                    ),
-                                  if (!NavigationSvc.isAvatarOnly(context))
-                                    Padding(
-                                      padding: const EdgeInsets.only(left: 18, right: 20),
-                                      child: (!showArchived && !showUnknown)
-                                          ? SvgPicture.asset(
-                                              'assets/icon/bb-icon.svg',
-                                              width: 26,
-                                              height: 26,
-                                              colorFilter: ColorFilter.mode(context.theme.colorScheme.properOnSurface, BlendMode.srcIn)
-                                          ) : IconButton(
-                                              onPressed: () async {
-                                                Navigator.of(context).pop();
-                                              },
-                                              padding: EdgeInsets.zero,
-                                              icon: Icon(
-                                                Icons.arrow_back,
-                                                color: context.theme.colorScheme.properOnSurface,
-                                              ),
-                                            ),
-                                    ),
-                                  if (!NavigationSvc.isAvatarOnly(context)) HeaderText(controller: controller, fontSize: 20),
-                                  if (!NavigationSvc.isAvatarOnly(context) && !showArchived && !showUnknown)
-                                    Expanded(
-                                      child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.end,
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          IconButton(
-                                            onPressed: () async {
-                                              controller.openCamera(context);
-                                            },
-                                            icon: Icon(
-                                              Icons.camera_alt_outlined,
-                                              color: context.theme.colorScheme.properOnSurface,
-                                            ),
-                                          ),
-                                          Padding(
-                                            padding: const EdgeInsets.only(left: 2),
-                                            child: IconButton(
-                                            onPressed: () async {
-                                              NavigationSvc.pushLeft(
-                                                context,
-                                                SearchView(),
-                                              );
-                                            },
-                                            icon: Icon(
-                                              Icons.search_rounded,
-                                              color: context.theme.colorScheme.properOnSurface,
-                                            ),
-                                          )),
-                                          const OverflowMenu(),
-                                        ],
+                    NavigationSvc.listener.value;
+                    return Container(
+                      decoration: BoxDecoration(
+                        color: !NavigationSvc.isAvatarOnly(context) && !showArchived && !showUnknown
+                            ? context.theme.colorScheme.properSurface.withValues(
+                                alpha: SettingsSvc.settings.windowEffect.value == WindowEffect.disabled ? 1 : 0.7)
+                            : Colors.transparent,
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 5.0, top: 5.0, bottom: 5.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            if (NavigationSvc.isAvatarOnly(context))
+                              Material(
+                                color: Colors.transparent,
+                                shape: const CircleBorder(),
+                                clipBehavior: Clip.antiAlias,
+                                child: OverflowMenu(extraItems: true, controller: controller),
+                              ),
+                            if (!NavigationSvc.isAvatarOnly(context))
+                              Padding(
+                                padding: const EdgeInsets.only(left: 18, right: 20),
+                                child: (!showArchived && !showUnknown)
+                                    ? SvgPicture.asset('assets/icon/bb-icon.svg',
+                                        width: 26,
+                                        height: 26,
+                                        colorFilter: ColorFilter.mode(
+                                            context.theme.colorScheme.properOnSurface, BlendMode.srcIn))
+                                    : IconButton(
+                                        onPressed: () async {
+                                          Navigator.of(context).pop();
+                                        },
+                                        padding: EdgeInsets.zero,
+                                        icon: Icon(
+                                          Icons.arrow_back,
+                                          color: context.theme.colorScheme.properOnSurface,
+                                        ),
+                                      ),
+                              ),
+                            if (!NavigationSvc.isAvatarOnly(context)) HeaderText(controller: controller, fontSize: 20),
+                            if (!NavigationSvc.isAvatarOnly(context) && !showArchived && !showUnknown)
+                              Expanded(
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      onPressed: () async {
+                                        controller.openCamera(context);
+                                      },
+                                      icon: Icon(
+                                        Icons.camera_alt_outlined,
+                                        color: context.theme.colorScheme.properOnSurface,
                                       ),
                                     ),
-                                ],
+                                    Padding(
+                                        padding: const EdgeInsets.only(left: 2),
+                                        child: IconButton(
+                                          onPressed: () async {
+                                            NavigationSvc.pushLeft(
+                                              context,
+                                              SearchView(),
+                                            );
+                                          },
+                                          icon: Icon(
+                                            Icons.search_rounded,
+                                            color: context.theme.colorScheme.properOnSurface,
+                                          ),
+                                        )),
+                                    const OverflowMenu(),
+                                  ],
+                                ),
                               ),
-                            ),
-                      );
-                    }),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
                 )
               : SafeArea(
                   child: Padding(
@@ -148,8 +152,10 @@ class _MaterialHeaderState extends CustomState<MaterialHeader, void, Conversatio
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            if (([0, controller.selectedChats.length])
-                                .contains(controller.selectedChats.where((element) => element.hasUnreadMessage!).length))
+                            if (([
+                              0,
+                              controller.selectedChats.length
+                            ]).contains(controller.selectedChats.where((element) => element.hasUnreadMessage!).length))
                               IconButton(
                                 onPressed: () {
                                   for (Chat element in controller.selectedChats) {
@@ -163,12 +169,16 @@ class _MaterialHeaderState extends CustomState<MaterialHeader, void, Conversatio
                                   controller.clearSelectedChats();
                                 },
                                 icon: Icon(
-                                  controller.selectedChats[0].hasUnreadMessage! ? Icons.mark_chat_read_outlined : Icons.mark_chat_unread_outlined,
+                                  controller.selectedChats[0].hasUnreadMessage!
+                                      ? Icons.mark_chat_read_outlined
+                                      : Icons.mark_chat_unread_outlined,
                                   color: context.theme.colorScheme.primary,
                                 ),
                               ),
-                            if (([0, controller.selectedChats.length])
-                                .contains(controller.selectedChats.where((element) => element.muteType == "mute").length))
+                            if (([
+                              0,
+                              controller.selectedChats.length
+                            ]).contains(controller.selectedChats.where((element) => element.muteType == "mute").length))
                               IconButton(
                                 onPressed: () {
                                   for (Chat element in controller.selectedChats) {

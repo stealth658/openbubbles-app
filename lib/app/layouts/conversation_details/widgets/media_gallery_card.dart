@@ -26,8 +26,7 @@ class MediaGalleryCard extends StatefulWidget {
   State<MediaGalleryCard> createState() => _MediaGalleryCardState();
 }
 
-class _MediaGalleryCardState extends OptimizedState<MediaGalleryCard>
-    with AutomaticKeepAliveClientMixin {
+class _MediaGalleryCardState extends OptimizedState<MediaGalleryCard> with AutomaticKeepAliveClientMixin {
   Uint8List? videoPreview;
   Duration? duration;
   late dynamic content;
@@ -51,8 +50,7 @@ class _MediaGalleryCardState extends OptimizedState<MediaGalleryCard>
 
   void updateContent() {
     // Use the attachment service to get the content properly
-    content = AttachmentsSvc.getContent(attachment,
-        autoDownload: false, onComplete: onComplete);
+    content = AttachmentsSvc.getContent(attachment, autoDownload: false, onComplete: onComplete);
 
     // If getContent returned a controller, listen to it
     if (content is AttachmentDownloadController) {
@@ -85,8 +83,7 @@ class _MediaGalleryCardState extends OptimizedState<MediaGalleryCard>
 
   void downloadAttachment() {
     setState(() {
-      content = AttachmentDownloader.startDownload(attachment,
-          onComplete: onComplete);
+      content = AttachmentDownloader.startDownload(attachment, onComplete: onComplete);
       if (content is AttachmentDownloadController) {
         (content as AttachmentDownloadController).errorFuncs.add(() {
           if (mounted) {
@@ -128,8 +125,7 @@ class _MediaGalleryCardState extends OptimizedState<MediaGalleryCard>
   Widget build(BuildContext context) {
     super.build(context);
 
-    final bool hideAttachments = SettingsSvc.settings.redactedMode.value &&
-        SettingsSvc.settings.hideAttachments.value;
+    final bool hideAttachments = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideAttachments.value;
 
     late Widget child;
     bool addPadding = true;
@@ -156,16 +152,13 @@ class _MediaGalleryCardState extends OptimizedState<MediaGalleryCard>
                 ? (attachment.mimeType?.startsWith("image") ?? false)
                     ? ImageDisplay(attachment: attachment, file: file)
                     : (attachment.mimeType?.startsWith("video") ?? false)
-                        ? ImageDisplay(
-                            attachment: attachment,
-                            image: videoPreview ?? Uint8List(0))
+                        ? ImageDisplay(attachment: attachment, image: videoPreview ?? Uint8List(0))
                         : const SizedBox.shrink()
                 : const SizedBox.shrink(),
           ),
           // Progress overlay
           Container(
-            color:
-                context.theme.colorScheme.properSurface.withValues(alpha: 0.5),
+            color: context.theme.colorScheme.properSurface.withValues(alpha: 0.5),
             child: Center(
               child: Obx(() {
                 return Column(
@@ -205,9 +198,7 @@ class _MediaGalleryCardState extends OptimizedState<MediaGalleryCard>
         child: Obx(() {
           final controller = content as AttachmentDownloadController;
           return controller.state.value == AttachmentDownloadState.processing
-              ? (iOS
-                  ? const CupertinoActivityIndicator(radius: 14)
-                  : const CircularProgressIndicator())
+              ? (iOS ? const CupertinoActivityIndicator(radius: 14) : const CircularProgressIndicator())
               : CircleProgressBar(
                   foregroundColor: context.theme.colorScheme.primary,
                   backgroundColor: context.theme.colorScheme.outline,
@@ -254,12 +245,8 @@ class _MediaGalleryCardState extends OptimizedState<MediaGalleryCard>
               style: Theme.of(context).textTheme.bodyLarge,
             ),
             const SizedBox(height: 5),
-            Icon(
-                SettingsSvc.settings.skin.value == Skins.iOS
-                    ? CupertinoIcons.cloud_download
-                    : Icons.cloud_download,
-                size: 28.0,
-                color: context.theme.colorScheme.properOnSurface),
+            Icon(SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.cloud_download : Icons.cloud_download,
+                size: 28.0, color: context.theme.colorScheme.properOnSurface),
             const SizedBox(height: 5),
             Text(
               attachment.mimeType ?? "Unknown File Type",
@@ -274,12 +261,9 @@ class _MediaGalleryCardState extends OptimizedState<MediaGalleryCard>
       if (attachment.mimeType?.startsWith("image") ?? false) {
         child = ImageDisplay(attachment: attachment, file: file);
         addPadding = false;
-      } else if ((attachment.mimeType?.startsWith("video") ?? false) &&
-          !kIsDesktop &&
-          !kIsWeb) {
+      } else if ((attachment.mimeType?.startsWith("video") ?? false) && !kIsDesktop && !kIsWeb) {
         if (videoPreview != null) {
-          child = ImageDisplay(
-              attachment: attachment, image: videoPreview!, duration: duration);
+          child = ImageDisplay(attachment: attachment, image: videoPreview!, duration: duration);
           addPadding = false;
         } else {
           child = const Text(
@@ -342,10 +326,8 @@ class ImageDisplay extends StatelessWidget {
             openContainer();
           },
           child: SizedBox(
-            width: NavigationSvc.width(context) /
-                max(2, NavigationSvc.width(context) ~/ 200),
-            height: NavigationSvc.width(context) /
-                max(2, NavigationSvc.width(context) ~/ 200),
+            width: NavigationSvc.width(context) / max(2, NavigationSvc.width(context) ~/ 200),
+            height: NavigationSvc.width(context) / max(2, NavigationSvc.width(context) ~/ 200),
             child: Stack(
               children: [
                 if (file != null && file!.path != null)
@@ -354,8 +336,9 @@ class ImageDisplay extends StatelessWidget {
                     fit: BoxFit.cover,
                     alignment: Alignment.center,
                     cacheWidth: (NavigationSvc.width(context) ~/
-                      max(2, NavigationSvc.width(context) ~/ 200) *
-                      MediaQuery.of(context).devicePixelRatio).toInt(),
+                            max(2, NavigationSvc.width(context) ~/ 200) *
+                            MediaQuery.of(context).devicePixelRatio)
+                        .toInt(),
                   )
                 else if (image != null)
                   Image.memory(
@@ -363,11 +346,11 @@ class ImageDisplay extends StatelessWidget {
                     fit: BoxFit.cover,
                     alignment: Alignment.center,
                     cacheWidth: (NavigationSvc.width(context) ~/
-                      max(2, NavigationSvc.width(context) ~/ 200) *
-                      MediaQuery.of(context).devicePixelRatio).toInt(),
+                            max(2, NavigationSvc.width(context) ~/ 200) *
+                            MediaQuery.of(context).devicePixelRatio)
+                        .toInt(),
                   ),
-                if ((attachment.mimeType?.contains("video") ?? false) &&
-                    duration != null)
+                if ((attachment.mimeType?.contains("video") ?? false) && duration != null)
                   Positioned(
                     bottom: 10,
                     right: 10,
@@ -380,20 +363,16 @@ class ImageDisplay extends StatelessWidget {
                           .padLeft(9, "a")
                           .replaceFirst("a00:", "")
                           .replaceFirst("a", ""),
-                      style: context.theme.textTheme.bodyMedium!
-                          .copyWith(fontWeight: FontWeight.bold),
+                      style: context.theme.textTheme.bodyMedium!.copyWith(fontWeight: FontWeight.bold),
                     ),
                   ),
                 if (!(attachment.message.target?.isFromMe ?? true) &&
-                    attachment.message.target?.handleRelation.hasValue ==
-                        true &&
+                    attachment.message.target?.handleRelation.hasValue == true &&
                     SettingsSvc.settings.skin.value == Skins.iOS)
                   Positioned(
                     top: 10,
                     right: 10,
-                    child: ContactAvatarWidget(
-                        handle:
-                            attachment.message.target?.handleRelation.target),
+                    child: ContactAvatarWidget(handle: attachment.message.target?.handleRelation.target),
                   ),
               ],
             ),

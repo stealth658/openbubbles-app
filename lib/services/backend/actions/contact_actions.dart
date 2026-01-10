@@ -39,8 +39,9 @@ class ContactActions {
         result = query.findFirst();
         query.close();
       } else if (address != null) {
-        final query =
-            contactBox.query(Contact_.phones.containsElement(address) | Contact_.emails.containsElement(address)).build();
+        final query = contactBox
+            .query(Contact_.phones.containsElement(address) | Contact_.emails.containsElement(address))
+            .build();
         query.limit = 1;
         result = query.findFirst();
         query.close();
@@ -64,7 +65,7 @@ class ContactActions {
   /// Uploads contacts to the server
   static Future<void> uploadContacts(Map<String, dynamic> data) async {
     final contacts = data['contacts'] as List<Map<String, dynamic>>;
-    
+
     try {
       await HttpSvc.createContact(contacts);
       Logger.info('Successfully uploaded ${contacts.length} contacts to server');

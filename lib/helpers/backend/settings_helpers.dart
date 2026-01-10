@@ -4,15 +4,11 @@ import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:disable_battery_optimization/disable_battery_optimization.dart';
 
-Future<bool> saveNewServerUrl(
-  String newServerUrl,
-  {
-    bool tryRestartForegroundService = true,
+Future<bool> saveNewServerUrl(String newServerUrl,
+    {bool tryRestartForegroundService = true,
     bool restartSocket = true,
     bool force = false,
-    List<String> saveAdditionalSettings = const []
-  }
-) async {
+    List<String> saveAdditionalSettings = const []}) async {
   String sanitized = sanitizeServerAddress(address: newServerUrl)!;
   if (force || sanitized != SettingsSvc.settings.serverAddress.value) {
     SettingsSvc.settings.serverAddress.value = sanitized;
@@ -23,7 +19,7 @@ Future<bool> saveNewServerUrl(
     if (tryRestartForegroundService) {
       restartForegroundService();
     }
-    
+
     try {
       if (restartSocket) {
         SocketSvc.restartSocket();
@@ -39,11 +35,7 @@ Future<bool> saveNewServerUrl(
 }
 
 Future<void> clearServerUrl(
-  {
-    bool tryRestartForegroundService = true,
-    List<String> saveAdditionalSettings = const []
-  }
-) async {
+    {bool tryRestartForegroundService = true, List<String> saveAdditionalSettings = const []}) async {
   SettingsSvc.settings.serverAddress.value = "";
   await SettingsSvc.settings.saveManyAsync(["serverAddress", ...saveAdditionalSettings]);
 
@@ -54,7 +46,7 @@ Future<void> clearServerUrl(
 }
 
 /// Prompts the user to disable battery optimizations for the app
-/// 
+///
 /// Returns true if the user has disabled battery optimizations
 Future<bool> disableBatteryOptimizations() async {
   bool? isDisabled = await DisableBatteryOptimization.isAllBatteryOptimizationDisabled;

@@ -33,7 +33,8 @@ class LaserController implements Listenable {
     isPlaying = true;
     autoLaunchDuration = const Duration(milliseconds: 500);
     lastAutoLaunch = Duration.zero;
-    position = Point((bubbleDimensions.left + bubbleDimensions.right) / 2, (bubbleDimensions.top + bubbleDimensions.bottom) / 2);
+    position = Point(
+        (bubbleDimensions.left + bubbleDimensions.right) / 2, (bubbleDimensions.top + bubbleDimensions.bottom) / 2);
     ticker = vsync.createTicker(update)..start();
   }
 
@@ -71,16 +72,43 @@ class LaserController implements Listenable {
       beams.addAll(List.generate(12, (index) {
         final width = (random.nextDouble() * 300).clamp(50, 300).toDouble();
         final angle = (random.nextDouble() * 2 * pi).clamp(
-            pi / 2 * (index > 8 ? index - 8 : index > 4 ? index - 4 : index), pi / 2 * (index > 8 ? index - 8 : index > 4 ? index - 4 : index) + pi / 2);
+            pi /
+                2 *
+                (index > 8
+                    ? index - 8
+                    : index > 4
+                        ? index - 4
+                        : index),
+            pi /
+                    2 *
+                    (index > 8
+                        ? index - 8
+                        : index > 4
+                            ? index - 4
+                            : index) +
+                pi / 2);
         return LaserBeam(
-            random: random,
-            position: position,
-            originalInternalWidth: (random.nextDouble() * 300).clamp(50, 300),
-            originalGlobalAngle: pi / 2 * (index > 8 ? index - 8 : index > 4 ? index - 4 : index),
-            internalWidth: width,
-            globalAngle: angle,
-            internalWidthVelocity: width / 50,
-            globalAngleVelocity: angle / 50 / ((index > 8 ? index - 8 : index > 4 ? index - 4 : index) + 1),
+          random: random,
+          position: position,
+          originalInternalWidth: (random.nextDouble() * 300).clamp(50, 300),
+          originalGlobalAngle: pi /
+              2 *
+              (index > 8
+                  ? index - 8
+                  : index > 4
+                      ? index - 4
+                      : index),
+          internalWidth: width,
+          globalAngle: angle,
+          internalWidthVelocity: width / 50,
+          globalAngleVelocity: angle /
+              50 /
+              ((index > 8
+                      ? index - 8
+                      : index > 4
+                          ? index - 4
+                          : index) +
+                  1),
         );
       }));
     }
@@ -188,15 +216,17 @@ class LaserBeam {
       internalWidthDirection = Direction.up;
       internalWidth = internalWidth + internalWidthVelocity;
     }
-    if (globalAngle >= globalAngleStops.item2 || (globalAngleDirection == Direction.down && globalAngle >= globalAngleStops.item1)) {
+    if (globalAngle >= globalAngleStops.item2 ||
+        (globalAngleDirection == Direction.down && globalAngle >= globalAngleStops.item1)) {
       globalAngleDirection = Direction.down;
       globalAngle = globalAngle - globalAngleVelocity;
     }
-    if (globalAngle <= globalAngleStops.item1 || (globalAngleDirection == Direction.up && globalAngle <= globalAngleStops.item2)) {
+    if (globalAngle <= globalAngleStops.item1 ||
+        (globalAngleDirection == Direction.up && globalAngle <= globalAngleStops.item2)) {
       globalAngleDirection = Direction.up;
       globalAngle = globalAngle + globalAngleVelocity;
     }
   }
 }
 
-enum Direction {up, down}
+enum Direction { up, down }

@@ -92,84 +92,80 @@ class ReactionWidgetState extends OptimizedState<ReactionWidget> {
   Widget build(BuildContext context) {
     if (SettingsSvc.settings.skin.value != Skins.iOS) {
       return Container(
-        width: 30,
-        height: 30,
-        decoration: BoxDecoration(
-          color: reactionIsFromMe ? context.theme.colorScheme.primary : context.theme.colorScheme.properSurface,
-          border: Border.all(color: context.theme.colorScheme.background),
-          shape: BoxShape.circle,
-        ),
-        child: GestureDetector(
-          onTap: () {
-            if (reactions == null) return;
-            Navigator.push(
-              context,
-              PageRouteBuilder(
-                transitionDuration: const Duration(milliseconds: 500),
-                pageBuilder: (context, animation, secondaryAnimation) {
-                  return SlideTransition(
-                    position: Tween<Offset>(
-                      begin: const Offset(0.0, 1.0),
-                      end: Offset.zero,
-                    ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOut)),
-                    child: Theme(
-                      data: context.theme.copyWith(
-                        // in case some components still use legacy theming
-                        primaryColor: context.theme.colorScheme.bubble(context, true),
-                        colorScheme: context.theme.colorScheme.copyWith(
-                          primary: context.theme.colorScheme.bubble(context, true),
-                          onPrimary: context.theme.colorScheme.onBubble(context, true),
-                          surface: SettingsSvc.settings.monetTheming.value == Monet.full ? null : (context.theme.extensions[BubbleColors] as BubbleColors?)?.receivedBubbleColor,
-                          onSurface: SettingsSvc.settings.monetTheming.value == Monet.full ? null : (context.theme.extensions[BubbleColors] as BubbleColors?)?.onReceivedBubbleColor,
+          width: 30,
+          height: 30,
+          decoration: BoxDecoration(
+            color: reactionIsFromMe ? context.theme.colorScheme.primary : context.theme.colorScheme.properSurface,
+            border: Border.all(color: context.theme.colorScheme.background),
+            shape: BoxShape.circle,
+          ),
+          child: GestureDetector(
+            onTap: () {
+              if (reactions == null) return;
+              Navigator.push(
+                context,
+                PageRouteBuilder(
+                  transitionDuration: const Duration(milliseconds: 500),
+                  pageBuilder: (context, animation, secondaryAnimation) {
+                    return SlideTransition(
+                      position: Tween<Offset>(
+                        begin: const Offset(0.0, 1.0),
+                        end: Offset.zero,
+                      ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOut)),
+                      child: Theme(
+                        data: context.theme.copyWith(
+                          // in case some components still use legacy theming
+                          primaryColor: context.theme.colorScheme.bubble(context, true),
+                          colorScheme: context.theme.colorScheme.copyWith(
+                            primary: context.theme.colorScheme.bubble(context, true),
+                            onPrimary: context.theme.colorScheme.onBubble(context, true),
+                            surface: SettingsSvc.settings.monetTheming.value == Monet.full
+                                ? null
+                                : (context.theme.extensions[BubbleColors] as BubbleColors?)?.receivedBubbleColor,
+                            onSurface: SettingsSvc.settings.monetTheming.value == Monet.full
+                                ? null
+                                : (context.theme.extensions[BubbleColors] as BubbleColors?)?.onReceivedBubbleColor,
+                          ),
+                        ),
+                        child: Stack(
+                          alignment: Alignment.bottomCenter,
+                          children: [
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.of(context).pop();
+                              },
+                            ),
+                            Positioned(bottom: 10, left: 15, right: 15, child: ReactionDetails(reactions: reactions!)),
+                          ],
                         ),
                       ),
-                      child: Stack(
-                        alignment: Alignment.bottomCenter,
-                        children: [
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.of(context).pop();
-                            },
-                          ),
-                          Positioned(
-                            bottom: 10,
-                            left: 15,
-                            right: 15,
-                            child: ReactionDetails(reactions: reactions!)
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-                fullscreenDialog: true,
-                opaque: false,
-                barrierDismissible: true,
-              ),
-            );
-          },
-          child: Center(
-            child: Builder(
-                builder: (context) {
-                  final text = Text(
-                    ReactionTypes.reactionToEmoji[reactionType] ?? "X",
-                    style: const TextStyle(fontSize: 15, fontFamily: 'Apple Color Emoji'),
-                    textAlign: TextAlign.center,
-                  );
-                  // rotate thumbs down to match iOS
-                  if (reactionType == "dislike") {
-                    return Transform(
-                      transform: Matrix4.identity()..rotateY(pi),
-                      alignment: FractionalOffset.center,
-                      child: text,
                     );
-                  }
-                  return text;
+                  },
+                  fullscreenDialog: true,
+                  opaque: false,
+                  barrierDismissible: true,
+                ),
+              );
+            },
+            child: Center(
+              child: Builder(builder: (context) {
+                final text = Text(
+                  ReactionTypes.reactionToEmoji[reactionType] ?? "X",
+                  style: const TextStyle(fontSize: 15, fontFamily: 'Apple Color Emoji'),
+                  textAlign: TextAlign.center,
+                );
+                // rotate thumbs down to match iOS
+                if (reactionType == "dislike") {
+                  return Transform(
+                    transform: Matrix4.identity()..rotateY(pi),
+                    alignment: FractionalOffset.center,
+                    child: text,
+                  );
                 }
+                return text;
+              }),
             ),
-          ),
-        )
-      );
+          ));
     }
     return Stack(
       alignment: messageIsFromMe ? Alignment.centerRight : Alignment.centerLeft,
@@ -190,31 +186,32 @@ class ReactionWidgetState extends OptimizedState<ReactionWidget> {
           ),
         ),
         ClipPath(
-          clipper: ReactionClipper(isFromMe: messageIsFromMe),
-          child: Container(
-            width: iosSize,
-            height: iosSize,
-            color: reactionIsFromMe
-                ? context.theme.colorScheme.primary.darkenAmount(reaction.guid!.startsWith("temp") ? 0.2 : 0)
-                : context.theme.colorScheme.properSurface,
-            alignment: messageIsFromMe ? Alignment.topRight : Alignment.topLeft,
-            child: SizedBox(
-              width: iosSize*0.8,
-              height: iosSize*0.8,
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(6.5).add(EdgeInsets.only(right: reactionType == "emphasize" ? 1 : 0)),
-                  child: SvgPicture.asset(
-                    'assets/reactions/$reactionType-black.svg',
-                    colorFilter: ColorFilter.mode(reactionType == "love"
-                        ? Colors.pink
-                        : (reactionIsFromMe ? context.theme.colorScheme.onPrimary : context.theme.colorScheme.properOnSurface), BlendMode.srcIn),
-                  ),
-                )
-              ),
-            )
-          )
-        ),
+            clipper: ReactionClipper(isFromMe: messageIsFromMe),
+            child: Container(
+                width: iosSize,
+                height: iosSize,
+                color: reactionIsFromMe
+                    ? context.theme.colorScheme.primary.darkenAmount(reaction.guid!.startsWith("temp") ? 0.2 : 0)
+                    : context.theme.colorScheme.properSurface,
+                alignment: messageIsFromMe ? Alignment.topRight : Alignment.topLeft,
+                child: SizedBox(
+                  width: iosSize * 0.8,
+                  height: iosSize * 0.8,
+                  child: Center(
+                      child: Padding(
+                    padding: const EdgeInsets.all(6.5).add(EdgeInsets.only(right: reactionType == "emphasize" ? 1 : 0)),
+                    child: SvgPicture.asset(
+                      'assets/reactions/$reactionType-black.svg',
+                      colorFilter: ColorFilter.mode(
+                          reactionType == "love"
+                              ? Colors.pink
+                              : (reactionIsFromMe
+                                  ? context.theme.colorScheme.onPrimary
+                                  : context.theme.colorScheme.properOnSurface),
+                          BlendMode.srcIn),
+                    ),
+                  )),
+                ))),
         Positioned(
           left: !messageIsFromMe ? 0 : -75,
           right: messageIsFromMe ? 0 : -75,
@@ -231,7 +228,9 @@ class ReactionWidgetState extends OptimizedState<ReactionWidget> {
               return DeferPointer(
                 child: GestureDetector(
                   child: Icon(
-                    SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.exclamationmark_circle : Icons.error_outline,
+                    SettingsSvc.settings.skin.value == Skins.iOS
+                        ? CupertinoIcons.exclamationmark_circle
+                        : Icons.error_outline,
                     color: context.theme.colorScheme.error,
                   ),
                   onTap: () {
@@ -244,10 +243,9 @@ class ReactionWidgetState extends OptimizedState<ReactionWidget> {
                           content: Text("Error ($errorCode): $errorText", style: context.theme.textTheme.bodyLarge),
                           actions: <Widget>[
                             TextButton(
-                              child: Text(
-                                  "Retry",
-                                  style: context.theme.textTheme.bodyLarge!.copyWith(color: Get.context!.theme.colorScheme.primary)
-                              ),
+                              child: Text("Retry",
+                                  style: context.theme.textTheme.bodyLarge!
+                                      .copyWith(color: Get.context!.theme.colorScheme.primary)),
                               onPressed: () async {
                                 // Remove the original message and notification
                                 Navigator.of(context).pop();
@@ -274,10 +272,9 @@ class ReactionWidgetState extends OptimizedState<ReactionWidget> {
                               },
                             ),
                             TextButton(
-                              child: Text(
-                                  "Remove",
-                                  style: context.theme.textTheme.bodyLarge!.copyWith(color: Get.context!.theme.colorScheme.primary)
-                              ),
+                              child: Text("Remove",
+                                  style: context.theme.textTheme.bodyLarge!
+                                      .copyWith(color: Get.context!.theme.colorScheme.primary)),
                               onPressed: () async {
                                 Navigator.of(context).pop();
                                 // Delete the message from the DB
@@ -293,10 +290,9 @@ class ReactionWidgetState extends OptimizedState<ReactionWidget> {
                               },
                             ),
                             TextButton(
-                              child: Text(
-                                  "Cancel",
-                                  style: context.theme.textTheme.bodyLarge!.copyWith(color: Get.context!.theme.colorScheme.primary)
-                              ),
+                              child: Text("Cancel",
+                                  style: context.theme.textTheme.bodyLarge!
+                                      .copyWith(color: Get.context!.theme.colorScheme.primary)),
                               onPressed: () async {
                                 Navigator.of(context).pop();
                                 await NotificationsSvc.clearFailedToSend(ChatsSvc.activeChat!.chat.id!);
@@ -317,4 +313,3 @@ class ReactionWidgetState extends OptimizedState<ReactionWidget> {
     );
   }
 }
-

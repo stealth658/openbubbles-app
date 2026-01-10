@@ -59,10 +59,10 @@ class _SetupViewState extends OptimizedState<SetupView> {
     super.initState();
 
     ever(SocketSvc.state, (event) {
-      if (event == SocketState.error
-          && !SettingsSvc.settings.finishedSetup.value
-          && controller.pageController.hasClients
-          && controller.currentPage > controller.pageOfNoReturn) {
+      if (event == SocketState.error &&
+          !SettingsSvc.settings.finishedSetup.value &&
+          controller.pageController.hasClients &&
+          controller.currentPage > controller.pageOfNoReturn) {
         showDialog(
           context: context,
           barrierDismissible: false,
@@ -86,7 +86,9 @@ class _SetupViewState extends OptimizedState<SetupView> {
     return PopScope(
       canPop: false,
       child: Scaffold(
-        backgroundColor: SettingsSvc.settings.windowEffect.value != WindowEffect.disabled ? Colors.transparent : context.theme.colorScheme.background,
+        backgroundColor: SettingsSvc.settings.windowEffect.value != WindowEffect.disabled
+            ? Colors.transparent
+            : context.theme.colorScheme.background,
         body: SafeArea(
           child: Column(
             children: <Widget>[
@@ -114,10 +116,7 @@ class SetupHeader extends StatelessWidget {
         children: [
           Row(
             children: [
-              Hero(
-                tag: "setup-icon",
-                child: Image.asset("assets/icon/icon.png", width: 30, fit: BoxFit.contain)
-              ),
+              Hero(tag: "setup-icon", child: Image.asset("assets/icon/icon.png", width: 30, fit: BoxFit.contain)),
               const SizedBox(width: 10),
               Text(
                 "BlueBubbles",
@@ -152,7 +151,6 @@ class PageNumber extends CustomStateful<SetupViewController> {
 }
 
 class _PageNumberState extends CustomState<PageNumber, int, SetupViewController> {
-
   @override
   void updateWidget(int newVal) {
     controller.currentPage = newVal;
@@ -165,13 +163,11 @@ class _PageNumberState extends CustomState<PageNumber, int, SetupViewController>
       text: TextSpan(
         children: [
           TextSpan(
-            text: "${controller.currentPage}",
-            style: context.theme.textTheme.bodyLarge!.copyWith(color: Colors.white, fontWeight: FontWeight.bold)
-          ),
+              text: "${controller.currentPage}",
+              style: context.theme.textTheme.bodyLarge!.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
           TextSpan(
-            text: " of ${kIsWeb ? "4" : kIsDesktop ? "5" : "7"}",
-            style: context.theme.textTheme.bodyLarge!.copyWith(color: Colors.white38, fontWeight: FontWeight.bold)
-          ),
+              text: " of ${kIsWeb ? "4" : kIsDesktop ? "5" : "7"}",
+              style: context.theme.textTheme.bodyLarge!.copyWith(color: Colors.white38, fontWeight: FontWeight.bold)),
         ],
       ),
     );
@@ -217,8 +213,7 @@ class SetupPages extends StatelessWidget {
           if (!kIsWeb && !kIsDesktop) BatteryOptimizationCheck(),
           MacSetupCheck(),
           ServerCredentials(),
-          if (!kIsWeb)
-            SyncSettings(),
+          if (!kIsWeb) SyncSettings(),
           SyncProgress(),
           //ThemeSelector(),
         ],

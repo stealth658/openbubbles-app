@@ -69,7 +69,7 @@ Future<Null> bubble() async {
 Future<Null> initApp(bool bubble, List<String> arguments) async {
   runZonedGuarded<Future<void>>(() async {
     WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
-    
+
     // Preserve the splash screen until we manually remove it
     if (!bubble) {
       FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
@@ -139,8 +139,8 @@ Future<Null> initApp(bool bubble, List<String> arguments) async {
         if (Platform.isWindows) {
           await Window.hideWindowControls();
         } else if (Platform.isLinux) {
-          await windowManager
-              .setTitleBarStyle(SettingsSvc.settings.useCustomTitleBar.value ? TitleBarStyle.hidden : TitleBarStyle.normal);
+          await windowManager.setTitleBarStyle(
+              SettingsSvc.settings.useCustomTitleBar.value ? TitleBarStyle.hidden : TitleBarStyle.normal);
         }
         windowManager.addListener(DesktopWindowListener.instance);
         doWhenWindowReady(() async {
@@ -174,11 +174,11 @@ Future<Null> initApp(bool bubble, List<String> arguments) async {
           } else {
             await windowManager.hide();
           }
-            bool shouldAuthenticate = SettingsSvc.canAuthenticate && SettingsSvc.settings.shouldSecure.value;
-            if (!shouldAuthenticate) {
-              ChatsSvc.init();
-              SocketSvc.init();
-            }
+          bool shouldAuthenticate = SettingsSvc.canAuthenticate && SettingsSvc.settings.shouldSecure.value;
+          if (!shouldAuthenticate) {
+            ChatsSvc.init();
+            SocketSvc.init();
+          }
         });
 
         /* ----- GIPHY API KEY INITIALIZATION ----- */
@@ -203,7 +203,8 @@ Future<Null> initApp(bool bubble, List<String> arguments) async {
       light = tuple.item1;
       dark = tuple.item2;
 
-      runApp(MaterialApp(home: Main(
+      runApp(MaterialApp(
+          home: Main(
         lightTheme: light,
         darkTheme: dark,
       )));
@@ -353,9 +354,9 @@ class Main extends StatelessWidget {
                         isAuthing = true;
                         localAuth
                             .authenticate(
-                                localizedReason: 'Please authenticate to unlock BlueBubbles',
-                                persistAcrossBackgrounding: true,
-                            )
+                          localizedReason: 'Please authenticate to unlock BlueBubbles',
+                          persistAcrossBackgrounding: true,
+                        )
                             .then((result) {
                           isAuthing = false;
                           if (result) {
@@ -395,8 +396,8 @@ class Main extends StatelessWidget {
                                     onTap: () async {
                                       final localAuth = LocalAuthentication();
                                       bool didAuthenticate = await localAuth.authenticate(
-                                          localizedReason: 'Please authenticate to unlock BlueBubbles',
-                                          persistAcrossBackgrounding: true,
+                                        localizedReason: 'Please authenticate to unlock BlueBubbles',
+                                        persistAcrossBackgrounding: true,
                                       );
                                       if (didAuthenticate) {
                                         controller!.authSuccess(unlock: true);
@@ -547,12 +548,12 @@ class _HomeState extends OptimizedState<Home> with WidgetsBindingObserver, TrayL
             FlutterNativeSplash.remove();
           }
         });
-        
+
         // Fallback: remove splash after 10 seconds even if loadedChatBatch doesn't trigger
         Future.delayed(const Duration(seconds: 10), () {
           FlutterNativeSplash.remove();
         });
-        
+
         if ((FilesystemSvc.androidInfo?.version.sdkInt ?? 0) >= 33) {
           Permission.notification.request();
         }

@@ -11,7 +11,7 @@ import 'package:get/get.dart';
 /// Prevents duplicate database queries and improves performance
 class ChatTitleController extends GetxController {
   static ChatTitleController get to => Get.find<ChatTitleController>();
-  
+
   final Map<String, RxString> _titleCache = {};
   final Map<String, StreamSubscription> _subscriptions = {};
   final Map<String, String?> _displayNameCache = {};
@@ -49,8 +49,7 @@ class ChatTitleController extends GetxController {
         final cachedDisplayName = _displayNameCache[chat.guid];
         final cachedParticipantCount = _participantCountCache[chat.guid];
 
-        if (updatedChat.displayName != cachedDisplayName ||
-            updatedChat.handles.length != cachedParticipantCount) {
+        if (updatedChat.displayName != cachedDisplayName || updatedChat.handles.length != cachedParticipantCount) {
           final newTitle = updatedChat.getTitle();
           if (_titleCache[chat.guid]?.value != newTitle) {
             _titleCache[chat.guid]?.value = newTitle;
@@ -66,8 +65,7 @@ class ChatTitleController extends GetxController {
         final cachedDisplayName = _displayNameCache[chat.guid];
         final cachedParticipantCount = _participantCountCache[chat.guid];
 
-        if (updatedChat.displayName != cachedDisplayName ||
-            updatedChat.handles.length != cachedParticipantCount) {
+        if (updatedChat.displayName != cachedDisplayName || updatedChat.handles.length != cachedParticipantCount) {
           final newTitle = updatedChat.getTitle();
           if (_titleCache[chat.guid]?.value != newTitle) {
             _titleCache[chat.guid]?.value = newTitle;

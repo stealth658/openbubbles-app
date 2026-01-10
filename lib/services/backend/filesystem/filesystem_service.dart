@@ -41,25 +41,14 @@ class FilesystemService {
   Future<void> init({bool headless = false}) async {
     if (!kIsWeb) {
       //ignore: unnecessary_cast, we need this as a workaround
-      appDocDir = (kIsDesktop ? await getApplicationSupportDirectory() : await getApplicationDocumentsDirectory()) as Directory;
+      appDocDir =
+          (kIsDesktop ? await getApplicationSupportDirectory() : await getApplicationDocumentsDirectory()) as Directory;
       if (isMsix) {
         final String appDataRoot = joinAll(split(appDocDir.absolute.path).slice(0, 4));
-        final Directory msStoreLocation = Directory(join(
-            appDataRoot,
-            "Local",
-            "Packages",
-            "23344BlueBubbles.BlueBubbles_2fva2ntdzvhtw",
-            "LocalCache",
-            "Roaming",
-            "BlueBubbles",
-            "bluebubbles"));
+        final Directory msStoreLocation = Directory(join(appDataRoot, "Local", "Packages",
+            "23344BlueBubbles.BlueBubbles_2fva2ntdzvhtw", "LocalCache", "Roaming", "BlueBubbles", "bluebubbles"));
         // Check if the non-msix directory exists
-        final Directory nonMsixLocation = Directory(join(
-          appDataRoot,
-          "Roaming",
-          "BlueBubbles",
-          "bluebubbles"
-        ));
+        final Directory nonMsixLocation = Directory(join(appDataRoot, "Roaming", "BlueBubbles", "bluebubbles"));
         if (!msStoreLocation.existsSync() && nonMsixLocation.existsSync()) {
           await copyPath(nonMsixLocation.path, msStoreLocation.path);
         }

@@ -24,21 +24,20 @@ class FailedToScanDialog extends StatelessWidget {
       backgroundColor: context.theme.colorScheme.properSurface,
       content: SingleChildScrollView(
         physics: ThemeSwitcher.getScrollPhysics(),
-        child: Text(
-          error,
-          style: context.theme.textTheme.bodyLarge
-        ),
+        child: Text(error, style: context.theme.textTheme.bodyLarge),
       ),
       actions: [
         TextButton(
-          child: Text("Copy", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+          child: Text("Copy",
+              style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
           onPressed: () {
             Navigator.of(context).pop();
             Clipboard.setData(ClipboardData(text: error.toString()));
           },
         ),
         TextButton(
-          child: Text("OK", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+          child:
+              Text("OK", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
           onPressed: () {
             Navigator.of(context).pop();
           },

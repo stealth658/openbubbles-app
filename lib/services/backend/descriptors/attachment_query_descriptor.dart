@@ -17,18 +17,16 @@ class AttachmentQueryDescriptor {
   /// Build an ObjectBox Condition from this descriptor
   Condition<Attachment>? buildCondition() {
     if (conditions.isEmpty) return null;
-    
+
     Condition<Attachment>? result = conditions.first.buildCondition();
-    
+
     for (int i = 1; i < conditions.length; i++) {
       final condition = conditions[i].buildCondition();
       if (result != null) {
-        result = logic == AttachmentQueryLogic.and 
-          ? result.and(condition)
-          : result.or(condition);
+        result = logic == AttachmentQueryLogic.and ? result.and(condition) : result.or(condition);
       }
     }
-    
+
     return result;
   }
 
@@ -43,9 +41,7 @@ class AttachmentQueryDescriptor {
   /// Create from a serialized map
   factory AttachmentQueryDescriptor.fromMap(Map<String, dynamic> map) {
     return AttachmentQueryDescriptor(
-      conditions: (map['conditions'] as List)
-          .map((c) => AttachmentQueryCondition.fromMap(c))
-          .toList(),
+      conditions: (map['conditions'] as List).map((c) => AttachmentQueryCondition.fromMap(c)).toList(),
       logic: AttachmentQueryLogic.values.firstWhere(
         (e) => e.name == map['logic'],
         orElse: () => AttachmentQueryLogic.and,

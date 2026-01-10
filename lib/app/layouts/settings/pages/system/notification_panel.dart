@@ -44,25 +44,21 @@ class _NotificationPanelState extends OptimizedState<NotificationPanel> with Sin
                   color: iOS ? headerColor : tileColor,
                   child: Padding(
                     padding: EdgeInsets.only(bottom: 8.0, left: iOS ? 30 : 15),
-                    child: Text("Notifications".psCapitalize,
-                        style: iOS
-                            ? iosSubtitle
-                            : materialSubtitle),
+                    child: Text("Notifications".psCapitalize, style: iOS ? iosSubtitle : materialSubtitle),
                   )),
             SettingsSection(backgroundColor: tileColor, children: [
               if (!kIsWeb)
                 Obx(() => SettingsSwitch(
-                  onChanged: (bool val) async {
-                    SettingsSvc.settings.notifyOnChatList.value = val;
-                    await SettingsSvc.settings.saveOneAsync('notifyOnChatList');
-                  },
-                  initialVal: SettingsSvc.settings.notifyOnChatList.value,
-                  title: "Send Notifications on Chat List",
-                  subtitle:
-                  "Sends notifications for new messages while in the chat list or chat creator",
-                  isThreeLine: true,
-                  backgroundColor: tileColor,
-                )),
+                      onChanged: (bool val) async {
+                        SettingsSvc.settings.notifyOnChatList.value = val;
+                        await SettingsSvc.settings.saveOneAsync('notifyOnChatList');
+                      },
+                      initialVal: SettingsSvc.settings.notifyOnChatList.value,
+                      title: "Send Notifications on Chat List",
+                      subtitle: "Sends notifications for new messages while in the chat list or chat creator",
+                      isThreeLine: true,
+                      backgroundColor: tileColor,
+                    )),
               if (kIsWeb)
                 SettingsTile(
                   onTap: () async {
@@ -73,88 +69,87 @@ class _NotificationPanelState extends OptimizedState<NotificationPanel> with Sin
                   title: uh.Notification.permission == "granted"
                       ? "Notifications enabled"
                       : uh.Notification.permission == "denied"
-                      ? "Notifications denied, please update your browser settings to re-enable notifications"
-                      : "Click to enable notifications",
+                          ? "Notifications denied, please update your browser settings to re-enable notifications"
+                          : "Click to enable notifications",
                   backgroundColor: tileColor,
                 ),
               const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
               Obx(() => SettingsSwitch(
-                onChanged: (bool val) async {
-                  SettingsSvc.settings.notifyReactions.value = val;
-                  await SettingsSvc.settings.saveOneAsync('notifyReactions');
-                },
-                initialVal: SettingsSvc.settings.notifyReactions.value,
-                title: "Notify for Reactions",
-                subtitle: "Sends notifications for incoming reactions",
-                backgroundColor: tileColor,
-              )),
+                    onChanged: (bool val) async {
+                      SettingsSvc.settings.notifyReactions.value = val;
+                      await SettingsSvc.settings.saveOneAsync('notifyReactions');
+                    },
+                    initialVal: SettingsSvc.settings.notifyReactions.value,
+                    title: "Notify for Reactions",
+                    subtitle: "Sends notifications for incoming reactions",
+                    backgroundColor: tileColor,
+                  )),
               const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
               Obx(() => SettingsSwitch(
-                title: "Text Detection",
-                subtitle: "Mute all chats except when your choice of text is found in a message",
-                initialVal: SettingsSvc.settings.globalTextDetection.value.isNotEmpty,
-                onChanged: (bool val) async {
-                  if (!val) {
-                    SettingsSvc.settings.globalTextDetection.value = "";
-                    await SettingsSvc.settings.saveOneAsync('globalTextDetection');
-                    return;
-                  }
-                  final TextEditingController controller = TextEditingController();
-                  controller.text = SettingsSvc.settings.globalTextDetection.value;
-                  await showDialog(
-                    context: context,
-                    builder: (context) => TextDetectionDialog(controller),
-                  );
-                  SettingsSvc.settings.globalTextDetection.value = controller.text;
-                  await SettingsSvc.settings.saveOneAsync('globalTextDetection');
-                },
-                backgroundColor: tileColor,
-              )),
-              Obx(() => SettingsSvc.settings.globalTextDetection.value.isNotEmpty ? SettingsTile(
-                title: "Whitelisted Phrases",
-                subtitle: SettingsSvc.settings.globalTextDetection.value,
-                leading: Icon(iOS ? CupertinoIcons.pencil : Icons.edit_outlined),
-                onTap: () async {
-                  final TextEditingController controller = TextEditingController();
-                  controller.text = SettingsSvc.settings.globalTextDetection.value;
-                  await showDialog(
-                    context: context,
-                    builder: (context) => TextDetectionDialog(controller),
-                  );
-                  SettingsSvc.settings.globalTextDetection.value = controller.text;
-                  await SettingsSvc.settings.saveOneAsync('globalTextDetection');
-                },
-              ) : const SizedBox.shrink())
+                    title: "Text Detection",
+                    subtitle: "Mute all chats except when your choice of text is found in a message",
+                    initialVal: SettingsSvc.settings.globalTextDetection.value.isNotEmpty,
+                    onChanged: (bool val) async {
+                      if (!val) {
+                        SettingsSvc.settings.globalTextDetection.value = "";
+                        await SettingsSvc.settings.saveOneAsync('globalTextDetection');
+                        return;
+                      }
+                      final TextEditingController controller = TextEditingController();
+                      controller.text = SettingsSvc.settings.globalTextDetection.value;
+                      await showDialog(
+                        context: context,
+                        builder: (context) => TextDetectionDialog(controller),
+                      );
+                      SettingsSvc.settings.globalTextDetection.value = controller.text;
+                      await SettingsSvc.settings.saveOneAsync('globalTextDetection');
+                    },
+                    backgroundColor: tileColor,
+                  )),
+              Obx(() => SettingsSvc.settings.globalTextDetection.value.isNotEmpty
+                  ? SettingsTile(
+                      title: "Whitelisted Phrases",
+                      subtitle: SettingsSvc.settings.globalTextDetection.value,
+                      leading: Icon(iOS ? CupertinoIcons.pencil : Icons.edit_outlined),
+                      onTap: () async {
+                        final TextEditingController controller = TextEditingController();
+                        controller.text = SettingsSvc.settings.globalTextDetection.value;
+                        await showDialog(
+                          context: context,
+                          builder: (context) => TextDetectionDialog(controller),
+                        );
+                        SettingsSvc.settings.globalTextDetection.value = controller.text;
+                        await SettingsSvc.settings.saveOneAsync('globalTextDetection');
+                      },
+                    )
+                  : const SizedBox.shrink())
             ]),
-            SettingsHeader(
-                iosSubtitle: iosSubtitle,
-                materialSubtitle: materialSubtitle,
-                text: "Advanced"),
+            SettingsHeader(iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Advanced"),
             SettingsSection(
               backgroundColor: tileColor,
               children: [
                 Obx(() => SettingsSwitch(
-                  onChanged: (bool val) async {
-                    SettingsSvc.settings.hideTextPreviews.value = val;
-                    await SettingsSvc.settings.saveOneAsync('hideTextPreviews');
-                  },
-                  initialVal: SettingsSvc.settings.hideTextPreviews.value,
-                  title: "Hide Message Text",
-                  subtitle: "Replaces message text with 'iMessage' in notifications",
-                  backgroundColor: tileColor,
-                )),
+                      onChanged: (bool val) async {
+                        SettingsSvc.settings.hideTextPreviews.value = val;
+                        await SettingsSvc.settings.saveOneAsync('hideTextPreviews');
+                      },
+                      initialVal: SettingsSvc.settings.hideTextPreviews.value,
+                      title: "Hide Message Text",
+                      subtitle: "Replaces message text with 'iMessage' in notifications",
+                      backgroundColor: tileColor,
+                    )),
                 const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                 Obx(() => SettingsSwitch(
-                  onChanged: (bool val) async {
-                    SettingsSvc.settings.showIncrementalSync.value = val;
-                    await SettingsSvc.settings.saveOneAsync('showIncrementalSync');
-                  },
-                  initialVal: SettingsSvc.settings.showIncrementalSync.value,
-                  title: "Notify When Incremental Sync Complete",
-                  subtitle: "Show a snackbar whenever a message sync is completed",
-                  backgroundColor: tileColor,
-                  isThreeLine: true,
-                )),
+                      onChanged: (bool val) async {
+                        SettingsSvc.settings.showIncrementalSync.value = val;
+                        await SettingsSvc.settings.saveOneAsync('showIncrementalSync');
+                      },
+                      initialVal: SettingsSvc.settings.showIncrementalSync.value,
+                      title: "Notify When Incremental Sync Complete",
+                      subtitle: "Show a snackbar whenever a message sync is completed",
+                      backgroundColor: tileColor,
+                      isThreeLine: true,
+                    )),
               ],
             ),
           ],
@@ -163,168 +158,178 @@ class _NotificationPanelState extends OptimizedState<NotificationPanel> with Sin
     ];
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle(
-        systemNavigationBarColor: SettingsSvc.settings.immersiveMode.value ? Colors.transparent : context.theme.colorScheme.background, // navigation bar color
-        systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
-        statusBarColor: Colors.transparent, // status bar color
-        statusBarIconBrightness: context.theme.colorScheme.brightness.opposite,
-      ),
-      child: Obx(() => Scaffold(
-        backgroundColor: material ? tileColor : headerColor,
-        appBar: samsung && index.value == 0
-            ? null
-            : PreferredSize(
-          preferredSize: Size(NavigationSvc.width(context), 50),
-          child: AppBar(
-            systemOverlayStyle: context.theme.colorScheme.brightness == Brightness.dark
-                ? SystemUiOverlayStyle.light
-                : SystemUiOverlayStyle.dark,
-            toolbarHeight: 50,
-            elevation: 0,
-            scrolledUnderElevation: 3,
-            surfaceTintColor: context.theme.colorScheme.primary,
-            leading: buildBackButton(context),
-            backgroundColor: headerColor,
-            centerTitle: iOS,
-            title: Text(
-              "Notifications",
-              style: context.theme.textTheme.titleLarge,
-            ),
-          ),
+        value: SystemUiOverlayStyle(
+          systemNavigationBarColor: SettingsSvc.settings.immersiveMode.value
+              ? Colors.transparent
+              : context.theme.colorScheme.background, // navigation bar color
+          systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
+          statusBarColor: Colors.transparent, // status bar color
+          statusBarIconBrightness: context.theme.colorScheme.brightness.opposite,
         ),
-        body: TabBarView(
-          physics: ThemeSwitcher.getScrollPhysics(),
-          controller: tabController,
-          children: <Widget>[
-            NotificationListener<ScrollEndNotification>(
-              onNotification: (_) {
-                if (SettingsSvc.settings.skin.value != Skins.Samsung || kIsWeb || kIsDesktop) return false;
-                final scrollDistance = context.height / 3 - 57;
+        child: Obx(() => Scaffold(
+              backgroundColor: material ? tileColor : headerColor,
+              appBar: samsung && index.value == 0
+                  ? null
+                  : PreferredSize(
+                      preferredSize: Size(NavigationSvc.width(context), 50),
+                      child: AppBar(
+                        systemOverlayStyle: context.theme.colorScheme.brightness == Brightness.dark
+                            ? SystemUiOverlayStyle.light
+                            : SystemUiOverlayStyle.dark,
+                        toolbarHeight: 50,
+                        elevation: 0,
+                        scrolledUnderElevation: 3,
+                        surfaceTintColor: context.theme.colorScheme.primary,
+                        leading: buildBackButton(context),
+                        backgroundColor: headerColor,
+                        centerTitle: iOS,
+                        title: Text(
+                          "Notifications",
+                          style: context.theme.textTheme.titleLarge,
+                        ),
+                      ),
+                    ),
+              body: TabBarView(
+                physics: ThemeSwitcher.getScrollPhysics(),
+                controller: tabController,
+                children: <Widget>[
+                  NotificationListener<ScrollEndNotification>(
+                    onNotification: (_) {
+                      if (SettingsSvc.settings.skin.value != Skins.Samsung || kIsWeb || kIsDesktop) return false;
+                      final scrollDistance = context.height / 3 - 57;
 
-                if (controller1.offset > 0 && controller1.offset < scrollDistance) {
-                  final double snapOffset = controller1.offset / scrollDistance > 0.5 ? scrollDistance : 0;
+                      if (controller1.offset > 0 && controller1.offset < scrollDistance) {
+                        final double snapOffset = controller1.offset / scrollDistance > 0.5 ? scrollDistance : 0;
 
-                  Future.microtask(() =>
-                      controller1.animateTo(snapOffset, duration: const Duration(milliseconds: 200), curve: Curves.linear));
-                }
-                return false;
-              },
-              child: ScrollbarWrapper(
-                controller: controller1,
-                child: Obx(() => CustomScrollView(
-                    controller: controller1,
-                    physics:
-                    (kIsDesktop || kIsWeb) ? const NeverScrollableScrollPhysics() : ThemeSwitcher.getScrollPhysics(),
-                    slivers: <Widget>[
-                      if (samsung)
-                        SliverAppBar(
-                          backgroundColor: headerColor,
-                          pinned: true,
-                          stretch: true,
-                          expandedHeight: context.height / 3,
-                          elevation: 0,
-                          automaticallyImplyLeading: false,
-                          flexibleSpace: LayoutBuilder(
-                            builder: (context, constraints) {
-                              var expandRatio = (constraints.maxHeight - 100) / (context.height / 3 - 50);
+                        Future.microtask(() => controller1.animateTo(snapOffset,
+                            duration: const Duration(milliseconds: 200), curve: Curves.linear));
+                      }
+                      return false;
+                    },
+                    child: ScrollbarWrapper(
+                      controller: controller1,
+                      child: Obx(
+                        () => CustomScrollView(
+                          controller: controller1,
+                          physics: (kIsDesktop || kIsWeb)
+                              ? const NeverScrollableScrollPhysics()
+                              : ThemeSwitcher.getScrollPhysics(),
+                          slivers: <Widget>[
+                            if (samsung)
+                              SliverAppBar(
+                                backgroundColor: headerColor,
+                                pinned: true,
+                                stretch: true,
+                                expandedHeight: context.height / 3,
+                                elevation: 0,
+                                automaticallyImplyLeading: false,
+                                flexibleSpace: LayoutBuilder(
+                                  builder: (context, constraints) {
+                                    var expandRatio = (constraints.maxHeight - 100) / (context.height / 3 - 50);
 
-                              if (expandRatio > 1.0) expandRatio = 1.0;
-                              if (expandRatio < 0.0) expandRatio = 0.0;
-                              final animation = AlwaysStoppedAnimation<double>(expandRatio);
+                                    if (expandRatio > 1.0) expandRatio = 1.0;
+                                    if (expandRatio < 0.0) expandRatio = 0.0;
+                                    final animation = AlwaysStoppedAnimation<double>(expandRatio);
 
-                              return Stack(
-                                fit: StackFit.expand,
-                                children: [
-                                  FadeTransition(
-                                    opacity: Tween(begin: 0.0, end: 1.0).animate(CurvedAnimation(
-                                      parent: animation,
-                                      curve: const Interval(0.3, 1.0, curve: Curves.easeIn),
-                                    )),
-                                    child: Center(child: Text("Notifications", style: context.theme.textTheme.displaySmall!.copyWith(color: context.theme.colorScheme.onBackground), textAlign: TextAlign.center)),
-                                  ),
-                                  FadeTransition(
-                                    opacity: Tween(begin: 1.0, end: 0.0).animate(CurvedAnimation(
-                                      parent: animation,
-                                      curve: const Interval(0.0, 0.7, curve: Curves.easeOut),
-                                    )),
-                                    child: Align(
-                                      alignment: Alignment.bottomLeft,
-                                      child: Container(
-                                        padding: const EdgeInsets.only(left: 40),
-                                        height: 50,
-                                        child: Align(
-                                          alignment: Alignment.centerLeft,
-                                          child: Text(
-                                            "Notifications",
-                                            style: context.theme.textTheme.titleLarge,
+                                    return Stack(
+                                      fit: StackFit.expand,
+                                      children: [
+                                        FadeTransition(
+                                          opacity: Tween(begin: 0.0, end: 1.0).animate(CurvedAnimation(
+                                            parent: animation,
+                                            curve: const Interval(0.3, 1.0, curve: Curves.easeIn),
+                                          )),
+                                          child: Center(
+                                              child: Text("Notifications",
+                                                  style: context.theme.textTheme.displaySmall!
+                                                      .copyWith(color: context.theme.colorScheme.onBackground),
+                                                  textAlign: TextAlign.center)),
+                                        ),
+                                        FadeTransition(
+                                          opacity: Tween(begin: 1.0, end: 0.0).animate(CurvedAnimation(
+                                            parent: animation,
+                                            curve: const Interval(0.0, 0.7, curve: Curves.easeOut),
+                                          )),
+                                          child: Align(
+                                            alignment: Alignment.bottomLeft,
+                                            child: Container(
+                                              padding: const EdgeInsets.only(left: 40),
+                                              height: 50,
+                                              child: Align(
+                                                alignment: Alignment.centerLeft,
+                                                child: Text(
+                                                  "Notifications",
+                                                  style: context.theme.textTheme.titleLarge,
+                                                ),
+                                              ),
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.only(left: 8.0),
-                                    child: Align(
-                                      alignment: Alignment.bottomLeft,
-                                      child: Container(
-                                        height: 50,
-                                        child: Align(
-                                          alignment: Alignment.centerLeft,
-                                          child: buildBackButton(context),
+                                        Padding(
+                                          padding: const EdgeInsets.only(left: 8.0),
+                                          child: Align(
+                                            alignment: Alignment.bottomLeft,
+                                            child: Container(
+                                              height: 50,
+                                              child: Align(
+                                                alignment: Alignment.centerLeft,
+                                                child: buildBackButton(context),
+                                              ),
+                                            ),
+                                          ),
                                         ),
-                                      ),
-                                    ),
+                                      ],
+                                    );
+                                  },
+                                ),
+                              ),
+                            if (SettingsSvc.settings.skin.value != Skins.Samsung) ...bodySlivers,
+                            if (SettingsSvc.settings.skin.value == Skins.Samsung)
+                              SliverToBoxAdapter(
+                                child: ConstrainedBox(
+                                  constraints: BoxConstraints(
+                                      minHeight: context.height -
+                                          50 -
+                                          context.mediaQueryPadding.top -
+                                          context.mediaQueryViewPadding.top),
+                                  child: CustomScrollView(
+                                    physics: const NeverScrollableScrollPhysics(),
+                                    shrinkWrap: true,
+                                    slivers: bodySlivers,
                                   ),
-                                ],
-                              );
-                            },
-                          ),
+                                ),
+                              ),
+                          ],
                         ),
-                      if (SettingsSvc.settings.skin.value != Skins.Samsung)
-                        ...bodySlivers,
-                      if (SettingsSvc.settings.skin.value == Skins.Samsung)
-                        SliverToBoxAdapter(
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(minHeight: context.height - 50 - context.mediaQueryPadding.top - context.mediaQueryViewPadding.top),
-                            child: CustomScrollView(
-                              physics: const NeverScrollableScrollPhysics(),
-                              shrinkWrap: true,
-                              slivers: bodySlivers,
-                            ),
-                          ),
-                        ),
-                    ],
+                      ),
+                    ),
                   ),
-                ),
+                  if (!kIsWeb) ChatList(),
+                ],
               ),
-            ),
-            if (!kIsWeb) ChatList(),
-          ],
-        ),
-        bottomNavigationBar: kIsWeb ? null : NavigationBar(
-          selectedIndex: index.value,
-          backgroundColor: headerColor,
-          destinations: [
-            NavigationDestination(
-              icon: Icon(iOS ? CupertinoIcons.globe : Icons.public),
-              label: "GLOBAL OPTIONS",
-            ),
-            NavigationDestination(
-              icon: Icon(
-                iOS
-                    ? CupertinoIcons.conversation_bubble
-                    : Icons.chat_bubble_outline,
-              ),
-              label: "CHAT OPTIONS",
-            ),
-          ],
-          onDestinationSelected: (page) {
-            index.value = page;
-            tabController.animateTo(page);
-          },
-        ),
-      )
-    ));
+              bottomNavigationBar: kIsWeb
+                  ? null
+                  : NavigationBar(
+                      selectedIndex: index.value,
+                      backgroundColor: headerColor,
+                      destinations: [
+                        NavigationDestination(
+                          icon: Icon(iOS ? CupertinoIcons.globe : Icons.public),
+                          label: "GLOBAL OPTIONS",
+                        ),
+                        NavigationDestination(
+                          icon: Icon(
+                            iOS ? CupertinoIcons.conversation_bubble : Icons.chat_bubble_outline,
+                          ),
+                          label: "CHAT OPTIONS",
+                        ),
+                      ],
+                      onDestinationSelected: (page) {
+                        index.value = page;
+                        tabController.animateTo(page);
+                      },
+                    ),
+            )));
   }
 }
 
@@ -343,8 +348,7 @@ class ChatListState extends OptimizedState<ChatList> {
       String muteArgsStr = "";
       if (chat.muteArgs != null) {
         if (chat.muteType == "mute_individuals") {
-          final participants =
-              chat.handles.where((element) => chat.muteArgs!.split(",").contains(element.address));
+          final participants = chat.handles.where((element) => chat.muteArgs!.split(",").contains(element.address));
           muteArgsStr = " - ${participants.length > 1 ? "${participants.length} people" : "1 person"}";
         } else if (chat.muteType == "temporary_mute") {
           final DateTime time = DateTime.parse(chat.muteArgs!).toLocal();
@@ -422,12 +426,14 @@ class ChatListState extends OptimizedState<ChatList> {
                           key: Key(chat.guid.toString()),
                           chat: chat,
                           controller: Get.put(
-                            ConversationListController(showUnknownSenders: true, showArchivedChats: true),
-                            tag: "notification-panel"
-                          ),
+                              ConversationListController(showUnknownSenders: true, showArchivedChats: true),
+                              tag: "notification-panel"),
                           inSelectMode: true,
-                          subtitle: Text(getSubtitle(chat),
-                              style: context.theme.textTheme.bodySmall!.copyWith(color: context.theme.colorScheme.properOnSurface),),
+                          subtitle: Text(
+                            getSubtitle(chat),
+                            style: context.theme.textTheme.bodySmall!
+                                .copyWith(color: context.theme.colorScheme.properOnSurface),
+                          ),
                           onSelect: (_) async {
                             await showDialog(
                               context: context,

@@ -36,8 +36,9 @@ class _DesktopPanelState extends OptimizedState<DesktopPanel> {
 
   @override
   Widget build(BuildContext context) {
-    final RxInt maxActions =
-        Platform.isWindows ? (SettingsSvc.settings.showReplyField.value ? 4 : 5).obs : SettingsSvc.settings.actionList.length.obs;
+    final RxInt maxActions = Platform.isWindows
+        ? (SettingsSvc.settings.showReplyField.value ? 4 : 5).obs
+        : SettingsSvc.settings.actionList.length.obs;
 
     return SettingsScaffold(
       title: "Desktop Settings",
@@ -55,8 +56,8 @@ class _DesktopPanelState extends OptimizedState<DesktopPanel> {
                 children: [
                   Obx(() => SettingsSwitch(
                         onChanged: (bool val) async {
-                          SettingsSvc.settings.launchAtStartup.value =
-                              await SettingsSvc.setupLaunchAtStartup(val, SettingsSvc.settings.launchAtStartupMinimized.value);
+                          SettingsSvc.settings.launchAtStartup.value = await SettingsSvc.setupLaunchAtStartup(
+                              val, SettingsSvc.settings.launchAtStartupMinimized.value);
                           await SettingsSvc.settings.saveOneAsync('launchAtStartup');
                         },
                         initialVal: SettingsSvc.settings.launchAtStartup.value,
@@ -84,8 +85,8 @@ class _DesktopPanelState extends OptimizedState<DesktopPanel> {
                             SettingsSwitch(
                               onChanged: (bool val) async {
                                 SettingsSvc.settings.launchAtStartupMinimized.value = val;
-                                SettingsSvc.settings.launchAtStartup.value =
-                                    await SettingsSvc.setupLaunchAtStartup(SettingsSvc.settings.launchAtStartup.value, val);
+                                SettingsSvc.settings.launchAtStartup.value = await SettingsSvc.setupLaunchAtStartup(
+                                    SettingsSvc.settings.launchAtStartup.value, val);
                                 await SettingsSvc.settings.saveOneAsync('launchAtStartupMinimized');
                               },
                               initialVal: SettingsSvc.settings.launchAtStartupMinimized.value,
@@ -228,7 +229,8 @@ class _DesktopPanelState extends OptimizedState<DesktopPanel> {
                                 await FilePicker.platform.pickFiles(type: FileType.audio, withData: true);
                             if (result != null) {
                               PlatformFile platformFile = result.files.first;
-                              String path = "${FilesystemSvc.appDocDir.path}/sounds/${"notification-"}${platformFile.name}";
+                              String path =
+                                  "${FilesystemSvc.appDocDir.path}/sounds/${"notification-"}${platformFile.name}";
                               await File(path).create(recursive: true);
                               await File(path).writeAsBytes(platformFile.bytes!);
                               SettingsSvc.settings.desktopNotificationSoundPath.value = path;
@@ -252,8 +254,8 @@ class _DesktopPanelState extends OptimizedState<DesktopPanel> {
                                           if (playingNotificationSound.value) {
                                             await _notificationPlayer.stop();
                                           } else {
-                                            await _notificationPlayer
-                                                .setVolume(SettingsSvc.settings.desktopNotificationSoundVolume.value.toDouble());
+                                            await _notificationPlayer.setVolume(
+                                                SettingsSvc.settings.desktopNotificationSoundVolume.value.toDouble());
                                             await _notificationPlayer
                                                 .open(Media(SettingsSvc.settings.desktopNotificationSoundPath.value!));
                                           }
@@ -369,16 +371,19 @@ class _DesktopPanelState extends OptimizedState<DesktopPanel> {
                                             String? temp = SettingsSvc.settings.actionList[oldIndex];
                                             // If dragging to the right
                                             for (int i = oldIndex; i <= newIndex - 1; i++) {
-                                              SettingsSvc.settings.actionList[i] = SettingsSvc.settings.actionList[i + 1];
+                                              SettingsSvc.settings.actionList[i] =
+                                                  SettingsSvc.settings.actionList[i + 1];
                                             }
                                             // If dragging to the left
                                             for (int i = oldIndex; i >= newIndex + 1; i--) {
-                                              SettingsSvc.settings.actionList[i] = SettingsSvc.settings.actionList[i - 1];
+                                              SettingsSvc.settings.actionList[i] =
+                                                  SettingsSvc.settings.actionList[i - 1];
                                             }
                                             SettingsSvc.settings.actionList[newIndex] = temp;
 
-                                            List<int> selectedIndices =
-                                                selected.map((s) => SettingsSvc.settings.actionList.indexOf(s)).toList();
+                                            List<int> selectedIndices = selected
+                                                .map((s) => SettingsSvc.settings.actionList.indexOf(s))
+                                                .toList();
                                             selectedIndices.sort();
                                             SettingsSvc.settings.selectedActionIndices.value = selectedIndices;
                                             await SettingsSvc.settings.saveOneAsync('selectedActionIndices');
@@ -391,15 +396,17 @@ class _DesktopPanelState extends OptimizedState<DesktopPanel> {
                                               onExit: (event) => showButtons[index] = false,
                                               child: Obx(
                                                 () {
-                                                  bool selected = SettingsSvc.settings.selectedActionIndices.contains(index);
+                                                  bool selected =
+                                                      SettingsSvc.settings.selectedActionIndices.contains(index);
 
                                                   String value = SettingsSvc.settings.actionList[index];
 
-                                                  bool disabled =
-                                                      (!SettingsSvc.settings.enablePrivateAPI.value && value != "Mark Read");
+                                                  bool disabled = (!SettingsSvc.settings.enablePrivateAPI.value &&
+                                                      value != "Mark Read");
 
                                                   bool hardDisabled = (!selected &&
-                                                      (SettingsSvc.settings.selectedActionIndices.length == maxActions.value));
+                                                      (SettingsSvc.settings.selectedActionIndices.length ==
+                                                          maxActions.value));
 
                                                   Color color = selected
                                                       ? context.theme.colorScheme.primary
@@ -417,8 +424,9 @@ class _DesktopPanelState extends OptimizedState<DesktopPanel> {
                                                           SettingsSvc.settings.selectedActionIndices.add(index);
                                                           SettingsSvc.settings.selectedActionIndices.sort();
                                                         }
-                                                        
-                                                        await SettingsSvc.settings.saveOneAsync('selectedActionIndices');
+
+                                                        await SettingsSvc.settings
+                                                            .saveOneAsync('selectedActionIndices');
                                                       },
                                                       child: AnimatedContainer(
                                                         margin: const EdgeInsets.symmetric(vertical: 5),
@@ -479,13 +487,16 @@ class _DesktopPanelState extends OptimizedState<DesktopPanel> {
                                   NavigationSvc.listener.value;
                                   double width = min(NavigationSvc.width(context) / 2, 400);
                                   return Container(
-                                      width: NavigationSvc.width(context) > 1500 ? 800 : min(NavigationSvc.width(context) / 2, 400),
+                                      width: NavigationSvc.width(context) > 1500
+                                          ? 800
+                                          : min(NavigationSvc.width(context) / 2, 400),
                                       child: Obx(() {
                                         int markReadIndex = SettingsSvc.settings.actionList.indexOf("Mark Read");
-                                        Iterable<int> actualIndices = SettingsSvc.settings.selectedActionIndices
-                                            .where((s) => SettingsSvc.settings.enablePrivateAPI.value || s == markReadIndex);
+                                        Iterable<int> actualIndices = SettingsSvc.settings.selectedActionIndices.where(
+                                            (s) => SettingsSvc.settings.enablePrivateAPI.value || s == markReadIndex);
                                         int numActions = actualIndices.length;
-                                        bool showMarkRead = SettingsSvc.settings.selectedActionIndices.contains(markReadIndex);
+                                        bool showMarkRead =
+                                            SettingsSvc.settings.selectedActionIndices.contains(markReadIndex);
                                         bool showReplyField = SettingsSvc.settings.showReplyField.value;
                                         NavigationSvc.listener.value;
                                         double margin = 20;

@@ -123,7 +123,7 @@ class _SendButtonIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final isIOS = SettingsSvc.settings.skin.value == Skins.iOS;
     final isAnimating = animationValue != 0;
-    
+
     return Container(
       constraints: const BoxConstraints(minHeight: 32, minWidth: 32),
       decoration: BoxDecoration(
@@ -133,12 +133,7 @@ class _SendButtonIcon extends StatelessWidget {
             ? LinearGradient(
                 begin: Alignment.bottomCenter,
                 end: Alignment.topCenter,
-                colors: [
-                  baseColor,
-                  baseColor,
-                  errorColor,
-                  errorColor
-                ],
+                colors: [baseColor, baseColor, errorColor, errorColor],
                 stops: [0.0, 1 - animationValue, 1 - animationValue, 1.0],
               )
             : null,
@@ -148,9 +143,7 @@ class _SendButtonIcon extends StatelessWidget {
         animationValue == 0
             ? (isIOS ? CupertinoIcons.arrow_up : Icons.send_outlined)
             : (isIOS ? CupertinoIcons.xmark : Icons.close),
-        color: animationValue == 0
-            ? (isIOS ? iosOnPrimary : materialSecondary)
-            : onError,
+        color: animationValue == 0 ? (isIOS ? iosOnPrimary : materialSecondary) : onError,
         size: isIOS || isAnimating ? 20 : 28,
       ),
     );

@@ -28,7 +28,9 @@ class ManualMarkState extends OptimizedState<ManualMark> {
 
   @override
   Widget build(BuildContext context) {
-    final manualMark = SettingsSvc.settings.enablePrivateAPI.value && SettingsSvc.settings.privateManualMarkAsRead.value && !(chat.autoSendReadReceipts ?? false);
+    final manualMark = SettingsSvc.settings.enablePrivateAPI.value &&
+        SettingsSvc.settings.privateManualMarkAsRead.value &&
+        !(chat.autoSendReadReceipts ?? false);
     return Obx(() {
       if (!manualMark && !widget.controller.inSelectMode.value) return const SizedBox.shrink();
       return Row(
@@ -36,19 +38,26 @@ class ManualMarkState extends OptimizedState<ManualMark> {
         children: [
           IconButton(
             icon: Icon(
-              widget.controller.inSelectMode.value ? (iOS ? CupertinoIcons.trash : Icons.delete_outlined)
-                  : marking ? (iOS ? CupertinoIcons.arrow_2_circlepath : Icons.sync)
-                  : marked ? (iOS ? CupertinoIcons.app : Icons.mark_chat_read_outlined)
-                  : (iOS ? CupertinoIcons.app_badge : Icons.mark_chat_unread_outlined),
-              color: !iOS ? context.theme.colorScheme.onBackground
+              widget.controller.inSelectMode.value
+                  ? (iOS ? CupertinoIcons.trash : Icons.delete_outlined)
+                  : marking
+                      ? (iOS ? CupertinoIcons.arrow_2_circlepath : Icons.sync)
+                      : marked
+                          ? (iOS ? CupertinoIcons.app : Icons.mark_chat_read_outlined)
+                          : (iOS ? CupertinoIcons.app_badge : Icons.mark_chat_unread_outlined),
+              color: !iOS
+                  ? context.theme.colorScheme.onBackground
                   : (!marked && !marking || widget.controller.inSelectMode.value)
-                  ? context.theme.colorScheme.primary
-                  : context.theme.colorScheme.outline,
+                      ? context.theme.colorScheme.primary
+                      : context.theme.colorScheme.outline,
             ),
-            tooltip: widget.controller.inSelectMode.value ? "Delete"
-              : marking ? null
-              : marked ? "Mark Unread"
-              : "Mark Read",
+            tooltip: widget.controller.inSelectMode.value
+                ? "Delete"
+                : marking
+                    ? null
+                    : marked
+                        ? "Mark Unread"
+                        : "Mark Read",
             onPressed: () async {
               if (widget.controller.inSelectMode.value) {
                 for (Message m in widget.controller.selected) {
@@ -134,20 +143,24 @@ class ConnectionIndicator extends StatelessWidget {
     return Align(
       alignment: Alignment.topCenter,
       child: Obx(() => AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        height: 0,
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: getIndicatorColor(SocketSvc.state.value).withValues(alpha: 0.4),
-              spreadRadius: SocketSvc.state.value != SocketState.connected && (LifecycleSvc.isAlive || kIsDesktop)
-                  ? max(MediaQuery.of(context).viewPadding.top, 40).clamp(0, noniOS ? 30 : double.infinity).toDouble()
-                  : 0,
-              blurRadius: max(MediaQuery.of(context).viewPadding.top, 40).clamp(0, noniOS ? 30 : double.infinity).toDouble(),
+            duration: const Duration(milliseconds: 300),
+            height: 0,
+            decoration: BoxDecoration(
+              boxShadow: [
+                BoxShadow(
+                  color: getIndicatorColor(SocketSvc.state.value).withValues(alpha: 0.4),
+                  spreadRadius: SocketSvc.state.value != SocketState.connected && (LifecycleSvc.isAlive || kIsDesktop)
+                      ? max(MediaQuery.of(context).viewPadding.top, 40)
+                          .clamp(0, noniOS ? 30 : double.infinity)
+                          .toDouble()
+                      : 0,
+                  blurRadius: max(MediaQuery.of(context).viewPadding.top, 40)
+                      .clamp(0, noniOS ? 30 : double.infinity)
+                      .toDouble(),
+                ),
+              ],
             ),
-          ],
-        ),
-      )),
+          )),
     );
   }
 }

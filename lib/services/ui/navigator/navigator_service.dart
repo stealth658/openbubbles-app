@@ -9,16 +9,20 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 // ignore: non_constant_identifier_names
-NavigatorService get NavigationSvc => Get.isRegistered<NavigatorService>() ? Get.find<NavigatorService>() : Get.put(NavigatorService());
+NavigatorService get NavigationSvc =>
+    Get.isRegistered<NavigatorService>() ? Get.find<NavigatorService>() : Get.put(NavigatorService());
 
 /// Handles navigation for the app
 class NavigatorService {
   final GlobalKey<NavigatorState> key = GlobalKey<NavigatorState>();
   final Rxn listener = Rxn();
+
   /// width of left side of split screen view
   double? _widthChatListLeft;
+
   /// width of right side of split screen view
   double? _widthChatListRight;
+
   /// width of settings right side split screen
   double? _widthSettings;
 
@@ -29,8 +33,10 @@ class NavigatorService {
   /// Returns widthChatListLeft if in tablet mode, and 0 otherwise
   double widthChatListLeft(BuildContext context) => isTabletMode(context) ? _widthChatListLeft ?? 0 : 0;
 
-  bool isTabletMode(BuildContext context) => (!context.isPhone || context.width / context.height > 0.8) &&
-      SettingsSvc.settings.tabletMode.value && context.width > 600;
+  bool isTabletMode(BuildContext context) =>
+      (!context.isPhone || context.width / context.height > 0.8) &&
+      SettingsSvc.settings.tabletMode.value &&
+      context.width > 600;
 
   /// grab the available screen width, returning the split screen width if applicable
   /// this should *always* be used in place of context.width or similar
@@ -46,8 +52,9 @@ class NavigatorService {
   }
 
   double ratio(BuildContext context) => (_widthChatListLeft ?? context.width) / context.width;
-  
-  bool isAvatarOnly(BuildContext context) => (kIsDesktop || kIsWeb) && isTabletMode(context) && (_widthChatListLeft ?? context.width) < 300;
+
+  bool isAvatarOnly(BuildContext context) =>
+      (kIsDesktop || kIsWeb) && isTabletMode(context) && (_widthChatListLeft ?? context.width) < 300;
 
   /// Push a new route onto the chat list right side navigator
   void push(BuildContext context, Widget widget) {
@@ -101,9 +108,12 @@ class NavigatorService {
           predicate,
           id: 2);
     } else {
-      await Navigator.of(context).pushAndRemoveUntil(customRoute ?? ThemeSwitcher.buildPageRoute(
-        builder: (BuildContext context) => TitleBarWrapper(child: widget),
-      ), predicate);
+      await Navigator.of(context).pushAndRemoveUntil(
+          customRoute ??
+              ThemeSwitcher.buildPageRoute(
+                builder: (BuildContext context) => TitleBarWrapper(child: widget),
+              ),
+          predicate);
     }
   }
 
@@ -112,12 +122,15 @@ class NavigatorService {
       {Bindings? binding}) {
     if (Get.keys.containsKey(3) && isTabletMode(context)) {
       // we only want to offUntil when in landscape, otherwise when the user presses back, the previous page will be the chat list
-      Get.offUntil(GetPageRoute(
-        page: () => widget,
-        binding: binding,
-        transition: Transition.noTransition,
-        transitionDuration: Duration.zero,
-      ), predicate, id: 3);
+      Get.offUntil(
+          GetPageRoute(
+            page: () => widget,
+            binding: binding,
+            transition: Transition.noTransition,
+            transitionDuration: Duration.zero,
+          ),
+          predicate,
+          id: 3);
     } else {
       binding?.dependencies();
       // only push here because we don't want to remove underlying routes when in portrait
@@ -128,9 +141,7 @@ class NavigatorService {
   }
 
   void backConversationView(BuildContext context) {
-    if (Get.keys.containsKey(3) &&
-        Get.keys[3]?.currentContext != null &&
-        isTabletMode(context)) {
+    if (Get.keys.containsKey(3) && Get.keys[3]?.currentContext != null && isTabletMode(context)) {
       Get.until((route) {
         if (route.settings.name == "initial") {
           Get.back();
@@ -139,9 +150,7 @@ class NavigatorService {
         }
         return true;
       }, id: 3);
-    } else if (Get.keys.containsKey(2) &&
-        Get.keys[2]?.currentContext != null &&
-        isTabletMode(context)) {
+    } else if (Get.keys.containsKey(2) && Get.keys[2]?.currentContext != null && isTabletMode(context)) {
       if (Get.currentRoute.isEmpty) {
         Get.back();
         return;

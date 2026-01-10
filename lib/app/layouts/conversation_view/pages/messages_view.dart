@@ -43,10 +43,10 @@ class MessagesViewState extends OptimizedState<MessagesView> {
   bool fetching = false;
   late bool noMoreMessages = widget.customService != null;
   List<Message> _messages = <Message>[];
-  
+
   // Notifier for list structure changes only (add/remove)
   final ValueNotifier<int> _listVersion = ValueNotifier<int>(0);
-  
+
   // Debounce setState calls to prevent rapid rebuilds
   Timer? _setStateDebouncer;
 
@@ -98,8 +98,8 @@ class MessagesViewState extends OptimizedState<MessagesView> {
       }
       final searchMessage = (messageService.method == null) ? null : messageService.struct.messages.firstOrNull;
       if (messageService.method != null) {
-        await messageService.loadSearchChunk(
-            messageService.struct.messages.first, messageService.method == "local" ? SearchMethod.local : SearchMethod.network);
+        await messageService.loadSearchChunk(messageService.struct.messages.first,
+            messageService.method == "local" ? SearchMethod.local : SearchMethod.network);
       } else if (messageService.struct.isEmpty) {
         final stopwatch = Stopwatch()..start();
         await messageService.loadChunk(0, controller);
@@ -194,10 +194,14 @@ class MessagesViewState extends OptimizedState<MessagesView> {
   }
 
   void updateReplies({bool updateConversation = true}) async {
-    if (!showSmartReplies || isNullOrEmpty(_messages) || kIsWeb || kIsDesktop || !mounted || !LifecycleSvc.isAlive) return;
+    if (!showSmartReplies || isNullOrEmpty(_messages) || kIsWeb || kIsDesktop || !mounted || !LifecycleSvc.isAlive)
+      return;
 
     if (updateConversation) {
-      _messages.reversed.where((e) => !isNullOrEmpty(e.fullText) && e.dateCreated != null).skip(max(_messages.length - 5, 0)).forEach((message) {
+      _messages.reversed
+          .where((e) => !isNullOrEmpty(e.fullText) && e.dateCreated != null)
+          .skip(max(_messages.length - 5, 0))
+          .forEach((message) {
         _addMessageToSmartReply(message);
       });
     }
@@ -217,8 +221,8 @@ class MessagesViewState extends OptimizedState<MessagesView> {
     if (message.isFromMe ?? false) {
       smartReply.addMessageToConversationFromLocalUser(message.fullText, message.dateCreated!.millisecondsSinceEpoch);
     } else {
-      smartReply.addMessageToConversationFromRemoteUser(
-          message.fullText, message.dateCreated!.millisecondsSinceEpoch, message.handleRelation.target?.address ?? "participant");
+      smartReply.addMessageToConversationFromRemoteUser(message.fullText, message.dateCreated!.millisecondsSinceEpoch,
+          message.handleRelation.target?.address ?? "participant");
     }
   }
 
@@ -232,7 +236,8 @@ class MessagesViewState extends OptimizedState<MessagesView> {
     Logger.debug("loadNextChunk: Starting - current messages: $previousLength");
 
     // Start loading the next chunk of messages
-    noMoreMessages = !(await messageService.loadChunk(_messages.length, controller, limit: limit).catchError((e, stack) {
+    noMoreMessages =
+        !(await messageService.loadChunk(_messages.length, controller, limit: limit).catchError((e, stack) {
       Logger.error("Failed to fetch message chunk!", error: e, trace: stack);
       fetching = false;
       return true;
@@ -246,23 +251,24 @@ class MessagesViewState extends OptimizedState<MessagesView> {
 
     final oldLength = _messages.length;
     final oldMessageGuids = Set<String>.from(_messages.map((m) => m.guid).whereType<String>());
-    
+
     final newMessagesFromService = messageService.struct.messages;
     final newMessages = newMessagesFromService.where((m) => !oldMessageGuids.contains(m.guid)).toList();
-    
-    Logger.debug("loadNextChunk: Found ${newMessages.length} new messages (old: $oldLength, new: ${newMessagesFromService.length})");
-    
+
+    Logger.debug(
+        "loadNextChunk: Found ${newMessages.length} new messages (old: $oldLength, new: ${newMessagesFromService.length})");
+
     // Initialize message widget controllers for new messages
     for (final newMsg in newMessages) {
       final c = mwc(newMsg);
       c.cvController = controller;
     }
-    
+
     // Update the list and rebuild - let SliverAnimatedList recalculate based on new length
     _messages = newMessagesFromService;
     _messages.sort(Message.sort);
     fetching = false;
-    
+
     Logger.debug("loadNextChunk: Updated _messages list to ${_messages.length} items, calling setState");
     setState(() {});
   }
@@ -270,30 +276,31 @@ class MessagesViewState extends OptimizedState<MessagesView> {
   void handleNewMessage(Message message) async {
     // Check if widget is still mounted before processing
     if (!mounted) return;
-    
+
     Logger.debug("handleNewMessage: Received new message ${message.guid}, current count: ${_messages.length}");
-    
+
     // Check if message already exists to prevent duplicates
     final existingIndex = _messages.indexWhere((m) => m.guid == message.guid);
     if (existingIndex != -1) {
-      Logger.debug("handleNewMessage: Message ${message.guid} already exists at index $existingIndex, skipping duplicate");
+      Logger.debug(
+          "handleNewMessage: Message ${message.guid} already exists at index $existingIndex, skipping duplicate");
       // Trigger update for this specific message via reactivity system
       if (message.guid != null) {
         muc.notifyMessageUpdate(chat.guid, message.guid!);
       }
       return;
     }
-    
+
     _messages.add(message);
     _messages.sort(Message.sort);
     final insertIndex = _messages.indexOf(message);
-    
+
     // Initialize message widget controller
     final c = mwc(message);
     c.cvController = controller;
-    
+
     Logger.debug("handleNewMessage: Added message at index $insertIndex, _messages now has ${_messages.length} items");
-    
+
     // Debounced setState to prevent rapid rebuilds
     _listVersion.value++;
     _setStateDebouncer?.cancel();
@@ -321,7 +328,9 @@ class MessagesViewState extends OptimizedState<MessagesView> {
       } else if (ChatsSvc.isChatActive(chat.guid)) {
         PlayerController controller = PlayerController();
         await controller
-            .preparePlayer(path: SettingsSvc.settings.receiveSoundPath.value!, volume: SettingsSvc.settings.soundVolume.value / 100)
+            .preparePlayer(
+                path: SettingsSvc.settings.receiveSoundPath.value!,
+                volume: SettingsSvc.settings.soundVolume.value / 100)
             .then((_) => controller.startPlayer());
       }
     }
@@ -330,7 +339,7 @@ class MessagesViewState extends OptimizedState<MessagesView> {
   void handleUpdatedMessage(Message message, {String? oldGuid}) {
     // Check if widget is still mounted before processing
     if (!mounted) return;
-    
+
     Logger.debug("handleUpdatedMessage: Updating message ${message.guid ?? oldGuid}");
     final index = _messages.indexWhere((e) => e.guid == (oldGuid ?? message.guid));
     if (index != -1) {
@@ -351,7 +360,7 @@ class MessagesViewState extends OptimizedState<MessagesView> {
   void handleDeletedMessage(Message message) {
     // Check if widget is still mounted before processing
     if (!mounted) return;
-    
+
     Logger.debug("handleDeletedMessage: Deleting message ${message.guid}");
     final index = _messages.indexWhere((e) => e.guid == message.guid);
     if (index != -1) {
@@ -399,7 +408,9 @@ class MessagesViewState extends OptimizedState<MessagesView> {
               child: Obx(() => RichText(
                     text: TextSpan(
                       children: MessageHelper.buildEmojiText(
-                        jumpingToOldestUnread.value && text == "Jump to oldest unread" ? "Jumping to oldest unread..." : text,
+                        jumpingToOldestUnread.value && text == "Jump to oldest unread"
+                            ? "Jumping to oldest unread..."
+                            : text,
                         context.theme.extension<BubbleText>()!.bubbleText,
                       ),
                     ),
@@ -419,7 +430,9 @@ class MessagesViewState extends OptimizedState<MessagesView> {
           dragging.value = false;
           return DropOperation.forbidden;
         }
-        numFiles.value = event.session.items.where((item) => Formats.standardFormats.whereType<FileFormat>().any((f) => item.canProvide(f))).length;
+        numFiles.value = event.session.items
+            .where((item) => Formats.standardFormats.whereType<FileFormat>().any((f) => item.canProvide(f)))
+            .length;
         if (numFiles.value > 0) {
           dragging.value = true;
           return DropOperation.copy;
@@ -524,10 +537,9 @@ class MessagesViewState extends OptimizedState<MessagesView> {
                               child: Loader(text: "Loading surrounding message context..."),
                             ),
                           SliverList(
-                              delegate: SliverChildBuilderDelegate(
-                                (BuildContext context, int index) {
+                            delegate: SliverChildBuilderDelegate(
+                              (BuildContext context, int index) {
                                 try {
-                                  
                                   // paginate
                                   if (index >= _messages.length) {
                                     if (!noMoreMessages && initialized && index == _messages.length) {
@@ -569,7 +581,8 @@ class MessagesViewState extends OptimizedState<MessagesView> {
                                     ),
                                   );
                                 } catch (e, stack) {
-                                  Logger.error("Error in SliverList itemBuilder at index $index", error: e, trace: stack);
+                                  Logger.error("Error in SliverList itemBuilder at index $index",
+                                      error: e, trace: stack);
                                   return SizedBox(
                                     key: ValueKey('error-$index'),
                                     height: 50,

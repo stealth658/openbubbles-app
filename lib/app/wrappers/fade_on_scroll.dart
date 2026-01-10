@@ -9,11 +9,10 @@ class FadeOnScroll extends StatefulWidget {
 
   FadeOnScroll(
       {Key? key,
-        required this.scrollController,
-        required this.child,
-        this.zeroOpacityOffset = 0,
-        this.fullOpacityOffset = 0
-      });
+      required this.scrollController,
+      required this.child,
+      this.zeroOpacityOffset = 0,
+      this.fullOpacityOffset = 0});
 
   @override
   State<StatefulWidget> createState() => _FadeOnScrollState();

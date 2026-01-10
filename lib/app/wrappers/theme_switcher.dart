@@ -15,10 +15,12 @@ class ThemeSwitcher extends StatefulWidget {
   static PageRoute<T> buildPageRoute<T>({required Widget Function(BuildContext context) builder}) {
     switch (SettingsSvc.settings.skin.value) {
       case Skins.iOS:
-        return PageRouteBuilder<T>(pageBuilder: (context, animation, secondaryAnimation) => builder.call(context),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return CustomCupertinoPageTransition(primaryRouteAnimation: animation, child: child, linearTransition: false);
-          });
+        return PageRouteBuilder<T>(
+            pageBuilder: (context, animation, secondaryAnimation) => builder.call(context),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return CustomCupertinoPageTransition(
+                  primaryRouteAnimation: animation, child: child, linearTransition: false);
+            });
       case Skins.Material:
         return MaterialPageRoute<T>(builder: builder);
       case Skins.Samsung:
@@ -48,7 +50,6 @@ class ThemeSwitcher extends StatefulWidget {
 }
 
 class _ThemeSwitcherState extends OptimizedState<ThemeSwitcher> {
-
   @override
   Widget build(BuildContext context) {
     return Obx(() {

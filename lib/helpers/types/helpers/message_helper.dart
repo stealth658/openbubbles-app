@@ -19,7 +19,7 @@ class MessageHelper {
     // Track progress on the UI thread
     int processedCount = 0;
     final totalCount = messages.length;
-    
+
     // Report initial progress
     if (onProgress != null) {
       onProgress(processedCount, totalCount);
@@ -28,7 +28,7 @@ class MessageHelper {
     // Offload the heavy work to the isolate via the interface
     // This processes messages in batches, handles DB operations, etc.
     Logger.info('Starting bulk add of $totalCount messages via isolate', tag: "BulkIngest");
-    
+
     try {
       final results = await MessageInterface.bulkAddMessages(
         chatData: chatData,
@@ -40,7 +40,7 @@ class MessageHelper {
       if (onProgress != null) {
         onProgress(totalCount, totalCount);
       }
-      
+
       Logger.info('Completed bulk add of ${results.length} messages', tag: "BulkIngest");
       return results;
     } catch (ex, stacktrace) {
@@ -55,7 +55,9 @@ class MessageHelper {
       return "Message sent with Invisible Ink";
     }
 
-    String sender = !withSender ? "" : "${message.isFromMe! ? "You: " : (message.handleRelation.target?.displayName ?? "Someone")}: ";
+    String sender = !withSender
+        ? ""
+        : "${message.isFromMe! ? "You: " : (message.handleRelation.target?.displayName ?? "Someone")}: ";
 
     if (message.isInteractive) {
       return "$sender${message.interactiveText}";
@@ -96,12 +98,19 @@ class MessageHelper {
           bool attachment = false;
           if (message.associatedMessagePart != null && associatedMessage.attributedBody.firstOrNull != null) {
             final attrBod = associatedMessage.attributedBody.first;
-            final ranges = attrBod.runs.where((e) => e.attributes?.messagePart == message.associatedMessagePart).map((e) => e.range).sorted((a, b) => a.first.compareTo(b.first));
-            final attachmentGuids = attrBod.runs.where((e) => e.attributes?.messagePart == message.associatedMessagePart && e.attributes?.attachmentGuid != null)
-                .map((e) => e.attributes?.attachmentGuid).toSet();
+            final ranges = attrBod.runs
+                .where((e) => e.attributes?.messagePart == message.associatedMessagePart)
+                .map((e) => e.range)
+                .sorted((a, b) => a.first.compareTo(b.first));
+            final attachmentGuids = attrBod.runs
+                .where((e) =>
+                    e.attributes?.messagePart == message.associatedMessagePart && e.attributes?.attachmentGuid != null)
+                .map((e) => e.attributes?.attachmentGuid)
+                .toSet();
             if (attachmentGuids.isNotEmpty) {
               attachment = true;
-              messageText = _getAttachmentText(associatedMessage.fetchAttachments()!.where((e) => attachmentGuids.contains(e?.guid)).toList());
+              messageText = _getAttachmentText(
+                  associatedMessage.fetchAttachments()!.where((e) => attachmentGuids.contains(e?.guid)).toList());
             } else if (ranges.isNotEmpty) {
               messageText = "";
               for (List range in ranges) {
@@ -116,9 +125,9 @@ class MessageHelper {
               attachment = true;
               messageText = _getAttachmentText(associatedMessage.fetchAttachments()!);
             } else {
-              messageText = (associatedMessage.subject ?? "")
-                + (!isNullOrEmpty(associatedMessage.subject?.trim()) ? "\n" : "")
-                + (associatedMessage.text ?? "");
+              messageText = (associatedMessage.subject ?? "") +
+                  (!isNullOrEmpty(associatedMessage.subject?.trim()) ? "\n" : "") +
+                  (associatedMessage.text ?? "");
             }
           }
           return '$sender $verb ${attachment ? "" : "“"}$messageText${attachment ? "" : "”"}';
@@ -199,7 +208,11 @@ class MessageHelper {
     List<RegExpMatch> matches = emojiRegex.allMatches(text).toList();
     List<String> items = matches.map((m) => m.toString()).toList();
 
-    String replaced = text.replaceAll(emojiRegex, "").replaceAll(String.fromCharCode(65039), "").replaceAll(darkSunglasses, "").trim();
+    String replaced = text
+        .replaceAll(emojiRegex, "")
+        .replaceAll(String.fromCharCode(65039), "")
+        .replaceAll(darkSunglasses, "")
+        .trim();
     return items.length <= 3 && replaced.isEmpty;
   }
 
@@ -259,13 +272,11 @@ class MessageHelper {
       previousEnd += chunk.length;
     }
     if (previousEnd < text.length) {
-      children.add(
-        TextSpan(
-          text: text.substring(previousEnd),
-          style: style,
-          recognizer: recognizer,
-        )
-      );
+      children.add(TextSpan(
+        text: text.substring(previousEnd),
+        style: style,
+        recognizer: recognizer,
+      ));
     }
 
     return children;

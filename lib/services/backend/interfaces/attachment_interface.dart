@@ -21,16 +21,15 @@ class AttachmentInterface {
     if (isIsolate) {
       attachmentId = await AttachmentActions.saveAttachmentAsync(data);
     } else {
-      attachmentId = await GetIt.I<GlobalIsolate>()
-          .send<int>(IsolateRequestType.saveAttachmentAsync, input: data);
+      attachmentId = await GetIt.I<GlobalIsolate>().send<int>(IsolateRequestType.saveAttachmentAsync, input: data);
     }
-    
+
     // Fetch attachment by ID using get
     final attachment = Database.attachments.get(attachmentId);
     if (attachment == null) {
       throw Exception('Failed to fetch attachment with ID $attachmentId after save');
     }
-    
+
     return attachment;
   }
 
@@ -44,8 +43,7 @@ class AttachmentInterface {
     if (isIsolate) {
       return await AttachmentActions.bulkSaveAttachmentsAsync(data);
     } else {
-      return await GetIt.I<GlobalIsolate>()
-          .send<void>(IsolateRequestType.bulkSaveAttachmentsAsync, input: data);
+      return await GetIt.I<GlobalIsolate>().send<void>(IsolateRequestType.bulkSaveAttachmentsAsync, input: data);
     }
   }
 
@@ -63,16 +61,15 @@ class AttachmentInterface {
     if (isIsolate) {
       attachmentId = await AttachmentActions.replaceAttachmentAsync(data);
     } else {
-      attachmentId = await GetIt.I<GlobalIsolate>()
-          .send<int>(IsolateRequestType.replaceAttachmentAsync, input: data);
+      attachmentId = await GetIt.I<GlobalIsolate>().send<int>(IsolateRequestType.replaceAttachmentAsync, input: data);
     }
-    
+
     // Fetch attachment by ID using get
     final attachment = Database.attachments.get(attachmentId);
     if (attachment == null) {
       throw Exception('Failed to fetch attachment with ID $attachmentId after replace');
     }
-    
+
     return attachment;
   }
 
@@ -88,12 +85,11 @@ class AttachmentInterface {
     if (isIsolate) {
       attachmentId = await AttachmentActions.findOneAttachmentAsync(data);
     } else {
-      attachmentId = await GetIt.I<GlobalIsolate>()
-          .send<int?>(IsolateRequestType.findOneAttachmentAsync, input: data);
+      attachmentId = await GetIt.I<GlobalIsolate>().send<int?>(IsolateRequestType.findOneAttachmentAsync, input: data);
     }
-    
+
     if (attachmentId == null) return null;
-    
+
     // Fetch attachment by ID using get
     final attachment = Database.attachments.get(attachmentId);
     return attachment;
@@ -106,15 +102,15 @@ class AttachmentInterface {
     final data = {
       'queryDescriptor': queryDescriptor?.toMap(),
     };
-    
+
     late List<int> attachmentIds;
     if (isIsolate) {
       attachmentIds = await AttachmentActions.findAttachmentsAsync(data);
     } else {
-      attachmentIds = await GetIt.I<GlobalIsolate>()
-          .send<List<int>>(IsolateRequestType.findAttachmentsAsync, input: data);
+      attachmentIds =
+          await GetIt.I<GlobalIsolate>().send<List<int>>(IsolateRequestType.findAttachmentsAsync, input: data);
     }
-    
+
     // Fetch attachments by ID using getMany for efficiency
     final attachments = Database.attachments.getMany(attachmentIds).whereType<Attachment>().toList();
     return attachments;
@@ -130,8 +126,7 @@ class AttachmentInterface {
     if (isIsolate) {
       return await AttachmentActions.deleteAttachmentAsync(data);
     } else {
-      return await GetIt.I<GlobalIsolate>()
-          .send<void>(IsolateRequestType.deleteAttachmentAsync, input: data);
+      return await GetIt.I<GlobalIsolate>().send<void>(IsolateRequestType.deleteAttachmentAsync, input: data);
     }
   }
 }

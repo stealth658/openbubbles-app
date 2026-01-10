@@ -1,4 +1,3 @@
-
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -8,13 +7,11 @@ import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class TaskerPanel extends StatefulWidget {
-
   @override
   State<StatefulWidget> createState() => _TaskerPanelState();
 }
 
 class _TaskerPanelState extends OptimizedState<TaskerPanel> {
-
   @override
   Widget build(BuildContext context) {
     return SettingsScaffold(
@@ -43,7 +40,12 @@ class _TaskerPanelState extends OptimizedState<TaskerPanel> {
                       subtitle: "View more details on how to create Tasker integrations with BlueBubbles",
                       isThreeLine: true,
                       onTap: () async {
-                        await launchUrl(Uri(scheme: "https", host: "docs.bluebubbles.app", path: "client/usage-guides/tasker-integration"), mode: LaunchMode.externalApplication);
+                        await launchUrl(
+                            Uri(
+                                scheme: "https",
+                                host: "docs.bluebubbles.app",
+                                path: "client/usage-guides/tasker-integration"),
+                            mode: LaunchMode.externalApplication);
                       },
                       leading: const SettingsLeadingIcon(
                         iosIcon: CupertinoIcons.info_circle,
@@ -53,28 +55,25 @@ class _TaskerPanelState extends OptimizedState<TaskerPanel> {
                   ],
                 ),
                 SettingsHeader(
-                    iosSubtitle: iosSubtitle,
-                    materialSubtitle: materialSubtitle,
-                    text: "Integration Settings"),
+                    iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Integration Settings"),
                 SettingsSection(
                   backgroundColor: tileColor,
                   children: [
                     Obx(() => SettingsSwitch(
-                      onChanged: (bool val) async {
-                        SettingsSvc.settings.sendEventsToTasker.value = val;
-                        await SettingsSvc.settings.saveOneAsync('sendEventsToTasker');
-                      },
-                      initialVal: SettingsSvc.settings.sendEventsToTasker.value,
-                      title: "Send Events to Tasker",
-                      subtitle: "Send events emitted by the server to Tasker via Intent broadcasts",
-                      backgroundColor: tileColor,
-                    )),
+                          onChanged: (bool val) async {
+                            SettingsSvc.settings.sendEventsToTasker.value = val;
+                            await SettingsSvc.settings.saveOneAsync('sendEventsToTasker');
+                          },
+                          initialVal: SettingsSvc.settings.sendEventsToTasker.value,
+                          title: "Send Events to Tasker",
+                          subtitle: "Send events emitted by the server to Tasker via Intent broadcasts",
+                          backgroundColor: tileColor,
+                        )),
                   ],
                 ),
               ],
             ),
           ),
-        ]
-    );
+        ]);
   }
 }

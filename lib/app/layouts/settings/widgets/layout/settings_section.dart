@@ -37,30 +37,30 @@ class SettingsSection extends StatelessWidget {
       padding: SettingsSvc.settings.skin.value == Skins.iOS
           ? const EdgeInsets.symmetric(horizontal: 20)
           : SettingsSvc.settings.skin.value == Skins.Samsung
-          ? const EdgeInsets.symmetric(vertical: 5)
-          : EdgeInsets.zero,
+              ? const EdgeInsets.symmetric(vertical: 5)
+              : EdgeInsets.zero,
       child: ClipRRect(
         borderRadius: SettingsSvc.settings.skin.value == Skins.Samsung
             ? BorderRadius.circular(25)
             : SettingsSvc.settings.skin.value == Skins.iOS
-            ? BorderRadius.circular(10)
-            : BorderRadius.circular(0),
+                ? BorderRadius.circular(10)
+                : BorderRadius.circular(0),
         clipBehavior: SettingsSvc.settings.skin.value != Skins.Material ? Clip.antiAlias : Clip.none,
         child: Container(
           color: SettingsSvc.settings.skin.value == Skins.iOS ? null : backgroundColor,
           decoration: SettingsSvc.settings.skin.value == Skins.iOS
               ? BoxDecoration(
-            color: backgroundColor,
-            borderRadius: BorderRadius.circular(10),
-            boxShadow: [
-              BoxShadow(
-                color: backgroundColor.darkenAmount(0.1).withValues(alpha: 0.25),
-                spreadRadius: 5,
-                blurRadius: 7,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          )
+                  color: backgroundColor,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: backgroundColor.darkenAmount(0.1).withValues(alpha: 0.25),
+                      spreadRadius: 5,
+                      blurRadius: 7,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                )
               : null,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

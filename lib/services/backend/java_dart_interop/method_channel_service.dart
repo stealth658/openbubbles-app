@@ -32,17 +32,14 @@ class MethodChannelService {
 
     this.headless = headless;
     this.isBubble = isBubble;
-    channel = MethodChannel(
-      'com.bluebubbles.messaging',
-      const StandardMethodCodec(),
-      binaryMessenger);
+    channel = MethodChannel('com.bluebubbles.messaging', const StandardMethodCodec(), binaryMessenger);
 
     // Only send the ready signal if we are in the BackgroundIsolate/UI (not the GlobalIsolate)
     if (binaryMessenger == null) {
       channel.setMethodCallHandler(_callHandler);
       channel.invokeMethod("ready");
     }
-    
+
     if (!kIsWeb && !kIsDesktop && !headless) {
       try {
         if (SettingsSvc.settings.colorsFromMedia.value) {
@@ -62,12 +59,13 @@ class MethodChannelService {
   }
 
   Future<bool> _callHandler(MethodCall call) async {
-    final Map<String, dynamic>? arguments = call.arguments is String ? jsonDecode(call.arguments) : call.arguments?.cast<String, Object>();
-    
+    final Map<String, dynamic>? arguments =
+        call.arguments is String ? jsonDecode(call.arguments) : call.arguments?.cast<String, Object>();
+
     // ONLY RETURN Future.value or Future.error
     // Future.value(false) will have the engine retry the call
     // Future.value(true) will have the engine stop trying to call the method
-    
+
     switch (call.method) {
       case "NewServerUrl":
         if (arguments == null) return Future.value(false);
@@ -79,24 +77,27 @@ class MethodChannelService {
           SocketSvc.restartSocket();
         }
         return Future.value(true);
-      case "new-message":  // FCM message
+      case "new-message": // FCM message
         await Database.waitForInit();
         Logger.info("Received new message from MethodChannel");
         try {
           // The socket will handle this event if the app is alive and unifiedpush is not enabled
-          if (!headless && LifecycleSvc.isAlive && (SocketSvc.socket?.connected ?? false) && SettingsSvc.settings.endpointUnifiedPush.value == "") {
+          if (!headless &&
+              LifecycleSvc.isAlive &&
+              (SocketSvc.socket?.connected ?? false) &&
+              SettingsSvc.settings.endpointUnifiedPush.value == "") {
             Logger.debug("App is alive, ignoring new message...");
             return Future.value(true);
           } else if (!headless && !LifecycleSvc.isAlive && SettingsSvc.settings.keepAppAlive.value) {
             Logger.debug("Ignoring FCM message while app is not alive, but keepAppAlive is enabled");
             return Future.value(true);
           }
-        
+
           Map<String, dynamic>? data = arguments;
           if (!isNullOrEmpty(data)) {
             final payload = ServerPayload.fromJson(data!);
             final item = IncomingItem.fromMap(QueueType.newMessage, payload.data);
-            if (!headless &&LifecycleSvc.isAlive && SettingsSvc.settings.endpointUnifiedPush.value == "") {
+            if (!headless && LifecycleSvc.isAlive && SettingsSvc.settings.endpointUnifiedPush.value == "") {
               await inq.queue(item);
             } else {
               await MessageHandlerSvc.handleNewMessage(item.chat, item.message, item.tempGuid);
@@ -235,18 +236,17 @@ class MethodChannelService {
         } else {
           final Completer<void> completer = Completer();
           outq.queue(OutgoingItem(
-            type: QueueType.sendMessage,
-            completer: completer,
-            chat: chat,
-            message: Message(
-              text: data['text'],
-              dateCreated: DateTime.now(),
-              hasAttachments: false,
-              isFromMe: true,
-              handleId: 0,
-            ),
-            customArgs: {'notifReply': true}
-          ));
+              type: QueueType.sendMessage,
+              completer: completer,
+              chat: chat,
+              message: Message(
+                text: data['text'],
+                dateCreated: DateTime.now(),
+                hasAttachments: false,
+                isFromMe: true,
+                handleId: 0,
+              ),
+              customArgs: {'notifReply': true}));
           await completer.future;
           return Future.value(true);
         }
@@ -318,7 +318,7 @@ class MethodChannelService {
 
         return Future.value(true);
       case "ft-call-status-changed":
-        if (!headless &&LifecycleSvc.isAlive) return Future.value(true);
+        if (!headless && LifecycleSvc.isAlive) return Future.value(true);
         await Database.waitForInit();
         Logger.info("Received facetime call status change from FCM");
 
@@ -371,10 +371,10 @@ class MethodChannelService {
         if (data == null) return false;
 
         try {
-            final String endpoint = data['endpoint'].toString();
-            upr.update(endpoint);
-        } catch(e, s) {
-            return Future.error(e, s);
+          final String endpoint = data['endpoint'].toString();
+          upr.update(endpoint);
+        } catch (e, s) {
+          return Future.error(e, s);
         }
 
         return Future.value(true);

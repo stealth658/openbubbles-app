@@ -116,7 +116,9 @@ class _ManualEntryDialogState extends OptimizedState<ManualEntryDialog> {
             children: [
               Focus(
                 onKeyEvent: (node, event) {
-                  if (event is KeyDownEvent && !HardwareKeyboard.instance.isShiftPressed && event.logicalKey == LogicalKeyboardKey.tab) {
+                  if (event is KeyDownEvent &&
+                      !HardwareKeyboard.instance.isShiftPressed &&
+                      event.logicalKey == LogicalKeyboardKey.tab) {
                     node.nextFocus();
                     return KeyEventResult.handled;
                   }
@@ -138,12 +140,14 @@ class _ManualEntryDialogState extends OptimizedState<ManualEntryDialog> {
                         borderRadius: BorderRadius.circular(20)),
                     labelText: "URL",
                   ),
-              ),
+                ),
               ),
               const SizedBox(height: 10),
               Focus(
                 onKeyEvent: (node, event) {
-                  if (event is KeyDownEvent && HardwareKeyboard.instance.isShiftPressed && event.logicalKey == LogicalKeyboardKey.tab) {
+                  if (event is KeyDownEvent &&
+                      HardwareKeyboard.instance.isShiftPressed &&
+                      event.logicalKey == LogicalKeyboardKey.tab) {
                     node.previousFocus();
                     node.previousFocus(); // This is intentional. Should probably figure out why it's needed
                     return KeyEventResult.handled;
@@ -179,11 +183,13 @@ class _ManualEntryDialogState extends OptimizedState<ManualEntryDialog> {
         ),
         actions: [
           TextButton(
-            child: Text("Cancel", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+            child: Text("Cancel",
+                style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
             onPressed: widget.onClose,
           ),
           TextButton(
-            child: Text("OK", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+            child: Text("OK",
+                style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
             onPressed: () {
               connect(urlController.text, passwordController.text);
               connecting = true;
@@ -194,9 +200,9 @@ class _ManualEntryDialogState extends OptimizedState<ManualEntryDialog> {
       );
     } else if (error == 'Google Services file not found.') {
       return const FailedToScanDialog(
-        title: "Connected! However...",
-        exception: 'Google Services file not found! If you plan to use Firebase for notifications, please setup Firebase via the BlueBubbles Server.'
-      );
+          title: "Connected! However...",
+          exception:
+              'Google Services file not found! If you plan to use Firebase for notifications, please setup Firebase via the BlueBubbles Server.');
     } else if (error != null) {
       return FailedToScanDialog(
         title: "An error occured while trying to retreive data!",
@@ -211,7 +217,7 @@ class _ManualEntryDialogState extends OptimizedState<ManualEntryDialog> {
             if (mounted) {
               setState(() {
                 error =
-                "Failed to connect to ${sanitizeServerAddress()}! Please check that the url is correct (including http://) and the server logs for more info.";
+                    "Failed to connect to ${sanitizeServerAddress()}! Please check that the url is correct (including http://) and the server logs for more info.";
               });
             }
           }

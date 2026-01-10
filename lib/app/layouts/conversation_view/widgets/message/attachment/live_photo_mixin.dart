@@ -61,18 +61,18 @@ mixin LivePhotoMixin<T extends StatefulWidget> on State<T> {
     if (livePhotoFile != null && livePhotoPlayer != null) {
       // Seek to start and wait for player to be ready
       await livePhotoPlayer!.seek(Duration.zero);
-      
+
       // Start playing (but keep hidden while loading)
       await livePhotoPlayer!.play();
-      
+
       // Wait a bit for the video to buffer the first frame
       await Future.delayed(const Duration(milliseconds: 100));
-      
+
       if (mounted) {
         setState(() {
           isPlayingLivePhoto = true;
         });
-        
+
         // Fade in
         await Future.delayed(const Duration(milliseconds: 50));
         if (mounted) {
@@ -81,7 +81,7 @@ mixin LivePhotoMixin<T extends StatefulWidget> on State<T> {
           });
         }
       }
-      
+
       // Auto-hide after video ends with fade out
       Future.delayed(Duration(milliseconds: livePhotoPlayer!.state.duration.inMilliseconds + 100), () async {
         if (mounted && isPlayingLivePhoto) {
@@ -104,7 +104,7 @@ mixin LivePhotoMixin<T extends StatefulWidget> on State<T> {
     // Get persistent storage path
     final livePhotoPath = getLivePhotoPath();
     final livePhotoFileOnDisk = File(livePhotoPath);
-    
+
     // Check if live photo already exists on disk
     if (await livePhotoFileOnDisk.exists()) {
       // Initialize and play existing file

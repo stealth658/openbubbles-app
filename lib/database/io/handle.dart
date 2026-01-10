@@ -70,43 +70,42 @@ class Handle {
       }
     }
     if (address.startsWith("urn:biz")) return "Business";
-    
+
     // Check cached contact name first (populated within transaction)
     if (cachedContactName != null) {
       return cachedContactName!;
     }
-    
+
     // Try to access ContactV2 directly (only works if in a transaction)
     if (!kIsWeb && contactsV2.isNotEmpty) {
       return contactsV2.first.displayName;
     }
-    
+
     // Fall back to old Contact system
     if (contact != null) {
       return contact!.displayName;
     }
-    
+
     return address.contains("@") ? address : (formattedAddress ?? address);
   }
+
   String? get initials {
     // Remove any numbers, certain symbols, and non-alphabet characters
     if (address.startsWith("urn:biz")) return null;
-    
+
     // Check ContactV2 first for initials
     if (!kIsWeb && contactsV2.isNotEmpty) {
       final contactV2Initials = contactsV2.first.initials;
       if (contactV2Initials != null) return contactV2Initials;
     }
-    
+
     String importantChars = displayName.toUpperCase().replaceAll(RegExp(r'[^a-zA-Z _-]'), "").trim();
     if (importantChars.isEmpty) return null;
 
     // Split by a space or special character delimiter, take each of the items and
     // reduce it to just the capitalized first letter. Then join the array by an empty char
-    List<String> initials = importantChars
-        .split(RegExp(r'[ \-_]'))
-        .map((e) => e.isEmpty ? '' : e[0].toUpperCase())
-        .toList();
+    List<String> initials =
+        importantChars.split(RegExp(r'[ \-_]')).map((e) => e.isEmpty ? '' : e[0].toUpperCase()).toList();
 
     initials.removeRange(1, max(initials.length - 1, 1));
 
@@ -135,23 +134,23 @@ class Handle {
   }
 
   factory Handle.fromMap(Map<String, dynamic> json) => Handle(
-    id: json["ROWID"] ?? json["id"],
-    originalROWID: json["originalROWID"],
-    address: json["address"],
-    formattedAddress: json["formattedAddress"],
-    service: json["service"] ?? "iMessage",
-    uniqueAddressAndService: json["uniqueAddrAndService"] ?? "${json["address"]}/${json["service"] ?? "iMessage"}",
-    country: json["country"],
-    handleColor: json["color"],
-    defaultPhone: json["defaultPhone"],
-    defaultEmail: json["defaultEmail"],
-  );
+        id: json["ROWID"] ?? json["id"],
+        originalROWID: json["originalROWID"],
+        address: json["address"],
+        formattedAddress: json["formattedAddress"],
+        service: json["service"] ?? "iMessage",
+        uniqueAddressAndService: json["uniqueAddrAndService"] ?? "${json["address"]}/${json["service"] ?? "iMessage"}",
+        country: json["country"],
+        handleColor: json["color"],
+        defaultPhone: json["defaultPhone"],
+        defaultEmail: json["defaultEmail"],
+      );
 
   /// Formats and sets the formattedAddress field if not already set.
-  /// 
+  ///
   /// For emails and business chats (urn:biz), uses the address as-is.
   /// For phone numbers, formats them using the formatPhoneNumber helper.
-  /// 
+  ///
   /// This should be called in isolate actions before saving handles to the database.
   Future<void> updateFormattedAddress() async {
     if (!isNullOrEmpty(formattedAddress)) return;
@@ -287,7 +286,9 @@ class Handle {
       query.close();
       return result;
     } else if (addressAndService != null) {
-      final query = Database.handles.query(Handle_.address.equals(addressAndService.item1) & Handle_.service.equals(addressAndService.item2)).build();
+      final query = Database.handles
+          .query(Handle_.address.equals(addressAndService.item1) & Handle_.service.equals(addressAndService.item2))
+          .build();
       query.limit = 1;
       final result = query.findFirst();
       query.close();

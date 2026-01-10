@@ -71,23 +71,26 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
   // Use cached values for expensive computed properties
   bool get showSender => _cachedShowSender ?? false;
   bool get canSwipeToReply => _cachedCanSwipeToReply ?? false;
-  
+
   bool get showAvatar => chat.isGroup;
-  
-  bool isEditing(int part) => message.isFromMe! && widget.cvController.editing.firstWhereOrNull((e2) => e2.item1.guid == message.guid! && e2.item2.part == part) != null;
+
+  bool isEditing(int part) =>
+      message.isFromMe! &&
+      widget.cvController.editing.firstWhereOrNull((e2) => e2.item1.guid == message.guid! && e2.item2.part == part) !=
+          null;
 
   List<MessagePart> messageParts = [];
   List<RxDouble> replyOffsets = [];
   List<GlobalKey> keys = [];
   bool gaveHapticFeedback = false;
   final RxBool tapped = false.obs;
-  
+
   // Cache computed values to avoid recalculating on every build
   List<Color>? _cachedBubbleColors;
   bool? _cachedShowSender;
   bool? _cachedCanSwipeToReply;
   Message? _cachedReplyTo;
-  
+
   // Track what needs recalculation
   Set<_CacheKey> _invalidatedCaches = {};
 
@@ -121,14 +124,14 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
       });
     }
   }
-  
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     // Cache computed values after context is available
     _updateCachedValues();
   }
-  
+
   /// Smart cache invalidation - only recalculate what changed
   void _updateCachedValues({bool forceAll = false, Set<_CacheKey>? specific}) {
     if (forceAll) {
@@ -142,7 +145,7 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
       // Only invalidate specific caches
       _invalidatedCaches.addAll(specific);
     }
-    
+
     // Recalculate only what's needed
     if (forceAll || _invalidatedCaches.contains(_CacheKey.bubbleColors) || _cachedBubbleColors == null) {
       _cachedBubbleColors = _calculateBubbleColors();
@@ -150,26 +153,32 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
     }
     if (forceAll || _invalidatedCaches.contains(_CacheKey.showSender) || _cachedShowSender == null) {
       _cachedShowSender = !message.isGroupEvent &&
-          (!message.sameSender(olderMessage) || (olderMessage?.isGroupEvent ?? false) || 
-           (olderMessage == null || !message.dateCreated!.isWithin(olderMessage!.dateCreated!, minutes: 30)));
+          (!message.sameSender(olderMessage) ||
+              (olderMessage?.isGroupEvent ?? false) ||
+              (olderMessage == null || !message.dateCreated!.isWithin(olderMessage!.dateCreated!, minutes: 30)));
       _invalidatedCaches.remove(_CacheKey.showSender);
     }
     if (forceAll || _invalidatedCaches.contains(_CacheKey.canSwipeToReply) || _cachedCanSwipeToReply == null) {
-      _cachedCanSwipeToReply = SettingsSvc.settings.enablePrivateAPI.value && SettingsSvc.isMinBigSurSync && 
-          chat.isIMessage && !widget.isReplyThread && !message.guid!.startsWith("temp") && !message.guid!.startsWith("error");
+      _cachedCanSwipeToReply = SettingsSvc.settings.enablePrivateAPI.value &&
+          SettingsSvc.isMinBigSurSync &&
+          chat.isIMessage &&
+          !widget.isReplyThread &&
+          !message.guid!.startsWith("temp") &&
+          !message.guid!.startsWith("error");
       _invalidatedCaches.remove(_CacheKey.canSwipeToReply);
     }
     if (forceAll || _invalidatedCaches.contains(_CacheKey.replyTo) || _cachedReplyTo == null) {
       _cachedReplyTo = message.threadOriginatorGuid == null
           ? null
           : SettingsSvc.settings.repliesToPrevious.value
-              ? (service.struct.getPreviousReply(message.threadOriginatorGuid!, message.normalizedThreadPart, message.guid!) ?? 
-                 service.struct.getThreadOriginator(message.threadOriginatorGuid!))
+              ? (service.struct
+                      .getPreviousReply(message.threadOriginatorGuid!, message.normalizedThreadPart, message.guid!) ??
+                  service.struct.getThreadOriginator(message.threadOriginatorGuid!))
               : service.struct.getThreadOriginator(message.threadOriginatorGuid!);
       _invalidatedCaches.remove(_CacheKey.replyTo);
     }
   }
-  
+
   /// Helper to calculate bubble colors (extracted for smart caching)
   List<Color> _calculateBubbleColors() {
     List<Color> bubbleColors = [context.theme.colorScheme.properSurface, context.theme.colorScheme.properSurface];
@@ -207,7 +216,7 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
       gaveHapticFeedback = false;
     }
   }
-  
+
   void completeEdit(String newEdit, int part) async {
     widget.cvController.editing.removeWhere((e2) => e2.item1.guid == message.guid! && e2.item2.part == part);
     if (newEdit.isNotEmpty && newEdit != messageParts.firstWhere((element) => element.part == part).text) {
@@ -249,15 +258,17 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
   @override
   Widget build(BuildContext context) {
     controller.built = true;
-    
+
     // Cache associated messages filtering
     final stickers = message.associatedMessages.where((e) => e.associatedMessageType == "sticker").toList();
-    
+
     // Helper to get reactions - MUST be called inside Obx() to be reactive
     List<Message> getReactions() {
-      return message.associatedMessages.where((e) => ReactionTypes.toList().contains(e.associatedMessageType?.replaceAll("-", ""))).toList();
+      return message.associatedMessages
+          .where((e) => ReactionTypes.toList().contains(e.associatedMessageType?.replaceAll("-", "")))
+          .toList();
     }
-    
+
     // Cache settings values to avoid repeated observable reads
     final alwaysShowAvatars = SettingsSvc.settings.alwaysShowAvatars.value;
     final avatarScale = SettingsSvc.settings.avatarScale.value;
@@ -300,7 +311,8 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
           // use stack so avatar can be placed at bottom
           Row(
             children: [
-              if (!message.isFromMe! && !message.isGroupEvent) SelectCheckbox(message: message, controller: widget.cvController),
+              if (!message.isFromMe! && !message.isGroupEvent)
+                SelectCheckbox(message: message, controller: widget.cvController),
               Expanded(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -333,7 +345,8 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                   replyTo != null &&
                                   getActiveMwc(replyTo!.guid!) != null)
                                 Padding(
-                                  padding: EdgeInsets.only(left: (showAvatar || alwaysShowAvatars) && replyTo!.isFromMe! ? 35 : 0),
+                                  padding: EdgeInsets.only(
+                                      left: (showAvatar || alwaysShowAvatars) && replyTo!.isFromMe! ? 35 : 0),
                                   child: DecoratedBox(
                                     decoration: replyTo!.isFromMe == message.isFromMe
                                         ? ReplyLineDecoration(
@@ -349,7 +362,9 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                       alignment: replyTo!.isFromMe! ? Alignment.centerRight : Alignment.centerLeft,
                                       child: ReplyBubble(
                                         parentController: getActiveMwc(replyTo!.guid!)!,
-                                        part: replyTo!.guid! == message.threadOriginatorGuid ? message.normalizedThreadPart : 0,
+                                        part: replyTo!.guid! == message.threadOriginatorGuid
+                                            ? message.normalizedThreadPart
+                                            : 0,
                                         showAvatar: (chat.isGroup || alwaysShowAvatars || !iOS) && !replyTo!.isFromMe!,
                                         cvController: widget.cvController,
                                       ),
@@ -357,9 +372,14 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                   ),
                                 ),
                               // show sender, if needed
-                              if (chat.isGroup && !message.isFromMe! && showSender && e.part == (messageParts.firstWhereOrNull((e) => !e.isUnsent)?.part))
+                              if (chat.isGroup &&
+                                  !message.isFromMe! &&
+                                  showSender &&
+                                  e.part == (messageParts.firstWhereOrNull((e) => !e.isUnsent)?.part))
                                 Padding(
-                                  padding: showAvatar || alwaysShowAvatars ? EdgeInsets.only(left: 35.0 * avatarScale) : EdgeInsets.zero,
+                                  padding: showAvatar || alwaysShowAvatars
+                                      ? EdgeInsets.only(left: 35.0 * avatarScale)
+                                      : EdgeInsets.zero,
                                   child: MessageSender(olderMessage: olderMessage, message: message),
                                 ),
                               // add a box to account for height of reactions
@@ -378,15 +398,20 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                   replyTo != null &&
                                   getActiveMwc(replyTo!.guid!) != null)
                                 Padding(
-                                  padding: showAvatar || alwaysShowAvatars ? const EdgeInsets.only(left: 45.0, right: 10) : const EdgeInsets.symmetric(horizontal: 10),
+                                  padding: showAvatar || alwaysShowAvatars
+                                      ? const EdgeInsets.only(left: 45.0, right: 10)
+                                      : const EdgeInsets.symmetric(horizontal: 10),
                                   child: DecoratedBox(
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(25),
-                                      border: Border.fromBorderSide(BorderSide(color: context.theme.colorScheme.properSurface)),
+                                      border: Border.fromBorderSide(
+                                          BorderSide(color: context.theme.colorScheme.properSurface)),
                                     ),
                                     child: ReplyBubble(
                                       parentController: getActiveMwc(replyTo!.guid!)!,
-                                      part: replyTo!.guid! == message.threadOriginatorGuid ? message.normalizedThreadPart : 0,
+                                      part: replyTo!.guid! == message.threadOriginatorGuid
+                                          ? message.normalizedThreadPart
+                                          : 0,
                                       showAvatar: (chat.isGroup || alwaysShowAvatars || !iOS) && !replyTo!.isFromMe!,
                                       cvController: widget.cvController,
                                     ),
@@ -415,375 +440,608 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                         ? EdgeInsets.only(left: 35.0 * avatarScale)
                                         : EdgeInsets.zero,
                                     child: DecoratedBox(
-                                        decoration: iOS &&
-                                                !widget.isReplyThread &&
-                                                ((index == 0 && message.threadOriginatorGuid != null && olderMessage != null) ||
-                                                    (index == messageParts.length - 1 && service.struct.threads(message.guid!, index).isNotEmpty && newerMessage != null))
-                                            ? ReplyLineDecoration(
-                                                isFromMe: message.isFromMe!,
-                                                color: context.theme.colorScheme.properSurface,
-                                                connectUpper: message.connectToUpper(),
-                                                connectLower: newerMessage != null && message.connectToLower(newerMessage!),
-                                                context: context,
-                                              )
-                                            : const BoxDecoration(),
-                                        child: _SelectModeWrapper(
-                                          cvController: widget.cvController,
-                                          message: message,
-                                          tapped: tapped,
-                                          child: Align(
-                                                alignment: message.isFromMe! ? Alignment.centerRight : Alignment.centerLeft,
-                                                child: Row(
-                                                  mainAxisSize: MainAxisSize.min,
+                                      decoration: iOS &&
+                                              !widget.isReplyThread &&
+                                              ((index == 0 &&
+                                                      message.threadOriginatorGuid != null &&
+                                                      olderMessage != null) ||
+                                                  (index == messageParts.length - 1 &&
+                                                      service.struct.threads(message.guid!, index).isNotEmpty &&
+                                                      newerMessage != null))
+                                          ? ReplyLineDecoration(
+                                              isFromMe: message.isFromMe!,
+                                              color: context.theme.colorScheme.properSurface,
+                                              connectUpper: message.connectToUpper(),
+                                              connectLower:
+                                                  newerMessage != null && message.connectToLower(newerMessage!),
+                                              context: context,
+                                            )
+                                          : const BoxDecoration(),
+                                      child: _SelectModeWrapper(
+                                        cvController: widget.cvController,
+                                        message: message,
+                                        tapped: tapped,
+                                        child: Align(
+                                          alignment: message.isFromMe! ? Alignment.centerRight : Alignment.centerLeft,
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              // show group event
+                                              if (message.isGroupEvent || e.isUnsent)
+                                                ChatEvent(
+                                                  part: e,
+                                                  message: message,
+                                                ),
+                                              if (samsung)
+                                                _SamsungTimestampObserver(
+                                                  controller: controller,
+                                                  message: message,
+                                                  messageParts: messageParts,
+                                                  part: e,
+                                                  cvController: widget.cvController,
+                                                  getReactions: getReactions,
+                                                  reactionsForPart: reactionsForPart,
+                                                ),
+                                              // otherwise show content
+                                              if (!message.isGroupEvent && !e.isUnsent)
+                                                Column(
+                                                  crossAxisAlignment: message.isFromMe!
+                                                      ? CrossAxisAlignment.end
+                                                      : CrossAxisAlignment.start,
                                                   children: [
-                                                    // show group event
-                                                    if (message.isGroupEvent || e.isUnsent)
-                                                      ChatEvent(
-                                                        part: e,
-                                                        message: message,
+                                                    // interactive messages may have subjects, so render them here
+                                                    // also render the subject for attachments that may have not rendered already
+                                                    if ((message.hasApplePayloadData ||
+                                                            message.isLegacyUrlPreview ||
+                                                            message.isInteractive ||
+                                                            (e.part == 0 &&
+                                                                isNullOrEmpty(e.text) &&
+                                                                e.attachments.isNotEmpty)) &&
+                                                        !isNullOrEmpty(message.subject))
+                                                      Padding(
+                                                        padding: const EdgeInsets.only(bottom: 2.0),
+                                                        child: ClipPath(
+                                                          clipper: TailClipper(
+                                                            isFromMe: message.isFromMe!,
+                                                            showTail: false,
+                                                            connectLower: iOS
+                                                                ? false
+                                                                : (e.part != 0 &&
+                                                                        e.part != controller.parts.length - 1) ||
+                                                                    (e.part == 0 && controller.parts.length > 1),
+                                                            connectUpper: iOS ? false : e.part != 0,
+                                                          ),
+                                                          child: TextBubble(
+                                                            parentController: controller,
+                                                            message: MessagePart(
+                                                              subject: e.subject,
+                                                              part: e.part,
+                                                            ),
+                                                          ),
+                                                        ),
                                                       ),
-                                                    if (samsung)
-                                                      _SamsungTimestampObserver(
-                                                        controller: controller,
-                                                        message: message,
-                                                        messageParts: messageParts,
-                                                        part: e,
-                                                        cvController: widget.cvController,
-                                                        getReactions: getReactions,
-                                                        reactionsForPart: reactionsForPart,
-                                                      ),
-                                                    // otherwise show content
-                                                    if (!message.isGroupEvent && !e.isUnsent)
-                                                      Column(
-                                                        crossAxisAlignment: message.isFromMe! ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                                                        children: [
-                                                          // interactive messages may have subjects, so render them here
-                                                          // also render the subject for attachments that may have not rendered already
-                                                          if ((message.hasApplePayloadData ||
-                                                                  message.isLegacyUrlPreview ||
-                                                                  message.isInteractive ||
-                                                                  (e.part == 0 && isNullOrEmpty(e.text) && e.attachments.isNotEmpty)) &&
-                                                              !isNullOrEmpty(message.subject))
-                                                            Padding(
-                                                              padding: const EdgeInsets.only(bottom: 2.0),
+                                                    Stack(
+                                                      alignment: Alignment.center,
+                                                      fit: StackFit.loose,
+                                                      clipBehavior: Clip.none,
+                                                      children: [
+                                                        // actual message content
+                                                        BubbleEffects(
+                                                          message: message,
+                                                          part: index,
+                                                          globalKey: keys.length > index ? keys[index] : null,
+                                                          showTail: message.showTail(newerMessage) &&
+                                                              e.part == controller.parts.length - 1,
+                                                          child: MessagePopupHolder(
+                                                            key: keys.length > index ? keys[index] : null,
+                                                            controller: controller,
+                                                            cvController: widget.cvController,
+                                                            part: e,
+                                                            isEditing: isEditing(e.part),
+                                                            child: GestureDetector(
+                                                              behavior: HitTestBehavior.deferToChild,
+                                                              onHorizontalDragUpdate: !canSwipeToReply ||
+                                                                      isEditing(e.part)
+                                                                  ? null
+                                                                  : (details) {
+                                                                      if (ReplyScope.maybeOf(context) != null) return;
+                                                                      final offset = replyOffsets[index];
+                                                                      offset.value += details.delta.dx * 0.5;
+                                                                      if (message.isFromMe!) {
+                                                                        offset.value =
+                                                                            offset.value.clamp(-double.infinity, 0);
+                                                                      } else {
+                                                                        offset.value =
+                                                                            offset.value.clamp(0, double.infinity);
+                                                                      }
+                                                                      _handleHapticFeedback(offset);
+                                                                    },
+                                                              onHorizontalDragEnd: !canSwipeToReply || isEditing(e.part)
+                                                                  ? null
+                                                                  : (details) {
+                                                                      if (ReplyScope.maybeOf(context) != null) return;
+                                                                      final offset = replyOffsets[index];
+                                                                      if (offset.value.abs() >=
+                                                                          SlideToReply.replyThreshold) {
+                                                                        widget.cvController.replyToMessage =
+                                                                            Tuple2(message, index);
+                                                                      }
+                                                                      offset.value = 0;
+                                                                    },
+                                                              onHorizontalDragCancel: !canSwipeToReply ||
+                                                                      isEditing(e.part)
+                                                                  ? null
+                                                                  : () {
+                                                                      if (ReplyScope.maybeOf(context) != null) return;
+                                                                      if (index < replyOffsets.length) {
+                                                                        replyOffsets[index].value = 0;
+                                                                      }
+                                                                    },
                                                               child: ClipPath(
                                                                 clipper: TailClipper(
                                                                   isFromMe: message.isFromMe!,
-                                                                  showTail: false,
-                                                                  connectLower: iOS ? false : (e.part != 0 && e.part != controller.parts.length - 1) || (e.part == 0 && controller.parts.length > 1),
+                                                                  showTail: message.showTail(newerMessage) &&
+                                                                      e.part == controller.parts.length - 1,
+                                                                  connectLower: iOS
+                                                                      ? false
+                                                                      : (e.part != 0 &&
+                                                                              e.part != controller.parts.length - 1) ||
+                                                                          (e.part == 0 && controller.parts.length > 1),
                                                                   connectUpper: iOS ? false : e.part != 0,
                                                                 ),
-                                                                child: TextBubble(
-                                                                  parentController: controller,
-                                                                  message: MessagePart(
-                                                                    subject: e.subject,
-                                                                    part: e.part,
-                                                                  ),
+                                                                child: Stack(
+                                                                  alignment: Alignment.centerRight,
+                                                                  children: [
+                                                                    message.hasApplePayloadData ||
+                                                                            message.isLegacyUrlPreview ||
+                                                                            message.isInteractive
+                                                                        ? InteractiveHolder(
+                                                                            parentController: controller,
+                                                                            message: e,
+                                                                          )
+                                                                        : e.attachments.isEmpty &&
+                                                                                (e.text != null || e.subject != null)
+                                                                            ? TextBubble(
+                                                                                parentController: controller,
+                                                                                message: e,
+                                                                              )
+                                                                            : e.attachments.isNotEmpty
+                                                                                ? AttachmentHolder(
+                                                                                    parentController: controller,
+                                                                                    message: e,
+                                                                                  )
+                                                                                : const SizedBox.shrink(),
+                                                                    if (message.isFromMe!)
+                                                                      Obx(() {
+                                                                        final editStuff = widget.cvController.editing
+                                                                            .firstWhereOrNull((e2) =>
+                                                                                e2.item1.guid == message.guid! &&
+                                                                                e2.item2.part == e.part);
+                                                                        return AnimatedSize(
+                                                                            duration: const Duration(milliseconds: 250),
+                                                                            alignment: Alignment.centerRight,
+                                                                            curve: Curves.easeOutBack,
+                                                                            child: editStuff == null
+                                                                                ? const SizedBox.shrink()
+                                                                                : Material(
+                                                                                    color: Colors.transparent,
+                                                                                    child: Container(
+                                                                                      decoration: BoxDecoration(
+                                                                                        color: !message.isBigEmoji
+                                                                                            ? context.theme.colorScheme
+                                                                                                .primary
+                                                                                                .darkenAmount(message
+                                                                                                        .guid!
+                                                                                                        .startsWith(
+                                                                                                            "temp")
+                                                                                                    ? 0.2
+                                                                                                    : 0)
+                                                                                            : context.theme.colorScheme
+                                                                                                .background,
+                                                                                      ),
+                                                                                      constraints: BoxConstraints(
+                                                                                        maxWidth: NavigationSvc.width(
+                                                                                                    context) *
+                                                                                                MessageWidgetController
+                                                                                                    .maxBubbleSizeFactor -
+                                                                                            40,
+                                                                                        minHeight: 40,
+                                                                                      ),
+                                                                                      padding: const EdgeInsets.only(
+                                                                                              right: 10)
+                                                                                          .add(const EdgeInsets.all(5)),
+                                                                                      child: Focus(
+                                                                                        focusNode: FocusNode(),
+                                                                                        onKeyEvent: (_, ev) {
+                                                                                          if (ev is! KeyDownEvent) {
+                                                                                            if (ev.logicalKey ==
+                                                                                                LogicalKeyboardKey
+                                                                                                    .tab) {
+                                                                                              // Absorb tab
+                                                                                              return KeyEventResult
+                                                                                                  .skipRemainingHandlers;
+                                                                                            }
+                                                                                            return KeyEventResult
+                                                                                                .ignored;
+                                                                                          }
+                                                                                          if (ev.logicalKey ==
+                                                                                                  LogicalKeyboardKey
+                                                                                                      .enter &&
+                                                                                              !HardwareKeyboard.instance
+                                                                                                  .isShiftPressed) {
+                                                                                            completeEdit(
+                                                                                                editStuff.item3.text,
+                                                                                                e.part);
+                                                                                            return KeyEventResult
+                                                                                                .handled;
+                                                                                          }
+                                                                                          if (ev.logicalKey ==
+                                                                                              LogicalKeyboardKey
+                                                                                                  .escape) {
+                                                                                            widget.cvController.editing
+                                                                                                .removeWhere((e2) =>
+                                                                                                    e2.item1.guid ==
+                                                                                                        message.guid! &&
+                                                                                                    e2.item2.part ==
+                                                                                                        e.part);
+                                                                                            if (widget.cvController
+                                                                                                .editing.isEmpty) {
+                                                                                              widget.cvController
+                                                                                                  .lastFocusedNode
+                                                                                                  .requestFocus();
+                                                                                            } else {
+                                                                                              widget
+                                                                                                  .cvController
+                                                                                                  .editing
+                                                                                                  .last
+                                                                                                  .item3
+                                                                                                  .focusNode
+                                                                                                  ?.requestFocus();
+                                                                                            }
+                                                                                            return KeyEventResult
+                                                                                                .handled;
+                                                                                          }
+                                                                                          if (ev.logicalKey ==
+                                                                                              LogicalKeyboardKey.tab) {
+                                                                                            // Absorb tab
+                                                                                            return KeyEventResult
+                                                                                                .skipRemainingHandlers;
+                                                                                          }
+                                                                                          return KeyEventResult.ignored;
+                                                                                        },
+                                                                                        child: TextField(
+                                                                                          textCapitalization:
+                                                                                              TextCapitalization
+                                                                                                  .sentences,
+                                                                                          autocorrect: true,
+                                                                                          controller: editStuff.item3,
+                                                                                          focusNode:
+                                                                                              editStuff.item3.focusNode,
+                                                                                          scrollPhysics:
+                                                                                              const CustomBouncingScrollPhysics(),
+                                                                                          style: context.theme
+                                                                                              .extension<BubbleText>()!
+                                                                                              .bubbleText
+                                                                                              .apply(
+                                                                                                fontSizeFactor:
+                                                                                                    message.isBigEmoji
+                                                                                                        ? 3
+                                                                                                        : 1,
+                                                                                              ),
+                                                                                          keyboardType:
+                                                                                              TextInputType.multiline,
+                                                                                          maxLines: 14,
+                                                                                          minLines: 1,
+                                                                                          autofocus:
+                                                                                              !(kIsDesktop || kIsWeb),
+                                                                                          enableIMEPersonalizedLearning:
+                                                                                              !SettingsSvc
+                                                                                                  .settings
+                                                                                                  .incognitoKeyboard
+                                                                                                  .value,
+                                                                                          textInputAction: SettingsSvc
+                                                                                                      .settings
+                                                                                                      .sendWithReturn
+                                                                                                      .value &&
+                                                                                                  !kIsWeb &&
+                                                                                                  !kIsDesktop
+                                                                                              ? TextInputAction.send
+                                                                                              : TextInputAction.newline,
+                                                                                          cursorColor: context.theme
+                                                                                              .extension<BubbleText>()!
+                                                                                              .bubbleText
+                                                                                              .color,
+                                                                                          cursorHeight: context.theme
+                                                                                                  .extension<
+                                                                                                      BubbleText>()!
+                                                                                                  .bubbleText
+                                                                                                  .fontSize! *
+                                                                                              1.25 *
+                                                                                              (message.isBigEmoji
+                                                                                                  ? 3
+                                                                                                  : 1),
+                                                                                          decoration: InputDecoration(
+                                                                                            contentPadding:
+                                                                                                EdgeInsets.all(
+                                                                                                    iOS ? 10 : 12.5),
+                                                                                            isDense: true,
+                                                                                            isCollapsed: true,
+                                                                                            hintText: "Edited Message",
+                                                                                            enabledBorder:
+                                                                                                OutlineInputBorder(
+                                                                                              borderSide: BorderSide(
+                                                                                                  color: context
+                                                                                                      .theme
+                                                                                                      .colorScheme
+                                                                                                      .outline,
+                                                                                                  width: 1.5),
+                                                                                              borderRadius:
+                                                                                                  BorderRadius.circular(
+                                                                                                      20),
+                                                                                            ),
+                                                                                            border: OutlineInputBorder(
+                                                                                              borderSide: BorderSide(
+                                                                                                  color: context
+                                                                                                      .theme
+                                                                                                      .colorScheme
+                                                                                                      .outline,
+                                                                                                  width: 1.5),
+                                                                                              borderRadius:
+                                                                                                  BorderRadius.circular(
+                                                                                                      20),
+                                                                                            ),
+                                                                                            focusedBorder:
+                                                                                                OutlineInputBorder(
+                                                                                              borderSide: BorderSide(
+                                                                                                  color: context
+                                                                                                      .theme
+                                                                                                      .colorScheme
+                                                                                                      .outline,
+                                                                                                  width: 1.5),
+                                                                                              borderRadius:
+                                                                                                  BorderRadius.circular(
+                                                                                                      20),
+                                                                                            ),
+                                                                                            fillColor:
+                                                                                                Colors.transparent,
+                                                                                            hintStyle: context.theme
+                                                                                                .extension<
+                                                                                                    BubbleText>()!
+                                                                                                .bubbleText
+                                                                                                .copyWith(
+                                                                                                    color: context
+                                                                                                        .theme
+                                                                                                        .colorScheme
+                                                                                                        .outline),
+                                                                                            prefixIconConstraints:
+                                                                                                const BoxConstraints(
+                                                                                                    minHeight: 0,
+                                                                                                    minWidth: 40),
+                                                                                            prefixIcon: IconButton(
+                                                                                              constraints:
+                                                                                                  const BoxConstraints(
+                                                                                                      maxWidth: 27),
+                                                                                              padding:
+                                                                                                  const EdgeInsets.only(
+                                                                                                      left: 5),
+                                                                                              visualDensity:
+                                                                                                  VisualDensity.compact,
+                                                                                              icon: Icon(
+                                                                                                CupertinoIcons
+                                                                                                    .xmark_circle_fill,
+                                                                                                color: context
+                                                                                                    .theme
+                                                                                                    .colorScheme
+                                                                                                    .outline,
+                                                                                                size: 22,
+                                                                                              ),
+                                                                                              onPressed: () {
+                                                                                                widget.cvController
+                                                                                                    .editing
+                                                                                                    .removeWhere((e2) =>
+                                                                                                        e2.item1.guid ==
+                                                                                                            message
+                                                                                                                .guid! &&
+                                                                                                        e2.item2.part ==
+                                                                                                            e.part);
+                                                                                                widget.cvController
+                                                                                                    .lastFocusedNode
+                                                                                                    .requestFocus();
+                                                                                              },
+                                                                                              iconSize: 22,
+                                                                                              style: const ButtonStyle(
+                                                                                                tapTargetSize:
+                                                                                                    MaterialTapTargetSize
+                                                                                                        .shrinkWrap,
+                                                                                                visualDensity:
+                                                                                                    VisualDensity
+                                                                                                        .compact,
+                                                                                              ),
+                                                                                            ),
+                                                                                            suffixIconConstraints:
+                                                                                                const BoxConstraints(
+                                                                                                    minHeight: 0,
+                                                                                                    minWidth: 40),
+                                                                                            suffixIcon:
+                                                                                                ValueListenableBuilder(
+                                                                                              valueListenable:
+                                                                                                  editStuff.item3,
+                                                                                              builder:
+                                                                                                  (context, value, _) {
+                                                                                                return Padding(
+                                                                                                  padding:
+                                                                                                      const EdgeInsets
+                                                                                                          .all(3.0),
+                                                                                                  child: TextButton(
+                                                                                                    style: TextButton
+                                                                                                        .styleFrom(
+                                                                                                      backgroundColor:
+                                                                                                          Colors
+                                                                                                              .transparent,
+                                                                                                      shape:
+                                                                                                          const CircleBorder(),
+                                                                                                      padding:
+                                                                                                          const EdgeInsets
+                                                                                                              .all(0),
+                                                                                                      maximumSize:
+                                                                                                          const Size(
+                                                                                                              27, 27),
+                                                                                                      minimumSize:
+                                                                                                          const Size(
+                                                                                                              27, 27),
+                                                                                                      tapTargetSize:
+                                                                                                          MaterialTapTargetSize
+                                                                                                              .shrinkWrap,
+                                                                                                    ),
+                                                                                                    child:
+                                                                                                        AnimatedContainer(
+                                                                                                      duration:
+                                                                                                          const Duration(
+                                                                                                              milliseconds:
+                                                                                                                  150),
+                                                                                                      constraints:
+                                                                                                          const BoxConstraints(
+                                                                                                              minHeight:
+                                                                                                                  27,
+                                                                                                              minWidth:
+                                                                                                                  27),
+                                                                                                      decoration:
+                                                                                                          BoxDecoration(
+                                                                                                        shape: iOS
+                                                                                                            ? BoxShape
+                                                                                                                .circle
+                                                                                                            : BoxShape
+                                                                                                                .rectangle,
+                                                                                                        color: !iOS
+                                                                                                            ? null
+                                                                                                            : editStuff
+                                                                                                                    .item3
+                                                                                                                    .text
+                                                                                                                    .isNotEmpty
+                                                                                                                ? Colors
+                                                                                                                    .white
+                                                                                                                : context
+                                                                                                                    .theme
+                                                                                                                    .colorScheme
+                                                                                                                    .outline,
+                                                                                                      ),
+                                                                                                      alignment:
+                                                                                                          Alignment
+                                                                                                              .center,
+                                                                                                      child: Icon(
+                                                                                                        iOS
+                                                                                                            ? CupertinoIcons
+                                                                                                                .arrow_up
+                                                                                                            : Icons
+                                                                                                                .send_outlined,
+                                                                                                        color: !iOS
+                                                                                                            ? context
+                                                                                                                .theme
+                                                                                                                .extension<
+                                                                                                                    BubbleText>()!
+                                                                                                                .bubbleText
+                                                                                                                .color
+                                                                                                            : context
+                                                                                                                .theme
+                                                                                                                .colorScheme
+                                                                                                                .bubble(
+                                                                                                                    context,
+                                                                                                                    chat.isIMessage),
+                                                                                                        size: iOS
+                                                                                                            ? 18
+                                                                                                            : 26,
+                                                                                                      ),
+                                                                                                    ),
+                                                                                                    onPressed: () {
+                                                                                                      completeEdit(
+                                                                                                          editStuff
+                                                                                                              .item3
+                                                                                                              .text,
+                                                                                                          e.part);
+                                                                                                    },
+                                                                                                  ),
+                                                                                                );
+                                                                                              },
+                                                                                            ),
+                                                                                          ),
+                                                                                          onTap: () {
+                                                                                            HapticFeedback
+                                                                                                .selectionClick();
+                                                                                          },
+                                                                                          onSubmitted: (String value) {
+                                                                                            completeEdit(value, e.part);
+                                                                                          },
+                                                                                        ),
+                                                                                      ),
+                                                                                    ),
+                                                                                  ));
+                                                                      }),
+                                                                  ],
                                                                 ),
                                                               ),
                                                             ),
-                                                          Stack(
-                                                            alignment: Alignment.center,
-                                                            fit: StackFit.loose,
-                                                            clipBehavior: Clip.none,
-                                                            children: [
-                                                              // actual message content
-                                                              BubbleEffects(
-                                                                message: message,
-                                                                part: index,
-                                                                globalKey: keys.length > index ? keys[index] : null,
-                                                                showTail: message.showTail(newerMessage) && e.part == controller.parts.length - 1,
-                                                                child: MessagePopupHolder(
-                                                                  key: keys.length > index ? keys[index] : null,
-                                                                  controller: controller,
-                                                                  cvController: widget.cvController,
-                                                                  part: e,
-                                                                  isEditing: isEditing(e.part),
-                                                                  child: GestureDetector(
-                                                                    behavior: HitTestBehavior.deferToChild,
-                                                                    onHorizontalDragUpdate: !canSwipeToReply || isEditing(e.part)
-                                                                        ? null
-                                                                        : (details) {
-                                                                            if (ReplyScope.maybeOf(context) != null) return;
-                                                                            final offset = replyOffsets[index];
-                                                                            offset.value += details.delta.dx * 0.5;
-                                                                            if (message.isFromMe!) {
-                                                                              offset.value = offset.value.clamp(-double.infinity, 0);
-                                                                            } else {
-                                                                              offset.value = offset.value.clamp(0, double.infinity);
-                                                                            }
-                                                                            _handleHapticFeedback(offset);
-                                                                          },
-                                                                    onHorizontalDragEnd: !canSwipeToReply || isEditing(e.part)
-                                                                        ? null
-                                                                        : (details) {
-                                                                            if (ReplyScope.maybeOf(context) != null) return;
-                                                                            final offset = replyOffsets[index];
-                                                                            if (offset.value.abs() >= SlideToReply.replyThreshold) {
-                                                                              widget.cvController.replyToMessage = Tuple2(message, index);
-                                                                            }
-                                                                            offset.value = 0;
-                                                                          },
-                                                                    onHorizontalDragCancel: !canSwipeToReply || isEditing(e.part)
-                                                                        ? null
-                                                                        : () {
-                                                                            if (ReplyScope.maybeOf(context) != null) return;
-                                                                            if (index < replyOffsets.length) {
-                                                                              replyOffsets[index].value = 0;
-                                                                            }
-                                                                          },
-                                                                    child: ClipPath(
-                                                                      clipper: TailClipper(
-                                                                        isFromMe: message.isFromMe!,
-                                                                        showTail: message.showTail(newerMessage) && e.part == controller.parts.length - 1,
-                                                                        connectLower:
-                                                                            iOS ? false : (e.part != 0 && e.part != controller.parts.length - 1) || (e.part == 0 && controller.parts.length > 1),
-                                                                        connectUpper: iOS ? false : e.part != 0,
-                                                                      ),
-                                                                      child: Stack(
-                                                                        alignment: Alignment.centerRight,
-                                                                        children: [
-                                                                          message.hasApplePayloadData || message.isLegacyUrlPreview || message.isInteractive
-                                                                              ? InteractiveHolder(
-                                                                                  parentController: controller,
-                                                                                  message: e,
-                                                                                )
-                                                                              : e.attachments.isEmpty && (e.text != null || e.subject != null)
-                                                                                  ? TextBubble(
-                                                                                      parentController: controller,
-                                                                                      message: e,
-                                                                                    )
-                                                                                  : e.attachments.isNotEmpty
-                                                                                      ? AttachmentHolder(
-                                                                                          parentController: controller,
-                                                                                          message: e,
-                                                                                        )
-                                                                                      : const SizedBox.shrink(),
-                                                                          if (message.isFromMe!)
-                                                                            Obx(() {
-                                                                              final editStuff =
-                                                                                  widget.cvController.editing.firstWhereOrNull((e2) => e2.item1.guid == message.guid! && e2.item2.part == e.part);
-                                                                              return AnimatedSize(
-                                                                                  duration: const Duration(milliseconds: 250),
-                                                                                  alignment: Alignment.centerRight,
-                                                                                  curve: Curves.easeOutBack,
-                                                                                  child: editStuff == null
-                                                                                      ? const SizedBox.shrink()
-                                                                                      : Material(
-                                                                                          color: Colors.transparent,
-                                                                                          child: Container(
-                                                                                            decoration: BoxDecoration(
-                                                                                              color: !message.isBigEmoji
-                                                                                                  ? context.theme.colorScheme.primary.darkenAmount(message.guid!.startsWith("temp") ? 0.2 : 0)
-                                                                                                  : context.theme.colorScheme.background,
-                                                                                            ),
-                                                                                            constraints: BoxConstraints(
-                                                                                              maxWidth: NavigationSvc.width(context) * MessageWidgetController.maxBubbleSizeFactor - 40,
-                                                                                              minHeight: 40,
-                                                                                            ),
-                                                                                            padding: const EdgeInsets.only(right: 10).add(const EdgeInsets.all(5)),
-                                                                                            child: Focus(
-                                                                                              focusNode: FocusNode(),
-                                                                                              onKeyEvent: (_, ev) {
-                                                                                                if (ev is! KeyDownEvent) {
-                                                                                                  if (ev.logicalKey == LogicalKeyboardKey.tab) {
-                                                                                                    // Absorb tab
-                                                                                                    return KeyEventResult.skipRemainingHandlers;
-                                                                                                  }
-                                                                                                  return KeyEventResult.ignored;
-                                                                                                }
-                                                                                                if (ev.logicalKey == LogicalKeyboardKey.enter && !HardwareKeyboard.instance.isShiftPressed) {
-                                                                                                  completeEdit(editStuff.item3.text, e.part);
-                                                                                                  return KeyEventResult.handled;
-                                                                                                }
-                                                                                                if (ev.logicalKey == LogicalKeyboardKey.escape) {
-                                                                                                  widget.cvController.editing
-                                                                                                      .removeWhere((e2) => e2.item1.guid == message.guid! && e2.item2.part == e.part);
-                                                                                                  if (widget.cvController.editing.isEmpty) {
-                                                                                                    widget.cvController.lastFocusedNode.requestFocus();
-                                                                                                  } else {
-                                                                                                    widget.cvController.editing.last.item3.focusNode?.requestFocus();
-                                                                                                  }
-                                                                                                  return KeyEventResult.handled;
-                                                                                                }
-                                                                                                if (ev.logicalKey == LogicalKeyboardKey.tab) {
-                                                                                                  // Absorb tab
-                                                                                                  return KeyEventResult.skipRemainingHandlers;
-                                                                                                }
-                                                                                                return KeyEventResult.ignored;
-                                                                                              },
-                                                                                              child: TextField(
-                                                                                                textCapitalization: TextCapitalization.sentences,
-                                                                                                autocorrect: true,
-                                                                                                controller: editStuff.item3,
-                                                                                                focusNode: editStuff.item3.focusNode,
-                                                                                                scrollPhysics: const CustomBouncingScrollPhysics(),
-                                                                                                style: context.theme.extension<BubbleText>()!.bubbleText.apply(
-                                                                                                      fontSizeFactor: message.isBigEmoji ? 3 : 1,
-                                                                                                    ),
-                                                                                                keyboardType: TextInputType.multiline,
-                                                                                                maxLines: 14,
-                                                                                                minLines: 1,
-                                                                                                autofocus: !(kIsDesktop || kIsWeb),
-                                                                                                enableIMEPersonalizedLearning: !SettingsSvc.settings.incognitoKeyboard.value,
-                                                                                                textInputAction: SettingsSvc.settings.sendWithReturn.value && !kIsWeb && !kIsDesktop
-                                                                                                    ? TextInputAction.send
-                                                                                                    : TextInputAction.newline,
-                                                                                                cursorColor: context.theme.extension<BubbleText>()!.bubbleText.color,
-                                                                                                cursorHeight:
-                                                                                                    context.theme.extension<BubbleText>()!.bubbleText.fontSize! * 1.25 * (message.isBigEmoji ? 3 : 1),
-                                                                                                decoration: InputDecoration(
-                                                                                                  contentPadding: EdgeInsets.all(iOS ? 10 : 12.5),
-                                                                                                  isDense: true,
-                                                                                                  isCollapsed: true,
-                                                                                                  hintText: "Edited Message",
-                                                                                                  enabledBorder: OutlineInputBorder(
-                                                                                                    borderSide: BorderSide(color: context.theme.colorScheme.outline, width: 1.5),
-                                                                                                    borderRadius: BorderRadius.circular(20),
-                                                                                                  ),
-                                                                                                  border: OutlineInputBorder(
-                                                                                                    borderSide: BorderSide(color: context.theme.colorScheme.outline, width: 1.5),
-                                                                                                    borderRadius: BorderRadius.circular(20),
-                                                                                                  ),
-                                                                                                  focusedBorder: OutlineInputBorder(
-                                                                                                    borderSide: BorderSide(color: context.theme.colorScheme.outline, width: 1.5),
-                                                                                                    borderRadius: BorderRadius.circular(20),
-                                                                                                  ),
-                                                                                                  fillColor: Colors.transparent,
-                                                                                                  hintStyle: context.theme
-                                                                                                      .extension<BubbleText>()!
-                                                                                                      .bubbleText
-                                                                                                      .copyWith(color: context.theme.colorScheme.outline),
-                                                                                                  prefixIconConstraints: const BoxConstraints(minHeight: 0, minWidth: 40),
-                                                                                                  prefixIcon: IconButton(
-                                                                                                    constraints: const BoxConstraints(maxWidth: 27),
-                                                                                                    padding: const EdgeInsets.only(left: 5),
-                                                                                                    visualDensity: VisualDensity.compact,
-                                                                                                    icon: Icon(
-                                                                                                      CupertinoIcons.xmark_circle_fill,
-                                                                                                      color: context.theme.colorScheme.outline,
-                                                                                                      size: 22,
-                                                                                                    ),
-                                                                                                    onPressed: () {
-                                                                                                      widget.cvController.editing
-                                                                                                          .removeWhere((e2) => e2.item1.guid == message.guid! && e2.item2.part == e.part);
-                                                                                                      widget.cvController.lastFocusedNode.requestFocus();
-                                                                                                    },
-                                                                                                    iconSize: 22,
-                                                                                                    style: const ButtonStyle(
-                                                                                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                                                                                      visualDensity: VisualDensity.compact,
-                                                                                                    ),
-                                                                                                  ),
-                                                                                                  suffixIconConstraints: const BoxConstraints(minHeight: 0, minWidth: 40),
-                                                                                                  suffixIcon: ValueListenableBuilder(
-                                                                                                    valueListenable: editStuff.item3,
-                                                                                                    builder: (context, value, _) {
-                                                                                                      return Padding(
-                                                                                                        padding: const EdgeInsets.all(3.0),
-                                                                                                        child: TextButton(
-                                                                                                          style: TextButton.styleFrom(
-                                                                                                            backgroundColor: Colors.transparent,
-                                                                                                            shape: const CircleBorder(),
-                                                                                                            padding: const EdgeInsets.all(0),
-                                                                                                            maximumSize: const Size(27, 27),
-                                                                                                            minimumSize: const Size(27, 27),
-                                                                                                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                                                                                          ),
-                                                                                                          child: AnimatedContainer(
-                                                                                                            duration: const Duration(milliseconds: 150),
-                                                                                                            constraints: const BoxConstraints(minHeight: 27, minWidth: 27),
-                                                                                                            decoration: BoxDecoration(
-                                                                                                              shape: iOS ? BoxShape.circle : BoxShape.rectangle,
-                                                                                                              color: !iOS
-                                                                                                                  ? null
-                                                                                                                  : editStuff.item3.text.isNotEmpty
-                                                                                                                      ? Colors.white
-                                                                                                                      : context.theme.colorScheme.outline,
-                                                                                                            ),
-                                                                                                            alignment: Alignment.center,
-                                                                                                            child: Icon(
-                                                                                                              iOS ? CupertinoIcons.arrow_up : Icons.send_outlined,
-                                                                                                              color: !iOS
-                                                                                                                  ? context.theme.extension<BubbleText>()!.bubbleText.color
-                                                                                                                  : context.theme.colorScheme.bubble(context, chat.isIMessage),
-                                                                                                              size: iOS ? 18 : 26,
-                                                                                                            ),
-                                                                                                          ),
-                                                                                                          onPressed: () {
-                                                                                                            completeEdit(editStuff.item3.text, e.part);
-                                                                                                          },
-                                                                                                        ),
-                                                                                                      );
-                                                                                                    },
-                                                                                                  ),
-                                                                                                ),
-                                                                                                onTap: () {
-                                                                                                  HapticFeedback.selectionClick();
-                                                                                                },
-                                                                                                onSubmitted: (String value) {
-                                                                                                  completeEdit(value, e.part);
-                                                                                                },
-                                                                                              ),
-                                                                                            ),
-                                                                                          ),
-                                                                                        ));
-                                                                            }),
-                                                                        ],
-                                                                      ),
-                                                                    ),
-                                                                  ),
-                                                                ),
-                                                              ),
-                                                              // show stickers on top
-                                                              _StickerObserver(
-                                                                messageParts: messageParts,
-                                                                stickers: stickers,
-                                                                part: e,
-                                                                cvController: widget.cvController,
-                                                              ),
-                                                              // show reactions on top
-                                                              if (message.isFromMe!)
-                                                                _ReactionObserver(
-                                                                  controller: controller,
-                                                                  message: message,
-                                                                  messageParts: messageParts,
-                                                                  part: e,
-                                                                  chatGuid: chat.guid,
-                                                                  isFromMe: true,
-                                                                  getReactions: getReactions,
-                                                                  reactionsForPart: reactionsForPart,
-                                                                ),
-                                                              if (!message.isFromMe!)
-                                                                _ReactionObserver(
-                                                                  controller: controller,
-                                                                  message: message,
-                                                                  messageParts: messageParts,
-                                                                  part: e,
-                                                                  chatGuid: chat.guid,
-                                                                  isFromMe: false,
-                                                                  getReactions: getReactions,
-                                                                  reactionsForPart: reactionsForPart,
-                                                                ),
-                                                            ],
                                                           ),
-                                                        ],
-                                                      ),
-                                                    // swipe to reply
-                                                    if (canSwipeToReply && !message.isGroupEvent && !e.isUnsent && !widget.isReplyThread && index < replyOffsets.length)
-                                                      Obx(() => SlideToReply(width: replyOffsets[index].value.abs(), isFromMe: message.isFromMe!)),
-                                                  ].conditionalReverse(message.isFromMe!),
+                                                        ),
+                                                        // show stickers on top
+                                                        _StickerObserver(
+                                                          messageParts: messageParts,
+                                                          stickers: stickers,
+                                                          part: e,
+                                                          cvController: widget.cvController,
+                                                        ),
+                                                        // show reactions on top
+                                                        if (message.isFromMe!)
+                                                          _ReactionObserver(
+                                                            controller: controller,
+                                                            message: message,
+                                                            messageParts: messageParts,
+                                                            part: e,
+                                                            chatGuid: chat.guid,
+                                                            isFromMe: true,
+                                                            getReactions: getReactions,
+                                                            reactionsForPart: reactionsForPart,
+                                                          ),
+                                                        if (!message.isFromMe!)
+                                                          _ReactionObserver(
+                                                            controller: controller,
+                                                            message: message,
+                                                            messageParts: messageParts,
+                                                            part: e,
+                                                            chatGuid: chat.guid,
+                                                            isFromMe: false,
+                                                            getReactions: getReactions,
+                                                            reactionsForPart: reactionsForPart,
+                                                          ),
+                                                      ],
+                                                    ),
+                                                  ],
                                                 ),
-                                              ),
+                                              // swipe to reply
+                                              if (canSwipeToReply &&
+                                                  !message.isGroupEvent &&
+                                                  !e.isUnsent &&
+                                                  !widget.isReplyThread &&
+                                                  index < replyOffsets.length)
+                                                Obx(() => SlideToReply(
+                                                    width: replyOffsets[index].value.abs(),
+                                                    isFromMe: message.isFromMe!)),
+                                            ].conditionalReverse(message.isFromMe!),
                                           ),
                                         ),
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
                               // message properties (replies, edits, effect)
                               Padding(
-                                padding: showAvatar || alwaysShowAvatars ? EdgeInsets.only(left: 35.0 * avatarScale) : EdgeInsets.zero,
-                                child: MessageProperties(globalKey: keys.length > index ? keys[index] : null, parentController: controller, part: e),
+                                padding: showAvatar || alwaysShowAvatars
+                                    ? EdgeInsets.only(left: 35.0 * avatarScale)
+                                    : EdgeInsets.zero,
+                                child: MessageProperties(
+                                    globalKey: keys.length > index ? keys[index] : null,
+                                    parentController: controller,
+                                    part: e),
                               ),
                             ],
                           ),
@@ -793,7 +1051,8 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                   ],
                 ),
               ),
-              if (message.isFromMe! && !message.isGroupEvent) SelectCheckbox(message: message, controller: widget.cvController),
+              if (message.isFromMe! && !message.isGroupEvent)
+                SelectCheckbox(message: message, controller: widget.cvController),
               _ErrorIndicatorObserver(controller: controller, message: message, chat: chat, service: service),
               // slide to view timestamp
               if (iOS) MessageTimestamp(controller: controller, cvController: widget.cvController),
@@ -843,9 +1102,8 @@ class _ReactionObserver extends StatelessWidget {
         final reactions = getReactions();
         final reactionList = messageParts.length == 1 ? reactions : reactionsForPart(part.part, reactions).toList();
         Logger.debug(
-          "[MessageHolder] Rebuilding ReactionHolder for ${message.guid} (isFromMe: $isFromMe) with ${reactionList.length} reactions",
-          tag: "MessageReactivity"
-        );
+            "[MessageHolder] Rebuilding ReactionHolder for ${message.guid} (isFromMe: $isFromMe) with ${reactionList.length} reactions",
+            tag: "MessageReactivity");
         return ReactionHolder(
           reactions: reactionList,
           message: message,
@@ -871,12 +1129,11 @@ class _StickerObserver extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final stickersForPart = messageParts.length == 1 
-        ? stickers 
-        : stickers.where((s) => (s.associatedMessagePart ?? 0) == part.part);
-    
+    final stickersForPart =
+        messageParts.length == 1 ? stickers : stickers.where((s) => (s.associatedMessagePart ?? 0) == part.part);
+
     if (stickersForPart.isEmpty) return const SizedBox.shrink();
-    
+
     return StickerHolder(
       stickerMessages: stickersForPart,
       controller: cvController,
@@ -928,9 +1185,9 @@ class _DeliveredIndicatorObserver extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() => DeliveredIndicator(
-      parentController: controller,
-      forceShow: tapped.value,
-    ));
+          parentController: controller,
+          forceShow: tapped.value,
+        ));
   }
 }
 
@@ -954,7 +1211,7 @@ class _ErrorIndicatorObserver extends StatelessWidget {
     return Obx(() {
       // Observe granular error state flag to minimize rebuilds
       controller.errorChanged.value;
-      
+
       if (message.error > 0 || message.guid!.startsWith("error-")) {
         int errorCode = message.error;
         String errorText = "An unknown internal error occurred.";
@@ -979,38 +1236,40 @@ class _ErrorIndicatorObserver extends StatelessWidget {
                   content: Text("Error ($errorCode): $errorText", style: context.theme.textTheme.bodyLarge),
                   actions: <Widget>[
                     TextButton(
-                      child: Text("Retry", style: context.theme.textTheme.bodyLarge!.copyWith(color: Get.context!.theme.colorScheme.primary)),
+                      child: Text("Retry",
+                          style: context.theme.textTheme.bodyLarge!
+                              .copyWith(color: Get.context!.theme.colorScheme.primary)),
                       onPressed: () async {
                         Navigator.of(context).pop();
-                        
+
                         // Save old GUID and generate new temp GUID for retry
                         final oldGuid = message.guid!;
                         message.generateTempGuid();
-                        
+
                         // Clear error, delivery status, and update timestamp
                         message.error = 0;
                         message.dateCreated = DateTime.now();
                         message.dateDelivered = null;
                         message.dateRead = null;
-                        
+
                         // Delete old errored message from DB and save with new temp GUID
                         await Message.delete(oldGuid);
                         message.id = null;
                         message.save(chat: chat);
-                        
+
                         // Clear notification
                         await NotificationsSvc.clearFailedToSend(chat.id!);
-                        
+
                         // Force UI rebuild to show unsent color
                         controller.update();
-                        
+
                         // Reload attachment bytes if needed
                         for (Attachment? a in message.attachments) {
                           if (a == null) continue;
                           await Attachment.deleteAsync(a.guid!);
                           a.bytes = await File(a.path).readAsBytes();
                         }
-                        
+
                         // Queue for sending (message already in UI, just updated)
                         if (message.attachments.isNotEmpty) {
                           outq.queue(OutgoingItem(
@@ -1028,7 +1287,9 @@ class _ErrorIndicatorObserver extends StatelessWidget {
                       },
                     ),
                     TextButton(
-                      child: Text("Remove", style: context.theme.textTheme.bodyLarge!.copyWith(color: Get.context!.theme.colorScheme.primary)),
+                      child: Text("Remove",
+                          style: context.theme.textTheme.bodyLarge!
+                              .copyWith(color: Get.context!.theme.colorScheme.primary)),
                       onPressed: () async {
                         Navigator.of(context).pop();
                         // Delete the message from the DB
@@ -1043,7 +1304,9 @@ class _ErrorIndicatorObserver extends StatelessWidget {
                       },
                     ),
                     TextButton(
-                      child: Text("Cancel", style: context.theme.textTheme.bodyLarge!.copyWith(color: Get.context!.theme.colorScheme.primary)),
+                      child: Text("Cancel",
+                          style: context.theme.textTheme.bodyLarge!
+                              .copyWith(color: Get.context!.theme.colorScheme.primary)),
                       onPressed: () async {
                         Navigator.of(context).pop();
                         await NotificationsSvc.clearFailedToSend(chat.id!);
@@ -1123,33 +1386,39 @@ class _EditHistoryObserver extends StatelessWidget {
     return Padding(
       padding: showAvatar || alwaysShowAvatars ? EdgeInsets.only(left: 35.0 * avatarScale) : EdgeInsets.zero,
       child: Obx(() => AnimatedSize(
-        duration: const Duration(milliseconds: 250),
-        alignment: Alignment.bottomCenter,
-        curve: controller.showEdits.value ? Curves.easeOutBack : Curves.easeOut,
-        child: controller.showEdits.value
-            ? Opacity(
-                opacity: 0.75,
-                child: Column(
-                  crossAxisAlignment: message.isFromMe! ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: part.edits
-                      .map((edit) => ClipPath(
-                            clipper: TailClipper(
-                              isFromMe: message.isFromMe!,
-                              showTail: message.showTail(newerMessage) && part.part == controller.parts.length - 1,
-                              connectLower: SettingsSvc.settings.skin.value == Skins.iOS ? false : (part.part != 0 && part.part != controller.parts.length - 1) || (part.part == 0 && controller.parts.length > 1),
-                              connectUpper: SettingsSvc.settings.skin.value == Skins.iOS ? false : part.part != 0,
-                            ),
-                            child: TextBubble(
-                              parentController: controller,
-                              message: edit,
-                            ),
-                          ))
-                      .toList(),
-                ),
-              )
-            : Container(height: 0, constraints: BoxConstraints(maxWidth: NavigationSvc.width(context) * MessageWidgetController.maxBubbleSizeFactor - 30)),
-      )),
+            duration: const Duration(milliseconds: 250),
+            alignment: Alignment.bottomCenter,
+            curve: controller.showEdits.value ? Curves.easeOutBack : Curves.easeOut,
+            child: controller.showEdits.value
+                ? Opacity(
+                    opacity: 0.75,
+                    child: Column(
+                      crossAxisAlignment: message.isFromMe! ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: part.edits
+                          .map((edit) => ClipPath(
+                                clipper: TailClipper(
+                                  isFromMe: message.isFromMe!,
+                                  showTail: message.showTail(newerMessage) && part.part == controller.parts.length - 1,
+                                  connectLower: SettingsSvc.settings.skin.value == Skins.iOS
+                                      ? false
+                                      : (part.part != 0 && part.part != controller.parts.length - 1) ||
+                                          (part.part == 0 && controller.parts.length > 1),
+                                  connectUpper: SettingsSvc.settings.skin.value == Skins.iOS ? false : part.part != 0,
+                                ),
+                                child: TextBubble(
+                                  parentController: controller,
+                                  message: edit,
+                                ),
+                              ))
+                          .toList(),
+                    ),
+                  )
+                : Container(
+                    height: 0,
+                    constraints: BoxConstraints(
+                        maxWidth: NavigationSvc.width(context) * MessageWidgetController.maxBubbleSizeFactor - 30)),
+          )),
     );
   }
 }
@@ -1172,23 +1441,26 @@ class _SelectModeWrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() => GestureDetector(
-      behavior: HitTestBehavior.translucent,
-      onTap: cvController.inSelectMode.value
-          ? () {
-              if (cvController.isSelected(message.guid!)) {
-                cvController.selected.remove(message);
-              } else {
-                cvController.selected.add(message);
-              }
-            }
-          : kIsDesktop || kIsWeb || SettingsSvc.settings.skin.value == Skins.iOS || SettingsSvc.settings.skin.value == Skins.Material
-              ? () => tapped.value = !tapped.value
-              : null,
-      child: IgnorePointer(
-        ignoring: cvController.inSelectMode.value,
-        child: child,
-      ),
-    ));
+          behavior: HitTestBehavior.translucent,
+          onTap: cvController.inSelectMode.value
+              ? () {
+                  if (cvController.isSelected(message.guid!)) {
+                    cvController.selected.remove(message);
+                  } else {
+                    cvController.selected.add(message);
+                  }
+                }
+              : kIsDesktop ||
+                      kIsWeb ||
+                      SettingsSvc.settings.skin.value == Skins.iOS ||
+                      SettingsSvc.settings.skin.value == Skins.Material
+                  ? () => tapped.value = !tapped.value
+                  : null,
+          child: IgnorePointer(
+            ignoring: cvController.inSelectMode.value,
+            child: child,
+          ),
+        ));
   }
 }
 

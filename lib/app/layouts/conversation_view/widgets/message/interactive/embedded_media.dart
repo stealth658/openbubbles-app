@@ -25,7 +25,8 @@ class EmbeddedMedia extends CustomStateful<MessageWidgetController> {
   State<EmbeddedMedia> createState() => _EmbeddedMediaState();
 }
 
-class _EmbeddedMediaState extends CustomState<EmbeddedMedia, void, MessageWidgetController> with AutomaticKeepAliveClientMixin {
+class _EmbeddedMediaState extends CustomState<EmbeddedMedia, void, MessageWidgetController>
+    with AutomaticKeepAliveClientMixin {
   Message get message => widget.message;
 
   dynamic content;
@@ -114,7 +115,10 @@ class _EmbeddedMediaState extends CustomState<EmbeddedMedia, void, MessageWidget
               child: Text("Failed to display image", style: context.theme.textTheme.bodyLarge),
             ),
           ),
-        if (content is PlatformFile && content.bytes != null && content.name.toLowerCase().endsWith(".mov") && !kIsDesktop)
+        if (content is PlatformFile &&
+            content.bytes != null &&
+            content.name.toLowerCase().endsWith(".mov") &&
+            !kIsDesktop)
           VideoPlayer(
             file: content,
             attachment: Attachment(
@@ -123,7 +127,10 @@ class _EmbeddedMediaState extends CustomState<EmbeddedMedia, void, MessageWidget
             controller: controller.cvController,
             isFromMe: message.isFromMe!,
           ),
-        if (content is PlatformFile && content.bytes != null && content.name.toLowerCase().endsWith(".mov") && kIsDesktop)
+        if (content is PlatformFile &&
+            content.bytes != null &&
+            content.name.toLowerCase().endsWith(".mov") &&
+            kIsDesktop)
           OtherFile(
             attachment: Attachment(
               guid: message.guid,
@@ -132,34 +139,34 @@ class _EmbeddedMediaState extends CustomState<EmbeddedMedia, void, MessageWidget
           ),
         if (content is! PlatformFile)
           InkWell(
-            onTap: content is String ? () {
-              getContent();
-            } : null,
+            onTap: content is String
+                ? () {
+                    getContent();
+                  }
+                : null,
             child: Padding(
               padding: const EdgeInsets.all(15.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Flexible(
-                    child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            getAppName(),
-                            style: context.theme.textTheme.bodyLarge!.apply(fontWeightDelta: 2),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 5),
-                          Text(
-                            content is Rx ? "Downloading media..." : "Failed to load media!",
-                            style: context.theme.textTheme.labelMedium!.copyWith(fontWeight: FontWeight.normal, color: context.theme.colorScheme.outline),
-                            overflow: TextOverflow.clip,
-                            maxLines: 2,
-                          ),
-                        ]
-                    ),
+                    child:
+                        Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(
+                        getAppName(),
+                        style: context.theme.textTheme.bodyLarge!.apply(fontWeightDelta: 2),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        content is Rx ? "Downloading media..." : "Failed to load media!",
+                        style: context.theme.textTheme.labelMedium!
+                            .copyWith(fontWeight: FontWeight.normal, color: context.theme.colorScheme.outline),
+                        overflow: TextOverflow.clip,
+                        maxLines: 2,
+                      ),
+                    ]),
                   ),
                   if (content is Rx<Tuple2>)
                     SizedBox(
@@ -167,10 +174,10 @@ class _EmbeddedMediaState extends CustomState<EmbeddedMedia, void, MessageWidget
                       width: 40,
                       child: Center(
                         child: Obx(() => CircleProgressBar(
-                          value: content.value.item2 > 0 ? content.value.item1 / content.value.item2 : 0,
-                          backgroundColor: context.theme.colorScheme.outline,
-                          foregroundColor: context.theme.colorScheme.properOnSurface,
-                        )),
+                              value: content.value.item2 > 0 ? content.value.item1 / content.value.item2 : 0,
+                              backgroundColor: context.theme.colorScheme.outline,
+                              foregroundColor: context.theme.colorScheme.properOnSurface,
+                            )),
                       ),
                     ),
                   if (content is String)

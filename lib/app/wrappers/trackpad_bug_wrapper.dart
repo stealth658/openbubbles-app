@@ -46,8 +46,7 @@ class _TrackpadBugWrapperState extends State<TrackpadBugWrapper> {
           final panDiff = evt.pan - cmp.$1;
           final scaleDiff = (evt.scale - cmp.$2).abs();
 
-          if ((panDiff.dx.abs() > _panDiffTrigger ||
-              panDiff.dy.abs() > _panDiffTrigger) &&
+          if ((panDiff.dx.abs() > _panDiffTrigger || panDiff.dy.abs() > _panDiffTrigger) &&
               scaleDiff > _scaleDiffTrigger) {
             setState(() => _latched = true);
           }

@@ -66,7 +66,9 @@ class _CupertinoConversationTileState extends CustomState<CupertinoConversationT
                     parentController: controller,
                     style: context.theme.textTheme.bodyLarge!.copyWith(
                         fontWeight: controller.shouldHighlight.value ? FontWeight.w600 : FontWeight.w500,
-                        color: controller.shouldHighlight.value ? context.theme.colorScheme.onBubble(context, controller.chat.isIMessage) : null),
+                        color: controller.shouldHighlight.value
+                            ? context.theme.colorScheme.onBubble(context, controller.chat.isIMessage)
+                            : null),
                   ),
                 ),
                 CupertinoTrailing(parentController: controller),
@@ -79,7 +81,9 @@ class _CupertinoConversationTileState extends CustomState<CupertinoConversationT
                     parentController: controller,
                     style: context.theme.textTheme.bodyMedium!.copyWith(
                       color: controller.shouldHighlight.value
-                          ? context.theme.colorScheme.onBubble(context, controller.chat.isIMessage).withValues(alpha: 0.85)
+                          ? context.theme.colorScheme
+                              .onBubble(context, controller.chat.isIMessage)
+                              .withValues(alpha: 0.85)
                           : context.theme.colorScheme.outline,
                       height: 1.5,
                     ),
@@ -101,8 +105,11 @@ class _CupertinoConversationTileState extends CustomState<CupertinoConversationT
                   : controller.hoverHighlight.value
                       ? context.theme.colorScheme.properSurface.withValues(alpha: 0.5)
                       : null,
-          borderRadius: BorderRadius.circular(
-              controller.shouldHighlight.value || controller.shouldPartialHighlight.value || controller.hoverHighlight.value ? 8 : 0),
+          borderRadius: BorderRadius.circular(controller.shouldHighlight.value ||
+                  controller.shouldPartialHighlight.value ||
+                  controller.hoverHighlight.value
+              ? 8
+              : 0),
         ),
         child: NavigationSvc.isAvatarOnly(context)
             ? InkWell(
@@ -118,7 +125,8 @@ class _CupertinoConversationTileState extends CustomState<CupertinoConversationT
                   longPressPosition = details.globalPosition;
                 },
                 child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 10.0, horizontal: (NavigationSvc.width(context) - 100) / 2).add(const EdgeInsets.only(right: 15)),
+                  padding: EdgeInsets.symmetric(vertical: 10.0, horizontal: (NavigationSvc.width(context) - 100) / 2)
+                      .add(const EdgeInsets.only(right: 15)),
                   child: leading,
                 ),
               )
@@ -165,7 +173,8 @@ class _CupertinoTrailingState extends CustomState<CupertinoTrailing, void, Conve
           });
           if (message != null &&
               SettingsSvc.settings.statusIndicatorsOnChats.value &&
-              (message.dateDelivered != cachedLatestMessage?.dateDelivered || message.dateRead != cachedLatestMessage?.dateRead)) {
+              (message.dateDelivered != cachedLatestMessage?.dateDelivered ||
+                  message.dateRead != cachedLatestMessage?.dateRead)) {
             setState(() {});
           }
           cachedLatestMessage = message;
@@ -182,7 +191,8 @@ class _CupertinoTrailingState extends CustomState<CupertinoTrailing, void, Conve
       });
     } else {
       sub = WebListeners.newMessage.listen((tuple) {
-        if (tuple.item2?.guid == controller.chat.guid && (dateCreated == null || tuple.item1.dateCreated!.isAfter(dateCreated!))) {
+        if (tuple.item2?.guid == controller.chat.guid &&
+            (dateCreated == null || tuple.item1.dateCreated!.isAfter(dateCreated!))) {
           cachedLatestMessage = tuple.item1;
           setState(() {
             dateCreated = tuple.item1.dateCreated;
@@ -210,7 +220,9 @@ class _CupertinoTrailingState extends CustomState<CupertinoTrailing, void, Conve
         children: <Widget>[
           Obx(() {
             String indicatorText = "";
-            if (SettingsSvc.settings.statusIndicatorsOnChats.value && (cachedLatestMessage?.isFromMe ?? false) && !controller.chat.isGroup) {
+            if (SettingsSvc.settings.statusIndicatorsOnChats.value &&
+                (cachedLatestMessage?.isFromMe ?? false) &&
+                !controller.chat.isGroup) {
               Indicator show = cachedLatestMessage?.indicatorToShow ?? Indicator.NONE;
               if (show != Indicator.NONE) {
                 indicatorText = show.name.toLowerCase().capitalizeFirst!;
@@ -236,27 +248,27 @@ class _CupertinoTrailingState extends CustomState<CupertinoTrailing, void, Conve
             );
           }),
           Obx(() => Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                CupertinoIcons.forward,
-                color: controller.shouldHighlight.value
-                    ? context.theme.colorScheme.onBubble(context, controller.chat.isIMessage)
-                    : context.theme.colorScheme.outline,
-                size: 15,
-              ),
-              if (controller.chatState?.muteType.value == "mute")
-                Padding(
-                    padding: const EdgeInsets.only(top: 5.0),
-                    child: Icon(
-                      CupertinoIcons.bell_slash_fill,
-                      color: controller.shouldHighlight.value
-                          ? context.theme.colorScheme.onBubble(context, controller.chat.isIMessage)
-                          : context.theme.colorScheme.outline,
-                      size: 12,
-                    ))
-            ],
-          )),
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    CupertinoIcons.forward,
+                    color: controller.shouldHighlight.value
+                        ? context.theme.colorScheme.onBubble(context, controller.chat.isIMessage)
+                        : context.theme.colorScheme.outline,
+                    size: 15,
+                  ),
+                  if (controller.chatState?.muteType.value == "mute")
+                    Padding(
+                        padding: const EdgeInsets.only(top: 5.0),
+                        child: Icon(
+                          CupertinoIcons.bell_slash_fill,
+                          color: controller.shouldHighlight.value
+                              ? context.theme.colorScheme.onBubble(context, controller.chat.isIMessage)
+                              : context.theme.colorScheme.outline,
+                          size: 12,
+                        ))
+                ],
+              )),
         ],
       ),
     );
@@ -271,7 +283,6 @@ class UnreadIcon extends CustomStateful<ConversationTileController> {
 }
 
 class _UnreadIconState extends CustomState<UnreadIcon, void, ConversationTileController> {
-
   @override
   void initState() {
     super.initState();
@@ -284,18 +295,18 @@ class _UnreadIconState extends CustomState<UnreadIcon, void, ConversationTileCon
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(left: 5.0, right: 5.0),
-      child: Obx(() => (ChatsSvc.getChatState(controller.chat.guid)?.hasUnreadMessage.value ?? false)
-          ? Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(35),
-                color: context.theme.colorScheme.primary,
-              ),
-              width: 10,
-              height: 10,
-            )
-          : const SizedBox(width: 10),
-      )
-    );
+        padding: const EdgeInsets.only(left: 5.0, right: 5.0),
+        child: Obx(
+          () => (ChatsSvc.getChatState(controller.chat.guid)?.hasUnreadMessage.value ?? false)
+              ? Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(35),
+                    color: context.theme.colorScheme.primary,
+                  ),
+                  width: 10,
+                  height: 10,
+                )
+              : const SizedBox(width: 10),
+        ));
   }
 }

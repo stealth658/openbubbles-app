@@ -204,11 +204,13 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                                 WindowEffects.defaultOpacity(dark: false);
                           }
                           if (defaultOpacityDark) {
-                            SettingsSvc.settings.windowEffectCustomOpacityDark.value = WindowEffects.defaultOpacity(dark: true);
+                            SettingsSvc.settings.windowEffectCustomOpacityDark.value =
+                                WindowEffects.defaultOpacity(dark: true);
                           }
                           await PrefsSvc.i.setString('window-effect', effect.toString());
                           await WindowEffects.setEffect(color: context.theme.colorScheme.background);
-                          await SettingsSvc.settings.saveManyAsync(['windowEffect', 'windowEffectCustomOpacityLight', 'windowEffectCustomOpacityDark']);
+                          await SettingsSvc.settings.saveManyAsync(
+                              ['windowEffect', 'windowEffectCustomOpacityLight', 'windowEffectCustomOpacityDark']);
                         },
                         title: "Window Effect",
                         subtitle:
@@ -532,95 +534,101 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                               }
                             }
 
-                              showDialog(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  backgroundColor: context.theme.colorScheme.properSurface,
-                                  title: Text("Downloading font file...", style: context.theme.textTheme.titleLarge),
-                                  content: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: <Widget>[
-                                        Obx(
-                                              () => Text(
-                                              '${HttpSvc.fontDownloadProgress.value != null && HttpSvc.fontDownloadTotalSize.value != null ? (HttpSvc.fontDownloadProgress.value! * HttpSvc.fontDownloadTotalSize.value! / 1000).getFriendlySize(withSuffix: false) : ""} / ${((HttpSvc.fontDownloadTotalSize.value ?? 0).toDouble() / 1000).getFriendlySize()} (${((HttpSvc.fontDownloadProgress.value ?? 0) * 100).floor()}%)',
-                                              style: context.theme.textTheme.bodyLarge),
-                                        ),
-                                        const SizedBox(height: 10.0),
-                                        Obx(
-                                              () => ClipRRect(
-                                            borderRadius: BorderRadius.circular(20),
-                                            child: LinearProgressIndicator(
-                                              backgroundColor: context.theme.colorScheme.outline,
-                                              valueColor: AlwaysStoppedAnimation<Color>(context.theme.colorScheme.primary),
-                                              value: HttpSvc.fontDownloadProgress.value,
-                                              minHeight: 5,
-                                            ),
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                backgroundColor: context.theme.colorScheme.properSurface,
+                                title: Text("Downloading font file...", style: context.theme.textTheme.titleLarge),
+                                content: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: <Widget>[
+                                      Obx(
+                                        () => Text(
+                                            '${HttpSvc.fontDownloadProgress.value != null && HttpSvc.fontDownloadTotalSize.value != null ? (HttpSvc.fontDownloadProgress.value! * HttpSvc.fontDownloadTotalSize.value! / 1000).getFriendlySize(withSuffix: false) : ""} / ${((HttpSvc.fontDownloadTotalSize.value ?? 0).toDouble() / 1000).getFriendlySize()} (${((HttpSvc.fontDownloadProgress.value ?? 0) * 100).floor()}%)',
+                                            style: context.theme.textTheme.bodyLarge),
+                                      ),
+                                      const SizedBox(height: 10.0),
+                                      Obx(
+                                        () => ClipRRect(
+                                          borderRadius: BorderRadius.circular(20),
+                                          child: LinearProgressIndicator(
+                                            backgroundColor: context.theme.colorScheme.outline,
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(context.theme.colorScheme.primary),
+                                            value: HttpSvc.fontDownloadProgress.value,
+                                            minHeight: 5,
                                           ),
                                         ),
-                                        const SizedBox(
-                                          height: 15.0,
-                                        ),
-                                        Obx(() => Text(
-                                          HttpSvc.fontDownloadProgress.value == 1 ? "Download Complete!" : "You can close this dialog. The font will continue to download in the background.",
-                                          textAlign: TextAlign.center,
-                                          style: context.theme.textTheme.bodyLarge,
-                                        )),
-                                      ]),
-                                  actions: [
-                                    Obx(() => HttpSvc.downloadingFont.value
+                                      ),
+                                      const SizedBox(
+                                        height: 15.0,
+                                      ),
+                                      Obx(() => Text(
+                                            HttpSvc.fontDownloadProgress.value == 1
+                                                ? "Download Complete!"
+                                                : "You can close this dialog. The font will continue to download in the background.",
+                                            textAlign: TextAlign.center,
+                                            style: context.theme.textTheme.bodyLarge,
+                                          )),
+                                    ]),
+                                actions: [
+                                  Obx(
+                                    () => HttpSvc.downloadingFont.value
                                         ? Container(height: 0, width: 0)
                                         : TextButton(
-                                      child: Text("Close", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
-                                      onPressed: () async {
-                                        Get.closeAllSnackbars();
-                                        Navigator.of(context, rootNavigator: true).pop();
-                                        Future.delayed(const Duration(milliseconds: 400), ()
-                                        {
-                                          HttpSvc.fontDownloadProgress.value = null;
-                                          HttpSvc.fontDownloadTotalSize.value = null;
-                                        });
-                                      },
-                                    ),
-                                    ),
-                                  ],
-                                ),
-                              );
+                                            child: Text("Close",
+                                                style: context.theme.textTheme.bodyLarge!
+                                                    .copyWith(color: context.theme.colorScheme.primary)),
+                                            onPressed: () async {
+                                              Get.closeAllSnackbars();
+                                              Navigator.of(context, rootNavigator: true).pop();
+                                              Future.delayed(const Duration(milliseconds: 400), () {
+                                                HttpSvc.fontDownloadProgress.value = null;
+                                                HttpSvc.fontDownloadTotalSize.value = null;
+                                              });
+                                            },
+                                          ),
+                                  ),
+                                ],
+                              ),
+                            );
 
-                              HttpSvc.downloadAppleEmojiFont();
-                            },
-                            title:
-                            kIsWeb ? "Upload Font File" : "Download${HttpSvc.downloadingFont.value ? "ing" : ""} iOS Emoji Font${HttpSvc.downloadingFont.value ? " (${HttpSvc.fontDownloadProgress.value != null && HttpSvc.fontDownloadTotalSize.value != null ? (HttpSvc.fontDownloadProgress.value! * HttpSvc.fontDownloadTotalSize.value! / 1000).getFriendlySize(withSuffix: false) : ""} / ${((HttpSvc.fontDownloadTotalSize.value ?? 0).toDouble() / 1000).getFriendlySize()}) (${((HttpSvc.fontDownloadProgress.value ?? 0) * 100).floor()}%)" : ""}",
-                            subtitle: kIsWeb ? "Upload your ttf emoji file into BlueBubbles" : null,
-                          );
-                        } else {
-                          return const SizedBox.shrink();
-                        }
-                      }),
-                      Obx(() {
-                        if (FilesystemSvc.fontExistsOnDisk.value) {
-                          return SettingsTile(
-                            onTap: () async {
-                              if (kIsWeb) {
-                                final txn = FilesystemSvc.webDb.transaction("BBStore", idbModeReadWrite);
-                                final store = txn.objectStore("BBStore");
-                                await store.delete("iosFont");
-                                await txn.completed;
-                              } else {
-                                final file = File("${FilesystemSvc.appDocDir.path}/font/apple.ttf");
-                                await file.delete();
-                              }
-                              FilesystemSvc.fontExistsOnDisk.value = false;
-                              showSnackbar("Notice", "Font removed, restart the app for changes to take effect");
-                            },
-                            title: "Delete ${kIsWeb ? "" : "iOS "}Emoji Font",
-                          );
-                        } else {
-                          return const SizedBox.shrink();
-                        }
-                      }),
-                    ],
-                  ),
+                            HttpSvc.downloadAppleEmojiFont();
+                          },
+                          title: kIsWeb
+                              ? "Upload Font File"
+                              : "Download${HttpSvc.downloadingFont.value ? "ing" : ""} iOS Emoji Font${HttpSvc.downloadingFont.value ? " (${HttpSvc.fontDownloadProgress.value != null && HttpSvc.fontDownloadTotalSize.value != null ? (HttpSvc.fontDownloadProgress.value! * HttpSvc.fontDownloadTotalSize.value! / 1000).getFriendlySize(withSuffix: false) : ""} / ${((HttpSvc.fontDownloadTotalSize.value ?? 0).toDouble() / 1000).getFriendlySize()}) (${((HttpSvc.fontDownloadProgress.value ?? 0) * 100).floor()}%)" : ""}",
+                          subtitle: kIsWeb ? "Upload your ttf emoji file into BlueBubbles" : null,
+                        );
+                      } else {
+                        return const SizedBox.shrink();
+                      }
+                    }),
+                    Obx(() {
+                      if (FilesystemSvc.fontExistsOnDisk.value) {
+                        return SettingsTile(
+                          onTap: () async {
+                            if (kIsWeb) {
+                              final txn = FilesystemSvc.webDb.transaction("BBStore", idbModeReadWrite);
+                              final store = txn.objectStore("BBStore");
+                              await store.delete("iosFont");
+                              await txn.completed;
+                            } else {
+                              final file = File("${FilesystemSvc.appDocDir.path}/font/apple.ttf");
+                              await file.delete();
+                            }
+                            FilesystemSvc.fontExistsOnDisk.value = false;
+                            showSnackbar("Notice", "Font removed, restart the app for changes to take effect");
+                          },
+                          title: "Delete ${kIsWeb ? "" : "iOS "}Emoji Font",
+                        );
+                      } else {
+                        return const SizedBox.shrink();
+                      }
+                    }),
+                  ],
+                ),
               ],
             ),
           ),

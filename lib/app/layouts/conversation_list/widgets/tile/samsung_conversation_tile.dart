@@ -57,7 +57,9 @@ class _SamsungConversationTileState extends CustomState<SamsungConversationTile,
                   Obx(() => ChatSubtitle(
                         parentController: controller,
                         style: context.theme.textTheme.bodyMedium!.copyWith(
-                          color: controller.shouldHighlight.value ? context.theme.colorScheme.onBackground : context.theme.colorScheme.outline,
+                          color: controller.shouldHighlight.value
+                              ? context.theme.colorScheme.onBackground
+                              : context.theme.colorScheme.outline,
                           height: 1.5,
                         ),
                       )),
@@ -137,7 +139,8 @@ class _SamsungTrailingState extends CustomState<SamsungTrailing, void, Conversat
           });
           if (message != null &&
               SettingsSvc.settings.statusIndicatorsOnChats.value &&
-              (message.dateDelivered != cachedLatestMessage?.dateDelivered || message.dateRead != cachedLatestMessage?.dateRead)) {
+              (message.dateDelivered != cachedLatestMessage?.dateDelivered ||
+                  message.dateRead != cachedLatestMessage?.dateRead)) {
             setState(() {});
           }
           cachedLatestMessage = message;
@@ -154,7 +157,8 @@ class _SamsungTrailingState extends CustomState<SamsungTrailing, void, Conversat
       });
     } else {
       sub = WebListeners.newMessage.listen((tuple) {
-        if (tuple.item2?.guid == controller.chat.guid && (dateCreated == null || tuple.item1.dateCreated!.isAfter(dateCreated!))) {
+        if (tuple.item2?.guid == controller.chat.guid &&
+            (dateCreated == null || tuple.item1.dateCreated!.isAfter(dateCreated!))) {
           cachedLatestMessage = tuple.item1;
           setState(() {
             dateCreated = tuple.item1.dateCreated;
@@ -178,7 +182,9 @@ class _SamsungTrailingState extends CustomState<SamsungTrailing, void, Conversat
       final muteType = ChatsSvc.getChatState(controller.chat.guid)?.muteType.value;
 
       String indicatorText = "";
-      if (SettingsSvc.settings.statusIndicatorsOnChats.value && (cachedLatestMessage?.isFromMe ?? false) && !controller.chat.isGroup) {
+      if (SettingsSvc.settings.statusIndicatorsOnChats.value &&
+          (cachedLatestMessage?.isFromMe ?? false) &&
+          !controller.chat.isGroup) {
         Indicator show = cachedLatestMessage?.indicatorToShow ?? Indicator.NONE;
         if (show != Indicator.NONE) {
           indicatorText = show.name.toLowerCase().capitalizeFirst!;
@@ -193,21 +199,22 @@ class _SamsungTrailingState extends CustomState<SamsungTrailing, void, Conversat
           mainAxisSize: MainAxisSize.min,
           children: [
             Padding(
-              padding: const EdgeInsets.only(top: 1),
-              child: Text(
-                (cachedLatestMessage?.error ?? 0) > 0 ? "Error" : "${indicatorText.isNotEmpty ? "$indicatorText\n" : ""}${buildDate(dateCreated)}",
-                textAlign: TextAlign.right,
-                style: context.theme.textTheme.bodySmall!.copyWith(
-                  color: (cachedLatestMessage?.error ?? 0) > 0
-                      ? context.theme.colorScheme.error
-                      : controller.shouldHighlight.value || unread
-                          ? context.theme.colorScheme.onBackground
-                          : context.theme.colorScheme.outline,
-                  fontWeight: controller.shouldHighlight.value ? FontWeight.w500 : null,
-                ),
-                overflow: TextOverflow.clip,
-              )
-            ),
+                padding: const EdgeInsets.only(top: 1),
+                child: Text(
+                  (cachedLatestMessage?.error ?? 0) > 0
+                      ? "Error"
+                      : "${indicatorText.isNotEmpty ? "$indicatorText\n" : ""}${buildDate(dateCreated)}",
+                  textAlign: TextAlign.right,
+                  style: context.theme.textTheme.bodySmall!.copyWith(
+                    color: (cachedLatestMessage?.error ?? 0) > 0
+                        ? context.theme.colorScheme.error
+                        : controller.shouldHighlight.value || unread
+                            ? context.theme.colorScheme.onBackground
+                            : context.theme.colorScheme.outline,
+                    fontWeight: controller.shouldHighlight.value ? FontWeight.w500 : null,
+                  ),
+                  overflow: TextOverflow.clip,
+                )),
             Obx(() {
               final isPinned = controller.chatState?.isPinned.value ?? controller.chat.isPinned ?? false;
               return Row(
@@ -217,7 +224,9 @@ class _SamsungTrailingState extends CustomState<SamsungTrailing, void, Conversat
                   if (muteType == "mute")
                     Icon(
                       Icons.notifications_off,
-                      color: controller.shouldHighlight.value || unread ? context.theme.colorScheme.onBackground : context.theme.colorScheme.outline,
+                      color: controller.shouldHighlight.value || unread
+                          ? context.theme.colorScheme.onBackground
+                          : context.theme.colorScheme.outline,
                       size: 16,
                     ),
                   if (muteType == "mute") const SizedBox(width: 2.0),
@@ -240,7 +249,6 @@ class UnreadIcon extends CustomStateful<ConversationTileController> {
 }
 
 class _UnreadIconState extends CustomState<UnreadIcon, void, ConversationTileController> {
-
   @override
   void initState() {
     super.initState();

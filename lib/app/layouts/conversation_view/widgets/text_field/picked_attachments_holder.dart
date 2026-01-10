@@ -31,9 +31,9 @@ class PickedAttachmentsHolder extends StatefulWidget {
 class _PickedAttachmentsHolderState extends OptimizedState<PickedAttachmentsHolder> {
   // Cache platform check to avoid repeated lookups
   late final bool _isIOS = SettingsSvc.settings.skin.value == Skins.iOS;
-  
-  List<PlatformFile> get pickedAttachments => widget.controller != null
-      ? widget.controller!.pickedAttachments : widget.initialAttachments;
+
+  List<PlatformFile> get pickedAttachments =>
+      widget.controller != null ? widget.controller!.pickedAttachments : widget.initialAttachments;
 
   void selectMention(int index, bool custom) async {
     if (widget.textController is! MentionTextEditingController) return;
@@ -55,7 +55,7 @@ class _PickedAttachmentsHolderState extends OptimizedState<PickedAttachmentsHold
     widget.controller!.mentionMatches.clear();
     widget.controller!.focusNode.requestFocus();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -66,7 +66,7 @@ class _PickedAttachmentsHolderState extends OptimizedState<PickedAttachmentsHold
           if (pickedAttachments.isEmpty) {
             return const SizedBox.shrink();
           }
-          
+
           return ConstrainedBox(
             constraints: BoxConstraints(
               maxHeight: _isIOS ? 150 : 100,
@@ -107,7 +107,7 @@ class _PickedAttachmentsHolderState extends OptimizedState<PickedAttachmentsHold
           Obx(() {
             final hasEmojiMatches = widget.controller!.emojiMatches.isNotEmpty;
             final hasMentionMatches = widget.controller!.mentionMatches.isNotEmpty;
-            
+
             if (hasEmojiMatches) {
               return _EmojiSuggestions(
                 controller: widget.controller!,
@@ -145,9 +145,10 @@ class _EmojiSuggestions extends StatelessWidget {
         padding: const EdgeInsets.all(5.0),
         child: Container(
           decoration: BoxDecoration(
-            border: isIOS ? null : Border.fromBorderSide(
-              BorderSide(color: context.theme.colorScheme.background, strokeAlign: BorderSide.strokeAlignOutside)
-            ),
+            border: isIOS
+                ? null
+                : Border.fromBorderSide(BorderSide(
+                    color: context.theme.colorScheme.background, strokeAlign: BorderSide.strokeAlignOutside)),
             borderRadius: BorderRadius.circular(20),
             color: context.theme.colorScheme.properSurface,
           ),
@@ -160,7 +161,8 @@ class _EmojiSuggestions extends StatelessWidget {
               controller: controller.emojiScrollController,
               physics: ThemeSwitcher.getScrollPhysics(),
               shrinkWrap: true,
-              findChildIndexCallback: (key) => findChildIndexByKey(controller.emojiMatches, key, (item) => item.unified),
+              findChildIndexCallback: (key) =>
+                  findChildIndexByKey(controller.emojiMatches, key, (item) => item.unified),
               itemBuilder: (BuildContext context, int index) {
                 final emoji = controller.emojiMatches[index];
                 return Material(
@@ -179,7 +181,8 @@ class _EmojiSuggestions extends StatelessWidget {
                         final match = matches.lastWhere((m) => m.start < _controller.selection.start);
                         final emojiChar = emoji.emoji;
                         _controller.text = "${text.substring(0, match.start)}$emojiChar ${text.substring(match.end)}";
-                        _controller.selection = TextSelection.fromPosition(TextPosition(offset: match.start + emojiChar.length + 1));
+                        _controller.selection =
+                            TextSelection.fromPosition(TextPosition(offset: match.start + emojiChar.length + 1));
                       }
                       controller.emojiSelectedIndex.value = 0;
                       controller.emojiMatches.clear();
@@ -236,9 +239,10 @@ class _MentionSuggestions extends StatelessWidget {
         padding: const EdgeInsets.all(5.0),
         child: Container(
           decoration: BoxDecoration(
-            border: isIOS ? null : Border.fromBorderSide(
-              BorderSide(color: context.theme.colorScheme.background, strokeAlign: BorderSide.strokeAlignOutside)
-            ),
+            border: isIOS
+                ? null
+                : Border.fromBorderSide(BorderSide(
+                    color: context.theme.colorScheme.background, strokeAlign: BorderSide.strokeAlignOutside)),
             borderRadius: BorderRadius.circular(20),
             color: context.theme.colorScheme.properSurface,
           ),
@@ -251,7 +255,8 @@ class _MentionSuggestions extends StatelessWidget {
               controller: controller.emojiScrollController,
               physics: ThemeSwitcher.getScrollPhysics(),
               shrinkWrap: true,
-              findChildIndexCallback: (key) => findChildIndexByKey(controller.mentionMatches, key, (item) => item.address),
+              findChildIndexCallback: (key) =>
+                  findChildIndexByKey(controller.mentionMatches, key, (item) => item.address),
               itemBuilder: (BuildContext context, int index) {
                 final mention = controller.mentionMatches[index];
                 return Material(
@@ -290,8 +295,7 @@ class _MentionSuggestions extends StatelessWidget {
                             style: context.textTheme.labelLarge!,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          if (mention.displayName != mention.address)
-                            const SizedBox(width: 8),
+                          if (mention.displayName != mention.address) const SizedBox(width: 8),
                           if (mention.displayName != mention.address)
                             Text(
                               mention.address,

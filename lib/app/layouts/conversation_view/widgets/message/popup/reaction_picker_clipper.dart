@@ -3,7 +3,7 @@ import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/material.dart';
 
-class ReactionPickerClipper extends CustomClipper<Path>{
+class ReactionPickerClipper extends CustomClipper<Path> {
   final Size messageSize;
   final bool isFromMe;
   const ReactionPickerClipper({required this.messageSize, required this.isFromMe});
@@ -22,11 +22,11 @@ class ReactionPickerClipper extends CustomClipper<Path>{
     path.lineTo(size.width - 20, 0);
     if (size.width > messageSize.width && SettingsSvc.settings.skin.value == Skins.iOS) {
       if (isFromMe) {
-        path.addArc(Rect.fromLTWH(size.width - messageSize.width, size.height - 22.5, 17.5, 17.5), 0, 2*pi);
-        path.addArc(Rect.fromLTWH(size.width - messageSize.width - 5, size.height - 7.5, 7, 7), 0, 2*pi);
+        path.addArc(Rect.fromLTWH(size.width - messageSize.width, size.height - 22.5, 17.5, 17.5), 0, 2 * pi);
+        path.addArc(Rect.fromLTWH(size.width - messageSize.width - 5, size.height - 7.5, 7, 7), 0, 2 * pi);
       } else {
-        path.addArc(Rect.fromLTWH(messageSize.width - 20, size.height - 22.5, 17.5, 17.5), 0, 2*pi);
-        path.addArc(Rect.fromLTWH(messageSize.width - 5, size.height - 7.5, 7, 7), 0, 2*pi);
+        path.addArc(Rect.fromLTWH(messageSize.width - 20, size.height - 22.5, 17.5, 17.5), 0, 2 * pi);
+        path.addArc(Rect.fromLTWH(messageSize.width - 5, size.height - 7.5, 7, 7), 0, 2 * pi);
       }
     }
     return path;

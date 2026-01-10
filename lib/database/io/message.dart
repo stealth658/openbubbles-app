@@ -17,7 +17,6 @@ import 'package:metadata_fetch/metadata_fetch.dart';
 // ignore: unnecessary_import
 import 'package:objectbox/objectbox.dart';
 
-
 @Entity()
 class Message {
   int? id;
@@ -51,7 +50,7 @@ class Message {
   Handle? handle;
   bool hasAttachments;
   bool hasReactions;
-  
+
   // Phase 1: Add ToOne relationship for Handle
   // This will eventually replace the embedded Handle object above
   final handleRelation = ToOne<Handle>();
@@ -59,14 +58,14 @@ class Message {
   Map<String, dynamic>? metadata;
   String? threadOriginatorGuid;
   String? threadOriginatorPart;
-  
+
   // IMPORTANT: Two separate attachment fields with different purposes:
   // 1. 'attachments' - In-memory list for serialization/deserialization and UI access
   // 2. 'dbAttachments' - ObjectBox ToMany relationship for persistent DB links
   //    Only modify when saving/updating messages in DB transactions
   //    Do NOT clear/modify when just querying - the relationship already exists
   List<Attachment?> attachments = [];
-  
+
   List<Message> associatedMessages = [];
   bool? bigEmoji;
   List<AttributedBody> attributedBody;
@@ -103,22 +102,19 @@ class Message {
   final chat = ToOne<Chat>();
 
   String? get dbAttributedBody => jsonEncode(attributedBody.map((e) => e.toMap()).toList());
-  set dbAttributedBody(String? json) => attributedBody = json == null
-      ? <AttributedBody>[] : (jsonDecode(json) as List).map((e) => AttributedBody.fromMap(e)).toList();
+  set dbAttributedBody(String? json) => attributedBody =
+      json == null ? <AttributedBody>[] : (jsonDecode(json) as List).map((e) => AttributedBody.fromMap(e)).toList();
 
   String? get dbMessageSummaryInfo => jsonEncode(messageSummaryInfo.map((e) => e.toJson()).toList());
   set dbMessageSummaryInfo(String? json) => messageSummaryInfo = json == null
-      ? <MessageSummaryInfo>[] : (jsonDecode(json) as List).map((e) => MessageSummaryInfo.fromJson(e)).toList();
+      ? <MessageSummaryInfo>[]
+      : (jsonDecode(json) as List).map((e) => MessageSummaryInfo.fromJson(e)).toList();
 
-  String? get dbPayloadData => payloadData == null
-      ? null : jsonEncode(payloadData!.toJson());
-  set dbPayloadData(String? json) => payloadData = json == null
-      ? null : PayloadData.fromJson(jsonDecode(json));
+  String? get dbPayloadData => payloadData == null ? null : jsonEncode(payloadData!.toJson());
+  set dbPayloadData(String? json) => payloadData = json == null ? null : PayloadData.fromJson(jsonDecode(json));
 
-  String? get dbMetadata => metadata == null
-      ? null : jsonEncode(metadata);
-  set dbMetadata(String? json) => metadata = json == null
-      ? null : jsonDecode(json) as Map<String, dynamic>;
+  String? get dbMetadata => metadata == null ? null : jsonEncode(metadata);
+  set dbMetadata(String? json) => metadata = json == null ? null : jsonDecode(json) as Map<String, dynamic>;
 
   bool get isKeptAudio => itemType == 5 && subject != null;
 
@@ -165,19 +161,20 @@ class Message {
     this.didNotifyRecipient = false,
     this.isBookmarked = false,
   }) {
-      if (error != null) _error.value = error;
-      if (dateRead != null) _dateRead.value = dateRead;
-      if (dateDelivered != null) _dateDelivered.value = dateDelivered;
-      if (dateEdited != null) _dateEdited.value = dateEdited;
-      if (isDelievered != null) _isDelivered.value = isDelievered;
-      if (attachments.isEmpty) attachments = [];
-      if (associatedMessages.isEmpty) associatedMessages = [];
-      if (attributedBody.isEmpty) attributedBody = [];
-      if (messageSummaryInfo.isEmpty) messageSummaryInfo = [];
+    if (error != null) _error.value = error;
+    if (dateRead != null) _dateRead.value = dateRead;
+    if (dateDelivered != null) _dateDelivered.value = dateDelivered;
+    if (dateEdited != null) _dateEdited.value = dateEdited;
+    if (isDelievered != null) _isDelivered.value = isDelievered;
+    if (attachments.isEmpty) attachments = [];
+    if (associatedMessages.isEmpty) associatedMessages = [];
+    if (attributedBody.isEmpty) attributedBody = [];
+    if (messageSummaryInfo.isEmpty) messageSummaryInfo = [];
   }
 
   factory Message.fromMap(Map<String, dynamic> json) {
-    final attachments = (json['attachments'] as List? ?? []).map((a) => Attachment.fromMap(a!.cast<String, Object>())).toList();
+    final attachments =
+        (json['attachments'] as List? ?? []).map((a) => Attachment.fromMap(a!.cast<String, Object>())).toList();
 
     List<AttributedBody> attributedBody = [];
     if (json["attributedBody"] != null) {
@@ -185,7 +182,8 @@ class Message {
         json['attributedBody'] = [json['attributedBody']!.cast<String, Object>()];
       }
       try {
-        attributedBody = (json['attributedBody'] as List).map((a) => AttributedBody.fromMap(a!.cast<String, Object>())).toList();
+        attributedBody =
+            (json['attributedBody'] as List).map((a) => AttributedBody.fromMap(a!.cast<String, Object>())).toList();
       } catch (e, stack) {
         Logger.error('Failed to parse attributed body!', error: e, trace: stack);
       }
@@ -204,7 +202,9 @@ class Message {
 
     List<MessageSummaryInfo> msi = [];
     try {
-      msi = (json['messageSummaryInfo'] as List? ?? []).map((e) => MessageSummaryInfo.fromJson(e!.cast<String, Object>())).toList();
+      msi = (json['messageSummaryInfo'] as List? ?? [])
+          .map((e) => MessageSummaryInfo.fromJson(e!.cast<String, Object>()))
+          .toList();
     } catch (e, stack) {
       Logger.error('Failed to parse summary info!', error: e, trace: stack);
     }
@@ -238,12 +238,14 @@ class Message {
       groupActionType: json["groupActionType"] ?? 0,
       balloonBundleId: json["balloonBundleId"],
       associatedMessageGuid: json["associatedMessageGuid"]?.toString().replaceAll("bp:", "").split("/").last,
-      associatedMessagePart: json["associatedMessagePart"] ?? int.tryParse(json["associatedMessageGuid"].toString().replaceAll("p:", "").split("/").first),
+      associatedMessagePart: json["associatedMessagePart"] ??
+          int.tryParse(json["associatedMessageGuid"].toString().replaceAll("p:", "").split("/").first),
       associatedMessageType: json["associatedMessageType"],
       expressiveSendStyleId: json["expressiveSendStyleId"],
       handle: json['handle'] != null ? Handle.fromMap(json['handle']!.cast<String, Object>()) : null,
       hasAttachments: attachments.isNotEmpty || json['hasAttachments'] == true,
-      attachments: (json['attachments'] as List? ?? []).map((a) => Attachment.fromMap(a!.cast<String, Object>())).toList(),
+      attachments:
+          (json['attachments'] as List? ?? []).map((a) => Attachment.fromMap(a!.cast<String, Object>())).toList(),
       hasReactions: json['hasReactions'] == true,
       dateDeleted: parseDate(json["dateDeleted"]),
       metadata: metadata is String ? null : metadata,
@@ -269,7 +271,7 @@ class Message {
       if (existing != null) {
         id = existing.id;
         text ??= existing.text;
-        
+
         // Phase 2: Preserve the handle relationship from existing message
         if (existing.handleRelation.hasValue) {
           handleRelation.target = existing.handleRelation.target;
@@ -307,13 +309,13 @@ class Message {
 
       try {
         if (chat != null) this.chat.target = chat;
-        
+
         // CRITICAL: Preserve dbAttachments ToMany relationship
         // ObjectBox will clear ToMany relationships on put() if not explicitly preserved
         final attachmentsToPreserve = List<Attachment>.from(dbAttachments);
-        
+
         id = Database.messages.put(this);
-        
+
         // Restore attachments after put
         if (attachmentsToPreserve.isNotEmpty) {
           dbAttachments.clear();
@@ -355,7 +357,7 @@ class Message {
   /// Replace a temp message with the message from the server
   static Future<Message> replaceMessage(String? oldGuid, Message newMessage) async {
     if (kIsWeb) throw Exception("Web does not support replacing messages!");
-    
+
     return await MessageInterface.replaceMessage(
       oldGuid: oldGuid,
       newMessageData: newMessage.toMap(),
@@ -424,7 +426,7 @@ class Message {
   /// Fetch reactions
   Future<Message> fetchAssociatedMessages({MessagesService? service, bool shouldRefresh = false}) async {
     if (kIsWeb) return this;
-    
+
     final result = await MessageInterface.fetchAssociatedMessagesAsync(
       messageGuid: guid!,
       messageId: id,
@@ -444,14 +446,14 @@ class Message {
         service?.struct.addThreadOriginator(threadOriginator);
       }
     }
-    
+
     return this;
   }
 
   Handle? getHandle() {
     // Phase 2: Prefer ToOne relationship if available
     if (handleRelation.target != null) return handleRelation.target;
-    
+
     // Fallback to manual lookup for backward compatibility
     if (kIsWeb || handleId == 0 || handleId == null) return null;
     return Handle.findOne(originalROWID: handleId!);
@@ -550,8 +552,9 @@ class Message {
   String get fullText => sanitizeString([subject, text].where((e) => !isNullOrEmpty(e)).join("\n"));
 
   // first condition is for macOS < 11 and second condition is for macOS >= 11
-  bool get isLegacyUrlPreview => (balloonBundleId == "com.apple.messages.URLBalloonProvider" && hasDdResults!)
-      || ((hasDdResults! || isFromMe!) && (text ?? "").trim().isURL);
+  bool get isLegacyUrlPreview =>
+      (balloonBundleId == "com.apple.messages.URLBalloonProvider" && hasDdResults!) ||
+      ((hasDdResults! || isFromMe!) && (text ?? "").trim().isURL);
 
   String? get url => text?.replaceAll("\n", " ").split(" ").firstWhereOrNull((String e) => e.hasUrl);
 
@@ -565,7 +568,8 @@ class Message {
       return "Website: ${payloadData!.urlData!.first.title} (${uri.host.replaceFirst('www.', '')})";
     }
 
-    final temp = balloonBundleIdMap[balloonBundleId?.split(":").first] ?? (balloonBundleId?.split(":").first ?? "Unknown");
+    final temp =
+        balloonBundleIdMap[balloonBundleId?.split(":").first] ?? (balloonBundleId?.split(":").first ?? "Unknown");
     if (temp is Map) {
       text = temp[balloonBundleId?.split(":").last] ?? ((balloonBundleId?.split(":").last ?? "Unknown"));
     } else {
@@ -575,7 +579,11 @@ class Message {
   }
 
   String? get interactiveMediaPath {
-    final extension = balloonBundleId!.contains("com.apple.Digital") ? ".mov" : balloonBundleId!.contains("com.apple.Handwriting") ? ".png" : null;
+    final extension = balloonBundleId!.contains("com.apple.Digital")
+        ? ".mov"
+        : balloonBundleId!.contains("com.apple.Handwriting")
+            ? ".png"
+            : null;
     return "${FilesystemSvc.appDocDir.path}/messages/$guid/embedded-media/$balloonBundleId$extension";
   }
 
@@ -621,16 +629,20 @@ class Message {
     return text;
   }
 
-  bool get isParticipantEvent => isGroupEvent && ((itemType == 1 && [0, 1].contains(groupActionType)) || [2, 3].contains(itemType));
+  bool get isParticipantEvent =>
+      isGroupEvent && ((itemType == 1 && [0, 1].contains(groupActionType)) || [2, 3].contains(itemType));
 
   bool get isBigEmoji => bigEmoji ?? MessageHelper.shouldShowBigEmoji(fullText);
 
-  List<Attachment> get realAttachments => attachments.where((e) => e != null && e.mimeType != null).cast<Attachment>().toList();
+  List<Attachment> get realAttachments =>
+      attachments.where((e) => e != null && e.mimeType != null).cast<Attachment>().toList();
 
-  List<Attachment> get previewAttachments => attachments.where((e) => e != null && e.mimeType == null).cast<Attachment>().toList();
+  List<Attachment> get previewAttachments =>
+      attachments.where((e) => e != null && e.mimeType == null).cast<Attachment>().toList();
 
-  List<Message> get reactions => associatedMessages.where((item) =>
-      ReactionTypes.toList().contains(item.associatedMessageType?.replaceAll("-", ""))).toList();
+  List<Message> get reactions => associatedMessages
+      .where((item) => ReactionTypes.toList().contains(item.associatedMessageType?.replaceAll("-", "")))
+      .toList();
 
   Indicator get indicatorToShow {
     if (!isFromMe!) return Indicator.NONE;
@@ -651,7 +663,8 @@ class Message {
   }
 
   bool sameSender(Message? other) {
-    return (isFromMe! && isFromMe == other?.isFromMe) || (!isFromMe! && !(other?.isFromMe ?? true) && handleId == other?.handleId);
+    return (isFromMe! && isFromMe == other?.isFromMe) ||
+        (!isFromMe! && !(other?.isFromMe ?? true) && handleId == other?.handleId);
   }
 
   void generateTempGuid() {
@@ -712,9 +725,11 @@ class Message {
     // OR
     // 1) It is the thread originator but the part is not the last part of the older message
     // 2) It is part of the thread but has multiple parts
-    return (olderMessage.guid != threadOriginatorGuid && (olderMessage.threadOriginatorGuid != threadOriginatorGuid || olderMessage.normalizedThreadPart != normalizedThreadPart))
-        || (olderMessage.guid == threadOriginatorGuid && normalizedThreadPart != olderPartCount - 1)
-        || (olderMessage.threadOriginatorGuid == threadOriginatorGuid && olderPartCount > 1);
+    return (olderMessage.guid != threadOriginatorGuid &&
+            (olderMessage.threadOriginatorGuid != threadOriginatorGuid ||
+                olderMessage.normalizedThreadPart != normalizedThreadPart)) ||
+        (olderMessage.guid == threadOriginatorGuid && normalizedThreadPart != olderPartCount - 1) ||
+        (olderMessage.threadOriginatorGuid == threadOriginatorGuid && olderPartCount > 1);
   }
 
   bool connectToLower(Message newerMessage) {
@@ -810,10 +825,10 @@ class Message {
     return size;
   }
 
-  static Message merge(Message existing, Message newMessage) {    
+  static Message merge(Message existing, Message newMessage) {
     existing.id ??= newMessage.id;
     existing.guid ??= newMessage.guid;
-  
+
     // Update date created
     if ((existing.dateCreated == null && newMessage.dateCreated != null) ||
         (existing.dateCreated != null &&
@@ -907,7 +922,7 @@ class Message {
     if (!existing.chat.hasValue && newMessage.chat.hasValue) {
       existing.chat.target = newMessage.chat.target;
     }
-    
+
     // Update handle relationship
     if (!existing.handleRelation.hasValue && newMessage.handleRelation.hasValue) {
       existing.handleRelation.target = newMessage.handleRelation.target;
@@ -944,7 +959,7 @@ class Message {
       // If attachments field is empty but dbAttachments has data, populate it
       existing.attachments = List<Attachment>.from(existing.dbAttachments);
     }
-    
+
     return existing;
   }
 
@@ -1012,7 +1027,7 @@ class Message {
       "_error": _error.value,
       "dateCreated": dateCreated?.millisecondsSinceEpoch,
       "dateRead": _dateRead.value?.millisecondsSinceEpoch,
-      "dateDelivered":  _dateDelivered.value?.millisecondsSinceEpoch,
+      "dateDelivered": _dateDelivered.value?.millisecondsSinceEpoch,
       "isDelivered": _isDelivered.value,
       "isFromMe": isFromMe!,
       "hasDdResults": hasDdResults!,

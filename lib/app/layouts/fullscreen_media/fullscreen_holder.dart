@@ -16,14 +16,13 @@ import 'package:gesture_x_detector/gesture_x_detector.dart';
 import 'package:get/get.dart';
 
 class FullscreenMediaHolder extends StatefulWidget {
-  FullscreenMediaHolder({
-    super.key,
-    required this.attachment,
-    required this.showInteractions,
-    this.currentChat,
-    this.videoController,
-    this.mute
-  });
+  FullscreenMediaHolder(
+      {super.key,
+      required this.attachment,
+      required this.showInteractions,
+      this.currentChat,
+      this.videoController,
+      this.mute});
 
   final Chat? currentChat;
   final Attachment attachment;
@@ -81,8 +80,9 @@ class FullscreenMediaHolderState extends OptimizedState<FullscreenMediaHolder> {
               : context.theme.colorScheme.background, // navigation bar color
           systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
           statusBarColor: Colors.transparent, // status bar color
-          statusBarIconBrightness:
-              SettingsSvc.settings.skin.value != Skins.iOS ? Brightness.light : context.theme.colorScheme.brightness.opposite,
+          statusBarIconBrightness: SettingsSvc.settings.skin.value != Skins.iOS
+              ? Brightness.light
+              : context.theme.colorScheme.brightness.opposite,
         ),
         child: Actions(
           actions: {
@@ -167,8 +167,8 @@ class FullscreenMediaHolderState extends OptimizedState<FullscreenMediaHolder> {
                   controller: controller,
                   itemBuilder: (BuildContext context, int index) {
                     final attachment = attachments[index];
-                    dynamic content =
-                        AttachmentsSvc.getContent(attachment, path: attachment.guid == null ? attachment.transferName : null);
+                    dynamic content = AttachmentsSvc.getContent(attachment,
+                        path: attachment.guid == null ? attachment.transferName : null);
                     final key = attachment.guid ?? attachment.transferName ?? randomString(8);
 
                     if (content is PlatformFile) {
@@ -264,7 +264,7 @@ class FullscreenMediaHolderState extends OptimizedState<FullscreenMediaHolder> {
                             final isError = _content.state.value == AttachmentDownloadState.error;
                             final isProcessing = _content.state.value == AttachmentDownloadState.processing;
                             final isQueued = _content.state.value == AttachmentDownloadState.queued;
-                            
+
                             return Column(
                               mainAxisSize: MainAxisSize.min,
                               children: <Widget>[
@@ -282,9 +282,9 @@ class FullscreenMediaHolderState extends OptimizedState<FullscreenMediaHolder> {
                                                 ? Icon(iOS ? CupertinoIcons.clock : Icons.schedule, size: 30)
                                                 : CircleProgressBar(
                                                     value: _content.progress.value?.toDouble() ?? 0,
-                                                backgroundColor: context.theme.colorScheme.outline,
-                                                foregroundColor: context.theme.colorScheme.properOnSurface,
-                                              ),
+                                                    backgroundColor: context.theme.colorScheme.outline,
+                                                    foregroundColor: context.theme.colorScheme.properOnSurface,
+                                                  ),
                                   ),
                                 ),
                                 isError ? const SizedBox(height: 10) : const SizedBox(height: 5),

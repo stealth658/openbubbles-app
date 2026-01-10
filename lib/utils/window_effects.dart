@@ -27,8 +27,7 @@ class WindowEffects {
     WindowEffect.disabled: const Tuple2(0, null),
   };
 
-  static List<WindowEffect> get effects =>
-      _effects.where((effect) {
+  static List<WindowEffect> get effects => _effects.where((effect) {
         int version = parsedWindowsVersion();
         return version >= _versions[effect]!.item1! &&
             (_versions[effect]!.item2 == null || (version <= _versions[effect]!.item2!));

@@ -26,10 +26,9 @@ class SyncService {
         messageCount: numberOfMessagesPerPage.toInt(),
         skipEmptyChats: skipEmptyChats,
         saveLogs: saveToDownloads,
-        syncTimeFilter: syncTimeFilter
-    );
+        syncTimeFilter: syncTimeFilter);
   }
-  
+
   Future<void> startFullSync() async {
     if (_manager == null) {
       initFullSync();
@@ -45,7 +44,7 @@ class SyncService {
   Future<void> startIncrementalSync() async {
     isIncrementalSyncing.value = true;
     int errors = 0;
-    
+
     try {
       Logger.info('Starting incremental chat sync...', tag: 'Incremental Chat Sync');
       final chatStopwatch = Stopwatch()..start();
@@ -54,7 +53,9 @@ class SyncService {
         ChatsSvc.updateChats(syncedChats, override: true);
       }
       chatStopwatch.stop();
-      Logger.info('Incremental chat sync completed! Synced ${syncedChats.length} chats in ${chatStopwatch.elapsedMilliseconds}ms', tag: 'Incremental Chat Sync');
+      Logger.info(
+          'Incremental chat sync completed! Synced ${syncedChats.length} chats in ${chatStopwatch.elapsedMilliseconds}ms',
+          tag: 'Incremental Chat Sync');
     } catch (e, stack) {
       Logger.error('Incremental chat sync failed!', error: e, trace: stack, tag: 'Incremental Chat Sync');
       errors += 1;
@@ -65,8 +66,10 @@ class SyncService {
       final contactStopwatch = Stopwatch()..start();
       final refreshedHandleIds = await ContactsSvcV2.syncContactsToHandles();
       contactStopwatch.stop();
-      Logger.info('Finished contact refresh, refreshed ${refreshedHandleIds.length} handles in ${contactStopwatch.elapsedMilliseconds}ms', tag: 'Incremental Contact Sync');
-      
+      Logger.info(
+          'Finished contact refresh, refreshed ${refreshedHandleIds.length} handles in ${contactStopwatch.elapsedMilliseconds}ms',
+          tag: 'Incremental Contact Sync');
+
       if (refreshedHandleIds.isNotEmpty) {
         ContactsSvcV2.notifyHandlesUpdated(refreshedHandleIds);
       }
@@ -86,10 +89,11 @@ class SyncService {
         for (final c in contactsV2) {
           _contacts.add(c.toMap());
         }
-        
+
         await ContactInterface.uploadContacts(_contacts);
         contactUploadStopwatch.stop();
-        Logger.debug("Contact upload complete in ${contactUploadStopwatch.elapsedMilliseconds}ms", tag: "Contact Upload");
+        Logger.debug("Contact upload complete in ${contactUploadStopwatch.elapsedMilliseconds}ms",
+            tag: "Contact Upload");
       }
     } catch (e, stack) {
       Logger.error("Failed to upload contacts!", error: e, trace: stack, tag: "Contact Upload");

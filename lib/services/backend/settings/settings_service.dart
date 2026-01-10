@@ -104,7 +104,8 @@ class SettingsService {
   bool _showingPapiPopup = false;
   Completer<void> initCompleted = Completer<void>();
 
-  bool get canAuthenticate => _canAuthenticate && (Platform.isWindows || (FilesystemSvc.androidInfo?.version.sdkInt ?? 0) > 28);
+  bool get canAuthenticate =>
+      _canAuthenticate && (Platform.isWindows || (FilesystemSvc.androidInfo?.version.sdkInt ?? 0) > 28);
 
   Future<void> init({bool headless = false}) async {
     settings = Settings.getSettings();
@@ -139,8 +140,8 @@ class SettingsService {
             _canAuthenticate = await LocalAuthentication().isDeviceSupported();
           } catch (_) {}
         }
-        SettingsSvc.settings.launchAtStartup.value =
-            await setupLaunchAtStartup(SettingsSvc.settings.launchAtStartup.value, SettingsSvc.settings.launchAtStartupMinimized.value);
+        SettingsSvc.settings.launchAtStartup.value = await setupLaunchAtStartup(
+            SettingsSvc.settings.launchAtStartup.value, SettingsSvc.settings.launchAtStartupMinimized.value);
       });
     }
 
@@ -233,7 +234,7 @@ class SettingsService {
       if (minorVersion != null) await PrefsSvc.i.setInt("macos-minor-version", minorVersion);
       if (serverVersion != null) await PrefsSvc.i.setString("server-version", serverVersion);
       await PrefsSvc.i.setInt("server-version-code", versionCode);
-      
+
       if (toSave.isNotEmpty) {
         await settings.saveManyAsync(toSave);
       }
@@ -243,11 +244,11 @@ class SettingsService {
         'macOSMinorVersion': minorVersion ?? 0,
         'serverVersion': serverVersion ?? "0.0.0",
         'serverVersionCode': versionCode,
-        'recommendPrivateApi': settings.finishedSetup.value && 
-                               settings.reachedConversationList.value && 
-                               !settings.enablePrivateAPI.value && 
-                               settings.serverPrivateAPI.value == true && 
-                               PrefsSvc.i.getBool('private-api-enable-tip') != true,
+        'recommendPrivateApi': settings.finishedSetup.value &&
+            settings.reachedConversationList.value &&
+            !settings.enablePrivateAPI.value &&
+            settings.serverPrivateAPI.value == true &&
+            PrefsSvc.i.getBool('private-api-enable-tip') != true,
       };
     }
 
@@ -278,7 +279,7 @@ class SettingsService {
       } else {
         detailsInfo = await fetchServerDetails();
       }
-      
+
       // Handle PAPI popup (only if not in isolate since it needs UI context)
       if (!Platform.isAndroid) {
         final detailsDict = await getServerDetailsDict();
@@ -481,13 +482,13 @@ class SettingsService {
     if (response.statusCode == 200) {
       bool available = response.data['data']['available'] ?? false;
       Map<String, dynamic> metadata = response.data['data']['metadata'] ?? {};
-      
+
       return {
         'available': available,
         'metadata': metadata,
       };
     }
-    
+
     return {
       'available': false,
       'metadata': <String, dynamic>{},
@@ -497,7 +498,7 @@ class SettingsService {
   Future<ServerUpdateInfo> checkForServerUpdate() async {
     final updateDict = await getServerUpdateDict();
     final metadata = updateDict['metadata'] as Map<String, dynamic>;
-    
+
     return ServerUpdateInfo(
       available: updateDict['available'] as bool,
       version: metadata['version'] as String?,
@@ -513,10 +514,10 @@ class SettingsService {
     } else {
       updateInfo = await checkForServerUpdate();
     }
-    
-    if (!updateInfo.available || 
+
+    if (!updateInfo.available ||
         (updateInfo.version != null && PrefsSvc.i.getString("server-update-check") == updateInfo.version)) return;
-    
+
     showDialog(
       context: Get.context!,
       builder: (context) => AlertDialog(
@@ -583,7 +584,8 @@ class SettingsService {
     final version = release.tagName!.split("+").first.replaceAll("v", "");
     final code = release.tagName!.split("+").last.split('-').first;
     final isDesktopRelease = release.tagName!.split('+').last.contains('desktop');
-    final buildNumber = FilesystemSvc.packageInfo.buildNumber.lastChars(min(4, FilesystemSvc.packageInfo.buildNumber.length));
+    final buildNumber =
+        FilesystemSvc.packageInfo.buildNumber.lastChars(min(4, FilesystemSvc.packageInfo.buildNumber.length));
     if (int.parse(code) <= int.parse(buildNumber) ||
         PrefsSvc.i.getString("client-update-check") == code ||
         (Platform.isAndroid && isDesktopRelease)) {
@@ -622,7 +624,7 @@ class SettingsService {
       updateInfo = await checkForUpdate();
     }
     if (!updateInfo.available) return;
-    
+
     showDialog(
       context: Get.context!,
       builder: (context) => AlertDialog(
@@ -639,7 +641,8 @@ class SettingsService {
             const SizedBox(
               height: 15.0,
             ),
-            Text("Version: ${updateInfo.version}\nRelease Date: ${buildDate(updateInfo.latestRelease.createdAt)}\nRelease Name: ${updateInfo.latestRelease.name}",
+            Text(
+                "Version: ${updateInfo.version}\nRelease Date: ${buildDate(updateInfo.latestRelease.createdAt)}\nRelease Name: ${updateInfo.latestRelease.name}",
                 style: context.theme.textTheme.bodyLarge)
           ],
         ),

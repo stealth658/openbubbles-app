@@ -39,7 +39,7 @@ class MessagesService extends GetxController {
   bool isFetching = false;
   bool _init = false;
   String? method;
-  
+
   /// Granular reactivity map to track individual message updates
   /// Key: message guid, Value: timestamp of last update
   final RxMap<String, int> messageUpdateTrigger = <String, int>{}.obs;
@@ -68,11 +68,9 @@ class MessagesService extends GetxController {
               ..link(Message_.chat, Chat_.id.equals(chat.id!))
               ..order(Message_.id, flags: Order.descending))
             .watch(triggerImmediately: true);
-        
+
         // Debounce the stream to batch rapid changes (reduces processing overhead)
-        countSub = countQuery
-            .debounceTime(const Duration(milliseconds: 100))
-            .listen((event) async {
+        countSub = countQuery.debounceTime(const Duration(milliseconds: 100)).listen((event) async {
           if (!SettingsSvc.settings.finishedSetup.value) return;
           final newCount = event.count();
           if (!isFetching && newCount > currentCount && currentCount != 0) {
@@ -129,61 +127,51 @@ class MessagesService extends GetxController {
         message.attachments = List<Attachment>.from(message.dbAttachments);
       }
     }
-    
+
     // Add to struct first to ensure it's available for lookups
     struct.addMessages([message]);
-    
+
     // Handle reactions with improved reactivity
     if (message.associatedMessageGuid != null) {
       final parentMessage = struct.getMessage(message.associatedMessageGuid!);
       if (parentMessage != null) {
         // Add to parent's associated messages list
         parentMessage.associatedMessages.add(message);
-        
+
         // Get or create the controller - this ensures it exists
         final mwcInstance = getActiveMwc(message.associatedMessageGuid!);
         if (mwcInstance != null) {
           // Controller exists, update it
           mwcInstance.updateAssociatedMessage(message);
-          Logger.debug(
-            "Updated reaction ${message.guid} on parent ${message.associatedMessageGuid}",
-            tag: "MessageReactivity"
-          );
+          Logger.debug("Updated reaction ${message.guid} on parent ${message.associatedMessageGuid}",
+              tag: "MessageReactivity");
         } else {
           // Controller doesn't exist yet, queue for retry
-          Logger.warn(
-            "Parent controller not ready for reaction ${message.guid}, will retry",
-            tag: "MessageReactivity"
-          );
+          Logger.warn("Parent controller not ready for reaction ${message.guid}, will retry", tag: "MessageReactivity");
           Future.delayed(const Duration(milliseconds: 100), () {
             final retryMwc = getActiveMwc(message.associatedMessageGuid!);
             if (retryMwc != null) {
               retryMwc.updateAssociatedMessage(message);
               Logger.debug(
-                "Retry successful: Updated reaction ${message.guid} on parent ${message.associatedMessageGuid}",
-                tag: "MessageReactivity"
-              );
+                  "Retry successful: Updated reaction ${message.guid} on parent ${message.associatedMessageGuid}",
+                  tag: "MessageReactivity");
               // Trigger immediate UI update via coordinator
               muc.notifyMessageUpdate(chat.guid, message.associatedMessageGuid!);
             } else {
-              Logger.error(
-                "Retry failed: Parent controller still not found for reaction ${message.guid}",
-                tag: "MessageReactivity"
-              );
+              Logger.error("Retry failed: Parent controller still not found for reaction ${message.guid}",
+                  tag: "MessageReactivity");
             }
           });
         }
-        
+
         // Trigger immediate UI update via coordinator (bypasses ObjectBox watch latency)
         muc.notifyMessageUpdate(chat.guid, message.associatedMessageGuid!);
       } else {
-        Logger.warn(
-          "Parent message not found for reaction ${message.guid} (parent: ${message.associatedMessageGuid})",
-          tag: "MessageReactivity"
-        );
+        Logger.warn("Parent message not found for reaction ${message.guid} (parent: ${message.associatedMessageGuid})",
+            tag: "MessageReactivity");
       }
     }
-    
+
     // Handle thread originators with improved reactivity
     if (message.threadOriginatorGuid != null) {
       final mwcInstance = getActiveMwc(message.threadOriginatorGuid!);
@@ -199,7 +187,7 @@ class MessagesService extends GetxController {
         });
       }
     }
-    
+
     // Only call newFunc for non-reactions (regular messages)
     if (message.associatedMessageGuid == null) {
       newFunc.call(message);
@@ -213,10 +201,10 @@ class MessagesService extends GetxController {
     struct.removeMessage(oldGuid ?? updated.guid!);
     struct.removeAttachments(toUpdate.attachments.map((e) => e!.guid!));
     struct.addMessages([updated]);
-    
+
     // Trigger granular update for this specific message
     messageUpdateTrigger[updated.guid!] = DateTime.now().millisecondsSinceEpoch;
-    
+
     updateFunc.call(updated, oldGuid: oldGuid);
   }
 
@@ -226,17 +214,17 @@ class MessagesService extends GetxController {
     messageUpdateTrigger.remove(toRemove.guid!);
     removeFunc.call(toRemove);
   }
-  
+
   /// Check if a specific message has been updated (for granular Obx widgets)
   bool isMessageUpdated(String guid) {
     return messageUpdateTrigger.containsKey(guid);
   }
-  
+
   /// Trigger an update for a specific message (useful for reactions, read receipts, etc.)
   void triggerMessageUpdate(String guid) {
     messageUpdateTrigger[guid] = DateTime.now().millisecondsSinceEpoch;
   }
-  
+
   /// Clear the update flag for a message after it's been processed
   void clearMessageUpdate(String guid) {
     messageUpdateTrigger.remove(guid);
@@ -251,20 +239,23 @@ class MessagesService extends GetxController {
 
     try {
       Logger.debug("[loadChunk] Starting to load messages (offset: $offset, limit: $limit)", tag: "MessageReactivity");
-      
+
       _messages = await Chat.getMessagesAsync(
         chat,
         offset: offset,
         limit: limit,
         onSupplementalDataLoaded: () {
           // Phase 2 complete - reactions have been loaded
-          Logger.info("[loadChunk] Supplemental data loaded, triggering UI updates for ${_messages.length} messages", tag: "MessageReactivity");
-          
+          Logger.info("[loadChunk] Supplemental data loaded, triggering UI updates for ${_messages.length} messages",
+              tag: "MessageReactivity");
+
           // Trigger UI updates for each message that has reactions
           for (final message in _messages) {
             if (message.associatedMessages.isNotEmpty) {
-              Logger.debug("[loadChunk] Message ${message.guid} has ${message.associatedMessages.length} reactions, triggering update", tag: "MessageReactivity");
-              
+              Logger.debug(
+                  "[loadChunk] Message ${message.guid} has ${message.associatedMessages.length} reactions, triggering update",
+                  tag: "MessageReactivity");
+
               // Get the controller if it exists and update it
               final mwcInstance = getActiveMwc(message.guid!);
               if (mwcInstance != null) {
@@ -272,11 +263,14 @@ class MessagesService extends GetxController {
                 for (final reaction in message.associatedMessages) {
                   mwcInstance.updateAssociatedMessage(reaction, updateHolder: true);
                 }
-                Logger.debug("[loadChunk] Updated controller for ${message.guid} with reactions", tag: "MessageReactivity");
+                Logger.debug("[loadChunk] Updated controller for ${message.guid} with reactions",
+                    tag: "MessageReactivity");
               } else {
-                Logger.warn("[loadChunk] No controller found for ${message.guid} with ${message.associatedMessages.length} reactions", tag: "MessageReactivity");
+                Logger.warn(
+                    "[loadChunk] No controller found for ${message.guid} with ${message.associatedMessages.length} reactions",
+                    tag: "MessageReactivity");
               }
-              
+
               // Trigger immediate UI update via coordinator
               muc.notifyMessageUpdate(chat.guid, message.guid!);
             }
@@ -385,8 +379,7 @@ class MessagesService extends GetxController {
     if (withChatParticipants) withQuery.add("chat.participants");
     withQuery.add("attachment.metadata");
 
-    HttpSvc
-        .messages(
+    HttpSvc.messages(
             withQuery: withQuery,
             where: where,
             sort: sort,

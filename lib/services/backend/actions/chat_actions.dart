@@ -9,21 +9,15 @@ import 'package:flutter/foundation.dart';
 class ChatActions {
   static Future<void> clearNotificationForChat(Map<String, dynamic> data) async {
     final chatId = data['chatId'] as int;
-    
-    await MethodChannelSvc.invokeMethod(
-      "delete-notification",
-      {
-        "notification_id": chatId,
-        "tag": "new_message"
-      }
-  );
+
+    await MethodChannelSvc.invokeMethod("delete-notification", {"notification_id": chatId, "tag": "new_message"});
   }
 
   static Future<void> markChatReadUnread(Map<String, dynamic> data) async {
     final chatGuid = data['chatGuid'] as String;
     final markAsRead = data['markAsRead'] as bool;
     final shouldMarkOnServer = data['shouldMarkOnServer'] as bool;
-    
+
     if (shouldMarkOnServer && SettingsSvc.settings.enablePrivateAPI.value) {
       if (markAsRead) {
         await HttpSvc.markChatRead(chatGuid);
@@ -233,8 +227,7 @@ class ChatActions {
           messageBox.put(associatedMessage);
         }
       } else if (!inputMessage.hasReactions) {
-        final reactionQuery =
-            messageBox.query(Message_.associatedMessageGuid.equals(inputMessage.guid ?? '')).build();
+        final reactionQuery = messageBox.query(Message_.associatedMessageGuid.equals(inputMessage.guid ?? '')).build();
         reactionQuery.limit = 1;
         final reaction = reactionQuery.findFirst();
         reactionQuery.close();
@@ -335,9 +328,8 @@ class ChatActions {
       final messageBox = Database.messages;
 
       // Query reactions and return just their IDs
-      final reactionsQuery = (messageBox.query(Message_.associatedMessageGuid.oneOf(messageGuids))
-            ..order(Message_.originalROWID))
-          .build();
+      final reactionsQuery =
+          (messageBox.query(Message_.associatedMessageGuid.oneOf(messageGuids))..order(Message_.originalROWID)).build();
       final reactions = reactionsQuery.find();
       reactionsQuery.close();
 
@@ -518,13 +510,13 @@ class ChatActions {
 
       final List<Chat> chatsToSave = [];
       final Map<String, List<Handle>> chatHandlesMap = {};
-      
+
       for (final inputChat in inputChats) {
         final existing = existingChatsMap[inputChat.guid];
 
-        // Don't sync specific fields because they 
+        // Don't sync specific fields because they
         Chat chatToSave = existing ?? inputChat;
-        
+
         // Prepare handles to link (collect them for later)
         final handlesToLink = <Handle>[];
         // Use participants here because handles will be empty on inputChat.
@@ -576,8 +568,8 @@ class ChatActions {
 
       if (searchAround == null) {
         final query = (messageBox.query(includeDeleted
-          ? Message_.dateCreated.notNull().and(Message_.dateDeleted.isNull().or(Message_.dateDeleted.notNull()))
-          : Message_.dateDeleted.isNull().and(Message_.dateCreated.notNull()))
+                ? Message_.dateCreated.notNull().and(Message_.dateDeleted.isNull().or(Message_.dateDeleted.notNull()))
+                : Message_.dateDeleted.isNull().and(Message_.dateCreated.notNull()))
               ..link(Message_.chat, Chat_.id.equals(chatId))
               ..order(Message_.dateCreated, flags: Order.descending))
             .build();
@@ -649,7 +641,8 @@ class ChatActions {
 
       // For each message, match the handles & replace the old reference
       for (Message message in inputMessages) {
-        message.handleRelation.target ??= handlesCache.values.firstWhereOrNull((e) => e.originalROWID == message.handleId);
+        message.handleRelation.target ??=
+            handlesCache.values.firstWhereOrNull((e) => e.originalROWID == message.handleId);
       }
 
       // Extract & cache the attachments
@@ -689,9 +682,9 @@ class ChatActions {
         try {
           // CRITICAL: Preserve dbAttachments ToMany relationship before put
           final attachmentsToPreserve = List<Attachment>.from(m.dbAttachments);
-          
+
           Database.messages.put(m);
-          
+
           // Restore and apply attachments after put
           if (attachmentsToPreserve.isNotEmpty) {
             m.dbAttachments.clear();
@@ -775,9 +768,9 @@ class ChatActions {
             attachmentPreservation[msg.guid!] = List<Attachment>.from(msg.dbAttachments);
           }
         }
-        
+
         messageBox.putMany(existingMessages, mode: PutMode.update);
-        
+
         // Restore attachments after putMany
         for (final msg in existingMessages) {
           if (attachmentPreservation.containsKey(msg.guid)) {
@@ -818,7 +811,7 @@ class ChatActions {
         msg.dbAttachments.applyToDb();
       }
     }
-    
+
     return messages;
   }
 
@@ -882,7 +875,7 @@ class ChatActions {
       // Execute the query and return just the IDs
       final result = query.find();
       query.close();
-      
+
       // Return just the IDs for efficient transfer across isolates
       return result.map((e) => e.id!).toList();
     });

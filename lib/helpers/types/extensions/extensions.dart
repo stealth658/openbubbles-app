@@ -47,7 +47,11 @@ extension MessageErrorExtension on MessageError {
 }
 
 extension EffectHelper on MessageEffect {
-  bool get isBubble => this == MessageEffect.slam || this == MessageEffect.loud || this == MessageEffect.gentle || this == MessageEffect.invisibleInk;
+  bool get isBubble =>
+      this == MessageEffect.slam ||
+      this == MessageEffect.loud ||
+      this == MessageEffect.gentle ||
+      this == MessageEffect.invisibleInk;
 }
 
 /// Used when playing iMessage effects
@@ -142,6 +146,7 @@ extension LastChars on String {
 extension UrlParsing on String {
   bool get hasUrl => urlRegex.hasMatch(this) && !kIsWeb;
 }
+
 extension ShortenString on String {
   String shorten(int length) {
     if (this.length <= length) return this;

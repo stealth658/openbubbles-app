@@ -12,7 +12,6 @@ import 'package:get/get.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:get_it/get_it.dart';
 
-
 // ignore: non_constant_identifier_names
 ContactsService get ContactsSvc => GetIt.I<ContactsService>();
 

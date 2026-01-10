@@ -20,9 +20,11 @@ class _SplashScreenState extends OptimizedState<SplashScreen> {
     if (widget.shouldNavigate && !didNavigate) {
       didNavigate = true;
       await Future.delayed(const Duration(milliseconds: 100));
-      Navigator.of(context).pushAndRemoveUntil(PageRouteBuilder(
-          transitionDuration: const Duration(seconds: 1),
-          pageBuilder: (_, __, ___) => TitleBarWrapper(child: SetupView())), (route) => route.isFirst);
+      Navigator.of(context).pushAndRemoveUntil(
+          PageRouteBuilder(
+              transitionDuration: const Duration(seconds: 1),
+              pageBuilder: (_, __, ___) => TitleBarWrapper(child: SetupView())),
+          (route) => route.isFirst);
     }
   }
 
@@ -32,15 +34,14 @@ class _SplashScreenState extends OptimizedState<SplashScreen> {
         backgroundColor: context.theme.colorScheme.background,
         body: Center(
           child: Hero(
-            tag: "setup-icon",
-            child: Image.asset("assets/icon/icon.png", width: 150, fit: BoxFit.contain, frameBuilder: (context, child, frame, _) {
-              if (frame != null) {
-                navigate();
-              }
-              return child;
-            })
-          ),
-        )
-    );
+              tag: "setup-icon",
+              child: Image.asset("assets/icon/icon.png", width: 150, fit: BoxFit.contain,
+                  frameBuilder: (context, child, frame, _) {
+                if (frame != null) {
+                  navigate();
+                }
+                return child;
+              })),
+        ));
   }
 }

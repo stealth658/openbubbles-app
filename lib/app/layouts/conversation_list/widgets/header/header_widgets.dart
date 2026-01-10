@@ -35,8 +35,8 @@ class HeaderText extends StatelessWidget {
         controller.showArchivedChats
             ? "Archive"
             : controller.showUnknownSenders
-            ? "Unknown Senders"
-            : "Messages",
+                ? "Unknown Senders"
+                : "Messages",
         style: context.textTheme.headlineLarge!.copyWith(
           color: context.theme.colorScheme.onBackground,
           fontWeight: FontWeight.w400,
@@ -56,8 +56,7 @@ class SyncIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      if (!SettingsSvc.settings.showSyncIndicator.value
-          || !SyncSvc.isIncrementalSyncing.value) {
+      if (!SettingsSvc.settings.showSyncIndicator.value || !SyncSvc.isIncrementalSyncing.value) {
         return const SizedBox.shrink();
       }
       return buildProgressIndicator(context, size: size);
@@ -95,13 +94,16 @@ class MaterialOverflowMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PopupMenuButton<int>(
-      color: context.theme.colorScheme.properSurface.lightenOrDarken(SettingsSvc.settings.skin.value == Skins.Samsung ? 20 : 0)
+      color: context.theme.colorScheme.properSurface
+          .lightenOrDarken(SettingsSvc.settings.skin.value == Skins.Samsung ? 20 : 0)
           .withValues(alpha: SettingsSvc.settings.windowEffect.value != WindowEffect.disabled ? 0.9 : 1),
-      shape: SettingsSvc.settings.skin.value != Skins.Material ? const RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(
-          Radius.circular(20.0),
-        ),
-      ) : null,
+      shape: SettingsSvc.settings.skin.value != Skins.Material
+          ? const RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(
+                Radius.circular(20.0),
+              ),
+            )
+          : null,
       onSelected: (int value) async {
         if (value == 0) {
           ChatsSvc.markAllAsRead();
@@ -127,9 +129,9 @@ class MaterialOverflowMenu extends StatelessWidget {
               context: context,
               builder: (context) => AlertDialog(
                 title: const Text('Message Isolate Test'),
-                content: Text(messages.length > 0 
-                  ? 'Successfully fetched messages from isolate!\nCount: ${messages.length}' 
-                  : 'No messages found or error occurred'),
+                content: Text(messages.length > 0
+                    ? 'Successfully fetched messages from isolate!\nCount: ${messages.length}'
+                    : 'No messages found or error occurred'),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(),
@@ -214,34 +216,36 @@ class MaterialOverflowMenu extends StatelessWidget {
             ),
         ];
       },
-      icon: SettingsSvc.settings.skin.value == Skins.Material ? Icon(
-        Icons.more_vert,
-        color: context.theme.colorScheme.properOnSurface,
-        size: 25,
-      ) : null,
-      child: SettingsSvc.settings.skin.value == Skins.Material
-        ? null
-        : ThemeSwitcher(
-            iOSSkin: Container(
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(40),
-                color: context.theme.colorScheme.properSurface,
-              ),
-              child: Icon(
-                Icons.more_horiz,
-                color: context.theme.colorScheme.properOnSurface,
-                size: 20,
-              ),
-            ),
-            materialSkin: const SizedBox.shrink(),
-            samsungSkin: Icon(
+      icon: SettingsSvc.settings.skin.value == Skins.Material
+          ? Icon(
               Icons.more_vert,
               color: context.theme.colorScheme.properOnSurface,
               size: 25,
+            )
+          : null,
+      child: SettingsSvc.settings.skin.value == Skins.Material
+          ? null
+          : ThemeSwitcher(
+              iOSSkin: Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(40),
+                  color: context.theme.colorScheme.properSurface,
+                ),
+                child: Icon(
+                  Icons.more_horiz,
+                  color: context.theme.colorScheme.properOnSurface,
+                  size: 20,
+                ),
+              ),
+              materialSkin: const SizedBox.shrink(),
+              samsungSkin: Icon(
+                Icons.more_vert,
+                color: context.theme.colorScheme.properOnSurface,
+                size: 25,
+              ),
             ),
-          ),
     );
   }
 }
@@ -266,30 +270,30 @@ class CupertinoOverflowMenu extends StatelessWidget {
         color: context.theme.colorScheme.onSurface.withValues(alpha: 0.7),
       ),
     );
-    
+
     return PullDownButton(
-      routeTheme: PullDownMenuRouteTheme(
-        backgroundColor: context.theme.colorScheme.properSurface.withValues(alpha: 0.9)
-      ),
+      routeTheme:
+          PullDownMenuRouteTheme(backgroundColor: context.theme.colorScheme.properSurface.withValues(alpha: 0.9)),
       itemBuilder: (context) => [
         PullDownMenuHeader(
           itemTheme: itemTheme,
           title: SettingsSvc.settings.userName.value,
           icon: CupertinoIcons.chevron_right,
           leadingBuilder: (context, constraints) {
-            return Container(constraints: constraints, child: ContactAvatarWidget(
-                size: 50,
-                preferHighResAvatar: true,
-                borderThickness: 0.1,
-                editable: false,
-                fontSize: 16,
-                contact: Contact(
-                  id: 'you',
-                  displayName: SettingsSvc.settings.userName.value,
-                  emails: [SettingsSvc.settings.iCloudAccount.value],
-                ),
-              )
-            );
+            return Container(
+                constraints: constraints,
+                child: ContactAvatarWidget(
+                  size: 50,
+                  preferHighResAvatar: true,
+                  borderThickness: 0.1,
+                  editable: false,
+                  fontSize: 16,
+                  contact: Contact(
+                    id: 'you',
+                    displayName: SettingsSvc.settings.userName.value,
+                    emails: [SettingsSvc.settings.iCloudAccount.value],
+                  ),
+                ));
           },
           subtitle: "Tap to open profile",
           onTap: () => goToProfile(context),
@@ -330,11 +334,10 @@ class CupertinoOverflowMenu extends StatelessWidget {
           ),
         if (extraItems && SettingsSvc.settings.moveChatCreatorToHeader.value)
           PullDownMenuItem(
-            itemTheme: itemTheme,
-            title: 'New Chat',
-            icon: CupertinoIcons.plus,
-            onTap: () => controller?.openNewChatCreator(context)
-          ),
+              itemTheme: itemTheme,
+              title: 'New Chat',
+              icon: CupertinoIcons.plus,
+              onTap: () => controller?.openNewChatCreator(context)),
         PullDownMenuItem(
           itemTheme: itemTheme,
           title: 'Settings',
@@ -350,30 +353,26 @@ class CupertinoOverflowMenu extends StatelessWidget {
           ),
       ],
       buttonBuilder: (context, showMenu) => GestureDetector(
-        onTap: showMenu,
-        child: ThemeSwitcher(
-            iOSSkin: Container(
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(40),
-                color: context.theme.colorScheme.properSurface,
+          onTap: showMenu,
+          child: ThemeSwitcher(
+              iOSSkin: Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(40),
+                  color: context.theme.colorScheme.properSurface,
+                ),
+                child: Icon(
+                  Icons.more_horiz,
+                  color: context.theme.colorScheme.properOnSurface,
+                  size: 20,
+                ),
               ),
-              child: Icon(
-                Icons.more_horiz,
-                color: context.theme.colorScheme.properOnSurface,
-                size: 20,
-              ),
-            ),
-            materialSkin: const SizedBox.shrink(),
-            samsungSkin: const SizedBox.shrink()
-          )
-      ),
+              materialSkin: const SizedBox.shrink(),
+              samsungSkin: const SizedBox.shrink())),
     );
   }
 }
-
-
 
 Future<void> goToSearch(BuildContext context) async {
   final current = NavigationSvc.ratio(context);
@@ -401,7 +400,7 @@ Future<void> goToFindMy(BuildContext context) async {
         ConversationView(
           chat: currentChat,
         ),
-            (route) => route.isFirst,
+        (route) => route.isFirst,
       );
     } else {
       cvc(currentChat).close();
@@ -422,13 +421,15 @@ void logout(BuildContext context) {
         backgroundColor: context.theme.colorScheme.properSurface,
         actions: <Widget>[
           TextButton(
-            child: Text("No", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+            child: Text("No",
+                style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
             onPressed: () {
               Navigator.of(context).pop();
             },
           ),
           TextButton(
-            child: Text("Yes", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+            child: Text("Yes",
+                style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
             onPressed: () async {
               FilesystemSvc.deleteDB();
               SocketSvc.forgetConnection();
@@ -437,10 +438,13 @@ void logout(BuildContext context) {
               await PrefsSvc.i.clear();
               await PrefsSvc.i.setString("selected-dark", "OLED Dark");
               await PrefsSvc.i.setString("selected-light", "Bright White");
-              Get.offAll(() => PopScope(
-                canPop: false,
-                child: TitleBarWrapper(child: SetupView()),
-              ), duration: Duration.zero, transition: Transition.noTransition);
+              Get.offAll(
+                  () => PopScope(
+                        canPop: false,
+                        child: TitleBarWrapper(child: SetupView()),
+                      ),
+                  duration: Duration.zero,
+                  transition: Transition.noTransition);
             },
           ),
         ],
@@ -451,12 +455,11 @@ void logout(BuildContext context) {
 
 void goToUnknownSenders(BuildContext context) {
   NavigationSvc.pushLeft(
-    context,
-    ConversationList(
-      showArchivedChats: false,
-      showUnknownSenders: true,
-    )
-  );
+      context,
+      ConversationList(
+        showArchivedChats: false,
+        showUnknownSenders: true,
+      ));
 }
 
 Future<void> goToSettings(BuildContext context) async {
@@ -473,13 +476,13 @@ Future<void> goToSettings(BuildContext context) async {
   if (currentChat != null) {
     await ChatsSvc.setActiveChat(currentChat);
     if (SettingsSvc.settings.tabletMode.value) {
-        NavigationSvc.pushAndRemoveUntil(
-          context,
-          ConversationView(
-            chat: currentChat,
-          ),
-              (route) => route.isFirst,
-        ).onError((error, stackTrace) => ChatsSvc.setAllInactiveSync());
+      NavigationSvc.pushAndRemoveUntil(
+        context,
+        ConversationView(
+          chat: currentChat,
+        ),
+        (route) => route.isFirst,
+      ).onError((error, stackTrace) => ChatsSvc.setAllInactiveSync());
     } else {
       cvc(currentChat).close();
     }
@@ -488,17 +491,13 @@ Future<void> goToSettings(BuildContext context) async {
 
 void goToArchived(BuildContext context) {
   NavigationSvc.pushLeft(
-    context,
-    ConversationList(
-      showArchivedChats: true,
-      showUnknownSenders: false,
-    )
-  );
+      context,
+      ConversationList(
+        showArchivedChats: true,
+        showUnknownSenders: false,
+      ));
 }
 
 void goToProfile(BuildContext context) {
-  NavigationSvc.pushLeft(
-    context,
-    ProfilePanel()
-  );
+  NavigationSvc.pushLeft(context, ProfilePanel());
 }

@@ -38,7 +38,8 @@ class CupertinoHeader extends StatelessWidget {
           child: Obx(() {
             NavigationSvc.listener.value;
             return Row(
-              mainAxisAlignment: NavigationSvc.isAvatarOnly(context) ? MainAxisAlignment.center : MainAxisAlignment.spaceBetween,
+              mainAxisAlignment:
+                  NavigationSvc.isAvatarOnly(context) ? MainAxisAlignment.center : MainAxisAlignment.spaceBetween,
               children: <Widget>[
                 if (!NavigationSvc.isAvatarOnly(context))
                   Expanded(
@@ -66,7 +67,8 @@ class CupertinoHeader extends StatelessWidget {
                             width: 30,
                             height: 30,
                             child: InkWell(
-                              child: Icon(CupertinoIcons.search, color: context.theme.colorScheme.properOnSurface, size: 18),
+                              child: Icon(CupertinoIcons.search,
+                                  color: context.theme.colorScheme.properOnSurface, size: 18),
                               onTap: () {
                                 NavigationSvc.pushLeft(context, SearchView());
                               },
@@ -93,9 +95,15 @@ class CupertinoHeader extends StatelessWidget {
                             ),
                           ),
                         ),
-                      if (SettingsSvc.settings.moveChatCreatorToHeader.value && SettingsSvc.settings.cameraFAB.value && !kIsWeb && !kIsDesktop)
+                      if (SettingsSvc.settings.moveChatCreatorToHeader.value &&
+                          SettingsSvc.settings.cameraFAB.value &&
+                          !kIsWeb &&
+                          !kIsDesktop)
                         const SizedBox(width: 10.0),
-                      if (SettingsSvc.settings.moveChatCreatorToHeader.value && SettingsSvc.settings.cameraFAB.value && !kIsWeb && !kIsDesktop)
+                      if (SettingsSvc.settings.moveChatCreatorToHeader.value &&
+                          SettingsSvc.settings.cameraFAB.value &&
+                          !kIsWeb &&
+                          !kIsDesktop)
                         ClipOval(
                           child: Material(
                             color: context.theme.colorScheme.properSurface, // button color
@@ -103,7 +111,8 @@ class CupertinoHeader extends StatelessWidget {
                                 child: SizedBox(
                                   width: 30,
                                   height: 30,
-                                  child: Icon(CupertinoIcons.camera, color: context.theme.colorScheme.properOnSurface, size: 20),
+                                  child: Icon(CupertinoIcons.camera,
+                                      color: context.theme.colorScheme.properOnSurface, size: 20),
                                 ),
                                 onTap: () => controller.openCamera(context)),
                           ),
@@ -145,28 +154,27 @@ class CupertinoMiniHeader extends StatelessWidget {
         fullOpacityOffset: topMargin + 15,
         child: ClipRect(
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-            child: Obx(() {
-              NavigationSvc.listener.value;
-              return Container(
-                width: NavigationSvc.width(context),
-                height: (topMargin - 20).clamp(kIsDesktop ? 65 : 40, double.infinity),
-                color: context.theme.colorScheme.properSurface.withValues(alpha: 0.5),
-                alignment: Alignment.bottomCenter,
-                child: Padding(
-                  padding: EdgeInsets.only(bottom: kIsDesktop ? 10 : 5),
-                  child: Text(
-                    controller.showArchivedChats
-                        ? "Archive"
-                        : controller.showUnknownSenders
-                        ? "Unknown Senders"
-                        : "Messages",
-                    style: context.textTheme.titleMedium!.copyWith(color: context.theme.colorScheme.properOnSurface),
+              filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+              child: Obx(() {
+                NavigationSvc.listener.value;
+                return Container(
+                  width: NavigationSvc.width(context),
+                  height: (topMargin - 20).clamp(kIsDesktop ? 65 : 40, double.infinity),
+                  color: context.theme.colorScheme.properSurface.withValues(alpha: 0.5),
+                  alignment: Alignment.bottomCenter,
+                  child: Padding(
+                    padding: EdgeInsets.only(bottom: kIsDesktop ? 10 : 5),
+                    child: Text(
+                      controller.showArchivedChats
+                          ? "Archive"
+                          : controller.showUnknownSenders
+                              ? "Unknown Senders"
+                              : "Messages",
+                      style: context.textTheme.titleMedium!.copyWith(color: context.theme.colorScheme.properOnSurface),
+                    ),
                   ),
-                ),
-              );
-            })
-          ),
+                );
+              })),
         ),
       ),
     );

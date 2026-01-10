@@ -12,19 +12,23 @@ DateTime? parseDate(dynamic value) {
 
 String buildDate(DateTime? dateTime) {
   if (dateTime == null || dateTime.millisecondsSinceEpoch == 0) return "";
-  String time = SettingsSvc.settings.use24HrFormat.value ? DateFormat.Hm().format(dateTime) : DateFormat.jm().format(dateTime);
+  String time =
+      SettingsSvc.settings.use24HrFormat.value ? DateFormat.Hm().format(dateTime) : DateFormat.jm().format(dateTime);
   String date;
   if (SettingsSvc.settings.skin.value != Skins.iOS && DateTime.now().difference(dateTime.toLocal()).inMinutes < 1) {
     date = "Just Now";
-  } else if (SettingsSvc.settings.skin.value != Skins.iOS && DateTime.now().difference(dateTime.toLocal()).inHours < 1) {
+  } else if (SettingsSvc.settings.skin.value != Skins.iOS &&
+      DateTime.now().difference(dateTime.toLocal()).inHours < 1) {
     date = "${DateTime.now().difference(dateTime.toLocal()).inMinutes} min";
   } else if (dateTime.isToday()) {
     date = time;
   } else if (SettingsSvc.settings.skin.value == Skins.iOS && dateTime.isYesterday()) {
     date = "Yesterday";
   } else if (DateTime.now().difference(dateTime.toLocal()).inDays <= 7) {
-    date = "${DateFormat(SettingsSvc.settings.skin.value != Skins.iOS ? "EEE" : "EEEE").format(dateTime)}${SettingsSvc.settings.skin.value != Skins.iOS ? " $time" : ""}";
-  } else if (SettingsSvc.settings.skin.value == Skins.Material && DateTime.now().difference(dateTime.toLocal()).inDays <= 365) {
+    date =
+        "${DateFormat(SettingsSvc.settings.skin.value != Skins.iOS ? "EEE" : "EEEE").format(dateTime)}${SettingsSvc.settings.skin.value != Skins.iOS ? " $time" : ""}";
+  } else if (SettingsSvc.settings.skin.value == Skins.Material &&
+      DateTime.now().difference(dateTime.toLocal()).inDays <= 365) {
     date = "${DateFormat.MMMd().format(dateTime)}, $time";
   } else if (SettingsSvc.settings.skin.value == Skins.Samsung && DateTime.now().year == dateTime.toLocal().year) {
     date = DateFormat.MMMd().format(dateTime);
@@ -45,7 +49,8 @@ String buildChatListDateMaterial(DateTime? dateTime) {
     date = "${DateTime.now().difference(dateTime.toLocal()).inMinutes} min";
   } else if (DateTime.now().difference(dateTime.toLocal()).inDays <= 7) {
     date = DateFormat("EEE").format(dateTime);
-  } else if (SettingsSvc.settings.skin.value == Skins.Material && DateTime.now().difference(dateTime.toLocal()).inDays <= 365) {
+  } else if (SettingsSvc.settings.skin.value == Skins.Material &&
+      DateTime.now().difference(dateTime.toLocal()).inDays <= 365) {
     date = DateFormat.MMMd().format(dateTime);
   } else if (SettingsSvc.settings.skin.value == Skins.Samsung && DateTime.now().year == dateTime.toLocal().year) {
     date = DateFormat.MMMd().format(dateTime);
@@ -67,7 +72,8 @@ String buildSeparatorDateSamsung(DateTime dateTime) {
 
 String buildTime(DateTime? dateTime) {
   if (dateTime == null || dateTime.millisecondsSinceEpoch == 0) return "";
-  String time = SettingsSvc.settings.use24HrFormat.value ? DateFormat.Hm().format(dateTime) : DateFormat.jm().format(dateTime);
+  String time =
+      SettingsSvc.settings.use24HrFormat.value ? DateFormat.Hm().format(dateTime) : DateFormat.jm().format(dateTime);
   return time;
 }
 

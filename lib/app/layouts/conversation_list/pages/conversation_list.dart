@@ -116,9 +116,8 @@ class ConversationList extends CustomStateful<ConversationListController> {
 }
 
 class _ConversationListState extends CustomState<ConversationList, void, ConversationListController> {
-  
   Timer? _initTimer;
-  
+
   @override
   void initState() {
     super.initState();
@@ -189,7 +188,9 @@ class _ConversationListState extends CustomState<ConversationList, void, Convers
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
-        systemNavigationBarColor: SettingsSvc.settings.immersiveMode.value ? Colors.transparent : context.theme.colorScheme.background, // navigation bar color
+        systemNavigationBarColor: SettingsSvc.settings.immersiveMode.value
+            ? Colors.transparent
+            : context.theme.colorScheme.background, // navigation bar color
         systemNavigationBarIconBrightness: brightness,
         statusBarColor: Colors.transparent, // status bar color
         statusBarIconBrightness: brightness.opposite,

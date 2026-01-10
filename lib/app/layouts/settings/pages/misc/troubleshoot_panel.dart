@@ -40,8 +40,7 @@ class _TroubleshootPanelState extends OptimizedState<TroubleshootPanel> {
     final Directory logDir = Directory(Logger.logDir);
     if (logDir.existsSync()) {
       final List<FileSystemEntity> files = logDir.listSync();
-      final logFiles =
-          files.where((file) => file.path.endsWith(".log")).toList();
+      final logFiles = files.where((file) => file.path.endsWith(".log")).toList();
       logFileCount.value = logFiles.length;
 
       // Size in KB
@@ -82,15 +81,10 @@ class _TroubleshootPanelState extends OptimizedState<TroubleshootPanel> {
                           showDialog(
                               context: context,
                               builder: (context) => AlertDialog(
-                                    backgroundColor:
-                                        context.theme.colorScheme.surface,
-                                    contentPadding: const EdgeInsets.symmetric(
-                                        horizontal: 20),
-                                    titlePadding:
-                                        const EdgeInsets.only(top: 15),
-                                    title: Text("Fetching contacts...",
-                                        style:
-                                            context.theme.textTheme.titleLarge),
+                                    backgroundColor: context.theme.colorScheme.surface,
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+                                    titlePadding: const EdgeInsets.only(top: 15),
+                                    title: Text("Fetching contacts...", style: context.theme.textTheme.titleLarge),
                                     content: Padding(
                                       padding: const EdgeInsets.all(8.0),
                                       child: SizedBox(
@@ -98,25 +92,18 @@ class _TroubleshootPanelState extends OptimizedState<TroubleshootPanel> {
                                         height: context.height * 1 / 3,
                                         child: Container(
                                           decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(25),
-                                            color: context
-                                                .theme.colorScheme.background,
+                                            borderRadius: BorderRadius.circular(25),
+                                            color: context.theme.colorScheme.background,
                                           ),
                                           padding: const EdgeInsets.all(10),
                                           child: Obx(() => ListView.builder(
-                                                physics:
-                                                    const AlwaysScrollableScrollPhysics(
-                                                        parent:
-                                                            BouncingScrollPhysics()),
+                                                physics: const AlwaysScrollableScrollPhysics(
+                                                    parent: BouncingScrollPhysics()),
                                                 itemBuilder: (context, index) {
                                                   return Text(
                                                     log[index],
                                                     style: TextStyle(
-                                                      color: context
-                                                          .theme
-                                                          .colorScheme
-                                                          .onBackground,
+                                                      color: context.theme.colorScheme.onBackground,
                                                       fontSize: 10,
                                                     ),
                                                   );
@@ -142,10 +129,7 @@ class _TroubleshootPanelState extends OptimizedState<TroubleshootPanel> {
                     ],
                   ),
                 if (isWebOrDesktop)
-                  SettingsHeader(
-                      iosSubtitle: iosSubtitle,
-                      materialSubtitle: materialSubtitle,
-                      text: "Logging"),
+                  SettingsHeader(iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Logging"),
                 SettingsSection(backgroundColor: tileColor, children: [
                   const LogLevelSelector(),
                   SettingsTile(
@@ -164,8 +148,7 @@ class _TroubleshootPanelState extends OptimizedState<TroubleshootPanel> {
                     },
                     trailing: const NextButton(),
                   ),
-                  if (Platform.isAndroid)
-                    const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
+                  if (Platform.isAndroid) const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                   if (Platform.isAndroid)
                     SettingsTile(
                         leading: const SettingsLeadingIcon(
@@ -174,8 +157,7 @@ class _TroubleshootPanelState extends OptimizedState<TroubleshootPanel> {
                           containerColor: Colors.green,
                         ),
                         title: "Download / Share Logs",
-                        subtitle:
-                            "${logFileCount.value} log file(s) | ${logFileSize.value} KB",
+                        subtitle: "${logFileCount.value} log file(s) | ${logFileSize.value} KB",
                         onTap: () async {
                           if (logFileCount.value == 0) {
                             showSnackbar("No Logs", "There are no logs to download!");
@@ -212,8 +194,7 @@ class _TroubleshootPanelState extends OptimizedState<TroubleshootPanel> {
                             isExportingLogs = false;
                           }
                         }),
-                  if (kIsDesktop)
-                    const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
+                  if (kIsDesktop) const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                   if (kIsDesktop)
                     SettingsTile(
                         leading: const SettingsLeadingIcon(
@@ -240,8 +221,7 @@ class _TroubleshootPanelState extends OptimizedState<TroubleshootPanel> {
                       subtitle: "Deletes all stored log files.",
                       onTap: () async {
                         Logger.clearLogs();
-                        showSnackbar(
-                            "Logs Cleared", "All logs have been deleted.");
+                        showSnackbar("Logs Cleared", "All logs have been deleted.");
                         logFileCount.value = 0;
                         logFileSize.value = 0;
                       }),
@@ -254,70 +234,56 @@ class _TroubleshootPanelState extends OptimizedState<TroubleshootPanel> {
                       ),
                       title: "Open App Data Location",
                       subtitle: FilesystemSvc.appDocDir.path,
-                      onTap: () async =>
-                          await launchUrl(Uri.file(FilesystemSvc.appDocDir.path)),
+                      onTap: () async => await launchUrl(Uri.file(FilesystemSvc.appDocDir.path)),
                     ),
                 ]),
                 if (Platform.isAndroid)
-                  SettingsHeader(
-                      iosSubtitle: iosSubtitle,
-                      materialSubtitle: materialSubtitle,
-                      text: "Optimizations"),
+                  SettingsHeader(iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Optimizations"),
                 if (Platform.isAndroid)
                   SettingsSection(backgroundColor: tileColor, children: [
                     SettingsTile(
                         onTap: () async {
                           if (optimizationsDisabled.value) {
-                            showSnackbar("Already Disabled",
-                                "Battery optimizations are already disabled for BlueBubbles");
+                            showSnackbar(
+                                "Already Disabled", "Battery optimizations are already disabled for BlueBubbles");
                             return;
                           }
 
-                          final optsDisabled =
-                              await disableBatteryOptimizations();
+                          final optsDisabled = await disableBatteryOptimizations();
                           if (!optsDisabled) {
-                            showSnackbar("Error",
-                                "Battery optimizations were not disabled. Please try again.");
+                            showSnackbar("Error", "Battery optimizations were not disabled. Please try again.");
                           }
                         },
                         leading: Obx(() => SettingsLeadingIcon(
-                          iosIcon: CupertinoIcons.battery_25,
-                          materialIcon: Icons.battery_5_bar,
-                          containerColor: optimizationsDisabled.value ? Colors.green : Colors.redAccent,
-                        )),
+                              iosIcon: CupertinoIcons.battery_25,
+                              materialIcon: Icons.battery_5_bar,
+                              containerColor: optimizationsDisabled.value ? Colors.green : Colors.redAccent,
+                            )),
                         title: "Disable Battery Optimizations",
-                        subtitle: "Allow app to run in the background via the OS. This may not do anything on some devices.",
+                        subtitle:
+                            "Allow app to run in the background via the OS. This may not do anything on some devices.",
                         trailing: Obx(() => !optimizationsDisabled.value
                             ? const NextButton()
-                            : Icon(Icons.check,
-                                color: context.theme.colorScheme.outline))),
+                            : Icon(Icons.check, color: context.theme.colorScheme.outline))),
                   ]),
-                SettingsHeader(
-                  iosSubtitle: iosSubtitle,
-                  materialSubtitle: materialSubtitle,
-                  text: "Troubleshooting"),
-                SettingsSection(
-                  backgroundColor: tileColor,
-                  children: [
-                    SettingsTile(
-                        onTap: () async {
-                          await PrefsSvc.i.remove("lastOpenedChat");
-                          showSnackbar("Success", "Successfully cleared the last opened chat!");
-                        },
-                        leading: const SettingsLeadingIcon(
-                          iosIcon: CupertinoIcons.rectangle_badge_xmark,
-                          materialIcon: Icons.folder_delete_outlined,
-                          containerColor: Colors.orange,
-                        ),
-                        title: "Clear Last Opened Chat",
-                        subtitle: "Use this if you are experiencing the app opening an incorrect chat"
-                    )
-                  ]),
+                SettingsHeader(iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Troubleshooting"),
+                SettingsSection(backgroundColor: tileColor, children: [
+                  SettingsTile(
+                      onTap: () async {
+                        await PrefsSvc.i.remove("lastOpenedChat");
+                        showSnackbar("Success", "Successfully cleared the last opened chat!");
+                      },
+                      leading: const SettingsLeadingIcon(
+                        iosIcon: CupertinoIcons.rectangle_badge_xmark,
+                        materialIcon: Icons.folder_delete_outlined,
+                        containerColor: Colors.orange,
+                      ),
+                      title: "Clear Last Opened Chat",
+                      subtitle: "Use this if you are experiencing the app opening an incorrect chat")
+                ]),
                 if (!kIsWeb)
                   SettingsHeader(
-                      iosSubtitle: iosSubtitle,
-                      materialSubtitle: materialSubtitle,
-                      text: "Database Re-syncing"),
+                      iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Database Re-syncing"),
                 if (!kIsWeb)
                   SettingsSection(backgroundColor: tileColor, children: [
                     SettingsTile(
@@ -336,8 +302,7 @@ class _TroubleshootPanelState extends OptimizedState<TroubleshootPanel> {
                           } catch (ex, stacktrace) {
                             Logger.error("Failed to reset contacts!", error: ex, trace: stacktrace);
 
-                            showSnackbar("Failed to re-sync handles!",
-                                "Error: ${ex.toString()}");
+                            showSnackbar("Failed to re-sync handles!", "Error: ${ex.toString()}");
                           } finally {
                             resyncingHandles.value = false;
                           }
@@ -352,15 +317,14 @@ class _TroubleshootPanelState extends OptimizedState<TroubleshootPanel> {
                                     ),
                                     child: CircularProgressIndicator(
                                       strokeWidth: 3,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                          context.theme.colorScheme.primary),
+                                      valueColor: AlwaysStoppedAnimation<Color>(context.theme.colorScheme.primary),
                                     ))
-                                : Icon(Icons.check,
-                                    color: context.theme.colorScheme.outline))),
+                                : Icon(Icons.check, color: context.theme.colorScheme.outline))),
                     const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     SettingsTile(
                         title: "Sync Chat Info",
-                        subtitle: "This will re-sync all chat data & icons from the server to ensure that you have the most up-to-date information.\n\nNote: This will overwrite any group chat icons that are not locked!",
+                        subtitle:
+                            "This will re-sync all chat data & icons from the server to ensure that you have the most up-to-date information.\n\nNote: This will overwrite any group chat icons that are not locked!",
                         onTap: () async {
                           resyncingChats.value = true;
                           try {
@@ -374,8 +338,7 @@ class _TroubleshootPanelState extends OptimizedState<TroubleshootPanel> {
                                 "Successfully synced your chat info! You may need to close and re-open the app for changes to take effect.");
                           } catch (ex, stacktrace) {
                             Logger.error("Failed to sync chat info!", error: ex, trace: stacktrace);
-                            showSnackbar("Failed to sync chat info!",
-                                "Error: ${ex.toString()}");
+                            showSnackbar("Failed to sync chat info!", "Error: ${ex.toString()}");
                           } finally {
                             resyncingChats.value = false;
                           }
@@ -390,11 +353,9 @@ class _TroubleshootPanelState extends OptimizedState<TroubleshootPanel> {
                                     ),
                                     child: CircularProgressIndicator(
                                       strokeWidth: 3,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                          context.theme.colorScheme.primary),
+                                      valueColor: AlwaysStoppedAnimation<Color>(context.theme.colorScheme.primary),
                                     ))
-                                : Icon(Icons.check,
-                                    color: context.theme.colorScheme.outline)))
+                                : Icon(Icons.check, color: context.theme.colorScheme.outline)))
                   ]),
                 if (kIsDesktop) const SizedBox(height: 100),
               ],

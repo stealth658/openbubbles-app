@@ -15,13 +15,13 @@ abstract class Queue extends GetxService {
     // we may get a link split into 2 messages
     if (item is OutgoingItem && returned is List) {
       items.addAll(returned.map((e) => OutgoingItem(
-        type: item.type,
-        chat: item.chat,
-        message: e,
-        completer: item.completer,
-        selected: item.selected,
-        reaction: item.reaction,
-      )));
+            type: item.type,
+            chat: item.chat,
+            message: e,
+            completer: item.completer,
+            selected: item.selected,
+            reaction: item.reaction,
+          )));
     } else {
       items.add(item);
     }
@@ -42,7 +42,8 @@ abstract class Queue extends GetxService {
     try {
       await handleQueueItem(queued).catchError((err) async {
         if (queued is OutgoingItem && SettingsSvc.settings.cancelQueuedMessages.value) {
-          final toCancel = List<OutgoingItem>.from(items.whereType<OutgoingItem>().where((e) => e.chat.guid == queued.chat.guid));
+          final toCancel =
+              List<OutgoingItem>.from(items.whereType<OutgoingItem>().where((e) => e.chat.guid == queued.chat.guid));
           for (OutgoingItem i in toCancel) {
             items.remove(i);
             final m = i.message;

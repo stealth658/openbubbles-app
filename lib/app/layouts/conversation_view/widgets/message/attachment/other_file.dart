@@ -46,12 +46,12 @@ class OtherFile extends StatelessWidget {
         }
         if (kIsWeb || file.path == null) {
           final content = base64.encode(file.bytes!);
-          html.AnchorElement(
-              href: "data:application/octet-stream;charset=utf-16le;base64,$content")
+          html.AnchorElement(href: "data:application/octet-stream;charset=utf-16le;base64,$content")
             ..setAttribute("download", file.name)
             ..click();
         } else if (kIsDesktop) {
-          File _file = File(join((await getTemporaryDirectory()).path, "BlueBubbles", "attachments", attachment.guid, basename(file.path!)));
+          File _file = File(join((await getTemporaryDirectory()).path, "BlueBubbles", "attachments", attachment.guid,
+              basename(file.path!)));
           if (!_file.existsSync()) {
             _file.createSync(recursive: true);
             File(file.path!).copySync(_file.path);
@@ -59,7 +59,8 @@ class OtherFile extends StatelessWidget {
           launchUrl(Uri.file(_file.path));
         } else {
           try {
-            final res = await OpenFilex.open("${FilesystemSvc.appDocDir.path}/attachments/${attachment.guid!}/${basename(file.path!)}");
+            final res = await OpenFilex.open(
+                "${FilesystemSvc.appDocDir.path}/attachments/${attachment.guid!}/${basename(file.path!)}");
             if (res.type == ResultType.noAppToOpen) {
               showSnackbar('Error', "No handler for this file type! Using share menu instead.");
               await Future.delayed(const Duration(seconds: 1));
@@ -69,7 +70,8 @@ class OtherFile extends StatelessWidget {
             } else if (res.type == ResultType.fileNotFound) {
               showSnackbar('Not Found', "File not found at path: ${file.path}");
             } else if (res.type == ResultType.permissionDenied) {
-              showSnackbar('Permission Denied', "BlueBubbles does not have access to this file! Using share menu instead.");
+              showSnackbar(
+                  'Permission Denied', "BlueBubbles does not have access to this file! Using share menu instead.");
               await Future.delayed(const Duration(seconds: 1));
               Share.files([file.path!]);
             }
@@ -105,7 +107,8 @@ class OtherFile extends StatelessWidget {
                   const SizedBox(height: 2.5),
                   Text(
                     "${(mime(file.name)?.split("/").lastOrNull ?? mime(file.name) ?? "file").toUpperCase()} • ${file.size.toDouble().getFriendlySize()}",
-                    style: context.theme.textTheme.labelMedium!.copyWith(fontWeight: FontWeight.normal, color: context.theme.colorScheme.outline),
+                    style: context.theme.textTheme.labelMedium!
+                        .copyWith(fontWeight: FontWeight.normal, color: context.theme.colorScheme.outline),
                     overflow: TextOverflow.clip,
                     maxLines: 1,
                   ),

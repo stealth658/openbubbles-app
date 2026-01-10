@@ -19,12 +19,12 @@ class StructuredName {
   }
 
   Map<String, String> toMap() => {
-    "namePrefix": namePrefix,
-    "givenName": givenName,
-    "middleName": middleName,
-    "familyName": familyName,
-    "nameSuffix": nameSuffix,
-  };
+        "namePrefix": namePrefix,
+        "givenName": givenName,
+        "middleName": middleName,
+        "familyName": familyName,
+        "nameSuffix": nameSuffix,
+      };
 
   final String namePrefix;
   final String givenName;

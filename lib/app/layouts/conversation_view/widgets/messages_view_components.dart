@@ -27,9 +27,7 @@ class TypingIndicatorRow extends StatelessWidget {
     return Obx(() => Row(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            if (controller.showTypingIndicator.value &&
-                SettingsSvc.settings.alwaysShowAvatars.value &&
-                iOS)
+            if (controller.showTypingIndicator.value && SettingsSvc.settings.alwaysShowAvatars.value && iOS)
               Padding(
                 padding: const EdgeInsets.only(left: 10.0),
                 child: ContactAvatarWidget(
@@ -67,7 +65,7 @@ class NotificationsSilencedBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const moonIcon = CupertinoIcons.moon_fill;
-    
+
     return AnimatedSize(
       key: controller.focusInfoKey,
       duration: const Duration(milliseconds: 250),
@@ -121,8 +119,7 @@ class _NotifyAnywayButton extends StatelessWidget {
       return TextButton(
         child: Text(
           "Notify Anyway",
-          style: context.theme.textTheme.labelLarge!
-              .copyWith(color: context.theme.colorScheme.tertiaryContainer),
+          style: context.theme.textTheme.labelLarge!.copyWith(color: context.theme.colorScheme.tertiaryContainer),
         ),
         onPressed: () async {
           await HttpSvc.notify(latestMessage!.guid!);
@@ -156,8 +153,7 @@ class SmartRepliesRow extends StatelessWidget {
                     child: ListView(
                       scrollDirection: Axis.horizontal,
                       reverse: true,
-                      children: List<Widget>.from(smartReplies)
-                        ..addAll(internalSmartReplies.values),
+                      children: List<Widget>.from(smartReplies)..addAll(internalSmartReplies.values),
                     ),
                   ),
                 )
@@ -258,8 +254,7 @@ class DragDropOverlay extends StatelessWidget {
                     ),
                     Text(
                       "Attach ${numFiles.value} File${numFiles.value > 1 ? 's' : ''}",
-                      style: context.theme.textTheme.headlineLarge!
-                          .copyWith(color: context.theme.colorScheme.primary),
+                      style: context.theme.textTheme.headlineLarge!.copyWith(color: context.theme.colorScheme.primary),
                     ),
                   ],
                 ),

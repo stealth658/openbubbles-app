@@ -25,114 +25,124 @@ class _AdvancedThemingTileState extends OptimizedState<AdvancedThemingTile> {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Material(
-          color: widget.tuple.item1.value,
-          child: Container(
-            decoration: widget.tuple.item1.value.computeDifference(ThemeSvc.inDarkMode(context)
-                || SettingsSvc.settings.skin.value == Skins.Samsung
-                ? context.theme.colorScheme.background : context.theme.colorScheme.properSurface) < 15 ? BoxDecoration(
-              border: Border.all(width: 0.5, color: context.theme.colorScheme.outline),
-              borderRadius: BorderRadius.circular(20)
-            ) : null,
-            child: InkWell(
-              onTap: () async {
-                BuildContext _context = context;
-                if (widget.editable) {
-                  final result = await showThemeDialog(widget.tuple.item1.value);
-                  if (result != null) {
-                    final map = widget.currentTheme.toMap();
-                    map["data"]["colorScheme"][widget.tuple.item1.key] = result.toARGB32();
-                    widget.currentTheme.data = ThemeStruct.fromMap(map).data;
-                    widget.currentTheme.save();
-                    if (widget.currentTheme.name == PrefsSvc.i.getString("selected-dark")) {
-                      await ThemeSvc.changeTheme(_context, dark: widget.currentTheme);
-                    } else if (widget.currentTheme.name == PrefsSvc.i.getString("selected-light")) {
-                      await ThemeSvc.changeTheme(_context, light: widget.currentTheme);
+          borderRadius: BorderRadius.circular(20),
+          child: Material(
+              color: widget.tuple.item1.value,
+              child: Container(
+                decoration: widget.tuple.item1.value.computeDifference(
+                            ThemeSvc.inDarkMode(context) || SettingsSvc.settings.skin.value == Skins.Samsung
+                                ? context.theme.colorScheme.background
+                                : context.theme.colorScheme.properSurface) <
+                        15
+                    ? BoxDecoration(
+                        border: Border.all(width: 0.5, color: context.theme.colorScheme.outline),
+                        borderRadius: BorderRadius.circular(20))
+                    : null,
+                child: InkWell(
+                  onTap: () async {
+                    BuildContext _context = context;
+                    if (widget.editable) {
+                      final result = await showThemeDialog(widget.tuple.item1.value);
+                      if (result != null) {
+                        final map = widget.currentTheme.toMap();
+                        map["data"]["colorScheme"][widget.tuple.item1.key] = result.toARGB32();
+                        widget.currentTheme.data = ThemeStruct.fromMap(map).data;
+                        widget.currentTheme.save();
+                        if (widget.currentTheme.name == PrefsSvc.i.getString("selected-dark")) {
+                          await ThemeSvc.changeTheme(_context, dark: widget.currentTheme);
+                        } else if (widget.currentTheme.name == PrefsSvc.i.getString("selected-light")) {
+                          await ThemeSvc.changeTheme(_context, light: widget.currentTheme);
+                        }
+                      }
+                    } else {
+                      if (SettingsSvc.settings.monetTheming.value != Monet.none) {
+                        showSnackbar('Notice', "Turn off Material You to start customizing!");
+                      } else {
+                        showSnackbar('Notice', "Create a new theme to start customizing!");
+                      }
                     }
-                  }
-                } else {
-                  if (SettingsSvc.settings.monetTheming.value != Monet.none) {
-                    showSnackbar('Notice', "Turn off Material You to start customizing!");
-                  } else {
-                    showSnackbar('Notice', "Create a new theme to start customizing!");
-                  }
-                }
-              },
-              onLongPress: widget.tuple.item2 != null ? () async {
-                BuildContext _context = context;
-                if (widget.editable) {
-                  final result = await showThemeDialog(widget.tuple.item2!.value);
-                  if (result != null) {
-                    final map = widget.currentTheme.toMap();
-                    map["data"]["colorScheme"][widget.tuple.item2!.key] = result.toARGB32();
-                    widget.currentTheme.data = ThemeStruct.fromMap(map).data;
-                    widget.currentTheme.save();
-                    if (widget.currentTheme.name == PrefsSvc.i.getString("selected-dark")) {
-                      await ThemeSvc.changeTheme(_context, dark: widget.currentTheme);
-                    } else if (widget.currentTheme.name == PrefsSvc.i.getString("selected-light")) {
-                      await ThemeSvc.changeTheme(_context, light: widget.currentTheme);
-                    }
-                  }
-                } else {
-                  if (SettingsSvc.settings.monetTheming.value != Monet.none) {
-                    showSnackbar('Notice', "Turn off Material You to start customizing!");
-                  } else {
-                    showSnackbar('Notice', "Create a new theme to start customizing!");
-                  }
-                }
-              } : null,
-              onDoubleTap: () {
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return AlertDialog(
-                      title: Text(
-                        "Info - ${widget.tuple.item1.key} ${widget.tuple.item2 != null ? "/ ${widget.tuple.item2!.key}" : ""}",
-                        style: context.theme.textTheme.titleLarge,
-                      ),
-                      backgroundColor: context.theme.colorScheme.properSurface,
-                      content: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(
-                            "${ThemeStruct.colorDescriptions[widget.tuple.item1.key]}${widget.tuple.item2 != null ? "\n\n${ThemeStruct.colorDescriptions[widget.tuple.item2!.key]}" : ""}",
-                            style: context.theme.textTheme.bodyLarge),
-                      ),
-                      actions: <Widget>[
-                        TextButton(
-                          child: Text("OK", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                          },
-                        ),
-                      ],
+                  },
+                  onLongPress: widget.tuple.item2 != null
+                      ? () async {
+                          BuildContext _context = context;
+                          if (widget.editable) {
+                            final result = await showThemeDialog(widget.tuple.item2!.value);
+                            if (result != null) {
+                              final map = widget.currentTheme.toMap();
+                              map["data"]["colorScheme"][widget.tuple.item2!.key] = result.toARGB32();
+                              widget.currentTheme.data = ThemeStruct.fromMap(map).data;
+                              widget.currentTheme.save();
+                              if (widget.currentTheme.name == PrefsSvc.i.getString("selected-dark")) {
+                                await ThemeSvc.changeTheme(_context, dark: widget.currentTheme);
+                              } else if (widget.currentTheme.name == PrefsSvc.i.getString("selected-light")) {
+                                await ThemeSvc.changeTheme(_context, light: widget.currentTheme);
+                              }
+                            }
+                          } else {
+                            if (SettingsSvc.settings.monetTheming.value != Monet.none) {
+                              showSnackbar('Notice', "Turn off Material You to start customizing!");
+                            } else {
+                              showSnackbar('Notice', "Create a new theme to start customizing!");
+                            }
+                          }
+                        }
+                      : null,
+                  onDoubleTap: () {
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: Text(
+                            "Info - ${widget.tuple.item1.key} ${widget.tuple.item2 != null ? "/ ${widget.tuple.item2!.key}" : ""}",
+                            style: context.theme.textTheme.titleLarge,
+                          ),
+                          backgroundColor: context.theme.colorScheme.properSurface,
+                          content: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(
+                                "${ThemeStruct.colorDescriptions[widget.tuple.item1.key]}${widget.tuple.item2 != null ? "\n\n${ThemeStruct.colorDescriptions[widget.tuple.item2!.key]}" : ""}",
+                                style: context.theme.textTheme.bodyLarge),
+                          ),
+                          actions: <Widget>[
+                            TextButton(
+                              child: Text("OK",
+                                  style: context.theme.textTheme.bodyLarge!
+                                      .copyWith(color: context.theme.colorScheme.primary)),
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                              },
+                            ),
+                          ],
+                        );
+                      },
                     );
                   },
-                );
-              },
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.color_lens,
-                    size: 40,
-                    color: textColor.computeDifference(widget.tuple.item1.value) < 15 ? widget.tuple.item1.value.lightenOrDarken(50) : textColor,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.color_lens,
+                        size: 40,
+                        color: textColor.computeDifference(widget.tuple.item1.value) < 15
+                            ? widget.tuple.item1.value.lightenOrDarken(50)
+                            : textColor,
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          widget.tuple.item1.key + (widget.tuple.item2 != null ? " / ${widget.tuple.item2!.key}" : ""),
+                          style: context.textTheme.titleMedium?.copyWith(
+                              color: textColor.computeDifference(widget.tuple.item1.value) < 15
+                                  ? widget.tuple.item1.value.lightenOrDarken(20)
+                                  : textColor),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ],
                   ),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Text(
-                      widget.tuple.item1.key + (widget.tuple.item2 != null ? " / ${widget.tuple.item2!.key}" : ""),
-                      style: context.textTheme.titleMedium?.copyWith(color: textColor.computeDifference(widget.tuple.item1.value) < 15 ? widget.tuple.item1.value.lightenOrDarken(20) : textColor),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          )
-        )
-      ),
+                ),
+              ))),
     );
   }
 
@@ -148,9 +158,8 @@ class _AdvancedThemingTileState extends OptimizedState<AdvancedThemingTile> {
                 newColor = color;
               },
               title: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Text('Choose a Color', style: Theme.of(context).textTheme.titleLarge)
-              ),
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Text('Choose a Color', style: Theme.of(context).textTheme.titleLarge)),
               width: 40,
               height: 40,
               spacing: 0,
@@ -185,7 +194,6 @@ class _AdvancedThemingTileState extends OptimizedState<AdvancedThemingTile> {
               ),
             ],
           );
-        }
-    );
+        });
   }
 }

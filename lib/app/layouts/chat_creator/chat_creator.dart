@@ -56,7 +56,8 @@ class ChatCreator extends StatefulWidget {
 class ChatCreatorState extends OptimizedState<ChatCreator> {
   final TextEditingController addressController = TextEditingController();
   final messageNode = FocusNode();
-  late final MentionTextEditingController textController = MentionTextEditingController(text: widget.initialText, focusNode: messageNode);
+  late final MentionTextEditingController textController =
+      MentionTextEditingController(text: widget.initialText, focusNode: messageNode);
   final FocusNode addressNode = FocusNode();
   final ScrollController addressScrollController = ScrollController();
 
@@ -253,7 +254,8 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
 
         if (widget.initialText != null && widget.initialText!.isNotEmpty) {
           ChatsSvc.activeChat!.controller!.textController.text = widget.initialText!;
-        } else if (fakeController.value?.textController.text != null && fakeController.value!.textController.text.isNotEmpty) {
+        } else if (fakeController.value?.textController.text != null &&
+            fakeController.value!.textController.text.isNotEmpty) {
           ChatsSvc.activeChat!.controller!.textController.text = fakeController.value!.textController.text;
         } else if (textController.text.isNotEmpty) {
           ChatsSvc.activeChat!.controller!.textController.text = textController.text;
@@ -390,7 +392,8 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
                                       shrinkWrap: true,
                                       scrollDirection: Axis.horizontal,
                                       physics: const NeverScrollableScrollPhysics(),
-                                      findChildIndexCallback: (key) => findChildIndexByKey(selectedContacts, key, (item) => item.address),
+                                      findChildIndexCallback: (key) =>
+                                          findChildIndexByKey(selectedContacts, key, (item) => item.address),
                                       itemBuilder: (context, index) {
                                         final e = selectedContacts[index];
                                         return SelectedContactChip(
@@ -603,14 +606,14 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
                               closeActiveChat: false,
                               // only used in non-tablet mode context
                               customRoute: PageRouteBuilder(
-                                pageBuilder: (_, __, ___) =>
-                                    TitleBarWrapper(child: ConversationView(chat: chat, fromChatCreator: true, onInit: sendInitialMessage)),
+                                pageBuilder: (_, __, ___) => TitleBarWrapper(
+                                    child: ConversationView(
+                                        chat: chat, fromChatCreator: true, onInit: sendInitialMessage)),
                                 transitionDuration: Duration.zero,
                               ),
                             );
 
                             await Future.delayed(const Duration(milliseconds: 500));
-                            
                           } else {
                             if (!(createCompleter?.isCompleted ?? true)) return;
                             // hard delete a chat that exists on BB but not on the server to make way for the proper server data

@@ -98,8 +98,9 @@ class Contact {
       query.close();
       return result;
     } else if (address != null) {
-      final query =
-          Database.contacts.query(Contact_.phones.containsElement(address) | Contact_.emails.containsElement(address)).build();
+      final query = Database.contacts
+          .query(Contact_.phones.containsElement(address) | Contact_.emails.containsElement(address))
+          .build();
       query.limit = 1;
       final result = query.findFirst();
       query.close();

@@ -64,7 +64,7 @@ class SocketService {
       state.value = SocketState.error;
       return;
     }
-    
+
     // Validate that server address is a valid URL
     Uri? uri = Uri.tryParse(serverAddress);
     if (uri == null || (uri.scheme != 'http' && uri.scheme != 'https')) {
@@ -73,9 +73,9 @@ class SocketService {
       state.value = SocketState.error;
       return;
     }
-    
+
     Logger.info("Starting socket connection to $serverAddress");
-    
+
     OptionBuilder options = OptionBuilder()
         .setQuery({"guid": password})
         .setTransports(['websocket', 'polling'])
@@ -104,18 +104,23 @@ class SocketService {
     // only listen to these events from socket on web/desktop (FCM handles on Android)
     if (kIsWeb || kIsDesktop) {
       socket?.on("group-name-change", (data) => MessageHandlerSvc.handleEvent("group-name-change", data, 'DartSocket'));
-      socket?.on("participant-removed", (data) => MessageHandlerSvc.handleEvent("participant-removed", data, 'DartSocket'));
+      socket?.on(
+          "participant-removed", (data) => MessageHandlerSvc.handleEvent("participant-removed", data, 'DartSocket'));
       socket?.on("participant-added", (data) => MessageHandlerSvc.handleEvent("participant-added", data, 'DartSocket'));
       socket?.on("participant-left", (data) => MessageHandlerSvc.handleEvent("participant-left", data, 'DartSocket'));
-      socket?.on("incoming-facetime", (data) => MessageHandlerSvc.handleEvent("incoming-facetime", jsonDecode(data), 'DartSocket'));
+      socket?.on("incoming-facetime",
+          (data) => MessageHandlerSvc.handleEvent("incoming-facetime", jsonDecode(data), 'DartSocket'));
     }
 
-    socket?.on("ft-call-status-changed", (data) => MessageHandlerSvc.handleEvent("ft-call-status-changed", data, 'DartSocket'));
+    socket?.on("ft-call-status-changed",
+        (data) => MessageHandlerSvc.handleEvent("ft-call-status-changed", data, 'DartSocket'));
     socket?.on("new-message", (data) => MessageHandlerSvc.handleEvent("new-message", data, 'DartSocket'));
     socket?.on("updated-message", (data) => MessageHandlerSvc.handleEvent("updated-message", data, 'DartSocket'));
     socket?.on("typing-indicator", (data) => MessageHandlerSvc.handleEvent("typing-indicator", data, 'DartSocket'));
-    socket?.on("chat-read-status-changed", (data) => MessageHandlerSvc.handleEvent("chat-read-status-changed", data, 'DartSocket'));
-    socket?.on("imessage-aliases-removed", (data) => MessageHandlerSvc.handleEvent("imessage-aliases-removed", data, 'DartSocket'));
+    socket?.on("chat-read-status-changed",
+        (data) => MessageHandlerSvc.handleEvent("chat-read-status-changed", data, 'DartSocket'));
+    socket?.on("imessage-aliases-removed",
+        (data) => MessageHandlerSvc.handleEvent("imessage-aliases-removed", data, 'DartSocket'));
 
     socket?.connect();
 
@@ -216,7 +221,7 @@ class SocketService {
       case SocketState.error:
         // Parse and log the error details
         String errorDetails = "Unknown error";
-        
+
         if (data is SocketException) {
           handleSocketException(data);
           errorDetails = lastError.value;
@@ -225,11 +230,11 @@ class SocketService {
         } else if (data != null) {
           errorDetails = data.toString();
         }
-        
+
         Logger.error("Socket error connecting to $serverAddress: $errorDetails");
         lastError.value = errorDetails;
         state.value = SocketState.error;
-        
+
         // Only set up reconnect timer if one doesn't already exist
         if (_reconnectTimer == null || !_reconnectTimer!.isActive) {
           Logger.info("Scheduling reconnect attempt in 5 seconds...");
@@ -238,13 +243,13 @@ class SocketService {
               Logger.info("Already connected, skipping reconnect");
               return;
             }
-            
+
             Logger.info("Attempting to fetch new URL and restart socket...");
             String? newUrl = await fdb.fetchNewUrl();
             if (newUrl != null && newUrl != serverAddress) {
               Logger.info("Server URL changed from $serverAddress to $newUrl");
             }
-            
+
             restartSocket();
 
             if (state.value == SocketState.connected) return;
@@ -272,7 +277,7 @@ class SocketService {
     } else {
       lastError.value = msg;
     }
-    
+
     Logger.error("Socket exception: ${lastError.value}", error: e);
   }
 }

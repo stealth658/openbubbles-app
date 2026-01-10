@@ -21,16 +21,15 @@ class HandleInterface {
     if (isIsolate) {
       handleId = await HandleActions.saveHandleAsync(data);
     } else {
-      handleId = await GetIt.I<GlobalIsolate>()
-          .send<int>(IsolateRequestType.saveHandleAsync, input: data);
+      handleId = await GetIt.I<GlobalIsolate>().send<int>(IsolateRequestType.saveHandleAsync, input: data);
     }
-    
+
     // Fetch handle by ID using get
     final handle = Database.handles.get(handleId);
     if (handle == null) {
       throw Exception('Failed to fetch handle with ID $handleId after save');
     }
-    
+
     return handle;
   }
 
@@ -47,10 +46,9 @@ class HandleInterface {
     if (isIsolate) {
       handleIds = await HandleActions.bulkSaveHandlesAsync(data);
     } else {
-      handleIds = await GetIt.I<GlobalIsolate>()
-          .send<List<int>>(IsolateRequestType.bulkSaveHandlesAsync, input: data);
+      handleIds = await GetIt.I<GlobalIsolate>().send<List<int>>(IsolateRequestType.bulkSaveHandlesAsync, input: data);
     }
-    
+
     // Fetch handles by ID using getMany for efficiency
     return Database.handles.getMany(handleIds).whereType<Handle>().toList();
   }
@@ -72,12 +70,11 @@ class HandleInterface {
     if (isIsolate) {
       handleId = await HandleActions.findOneHandleAsync(data);
     } else {
-      handleId = await GetIt.I<GlobalIsolate>()
-          .send<int?>(IsolateRequestType.findOneHandleAsync, input: data);
+      handleId = await GetIt.I<GlobalIsolate>().send<int?>(IsolateRequestType.findOneHandleAsync, input: data);
     }
-    
+
     if (handleId == null) return null;
-    
+
     // Fetch handle by ID using get
     return Database.handles.get(handleId);
   }
@@ -87,10 +84,9 @@ class HandleInterface {
     if (isIsolate) {
       handleIds = await HandleActions.findHandlesAsync({});
     } else {
-      handleIds = await GetIt.I<GlobalIsolate>()
-          .send<List<int>>(IsolateRequestType.findHandlesAsync, input: {});
+      handleIds = await GetIt.I<GlobalIsolate>().send<List<int>>(IsolateRequestType.findHandlesAsync, input: {});
     }
-    
+
     // Fetch handles by ID using getMany for efficiency
     return Database.handles.getMany(handleIds).whereType<Handle>().toList();
   }

@@ -40,7 +40,7 @@ class OpenSettingsAction extends Action<OpenSettingsIntent> {
             ConversationView(
               chat: currentChat,
             ),
-                (route) => route.isFirst,
+            (route) => route.isFirst,
           );
         } else {
           cvc(currentChat).close();

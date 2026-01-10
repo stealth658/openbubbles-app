@@ -78,7 +78,9 @@ class ChatListSection extends StatelessWidget {
                 ),
               ),
             );
-          }, childCount: filteredChats.length.clamp(ChatsSvc.loadedAllChats.isCompleted ? 0 : 1, double.infinity).toInt()),
+          },
+              childCount:
+                  filteredChats.length.clamp(ChatsSvc.loadedAllChats.isCompleted ? 0 : 1, double.infinity).toInt()),
         ),
         SliverList(
           delegate: SliverChildBuilderDelegate(

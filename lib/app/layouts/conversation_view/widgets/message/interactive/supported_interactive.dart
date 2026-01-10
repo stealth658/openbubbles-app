@@ -93,12 +93,10 @@ class _SupportedInteractiveState extends OptimizedState<SupportedInteractive> wi
                         overflow: TextOverflow.ellipsis,
                       ),
                     if (!isNullOrEmpty(data.userInfo?.imageSubtitle))
-                      Text(
-                        data.userInfo!.imageSubtitle!,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: context.theme.textTheme.labelMedium!.copyWith(fontWeight: FontWeight.normal)
-                      ),
+                      Text(data.userInfo!.imageSubtitle!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: context.theme.textTheme.labelMedium!.copyWith(fontWeight: FontWeight.normal)),
                   ],
                 ),
               ),
@@ -106,63 +104,56 @@ class _SupportedInteractiveState extends OptimizedState<SupportedInteractive> wi
         ),
         Padding(
           padding: const EdgeInsets.all(15.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (!isNullOrEmpty(data.userInfo?.caption))
-                    Flexible(
-                      fit: !isNullOrEmpty(data.userInfo?.secondarySubcaption) ? FlexFit.tight : FlexFit.loose,
-                      child: Text(
-                        data.userInfo!.caption!,
-                        style: context.theme.textTheme.bodyLarge!.apply(fontWeightDelta: 2),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  if (isNullOrEmpty(data.userInfo?.caption) && !isNullOrEmpty(data.ldText))
-                    Flexible(
-                      fit: !isNullOrEmpty(data.userInfo?.secondarySubcaption) ? FlexFit.tight : FlexFit.loose,
-                      child: Text(
-                        data.ldText!,
-                        style: context.theme.textTheme.bodyLarge!.apply(fontWeightDelta: 2),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  if (!isNullOrEmpty(data.userInfo?.secondarySubcaption))
-                    Text(
-                      data.userInfo!.secondarySubcaption!,
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (!isNullOrEmpty(data.userInfo?.caption))
+                  Flexible(
+                    fit: !isNullOrEmpty(data.userInfo?.secondarySubcaption) ? FlexFit.tight : FlexFit.loose,
+                    child: Text(
+                      data.userInfo!.caption!,
                       style: context.theme.textTheme.bodyLarge!.apply(fontWeightDelta: 2),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                ],
-              ),
-              if (!isNullOrEmpty(data.userInfo?.subcaption))
-                const SizedBox(height: 2.5),
-              if (!isNullOrEmpty(data.userInfo?.subcaption))
-                Text(
-                  data.userInfo!.subcaption!,
+                  ),
+                if (isNullOrEmpty(data.userInfo?.caption) && !isNullOrEmpty(data.ldText))
+                  Flexible(
+                    fit: !isNullOrEmpty(data.userInfo?.secondarySubcaption) ? FlexFit.tight : FlexFit.loose,
+                    child: Text(
+                      data.ldText!,
+                      style: context.theme.textTheme.bodyLarge!.apply(fontWeightDelta: 2),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                if (!isNullOrEmpty(data.userInfo?.secondarySubcaption))
+                  Text(
+                    data.userInfo!.secondarySubcaption!,
+                    style: context.theme.textTheme.bodyLarge!.apply(fontWeightDelta: 2),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+              ],
+            ),
+            if (!isNullOrEmpty(data.userInfo?.subcaption)) const SizedBox(height: 2.5),
+            if (!isNullOrEmpty(data.userInfo?.subcaption))
+              Text(data.userInfo!.subcaption!,
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
-                  style: context.theme.textTheme.labelMedium!.copyWith(fontWeight: FontWeight.normal)
-                ),
-              if (!isNullOrEmpty(data.appName))
-                const SizedBox(height: 5),
-              if (!isNullOrEmpty(data.appName))
-                Text(
-                  data.appName!,
-                  style: context.theme.textTheme.labelMedium!.copyWith(fontWeight: FontWeight.normal, color: context.theme.colorScheme.outline),
-                  overflow: TextOverflow.clip,
-                  maxLines: 1,
-                ),
-            ]
-          ),
+                  style: context.theme.textTheme.labelMedium!.copyWith(fontWeight: FontWeight.normal)),
+            if (!isNullOrEmpty(data.appName)) const SizedBox(height: 5),
+            if (!isNullOrEmpty(data.appName))
+              Text(
+                data.appName!,
+                style: context.theme.textTheme.labelMedium!
+                    .copyWith(fontWeight: FontWeight.normal, color: context.theme.colorScheme.outline),
+                overflow: TextOverflow.clip,
+                maxLines: 1,
+              ),
+          ]),
         )
       ],
     );

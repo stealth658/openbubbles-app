@@ -67,7 +67,8 @@ class Database {
       }
 
       bool setupFinished2 = PrefsSvc.i.getBool('finishedSetup') ?? false;
-      Logger.info("Database init: SettingsSvc.finishedSetup = $setupFinished, PrefsSvc.finishedSetup = $setupFinished2");
+      Logger.info(
+          "Database init: SettingsSvc.finishedSetup = $setupFinished, PrefsSvc.finishedSetup = $setupFinished2");
 
       if (!setupFinished) {
         Logger.warn("Clearing database because setup is not finished...");
@@ -164,21 +165,23 @@ class Database {
   }
 
   static Future<void> _performDatabaseMigrations({int? versionOverride}) async {
-    int version = versionOverride ?? PrefsSvc.i.getInt('dbVersion') ?? (SettingsSvc.settings.finishedSetup.value ? 1 : Database.version);
+    int version = versionOverride ??
+        PrefsSvc.i.getInt('dbVersion') ??
+        (SettingsSvc.settings.finishedSetup.value ? 1 : Database.version);
     if (version >= Database.version) return;
 
     final Stopwatch s = Stopwatch();
     s.start();
 
     Logger.debug("Performing database migration from version $version to ${Database.version}", tag: "DB-Migration");
-    
+
     // Migrate one version at a time, starting from current version
     int currentVersion = version;
-    
+
     while (currentVersion < Database.version) {
       final int nextVersion = currentVersion + 1;
       Logger.info("Migrating from version $currentVersion to $nextVersion...", tag: "DB-Migration");
-      
+
       switch (nextVersion) {
         // Version 2 changed handleId to match the server side ROWID, rather than client side ROWID
         case 2:
@@ -195,7 +198,7 @@ class Database {
             Database.messages.putMany(messages);
           }
           break;
-          
+
         // Version 3 modifies chat typing indicators and read receipts values to follow global setting initially
         case 3:
           final chats = Database.chats.getAll();
@@ -216,13 +219,13 @@ class Database {
           }
           Database.chats.putMany(chats);
           break;
-          
+
         // Version 4 saves FCM Data to the shared preferences for use in Tasker integration
         case 4:
           SettingsSvc.loadFcmDataFromDatabase();
           SettingsSvc.fcmData.save();
           break;
-          
+
         case 5:
           // Find the Bright White theme and reset it back to the default (new colors)
           final brightWhite = Database.themes.query(ThemeStruct_.name.equals("Bright White")).build().findFirst();
@@ -238,14 +241,14 @@ class Database {
             Database.themes.put(oled, mode: PutMode.update);
           }
           break;
-        
+
         // Version 6: Migrate Message.handle from embedded object to ToOne relationship (Phase 2)
         case 6:
           Logger.info("Executing Message-Handle relationship migration (Phase 2)...", tag: "DB-Migration");
           MessageHandleRelationshipMigration.migrate();
           break;
       }
-      
+
       // Update the current version and save it
       currentVersion = nextVersion;
       await PrefsSvc.i.setInt('dbVersion', currentVersion);

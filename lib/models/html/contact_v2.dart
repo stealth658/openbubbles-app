@@ -25,14 +25,14 @@ class ContactV2 {
   String? get initials {
     final parts = displayName.trim().split(' ');
     if (parts.isEmpty || displayName.isEmpty) return null;
-    
+
     if (parts.length == 1) {
       return parts[0].isNotEmpty ? parts[0][0].toUpperCase() : null;
     }
-    
+
     final first = parts.first.isNotEmpty ? parts.first[0] : '';
     final last = parts.last.isNotEmpty ? parts.last[0] : '';
-    
+
     return (first + last).isEmpty ? null : (first + last).toUpperCase();
   }
 
@@ -47,14 +47,11 @@ class ContactV2 {
   }
 
   bool hasMatchingAddress(String address) {
-    final normalized = address.contains('@') 
-        ? normalizeEmail(address) 
-        : normalizePhoneNumber(address);
-    
+    final normalized = address.contains('@') ? normalizeEmail(address) : normalizePhoneNumber(address);
+
     return addresses.any((contactAddress) {
-      final contactNormalized = contactAddress.contains('@')
-          ? normalizeEmail(contactAddress)
-          : normalizePhoneNumber(contactAddress);
+      final contactNormalized =
+          contactAddress.contains('@') ? normalizeEmail(contactAddress) : normalizePhoneNumber(contactAddress);
       return contactNormalized == normalized;
     });
   }

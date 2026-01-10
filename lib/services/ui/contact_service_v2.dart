@@ -67,7 +67,7 @@ class ContactServiceV2 {
   /// [headless] - If true, skips operations that require UI or user interaction (for isolate usage)
   Future<void> init({bool headless = false}) async {
     Logger.info('[ContactServiceV2] Initializing... (headless: $headless)');
-    
+
     // We only want to call the sync operations if we're not in heardless mode.
     // The UI thread will invoke these methods on init, but should not wait for them to complete.
     // The isolate does not need to perform these operations on startup as no state is required.
@@ -100,13 +100,14 @@ class ContactServiceV2 {
       } else {
         // Fire and forget
         ContactV2Interface.syncContactsToHandles().then((affectedHandleIds) {
-          Logger.info('[ContactServiceV2] Completed contact sync, notifying UI of ${affectedHandleIds.length} affected handles');
+          Logger.info(
+              '[ContactServiceV2] Completed contact sync, notifying UI of ${affectedHandleIds.length} affected handles');
           notifyHandlesUpdated(affectedHandleIds);
         }).catchError((e, stack) {
           Logger.error('[ContactServiceV2] Error in async contact fetch and match', error: e, trace: stack);
         });
       }
-      
+
       Logger.info('[ContactServiceV2] Completed contact fetch and match');
       return affectedHandleIds;
     } catch (e, stack) {
@@ -161,14 +162,14 @@ class ContactServiceV2 {
     for (final id in handleIds) {
       handleUpdateStatus[id] = timestamp;
     }
-    
+
     // Update chats that have these handles as participants
     // This ensures chat titles and headers reflect the new contact names
     if (!kIsWeb && !kIsDesktop) {
       _updateChatsForHandles(handleIds);
     }
   }
-  
+
   /// Update chats that contain the affected handles
   void _updateChatsForHandles(List<int> handleIds) {
     try {
@@ -176,12 +177,12 @@ class ContactServiceV2 {
       if (!Get.isRegistered<ChatsService>()) {
         return;
       }
-      
+
       // Find all chats that have any of these handles as participants
       for (final handleId in handleIds) {
         final handle = Database.handles.get(handleId);
         if (handle == null) continue;
-        
+
         // Get all chats this handle participates in
         final chatsWithHandle = Database.chats
             .query(Chat_.dateDeleted.isNull())
@@ -189,7 +190,7 @@ class ContactServiceV2 {
             .find()
             .where((chat) => chat.handles.any((p) => p.id == handleId))
             .toList();
-        
+
         // Update each chat in the ChatsService to trigger UI updates
         for (final chat in chatsWithHandle) {
           // Force the chat to recalculate its title
@@ -275,20 +276,16 @@ class ContactServiceV2 {
       logger?.call("Fetching contacts from server...");
       final contactMaps = await ContactV2Interface.fetchNetworkContacts();
       logger?.call("Fetched ${contactMaps.length} contacts");
-      
+
       final contacts = contactMaps.map((m) => ContactV2.fromMap(m)).toList();
-      
+
       // Notify about all handles that might have been updated
-      final allHandleIds = contacts
-          .expand((c) => c.handles)
-          .where((h) => h.id != null)
-          .map((h) => h.id!)
-          .toList();
-      
+      final allHandleIds = contacts.expand((c) => c.handles).where((h) => h.id != null).map((h) => h.id!).toList();
+
       if (allHandleIds.isNotEmpty) {
         notifyHandlesUpdated(allHandleIds);
       }
-      
+
       return contacts;
     } catch (e, stack) {
       Logger.error('[ContactServiceV2] Error fetching network contacts', error: e, trace: stack);

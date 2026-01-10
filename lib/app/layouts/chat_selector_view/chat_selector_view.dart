@@ -161,11 +161,11 @@ class ChatSelectorViewState extends OptimizedState<ChatSelectorView> {
                                     );
                                   }
                                   final chat = filteredChats[index];
-                                  final hideInfo = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
+                                  final hideInfo = SettingsSvc.settings.redactedMode.value &&
+                                      SettingsSvc.settings.hideContactInfo.value;
                                   String _title = chat.properTitle;
                                   if (hideInfo) {
-                                    _title =
-                                        chat.isGroup ? chat.fakeName : chat.handles[0].fakeName;
+                                    _title = chat.isGroup ? chat.fakeName : chat.handles[0].fakeName;
                                   }
                                   return Material(
                                     color: Colors.transparent,
@@ -180,8 +180,7 @@ class ChatSelectorViewState extends OptimizedState<ChatSelectorView> {
                                         subtitle: hideInfo
                                             ? ""
                                             : !chat.isGroup
-                                                ? (chat.handles.first.formattedAddress ??
-                                                    chat.handles.first.address)
+                                                ? (chat.handles.first.formattedAddress ?? chat.handles.first.address)
                                                 : chat.getChatCreatorSubtitle(),
                                         chat: chat,
                                         showTrailing: false,

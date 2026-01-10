@@ -10,19 +10,19 @@ class ImageActions {
     try {
       final path = fileData['path'] as String?;
       final bytes = fileData['bytes'] as Uint8List?;
-      
+
       // Get image bytes from either bytes or file path
       final Uint8List? imageBytes = bytes ?? (path != null && !kIsWeb ? File(path).readAsBytesSync() : null);
-      
+
       if (imageBytes == null) {
         return null;
       }
-      
+
       final image = decodeImage(imageBytes);
       if (image == null) {
         return null;
       }
-      
+
       return Uint8List.fromList(encodePng(image));
     } catch (e) {
       Logger.warn('Error converting image to PNG: $e');
@@ -47,7 +47,7 @@ class ImageActions {
 
       // Read EXIF data
       final exifData = await readExifFromFile(file);
-      
+
       // Convert IfdTag values to strings for serialization
       final result = <String, String>{};
       for (var entry in exifData.entries) {
@@ -78,7 +78,7 @@ class ImageActions {
 
       // Only read the first 10 bytes needed for GIF dimensions
       final bytes = await file.openRead(0, 10).first;
-      
+
       String hexString = "";
       // Bytes 6 and 7 are the width bytes of a gif
       hexString += hex.encode(bytes.sublist(7, 8));
@@ -90,7 +90,7 @@ class ImageActions {
       hexString += hex.encode(bytes.sublist(9, 10));
       hexString += hex.encode(bytes.sublist(8, 9));
       int height = int.parse(hexString, radix: 16);
-      
+
       return {'width': width, 'height': height};
     } catch (e) {
       Logger.warn('Error reading GIF dimensions: $e');

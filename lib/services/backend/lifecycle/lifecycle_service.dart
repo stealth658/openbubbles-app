@@ -24,17 +24,22 @@ class LifecycleService with WidgetsBindingObserver {
   bool windowFocused = true;
   bool? wasActiveAliveBefore;
   bool _keepAppAlive = false;
-  
-  bool get isAlive => kIsWeb ? !(window.document.hidden ?? false)
-      : kIsDesktop ? windowFocused : (WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed
-        || IsolateNameServer.lookupPortByName('bg_isolate') != null);
+
+  bool get isAlive => kIsWeb
+      ? !(window.document.hidden ?? false)
+      : kIsDesktop
+          ? windowFocused
+          : (WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed ||
+              IsolateNameServer.lookupPortByName('bg_isolate') != null);
 
   AppLifecycleState? get currentState => WidgetsBinding.instance.lifecycleState;
 
   List<AppLifecycleState> statesSinceLastResume = [];
 
   bool get wasPaused => statesSinceLastResume.contains(AppLifecycleState.paused);
-  bool get wasHidden => statesSinceLastResume.contains(AppLifecycleState.inactive) || statesSinceLastResume.contains(AppLifecycleState.detached);
+  bool get wasHidden =>
+      statesSinceLastResume.contains(AppLifecycleState.inactive) ||
+      statesSinceLastResume.contains(AppLifecycleState.detached);
   bool get hasResumed => statesSinceLastResume.contains(AppLifecycleState.resumed);
 
   bool incrementalSyncShouldRun = false;
@@ -64,7 +69,7 @@ class LifecycleService with WidgetsBindingObserver {
       final lastResumeIndex = statesSinceLastResume.lastIndexOf(AppLifecycleState.resumed);
       statesSinceLastResume.removeRange(0, lastResumeIndex + 1);
     }
-    
+
     // Add the new state
     statesSinceLastResume.add(state);
 

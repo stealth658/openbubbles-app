@@ -38,6 +38,7 @@ class Handle {
     if (contact != null) return contact!.displayName;
     return address.contains("@") ? address : (formattedAddress ?? address);
   }
+
   String? get initials {
     // Remove any numbers, certain symbols, and non-alphabet characters
     if (address.startsWith("urn:biz")) return null;
@@ -46,11 +47,8 @@ class Handle {
 
     // Split by a space or special character delimiter, take each of the items and
     // reduce it to just the capitalized first letter. Then join the array by an empty char
-    String reduced = importantChars
-        .split(RegExp(r'[ \-_]'))
-        .take(2)
-        .map((e) => e.isEmpty ? '' : e[0].toUpperCase())
-        .join('');
+    String reduced =
+        importantChars.split(RegExp(r'[ \-_]')).take(2).map((e) => e.isEmpty ? '' : e[0].toUpperCase()).join('');
     return reduced.isEmpty ? null : reduced;
   }
 
@@ -76,16 +74,16 @@ class Handle {
   }
 
   factory Handle.fromMap(Map<String, dynamic> json) => Handle(
-    id: json["ROWID"] ?? json["id"],
-    originalROWID: json["originalROWID"],
-    address: json["address"],
-    service: json["service"] ?? "iMessage",
-    uniqueAddressAndService: json["uniqueAddrAndService"] ?? "${json["address"]}/${json["service"] ?? "iMessage"}",
-    formattedAddress: json["formattedAddress"],
-    country: json["country"],
-    handleColor: json["color"],
-    defaultPhone: json['defaultPhone'],
-  );
+        id: json["ROWID"] ?? json["id"],
+        originalROWID: json["originalROWID"],
+        address: json["address"],
+        service: json["service"] ?? "iMessage",
+        uniqueAddressAndService: json["uniqueAddrAndService"] ?? "${json["address"]}/${json["service"] ?? "iMessage"}",
+        formattedAddress: json["formattedAddress"],
+        country: json["country"],
+        handleColor: json["color"],
+        defaultPhone: json['defaultPhone'],
+      );
 
   Handle save({updateColor = false}) {
     return this;
@@ -115,7 +113,9 @@ class Handle {
 
   static Handle? findOne({int? id, int? originalROWID, Tuple2<String, String>? addressAndService}) {
     // ignore: argument_type_not_assignable, return_of_invalid_type, invalid_assignment, for_in_of_invalid_element_type
-    return ChatsSvc.webCachedHandles.firstWhereOrNull((e) => originalROWID != null ? e.originalROWID == originalROWID : e.uniqueAddressAndService == "${addressAndService?.item1}/${addressAndService?.item2}");
+    return ChatsSvc.webCachedHandles.firstWhereOrNull((e) => originalROWID != null
+        ? e.originalROWID == originalROWID
+        : e.uniqueAddressAndService == "${addressAndService?.item1}/${addressAndService?.item2}");
   }
 
   static List<Handle> find() {

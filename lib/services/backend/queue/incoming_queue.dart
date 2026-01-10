@@ -7,7 +7,6 @@ import 'package:get/get.dart';
 IncomingQueue inq = Get.isRegistered<IncomingQueue>() ? Get.find<IncomingQueue>() : Get.put(IncomingQueue());
 
 class IncomingQueue extends Queue {
-
   @override
   Future<void> prepItem(QueueItem _) async {}
 

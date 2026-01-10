@@ -25,7 +25,7 @@ class AttachmentActions {
       Attachment? existing = AttachmentActions.findOne(attachment.guid!);
       if (existing != null) {
         attachment.id = existing.id;
-        
+
         // Always preserve the existing message relationship unless explicitly overridden
         if (existing.message.hasValue) {
           attachment.message.target = existing.message.target;
@@ -62,7 +62,7 @@ class AttachmentActions {
 
     /// convert List<List<Attachment>> into just List<Attachment> (flatten it)
     final attachments = map.values.flattened.toList();
-    
+
     /// find existing attachments using query descriptor
     final guids = attachments.map((e) => e.guid!).toList();
     final queryDescriptor = AttachmentQueryDescriptor(
@@ -74,25 +74,25 @@ class AttachmentActions {
         ),
       ],
     );
-    
+
     List<Attachment> existingAttachments = await Attachment.findAsync(
       queryDescriptor: queryDescriptor,
     );
-    
+
     return Database.runInTransaction(TxMode.write, () {
       /// map existing attachment IDs and preserve message relationships
       for (Attachment a in attachments) {
         final existing = existingAttachments.firstWhereOrNull((e) => e.guid == a.guid);
         if (existing != null) {
           a.id = existing.id;
-          
+
           // Preserve the existing message relationship to prevent it from being cleared by put
           if (existing.message.hasValue && !a.message.hasValue) {
             a.message.target = existing.message.target;
           }
         }
       }
-      
+
       try {
         /// store the attachments and update their ids
         final ids = Database.attachments.putMany(attachments);
@@ -136,7 +136,7 @@ class AttachmentActions {
       newAttachment.width = existing.width;
       newAttachment.height = existing.height;
       newAttachment.metadata = existing.metadata;
-      
+
       // Return just the ID for efficient transfer across isolates
       return newAttachment.id!;
     });
@@ -162,18 +162,15 @@ class AttachmentActions {
 
   static Future<List<int>> findAttachmentsAsync(Map<String, dynamic> data) async {
     final queryDescriptorMap = data['queryDescriptor'] as Map<String, dynamic>?;
-    
+
     return Database.runInTransaction(TxMode.read, () {
       final attachmentBox = Database.attachments;
 
       // Build condition from descriptor if provided
-      final Condition<Attachment>? condition = queryDescriptorMap != null
-          ? AttachmentQueryDescriptor.fromMap(queryDescriptorMap).buildCondition()
-          : null;
+      final Condition<Attachment>? condition =
+          queryDescriptorMap != null ? AttachmentQueryDescriptor.fromMap(queryDescriptorMap).buildCondition() : null;
 
-      final queryBuilder = condition != null 
-          ? attachmentBox.query(condition)
-          : attachmentBox.query();
+      final queryBuilder = condition != null ? attachmentBox.query(condition) : attachmentBox.query();
       queryBuilder.link(Attachment_.message);
       final query = queryBuilder.build();
       final results = query.find();
@@ -191,7 +188,7 @@ class AttachmentActions {
       final query = Database.attachments.query(Attachment_.guid.equals(guid)).build();
       final result = query.findFirst();
       query.close();
-      
+
       if (result?.id != null) {
         Database.attachments.remove(result!.id!);
       }

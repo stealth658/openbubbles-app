@@ -56,8 +56,7 @@ class ConnectionServerTile extends StatelessWidget {
         },
         onLongPress: () {
           Clipboard.setData(ClipboardData(text: HttpSvc.origin));
-          if (!Platform.isAndroid ||
-              (FilesystemSvc.androidInfo?.version.sdkInt ?? 0) < 33) {
+          if (!Platform.isAndroid || (FilesystemSvc.androidInfo?.version.sdkInt ?? 0) < 33) {
             showSnackbar("Copied", "Server address copied to clipboard!");
           }
         },
@@ -84,15 +83,9 @@ class ConnectionServerTile extends StatelessWidget {
                   alignment: Alignment.center,
                   children: [
                     Icon(
-                      iOS
-                          ? CupertinoIcons.antenna_radiowaves_left_right
-                          : Icons.router,
-                      color: SettingsSvc.settings.skin.value != Skins.Material
-                          ? Colors.white
-                          : Colors.grey,
-                      size: SettingsSvc.settings.skin.value != Skins.Material
-                          ? 21
-                          : 28,
+                      iOS ? CupertinoIcons.antenna_radiowaves_left_right : Icons.router,
+                      color: SettingsSvc.settings.skin.value != Skins.Material ? Colors.white : Colors.grey,
+                      size: SettingsSvc.settings.skin.value != Skins.Material ? 21 : 28,
                     ),
                     if (material)
                       Positioned.fill(
@@ -116,8 +109,7 @@ class ConnectionServerTile extends StatelessWidget {
           children: [
             Text(
               subtitle,
-              style: context.theme.textTheme.bodyMedium!.apply(
-                  color: context.theme.colorScheme.outline.withAlpha(220)),
+              style: context.theme.textTheme.bodyMedium!.apply(color: context.theme.colorScheme.outline.withAlpha(220)),
             ),
             const SizedBox(width: 5),
             const NextButton(),

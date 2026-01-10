@@ -15,7 +15,6 @@ class AudioPlayer extends StatefulWidget {
   final Attachment? attachment;
   final String? transcript;
 
-
   AudioPlayer({
     super.key,
     required this.file,
@@ -27,8 +26,7 @@ class AudioPlayer extends StatefulWidget {
   final ConversationViewController? controller;
 
   @override
-  OptimizedState createState() =>
-      kIsDesktop ? _DesktopAudioPlayerState() : _AudioPlayerState();
+  OptimizedState createState() => kIsDesktop ? _DesktopAudioPlayerState() : _AudioPlayerState();
 }
 
 class _AudioPlayerState extends OptimizedState<AudioPlayer>
@@ -41,15 +39,12 @@ class _AudioPlayerState extends OptimizedState<AudioPlayer>
 
   PlayerController? controller;
   late final animController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 400),
-      animationBehavior: AnimationBehavior.preserve);
+      vsync: this, duration: const Duration(milliseconds: 400), animationBehavior: AnimationBehavior.preserve);
 
   @override
   void initState() {
     super.initState();
-    if (attachment != null)
-      controller = cvController?.audioPlayers[attachment!.guid];
+    if (attachment != null) controller = cvController?.audioPlayers[attachment!.guid];
     updateObx(() {
       initBytes();
     });
@@ -65,24 +60,21 @@ class _AudioPlayerState extends OptimizedState<AudioPlayer>
   }
 
   void initBytes() async {
-    if (attachment != null)
-      controller = cvController?.audioPlayers[attachment!.guid];
+    if (attachment != null) controller = cvController?.audioPlayers[attachment!.guid];
     if (controller == null) {
       controller = PlayerController()
         ..addListener(() {
           setState(() {});
         });
       controller!.onPlayerStateChanged.listen((event) {
-        if ((controller!.playerState == PlayerState.paused ||
-                controller!.playerState == PlayerState.stopped) &&
+        if ((controller!.playerState == PlayerState.paused || controller!.playerState == PlayerState.stopped) &&
             animController.value > 0) {
           animController.reverse();
         }
         setState(() {});
       });
       await controller!.preparePlayer(path: file.path!);
-      if (attachment != null)
-        cvController?.audioPlayers[attachment!.guid!] = controller!;
+      if (attachment != null) cvController?.audioPlayers[attachment!.guid!] = controller!;
     }
     setState(() {});
   }
@@ -92,10 +84,7 @@ class _AudioPlayerState extends OptimizedState<AudioPlayer>
     super.build(context);
     return Padding(
         padding: const EdgeInsets.all(5),
-        child: Column(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-          children: [
+        child: Column(mainAxisSize: MainAxisSize.min, mainAxisAlignment: MainAxisAlignment.center, children: [
           Row(
             children: [
               IconButton(
@@ -125,11 +114,8 @@ class _AudioPlayerState extends OptimizedState<AudioPlayer>
                       playerController: controller!,
                       padding: EdgeInsets.zero,
                       playerWaveStyle: PlayerWaveStyle(
-                          fixedWaveColor: context
-                              .theme.colorScheme.properSurface
-                              .oppositeLightenOrDarken(20),
-                          liveWaveColor:
-                              context.theme.colorScheme.properOnSurface,
+                          fixedWaveColor: context.theme.colorScheme.properSurface.oppositeLightenOrDarken(20),
+                          liveWaveColor: context.theme.colorScheme.properOnSurface,
                           waveCap: StrokeCap.square,
                           waveThickness: 2,
                           seekLineThickness: 2,
@@ -139,9 +125,7 @@ class _AudioPlayerState extends OptimizedState<AudioPlayer>
               Expanded(
                 child: Center(
                   heightFactor: 1,
-                  child: Text(
-                      prettyDuration(
-                          Duration(milliseconds: controller?.maxDuration ?? 0)),
+                  child: Text(prettyDuration(Duration(milliseconds: controller?.maxDuration ?? 0)),
                       style: context.theme.textTheme.labelLarge!),
                 ),
               ),
@@ -172,15 +156,12 @@ class _DesktopAudioPlayerState extends OptimizedState<AudioPlayer>
 
   Player? controller;
   late final animController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 400),
-      animationBehavior: AnimationBehavior.preserve);
+      vsync: this, duration: const Duration(milliseconds: 400), animationBehavior: AnimationBehavior.preserve);
 
   @override
   void initState() {
     super.initState();
-    if (attachment != null)
-      controller = cvController?.audioPlayersDesktop[attachment!.guid];
+    if (attachment != null) controller = cvController?.audioPlayersDesktop[attachment!.guid];
     updateObx(() {
       initBytes();
     });
@@ -196,8 +177,7 @@ class _DesktopAudioPlayerState extends OptimizedState<AudioPlayer>
   }
 
   void initBytes() async {
-    if (attachment != null)
-      controller = cvController?.audioPlayersDesktop[attachment!.guid];
+    if (attachment != null) controller = cvController?.audioPlayersDesktop[attachment!.guid];
     if (controller == null) {
       controller = Player()
         ..stream.position.listen((position) => setState(() {}))
@@ -213,8 +193,7 @@ class _DesktopAudioPlayerState extends OptimizedState<AudioPlayer>
         });
       await controller!.setPlaylistMode(PlaylistMode.none);
       await controller!.open(Media(file.path!), play: false);
-      if (attachment != null)
-        cvController?.audioPlayersDesktop[attachment!.guid!] = controller!;
+      if (attachment != null) cvController?.audioPlayersDesktop[attachment!.guid!] = controller!;
     }
     setState(() {});
   }

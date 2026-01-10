@@ -49,7 +49,9 @@ class _AdvancedThemingPanelState extends OptimizedState<AdvancedThemingPanel> wi
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
-        systemNavigationBarColor: SettingsSvc.settings.immersiveMode.value ? Colors.transparent : context.theme.colorScheme.background, // navigation bar color
+        systemNavigationBarColor: SettingsSvc.settings.immersiveMode.value
+            ? Colors.transparent
+            : context.theme.colorScheme.background, // navigation bar color
         systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
         statusBarColor: Colors.transparent, // status bar color
         statusBarIconBrightness: context.theme.colorScheme.brightness.opposite,
@@ -59,35 +61,35 @@ class _AdvancedThemingPanelState extends OptimizedState<AdvancedThemingPanel> wi
         appBar: PreferredSize(
           preferredSize: Size(NavigationSvc.width(context), 50),
           child: AppBar(
-            systemOverlayStyle: context.theme.colorScheme.brightness == Brightness.dark
-                ? SystemUiOverlayStyle.light
-                : SystemUiOverlayStyle.dark,
-            toolbarHeight: 50,
-            elevation: 0,
-            scrolledUnderElevation: 3,
-            surfaceTintColor: context.theme.colorScheme.primary,
-            leading: buildBackButton(context),
-            backgroundColor: headerColor,
-            centerTitle: iOS,
-            title: Text(
-              "Advanced Theming",
-              style: context.theme.textTheme.titleLarge,
-            ),
-            actions: [
-              if (oldThemes.isNotEmpty)
-                TextButton(
-                  child: Text("View Old", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
-                  onPressed: () {
-                    showDialog(
-                        context: context,
-                        builder: (context) => OldThemesDialog(
-                          oldThemes, clearOld,
-                        )
-                    );
-                  },
-                ),
-            ]
-          ),
+              systemOverlayStyle: context.theme.colorScheme.brightness == Brightness.dark
+                  ? SystemUiOverlayStyle.light
+                  : SystemUiOverlayStyle.dark,
+              toolbarHeight: 50,
+              elevation: 0,
+              scrolledUnderElevation: 3,
+              surfaceTintColor: context.theme.colorScheme.primary,
+              leading: buildBackButton(context),
+              backgroundColor: headerColor,
+              centerTitle: iOS,
+              title: Text(
+                "Advanced Theming",
+                style: context.theme.textTheme.titleLarge,
+              ),
+              actions: [
+                if (oldThemes.isNotEmpty)
+                  TextButton(
+                    child: Text("View Old",
+                        style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+                    onPressed: () {
+                      showDialog(
+                          context: context,
+                          builder: (context) => OldThemesDialog(
+                                oldThemes,
+                                clearOld,
+                              ));
+                    },
+                  ),
+              ]),
         ),
         body: TabBarView(
           controller: controller,
@@ -104,16 +106,16 @@ class _AdvancedThemingPanelState extends OptimizedState<AdvancedThemingPanel> wi
           ],
         ),
         floatingActionButton: FloatingActionButton.extended(
-          backgroundColor: context.theme.colorScheme.primary,
-          onPressed: () {
-            streamController.sink.add(null);
-          },
-          label: Text("Create New", style: context.theme.textTheme.labelLarge!.copyWith(color: context.theme.colorScheme.onPrimary)),
-          icon: Icon(
-            iOS ? CupertinoIcons.pencil : Icons.edit,
-            color: context.theme.colorScheme.onPrimary,
-          )
-        ),
+            backgroundColor: context.theme.colorScheme.primary,
+            onPressed: () {
+              streamController.sink.add(null);
+            },
+            label: Text("Create New",
+                style: context.theme.textTheme.labelLarge!.copyWith(color: context.theme.colorScheme.onPrimary)),
+            icon: Icon(
+              iOS ? CupertinoIcons.pencil : Icons.edit,
+              color: context.theme.colorScheme.onPrimary,
+            )),
         bottomNavigationBar: NavigationBar(
           selectedIndex: index,
           backgroundColor: headerColor,

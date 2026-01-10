@@ -104,8 +104,8 @@ class ThemeObject {
           titleSmall: data[ThemeColors.Subtitle2]!.style,
         ),
         colorScheme: ColorScheme.fromSwatch(
-            accentColor: data[ThemeColors.AccentColor]!.style,
-            backgroundColor: data[ThemeColors.BackgroundColor]!.style,
+          accentColor: data[ThemeColors.AccentColor]!.style,
+          backgroundColor: data[ThemeColors.BackgroundColor]!.style,
         ),
         dividerColor: data[ThemeColors.DividerColor]!.style,
         primaryColor: data[ThemeColors.PrimaryColor]!.style);

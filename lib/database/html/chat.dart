@@ -63,6 +63,7 @@ class Chat {
     title ??= getTitle();
     return title!;
   }
+
   String? displayName;
   List<Handle> participants = [];
   bool? autoSendReadReceipts = true;
@@ -72,12 +73,14 @@ class Chat {
   Message? _latestMessage;
   Message get latestMessage {
     if (_latestMessage != null) return _latestMessage!;
-    _latestMessage = Chat.getMessages(this, limit: 1, getDetails: true).firstOrNull ?? Message(
-      dateCreated: DateTime.fromMillisecondsSinceEpoch(0),
-      guid: guid,
-    );
+    _latestMessage = Chat.getMessages(this, limit: 1, getDetails: true).firstOrNull ??
+        Message(
+          dateCreated: DateTime.fromMillisecondsSinceEpoch(0),
+          guid: guid,
+        );
     return _latestMessage!;
   }
+
   set latestMessage(Message m) => _latestMessage = m;
   DateTime? dbOnlyLatestMessageDate;
   DateTime? dateDeleted;
@@ -198,7 +201,9 @@ class Chat {
   /// Get a chat's title
   String getChatCreatorSubtitle() {
     // generate names for group chats or DMs
-    List<String> titles = participants.map((e) => e.displayName.trim().split(isGroup && e.contact != null ? " " : String.fromCharCode(65532)).first).toList();
+    List<String> titles = participants
+        .map((e) => e.displayName.trim().split(isGroup && e.contact != null ? " " : String.fromCharCode(65532)).first)
+        .toList();
     if (titles.isEmpty) {
       if (chatIdentifier!.startsWith("urn:biz")) {
         return "Business Chat";
@@ -269,7 +274,8 @@ class Chat {
     return;
   }
 
-  Chat toggleHasUnread(bool hasUnread, {bool force = false, bool clearLocalNotifications = true, bool privateMark = true}) {
+  Chat toggleHasUnread(bool hasUnread,
+      {bool force = false, bool clearLocalNotifications = true, bool privateMark = true}) {
     if (hasUnreadMessage == hasUnread && !force) return this;
     if (!ChatsSvc.isChatActive(guid) || !hasUnread || force) {
       hasUnreadMessage = hasUnread;
@@ -277,7 +283,9 @@ class Chat {
     }
 
     try {
-      if (privateMark && SettingsSvc.settings.enablePrivateAPI.value && SettingsSvc.settings.privateMarkChatAsRead.value) {
+      if (privateMark &&
+          SettingsSvc.settings.enablePrivateAPI.value &&
+          SettingsSvc.settings.privateMarkChatAsRead.value) {
         if (!hasUnread && autoSendReadReceipts!) {
           HttpSvc.markChatRead(guid);
         } else if (hasUnread) {
@@ -289,7 +297,8 @@ class Chat {
     return this;
   }
 
-  Future<Chat> addMessage(Message message, {bool changeUnreadStatus = true, bool checkForMessageText = true, bool clearNotificationsIfFromMe = true}) async {
+  Future<Chat> addMessage(Message message,
+      {bool changeUnreadStatus = true, bool checkForMessageText = true, bool clearNotificationsIfFromMe = true}) async {
     // Save the message
     Message? latest = latestMessage;
     Message? newMessage;
@@ -299,7 +308,8 @@ class Chat {
     } catch (ex, stacktrace) {
       newMessage = Message.findOne(guid: message.guid);
       if (newMessage == null) {
-        Logger.error("Failed to add message (GUID: ${message.guid}) to chat (GUID: $guid)", error: ex, trace: stacktrace);
+        Logger.error("Failed to add message (GUID: ${message.guid}) to chat (GUID: $guid)",
+            error: ex, trace: stacktrace);
       }
     }
     bool isNewer = false;
@@ -307,8 +317,8 @@ class Chat {
     // If the message was saved correctly, update this chat's latestMessage info,
     // but only if the incoming message's date is newer
     if ((newMessage?.id != null || kIsWeb) && checkForMessageText) {
-      isNewer = message.dateCreated!.isAfter(latest.dateCreated!)
-          || (message.guid != latest.guid && message.dateCreated == latest.dateCreated);
+      isNewer = message.dateCreated!.isAfter(latest.dateCreated!) ||
+          (message.guid != latest.guid && message.dateCreated == latest.dateCreated);
       if (isNewer) {
         _latestMessage = message;
         dateDeleted = null;
@@ -379,11 +389,10 @@ class Chat {
     return [];
   }
 
-
-
   void webSyncParticipants() {
     // ignore: argument_type_not_assignable, return_of_invalid_type, invalid_assignment, for_in_of_invalid_element_type
-    participants = ChatsSvc.webCachedHandles.where((e) => participants.map((e2) => e2.address).contains(e.address)).toList();
+    participants =
+        ChatsSvc.webCachedHandles.where((e) => participants.map((e2) => e2.address).contains(e.address)).toList();
   }
 
   Chat addParticipant(Handle participant) {
@@ -545,24 +554,24 @@ class Chat {
   static Future<void> getIcon(Chat c, {bool force = false}) async {}
 
   Map<String, dynamic> toMap() => {
-    "ROWID": id,
-    "guid": guid,
-    "chatIdentifier": chatIdentifier,
-    "isArchived": isArchived!,
-    "muteType": muteType,
-    "muteArgs": muteArgs,
-    "isPinned": isPinned!,
-    "displayName": displayName,
-    "participants": participants.map((item) => item.toMap()).toList(),
-    "hasUnreadMessage": hasUnreadMessage!,
-    "_customAvatarPath": _customAvatarPath.value,
-    "_pinIndex": _pinIndex.value,
-    "autoSendReadReceipts": autoSendReadReceipts!,
-    "autoSendTypingIndicators": autoSendTypingIndicators!,
-    "dateDeleted": dateDeleted?.millisecondsSinceEpoch,
-    "style": style,
-    "lockChatName": lockChatName,
-    "lockChatIcon": lockChatIcon,
-    "lastReadMessageGuid": lastReadMessageGuid,
-  };
+        "ROWID": id,
+        "guid": guid,
+        "chatIdentifier": chatIdentifier,
+        "isArchived": isArchived!,
+        "muteType": muteType,
+        "muteArgs": muteArgs,
+        "isPinned": isPinned!,
+        "displayName": displayName,
+        "participants": participants.map((item) => item.toMap()).toList(),
+        "hasUnreadMessage": hasUnreadMessage!,
+        "_customAvatarPath": _customAvatarPath.value,
+        "_pinIndex": _pinIndex.value,
+        "autoSendReadReceipts": autoSendReadReceipts!,
+        "autoSendTypingIndicators": autoSendTypingIndicators!,
+        "dateDeleted": dateDeleted?.millisecondsSinceEpoch,
+        "style": style,
+        "lockChatName": lockChatName,
+        "lockChatIcon": lockChatIcon,
+        "lastReadMessageGuid": lastReadMessageGuid,
+      };
 }

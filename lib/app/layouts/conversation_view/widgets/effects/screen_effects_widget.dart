@@ -42,12 +42,16 @@ class _ScreenEffectsWidgetState extends OptimizedState<ScreenEffectsWidget> with
     super.initState();
 
     updateObx(() {
-      fireworkController = FireworkController(vsync: this, windowSize: Size(NavigationSvc.width(context), context.height));
-      celebrationController = CelebrationController(vsync: this, windowSize: Size(NavigationSvc.width(context), context.height));
+      fireworkController =
+          FireworkController(vsync: this, windowSize: Size(NavigationSvc.width(context), context.height));
+      celebrationController =
+          CelebrationController(vsync: this, windowSize: Size(NavigationSvc.width(context), context.height));
       confettiController = ConfettiController(duration: const Duration(seconds: 1));
-      balloonController = BalloonController(vsync: this, windowSize: Size(NavigationSvc.width(context), context.height));
+      balloonController =
+          BalloonController(vsync: this, windowSize: Size(NavigationSvc.width(context), context.height));
       loveController = LoveController(vsync: this, windowSize: Size(NavigationSvc.width(context), context.height));
-      spotlightController = SpotlightController(vsync: this, windowSize: Size(NavigationSvc.width(context), context.height));
+      spotlightController =
+          SpotlightController(vsync: this, windowSize: Size(NavigationSvc.width(context), context.height));
       laserController = LaserController(vsync: this, windowSize: Size(NavigationSvc.width(context), context.height));
     });
 
@@ -126,35 +130,35 @@ class _ScreenEffectsWidgetState extends OptimizedState<ScreenEffectsWidget> with
     });
   }
 
-
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
-      color: screenSelected == "fireworks"
-          || screenSelected == "celebration"
-          || screenSelected == "spotlight"
-          || screenSelected == "lasers"
-        ? Colors.black : Colors.transparent,
-      child: screenSelected.isEmpty ? null : Stack(
-        children: [
-          Fireworks(controller: fireworkController),
-          Celebration(controller: celebrationController),
-          Balloons(controller: balloonController),
-          Love(controller: loveController),
-          Spotlight(controller: spotlightController),
-          Laser(controller: laserController),
-          Align(
-            alignment: Alignment.topCenter,
-            child: ConfettiWidget(
-              confettiController: confettiController,
-              blastDirection: pi / 2,
-              blastDirectionality: BlastDirectionality.explosive,
-              emissionFrequency: 0.35,
-            ),
-          ),
-        ]
-      ),
+      color: screenSelected == "fireworks" ||
+              screenSelected == "celebration" ||
+              screenSelected == "spotlight" ||
+              screenSelected == "lasers"
+          ? Colors.black
+          : Colors.transparent,
+      child: screenSelected.isEmpty
+          ? null
+          : Stack(children: [
+              Fireworks(controller: fireworkController),
+              Celebration(controller: celebrationController),
+              Balloons(controller: balloonController),
+              Love(controller: loveController),
+              Spotlight(controller: spotlightController),
+              Laser(controller: laserController),
+              Align(
+                alignment: Alignment.topCenter,
+                child: ConfettiWidget(
+                  confettiController: confettiController,
+                  blastDirection: pi / 2,
+                  blastDirectionality: BlastDirectionality.explosive,
+                  emissionFrequency: 0.35,
+                ),
+              ),
+            ]),
     );
   }
 }

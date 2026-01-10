@@ -138,12 +138,13 @@ class _DetailsMenuActionUtils {
 
 extension DetailsMenuActionExtension on List<DetailsMenuAction> {
   List<DetailsMenuAction> get platformSupportedActions => (kIsWeb
-      ? where((action) => _DetailsMenuActionUtils._webActions.contains(action))
-      : Platform.isAndroid
-          ? where((action) => _DetailsMenuActionUtils._androidActions.contains(action))
-          : Platform.isWindows
-              ? where((action) => _DetailsMenuActionUtils._windowsActions.contains(action))
-              : where((action) => _DetailsMenuActionUtils._linuxActions.contains(action))).toList();
+          ? where((action) => _DetailsMenuActionUtils._webActions.contains(action))
+          : Platform.isAndroid
+              ? where((action) => _DetailsMenuActionUtils._androidActions.contains(action))
+              : Platform.isWindows
+                  ? where((action) => _DetailsMenuActionUtils._windowsActions.contains(action))
+                  : where((action) => _DetailsMenuActionUtils._linuxActions.contains(action)))
+      .toList();
 }
 
 class CustomDetailsMenuActionWidget extends StatelessWidget {

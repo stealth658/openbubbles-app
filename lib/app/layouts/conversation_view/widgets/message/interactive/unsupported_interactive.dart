@@ -106,34 +106,28 @@ class _UnsupportedInteractiveState extends OptimizedState<UnsupportedInteractive
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Flexible(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      data?.appName ?? getAppName(),
-                      style: context.theme.textTheme.bodyLarge!.apply(fontWeightDelta: 2),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (!isNullOrEmpty(data?.userInfo?.caption))
-                      const SizedBox(height: 2.5),
-                    if (!isNullOrEmpty(data?.userInfo?.caption))
-                      Text(
-                          data!.userInfo!.caption!,
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                          style: context.theme.textTheme.labelMedium!.copyWith(fontWeight: FontWeight.normal)
-                      ),
-                    const SizedBox(height: 5),
-                    Text(
-                      "Unsupported interactive message",
-                      style: context.theme.textTheme.labelMedium!.copyWith(fontWeight: FontWeight.normal, color: context.theme.colorScheme.outline),
-                      overflow: TextOverflow.clip,
-                      maxLines: 2,
-                    ),
-                  ]
-                ),
+                child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(
+                    data?.appName ?? getAppName(),
+                    style: context.theme.textTheme.bodyLarge!.apply(fontWeightDelta: 2),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (!isNullOrEmpty(data?.userInfo?.caption)) const SizedBox(height: 2.5),
+                  if (!isNullOrEmpty(data?.userInfo?.caption))
+                    Text(data!.userInfo!.caption!,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        style: context.theme.textTheme.labelMedium!.copyWith(fontWeight: FontWeight.normal)),
+                  const SizedBox(height: 5),
+                  Text(
+                    "Unsupported interactive message",
+                    style: context.theme.textTheme.labelMedium!
+                        .copyWith(fontWeight: FontWeight.normal, color: context.theme.colorScheme.outline),
+                    overflow: TextOverflow.clip,
+                    maxLines: 2,
+                  ),
+                ]),
               ),
               Icon(getIcon(), color: context.theme.colorScheme.properOnSurface, size: 48),
             ],

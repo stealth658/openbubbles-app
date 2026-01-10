@@ -49,5 +49,4 @@ class ThemeEntry {
           fontSize: fontSize?.toDouble(),
         )
       : color;
-
 }

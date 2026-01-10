@@ -9,7 +9,10 @@ class MessageActions {
   static Future<List<Message>?> getMessages() async {
     // Fetch a message with a limit of 1 using ObjectBox
     final oneDayAgo = DateTime.now().subtract(const Duration(days: 1));
-    final messages = (await Database.messages.query(Message_.dateCreated.greaterThan(oneDayAgo.millisecondsSinceEpoch)).build().findAsync());
+    final messages = (await Database.messages
+        .query(Message_.dateCreated.greaterThan(oneDayAgo.millisecondsSinceEpoch))
+        .build()
+        .findAsync());
     if (messages.isNotEmpty) {
       return messages;
     }
@@ -78,13 +81,13 @@ class MessageActions {
       final messageQuery = messageBox.query(Message_.guid.oneOf(inputMessageGuids)).build();
       List<Message> existingMessages = messageQuery.find();
       messageQuery.close();
-      
+
       // Create a map of existing messages by GUID for quick lookup
       Map<String, Message> existingMessageMap = {};
       for (final existingMsg in existingMessages) {
         existingMessageMap[existingMsg.guid!] = existingMsg;
       }
-      
+
       final newMessages = inputMessages.where((element) => !existingMessageMap.containsKey(element.guid)).toList();
 
       // 5. Fetch all handles and map the old handle ROWIDs from each message to the new ones based on the original ROWID
@@ -92,13 +95,13 @@ class MessageActions {
 
       for (final msg in newMessages) {
         msg.chat.target = inputChat;
-        
+
         // For new messages from isolate, handleRelation won't be set due to serialization
         // Look up by handleId and establish the relationship
         if (msg.handleId != null && msg.handleId! > 0) {
           final foundHandle = handles.firstWhereOrNull((e) => e.originalROWID == msg.handleId);
           msg.handle = foundHandle;
-          
+
           // Set up handleRelation for the ToOne relationship
           if (foundHandle != null && foundHandle.id != null) {
             msg.handleRelation.target = foundHandle;
@@ -108,8 +111,7 @@ class MessageActions {
 
       // 6. Relate the attachments to the messages
       for (final msg in newMessages) {
-        final relatedAttachments =
-            messageAttachments[msg.guid]?.map((e) => attachmentMap[e]).nonNulls.toList() ?? [];
+        final relatedAttachments = messageAttachments[msg.guid]?.map((e) => attachmentMap[e]).nonNulls.toList() ?? [];
         msg.attachments = relatedAttachments;
         msg.dbAttachments.addAll(relatedAttachments);
       }
@@ -135,7 +137,7 @@ class MessageActions {
           // No existing relationship, set up from handleId
           final foundHandle = handles.firstWhereOrNull((element) => element.originalROWID == message.handleId);
           message.handle = foundHandle;
-          
+
           // Set up handleRelation for the ToOne relationship
           if (foundHandle != null && foundHandle.id != null) {
             message.handleRelation.target = foundHandle;
@@ -152,7 +154,7 @@ class MessageActions {
         final associatedQuery = messageBox.query(Message_.guid.equals(message.associatedMessageGuid!)).build();
         List<Message> associatedMessages = associatedQuery.find().toList();
         associatedQuery.close();
-        
+
         if (associatedMessages.isNotEmpty) {
           // Toggle the hasReactions flag
           Message messageWithReaction = messagesToUpdate[associatedMessages[0].guid] ?? associatedMessages[0];
@@ -213,13 +215,13 @@ class MessageActions {
     return Database.runInTransaction(TxMode.write, () {
       final messageBox = Database.messages;
       final inputNewMessage = Message.fromMap(newMessageData);
-      
+
       // Find existing message
       final query = messageBox.query(Message_.guid.equals(oldGuid ?? '')).build();
       query.limit = 1;
       final existing = query.findFirst();
       query.close();
-      
+
       if (existing == null) {
         throw Exception("Cannot replace on a null existing message!!");
       }
@@ -231,24 +233,30 @@ class MessageActions {
       if (inputNewMessage.text != null) {
         existing.text = inputNewMessage.text;
       }
-      
+
       existing.dateDelivered = inputNewMessage.dateDelivered ?? existing.dateDelivered;
       existing.isDelivered = inputNewMessage.isDelivered;
       existing.dateRead = inputNewMessage.dateRead ?? existing.dateRead;
       existing.dateEdited = inputNewMessage.dateEdited ?? existing.dateEdited;
-      existing.attributedBody = inputNewMessage.attributedBody.isNotEmpty ? inputNewMessage.attributedBody : existing.attributedBody;
-      existing.messageSummaryInfo = inputNewMessage.messageSummaryInfo.isNotEmpty ? inputNewMessage.messageSummaryInfo : existing.messageSummaryInfo;
+      existing.attributedBody =
+          inputNewMessage.attributedBody.isNotEmpty ? inputNewMessage.attributedBody : existing.attributedBody;
+      existing.messageSummaryInfo = inputNewMessage.messageSummaryInfo.isNotEmpty
+          ? inputNewMessage.messageSummaryInfo
+          : existing.messageSummaryInfo;
       existing.payloadData = inputNewMessage.payloadData ?? existing.payloadData;
-      existing.wasDeliveredQuietly = inputNewMessage.wasDeliveredQuietly ? inputNewMessage.wasDeliveredQuietly : existing.wasDeliveredQuietly;
-      existing.didNotifyRecipient = inputNewMessage.didNotifyRecipient ? inputNewMessage.didNotifyRecipient : existing.didNotifyRecipient;
+      existing.wasDeliveredQuietly =
+          inputNewMessage.wasDeliveredQuietly ? inputNewMessage.wasDeliveredQuietly : existing.wasDeliveredQuietly;
+      existing.didNotifyRecipient =
+          inputNewMessage.didNotifyRecipient ? inputNewMessage.didNotifyRecipient : existing.didNotifyRecipient;
       existing.error = inputNewMessage.error;
 
       try {
         messageBox.put(existing, mode: PutMode.update);
       } catch (ex) {
-        Logger.warn('Failed to replace message! This is likely due to a unique constraint being violated: ${ex.toString()}');
+        Logger.warn(
+            'Failed to replace message! This is likely due to a unique constraint being violated: ${ex.toString()}');
       }
-      
+
       // Return just the ID for efficient transfer across isolates
       return existing.id!;
     });
@@ -282,7 +290,7 @@ class MessageActions {
 
     Database.runInTransaction(TxMode.write, () {
       final messageBox = Database.messages;
-      
+
       final query = messageBox.query(Message_.guid.equals(guid)).build();
       final result = query.findFirst();
       query.close();
@@ -297,12 +305,12 @@ class MessageActions {
 
     Database.runInTransaction(TxMode.write, () {
       final messageBox = Database.messages;
-      
+
       final query = messageBox.query(Message_.guid.equals(guid)).build();
       query.limit = 1;
       final toDelete = query.findFirst();
       query.close();
-      
+
       if (toDelete != null) {
         toDelete.dateDeleted = DateTime.now().toUtc();
         messageBox.put(toDelete);
@@ -365,7 +373,7 @@ class MessageActions {
       if (existing != null) {
         inputMessage.id = existing.id;
         inputMessage.text ??= existing.text;
-        
+
         // Preserve existing handleRelation if available
         if (existing.handleRelation.hasValue && !inputMessage.handleRelation.hasValue) {
           inputMessage.handleRelation.target = existing.handleRelation.target;
@@ -381,7 +389,7 @@ class MessageActions {
         final foundHandle = handleQuery.findFirst();
         handleQuery.close();
         inputMessage.handle = foundHandle;
-        
+
         // Set up handleRelation for the ToOne relationship
         if (foundHandle != null && foundHandle.id != null) {
           inputMessage.handleRelation.target = foundHandle;
@@ -475,7 +483,7 @@ class MessageActions {
     final chatData = data['chatData'] as Map<String, dynamic>?;
     final messagesData = (data['messagesData'] as List).cast<Map<String, dynamic>>();
     final checkForLatestMessageText = data['checkForLatestMessageText'] as bool? ?? true;
-    
+
     // Note: Progress reporting will be handled by the isolate wrapper if sendPort is provided
     final progressCallback = data['progressCallback'] as Function(int, int)?;
     return Database.runInTransaction(TxMode.write, () {
@@ -491,21 +499,21 @@ class MessageActions {
       Chat? inputChat;
       if (chatData != null) {
         inputChat = Chat.fromMap(chatData);
-        
+
         // Check if chat exists in DB, save if not
         if (inputChat.id == null) {
           final existingChatQuery = chatBox.query(Chat_.guid.equals(inputChat.guid)).build();
           existingChatQuery.limit = 1;
           final existingChat = existingChatQuery.findFirst();
           existingChatQuery.close();
-          
+
           if (existingChat != null) {
             inputChat = existingChat;
           } else {
             inputChat.id = chatBox.put(inputChat);
           }
         }
-        
+
         chatCache[inputChat.guid] = inputChat;
       }
 
@@ -515,7 +523,7 @@ class MessageActions {
       // Process messages in batches
       int index = 0;
       final totalMessages = messagesData.length;
-      
+
       for (final msgData in messagesData) {
         try {
           // Report progress
@@ -525,14 +533,14 @@ class MessageActions {
 
           // Parse message
           final message = Message.fromMap(msgData);
-          
+
           // Handle chat association
           Chat? msgChat = inputChat;
           if (msgChat == null && msgData['chats'] != null) {
             final chatsFromMessage = (msgData['chats'] as List).cast<Map<String, dynamic>>();
             if (chatsFromMessage.isNotEmpty) {
               final chatFromMsg = Chat.fromMap(chatsFromMessage.first);
-              
+
               // Check cache first
               if (chatCache.containsKey(chatFromMsg.guid)) {
                 msgChat = chatCache[chatFromMsg.guid];
@@ -542,14 +550,14 @@ class MessageActions {
                 chatQuery.limit = 1;
                 final existingChat = chatQuery.findFirst();
                 chatQuery.close();
-                
+
                 if (existingChat != null) {
                   msgChat = existingChat;
                 } else {
                   chatFromMsg.id = chatBox.put(chatFromMsg);
                   msgChat = chatFromMsg;
                 }
-                
+
                 chatCache[msgChat.guid] = msgChat;
               }
             }
@@ -568,20 +576,22 @@ class MessageActions {
           existingQuery.close();
 
           Message messageToSave = existingMessage ?? message;
-          
+
           // Associate chat and handle
           messageToSave.chat.target = msgChat;
-          
+
           // Preserve existing handleRelation from DB, otherwise do handleId lookup
           if (existingMessage != null && existingMessage.handleRelation.hasValue) {
             // Use existing relationship
             messageToSave.handleRelation.target = existingMessage.handleRelation.target;
             messageToSave.handle = existingMessage.handleRelation.target;
-          } else if (!messageToSave.handleRelation.hasValue && messageToSave.handleId != null && messageToSave.handleId! > 0) {
+          } else if (!messageToSave.handleRelation.hasValue &&
+              messageToSave.handleId != null &&
+              messageToSave.handleId! > 0) {
             // No existing relationship, look up by handleId
             final foundHandle = allHandles.firstWhereOrNull((h) => h.originalROWID == messageToSave.handleId);
             messageToSave.handle = foundHandle;
-            
+
             // Set up handleRelation for the ToOne relationship
             if (foundHandle != null && foundHandle.id != null) {
               messageToSave.handleRelation.target = foundHandle;
@@ -598,16 +608,16 @@ class MessageActions {
           if (msgData['attachments'] != null) {
             final attachmentsData = (msgData['attachments'] as List).cast<Map<String, dynamic>>();
             List<Attachment> attachmentsToLink = [];
-            
+
             for (final attachmentData in attachmentsData) {
               final attachment = Attachment.fromMap(attachmentData);
-              
+
               // Check if attachment exists
               final attachmentQuery = attachmentBox.query(Attachment_.guid.equals(attachment.guid!)).build();
               attachmentQuery.limit = 1;
               final existingAttachment = attachmentQuery.findFirst();
               attachmentQuery.close();
-              
+
               if (existingAttachment != null) {
                 attachmentsToLink.add(existingAttachment);
               } else {
@@ -615,20 +625,20 @@ class MessageActions {
                 attachmentsToLink.add(attachment);
               }
             }
-            
+
             // IMPORTANT: Set BOTH attachment fields:
             // 1. dbAttachments: ToMany relationship for DB persistence
             //    Must be done AFTER message has an ID from put()
             //    For existing messages, clear first to avoid duplicates
-            // 2. attachments: List field for serialization via toMap()            
+            // 2. attachments: List field for serialization via toMap()
             messageToSave.dbAttachments.clear();
             messageToSave.dbAttachments.addAll(attachmentsToLink);
             messageToSave.attachments = attachmentsToLink;
-            
+
             // Apply the ToMany relationship changes to DB
             messageToSave.dbAttachments.applyToDb();
           }
-            
+
           // Update chat's latest message if this is newer (only for new messages)
           if (existingMessage == null && checkForLatestMessageText) {
             final latestMessage = msgChat.latestMessage;
@@ -652,7 +662,7 @@ class MessageActions {
       if (progressCallback != null) {
         progressCallback(totalMessages, totalMessages);
       }
-      
+
       // Return just the IDs for efficient transfer across isolates
       return savedMessages.map((m) => m.id!).toList();
     });

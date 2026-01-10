@@ -41,14 +41,16 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                             onChanged: (bool val) async {
                               var localAuth = LocalAuthentication();
                               bool didAuthenticate = await localAuth.authenticate(
-                                  localizedReason: 'Please authenticate to ${val == true ? "enable" : "disable"} security',
-                                  persistAcrossBackgrounding: true,
+                                localizedReason:
+                                    'Please authenticate to ${val == true ? "enable" : "disable"} security',
+                                persistAcrossBackgrounding: true,
                               );
                               if (didAuthenticate) {
                                 SettingsSvc.settings.shouldSecure.value = val;
                                 if (val == false) {
                                   SecureApplicationProvider.of(context, listen: false)!.open();
-                                } else if (SettingsSvc.settings.securityLevel.value == SecurityLevel.locked_and_secured) {
+                                } else if (SettingsSvc.settings.securityLevel.value ==
+                                    SecurityLevel.locked_and_secured) {
                                   SecureApplicationProvider.of(context, listen: false)!.secure();
                                 }
                                 await SettingsSvc.settings.saveOneAsync('shouldSecure');
@@ -59,10 +61,10 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                             subtitle: "Secure app with ${kIsDesktop ? "Windows Security" : "a fingerprint or pin"}",
                             backgroundColor: tileColor,
                             leading: SettingsLeadingIcon(
-                              iosIcon: CupertinoIcons.lock_fill,
-                              materialIcon: Icons.lock,
-                              containerColor: (SettingsSvc.settings.shouldSecure.value) ? Colors.green : Colors.redAccent
-                            ),
+                                iosIcon: CupertinoIcons.lock_fill,
+                                materialIcon: Icons.lock,
+                                containerColor:
+                                    (SettingsSvc.settings.shouldSecure.value) ? Colors.green : Colors.redAccent),
                           )),
                     if (SettingsSvc.canAuthenticate)
                       Obx(() {
@@ -116,8 +118,8 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                             onChanged: (val) async {
                               var localAuth = LocalAuthentication();
                               bool didAuthenticate = await localAuth.authenticate(
-                                  localizedReason: 'Please authenticate to change your security level',
-                                  persistAcrossBackgrounding: true,
+                                localizedReason: 'Please authenticate to change your security level',
+                                persistAcrossBackgrounding: true,
                               );
                               if (didAuthenticate) {
                                 if (val != null) {
@@ -140,8 +142,7 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                           return const SizedBox.shrink();
                         }
                       }),
-                    if (SettingsSvc.canAuthenticate && !kIsDesktop)
-                      const SettingsDivider(),
+                    if (SettingsSvc.canAuthenticate && !kIsDesktop) const SettingsDivider(),
                     if (!kIsWeb && !kIsDesktop)
                       Obx(() => SettingsSwitch(
                             onChanged: (bool val) async {
@@ -224,23 +225,22 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                 backgroundColor: tileColor,
                 children: [
                   Obx(() => SettingsTile(
-                    title: "API Timeout Duration",
-                    subtitle:
-                        "Controls the duration (in seconds) until a network request will time out.\nIncrease this setting if you have poor connection.",
-                    isThreeLine: true,
-                    leading: const SettingsLeadingIcon(
-                      iosIcon: CupertinoIcons.stopwatch,
-                      materialIcon: Icons.timer,
-                      containerColor: Colors.red
-                    ),
-                    trailing: SettingsSvc.settings.apiTimeout.value != 30000 ? ElevatedButton(
-                      onPressed: () async {
-                        SettingsSvc.settings.apiTimeout.value = 30000;
-                        await SettingsSvc.settings.saveOneAsync('apiTimeout');
-                      },
-                      child: const Text("Reset to Default"),
-                    ) : null,
-                  )),
+                        title: "API Timeout Duration",
+                        subtitle:
+                            "Controls the duration (in seconds) until a network request will time out.\nIncrease this setting if you have poor connection.",
+                        isThreeLine: true,
+                        leading: const SettingsLeadingIcon(
+                            iosIcon: CupertinoIcons.stopwatch, materialIcon: Icons.timer, containerColor: Colors.red),
+                        trailing: SettingsSvc.settings.apiTimeout.value != 30000
+                            ? ElevatedButton(
+                                onPressed: () async {
+                                  SettingsSvc.settings.apiTimeout.value = 30000;
+                                  await SettingsSvc.settings.saveOneAsync('apiTimeout');
+                                },
+                                child: const Text("Reset to Default"),
+                              )
+                            : null,
+                      )),
                   Obx(() => SettingsSlider(
                       startingVal: SettingsSvc.settings.apiTimeout.value / 1000,
                       update: (double val) {
@@ -294,20 +294,19 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                 backgroundColor: tileColor,
                 children: [
                   Obx(() => SettingsSwitch(
-                    onChanged: (bool val) async {
-                      SettingsSvc.settings.replaceEmoticonsWithEmoji.value = val;
-                      await SettingsSvc.settings.saveOneAsync('replaceEmoticonsWithEmoji');
-                    },
-                    initialVal: SettingsSvc.settings.replaceEmoticonsWithEmoji.value,
-                    title: "Replace Emoticons with Emoji",
-                    subtitle: "Replace emoticons like :), :D, etc. with their corresponding emojis",
-                    backgroundColor: tileColor,
-                    leading: const SettingsLeadingIcon(
-                      iosIcon: CupertinoIcons.smiley,
-                      materialIcon: Icons.emoji_emotions_outlined,
-                      containerColor: Colors.indigo
-                    ),
-                  )),
+                        onChanged: (bool val) async {
+                          SettingsSvc.settings.replaceEmoticonsWithEmoji.value = val;
+                          await SettingsSvc.settings.saveOneAsync('replaceEmoticonsWithEmoji');
+                        },
+                        initialVal: SettingsSvc.settings.replaceEmoticonsWithEmoji.value,
+                        title: "Replace Emoticons with Emoji",
+                        subtitle: "Replace emoticons like :), :D, etc. with their corresponding emojis",
+                        backgroundColor: tileColor,
+                        leading: const SettingsLeadingIcon(
+                            iosIcon: CupertinoIcons.smiley,
+                            materialIcon: Icons.emoji_emotions_outlined,
+                            containerColor: Colors.indigo),
+                      )),
                   const SettingsDivider(),
                   if (kIsDesktop || kIsWeb)
                     Obx(() => SettingsSwitch(
@@ -324,21 +323,24 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                               containerColor: Colors.cyan),
                         )),
                   if (kIsDesktop || kIsWeb)
-                    Obx(() => SettingsSvc.settings.spellcheck.value ? SettingsOptions<(String, String)>(
-                      useCupertino: false,
-                      onChanged: (val) async {
-                        if (val == null) return;
-                        SettingsSvc.settings.spellcheckLanguage.value = val.$2;
-                        await SettingsSvc.settings.saveOneAsync('spellcheckLanguage');
-                      },
-                      initial: languageNameAndCodes.firstWhereOrNull((l) => l.$2 == SettingsSvc.settings.spellcheckLanguage.value) ?? ("Auto", "auto"),
-                      options: [("Auto", "auto"), ...languageNameAndCodes],
-                      title: 'Spellcheck Language',
-                      textProcessing: (val) => val.$1,
-                      capitalize: false,
-                    ) : const SizedBox.shrink()),
-                  if (kIsDesktop || kIsWeb)
-                    const SettingsDivider(),
+                    Obx(() => SettingsSvc.settings.spellcheck.value
+                        ? SettingsOptions<(String, String)>(
+                            useCupertino: false,
+                            onChanged: (val) async {
+                              if (val == null) return;
+                              SettingsSvc.settings.spellcheckLanguage.value = val.$2;
+                              await SettingsSvc.settings.saveOneAsync('spellcheckLanguage');
+                            },
+                            initial: languageNameAndCodes
+                                    .firstWhereOrNull((l) => l.$2 == SettingsSvc.settings.spellcheckLanguage.value) ??
+                                ("Auto", "auto"),
+                            options: [("Auto", "auto"), ...languageNameAndCodes],
+                            title: 'Spellcheck Language',
+                            textProcessing: (val) => val.$1,
+                            capitalize: false,
+                          )
+                        : const SizedBox.shrink()),
+                  if (kIsDesktop || kIsWeb) const SettingsDivider(),
                   Obx(() => SettingsSwitch(
                         onChanged: (bool val) async {
                           SettingsSvc.settings.sendDelay.value = val ? 3 : 0;
