@@ -391,8 +391,10 @@ class Chat {
 
   void webSyncParticipants() {
     // ignore: argument_type_not_assignable, return_of_invalid_type, invalid_assignment, for_in_of_invalid_element_type
-    participants =
-        ChatsSvc.webCachedHandles.where((e) => participants.map((e2) => e2.address).contains(e.address)).toList();
+    participants = ChatsSvc.webCachedHandles
+        .where((e) => participants.map((e2) => e2.address).contains(e.address))
+        .cast<Handle>()
+        .toList();
   }
 
   Chat addParticipant(Handle participant) {
