@@ -63,7 +63,17 @@ class _AttachmentPickerState extends OptimizedState<AttachmentPicker> {
         return;
       }
 
-      List<AssetPathEntity> list = await PhotoManager.getAssetPathList(onlyAll: true);
+      List<AssetPathEntity> list = await PhotoManager.getAssetPathList(
+        onlyAll: true,
+        filterOption: FilterOptionGroup(
+          orders: [
+            const OrderOption(
+              type: OrderOptionType.createDate,
+              asc: false, // false = descending, newest first
+            ),
+          ],
+        ),
+      );
       if (list.isNotEmpty) {
         _images = await list.first.getAssetListRange(start: 0, end: 24);
 
