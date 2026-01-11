@@ -124,6 +124,10 @@ class Settings {
   final RxBool enableQuickTapback = false.obs;
   final RxString quickTapbackType = ReactionTypes.toList()[0].obs; // The 'love' reaction
 
+  // Notification reaction settings
+  final RxBool notificationReactionAction = true.obs;
+  final RxString notificationReactionActionType = ReactionTypes.LIKE.obs; // Default to 'like'
+
   // Slideable action settings
   final Rx<MaterialSwipeAction> materialRightAction = MaterialSwipeAction.pin.obs;
   final Rx<MaterialSwipeAction> materialLeftAction = MaterialSwipeAction.archive.obs;
@@ -367,6 +371,8 @@ class Settings {
       'generateFakeMessageContent': hideMessageContent.value,
       'enableQuickTapback': enableQuickTapback.value,
       'quickTapbackType': quickTapbackType.value,
+      'notificationReactionAction': notificationReactionAction.value,
+      'notificationReactionActionType': notificationReactionActionType.value,
       'materialRightAction': materialRightAction.value.index,
       'materialLeftAction': materialLeftAction.value.index,
       'shouldSecure': shouldSecure.value,
@@ -574,6 +580,10 @@ class Settings {
         map['enableQuickTapback'] ?? SettingsSvc.settings.enableQuickTapback.value;
     SettingsSvc.settings.quickTapbackType.value =
         map['quickTapbackType'] ?? SettingsSvc.settings.quickTapbackType.value;
+    SettingsSvc.settings.notificationReactionAction.value =
+        map['notificationReactionAction'] ?? SettingsSvc.settings.notificationReactionAction.value;
+    SettingsSvc.settings.notificationReactionActionType.value =
+        map['notificationReactionActionType'] ?? SettingsSvc.settings.notificationReactionActionType.value;
     SettingsSvc.settings.materialRightAction.value = map['materialRightAction'] != null
         ? MaterialSwipeAction.values[map['materialRightAction']]
         : SettingsSvc.settings.materialRightAction.value;
@@ -745,6 +755,8 @@ class Settings {
     s.endpointUnifiedPush.value = map['endpointUnifiedPush'] ?? "";
     s.enableQuickTapback.value = map['enableQuickTapback'] ?? false;
     s.quickTapbackType.value = map['quickTapbackType'] ?? ReactionTypes.toList()[0];
+    s.notificationReactionAction.value = map['notificationReactionAction'] ?? true;
+    s.notificationReactionActionType.value = map['notificationReactionActionType'] ?? ReactionTypes.LIKE;
     s.materialRightAction.value = map['materialRightAction'] != null
         ? MaterialSwipeAction.values[map['materialRightAction']]
         : MaterialSwipeAction.pin;

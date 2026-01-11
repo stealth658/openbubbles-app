@@ -1,9 +1,8 @@
 import 'package:animated_size_and_fade/animated_size_and_fade.dart';
-import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/reaction/reaction.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
+import 'package:bluebubbles/app/layouts/settings/widgets/reaction_type_picker.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
-import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -29,7 +28,7 @@ class PrivateAPIPanelController extends StatefulController {
 }
 
 class PrivateAPIPanel extends CustomStateful<PrivateAPIPanelController> {
-  PrivateAPIPanel({this.enablePrivateAPIonInit = false})
+  PrivateAPIPanel({super.key, this.enablePrivateAPIonInit = false})
       : super(parentController: Get.put(PrivateAPIPanelController()));
 
   final bool enablePrivateAPIonInit;
@@ -257,83 +256,17 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
                             show: SettingsSvc.settings.enableQuickTapback.value,
                             child: Padding(
                               padding: const EdgeInsets.only(bottom: 5.0),
-                              child: SettingsOptions<String>(
-                                title: "Quick Tapback",
-                                options: ReactionTypes.toList(),
-                                cupertinoCustomWidgets: [
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 7.5),
-                                    child: ReactionWidget(
-                                      reaction: Message(
-                                          guid: "",
-                                          associatedMessageType: ReactionTypes.LOVE,
-                                          isFromMe: SettingsSvc.settings.quickTapbackType.value != ReactionTypes.LOVE),
-                                      message: null,
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 7.5),
-                                    child: ReactionWidget(
-                                      reaction: Message(
-                                          guid: "",
-                                          associatedMessageType: ReactionTypes.LIKE,
-                                          isFromMe: SettingsSvc.settings.quickTapbackType.value != ReactionTypes.LIKE),
-                                      message: null,
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 7.5),
-                                    child: ReactionWidget(
-                                      reaction: Message(
-                                          guid: "",
-                                          associatedMessageType: ReactionTypes.DISLIKE,
-                                          isFromMe:
-                                              SettingsSvc.settings.quickTapbackType.value != ReactionTypes.DISLIKE),
-                                      message: null,
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 7.5),
-                                    child: ReactionWidget(
-                                      reaction: Message(
-                                          guid: "",
-                                          associatedMessageType: ReactionTypes.LAUGH,
-                                          isFromMe: SettingsSvc.settings.quickTapbackType.value != ReactionTypes.LAUGH),
-                                      message: null,
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 7.5),
-                                    child: ReactionWidget(
-                                      reaction: Message(
-                                          guid: "",
-                                          associatedMessageType: ReactionTypes.EMPHASIZE,
-                                          isFromMe:
-                                              SettingsSvc.settings.quickTapbackType.value != ReactionTypes.EMPHASIZE),
-                                      message: null,
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 7.5),
-                                    child: ReactionWidget(
-                                      reaction: Message(
-                                          guid: "",
-                                          associatedMessageType: ReactionTypes.QUESTION,
-                                          isFromMe:
-                                              SettingsSvc.settings.quickTapbackType.value != ReactionTypes.QUESTION),
-                                      message: null,
-                                    ),
-                                  ),
-                                ],
-                                initial: SettingsSvc.settings.quickTapbackType.value,
-                                textProcessing: (val) => val,
-                                onChanged: (val) async {
-                                  if (val == null) return;
-                                  SettingsSvc.settings.quickTapbackType.value = val;
-                                  await SettingsSvc.settings.saveOneAsync('quickTapbackType');
-                                },
-                                secondaryColor: headerColor,
-                              ),
+                              child: Obx(() => ReactionTypePicker(
+                                    title: "Quick Tapback",
+                                    currentValue: SettingsSvc.settings.quickTapbackType.value,
+                                    reactions: ReactionTypes.toList(),
+                                    onChanged: (val) async {
+                                      if (val == null) return;
+                                      SettingsSvc.settings.quickTapbackType.value = val;
+                                      await SettingsSvc.settings.saveOneAsync('quickTapbackType');
+                                    },
+                                    secondaryColor: headerColor,
+                                  )),
                             ),
                           ),
                           AnimatedSizeAndFade.showHide(

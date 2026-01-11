@@ -304,9 +304,6 @@ class Chat {
         ReactionTypes.toList().contains(message?.associatedMessageType ?? "");
   }
 
-  // Static methods moved to ChatsService for proper separation of concerns
-  // Use ChatsSvc.deleteChat(), ChatsSvc.softDeleteChat(), ChatsSvc.unDeleteChat(), etc.
-
   /// Toggle unread status - pure DB operation
   /// Note: For full unread toggle with active chat awareness, use ChatsSvc.toggleChatHasUnread
   Future<Chat> toggleHasUnreadAsync(bool hasUnread,

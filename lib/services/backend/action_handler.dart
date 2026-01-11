@@ -566,8 +566,12 @@ class ActionHandler extends GetxService {
       }
     }
 
-    // Save message to DB first to get the complete DB object
-    final result = await c.addMessage(m);
+    // Save message to DB first to get the complete DB object.
+    // Only clear the notification from me if it's not a reaction.
+    // If it's a reaction, we want to keep the notification. Especially in
+    // cases where the reaction was sent from a notification.
+    final clearNotificationFromMe = (m.isFromMe ?? false) && m.associatedMessageGuid == null;
+    final result = await c.addMessage(m, clearNotificationsIfFromMe: clearNotificationFromMe);
     m = result.item1;
 
     // Display notification if needed

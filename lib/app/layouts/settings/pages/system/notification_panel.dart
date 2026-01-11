@@ -4,10 +4,12 @@ import 'package:bluebubbles/app/layouts/conversation_list/widgets/tile/conversat
 import 'package:bluebubbles/app/layouts/settings/dialogs/notification_settings_dialog.dart';
 import 'package:bluebubbles/app/wrappers/scrollbar_wrapper.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
+import 'package:bluebubbles/app/layouts/settings/widgets/reaction_type_picker.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
+import 'package:animated_size_and_fade/animated_size_and_fade.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -16,6 +18,8 @@ import 'package:get/get.dart';
 import 'package:universal_html/html.dart' as uh;
 
 class NotificationPanel extends StatefulWidget {
+  const NotificationPanel({super.key});
+
   @override
   State<StatefulWidget> createState() => _NotificationPanelState();
 }
@@ -150,6 +154,46 @@ class _NotificationPanelState extends OptimizedState<NotificationPanel> with Sin
                       backgroundColor: tileColor,
                       isThreeLine: true,
                     )),
+                if (!kIsWeb && !kIsDesktop) ...[
+                  AnimatedSizeAndFade.showHide(
+                    show: SettingsSvc.settings.enablePrivateAPI.value,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
+                        Obx(() => SettingsSwitch(
+                              onChanged: (bool val) async {
+                                SettingsSvc.settings.notificationReactionAction.value = val;
+                                await SettingsSvc.settings.saveOneAsync('notificationReactionAction');
+                              },
+                              initialVal: SettingsSvc.settings.notificationReactionAction.value,
+                              title: "Quick Reaction from Notifications",
+                              subtitle: "Add a quick reaction button to your notifications (requires Private API)",
+                              backgroundColor: tileColor,
+                              isThreeLine: true,
+                            )),
+                      ],
+                    ),
+                  ),
+                  AnimatedSizeAndFade.showHide(
+                    show: SettingsSvc.settings.enablePrivateAPI.value &&
+                        SettingsSvc.settings.notificationReactionAction.value,
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 5.0),
+                      child: Obx(() => ReactionTypePicker(
+                            title: "Notification Reaction Type",
+                            currentValue: SettingsSvc.settings.notificationReactionActionType.value,
+                            reactions: [ReactionTypes.LOVE, ReactionTypes.LIKE],
+                            onChanged: (val) async {
+                              if (val == null) return;
+                              SettingsSvc.settings.notificationReactionActionType.value = val;
+                              await SettingsSvc.settings.saveOneAsync('notificationReactionActionType');
+                            },
+                            secondaryColor: headerColor,
+                          )),
+                    ),
+                  ),
+                ],
               ],
             ),
           ],

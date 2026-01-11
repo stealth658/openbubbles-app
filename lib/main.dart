@@ -431,7 +431,7 @@ class Main extends StatelessWidget {
 }
 
 class Home extends StatefulWidget {
-  Home({super.key});
+  const Home({super.key});
 
   @override
   State<Home> createState() => _HomeState();
@@ -545,8 +545,14 @@ class _HomeState extends OptimizedState<Home> with WidgetsBindingObserver, TrayL
         // Wait for ChatsSvc to load the first batch before removing splash
         ChatsSvc.loadedFirstChatBatch.listen((loadedChatBatch) {
           if (loadedChatBatch) {
+            debugPrint('[SPLASH] First chat batch loaded, removing splash screen');
             FlutterNativeSplash.remove();
           }
+        });
+
+        ChatsSvc.loadedAllChats.then((_) {
+          debugPrint('[SPLASH] Loaded all chats, removing splash screen if still present');
+          FlutterNativeSplash.remove();
         });
 
         // Fallback: remove splash after 10 seconds even if loadedChatBatch doesn't trigger

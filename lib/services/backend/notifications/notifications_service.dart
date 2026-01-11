@@ -200,6 +200,11 @@ class NotificationsService {
           () => showDesktopNotif(text, chat, title, contactName, message, isReaction, message.isGroupEvent));
     } else {
       if (message.guid != null && message.dateCreated != null) {
+        // Determine if reaction action should be shown (only if Private API is enabled & not a reaction message)
+        final bool showReactionAction = SettingsSvc.settings.enablePrivateAPI.value &&
+            SettingsSvc.settings.notificationReactionAction.value && message.associatedMessageGuid == null;
+        final String reactionType = SettingsSvc.settings.notificationReactionActionType.value;
+
         await MethodChannelSvc.invokeMethod("create-incoming-message-notification", {
           "channel_id": NEW_MESSAGE_CHANNEL,
           "chat_id": chat.id,
@@ -213,6 +218,8 @@ class NotificationsService {
           "message_text": text,
           "message_date": message.dateCreated!.millisecondsSinceEpoch,
           "message_is_from_me": false,
+          "show_reaction_action": showReactionAction,
+          "reaction_type": reactionType,
         });
       }
     }

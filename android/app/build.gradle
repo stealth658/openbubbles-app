@@ -61,6 +61,14 @@ android {
         jvmTarget = '17'
     }
 
+    // Fix for META-INF/versions/9/OSGI-INF/MANIFEST.MF duplicate file error
+    // This is a known issue with the latest version of OkHttp.
+    packaging {
+        resources {
+            excludes += ['META-INF/versions/9/OSGI-INF/MANIFEST.MF']
+        }
+    }
+
     signingConfigs {
         release {
             keyAlias keystoreProperties['keyAlias']
@@ -138,14 +146,6 @@ flutter {
     source '../..'
 }
 
-// For Cloud Firestore okio error
-configurations.all {
-    resolutionStrategy {
-        force 'com.squareup.okhttp:okhttp:2.7.5'
-        force 'com.squareup.okio:okio:1.17.5'
-    }
-}
-
 dependencies {
     // Android native functions
     implementation "androidx.core:core-ktx:1.13.1"
@@ -176,6 +176,12 @@ dependencies {
 
     // JSON parsing
     implementation 'com.google.code.gson:gson:2.10.1'
+
+    // HTTP Client (OkHttp + Retrofit)
+    implementation 'com.squareup.okhttp3:okhttp:5.3.2'
+    implementation 'com.squareup.okhttp3:logging-interceptor:5.3.2'
+    implementation 'com.squareup.retrofit2:retrofit:3.0.0'
+    implementation 'com.squareup.retrofit2:converter-gson:3.0.0'
 
     // For AGP 7.4+ desugaring
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")

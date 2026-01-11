@@ -49,6 +49,9 @@ class CreateIncomingMessageNotification: MethodCallHandlerImpl() {
         val contactName: String = call.argument("contact_name")!!
         val contactIcon: ByteArray? = call.argument("contact_avatar")
         val contactBitmap = if ((contactIcon?.size ?: 0) == 0) null else Utils.getAdaptiveIconFromByteArray(contactIcon!!)
+        // reaction settings
+        val showReactionAction: Boolean = call.argument("show_reaction_action") ?: false
+        val reactionType: String = call.argument("reaction_type") ?: "like"
 
         // calculate a notification ID based on the chat database ID
         val notificationId: Int = call.argument("chat_id")!!
@@ -98,6 +101,7 @@ class CreateIncomingMessageNotification: MethodCallHandlerImpl() {
         extras.putString("messageGuid", messageGuid)
         extras.putString("channelId", channelId)
         extras.putString("tag", Constants.newMessageNotificationTag)
+        extras.putBoolean("reactionSent", false) // Track if reaction has been sent
 
         // intent to open the conversation in-app
         val openConversationIntent = PendingIntent.getActivity(
@@ -155,6 +159,24 @@ class CreateIncomingMessageNotification: MethodCallHandlerImpl() {
             .addRemoteInput(RemoteInput.Builder("text_reply").setLabel("Reply").build())
             .build()
 
+        // intent and action for 'like'
+        val likeIntent = PendingIntent.getBroadcast(
+            context,
+            notificationId + 1, // offset by 1 to avoid conflicts
+            Intent(context, InternalIntentReceiver::class.java)
+                .putExtras(extras)
+                .putExtra("notificationId", notificationId)
+                .putExtra("messageText", messageText)
+                .putExtra("reactionType", reactionType)
+                .setType("LikeMessage"),
+            PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+        val likeActionTitle = if (reactionType == "love") "Love" else "Like"
+        val likeAction = NotificationCompat.Action.Builder(0, likeActionTitle, likeIntent)
+            .setSemanticAction(NotificationCompat.Action.SEMANTIC_ACTION_THUMBS_UP)
+            .setShowsUserInterface(false)
+            .build()
+
         // intent for bubbling (create it even if not used, for future compatibility)
         val bubbleIntent = PendingIntent.getActivity(
             context,
@@ -185,7 +207,20 @@ class CreateIncomingMessageNotification: MethodCallHandlerImpl() {
             .addAction(replyAction)
             .addPerson(sender)
             .addExtras(extras)
-            .extend(NotificationCompat.WearableExtender().addAction(markAsReadAction).addAction(replyAction))
+
+        // Conditionally add reaction action if enabled
+        if (showReactionAction) {
+            notificationBuilder.addAction(likeAction)
+        }
+
+        // Build wearable extender
+        val wearableExtender = NotificationCompat.WearableExtender()
+            .addAction(markAsReadAction)
+            .addAction(replyAction)
+        if (showReactionAction) {
+            wearableExtender.addAction(likeAction)
+        }
+        notificationBuilder.extend(wearableExtender)
 
         // Only set bubble metadata on Android 11+ (API 29+) where it's supported
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
