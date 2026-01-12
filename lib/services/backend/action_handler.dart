@@ -432,6 +432,9 @@ class ActionHandler extends GetxService {
           Logger.warn("Failed to load image properties for outgoing attachment", error: ex);
         }
       }
+
+      // Mark attachment as downloaded since it's now on disk
+      attachment.isDownloaded = true;
     }
     await c.addMessage(m);
   }

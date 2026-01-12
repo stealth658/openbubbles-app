@@ -122,6 +122,9 @@ class AttachmentDownloadController extends GetxController {
     state.value = AttachmentDownloadState.downloading;
     stopwatch.start();
 
+    // Mark as not downloaded while downloading (handles re-downloads)
+    attachment.isDownloaded = false;
+
     // For web, download to memory. For native platforms, write directly to disk
     final savePath = kIsWeb ? null : attachment.path;
 
@@ -191,6 +194,10 @@ class AttachmentDownloadController extends GetxController {
       size: kIsWeb ? bytes!.length : await File(attachment.path).length(),
       bytes: kIsWeb ? bytes : null,
     );
+
+    // Mark attachment as downloaded and save to database
+    attachment.isDownloaded = true;
+    await attachment.saveAsync(attachment.message.target);
 
     // Mark as complete
     state.value = AttachmentDownloadState.complete;

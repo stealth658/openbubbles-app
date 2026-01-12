@@ -33,6 +33,7 @@ class Attachment {
   Uint8List? bytes;
   String? webUrl;
   bool hasLivePhoto;
+  bool? isDownloaded;
 
   final message = ToOne<Message>();
 
@@ -56,6 +57,7 @@ class Attachment {
     this.bytes,
     this.webUrl,
     this.hasLivePhoto = false,
+    this.isDownloaded,
   });
 
   /// Convert JSON to [Attachment]
@@ -86,6 +88,7 @@ class Attachment {
       width: json["width"] ?? 0,
       metadata: metadata is String ? null : metadata,
       hasLivePhoto: json["hasLivePhoto"] ?? false,
+      isDownloaded: json["isDownloaded"],
     );
   }
 
@@ -219,6 +222,7 @@ class Attachment {
     if (attachment2.hasLivePhoto) {
       attachment1.hasLivePhoto = attachment2.hasLivePhoto;
     }
+    attachment1.isDownloaded ??= attachment2.isDownloaded;
     if (!attachment1.message.hasValue) {
       attachment1.message.target = attachment2.message.target;
     }
@@ -238,6 +242,7 @@ class Attachment {
         "width": width,
         "metadata": jsonEncode(metadata),
         "hasLivePhoto": hasLivePhoto,
+        "isDownloaded": isDownloaded,
       };
 
   bool get _isPortrait {

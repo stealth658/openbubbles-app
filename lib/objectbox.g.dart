@@ -9,7 +9,8 @@
 import 'dart:typed_data';
 
 import 'package:flat_buffers/flat_buffers.dart' as fb;
-import 'package:objectbox/internal.dart' as obx_int; // generated code can access "internal" functionality
+import 'package:objectbox/internal.dart'
+    as obx_int; // generated code can access "internal" functionality
 import 'package:objectbox/objectbox.dart' as obx;
 import 'package:objectbox_flutter_libs/objectbox_flutter_libs.dart';
 
@@ -30,7 +31,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(1, 2065429213543838585),
     name: 'Attachment',
-    lastPropertyId: const obx_int.IdUid(19, 2980761301143366690),
+    lastPropertyId: const obx_int.IdUid(20, 8433001080232138396),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -117,6 +118,12 @@ final _entities = <obx_int.ModelEntity>[
       obx_int.ModelProperty(
         id: const obx_int.IdUid(19, 2980761301143366690),
         name: 'hasLivePhoto',
+        type: 1,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(20, 8433001080232138396),
+        name: 'isDownloaded',
         type: 1,
         flags: 0,
       ),
@@ -1108,13 +1115,25 @@ obx_int.ModelDefinition getObjectBoxModel() {
         object.id = id;
       },
       objectToFB: (Attachment object, fb.Builder fbb) {
-        final guidOffset = object.guid == null ? null : fbb.writeString(object.guid!);
-        final utiOffset = object.uti == null ? null : fbb.writeString(object.uti!);
-        final mimeTypeOffset = object.mimeType == null ? null : fbb.writeString(object.mimeType!);
-        final transferNameOffset = object.transferName == null ? null : fbb.writeString(object.transferName!);
-        final webUrlOffset = object.webUrl == null ? null : fbb.writeString(object.webUrl!);
-        final dbMetadataOffset = object.dbMetadata == null ? null : fbb.writeString(object.dbMetadata!);
-        fbb.startTable(20);
+        final guidOffset = object.guid == null
+            ? null
+            : fbb.writeString(object.guid!);
+        final utiOffset = object.uti == null
+            ? null
+            : fbb.writeString(object.uti!);
+        final mimeTypeOffset = object.mimeType == null
+            ? null
+            : fbb.writeString(object.mimeType!);
+        final transferNameOffset = object.transferName == null
+            ? null
+            : fbb.writeString(object.transferName!);
+        final webUrlOffset = object.webUrl == null
+            ? null
+            : fbb.writeString(object.webUrl!);
+        final dbMetadataOffset = object.dbMetadata == null
+            ? null
+            : fbb.writeString(object.dbMetadata!);
+        fbb.startTable(21);
         fbb.addInt64(0, object.id ?? 0);
         fbb.addInt64(1, object.originalROWID);
         fbb.addOffset(2, guidOffset);
@@ -1129,6 +1148,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
         fbb.addInt64(16, object.message.targetId);
         fbb.addOffset(17, dbMetadataOffset);
         fbb.addBool(18, object.hasLivePhoto);
+        fbb.addBool(19, object.isDownloaded);
         fbb.finish(fbb.endTable());
         return object.id ?? 0;
       },
@@ -1186,22 +1206,30 @@ obx_int.ModelDefinition getObjectBoxModel() {
           40,
           false,
         );
-        final object = Attachment(
-          id: idParam,
-          originalROWID: originalROWIDParam,
-          guid: guidParam,
-          uti: utiParam,
-          mimeType: mimeTypeParam,
-          isOutgoing: isOutgoingParam,
-          transferName: transferNameParam,
-          totalBytes: totalBytesParam,
-          height: heightParam,
-          width: widthParam,
-          webUrl: webUrlParam,
-          hasLivePhoto: hasLivePhotoParam,
-        )..dbMetadata = const fb.StringReader(
-            asciiOptimization: true,
-          ).vTableGetNullable(buffer, rootOffset, 38);
+        final isDownloadedParam = const fb.BoolReader().vTableGetNullable(
+          buffer,
+          rootOffset,
+          42,
+        );
+        final object =
+            Attachment(
+                id: idParam,
+                originalROWID: originalROWIDParam,
+                guid: guidParam,
+                uti: utiParam,
+                mimeType: mimeTypeParam,
+                isOutgoing: isOutgoingParam,
+                transferName: transferNameParam,
+                totalBytes: totalBytesParam,
+                height: heightParam,
+                width: widthParam,
+                webUrl: webUrlParam,
+                hasLivePhoto: hasLivePhotoParam,
+                isDownloaded: isDownloadedParam,
+              )
+              ..dbMetadata = const fb.StringReader(
+                asciiOptimization: true,
+              ).vTableGetNullable(buffer, rootOffset, 38);
         object.message.targetId = const fb.Int64Reader().vTableGet(
           buffer,
           rootOffset,
@@ -1229,19 +1257,35 @@ obx_int.ModelDefinition getObjectBoxModel() {
       },
       objectToFB: (Chat object, fb.Builder fbb) {
         final guidOffset = fbb.writeString(object.guid);
-        final chatIdentifierOffset = object.chatIdentifier == null ? null : fbb.writeString(object.chatIdentifier!);
-        final muteTypeOffset = object.muteType == null ? null : fbb.writeString(object.muteType!);
-        final muteArgsOffset = object.muteArgs == null ? null : fbb.writeString(object.muteArgs!);
-        final titleOffset = object.title == null ? null : fbb.writeString(object.title!);
-        final displayNameOffset = object.displayName == null ? null : fbb.writeString(object.displayName!);
-        final customAvatarPathOffset =
-            object.customAvatarPath == null ? null : fbb.writeString(object.customAvatarPath!);
-        final textFieldTextOffset = object.textFieldText == null ? null : fbb.writeString(object.textFieldText!);
+        final chatIdentifierOffset = object.chatIdentifier == null
+            ? null
+            : fbb.writeString(object.chatIdentifier!);
+        final muteTypeOffset = object.muteType == null
+            ? null
+            : fbb.writeString(object.muteType!);
+        final muteArgsOffset = object.muteArgs == null
+            ? null
+            : fbb.writeString(object.muteArgs!);
+        final titleOffset = object.title == null
+            ? null
+            : fbb.writeString(object.title!);
+        final displayNameOffset = object.displayName == null
+            ? null
+            : fbb.writeString(object.displayName!);
+        final customAvatarPathOffset = object.customAvatarPath == null
+            ? null
+            : fbb.writeString(object.customAvatarPath!);
+        final textFieldTextOffset = object.textFieldText == null
+            ? null
+            : fbb.writeString(object.textFieldText!);
         final textFieldAttachmentsOffset = fbb.writeList(
-          object.textFieldAttachments.map(fbb.writeString).toList(growable: false),
+          object.textFieldAttachments
+              .map(fbb.writeString)
+              .toList(growable: false),
         );
-        final lastReadMessageGuidOffset =
-            object.lastReadMessageGuid == null ? null : fbb.writeString(object.lastReadMessageGuid!);
+        final lastReadMessageGuidOffset = object.lastReadMessageGuid == null
+            ? null
+            : fbb.writeString(object.lastReadMessageGuid!);
         fbb.startTable(29);
         fbb.addInt64(0, object.id ?? 0);
         fbb.addOffset(2, guidOffset);
@@ -1274,7 +1318,8 @@ obx_int.ModelDefinition getObjectBoxModel() {
       objectFromFB: (obx.Store store, ByteData fbData) {
         final buffer = fb.BufferContext(fbData);
         final rootOffset = buffer.derefObject(0);
-        final dbOnlyLatestMessageDateValue = const fb.Int64Reader().vTableGetNullable(buffer, rootOffset, 26);
+        final dbOnlyLatestMessageDateValue = const fb.Int64Reader()
+            .vTableGetNullable(buffer, rootOffset, 26);
         final dateDeletedValue = const fb.Int64Reader().vTableGetNullable(
           buffer,
           rootOffset,
@@ -1315,8 +1360,10 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final displayNameParam = const fb.StringReader(
           asciiOptimization: true,
         ).vTableGetNullable(buffer, rootOffset, 34);
-        final autoSendReadReceiptsParam = const fb.BoolReader().vTableGetNullable(buffer, rootOffset, 42);
-        final autoSendTypingIndicatorsParam = const fb.BoolReader().vTableGetNullable(buffer, rootOffset, 44);
+        final autoSendReadReceiptsParam = const fb.BoolReader()
+            .vTableGetNullable(buffer, rootOffset, 42);
+        final autoSendTypingIndicatorsParam = const fb.BoolReader()
+            .vTableGetNullable(buffer, rootOffset, 44);
         final textFieldTextParam = const fb.StringReader(
           asciiOptimization: true,
         ).vTableGetNullable(buffer, rootOffset, 46);
@@ -1324,8 +1371,9 @@ obx_int.ModelDefinition getObjectBoxModel() {
           fb.StringReader(asciiOptimization: true),
           lazy: false,
         ).vTableGet(buffer, rootOffset, 48, []);
-        final dateDeletedParam =
-            dateDeletedValue == null ? null : DateTime.fromMillisecondsSinceEpoch(dateDeletedValue);
+        final dateDeletedParam = dateDeletedValue == null
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(dateDeletedValue);
         final styleParam = const fb.Int64Reader().vTableGetNullable(
           buffer,
           rootOffset,
@@ -1346,42 +1394,43 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final lastReadMessageGuidParam = const fb.StringReader(
           asciiOptimization: true,
         ).vTableGetNullable(buffer, rootOffset, 58);
-        final object = Chat(
-          id: idParam,
-          guid: guidParam,
-          chatIdentifier: chatIdentifierParam,
-          isArchived: isArchivedParam,
-          isPinned: isPinnedParam,
-          muteType: muteTypeParam,
-          muteArgs: muteArgsParam,
-          hasUnreadMessage: hasUnreadMessageParam,
-          displayName: displayNameParam,
-          autoSendReadReceipts: autoSendReadReceiptsParam,
-          autoSendTypingIndicators: autoSendTypingIndicatorsParam,
-          textFieldText: textFieldTextParam,
-          textFieldAttachments: textFieldAttachmentsParam,
-          dateDeleted: dateDeletedParam,
-          style: styleParam,
-          lockChatName: lockChatNameParam,
-          lockChatIcon: lockChatIconParam,
-          lastReadMessageGuid: lastReadMessageGuidParam,
-        )
-          ..dbOnlyLatestMessageDate = dbOnlyLatestMessageDateValue == null
-              ? null
-              : DateTime.fromMillisecondsSinceEpoch(
-                  dbOnlyLatestMessageDateValue,
-                )
-          ..title = const fb.StringReader(
-            asciiOptimization: true,
-          ).vTableGetNullable(buffer, rootOffset, 32)
-          ..customAvatarPath = const fb.StringReader(
-            asciiOptimization: true,
-          ).vTableGetNullable(buffer, rootOffset, 38)
-          ..pinIndex = const fb.Int64Reader().vTableGetNullable(
-            buffer,
-            rootOffset,
-            40,
-          );
+        final object =
+            Chat(
+                id: idParam,
+                guid: guidParam,
+                chatIdentifier: chatIdentifierParam,
+                isArchived: isArchivedParam,
+                isPinned: isPinnedParam,
+                muteType: muteTypeParam,
+                muteArgs: muteArgsParam,
+                hasUnreadMessage: hasUnreadMessageParam,
+                displayName: displayNameParam,
+                autoSendReadReceipts: autoSendReadReceiptsParam,
+                autoSendTypingIndicators: autoSendTypingIndicatorsParam,
+                textFieldText: textFieldTextParam,
+                textFieldAttachments: textFieldAttachmentsParam,
+                dateDeleted: dateDeletedParam,
+                style: styleParam,
+                lockChatName: lockChatNameParam,
+                lockChatIcon: lockChatIconParam,
+                lastReadMessageGuid: lastReadMessageGuidParam,
+              )
+              ..dbOnlyLatestMessageDate = dbOnlyLatestMessageDateValue == null
+                  ? null
+                  : DateTime.fromMillisecondsSinceEpoch(
+                      dbOnlyLatestMessageDateValue,
+                    )
+              ..title = const fb.StringReader(
+                asciiOptimization: true,
+              ).vTableGetNullable(buffer, rootOffset, 32)
+              ..customAvatarPath = const fb.StringReader(
+                asciiOptimization: true,
+              ).vTableGetNullable(buffer, rootOffset, 38)
+              ..pinIndex = const fb.Int64Reader().vTableGetNullable(
+                buffer,
+                rootOffset,
+                40,
+              );
         obx_int.InternalToManyAccess.setRelInfo<Chat>(
           object.handles,
           store,
@@ -1408,12 +1457,24 @@ obx_int.ModelDefinition getObjectBoxModel() {
         object.id = id;
       },
       objectToFB: (FCMData object, fb.Builder fbb) {
-        final projectIDOffset = object.projectID == null ? null : fbb.writeString(object.projectID!);
-        final storageBucketOffset = object.storageBucket == null ? null : fbb.writeString(object.storageBucket!);
-        final apiKeyOffset = object.apiKey == null ? null : fbb.writeString(object.apiKey!);
-        final firebaseURLOffset = object.firebaseURL == null ? null : fbb.writeString(object.firebaseURL!);
-        final clientIDOffset = object.clientID == null ? null : fbb.writeString(object.clientID!);
-        final applicationIDOffset = object.applicationID == null ? null : fbb.writeString(object.applicationID!);
+        final projectIDOffset = object.projectID == null
+            ? null
+            : fbb.writeString(object.projectID!);
+        final storageBucketOffset = object.storageBucket == null
+            ? null
+            : fbb.writeString(object.storageBucket!);
+        final apiKeyOffset = object.apiKey == null
+            ? null
+            : fbb.writeString(object.apiKey!);
+        final firebaseURLOffset = object.firebaseURL == null
+            ? null
+            : fbb.writeString(object.firebaseURL!);
+        final clientIDOffset = object.clientID == null
+            ? null
+            : fbb.writeString(object.clientID!);
+        final applicationIDOffset = object.applicationID == null
+            ? null
+            : fbb.writeString(object.applicationID!);
         fbb.startTable(8);
         fbb.addInt64(0, object.id ?? 0);
         fbb.addOffset(1, projectIDOffset);
@@ -1468,7 +1529,8 @@ obx_int.ModelDefinition getObjectBoxModel() {
       model: _entities[3],
       toOneRelations: (Handle object) => [object.contactRelation],
       toManyRelations: (Handle object) => {
-        obx_int.RelInfo<ContactV2>.toManyBacklink(2, object.id!): object.contactsV2,
+        obx_int.RelInfo<ContactV2>.toManyBacklink(2, object.id!):
+            object.contactsV2,
       },
       getId: (Handle object) => object.id,
       setId: (Handle object, int id) {
@@ -1476,12 +1538,21 @@ obx_int.ModelDefinition getObjectBoxModel() {
       },
       objectToFB: (Handle object, fb.Builder fbb) {
         final addressOffset = fbb.writeString(object.address);
-        final countryOffset = object.country == null ? null : fbb.writeString(object.country!);
-        final colorOffset = object.color == null ? null : fbb.writeString(object.color!);
-        final defaultPhoneOffset = object.defaultPhone == null ? null : fbb.writeString(object.defaultPhone!);
-        final defaultEmailOffset = object.defaultEmail == null ? null : fbb.writeString(object.defaultEmail!);
-        final formattedAddressOffset =
-            object.formattedAddress == null ? null : fbb.writeString(object.formattedAddress!);
+        final countryOffset = object.country == null
+            ? null
+            : fbb.writeString(object.country!);
+        final colorOffset = object.color == null
+            ? null
+            : fbb.writeString(object.color!);
+        final defaultPhoneOffset = object.defaultPhone == null
+            ? null
+            : fbb.writeString(object.defaultPhone!);
+        final defaultEmailOffset = object.defaultEmail == null
+            ? null
+            : fbb.writeString(object.defaultEmail!);
+        final formattedAddressOffset = object.formattedAddress == null
+            ? null
+            : fbb.writeString(object.formattedAddress!);
         final uniqueAddressAndServiceOffset = fbb.writeString(
           object.uniqueAddressAndService,
         );
@@ -1535,19 +1606,21 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final defaultPhoneParam = const fb.StringReader(
           asciiOptimization: true,
         ).vTableGetNullable(buffer, rootOffset, 14);
-        final object = Handle(
-          id: idParam,
-          originalROWID: originalROWIDParam,
-          address: addressParam,
-          formattedAddress: formattedAddressParam,
-          service: serviceParam,
-          uniqueAddressAndService: uniqueAddressAndServiceParam,
-          country: countryParam,
-          defaultEmail: defaultEmailParam,
-          defaultPhone: defaultPhoneParam,
-        )..color = const fb.StringReader(
-            asciiOptimization: true,
-          ).vTableGetNullable(buffer, rootOffset, 12);
+        final object =
+            Handle(
+                id: idParam,
+                originalROWID: originalROWIDParam,
+                address: addressParam,
+                formattedAddress: formattedAddressParam,
+                service: serviceParam,
+                uniqueAddressAndService: uniqueAddressAndServiceParam,
+                country: countryParam,
+                defaultEmail: defaultEmailParam,
+                defaultPhone: defaultPhoneParam,
+              )
+              ..color = const fb.StringReader(
+                asciiOptimization: true,
+              ).vTableGetNullable(buffer, rootOffset, 12);
         object.contactRelation.targetId = const fb.Int64Reader().vTableGet(
           buffer,
           rootOffset,
@@ -1572,8 +1645,12 @@ obx_int.ModelDefinition getObjectBoxModel() {
         object.id = id;
       },
       objectToFB: (ThemeEntry object, fb.Builder fbb) {
-        final nameOffset = object.name == null ? null : fbb.writeString(object.name!);
-        final dbColorOffset = object.dbColor == null ? null : fbb.writeString(object.dbColor!);
+        final nameOffset = object.name == null
+            ? null
+            : fbb.writeString(object.name!);
+        final dbColorOffset = object.dbColor == null
+            ? null
+            : fbb.writeString(object.dbColor!);
         fbb.startTable(9);
         fbb.addInt64(0, object.id ?? 0);
         fbb.addInt64(1, object.themeId);
@@ -1617,16 +1694,18 @@ obx_int.ModelDefinition getObjectBoxModel() {
           rootOffset,
           16,
         );
-        final object = ThemeEntry(
-          id: idParam,
-          themeId: themeIdParam,
-          name: nameParam,
-          isFont: isFontParam,
-          fontSize: fontSizeParam,
-          fontWeight: fontWeightParam,
-        )..dbColor = const fb.StringReader(
-            asciiOptimization: true,
-          ).vTableGetNullable(buffer, rootOffset, 14);
+        final object =
+            ThemeEntry(
+                id: idParam,
+                themeId: themeIdParam,
+                name: nameParam,
+                isFont: isFontParam,
+                fontSize: fontSizeParam,
+                fontWeight: fontWeightParam,
+              )
+              ..dbColor = const fb.StringReader(
+                asciiOptimization: true,
+              ).vTableGetNullable(buffer, rootOffset, 14);
         object.themeObject.targetId = const fb.Int64Reader().vTableGet(
           buffer,
           rootOffset,
@@ -1652,28 +1731,51 @@ obx_int.ModelDefinition getObjectBoxModel() {
         object.id = id;
       },
       objectToFB: (Message object, fb.Builder fbb) {
-        final guidOffset = object.guid == null ? null : fbb.writeString(object.guid!);
-        final textOffset = object.text == null ? null : fbb.writeString(object.text!);
-        final subjectOffset = object.subject == null ? null : fbb.writeString(object.subject!);
-        final countryOffset = object.country == null ? null : fbb.writeString(object.country!);
-        final groupTitleOffset = object.groupTitle == null ? null : fbb.writeString(object.groupTitle!);
-        final balloonBundleIdOffset = object.balloonBundleId == null ? null : fbb.writeString(object.balloonBundleId!);
-        final associatedMessageGuidOffset =
-            object.associatedMessageGuid == null ? null : fbb.writeString(object.associatedMessageGuid!);
-        final associatedMessageTypeOffset =
-            object.associatedMessageType == null ? null : fbb.writeString(object.associatedMessageType!);
-        final expressiveSendStyleIdOffset =
-            object.expressiveSendStyleId == null ? null : fbb.writeString(object.expressiveSendStyleId!);
-        final threadOriginatorGuidOffset =
-            object.threadOriginatorGuid == null ? null : fbb.writeString(object.threadOriginatorGuid!);
-        final threadOriginatorPartOffset =
-            object.threadOriginatorPart == null ? null : fbb.writeString(object.threadOriginatorPart!);
-        final dbAttributedBodyOffset =
-            object.dbAttributedBody == null ? null : fbb.writeString(object.dbAttributedBody!);
-        final dbMessageSummaryInfoOffset =
-            object.dbMessageSummaryInfo == null ? null : fbb.writeString(object.dbMessageSummaryInfo!);
-        final dbPayloadDataOffset = object.dbPayloadData == null ? null : fbb.writeString(object.dbPayloadData!);
-        final dbMetadataOffset = object.dbMetadata == null ? null : fbb.writeString(object.dbMetadata!);
+        final guidOffset = object.guid == null
+            ? null
+            : fbb.writeString(object.guid!);
+        final textOffset = object.text == null
+            ? null
+            : fbb.writeString(object.text!);
+        final subjectOffset = object.subject == null
+            ? null
+            : fbb.writeString(object.subject!);
+        final countryOffset = object.country == null
+            ? null
+            : fbb.writeString(object.country!);
+        final groupTitleOffset = object.groupTitle == null
+            ? null
+            : fbb.writeString(object.groupTitle!);
+        final balloonBundleIdOffset = object.balloonBundleId == null
+            ? null
+            : fbb.writeString(object.balloonBundleId!);
+        final associatedMessageGuidOffset = object.associatedMessageGuid == null
+            ? null
+            : fbb.writeString(object.associatedMessageGuid!);
+        final associatedMessageTypeOffset = object.associatedMessageType == null
+            ? null
+            : fbb.writeString(object.associatedMessageType!);
+        final expressiveSendStyleIdOffset = object.expressiveSendStyleId == null
+            ? null
+            : fbb.writeString(object.expressiveSendStyleId!);
+        final threadOriginatorGuidOffset = object.threadOriginatorGuid == null
+            ? null
+            : fbb.writeString(object.threadOriginatorGuid!);
+        final threadOriginatorPartOffset = object.threadOriginatorPart == null
+            ? null
+            : fbb.writeString(object.threadOriginatorPart!);
+        final dbAttributedBodyOffset = object.dbAttributedBody == null
+            ? null
+            : fbb.writeString(object.dbAttributedBody!);
+        final dbMessageSummaryInfoOffset = object.dbMessageSummaryInfo == null
+            ? null
+            : fbb.writeString(object.dbMessageSummaryInfo!);
+        final dbPayloadDataOffset = object.dbPayloadData == null
+            ? null
+            : fbb.writeString(object.dbPayloadData!);
+        final dbMetadataOffset = object.dbMetadata == null
+            ? null
+            : fbb.writeString(object.dbMetadata!);
         fbb.startTable(52);
         fbb.addInt64(0, object.id ?? 0);
         fbb.addInt64(1, object.originalROWID);
@@ -1790,11 +1892,15 @@ obx_int.ModelDefinition getObjectBoxModel() {
           78,
           0,
         );
-        final dateCreatedParam =
-            dateCreatedValue == null ? null : DateTime.fromMillisecondsSinceEpoch(dateCreatedValue);
-        final dateReadParam = dateReadValue == null ? null : DateTime.fromMillisecondsSinceEpoch(dateReadValue);
-        final dateDeliveredParam =
-            dateDeliveredValue == null ? null : DateTime.fromMillisecondsSinceEpoch(dateDeliveredValue);
+        final dateCreatedParam = dateCreatedValue == null
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(dateCreatedValue);
+        final dateReadParam = dateReadValue == null
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(dateReadValue);
+        final dateDeliveredParam = dateDeliveredValue == null
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(dateDeliveredValue);
         final isFromMeParam = const fb.BoolReader().vTableGetNullable(
           buffer,
           rootOffset,
@@ -1805,7 +1911,9 @@ obx_int.ModelDefinition getObjectBoxModel() {
           rootOffset,
           40,
         );
-        final datePlayedParam = datePlayedValue == null ? null : DateTime.fromMillisecondsSinceEpoch(datePlayedValue);
+        final datePlayedParam = datePlayedValue == null
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(datePlayedValue);
         final itemTypeParam = const fb.Int64Reader().vTableGetNullable(
           buffer,
           rootOffset,
@@ -1825,7 +1933,8 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final associatedMessageGuidParam = const fb.StringReader(
           asciiOptimization: true,
         ).vTableGetNullable(buffer, rootOffset, 58);
-        final associatedMessagePartParam = const fb.Int64Reader().vTableGetNullable(buffer, rootOffset, 84);
+        final associatedMessagePartParam = const fb.Int64Reader()
+            .vTableGetNullable(buffer, rootOffset, 84);
         final associatedMessageTypeParam = const fb.StringReader(
           asciiOptimization: true,
         ).vTableGetNullable(buffer, rootOffset, 60);
@@ -1844,8 +1953,9 @@ obx_int.ModelDefinition getObjectBoxModel() {
           68,
           false,
         );
-        final dateDeletedParam =
-            dateDeletedValue == null ? null : DateTime.fromMillisecondsSinceEpoch(dateDeletedValue);
+        final dateDeletedParam = dateDeletedValue == null
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(dateDeletedValue);
         final threadOriginatorGuidParam = const fb.StringReader(
           asciiOptimization: true,
         ).vTableGetNullable(buffer, rootOffset, 72);
@@ -1858,7 +1968,9 @@ obx_int.ModelDefinition getObjectBoxModel() {
           86,
           false,
         );
-        final dateEditedParam = dateEditedValue == null ? null : DateTime.fromMillisecondsSinceEpoch(dateEditedValue);
+        final dateEditedParam = dateEditedValue == null
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(dateEditedValue);
         final wasDeliveredQuietlyParam = const fb.BoolReader().vTableGet(
           buffer,
           rootOffset,
@@ -1877,64 +1989,65 @@ obx_int.ModelDefinition getObjectBoxModel() {
           100,
           false,
         );
-        final object = Message(
-          id: idParam,
-          originalROWID: originalROWIDParam,
-          guid: guidParam,
-          handleId: handleIdParam,
-          otherHandle: otherHandleParam,
-          text: textParam,
-          subject: subjectParam,
-          country: countryParam,
-          error: errorParam,
-          dateCreated: dateCreatedParam,
-          dateRead: dateReadParam,
-          dateDelivered: dateDeliveredParam,
-          isFromMe: isFromMeParam,
-          hasDdResults: hasDdResultsParam,
-          datePlayed: datePlayedParam,
-          itemType: itemTypeParam,
-          groupTitle: groupTitleParam,
-          groupActionType: groupActionTypeParam,
-          balloonBundleId: balloonBundleIdParam,
-          associatedMessageGuid: associatedMessageGuidParam,
-          associatedMessagePart: associatedMessagePartParam,
-          associatedMessageType: associatedMessageTypeParam,
-          expressiveSendStyleId: expressiveSendStyleIdParam,
-          hasAttachments: hasAttachmentsParam,
-          hasReactions: hasReactionsParam,
-          dateDeleted: dateDeletedParam,
-          threadOriginatorGuid: threadOriginatorGuidParam,
-          threadOriginatorPart: threadOriginatorPartParam,
-          hasApplePayloadData: hasApplePayloadDataParam,
-          dateEdited: dateEditedParam,
-          wasDeliveredQuietly: wasDeliveredQuietlyParam,
-          didNotifyRecipient: didNotifyRecipientParam,
-          isBookmarked: isBookmarkedParam,
-        )
-          ..bigEmoji = const fb.BoolReader().vTableGetNullable(
-            buffer,
-            rootOffset,
-            76,
-          )
-          ..dbAttributedBody = const fb.StringReader(
-            asciiOptimization: true,
-          ).vTableGetNullable(buffer, rootOffset, 82)
-          ..dbMessageSummaryInfo = const fb.StringReader(
-            asciiOptimization: true,
-          ).vTableGetNullable(buffer, rootOffset, 90)
-          ..dbPayloadData = const fb.StringReader(
-            asciiOptimization: true,
-          ).vTableGetNullable(buffer, rootOffset, 92)
-          ..dbMetadata = const fb.StringReader(
-            asciiOptimization: true,
-          ).vTableGetNullable(buffer, rootOffset, 94)
-          ..isDelivered = const fb.BoolReader().vTableGet(
-            buffer,
-            rootOffset,
-            102,
-            false,
-          );
+        final object =
+            Message(
+                id: idParam,
+                originalROWID: originalROWIDParam,
+                guid: guidParam,
+                handleId: handleIdParam,
+                otherHandle: otherHandleParam,
+                text: textParam,
+                subject: subjectParam,
+                country: countryParam,
+                error: errorParam,
+                dateCreated: dateCreatedParam,
+                dateRead: dateReadParam,
+                dateDelivered: dateDeliveredParam,
+                isFromMe: isFromMeParam,
+                hasDdResults: hasDdResultsParam,
+                datePlayed: datePlayedParam,
+                itemType: itemTypeParam,
+                groupTitle: groupTitleParam,
+                groupActionType: groupActionTypeParam,
+                balloonBundleId: balloonBundleIdParam,
+                associatedMessageGuid: associatedMessageGuidParam,
+                associatedMessagePart: associatedMessagePartParam,
+                associatedMessageType: associatedMessageTypeParam,
+                expressiveSendStyleId: expressiveSendStyleIdParam,
+                hasAttachments: hasAttachmentsParam,
+                hasReactions: hasReactionsParam,
+                dateDeleted: dateDeletedParam,
+                threadOriginatorGuid: threadOriginatorGuidParam,
+                threadOriginatorPart: threadOriginatorPartParam,
+                hasApplePayloadData: hasApplePayloadDataParam,
+                dateEdited: dateEditedParam,
+                wasDeliveredQuietly: wasDeliveredQuietlyParam,
+                didNotifyRecipient: didNotifyRecipientParam,
+                isBookmarked: isBookmarkedParam,
+              )
+              ..bigEmoji = const fb.BoolReader().vTableGetNullable(
+                buffer,
+                rootOffset,
+                76,
+              )
+              ..dbAttributedBody = const fb.StringReader(
+                asciiOptimization: true,
+              ).vTableGetNullable(buffer, rootOffset, 82)
+              ..dbMessageSummaryInfo = const fb.StringReader(
+                asciiOptimization: true,
+              ).vTableGetNullable(buffer, rootOffset, 90)
+              ..dbPayloadData = const fb.StringReader(
+                asciiOptimization: true,
+              ).vTableGetNullable(buffer, rootOffset, 92)
+              ..dbMetadata = const fb.StringReader(
+                asciiOptimization: true,
+              ).vTableGetNullable(buffer, rootOffset, 94)
+              ..isDelivered = const fb.BoolReader().vTableGet(
+                buffer,
+                rootOffset,
+                102,
+                false,
+              );
         object.chat.targetId = const fb.Int64Reader().vTableGet(
           buffer,
           rootOffset,
@@ -1976,7 +2089,9 @@ obx_int.ModelDefinition getObjectBoxModel() {
         object.id = id;
       },
       objectToFB: (ThemeObject object, fb.Builder fbb) {
-        final nameOffset = object.name == null ? null : fbb.writeString(object.name!);
+        final nameOffset = object.name == null
+            ? null
+            : fbb.writeString(object.name!);
         fbb.startTable(8);
         fbb.addInt64(0, object.id ?? 0);
         fbb.addOffset(1, nameOffset);
@@ -2091,14 +2206,16 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final googleFontParam = const fb.StringReader(
           asciiOptimization: true,
         ).vTableGet(buffer, rootOffset, 12, '');
-        final object = ThemeStruct(
-          id: idParam,
-          name: nameParam,
-          gradientBg: gradientBgParam,
-          googleFont: googleFontParam,
-        )..dbThemeData = const fb.StringReader(
-            asciiOptimization: true,
-          ).vTableGet(buffer, rootOffset, 10, '');
+        final object =
+            ThemeStruct(
+                id: idParam,
+                name: nameParam,
+                gradientBg: gradientBgParam,
+                googleFont: googleFontParam,
+              )
+              ..dbThemeData = const fb.StringReader(
+                asciiOptimization: true,
+              ).vTableGet(buffer, rootOffset, 10, '');
 
         return object;
       },
@@ -2120,9 +2237,12 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final emailsOffset = fbb.writeList(
           object.emails.map(fbb.writeString).toList(growable: false),
         );
-        final avatarOffset = object.avatar == null ? null : fbb.writeListInt8(object.avatar!);
-        final dbStructuredNameOffset =
-            object.dbStructuredName == null ? null : fbb.writeString(object.dbStructuredName!);
+        final avatarOffset = object.avatar == null
+            ? null
+            : fbb.writeListInt8(object.avatar!);
+        final dbStructuredNameOffset = object.dbStructuredName == null
+            ? null
+            : fbb.writeString(object.dbStructuredName!);
         fbb.startTable(11);
         fbb.addInt64(0, object.dbId ?? 0);
         fbb.addOffset(1, idOffset);
@@ -2156,19 +2276,23 @@ obx_int.ModelDefinition getObjectBoxModel() {
           fb.StringReader(asciiOptimization: true),
           lazy: false,
         ).vTableGet(buffer, rootOffset, 14, []);
-        final avatarParam = const fb.Uint8ListReader(
-          lazy: false,
-        ).vTableGetNullable(buffer, rootOffset, 18) as Uint8List?;
-        final object = Contact(
-          dbId: dbIdParam,
-          id: idParam,
-          displayName: displayNameParam,
-          phones: phonesParam,
-          emails: emailsParam,
-          avatar: avatarParam,
-        )..dbStructuredName = const fb.StringReader(
-            asciiOptimization: true,
-          ).vTableGetNullable(buffer, rootOffset, 22);
+        final avatarParam =
+            const fb.Uint8ListReader(
+                  lazy: false,
+                ).vTableGetNullable(buffer, rootOffset, 18)
+                as Uint8List?;
+        final object =
+            Contact(
+                dbId: dbIdParam,
+                id: idParam,
+                displayName: displayNameParam,
+                phones: phonesParam,
+                emails: emailsParam,
+                avatar: avatarParam,
+              )
+              ..dbStructuredName = const fb.StringReader(
+                asciiOptimization: true,
+              ).vTableGetNullable(buffer, rootOffset, 22);
 
         return object;
       },
@@ -2186,7 +2310,9 @@ obx_int.ModelDefinition getObjectBoxModel() {
       objectToFB: (ContactV2 object, fb.Builder fbb) {
         final displayNameOffset = fbb.writeString(object.displayName);
         final nativeContactIdOffset = fbb.writeString(object.nativeContactId);
-        final avatarPathOffset = object.avatarPath == null ? null : fbb.writeString(object.avatarPath!);
+        final avatarPathOffset = object.avatarPath == null
+            ? null
+            : fbb.writeString(object.avatarPath!);
         final addressesOffset = fbb.writeList(
           object.addresses.map(fbb.writeString).toList(growable: false),
         );
@@ -2311,6 +2437,11 @@ class Attachment_ {
   /// See [Attachment.hasLivePhoto].
   static final hasLivePhoto = obx.QueryBooleanProperty<Attachment>(
     _entities[0].properties[13],
+  );
+
+  /// See [Attachment.isDownloaded].
+  static final isDownloaded = obx.QueryBooleanProperty<Attachment>(
+    _entities[0].properties[14],
   );
 }
 

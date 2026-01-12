@@ -154,7 +154,7 @@ class CustomDetailsMenuActionWidget extends StatelessWidget {
   final IconData nonIosIcon;
   final bool? shouldDisable;
 
-  CustomDetailsMenuActionWidget({
+  const CustomDetailsMenuActionWidget({
     super.key,
     this.onTap,
     required this.title,

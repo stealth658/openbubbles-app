@@ -154,8 +154,9 @@ class AttachmentsService extends GetxService {
       return AttachmentDownloader.getController(attachment.guid);
     }
 
-    // Check if file exists and get the compatible path (converted if needed)
-    if (File(pathName).existsSync()) {
+    // Check if attachment is downloaded using the isDownloaded flag
+    // This prevents treating partial downloads as complete files
+    if (attachment.isDownloaded == true && File(pathName).existsSync()) {
       // For images, check if we need HEIC/TIFF conversion
       String? compatiblePath = pathName;
       if (attachment.mimeType?.contains('image/hei') ?? false) {
@@ -405,9 +406,19 @@ class AttachmentsService extends GetxService {
       } catch (_) {}
     }
 
+    bool updateAttachment = false;
+    if (attachment.isDownloaded == true) {
+      attachment.isDownloaded = false;
+      updateAttachment = true;
+    }
+
     // Clear metadata processing flag to force reprocessing
     if (attachment.metadata != null) {
       attachment.metadata!.remove('_dimensions_processed');
+      updateAttachment = true;
+    }
+
+    if (updateAttachment) {
       await attachment.saveAsync(null);
     }
 
