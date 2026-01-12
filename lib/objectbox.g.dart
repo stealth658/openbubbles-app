@@ -1206,10 +1206,11 @@ obx_int.ModelDefinition getObjectBoxModel() {
           40,
           false,
         );
-        final isDownloadedParam = const fb.BoolReader().vTableGetNullable(
+        final isDownloadedParam = const fb.BoolReader().vTableGet(
           buffer,
           rootOffset,
           42,
+          false,
         );
         final object =
             Attachment(
