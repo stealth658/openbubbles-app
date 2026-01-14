@@ -1,5 +1,5 @@
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
-import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/data/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
@@ -10,7 +10,7 @@ class GamePigeon extends StatefulWidget {
   final iMessageAppData data;
   final Message message;
 
-  GamePigeon({
+  const GamePigeon({
     super.key,
     required this.data,
     required this.message,

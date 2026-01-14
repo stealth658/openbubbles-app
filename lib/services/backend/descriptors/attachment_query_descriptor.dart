@@ -1,4 +1,4 @@
-import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/data/database/models.dart';
 import 'package:bluebubbles/objectbox.g.dart';
 import 'package:objectbox/objectbox.dart';
 

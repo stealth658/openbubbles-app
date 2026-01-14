@@ -1,5 +1,5 @@
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
-import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/data/database/models.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -7,7 +7,7 @@ class ApplePay extends StatefulWidget {
   final iMessageAppData data;
   final Message message;
 
-  ApplePay({
+  const ApplePay({
     super.key,
     required this.data,
     required this.message,

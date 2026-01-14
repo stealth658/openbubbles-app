@@ -1,5 +1,5 @@
-import 'package:bluebubbles/database/models.dart';
-import 'package:bluebubbles/database/database.dart';
+import 'package:bluebubbles/data/database/models.dart';
+import 'package:bluebubbles/data/database/database.dart';
 import 'package:bluebubbles/env.dart';
 import 'package:bluebubbles/services/backend/actions/handle_actions.dart';
 import 'package:get_it/get_it.dart';

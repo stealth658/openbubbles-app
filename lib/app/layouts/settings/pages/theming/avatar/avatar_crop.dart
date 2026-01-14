@@ -1,19 +1,20 @@
 import 'package:bluebubbles/helpers/helpers.dart';
+import 'package:bluebubbles/app/components/dialogs/dialogs.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
-import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/data/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:crop_your_image/crop_your_image.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:bluebubbles/utils/logger/logger.dart';
+import 'package:bluebubbles/core/logger/logger.dart';
 import 'package:universal_io/io.dart';
 
 class AvatarCrop extends StatefulWidget {
   final int? index;
   final Chat? chat;
-  AvatarCrop({this.index, this.chat});
+  const AvatarCrop({super.key, this.index, this.chat});
 
   @override
   State<AvatarCrop> createState() => _AvatarCropState();
@@ -134,14 +135,14 @@ class _AvatarCropState extends OptimizedState<AvatarCrop> {
               ],
             ),
           ),
-          body: Container(
+          body: SizedBox(
             width: double.infinity,
             height: double.infinity,
             child: Center(
               child: Column(
                 children: [
                   if (_imageData != null)
-                    Container(
+                    SizedBox(
                       height: context.height / 2,
                       child: Crop(
                         controller: _cropController,
@@ -162,7 +163,7 @@ class _AvatarCropState extends OptimizedState<AvatarCrop> {
                       ),
                     ),
                   if (_imageData == null)
-                    Container(
+                    SizedBox(
                       height: context.height / 2,
                       child: Center(
                         child: Text("Pick an image to crop it for a custom avatar",
@@ -183,19 +184,9 @@ class _AvatarCropState extends OptimizedState<AvatarCrop> {
                       if (res == null || res.files.isEmpty || res.files.first.bytes == null) return;
 
                       if (res.files.first.name.endsWith("gif")) {
-                        showDialog(
+                        BBProgressDialog.show(
                           context: context,
-                          builder: (context) => AlertDialog(
-                            title: Text("Saving avatar...", style: context.theme.textTheme.titleLarge),
-                            content: Container(
-                              height: 70,
-                              child: Center(
-                                child: buildProgressIndicator(context),
-                              ),
-                            ),
-                            backgroundColor: context.theme.colorScheme.properSurface,
-                          ),
-                          barrierDismissible: false,
+                          title: "Saving avatar...",
                         );
                         onCropped(CropSuccess(res.files.first.bytes!));
                       } else {
@@ -215,18 +206,9 @@ class _AvatarCropState extends OptimizedState<AvatarCrop> {
   }
 
   void showSavingAvatarDialog() {
-    showDialog(
+    BBProgressDialog.show(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text("Saving avatar...", style: context.theme.textTheme.titleLarge),
-        content: Container(
-          height: 70,
-          child: Center(
-            child: buildProgressIndicator(context),
-          ),
-        ),
-        backgroundColor: context.theme.colorScheme.properSurface,
-      ),
+      title: "Saving avatar...",
       barrierDismissible: false,
     );
   }

@@ -1,11 +1,11 @@
 import 'dart:math';
 
+import 'package:bluebubbles/app/layouts/conversation_list/pages/conversation_list.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/server/backup_restore_panel.dart';
 import 'package:bluebubbles/app/layouts/settings/settings_page.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/helpers/ui/theme_helpers.dart';
-import 'package:bluebubbles/utils/logger/logger.dart';
-import 'package:bluebubbles/app/layouts/conversation_list/pages/conversation_list.dart';
+import 'package:bluebubbles/core/logger/logger.dart';
 import 'package:bluebubbles/app/layouts/setup/dialogs/failed_to_scan_dialog.dart';
 import 'package:bluebubbles/app/layouts/setup/pages/page_template.dart';
 import 'package:bluebubbles/app/layouts/setup/setup_view.dart';
@@ -19,6 +19,8 @@ import 'package:simple_animations/simple_animations.dart';
 import 'package:tuple/tuple.dart';
 
 class SyncProgress extends StatefulWidget {
+  const SyncProgress({super.key});
+
   @override
   State<SyncProgress> createState() => _SyncProgressState();
 }
@@ -159,7 +161,7 @@ class _SyncProgressState extends OptimizedState<SyncProgress> {
                           Navigator.of(Get.context!).push(
                             ThemeSwitcher.buildPageRoute(
                               builder: (BuildContext context) {
-                                return SettingsPage(
+                                return const SettingsPage(
                                   initialPage: BackupRestorePanel(),
                                 );
                               },

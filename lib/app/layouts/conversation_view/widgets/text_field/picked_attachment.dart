@@ -5,7 +5,7 @@ import 'package:animations/animations.dart';
 import 'package:bluebubbles/app/layouts/fullscreen_media/fullscreen_holder.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/ui/theme_helpers.dart';
-import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/data/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -14,7 +14,7 @@ import 'package:mime_type/mime_type.dart';
 import 'package:universal_io/io.dart';
 
 class PickedAttachment extends StatefulWidget {
-  PickedAttachment({
+  const PickedAttachment({
     super.key,
     required this.data,
     required this.controller,

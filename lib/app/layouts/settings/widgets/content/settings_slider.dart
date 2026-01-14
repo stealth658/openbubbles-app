@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class SettingsSlider extends StatelessWidget {
-  SettingsSlider(
+  const SettingsSlider(
       {required this.startingVal,
       this.update,
       this.onChangeEnd,

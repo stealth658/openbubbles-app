@@ -1,4 +1,4 @@
-import 'package:bluebubbles/database/models.dart' hide Entity;
+import 'package:bluebubbles/data/database/models.dart' hide Entity;
 import 'package:flutter/foundation.dart';
 
 class ReactionTypes {

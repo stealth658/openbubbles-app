@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:bluebubbles/app/components/avatars/contact_avatar_widget.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/data/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -15,7 +15,7 @@ import 'package:universal_html/html.dart' as html;
 import 'package:universal_io/io.dart';
 
 class ContactCard extends StatefulWidget {
-  ContactCard({
+  const ContactCard({
     super.key,
     required this.file,
     required this.attachment,

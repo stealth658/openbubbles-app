@@ -4,16 +4,17 @@ import 'package:bluebubbles/app/components/avatars/contact_avatar_widget.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
-import 'package:bluebubbles/database/database.dart';
-import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/data/database/database.dart';
+import 'package:bluebubbles/data/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
-import 'package:bluebubbles/utils/string_utils.dart';
+import 'package:bluebubbles/core/utils/string_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_acrylic/window_effect.dart';
 import 'package:get/get.dart' hide Response;
 import 'package:slugify/slugify.dart';
+import 'package:bluebubbles/app/components/base/base.dart';
 
 class HandleSelectorView extends StatefulWidget {
   const HandleSelectorView({
@@ -152,8 +153,8 @@ class HandleSelectorViewState extends OptimizedState<HandleSelectorView> {
                         color: context.theme.colorScheme.outline,
                       ),
                       suffixIcon: searchController.text.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(Icons.clear),
+                          ? BBIconButton(
+                              icon: Icons.clear,
                               onPressed: () {
                                 searchController.clear();
                               },
@@ -189,7 +190,7 @@ class HandleSelectorViewState extends OptimizedState<HandleSelectorView> {
                                             style: context.theme.textTheme.labelLarge,
                                           ),
                                         ),
-                                        buildProgressIndicator(context, size: 15),
+                                        const BBLoadingIndicator(size: 15),
                                       ],
                                     );
                                   }
@@ -224,16 +225,10 @@ class HandleSelectorViewState extends OptimizedState<HandleSelectorView> {
                                               overflow: TextOverflow.ellipsis,
                                             ),
                                             subtitle: handle.address.isPhoneNumber
-                                                ? FutureBuilder<String>(
-                                                    future: formatPhoneNumber(cleansePhoneNumber(handle.address)),
-                                                    initialData: handle.address,
-                                                    builder: (context, snapshot) {
-                                                      return Text(
-                                                        snapshot.data ?? "",
-                                                        style: context.theme.textTheme.bodySmall!
-                                                            .copyWith(color: context.theme.colorScheme.outline),
-                                                      );
-                                                    },
+                                                ? Text(
+                                                    formatPhoneNumber(cleansePhoneNumber(handle.address)),
+                                                    style: context.theme.textTheme.bodySmall!
+                                                        .copyWith(color: context.theme.colorScheme.outline),
                                                   )
                                                 : Text(
                                                     handle.address,

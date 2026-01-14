@@ -1,12 +1,15 @@
 import 'dart:convert';
 
+import 'package:bluebubbles/app/components/settings/settings.dart';
+import 'package:bluebubbles/app/components/dialogs/dialogs.dart';
+import 'package:bluebubbles/app/components/settings/bb_settings_subtitle.dart';
 import 'package:bluebubbles/app/components/avatars/contact_avatar_widget.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/theming/avatar/avatar_crop.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
-import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/data/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
@@ -15,7 +18,7 @@ import 'package:skeletonizer/skeletonizer.dart';
 import 'package:universal_io/io.dart';
 
 class ProfilePanel extends StatefulWidget {
-  ProfilePanel({super.key});
+  const ProfilePanel({super.key});
 
   @override
   State<ProfilePanel> createState() => _ProfilePanelState();
@@ -50,55 +53,24 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
   }
 
   void updateName() async {
-    final nameController = TextEditingController(text: SettingsSvc.settings.userName.value);
-    done() async {
-      if (nameController.text.isEmpty) {
-        showSnackbar("Error", "Enter a name!");
-        return;
-      }
-      Navigator.of(context, rootNavigator: true).pop();
-      SettingsSvc.settings.userName.value = nameController.text;
+    final result = await BBInputDialog.text(
+      context: context,
+      title: "User Profile Name",
+      placeholder: "Name",
+      initialValue: SettingsSvc.settings.userName.value,
+    );
+
+    if (result != null && result.isNotEmpty) {
+      SettingsSvc.settings.userName.value = result;
       await SettingsSvc.settings.saveOneAsync("userName");
       setState(() {});
     }
-
-    await showDialog(
-        context: context,
-        builder: (_) {
-          return AlertDialog(
-            actions: [
-              TextButton(
-                child: Text("Cancel",
-                    style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
-                onPressed: () => Get.back(),
-              ),
-              TextButton(
-                child: Text("OK",
-                    style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
-                onPressed: () async {
-                  done.call();
-                },
-              ),
-            ],
-            content: TextField(
-              controller: nameController,
-              onSubmitted: (_) => done.call(),
-              autofocus: true,
-              decoration: const InputDecoration(
-                labelText: "Name",
-                border: OutlineInputBorder(),
-              ),
-            ),
-            title: Text("User Profile Name", style: context.theme.textTheme.titleLarge),
-            backgroundColor: context.theme.colorScheme.properSurface,
-          );
-        });
   }
 
   void updatePhoto() async {
     Navigator.of(context).push(
       ThemeSwitcher.buildPageRoute(
-        builder: (context) => AvatarCrop(),
+        builder: (context) => const AvatarCrop(),
       ),
     );
   }
@@ -135,7 +107,7 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
                         onTap: () async {
                           updatePhoto();
                         },
-                        child: ContactAvatarWidget(
+                        child: const ContactAvatarWidget(
                           handle: null,
                           borderThickness: 0.1,
                           editable: false,
@@ -244,7 +216,7 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
                     color: Colors.transparent,
                     child: ListTile(
                       mouseCursor: MouseCursor.defer,
-                      leading: ContactAvatarWidget(
+                      leading: const ContactAvatarWidget(
                         handle: null,
                         borderThickness: 0.1,
                         editable: false,
@@ -310,10 +282,10 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
                         ),
                       )
                     : const SizedBox.shrink()),
-              SettingsHeader(iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "iCloud Account Info"),
+              const BBSettingsHeader(text: "iCloud Account Info"),
               Skeletonizer(
                   enabled: accountInfo.isEmpty,
-                  child: SettingsSection(
+                  child: BBSettingsSection(
                     backgroundColor: tileColor,
                     children: [
                       Obx(() {
@@ -390,13 +362,11 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
                           ),
                         ),
                       if (accountInfo['active_alias'] != null)
-                        SettingsOptions<String>(
+                        BBSettingsDropdown<String>(
                           title: "Start Chats Using",
-                          initial: accountInfo['active_alias'],
-                          clampWidth: false,
+                          value: accountInfo['active_alias'],
                           options:
                               accountInfo['vetted_aliases'].map((e) => e['Alias'].toString()).toList().cast<String>(),
-                          secondaryColor: headerColor,
                           useCupertino: false,
                           textProcessing: (str) => str,
                           capitalize: false,
@@ -409,14 +379,12 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
                         ),
                     ],
                   )),
+              if (!isNullOrEmpty(accountContact['name'])) const BBSettingsHeader(text: "iMessage Contact Card"),
               if (!isNullOrEmpty(accountContact['name']))
-                SettingsHeader(
-                    iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "iMessage Contact Card"),
-              if (!isNullOrEmpty(accountContact['name']))
-                SettingsSection(
+                BBSettingsSection(
                   backgroundColor: tileColor,
                   children: [
-                    SettingsTile(
+                    BBSettingsTile(
                       leading: (accountContact['avatar'] == null)
                           ? const CircleAvatar()
                           : ContactAvatarWidget(
@@ -431,7 +399,7 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
                       title: accountContact['name'],
                       subtitle: "Your sharable iMessage contact card",
                     ),
-                    const SettingsSubtitle(subtitle: "Visit iMessage settings on your Mac to update.")
+                    const BBSettingsSubtitle(text: "Visit iMessage settings on your Mac to update.")
                   ],
                 ),
             ],

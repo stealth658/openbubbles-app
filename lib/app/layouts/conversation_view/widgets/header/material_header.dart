@@ -7,8 +7,8 @@ import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/reply/
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/database/database.dart';
-import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/data/database/database.dart';
+import 'package:bluebubbles/data/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' hide BackButton;
@@ -19,7 +19,7 @@ import 'package:universal_io/io.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class MaterialHeader extends StatelessWidget implements PreferredSizeWidget {
-  const MaterialHeader({Key? key, required this.controller});
+  const MaterialHeader({super.key, required this.controller});
 
   final ConversationViewController controller;
 
@@ -227,6 +227,9 @@ class MaterialHeader extends StatelessWidget implements PreferredSizeWidget {
             ],
           )),
       Positioned(
+        bottom: 0,
+        left: 0,
+        right: 0,
         child: Obx(() => TweenAnimationBuilder<double>(
             duration: controller.chat.sendProgress.value == 0
                 ? Duration.zero
@@ -247,9 +250,6 @@ class MaterialHeader extends StatelessWidget implements PreferredSizeWidget {
                     minHeight: 3,
                   ),
                 ))),
-        bottom: 0,
-        left: 0,
-        right: 0,
       ),
     ]);
   }

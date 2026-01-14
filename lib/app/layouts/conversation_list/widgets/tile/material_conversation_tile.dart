@@ -1,16 +1,17 @@
 import 'package:async_task/async_task_extension.dart';
+import 'package:bluebubbles/data/database/database.dart';
+import 'package:bluebubbles/data/models/native/message.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/tile/conversation_tile.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
-import 'package:bluebubbles/database/database.dart';
-import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/objectbox.g.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class MaterialConversationTile extends CustomStateful<ConversationTileController> {
-  const MaterialConversationTile({Key? key, required super.parentController});
+  const MaterialConversationTile({super.key, required super.parentController});
 
   @override
   State<StatefulWidget> createState() => _MaterialConversationTileState();
@@ -133,7 +134,7 @@ class _MaterialConversationTileState extends CustomState<MaterialConversationTil
 }
 
 class MaterialTrailing extends CustomStateful<ConversationTileController> {
-  const MaterialTrailing({Key? key, required super.parentController});
+  const MaterialTrailing({super.key, required super.parentController});
 
   @override
   State<StatefulWidget> createState() => _MaterialTrailingState();
@@ -293,7 +294,7 @@ class _MaterialTrailingState extends CustomState<MaterialTrailing, void, Convers
 }
 
 class UnreadIcon extends CustomStateful<ConversationTileController> {
-  const UnreadIcon({Key? key, required super.parentController});
+  const UnreadIcon({super.key, required super.parentController});
 
   @override
   State<StatefulWidget> createState() => _UnreadIconState();

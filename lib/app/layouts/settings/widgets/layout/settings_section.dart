@@ -1,16 +1,17 @@
-import 'package:bluebubbles/helpers/types/constants.dart';
+import 'package:bluebubbles/core/constants/app_constants.dart';
 import 'package:bluebubbles/helpers/ui/theme_helpers.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/material.dart';
 import '../search/searchable_setting_item.dart';
 
+@Deprecated('Use BBSettingsSection from package:bluebubbles/app/app.dart instead')
 class SettingsSection extends StatelessWidget {
   final List<Widget>? children;
   // group searchable settings into a rounded rectangle
   final List<SearchableSettingItem>? searchableSettingsItems;
   final Color backgroundColor;
 
-  SettingsSection({
+  const SettingsSection({super.key, 
     this.children,
     required this.backgroundColor,
     this.searchableSettingsItems,

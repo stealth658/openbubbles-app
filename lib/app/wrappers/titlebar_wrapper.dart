@@ -10,7 +10,7 @@ import 'package:get/get_utils/src/extensions/context_extensions.dart';
 import 'package:window_manager/window_manager.dart';
 
 class TitleBarWrapper extends StatelessWidget {
-  TitleBarWrapper({super.key, required this.child});
+  const TitleBarWrapper({super.key, required this.child});
 
   final Widget child;
 

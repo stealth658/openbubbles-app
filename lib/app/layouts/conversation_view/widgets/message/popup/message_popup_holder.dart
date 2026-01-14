@@ -1,9 +1,9 @@
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/popup/message_popup.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/data/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
-import 'package:bluebubbles/utils/logger/logger.dart';
+import 'package:bluebubbles/core/logger/logger.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -12,7 +12,7 @@ import 'package:tuple/tuple.dart';
 import 'package:universal_html/html.dart' as html;
 
 class MessagePopupHolder extends StatefulWidget {
-  MessagePopupHolder({
+  const MessagePopupHolder({
     super.key,
     required this.child,
     required this.part,
@@ -85,13 +85,13 @@ class _MessagePopupHolderState extends OptimizedState<MessagePopupHolder> {
                 child: MessagePopup(
                   childPosition: childPos!,
                   size: size,
-                  child: widget.child,
                   part: widget.part,
                   controller: widget.controller,
                   cvController: widget.cvController,
                   serverDetails: Tuple3(minSierra, minBigSur, version > 100),
                   sendTapback: sendTapback,
                   widthContext: () => mounted ? context : null,
+                  child: widget.child,
                 ),
               ),
             ),

@@ -12,11 +12,11 @@ import 'package:bluebubbles/app/layouts/conversation_view/widgets/text_field/rep
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/text_field/text_field_suffix.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/text_field/voice_message_recorder.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
+import 'package:bluebubbles/core/logger/logger.dart';
+import 'package:bluebubbles/core/utils/emoji_utils.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/data/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
-import 'package:bluebubbles/utils/emoji.dart';
-import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/utils/share.dart';
 import 'package:chunked_stream/chunked_stream.dart';
 import 'package:collection/collection.dart';
@@ -40,7 +40,7 @@ import 'package:unicode_emojis/unicode_emojis.dart';
 import 'package:universal_io/io.dart';
 
 class ConversationTextField extends CustomStateful<ConversationViewController> {
-  ConversationTextField({
+  const ConversationTextField({
     super.key,
     required super.parentController,
   });
@@ -443,7 +443,7 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
               "Scheduling message...",
               style: context.theme.textTheme.titleLarge,
             ),
-            content: Container(
+            content: SizedBox(
               height: 70,
               child: Center(
                 child: CircularProgressIndicator(
@@ -795,14 +795,6 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
                                                     padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 15),
                                                     width: textFieldSize.width - (samsung ? 0 : 80),
                                                     height: textFieldSize.height - 15,
-                                                    child: Center(
-                                                      child: AnimatedOpacity(
-                                                        duration: const Duration(seconds: 1),
-                                                        opacity: (elapsed.inMilliseconds ~/ 1200 % 2 + 0.5).clamp(0, 1),
-                                                        child: Text("Recording... (${prettyDuration(elapsed)})",
-                                                            style: context.textTheme.titleMedium),
-                                                      ),
-                                                    ),
                                                     decoration: BoxDecoration(
                                                       border: Border.fromBorderSide(BorderSide(
                                                         color: context.theme.colorScheme.outline,
@@ -810,6 +802,14 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
                                                       )),
                                                       borderRadius: BorderRadius.circular(20),
                                                       color: context.theme.colorScheme.properSurface,
+                                                    ),
+                                                    child: Center(
+                                                      child: AnimatedOpacity(
+                                                        duration: const Duration(seconds: 1),
+                                                        opacity: (elapsed.inMilliseconds ~/ 1200 % 2 + 0.5).clamp(0, 1),
+                                                        child: Text("Recording... (${prettyDuration(elapsed)})",
+                                                            style: context.textTheme.titleMedium),
+                                                      ),
                                                     ),
                                                   );
                                                 })

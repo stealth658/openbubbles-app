@@ -1,11 +1,11 @@
 import 'dart:convert';
 
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/database/database.dart';
-import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/data/database/database.dart';
+import 'package:bluebubbles/data/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
-import 'package:bluebubbles/utils/logger/logger.dart';
-import 'package:bluebubbles/utils/string_utils.dart';
+import 'package:bluebubbles/core/logger/logger.dart';
+import 'package:bluebubbles/core/utils/string_utils.dart';
 import 'package:fast_contacts/fast_contacts.dart' hide Contact, StructuredName;
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
@@ -97,7 +97,7 @@ class ContactsService {
     // get formatted addresses
     for (Handle h in handles) {
       if (!h.address.contains("@") && h.formattedAddress == null) {
-        h.formattedAddress = await formatPhoneNumber(h.address);
+        h.formattedAddress = formatPhoneNumber(h.address);
       }
     }
     // match handles to contacts and save match
@@ -366,11 +366,11 @@ class ContactsService {
                 if (match) {
                   break;
                 }
-                String? formatA = a.contains("@") ? a.toLowerCase() : await formatPhoneNumber(cleansePhoneNumber(a));
+                String? formatA = a.contains("@") ? a.toLowerCase() : formatPhoneNumber(cleansePhoneNumber(a));
                 if (formatA.isEmpty) continue;
                 for (String _a in _addresses) {
                   String? _formatA =
-                      _a.contains("@") ? _a.toLowerCase() : await formatPhoneNumber(cleansePhoneNumber(_a));
+                      _a.contains("@") ? _a.toLowerCase() : formatPhoneNumber(cleansePhoneNumber(_a));
                   if (formatA == _formatA) {
                     match = true;
                     break;

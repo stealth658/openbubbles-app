@@ -7,6 +7,8 @@ import 'package:get/get.dart';
 import 'package:shimmer/shimmer.dart';
 
 class BatteryOptimizationCheck extends StatelessWidget {
+  const BatteryOptimizationCheck({super.key});
+
   @override
   Widget build(BuildContext context) {
     return SetupPageTemplate(

@@ -1,6 +1,6 @@
+import 'package:bluebubbles/app/components/settings/settings.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/server/server_management_panel.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/content/next_button.dart';
-import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
@@ -44,8 +44,7 @@ class ConnectionServerTile extends StatelessWidget {
           break;
       }
 
-      return SettingsTile(
-        backgroundColor: tileColor,
+      return BBSettingsTile(
         title: "Connection & Server",
         onTap: () {
           NavigationSvc.pushAndRemoveSettingsUntil(

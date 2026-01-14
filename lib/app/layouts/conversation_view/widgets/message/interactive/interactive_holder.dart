@@ -8,14 +8,14 @@ import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/intera
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/misc/tail_clipper.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/database/models.dart' hide PayloadType;
+import 'package:bluebubbles/data/database/models.dart' hide PayloadType;
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class InteractiveHolder extends CustomStateful<MessageWidgetController> {
-  InteractiveHolder({
+  const InteractiveHolder({
     super.key,
     required super.parentController,
     required this.message,

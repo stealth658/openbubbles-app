@@ -1,13 +1,11 @@
-import 'dart:math';
-
+import 'package:bluebubbles/app/app.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/widgets/media_gallery_card.dart';
-import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/data/database/models.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 
 /// Widget that handles documents/files section display
 class DocumentsSection extends StatelessWidget {
@@ -28,53 +26,36 @@ class DocumentsSection extends StatelessWidget {
 
     return SliverMainAxisGroup(
       slivers: [
-        SliverPadding(
-          padding: const EdgeInsets.only(top: 20, bottom: 5, left: 20),
-          sliver: SliverToBoxAdapter(
-            child: Text(
-              "OTHER FILES",
-              style: context.theme.textTheme.bodyMedium!.copyWith(
-                color: context.theme.colorScheme.outline,
-              ),
-            ),
-          ),
+        const SliverToBoxAdapter(
+          child: BBSectionHeader(text: "OTHER FILES"),
         ),
         if (isLoading)
-          SliverToBoxAdapter(
+          const SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 20.0),
+              padding: EdgeInsets.symmetric(
+                vertical: BBSpacing.lg,
+                horizontal: BBSpacing.lg,
+              ),
               child: Center(
-                child: buildProgressIndicator(context, size: 24),
+                child: BBLoadingIndicator(size: 24),
               ),
             ),
           )
         else if (docs.isEmpty)
           SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 20.0),
-              child: Center(
-                child: Text(
-                  "No files",
-                  style: context.theme.textTheme.bodyMedium!.copyWith(
-                    color: context.theme.colorScheme.outline,
-                  ),
-                ),
-              ),
+            child: BBEmptyState(
+              message: "No files",
+              icon: SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.doc : Icons.description,
             ),
           )
         else
           SliverPadding(
-            padding: EdgeInsets.only(
-              left: SettingsSvc.settings.skin.value == Skins.iOS ? 20 : 10,
-              right: SettingsSvc.settings.skin.value == Skins.iOS ? 20 : 10,
-              top: 10,
-              bottom: 10,
-            ),
+            padding: BBMediaGrid.getGridPadding(SettingsSvc.settings.skin.value),
             sliver: SliverGrid(
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: max(2, NavigationSvc.width(context) ~/ 200),
-                mainAxisSpacing: 10,
-                crossAxisSpacing: 10,
+                crossAxisCount: BBMediaGrid.calculateCrossAxisCount(context),
+                mainAxisSpacing: BBMediaGrid.mainAxisSpacing,
+                crossAxisSpacing: BBMediaGrid.crossAxisSpacing,
                 childAspectRatio: 1.75,
               ),
               delegate: SliverChildBuilderDelegate(

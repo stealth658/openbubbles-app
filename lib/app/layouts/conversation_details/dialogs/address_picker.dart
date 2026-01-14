@@ -1,5 +1,6 @@
+import 'package:bluebubbles/app/components/dialogs/dialogs.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/data/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -35,49 +36,46 @@ void showAddressPicker(Contact? contact, Handle handle, BuildContext context,
     } else if (isEmail && handle.defaultEmail != null && !isLongPressed) {
       launchIntent(video, handle.defaultEmail!);
     } else {
-      showDialog(
+      BBCustomDialog.show(
         context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-              backgroundColor: context.theme.colorScheme.properSurface,
-              title: Text("Select Address", style: context.theme.textTheme.titleLarge),
-              content: ObxValue<Rx<bool>>(
-                (data) => Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    for (int i = 0; i < items.length; i++)
-                      TextButton(
-                        child: Text(
-                          items[i],
-                          style: context.theme.textTheme.bodyLarge,
-                          textAlign: TextAlign.start,
-                        ),
-                        onPressed: () {
-                          if (data.value) {
-                            if (isEmail) {
-                              handle.defaultEmail = items[i];
-                              handle.updateDefaultEmail(items[i]);
-                            } else {
-                              handle.defaultPhone = items[i];
-                              handle.updateDefaultPhone(items[i]);
-                            }
-                          }
-                          launchIntent(video, items[i]);
-                          Navigator.of(context).pop();
-                        },
-                      ),
-                    Row(
-                      children: <Widget>[
-                        SizedBox(
-                          height: 48.0,
-                          width: 24.0,
-                          child: Checkbox(
-                            value: data.value,
-                            activeColor: context.theme.colorScheme.primary,
-                            onChanged: (bool? value) {
-                              data.value = value!;
+        title: "Select Address",
+        content: ObxValue<Rx<bool>>(
+          (data) => Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (int i = 0; i < items.length; i++)
+                TextButton(
+                  child: Text(
+                    items[i],
+                    style: context.theme.textTheme.bodyLarge,
+                    textAlign: TextAlign.start,
+                  ),
+                  onPressed: () {
+                    if (data.value) {
+                      if (isEmail) {
+                        handle.defaultEmail = items[i];
+                        handle.updateDefaultEmail(items[i]);
+                      } else {
+                        handle.defaultPhone = items[i];
+                        handle.updateDefaultPhone(items[i]);
+                      }
+                    }
+                    launchIntent(video, items[i]);
+                    Navigator.of(context).pop();
+                  },
+                ),
+              Row(
+                children: <Widget>[
+                  SizedBox(
+                    height: 48.0,
+                    width: 24.0,
+                    child: Checkbox(
+                      value: data.value,
+                      activeColor: context.theme.colorScheme.primary,
+                      onChanged: (bool? value) {
+                        data.value = value!;
                             },
                           ),
                         ),
@@ -104,8 +102,8 @@ void showAddressPicker(Contact? contact, Handle handle, BuildContext context,
                   ],
                 ),
                 false.obs,
-              ));
-        },
+              ),
+        actions: const [],
       );
     }
   }

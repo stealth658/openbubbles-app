@@ -1,10 +1,13 @@
 import 'package:audio_waveforms/audio_waveforms.dart' as aw;
+import 'package:bluebubbles/app/components/base/base.dart';
+import 'package:bluebubbles/app/components/settings/settings.dart';
+import 'package:bluebubbles/app/components/settings/bb_settings_subtitle.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/message_view/message_options_order_panel.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/content/next_button.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
-import 'package:bluebubbles/database/models.dart' hide PlatformFile;
+import 'package:bluebubbles/data/database/models.dart' hide PlatformFile;
 import 'package:bluebubbles/services/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
@@ -15,6 +18,8 @@ import 'package:path/path.dart';
 import 'package:universal_io/io.dart';
 
 class ConversationPanel extends StatefulWidget {
+  const ConversationPanel({super.key});
+
   @override
   State<StatefulWidget> createState() => _ConversationPanelState();
 }
@@ -63,85 +68,80 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
         SliverList(
           delegate: SliverChildListDelegate(
             <Widget>[
-              SettingsSection(
+              BBSettingsSection(
                 backgroundColor: tileColor,
                 children: [
-                  Obx(() => SettingsSwitch(
+                  Obx(() => BBSettingsSwitch(
                         onChanged: (bool val) async {
                           SettingsSvc.settings.showDeliveryTimestamps.value = val;
                           await SettingsSvc.settings.saveOneAsync('showDeliveryTimestamps');
                         },
-                        initialVal: SettingsSvc.settings.showDeliveryTimestamps.value,
+                        value: SettingsSvc.settings.showDeliveryTimestamps.value,
                         title: "Show Delivery Timestamps",
-                        backgroundColor: tileColor,
                       )),
                   const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
-                  Obx(() => SettingsSwitch(
+                  Obx(() => BBSettingsSwitch(
                         onChanged: (bool val) async {
                           SettingsSvc.settings.recipientAsPlaceholder.value = val;
                           await SettingsSvc.settings.saveOneAsync('recipientAsPlaceholder');
                         },
-                        initialVal: SettingsSvc.settings.recipientAsPlaceholder.value,
+                        value: SettingsSvc.settings.recipientAsPlaceholder.value,
                         title: "Show Chat Name as Placeholder",
                         subtitle: "Changes the default hint text in the message box to display the recipient name",
-                        backgroundColor: tileColor,
                         isThreeLine: true,
                       )),
                   const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
-                  Obx(() => SettingsSwitch(
+                  Obx(() => BBSettingsSwitch(
                         onChanged: (bool val) async {
                           SettingsSvc.settings.alwaysShowAvatars.value = val;
                           await SettingsSvc.settings.saveOneAsync('alwaysShowAvatars');
                         },
-                        initialVal: SettingsSvc.settings.alwaysShowAvatars.value,
+                        value: SettingsSvc.settings.alwaysShowAvatars.value,
                         title: "Show Avatars in DM Chats",
                         subtitle: "Shows contact avatars in direct messages rather than just in group messages",
-                        backgroundColor: tileColor,
                         isThreeLine: true,
                       )),
                   if (!kIsWeb && !kIsDesktop) const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                   if (!kIsWeb && !kIsDesktop)
-                    Obx(() => SettingsSwitch(
+                    Obx(() => BBSettingsSwitch(
                           onChanged: (bool val) async {
                             SettingsSvc.settings.smartReply.value = val;
                             await SettingsSvc.settings.saveOneAsync('smartReply');
                           },
-                          initialVal: SettingsSvc.settings.smartReply.value,
+                          value: SettingsSvc.settings.smartReply.value,
                           title: "Smart Suggestions",
                           subtitle:
                               "Shows smart reply suggestions above the message text field and detects various interactive content in message text",
-                          backgroundColor: tileColor,
                           isThreeLine: true,
                         )),
                   const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
-                  Obx(() => SettingsSwitch(
+                  Obx(() => BBSettingsSwitch(
                         onChanged: (bool val) async {
                           SettingsSvc.settings.repliesToPrevious.value = val;
                           await SettingsSvc.settings.saveOneAsync('repliesToPrevious');
                         },
-                        initialVal: SettingsSvc.settings.repliesToPrevious.value,
+                        value: SettingsSvc.settings.repliesToPrevious.value,
                         title: "Show Replies To Previous Message",
                         subtitle: "Shows replies to the previous message in the thread rather than the original",
-                        backgroundColor: tileColor,
                         isThreeLine: true,
                       )),
                   if (!kIsWeb) const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                   if (!kIsWeb)
-                    SettingsTile(
+                    BBSettingsTile(
                       title: "Message Options Order",
                       subtitle:
                           "Set the order for the options when ${SettingsSvc.settings.doubleTapForDetails.value ? "double-tapping" : "pressing and holding"} a message",
                       onTap: () {
                         NavigationSvc.pushSettings(
                           context,
-                          MessageOptionsOrderPanel(),
+                          const MessageOptionsOrderPanel(),
                         );
                       },
                       trailing: const NextButton(),
                     ),
                   if (!kIsWeb) const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                   if (!kIsWeb)
-                    SettingsTile(
+                    BBSettingsTile(
                       title: "Sync Group Chat Icons",
                       trailing: Obx(() => gettingIcons.value == null
                           ? const SizedBox.shrink()
@@ -166,48 +166,44 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                       subtitle: "Get iMessage group chat icons from the server",
                     ),
                   if (!kIsWeb)
-                    const SettingsSubtitle(
-                      subtitle: "Note: Overrides any custom avatars set for group chats.",
+                    const BBSettingsSubtitle(
+                      text: "Note: Overrides any custom avatars set for group chats.",
                     ),
                   if (!kIsWeb) const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                   if (!kIsWeb)
-                    Obx(() => SettingsSwitch(
+                    Obx(() => BBSettingsSwitch(
                           onChanged: (bool val) async {
                             SettingsSvc.settings.scrollToLastUnread.value = val;
                             await SettingsSvc.settings.saveOneAsync('scrollToLastUnread');
                           },
-                          initialVal: SettingsSvc.settings.scrollToLastUnread.value,
+                          value: SettingsSvc.settings.scrollToLastUnread.value,
                           title: "Store Last Read Message",
                           subtitle:
                               "Remembers the last opened message and allows automatically scrolling back to it if out of view",
-                          backgroundColor: tileColor,
                           isThreeLine: true,
                         )),
-                  Obx(() => SettingsSwitch(
+                  Obx(() => BBSettingsSwitch(
                         onChanged: (bool val) {
                           SettingsSvc.settings.hideNamesForReactions.value = val;
                           SettingsSvc.settings.saveOneAsync("hideNamesForReactions");
                         },
-                        initialVal: SettingsSvc.settings.hideNamesForReactions.value,
+                        value: SettingsSvc.settings.hideNamesForReactions.value,
                         title: "Hide Names in Reaction Details",
                         subtitle:
                             "Enable this to hide names under participant avatars when you view a message's reactions",
-                        backgroundColor: tileColor,
                       )),
                 ],
               ),
               if (!kIsWeb)
-                SettingsHeader(
-                  iosSubtitle: iosSubtitle,
-                  materialSubtitle: materialSubtitle,
+                const BBSettingsHeader(
                   text: "Sounds",
                 ),
               if (!kIsWeb)
                 Obx(
-                  () => SettingsSection(
+                  () => BBSettingsSection(
                     backgroundColor: tileColor,
                     children: [
-                      SettingsTile(
+                      BBSettingsTile(
                         title: "${SettingsSvc.settings.sendSoundPath.value == null ? "Add" : "Change"} Send Sound",
                         subtitle: SettingsSvc.settings.sendSoundPath.value != null
                             ? basename(SettingsSvc.settings.sendSoundPath.value!).substring("send-".length)
@@ -229,12 +225,12 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                             : Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  IconButton(
+                                  BBIconButton(
                                       icon: playingSendSound.value
-                                          ? Icon(SettingsSvc.settings.skin.value == Skins.iOS
+                                          ? (SettingsSvc.settings.skin.value == Skins.iOS
                                               ? CupertinoIcons.stop
                                               : Icons.stop_outlined)
-                                          : Icon(SettingsSvc.settings.skin.value == Skins.iOS
+                                          : (SettingsSvc.settings.skin.value == Skins.iOS
                                               ? CupertinoIcons.play
                                               : Icons.play_arrow_outlined),
                                       onPressed: () async {
@@ -263,10 +259,10 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                                           }
                                         }
                                       }),
-                                  IconButton(
-                                    icon: Icon(SettingsSvc.settings.skin.value == Skins.iOS
+                                  BBIconButton(
+                                    icon: SettingsSvc.settings.skin.value == Skins.iOS
                                         ? CupertinoIcons.trash
-                                        : Icons.delete_outline),
+                                        : Icons.delete_outline,
                                     onPressed: () async {
                                       File file = File(SettingsSvc.settings.sendSoundPath.value!);
                                       if (await file.exists()) {
@@ -280,7 +276,7 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                               ),
                       ),
                       const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
-                      SettingsTile(
+                      BBSettingsTile(
                         title:
                             "${SettingsSvc.settings.receiveSoundPath.value == null ? "Add" : "Change"} Receive Sound",
                         subtitle: SettingsSvc.settings.receiveSoundPath.value != null
@@ -303,12 +299,12 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                             : Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  IconButton(
+                                  BBIconButton(
                                       icon: playingReceiveSound.value
-                                          ? Icon(SettingsSvc.settings.skin.value == Skins.iOS
+                                          ? (SettingsSvc.settings.skin.value == Skins.iOS
                                               ? CupertinoIcons.stop
                                               : Icons.stop_outlined)
-                                          : Icon(SettingsSvc.settings.skin.value == Skins.iOS
+                                          : (SettingsSvc.settings.skin.value == Skins.iOS
                                               ? CupertinoIcons.play
                                               : Icons.play_arrow_outlined),
                                       onPressed: () async {
@@ -339,10 +335,10 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                                           }
                                         }
                                       }),
-                                  IconButton(
-                                    icon: Icon(SettingsSvc.settings.skin.value == Skins.iOS
+                                  BBIconButton(
+                                    icon: SettingsSvc.settings.skin.value == Skins.iOS
                                         ? CupertinoIcons.trash
-                                        : Icons.delete_outline),
+                                        : Icons.delete_outline,
                                     onPressed: () async {
                                       File file = File(SettingsSvc.settings.receiveSoundPath.value!);
                                       if (await file.exists()) {
@@ -356,7 +352,7 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                               ),
                       ),
                       const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
-                      const SettingsTile(
+                      const BBSettingsTile(
                         title: "Send/Receive Sound Volume",
                         subtitle: "Controls the volume of the send and receive sounds",
                       ),
@@ -371,73 +367,66 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                     ],
                   ),
                 ),
-              SettingsHeader(
-                iosSubtitle: iosSubtitle,
-                materialSubtitle: materialSubtitle,
+              const BBSettingsHeader(
                 text: "Gestures",
               ),
-              SettingsSection(
+              BBSettingsSection(
                 backgroundColor: tileColor,
                 children: [
                   if (!kIsWeb && !kIsDesktop)
-                    Obx(() => SettingsSwitch(
+                    Obx(() => BBSettingsSwitch(
                           onChanged: (bool val) async {
                             SettingsSvc.settings.autoOpenKeyboard.value = val;
                             await SettingsSvc.settings.saveOneAsync('autoOpenKeyboard');
                           },
-                          initialVal: SettingsSvc.settings.autoOpenKeyboard.value,
+                          value: SettingsSvc.settings.autoOpenKeyboard.value,
                           title: "Auto-open Keyboard",
                           subtitle: "Automatically open the keyboard when entering a chat",
-                          backgroundColor: tileColor,
                         )),
                   if (!kIsWeb && !kIsDesktop) const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                   if (!kIsWeb && !kIsDesktop)
-                    Obx(() => SettingsSwitch(
+                    Obx(() => BBSettingsSwitch(
                           onChanged: (bool val) async {
                             SettingsSvc.settings.swipeToCloseKeyboard.value = val;
                             await SettingsSvc.settings.saveOneAsync('swipeToCloseKeyboard');
                           },
-                          initialVal: SettingsSvc.settings.swipeToCloseKeyboard.value,
+                          value: SettingsSvc.settings.swipeToCloseKeyboard.value,
                           title: "Swipe Message Box to Close Keyboard",
                           subtitle: "Swipe down on the message box to hide the keyboard",
-                          backgroundColor: tileColor,
                         )),
                   if (!kIsWeb && !kIsDesktop) const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                   if (!kIsWeb && !kIsDesktop)
-                    Obx(() => SettingsSwitch(
+                    Obx(() => BBSettingsSwitch(
                           onChanged: (bool val) async {
                             SettingsSvc.settings.swipeToOpenKeyboard.value = val;
                             await SettingsSvc.settings.saveOneAsync('swipeToOpenKeyboard');
                           },
-                          initialVal: SettingsSvc.settings.swipeToOpenKeyboard.value,
+                          value: SettingsSvc.settings.swipeToOpenKeyboard.value,
                           title: "Swipe Message Box to Open Keyboard",
                           subtitle: "Swipe up on the message box to show the keyboard",
-                          backgroundColor: tileColor,
                         )),
                   if (!kIsWeb && !kIsDesktop) const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                   if (!kIsWeb && !kIsDesktop)
-                    Obx(() => SettingsSwitch(
+                    Obx(() => BBSettingsSwitch(
                           onChanged: (bool val) async {
                             SettingsSvc.settings.hideKeyboardOnScroll.value = val;
                             await SettingsSvc.settings.saveOneAsync('hideKeyboardOnScroll');
                           },
-                          initialVal: SettingsSvc.settings.hideKeyboardOnScroll.value,
+                          value: SettingsSvc.settings.hideKeyboardOnScroll.value,
                           title: "Hide Keyboard When Scrolling",
-                          backgroundColor: tileColor,
                         )),
                   if (!kIsWeb && !kIsDesktop) const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                   if (!kIsWeb && !kIsDesktop)
-                    Obx(() => SettingsSwitch(
+                    Obx(() => BBSettingsSwitch(
                           onChanged: (bool val) async {
                             SettingsSvc.settings.openKeyboardOnSTB.value = val;
                             await SettingsSvc.settings.saveOneAsync('openKeyboardOnSTB');
                           },
-                          initialVal: SettingsSvc.settings.openKeyboardOnSTB.value,
+                          value: SettingsSvc.settings.openKeyboardOnSTB.value,
                           title: "Open Keyboard After Tapping Scroll To Bottom",
-                          backgroundColor: tileColor,
                         )),
                   if (!kIsWeb && !kIsDesktop) const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
-                  Obx(() => SettingsSwitch(
+                  Obx(() => BBSettingsSwitch(
                         onChanged: (bool val) async {
                           SettingsSvc.settings.doubleTapForDetails.value = val;
                           if (val && SettingsSvc.settings.enableQuickTapback.value) {
@@ -447,34 +436,31 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                             await SettingsSvc.settings.saveOneAsync('doubleTapForDetails');
                           }
                         },
-                        initialVal: SettingsSvc.settings.doubleTapForDetails.value,
+                        value: SettingsSvc.settings.doubleTapForDetails.value,
                         title: "Double-${kIsWeb || kIsDesktop ? "Click" : "Tap"} Message for Details",
                         subtitle:
                             "Opens the message details popup when double ${kIsWeb || kIsDesktop ? "click" : "tapp"}ing a message",
-                        backgroundColor: tileColor,
                         isThreeLine: true,
                       )),
                   if (!kIsDesktop && !kIsWeb) const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                   if (!kIsDesktop && !kIsWeb)
-                    Obx(() => SettingsSwitch(
+                    Obx(() => BBSettingsSwitch(
                           onChanged: (bool val) async {
                             SettingsSvc.settings.sendWithReturn.value = val;
                             await SettingsSvc.settings.saveOneAsync('sendWithReturn');
                           },
-                          initialVal: SettingsSvc.settings.sendWithReturn.value,
+                          value: SettingsSvc.settings.sendWithReturn.value,
                           title: "Send Message with Enter",
-                          backgroundColor: tileColor,
                         )),
                   const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
-                  Obx(() => SettingsSwitch(
+                  Obx(() => BBSettingsSwitch(
                         onChanged: (bool val) async {
                           SettingsSvc.settings.scrollToBottomOnSend.value = val;
                           await SettingsSvc.settings.saveOneAsync('scrollToBottomOnSend');
                         },
-                        initialVal: SettingsSvc.settings.scrollToBottomOnSend.value,
+                        value: SettingsSvc.settings.scrollToBottomOnSend.value,
                         title: "Scroll To Bottom When Sending Messages",
                         subtitle: "Scroll to the most recent messages in the chat when sending a new text",
-                        backgroundColor: tileColor,
                       )),
                 ],
               ),

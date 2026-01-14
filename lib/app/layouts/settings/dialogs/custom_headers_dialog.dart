@@ -1,7 +1,9 @@
 import 'dart:convert';
 
+import 'package:bluebubbles/app/components/base/base.dart' hide BBDialogAction;
+import 'package:bluebubbles/app/components/dialogs/dialogs.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
+import 'package:bluebubbles/services/storage/shared_preferences_service.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
@@ -20,15 +22,13 @@ Future<bool> showCustomHeadersDialog(BuildContext context) async {
     keyControllers.add(TextEditingController());
     valueControllers.add(TextEditingController());
   }
-  return await showDialog(
+  return await BBCustomDialog.show<bool>(
         context: context,
-        builder: (context) => AlertDialog(
-          title: Text("Custom Headers", style: context.theme.textTheme.titleLarge),
-          backgroundColor: context.theme.colorScheme.properSurface,
-          content: SingleChildScrollView(
-            child: Container(
-              width: double.maxFinite,
-              child: StatefulBuilder(builder: (context, setState) {
+        title: "Custom Headers",
+        content: SingleChildScrollView(
+          child: SizedBox(
+            width: double.maxFinite,
+            child: StatefulBuilder(builder: (context, setState) {
                 return Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -71,8 +71,8 @@ Future<bool> showCustomHeadersDialog(BuildContext context) async {
                                   ),
                                 ),
                               ),
-                              IconButton(
-                                icon: const Icon(Icons.delete),
+                              BBIconButton(
+                                icon: Icons.delete,
                                 onPressed: () {
                                   keyControllers.removeAt(index);
                                   valueControllers.removeAt(index);
@@ -106,34 +106,35 @@ Future<bool> showCustomHeadersDialog(BuildContext context) async {
               }),
             ),
           ),
-          actions: [
-            TextButton(
-                child: Text("Cancel",
-                    style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
-                onPressed: () {
-                  Navigator.of(context).pop(false);
-                }),
-            TextButton(
-                child: Text("OK",
-                    style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
-                onPressed: () async {
-                  final map = <String, String>{};
-                  keyControllers.forEachIndexed((index, element) {
-                    final keyController = element;
-                    final valueController = valueControllers[index];
-                    if (keyController.text.isNotEmpty && valueController.text.isNotEmpty) {
-                      map.addEntries([MapEntry(keyController.text, valueController.text)]);
-                    }
-                  });
+        actions: [
+          BBDialogAction(
+            label: "Cancel",
+            type: BBDialogButtonType.cancel,
+            onPressed: () {
+              Navigator.of(context).pop(false);
+            },
+          ),
+          BBDialogAction(
+            label: "OK",
+            type: BBDialogButtonType.primary,
+            onPressed: () async {
+              final map = <String, String>{};
+              keyControllers.forEachIndexed((index, element) {
+                final keyController = element;
+                final valueController = valueControllers[index];
+                if (keyController.text.isNotEmpty && valueController.text.isNotEmpty) {
+                  map.addEntries([MapEntry(keyController.text, valueController.text)]);
+                }
+              });
 
-                  SettingsSvc.settings.customHeaders.value = map;
-                  await SettingsSvc.settings.saveOneAsync('customHeaders');
-                  await PrefsSvc.i.setString('customHeaders', jsonEncode(HttpSvc.headers));
-                  HttpSvc.updateHeaders();
-                  Navigator.of(context).pop(true);
-                }),
-          ],
-        ),
+              SettingsSvc.settings.customHeaders.value = map;
+              await SettingsSvc.settings.saveOneAsync('customHeaders');
+              await PrefsSvc.i.setString('customHeaders', jsonEncode(HttpSvc.headers));
+              HttpSvc.updateHeaders();
+              Navigator.of(context).pop(true);
+            },
+          ),
+        ],
       ) ??
       false;
 }

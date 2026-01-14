@@ -1,7 +1,8 @@
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
+import 'package:bluebubbles/app/components/dialogs/dialogs.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/database/models.dart';
-import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
+import 'package:bluebubbles/data/database/models.dart';
+import 'package:bluebubbles/services/storage/shared_preferences_service.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/material.dart';
@@ -9,7 +10,7 @@ import 'package:get/get.dart';
 import 'package:tuple/tuple.dart';
 
 class AdvancedThemingTile extends StatefulWidget {
-  AdvancedThemingTile({super.key, required this.currentTheme, required this.tuple, required this.editable});
+  const AdvancedThemingTile({super.key, required this.currentTheme, required this.tuple, required this.editable});
   final ThemeStruct currentTheme;
   final Tuple2<MapEntry<String, Color>, MapEntry<String, Color>?> tuple;
   final bool editable;
@@ -88,33 +89,10 @@ class _AdvancedThemingTileState extends OptimizedState<AdvancedThemingTile> {
                         }
                       : null,
                   onDoubleTap: () {
-                    showDialog(
+                    BBAlertDialog.alert(
                       context: context,
-                      builder: (BuildContext context) {
-                        return AlertDialog(
-                          title: Text(
-                            "Info - ${widget.tuple.item1.key} ${widget.tuple.item2 != null ? "/ ${widget.tuple.item2!.key}" : ""}",
-                            style: context.theme.textTheme.titleLarge,
-                          ),
-                          backgroundColor: context.theme.colorScheme.properSurface,
-                          content: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Text(
-                                "${ThemeStruct.colorDescriptions[widget.tuple.item1.key]}${widget.tuple.item2 != null ? "\n\n${ThemeStruct.colorDescriptions[widget.tuple.item2!.key]}" : ""}",
-                                style: context.theme.textTheme.bodyLarge),
-                          ),
-                          actions: <Widget>[
-                            TextButton(
-                              child: Text("OK",
-                                  style: context.theme.textTheme.bodyLarge!
-                                      .copyWith(color: context.theme.colorScheme.primary)),
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                              },
-                            ),
-                          ],
-                        );
-                      },
+                      title: "Info - ${widget.tuple.item1.key} ${widget.tuple.item2 != null ? "/ ${widget.tuple.item2!.key}" : ""}",
+                      message: "${ThemeStruct.colorDescriptions[widget.tuple.item1.key]}${widget.tuple.item2 != null ? "\n\n${ThemeStruct.colorDescriptions[widget.tuple.item2!.key]}" : ""}",
                     );
                   },
                   child: Column(
@@ -147,53 +125,47 @@ class _AdvancedThemingTileState extends OptimizedState<AdvancedThemingTile> {
   }
 
   Future<Color?> showThemeDialog(Color newColor) async {
-    return await showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            scrollable: true,
-            content: ColorPicker(
-              color: newColor,
-              onColorChanged: (color) {
-                newColor = color;
-              },
-              title: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Text('Choose a Color', style: Theme.of(context).textTheme.titleLarge)),
-              width: 40,
-              height: 40,
-              spacing: 0,
-              runSpacing: 0,
-              borderRadius: 0,
-              wheelDiameter: 165,
-              enableOpacity: false,
-              showColorCode: true,
-              colorCodeHasColor: true,
-              pickersEnabled: <ColorPickerType, bool>{
-                ColorPickerType.wheel: true,
-              },
-              copyPasteBehavior: const ColorPickerCopyPasteBehavior(
-                parseShortHexCode: true,
-              ),
-              actionButtons: const ColorPickerActionButtons(
-                dialogActionButtons: true,
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop(null);
-                },
-                child: const Text('CANCEL'),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop(newColor);
-                },
-                child: const Text('SAVE'),
-              ),
-            ],
-          );
-        });
+    return await BBCustomDialog.show<Color>(
+      context: context,
+      content: ColorPicker(
+        color: newColor,
+        onColorChanged: (color) {
+          newColor = color;
+        },
+        title: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Text('Choose a Color', style: Theme.of(context).textTheme.titleLarge)),
+        width: 40,
+        height: 40,
+        spacing: 0,
+        runSpacing: 0,
+        borderRadius: 0,
+        wheelDiameter: 165,
+        enableOpacity: false,
+        showColorCode: true,
+        colorCodeHasColor: true,
+        pickersEnabled: <ColorPickerType, bool>{
+          ColorPickerType.wheel: true,
+        },
+        copyPasteBehavior: const ColorPickerCopyPasteBehavior(
+          parseShortHexCode: true,
+        ),
+        actionButtons: const ColorPickerActionButtons(
+          dialogActionButtons: true,
+        ),
+      ),
+      actions: [
+        BBDialogAction(
+          label: "CANCEL",
+          type: BBDialogButtonType.cancel,
+          onPressed: () => Navigator.of(context).pop(null),
+        ),
+        BBDialogAction(
+          label: "SAVE",
+          type: BBDialogButtonType.primary,
+          onPressed: () => Navigator.of(context).pop(newColor),
+        ),
+      ],
+    );
   }
 }

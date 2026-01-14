@@ -1,5 +1,4 @@
-import 'package:bluebubbles/helpers/ui/theme_helpers.dart';
-import 'package:bluebubbles/helpers/ui/ui_helpers.dart';
+import 'package:bluebubbles/app/components/dialogs/dialogs.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/pages/conversation_list.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/tile/conversation_tile.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
@@ -9,8 +8,11 @@ import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:universal_io/io.dart';
+import 'package:bluebubbles/app/components/base/base.dart' hide BBDialogAction;
 
 class CustomAvatarPanel extends StatefulWidget {
+  const CustomAvatarPanel({super.key});
+
   @override
   State<StatefulWidget> createState() => _CustomAvatarPanelState();
 }
@@ -41,7 +43,7 @@ class _CustomAvatarPanelState extends OptimizedState<CustomAvatarPanel> {
                             style: context.theme.textTheme.labelLarge,
                           ),
                         ),
-                        buildProgressIndicator(context, size: 15),
+                        const BBLoadingIndicator(size: 15),
                       ],
                     ),
                   ),
@@ -74,54 +76,39 @@ class _CustomAvatarPanelState extends OptimizedState<CustomAvatarPanel> {
                     inSelectMode: true,
                     onSelect: (_) {
                       if (chat.customAvatarPath != null) {
-                        showDialog(
+                        BBAlertDialog.show(
                           context: context,
-                          builder: (BuildContext context) {
-                            return AlertDialog(
-                                backgroundColor: context.theme.colorScheme.properSurface,
-                                title: Text("Custom Avatar", style: context.theme.textTheme.titleLarge),
-                                content: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                        "You have already set a custom avatar for this chat. What would you like to do?",
-                                        style: context.theme.textTheme.bodyLarge),
-                                  ],
-                                ),
-                                actions: <Widget>[
-                                  TextButton(
-                                      child: Text("Cancel",
-                                          style: context.theme.textTheme.bodyLarge!
-                                              .copyWith(color: context.theme.colorScheme.primary)),
-                                      onPressed: () {
-                                        Navigator.of(context).pop();
-                                      }),
-                                  TextButton(
-                                      child: Text("Reset",
-                                          style: context.theme.textTheme.bodyLarge!
-                                              .copyWith(color: context.theme.colorScheme.primary)),
-                                      onPressed: () async {
-                                        File file = File(chat.customAvatarPath!);
-                                        file.delete();
-                                        chat.customAvatarPath = null;
-                                        await chat.saveAsync(updateCustomAvatarPath: true);
-                                        Navigator.of(context, rootNavigator: true).pop();
-                                      }),
-                                  TextButton(
-                                      child: Text("Set New",
-                                          style: context.theme.textTheme.bodyLarge!
-                                              .copyWith(color: context.theme.colorScheme.primary)),
-                                      onPressed: () {
-                                        Navigator.of(context).pop();
-                                        NavigationSvc.pushSettings(
-                                          context,
-                                          AvatarCrop(chat: chat),
-                                        );
-                                      }),
-                                ]);
-                          },
+                          title: "Custom Avatar",
+                          message: "You have already set a custom avatar for this chat. What would you like to do?",
+                          actions: [
+                            BBDialogAction(
+                              label: "Cancel",
+                              type: BBDialogButtonType.cancel,
+                              onPressed: () => Navigator.of(context).pop(),
+                            ),
+                            BBDialogAction(
+                              label: "Reset",
+                              type: BBDialogButtonType.destructive,
+                              onPressed: () async {
+                                File file = File(chat.customAvatarPath!);
+                                file.delete();
+                                chat.customAvatarPath = null;
+                                await chat.saveAsync(updateCustomAvatarPath: true);
+                                Navigator.of(context, rootNavigator: true).pop();
+                              },
+                            ),
+                            BBDialogAction(
+                              label: "Set New",
+                              type: BBDialogButtonType.primary,
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                                NavigationSvc.pushSettings(
+                                  context,
+                                  AvatarCrop(chat: chat),
+                                );
+                              },
+                            ),
+                          ],
                         );
                       } else {
                         NavigationSvc.pushSettings(

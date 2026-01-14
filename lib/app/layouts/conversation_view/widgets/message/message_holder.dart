@@ -20,8 +20,8 @@ import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/timest
 import 'package:bluebubbles/app/components/avatars/contact_avatar_widget.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/utils/logger/logger.dart';
-import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/core/logger/logger.dart';
+import 'package:bluebubbles/data/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/cupertino.dart';
@@ -231,7 +231,7 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
               "Editing message...",
               style: context.theme.textTheme.titleLarge,
             ),
-            content: Container(
+            content: SizedBox(
               height: 70,
               child: Center(
                 child: CircularProgressIndicator(

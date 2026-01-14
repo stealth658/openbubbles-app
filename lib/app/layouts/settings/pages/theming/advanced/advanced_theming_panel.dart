@@ -5,7 +5,7 @@ import 'package:bluebubbles/helpers/ui/ui_helpers.dart';
 import 'package:bluebubbles/app/layouts/settings/dialogs/old_themes_dialog.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/theming/advanced/advanced_theming_content.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
-import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/data/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -13,7 +13,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 class AdvancedThemingPanel extends StatefulWidget {
-  AdvancedThemingPanel({super.key});
+  const AdvancedThemingPanel({super.key});
 
   @override
   State<AdvancedThemingPanel> createState() => _AdvancedThemingPanelState();
@@ -82,11 +82,12 @@ class _AdvancedThemingPanelState extends OptimizedState<AdvancedThemingPanel> wi
                         style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
                     onPressed: () {
                       showDialog(
-                          context: context,
-                          builder: (context) => OldThemesDialog(
-                                oldThemes,
-                                clearOld,
-                              ));
+                        context: context,
+                        builder: (context) => OldThemesDialog(
+                          oldThemes,
+                          clearOld,
+                        ),
+                      );
                     },
                   ),
               ]),

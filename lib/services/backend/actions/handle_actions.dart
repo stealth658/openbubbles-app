@@ -1,5 +1,5 @@
-import 'package:bluebubbles/database/database.dart';
-import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/data/database/database.dart';
+import 'package:bluebubbles/data/database/models.dart';
 import 'package:tuple/tuple.dart';
 
 class HandleActions {
@@ -28,7 +28,7 @@ class HandleActions {
       }
 
       // Format the address if not already formatted
-      await handle.updateFormattedAddress();
+      handle.updateFormattedAddress();
 
       try {
         handle.id = Database.handles.put(handle);
@@ -61,7 +61,7 @@ class HandleActions {
         // Contact matching is now handled automatically by ContactServiceV2
 
         // Format the address if not already formatted
-        await h.updateFormattedAddress();
+        h.updateFormattedAddress();
       }
 
       List<int> insertedIds = Database.handles.putMany(handles);

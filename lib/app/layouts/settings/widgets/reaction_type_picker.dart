@@ -1,6 +1,6 @@
+import 'package:bluebubbles/app/components/settings/settings.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/reaction/reaction.dart';
-import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
-import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/data/database/models.dart';
 import 'package:flutter/material.dart';
 
 /// Reusable widget for selecting a reaction type
@@ -61,11 +61,11 @@ class _ReactionTypePickerState extends State<ReactionTypePicker> {
             ))
         .toList();
 
-    return SettingsOptions<String>(
+    return BBSettingsDropdown<String>(
       title: widget.title,
       options: widget.reactions,
       cupertinoCustomWidgets: customWidgets,
-      initial: selectedValue,
+      value: selectedValue,
       textProcessing: (val) => val,
       onChanged: (val) {
         setState(() {
@@ -73,7 +73,6 @@ class _ReactionTypePickerState extends State<ReactionTypePicker> {
         });
         widget.onChanged(val);
       },
-      secondaryColor: widget.secondaryColor,
     );
   }
 }

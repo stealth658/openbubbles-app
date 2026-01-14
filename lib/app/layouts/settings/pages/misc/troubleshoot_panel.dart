@@ -1,15 +1,16 @@
+import 'package:bluebubbles/app/components/dialogs/dialogs.dart';
+import 'package:bluebubbles/app/components/settings/settings.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/misc/logging_panel.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/content/log_level_selector.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/content/next_button.dart';
 import 'package:bluebubbles/helpers/backend/settings_helpers.dart';
-import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
 import 'package:bluebubbles/services/backend/sync/chat_sync_manager.dart';
-import 'package:bluebubbles/utils/logger/logger.dart';
+import 'package:bluebubbles/core/logger/logger.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/services/services.dart';
-import 'package:bluebubbles/utils/share.dart';
+import 'package:bluebubbles/core/utils/share_utils.dart';
 import 'package:disable_battery_optimization/disable_battery_optimization.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -19,6 +20,8 @@ import 'package:universal_io/io.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class TroubleshootPanel extends StatefulWidget {
+  const TroubleshootPanel({super.key});
+
   @override
   State<StatefulWidget> createState() => _TroubleshootPanelState();
 }
@@ -72,53 +75,49 @@ class _TroubleshootPanelState extends OptimizedState<TroubleshootPanel> {
             delegate: SliverChildListDelegate(
               <Widget>[
                 if (isWebOrDesktop)
-                  SettingsSection(
+                  BBSettingsSection(
                     backgroundColor: tileColor,
                     children: [
-                      SettingsTile(
+                      BBSettingsTile(
                         onTap: () async {
                           final RxList<String> log = <String>[].obs;
-                          showDialog(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                    backgroundColor: context.theme.colorScheme.surface,
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 20),
-                                    titlePadding: const EdgeInsets.only(top: 15),
-                                    title: Text("Fetching contacts...", style: context.theme.textTheme.titleLarge),
-                                    content: Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: SizedBox(
-                                        width: NavigationSvc.width(context) * 4 / 5,
-                                        height: context.height * 1 / 3,
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            borderRadius: BorderRadius.circular(25),
-                                            color: context.theme.colorScheme.background,
-                                          ),
-                                          padding: const EdgeInsets.all(10),
-                                          child: Obx(() => ListView.builder(
-                                                physics: const AlwaysScrollableScrollPhysics(
-                                                    parent: BouncingScrollPhysics()),
-                                                itemBuilder: (context, index) {
-                                                  return Text(
-                                                    log[index],
-                                                    style: TextStyle(
-                                                      color: context.theme.colorScheme.onBackground,
-                                                      fontSize: 10,
-                                                    ),
-                                                  );
-                                                },
-                                                itemCount: log.length,
-                                              )),
-                                        ),
-                                      ),
-                                    ),
-                                  ));
+                          BBCustomDialog.show(
+                            context: context,
+                            title: "Fetching contacts...",
+                            content: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: SizedBox(
+                                width: NavigationSvc.width(context) * 4 / 5,
+                                height: Get.context!.height * 1 / 3,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(25),
+                                    color: Theme.of(context).colorScheme.background,
+                                  ),
+                                  padding: const EdgeInsets.all(10),
+                                  child: Obx(() => ListView.builder(
+                                        physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                                        itemBuilder: (context, index) {
+                                          return Text(
+                                            log[index],
+                                            style: TextStyle(
+                                              color: Theme.of(context).colorScheme.onBackground,
+                                              fontSize: 10,
+                                            ),
+                                          );
+                                        },
+                                        itemCount: log.length,
+                                      )),
+                                ),
+                              ),
+                            ),
+                            actions: const [],
+                          );
                           await ContactsSvcV2.fetchNetworkContacts(logger: (newLog) {
                             log.add(newLog);
                           });
                         },
-                        leading: const SettingsLeadingIcon(
+                        leading: const BBSettingsIcon(
                           iosIcon: CupertinoIcons.group,
                           materialIcon: Icons.contacts,
                         ),
@@ -129,32 +128,34 @@ class _TroubleshootPanelState extends OptimizedState<TroubleshootPanel> {
                     ],
                   ),
                 if (isWebOrDesktop)
-                  SettingsHeader(iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Logging"),
-                SettingsSection(backgroundColor: tileColor, children: [
+                  const BBSettingsHeader(text: "Logging"),
+                BBSettingsSection(
+                  backgroundColor: tileColor,
+                  children: [
                   const LogLevelSelector(),
-                  SettingsTile(
+                  BBSettingsTile(
                     title: "View Latest Log",
                     subtitle: "View the latest log file. Useful for debugging issues, in app.",
-                    leading: const SettingsLeadingIcon(
+                    leading: const BBSettingsIcon(
                       iosIcon: CupertinoIcons.doc_append,
                       materialIcon: Icons.document_scanner_rounded,
-                      containerColor: Colors.blueAccent,
+                      color: Colors.blueAccent,
                     ),
                     onTap: () {
                       NavigationSvc.pushSettings(
                         context,
-                        LoggingPanel(),
+                        const LoggingPanel(),
                       );
                     },
                     trailing: const NextButton(),
                   ),
                   if (Platform.isAndroid) const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                   if (Platform.isAndroid)
-                    SettingsTile(
-                        leading: const SettingsLeadingIcon(
+                    BBSettingsTile(
+                        leading: const BBSettingsIcon(
                           iosIcon: CupertinoIcons.share_up,
                           materialIcon: Icons.share,
-                          containerColor: Colors.green,
+                          color: Colors.green,
                         ),
                         title: "Download / Share Logs",
                         subtitle: "${logFileCount.value} log file(s) | ${logFileSize.value} KB",
@@ -196,8 +197,8 @@ class _TroubleshootPanelState extends OptimizedState<TroubleshootPanel> {
                         }),
                   if (kIsDesktop) const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                   if (kIsDesktop)
-                    SettingsTile(
-                        leading: const SettingsLeadingIcon(
+                    BBSettingsTile(
+                        leading: const BBSettingsIcon(
                           iosIcon: CupertinoIcons.doc,
                           materialIcon: Icons.file_open,
                         ),
@@ -211,11 +212,11 @@ class _TroubleshootPanelState extends OptimizedState<TroubleshootPanel> {
                           await launchUrl(Uri.file(logFile.path));
                         }),
                   const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
-                  SettingsTile(
-                      leading: const SettingsLeadingIcon(
+                  BBSettingsTile(
+                      leading: const BBSettingsIcon(
                         iosIcon: CupertinoIcons.trash,
                         materialIcon: Icons.delete,
-                        containerColor: Colors.redAccent,
+                        color: Colors.redAccent,
                       ),
                       title: "Clear Logs",
                       subtitle: "Deletes all stored log files.",
@@ -227,8 +228,8 @@ class _TroubleshootPanelState extends OptimizedState<TroubleshootPanel> {
                       }),
                   if (kIsDesktop) const SettingsDivider(),
                   if (kIsDesktop)
-                    SettingsTile(
-                      leading: const SettingsLeadingIcon(
+                    BBSettingsTile(
+                      leading: const BBSettingsIcon(
                         iosIcon: CupertinoIcons.folder,
                         materialIcon: Icons.folder,
                       ),
@@ -238,10 +239,12 @@ class _TroubleshootPanelState extends OptimizedState<TroubleshootPanel> {
                     ),
                 ]),
                 if (Platform.isAndroid)
-                  SettingsHeader(iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Optimizations"),
+                  const BBSettingsHeader(text: "Optimizations"),
                 if (Platform.isAndroid)
-                  SettingsSection(backgroundColor: tileColor, children: [
-                    SettingsTile(
+                  BBSettingsSection(
+                    backgroundColor: tileColor,
+                    children: [
+                    BBSettingsTile(
                         onTap: () async {
                           if (optimizationsDisabled.value) {
                             showSnackbar(
@@ -254,10 +257,10 @@ class _TroubleshootPanelState extends OptimizedState<TroubleshootPanel> {
                             showSnackbar("Error", "Battery optimizations were not disabled. Please try again.");
                           }
                         },
-                        leading: Obx(() => SettingsLeadingIcon(
+                        leading: Obx(() => BBSettingsIcon(
                               iosIcon: CupertinoIcons.battery_25,
                               materialIcon: Icons.battery_5_bar,
-                              containerColor: optimizationsDisabled.value ? Colors.green : Colors.redAccent,
+                              color: optimizationsDisabled.value ? Colors.green : Colors.redAccent,
                             )),
                         title: "Disable Battery Optimizations",
                         subtitle:
@@ -266,27 +269,30 @@ class _TroubleshootPanelState extends OptimizedState<TroubleshootPanel> {
                             ? const NextButton()
                             : Icon(Icons.check, color: context.theme.colorScheme.outline))),
                   ]),
-                SettingsHeader(iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Troubleshooting"),
-                SettingsSection(backgroundColor: tileColor, children: [
-                  SettingsTile(
+                const BBSettingsHeader(text: "Troubleshooting"),
+                BBSettingsSection(
+                  backgroundColor: tileColor,
+                  children: [
+                  BBSettingsTile(
                       onTap: () async {
                         await PrefsSvc.i.remove("lastOpenedChat");
                         showSnackbar("Success", "Successfully cleared the last opened chat!");
                       },
-                      leading: const SettingsLeadingIcon(
+                      leading: const BBSettingsIcon(
                         iosIcon: CupertinoIcons.rectangle_badge_xmark,
                         materialIcon: Icons.folder_delete_outlined,
-                        containerColor: Colors.orange,
+                        color: Colors.orange,
                       ),
                       title: "Clear Last Opened Chat",
                       subtitle: "Use this if you are experiencing the app opening an incorrect chat")
                 ]),
                 if (!kIsWeb)
-                  SettingsHeader(
-                      iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Database Re-syncing"),
+                  const BBSettingsHeader(text: "Database Re-syncing"),
                 if (!kIsWeb)
-                  SettingsSection(backgroundColor: tileColor, children: [
-                    SettingsTile(
+                  BBSettingsSection(
+                    backgroundColor: tileColor,
+                    children: [
+                    BBSettingsTile(
                         title: "Sync Handles & Contacts",
                         subtitle:
                             "Run this troubleshooter if you are experiencing issues with missing or incorrect contact names and photos",
@@ -321,7 +327,7 @@ class _TroubleshootPanelState extends OptimizedState<TroubleshootPanel> {
                                     ))
                                 : Icon(Icons.check, color: context.theme.colorScheme.outline))),
                     const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
-                    SettingsTile(
+                    BBSettingsTile(
                         title: "Sync Chat Info",
                         subtitle:
                             "This will re-sync all chat data & icons from the server to ensure that you have the most up-to-date information.\n\nNote: This will overwrite any group chat icons that are not locked!",

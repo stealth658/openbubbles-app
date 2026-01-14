@@ -1,3 +1,5 @@
+import 'package:bluebubbles/app/components/base/base.dart';
+import 'package:bluebubbles/app/components/settings/settings.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/dialogs/timeframe_picker.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
@@ -9,9 +11,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart' hide Response;
 
 class MessageRemindersPanel extends StatefulWidget {
-  MessageRemindersPanel({
-    Key? key,
-  });
+  const MessageRemindersPanel({super.key});
 
   @override
   State<MessageRemindersPanel> createState() => _MessageRemindersPanelState();
@@ -67,12 +67,12 @@ class _MessageRemindersPanelState extends OptimizedState<MessageRemindersPanel> 
                             style: context.theme.textTheme.labelLarge,
                           ),
                         ),
-                        if (fetching == true) buildProgressIndicator(context, size: 15),
+                        if (fetching == true) const BBLoadingIndicator(size: 15),
                       ],
                     ),
                   ),
                 ),
-              SettingsSection(
+              BBSettingsSection(
                 backgroundColor: tileColor,
                 children: [
                   Material(
@@ -113,8 +113,8 @@ class _MessageRemindersPanelState extends OptimizedState<MessageRemindersPanel> 
                               getExistingMessages();
                             }
                           },
-                          trailing: IconButton(
-                            icon: Icon(iOS ? CupertinoIcons.trash : Icons.delete_outlined),
+                          trailing: BBIconButton(
+                            icon: iOS ? CupertinoIcons.trash : Icons.delete_outlined,
                             onPressed: () => deleteMessage(item),
                           ),
                         );

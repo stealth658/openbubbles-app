@@ -1,9 +1,8 @@
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/reply/reply_thread_popup.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/data/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
-import 'package:bluebubbles/services/ui/message/message_update_coordinator.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -11,7 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 class MessageProperties extends CustomStateful<MessageWidgetController> {
-  MessageProperties({
+  const MessageProperties({
     super.key,
     required super.parentController,
     required this.part,

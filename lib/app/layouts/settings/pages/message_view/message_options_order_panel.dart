@@ -3,15 +3,17 @@ import 'dart:ui';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/popup/details_menu_action.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/services/backend/settings/settings_service.dart';
-import 'package:bluebubbles/services/ui/navigator/navigator_service.dart';
-import 'package:bluebubbles/services/ui/theme/themes_service.dart';
+import 'package:bluebubbles/services/storage/settings_service.dart';
+import 'package:bluebubbles/services/ui/navigation_service.dart';
+import 'package:bluebubbles/services/ui/themes_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_acrylic/window_effect.dart';
 import 'package:get/get.dart';
 
 class MessageOptionsOrderPanel extends StatefulWidget {
+  const MessageOptionsOrderPanel({super.key});
+
   @override
   State<StatefulWidget> createState() => _MessageOptionsOrderPanelState();
 }
@@ -57,6 +59,7 @@ class _MessageOptionsOrderPanelState extends OptimizedState<MessageOptionsOrderP
             preferredSize: Size(NavigationSvc.width(context), 80),
             child: ClipRRect(
               child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
                 child: AppBar(
                   systemOverlayStyle:
                       ThemeData.estimateBrightnessForColor(context.theme.colorScheme.background) == Brightness.dark
@@ -84,7 +87,6 @@ class _MessageOptionsOrderPanelState extends OptimizedState<MessageOptionsOrderP
                     ),
                   ],
                 ),
-                filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
               ),
             ),
           ),

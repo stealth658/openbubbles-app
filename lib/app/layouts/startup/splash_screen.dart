@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class SplashScreen extends StatefulWidget {
-  SplashScreen({super.key, required this.shouldNavigate});
+  const SplashScreen({super.key, required this.shouldNavigate});
 
   final bool shouldNavigate;
 
@@ -23,7 +23,7 @@ class _SplashScreenState extends OptimizedState<SplashScreen> {
       Navigator.of(context).pushAndRemoveUntil(
           PageRouteBuilder(
               transitionDuration: const Duration(seconds: 1),
-              pageBuilder: (_, __, ___) => TitleBarWrapper(child: SetupView())),
+              pageBuilder: (_, __, ___) => const TitleBarWrapper(child: SetupView())),
           (route) => route.isFirst);
     }
   }

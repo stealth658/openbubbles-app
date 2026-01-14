@@ -1,12 +1,13 @@
+import 'package:bluebubbles/app/components/avatars/contact_avatar_group_widget.dart';
+import 'package:bluebubbles/app/components/dialogs/dialogs.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/dialogs/address_picker.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/dialogs/change_name.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/widgets/contact_tile.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/theming/avatar/avatar_crop.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/app/components/avatars/contact_avatar_group_widget.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
-import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/data/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:defer_pointer/defer_pointer.dart';
 import 'package:flutter/cupertino.dart';
@@ -28,42 +29,30 @@ class _ChatInfoState extends OptimizedState<ChatInfo> {
   Chat get chat => widget.chat;
 
   Future<bool?> showMethodDialog(String title) async {
-    return await showDialog<bool>(
+    return await BBCustomDialog.show<bool>(
         context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            backgroundColor: context.theme.colorScheme.properSurface,
-            title: Text(
-              title,
-              style: context.theme.textTheme.titleLarge,
-            ),
-            content: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (SettingsSvc.settings.enablePrivateAPI.value && chat.isIMessage)
-                  Text(
-                      "Local - Changes only apply to this device.\nPrivate API - Changes will apply to everyone's devices.",
-                      style: context.theme.textTheme.bodyLarge),
-              ],
-            ),
-            actions: [
-              TextButton(
-                  child: Text("Local",
-                      style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
-                  onPressed: () {
-                    Navigator.of(context).pop(false);
-                  }),
-              TextButton(
-                  child: Text("Private API",
-                      style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
-                  onPressed: () {
-                    Navigator.of(context).pop(true);
-                  }),
-            ],
-          );
-        });
+        title: title,
+        content: SettingsSvc.settings.enablePrivateAPI.value && chat.isIMessage
+            ? Text(
+                "Local - Changes only apply to this device.\nPrivate API - Changes will apply to everyone's devices.",
+                style: Theme.of(context).textTheme.bodyLarge)
+            : const SizedBox.shrink(),
+        actions: [
+          BBDialogAction(
+            label: "Local",
+            type: BBDialogButtonType.secondary,
+            onPressed: () {
+              Navigator.of(context).pop(false);
+            },
+          ),
+          BBDialogAction(
+            label: "Private API",
+            type: BBDialogButtonType.primary,
+            onPressed: () {
+              Navigator.of(context).pop(true);
+            },
+          ),
+        ]);
   }
 
   void updatePhoto() async {
@@ -85,29 +74,14 @@ class _ChatInfoState extends OptimizedState<ChatInfo> {
         result != null &&
         (await SettingsSvc.isMinBigSur) &&
         SettingsSvc.serverDetailsSync().item4 >= 226) {
-      showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              backgroundColor: context.theme.colorScheme.properSurface,
-              title: Text(
-                "Updating group photo...",
-                style: context.theme.textTheme.titleLarge,
-              ),
-              content: Container(
-                height: 70,
-                child: Center(
-                  child: CircularProgressIndicator(
-                    backgroundColor: context.theme.colorScheme.properSurface,
-                    valueColor: AlwaysStoppedAnimation<Color>(context.theme.colorScheme.primary),
-                  ),
-                ),
-              ),
-            );
-          });
+      BBProgressDialog.show(
+        context: context,
+        title: "Updating Photo",
+        message: "Updating group photo...",
+      );
       final response = await HttpSvc.setChatIcon(chat.guid, chat.customAvatarPath!);
+      Navigator.of(context, rootNavigator: true).pop(); // Close progress dialog
       if (response.statusCode == 200) {
-        Navigator.of(context, rootNavigator: true).pop();
         showSnackbar("Notice", "Updated group photo successfully!");
       } else {
         Navigator.of(context, rootNavigator: true).pop();

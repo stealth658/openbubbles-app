@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:animated_size_and_fade/animated_size_and_fade.dart';
+import 'package:bluebubbles/app/components/settings/settings.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -14,7 +15,7 @@ class UnifiedPushPanelController extends StatefulController {
 }
 
 class UnifiedPushPanel extends CustomStateful<UnifiedPushPanelController> {
-  UnifiedPushPanel() : super(parentController: Get.put(UnifiedPushPanelController()));
+  UnifiedPushPanel({super.key}) : super(parentController: Get.put(UnifiedPushPanelController()));
 
   @override
   State<UnifiedPushPanel> createState() => _UnifiedPushPanelState();
@@ -36,7 +37,7 @@ class _UnifiedPushPanelState extends CustomState<UnifiedPushPanel, void, Unified
         bodySlivers: [
           SliverList(
               delegate: SliverChildListDelegate(<Widget>[
-            SettingsSection(backgroundColor: tileColor, children: [
+            BBSettingsSection(backgroundColor: tileColor, children: [
               Padding(
                 padding: const EdgeInsets.only(bottom: 8, left: 15, top: 15, right: 15),
                 child: RichText(
@@ -55,8 +56,8 @@ class _UnifiedPushPanelState extends CustomState<UnifiedPushPanel, void, Unified
                 ),
               ),
             ]),
-            SettingsHeader(iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Recommendation"),
-            SettingsSection(backgroundColor: tileColor, children: [
+            const BBSettingsHeader(text: "Recommendation"),
+            BBSettingsSection(backgroundColor: tileColor, children: [
               Padding(
                 padding: const EdgeInsets.only(bottom: 8, left: 15, top: 15, right: 15),
                 child: RichText(
@@ -75,7 +76,7 @@ class _UnifiedPushPanelState extends CustomState<UnifiedPushPanel, void, Unified
                   ),
                 ),
               ),
-              SettingsTile(
+              BBSettingsTile(
                 title: "ntfy.sh",
                 subtitle: "Tap to download ntfy from Google Play",
                 onTap: () async {
@@ -88,28 +89,27 @@ class _UnifiedPushPanelState extends CustomState<UnifiedPushPanel, void, Unified
                           queryParameters: params),
                       mode: LaunchMode.externalApplication);
                 },
-                leading: const SettingsLeadingIcon(
+                leading: const BBSettingsIcon(
                   iosIcon: CupertinoIcons.arrow_up_right,
                   materialIcon: Icons.arrow_outward,
-                  containerColor: Colors.blueAccent,
+                  color: Colors.blueAccent,
                 ),
               ),
             ]),
-            SettingsHeader(iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Unified Push"),
-            SettingsSection(
+            const BBSettingsHeader(text: "Unified Push"),
+            BBSettingsSection(
               backgroundColor: tileColor,
               children: [
                 Obx(() {
                   final _enabled = enabled.value;
-                  return SettingsSwitch(
+                  return BBSettingsSwitch(
                       onChanged: onChanged,
-                      initialVal: _enabled,
+                      value: _enabled,
                       title: "Enable Unified Push",
-                      backgroundColor: tileColor,
-                      leading: const SettingsLeadingIcon(
+                      leading: const BBSettingsIcon(
                         iosIcon: CupertinoIcons.bell_circle,
                         materialIcon: Icons.circle_notifications_outlined,
-                        containerColor: Colors.purpleAccent,
+                        color: Colors.purpleAccent,
                       ));
                 }),
               ],
@@ -119,9 +119,9 @@ class _UnifiedPushPanelState extends CustomState<UnifiedPushPanel, void, Unified
               return AnimatedSizeAndFade.showHide(
                 show: _registered,
                 child: Column(children: [
-                  SettingsHeader(
-                      iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Unified Push Settings"),
-                  SettingsSection(
+                  const BBSettingsHeader(
+                      text: "Unified Push Settings"),
+                  BBSettingsSection(
                     backgroundColor: tileColor,
                     children: [
                       Padding(

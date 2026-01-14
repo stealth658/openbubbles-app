@@ -1,5 +1,5 @@
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
-import 'package:bluebubbles/services/backend/settings/settings_service.dart';
+import 'package:bluebubbles/services/storage/settings_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_acrylic/window_effect.dart';
 import 'package:get/get.dart';
@@ -21,7 +21,7 @@ class _InitialWidgetRightState extends OptimizedState<InitialWidgetRight> {
             : context.theme.colorScheme.background,
         extendBodyBehindAppBar: true,
         body: Center(
-          child: Container(child: Text("Select a chat from the list", style: context.theme.textTheme.bodyLarge)),
+          child: Text("Select a chat from the list", style: context.theme.textTheme.bodyLarge),
         ),
       ),
     );

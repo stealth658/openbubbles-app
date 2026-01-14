@@ -1,19 +1,21 @@
 import 'dart:convert';
 
 import 'package:animated_size_and_fade/animated_size_and_fade.dart';
+import 'package:bluebubbles/app/components/settings/settings.dart';
+import 'package:bluebubbles/app/components/dialogs/dialogs.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/dialogs/timeframe_picker.dart';
 import 'package:bluebubbles/app/layouts/settings/dialogs/custom_headers_dialog.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/server/oauth_panel.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/helpers/backend/settings_helpers.dart';
-import 'package:bluebubbles/utils/logger/logger.dart';
-import 'package:bluebubbles/utils/share.dart';
+import 'package:bluebubbles/core/logger/logger.dart';
+import 'package:bluebubbles/core/utils/share_utils.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/settings/dialogs/sync_dialog.dart';
-import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
+import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart' hide SquircleBorder;
 import 'package:bluebubbles/app/layouts/setup/pages/sync/qr_code_scanner.dart';
 import 'package:bluebubbles/app/layouts/setup/dialogs/manual_entry_dialog.dart';
-import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/data/database/models.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:firebase_dart/firebase_dart.dart';
@@ -103,9 +105,7 @@ class ServerManagementPanelController extends StatefulController {
 }
 
 class ServerManagementPanel extends CustomStateful<ServerManagementPanelController> {
-  ServerManagementPanel({
-    Key? key,
-  }) : super(parentController: Get.put(ServerManagementPanelController()));
+  ServerManagementPanel({super.key}) : super(parentController: Get.put(ServerManagementPanelController()));
 
   @override
   State<ServerManagementPanel> createState() => _ServerManagementPanelState();
@@ -127,7 +127,7 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
           SliverList(
             delegate: SliverChildListDelegate(
               <Widget>[
-                SettingsSection(
+                BBSettingsSection(
                   backgroundColor: tileColor,
                   children: [
                     Obx(() {
@@ -245,57 +245,51 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            SettingsTile(
+                            BBSettingsTile(
                               title: "Show Stats",
                               subtitle: "Show iMessage statistics",
-                              backgroundColor: tileColor,
-                              leading: const SettingsLeadingIcon(
+                              leading: const BBSettingsIcon(
                                 iosIcon: CupertinoIcons.chart_bar_square,
                                 materialIcon: Icons.stacked_bar_chart,
-                                containerColor: Colors.green,
+                                color: Colors.green,
                               ),
                               onTap: () {
-                                showDialog(
-                                    context: context,
-                                    builder: (context) => AlertDialog(
-                                          backgroundColor: context.theme.colorScheme.properSurface,
-                                          content: Padding(
-                                            padding: const EdgeInsets.only(bottom: 8.0, left: 15, top: 8.0, right: 15),
-                                            child: SelectableText.rich(
-                                              TextSpan(
-                                                  children: controller.stats.entries
-                                                      .map((e) => TextSpan(
-                                                          text:
-                                                              "${e.key.capitalizeFirst!.replaceAll("Handles", "iMessage Numbers")}: ${e.value}${controller.stats.keys.last != e.key ? "\n\n" : ""}"))
-                                                      .toList()),
-                                              style: context.theme.textTheme.bodyLarge,
-                                            ),
-                                          ),
-                                          title: Text("Stats", style: context.theme.textTheme.titleLarge),
-                                          actions: <Widget>[
-                                            TextButton(
-                                              child: Text("Dismiss",
-                                                  style: context.theme.textTheme.bodyLarge!
-                                                      .copyWith(color: context.theme.colorScheme.primary)),
-                                              onPressed: () {
-                                                Navigator.of(context).pop();
-                                              },
-                                            ),
-                                          ],
-                                        ));
+                                BBCustomDialog.show(
+                                  context: context,
+                                  title: "Stats",
+                                  content: Padding(
+                                    padding: const EdgeInsets.only(bottom: 8.0, left: 15, top: 8.0, right: 15),
+                                    child: SelectableText.rich(
+                                      TextSpan(
+                                        children: controller.stats.entries
+                                            .map((e) => TextSpan(
+                                                text:
+                                                    "${e.key.capitalizeFirst!.replaceAll("Handles", "iMessage Numbers")}: ${e.value}${controller.stats.keys.last != e.key ? "\n\n" : ""}"))
+                                            .toList(),
+                                      ),
+                                      style: Theme.of(context).textTheme.bodyLarge,
+                                    ),
+                                  ),
+                                  actions: [
+                                    BBDialogAction(
+                                      label: "Dismiss",
+                                      onPressed: () => Navigator.of(context).pop(),
+                                    ),
+                                  ],
+                                );
                               },
                             ),
                             const SettingsDivider(),
                           ],
                         ))),
                     if (!SettingsSvc.fcmData.isNull)
-                      SettingsTile(
+                      BBSettingsTile(
                         title: "Show QR Code",
                         subtitle: "Generate QR Code to screenshot or sync other devices",
-                        leading: const SettingsLeadingIcon(
+                        leading: const BBSettingsIcon(
                           iosIcon: CupertinoIcons.qrcode,
                           materialIcon: Icons.qr_code,
-                          containerColor: Colors.black,
+                          color: Colors.black,
                         ),
                         onTap: () {
                           List<dynamic> json = [
@@ -309,45 +303,41 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                             SettingsSvc.fcmData.applicationID,
                           ];
                           String qrtext = jsonEncode(json);
-                          showDialog(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                    backgroundColor: context.theme.colorScheme.properSurface,
-                                    content: AspectRatio(
-                                      aspectRatio: 1,
-                                      child: Container(
-                                        height: 320,
-                                        width: 320,
-                                        child: QrImageView(
-                                          data: qrtext,
-                                          version: QrVersions.auto,
-                                          size: 320,
-                                          gapless: true,
-                                          backgroundColor: context.theme.colorScheme.properSurface,
-                                          eyeStyle: QrEyeStyle(color: context.theme.colorScheme.properOnSurface),
-                                          dataModuleStyle:
-                                              QrDataModuleStyle(color: context.theme.colorScheme.properOnSurface),
-                                        ),
-                                      ),
-                                    ),
-                                    title: Text("QR Code", style: context.theme.textTheme.titleLarge),
-                                    actions: <Widget>[
-                                      TextButton(
-                                        child: Text("Dismiss",
-                                            style: context.theme.textTheme.bodyLarge!
-                                                .copyWith(color: context.theme.colorScheme.primary)),
-                                        onPressed: () {
-                                          Navigator.of(context).pop();
-                                        },
-                                      ),
-                                    ],
-                                  ));
+                          BBCustomDialog.show(
+                            context: context,
+                            title: "QR Code",
+                            content: AspectRatio(
+                              aspectRatio: 1,
+                              child: SizedBox(
+                                height: 320,
+                                width: 320,
+                                child: QrImageView(
+                                  data: qrtext,
+                                  version: QrVersions.auto,
+                                  size: 320,
+                                  gapless: true,
+                                  backgroundColor: Theme.of(context).colorScheme.surface,
+                                  eyeStyle: QrEyeStyle(color: Theme.of(context).colorScheme.onSurface),
+                                  dataModuleStyle:
+                                      QrDataModuleStyle(color: Theme.of(context).colorScheme.onSurface),
+                                ),
+                              ),
+                            ),
+                            actions: [
+                              BBDialogAction(
+                                label: "Dismiss",
+                                onPressed: () => Navigator.of(context).pop(),
+                              ),
+                            ],
+                          );
                         },
                       ),
                   ],
                 ),
-                SettingsHeader(iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Connection & Sync"),
-                SettingsSection(backgroundColor: tileColor, children: [
+                const BBSettingsHeader(text: "Connection & Sync"),
+                BBSettingsSection(
+                  backgroundColor: tileColor,
+                  children: [
                   /*Obx(() {
                     if (controller.proxyService.value != null && iOS)
                       return Container(
@@ -368,43 +358,16 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                     onChanged: (val) async {
                       String? url;
                       if (val == "Dynamic DNS") {
-                        TextEditingController controller = TextEditingController();
-                        await showDialog(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              actions: [
-                                TextButton(
-                                  child: Text("OK"),
-                                  onPressed: () async {
-                                    if (!controller.text.isURL) {
-                                      showSnackbar("Error", "Please enter a valid URL");
-                                      return;
-                                    }
-                                    url = controller.text;
-                                    Get.back();
-                                  },
-                                ),
-                                TextButton(
-                                  child: Text("Cancel"),
-                                  onPressed: () {
-                                    Get.back();
-                                  },
-                                )
-                              ],
-                              content: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  TextField(
-                                    controller: controller,
-                                    decoration: InputDecoration(
-                                      labelText: "Server Address",
-                                      border: OutlineInputBorder(),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              title: Text("Enter Server Address"),
-                            )
+                        url = await BBInputDialog.text(
+                          context: context,
+                          title: "Enter Server Address",
+                          placeholder: "Server Address",
+                          validator: (value) {
+                            if (value == null || !value.isURL) {
+                              return "Please enter a valid URL";
+                            }
+                            return null;
+                          },
                         );
                         if (url == null) return;
                       }
@@ -431,23 +394,22 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                     secondaryColor: headerColor,
                   ) : SizedBox.shrink()),
                   Obx(() => controller.proxyService.value != null && !kIsWeb ? const SettingsDivider(),*/
-                  SettingsTile(
+                  BBSettingsTile(
                     title: "Re-configure with BlueBubbles Server",
                     subtitle: kIsWeb || kIsDesktop
                         ? "Click for manual entry"
                         : "Tap to scan QR code\nLong press for manual entry",
-                    isThreeLine: kIsWeb || kIsDesktop ? false : true,
-                    leading: const SettingsLeadingIcon(
+                    leading: const BBSettingsIcon(
                       iosIcon: CupertinoIcons.gear,
                       materialIcon: Icons.room_preferences,
-                      containerColor: Colors.blueAccent,
+                      color: Colors.blueAccent,
                     ),
                     onLongPress: kIsWeb || kIsDesktop
                         ? null
                         : () {
-                            showDialog(
+                            BBCustomDialog.show(
                               context: context,
-                              builder: (connectContext) => ManualEntryDialog(
+                              content: ManualEntryDialog(
                                 onConnect: () {
                                   Navigator.of(context, rootNavigator: true).pop();
                                 },
@@ -459,9 +421,9 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                           },
                     onTap: kIsWeb || kIsDesktop
                         ? () async {
-                            await showDialog(
+                            await BBCustomDialog.show(
                               context: context,
-                              builder: (connectContext) => ManualEntryDialog(
+                              content: ManualEntryDialog(
                                 onConnect: () {
                                   Navigator.of(context, rootNavigator: true).pop();
                                 },
@@ -478,7 +440,7 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                                 await Navigator.of(context).push(
                                   CupertinoPageRoute(
                                     builder: (BuildContext context) {
-                                      return QRCodeScanner();
+                                      return const QRCodeScanner();
                                     },
                                   ),
                                 ),
@@ -509,23 +471,22 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                   if (!kIsWeb) const SettingsDivider(),
                   if (!kIsWeb)
                     Obx(
-                      () => SettingsTile(
+                      () => BBSettingsTile(
                           title: "Manually Sync Messages",
                           subtitle: SocketSvc.state.value == SocketState.connected
                               ? "Tap to sync messages"
                               : "Disconnected, cannot sync",
-                          backgroundColor: tileColor,
-                          leading: SettingsLeadingIcon(
+                          leading: BBSettingsIcon(
                             iosIcon: CupertinoIcons.arrow_2_circlepath,
                             materialIcon: Icons.sync,
-                            containerColor: Colors.yellow[700],
+                            color: Colors.yellow[700],
                           ),
                           onTap: () async {
                             if (SocketSvc.state.value != SocketState.connected) return;
                             if (manager != null) {
-                              showDialog(
+                              BBCustomDialog.show(
                                 context: context,
-                                builder: (context) => SyncDialog(manager: manager!),
+                                content: SyncDialog(manager: manager!),
                               );
                             } else {
                               final date = await showTimeframePicker("How Far Back?", context, showHourPicker: false);
@@ -533,9 +494,9 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                               try {
                                 SyncSvc.isIncrementalSyncing.value = true;
                                 manager = IncrementalSyncManager(startTimestamp: date.millisecondsSinceEpoch);
-                                showDialog(
+                                BBCustomDialog.show(
                                   context: context,
-                                  builder: (context) => SyncDialog(manager: manager!),
+                                  content: SyncDialog(manager: manager!),
                                 );
                                 await manager!.start();
                               } catch (_) {}
@@ -546,12 +507,13 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                           }),
                     ),
                   if (!kIsWeb) const SettingsDivider(),
-                  SettingsTile(
-                      leading: const SettingsLeadingIcon(
-                          iosIcon: CupertinoIcons.pencil, materialIcon: Icons.edit, containerColor: Colors.teal),
+                  BBSettingsTile(
+                      leading: const BBSettingsIcon(
+                          iosIcon: CupertinoIcons.pencil, 
+                          materialIcon: Icons.edit,
+                          color: Colors.teal),
                       title: "Configure Custom Headers",
                       subtitle: "Add or edit custom headers to connect to your server",
-                      backgroundColor: tileColor,
                       onTap: () async {
                         final result = await showCustomHeadersDialog(context);
                         if (result) {
@@ -560,24 +522,23 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                       }),
                   if (Platform.isAndroid) const SettingsDivider(),
                   if (Platform.isAndroid)
-                    Obx(() => SettingsSwitch(
-                          initialVal: SettingsSvc.settings.syncContactsAutomatically.value,
+                    Obx(() => BBSettingsSwitch(
+                          value: SettingsSvc.settings.syncContactsAutomatically.value,
                           title: "Auto-Sync Contacts",
                           subtitle: "Automatically re-upload contacts to server when changes are detected",
-                          backgroundColor: tileColor,
                           onChanged: (bool val) async {
                             SettingsSvc.settings.syncContactsAutomatically.value = val;
                             await SettingsSvc.settings.saveOneAsync("syncContactsAutomatically");
                           },
-                          leading: const SettingsLeadingIcon(
+                          leading: const BBSettingsIcon(
                             iosIcon: CupertinoIcons.person_2,
                             materialIcon: Icons.people,
-                            containerColor: Colors.green,
+                            color: Colors.green,
                           ),
                         )),
                   if (!isSnap) const SettingsDivider(),
                   if (!isSnap)
-                    SettingsTile(
+                    BBSettingsTile(
                       leading: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                         Obx(() => Material(
                             shape: SettingsSvc.settings.skin.value == Skins.Samsung
@@ -613,24 +574,22 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                       ]),
                       title: "Sign in with Google",
                       subtitle: "Fetch Firebase Config by Signing in with Google",
-                      backgroundColor: tileColor,
                       onTap: () {
-                        NavigationSvc.pushSettings(context, OauthPanel());
+                        NavigationSvc.pushSettings(context, const OauthPanel());
                       },
-                      trailing: ThemeSwitcher(
-                        iOSSkin: const Icon(CupertinoIcons.chevron_forward),
-                        materialSkin: const Icon(Icons.chevron_right),
+                      trailing: const ThemeSwitcher(
+                        iOSSkin: Icon(CupertinoIcons.chevron_forward),
+                        materialSkin: Icon(Icons.chevron_right),
                       ),
                     ),
                   const SettingsDivider(),
-                  SettingsTile(
-                      leading: const SettingsLeadingIcon(
+                  BBSettingsTile(
+                      leading: const BBSettingsIcon(
                           iosIcon: CupertinoIcons.refresh,
                           materialIcon: Icons.refresh,
-                          containerColor: Colors.blueAccent),
+                          color: Colors.blueAccent),
                       title: "Fetch Latest URL",
                       subtitle: "Forcefully fetch latest URL from Firebase",
-                      backgroundColor: tileColor,
                       onTap: () async {
                         await fdb.fetchFirebaseConfig();
                         String? newUrl = await fdb.fetchNewUrl();
@@ -639,58 +598,36 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                       }),
                   if (!kIsWeb) const SettingsDivider(),
                   if (!kIsWeb)
-                    Obx(() => SettingsSwitch(
-                          initialVal: SettingsSvc.settings.localhostPort.value != null,
+                    Obx(() => BBSettingsSwitch(
+                          value: SettingsSvc.settings.localhostPort.value != null,
                           title: "Detect Localhost Address",
                           subtitle: SettingsSvc.settings.localhostPort.value != null
                               ? "Configured Port: ${SettingsSvc.settings.localhostPort.value}"
                               : "Look up localhost address for a faster direct connection",
-                          backgroundColor: tileColor,
-                          leading: const SettingsLeadingIcon(
+                          leading: const BBSettingsIcon(
                             iosIcon: CupertinoIcons.wifi,
                             materialIcon: Icons.wifi,
-                            containerColor: Colors.green,
+                            color: Colors.green,
                           ),
                           onChanged: (bool val) async {
                             if (val) {
-                              final TextEditingController portController = TextEditingController();
-                              await showDialog(
-                                  context: context,
-                                  builder: (_) {
-                                    return AlertDialog(
-                                      actions: [
-                                        TextButton(
-                                          child: Text("Cancel",
-                                              style: context.theme.textTheme.bodyLarge!
-                                                  .copyWith(color: context.theme.colorScheme.primary)),
-                                          onPressed: () => Get.back(),
-                                        ),
-                                        TextButton(
-                                          child: Text("OK",
-                                              style: context.theme.textTheme.bodyLarge!
-                                                  .copyWith(color: context.theme.colorScheme.primary)),
-                                          onPressed: () async {
-                                            if (portController.text.isEmpty || !portController.text.isNumericOnly) {
-                                              showSnackbar("Error", "Enter a valid port!");
-                                              return;
-                                            }
-                                            Navigator.of(context, rootNavigator: true).pop();
-                                            SettingsSvc.settings.localhostPort.value = portController.text;
-                                          },
-                                        ),
-                                      ],
-                                      content: TextField(
-                                        controller: portController,
-                                        decoration: const InputDecoration(
-                                          labelText: "Port Number",
-                                          border: OutlineInputBorder(),
-                                        ),
-                                        keyboardType: TextInputType.number,
-                                      ),
-                                      title: Text("Enter Server Port", style: context.theme.textTheme.titleLarge),
-                                      backgroundColor: context.theme.colorScheme.properSurface,
-                                    );
-                                  });
+                              final port = await BBInputDialog.text(
+                                context: context,
+                                title: "Enter Server Port",
+                                placeholder: "Port Number",
+                                keyboardType: TextInputType.number,
+                                validator: (value) {
+                                  if (value == null || value.isEmpty || !value.isNumericOnly) {
+                                    return "Enter a valid port!";
+                                  }
+                                  return null;
+                                },
+                              );
+                              if (port != null) {
+                                SettingsSvc.settings.localhostPort.value = port;
+                              } else {
+                                return; // User cancelled
+                              }
                             } else {
                               SettingsSvc.settings.localhostPort.value = null;
                             }
@@ -706,8 +643,8 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                   if (!kIsWeb) const SettingsDivider(),
                   if (!kIsWeb)
                     Obx(() => SettingsSvc.settings.localhostPort.value != null
-                        ? SettingsSwitch(
-                            initialVal: SettingsSvc.settings.useLocalIpv6.value,
+                        ? BBSettingsSwitch(
+                            value: SettingsSvc.settings.useLocalIpv6.value,
                             title: "Use IPv6",
                             subtitle: "Do not enable this unless your environment supports IPv6",
                             isThreeLine: true,
@@ -715,23 +652,23 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                               SettingsSvc.settings.useLocalIpv6.value = val;
                               NetworkTasks.detectLocalhost(createSnackbar: true);
                             },
-                            leading: const SettingsLeadingIcon(
-                                iosIcon: CupertinoIcons.globe, materialIcon: Icons.network_check_outlined),
+                            leading: const BBSettingsIcon(
+                                iosIcon: CupertinoIcons.globe,
+                                materialIcon: Icons.network_check_outlined),
                           )
                         : const SizedBox.shrink()),
                 ]),
-                SettingsHeader(iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Server Actions"),
-                SettingsSection(
+                const BBSettingsHeader(text: "Server Actions"),
+                BBSettingsSection(
                   backgroundColor: tileColor,
                   children: [
-                    Obx(() => SettingsTile(
+                    Obx(() => BBSettingsTile(
                           title: "Fetch${kIsWeb || kIsDesktop ? "" : " & Share"} Server Logs",
                           subtitle: controller.fetchStatus.value ??
                               (SocketSvc.state.value == SocketState.connected
                                   ? "Tap to fetch logs"
                                   : "Disconnected, cannot fetch logs"),
-                          backgroundColor: tileColor,
-                          leading: const SettingsLeadingIcon(
+                          leading: const BBSettingsIcon(
                             iosIcon: CupertinoIcons.doc_plaintext,
                             materialIcon: Icons.article,
                           ),
@@ -779,7 +716,7 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                           },
                         )),
                     const SettingsDivider(),
-                    Obx(() => SettingsTile(
+                    Obx(() => BBSettingsTile(
                         title: "Restart iMessage",
                         subtitle:
                             controller.isRestartingMessages.value && SocketSvc.state.value == SocketState.connected
@@ -787,11 +724,10 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                                 : SocketSvc.state.value == SocketState.connected
                                     ? "Restart the iMessage app"
                                     : "Disconnected, cannot restart",
-                        backgroundColor: tileColor,
-                        leading: const SettingsLeadingIcon(
+                        leading: const BBSettingsIcon(
                           iosIcon: CupertinoIcons.chat_bubble,
                           materialIcon: Icons.sms,
-                          containerColor: Colors.blueAccent,
+                          color: Colors.blueAccent,
                         ),
                         onTap: () async {
                           if (SocketSvc.state.value != SocketState.connected || controller.isRestartingMessages.value) {
@@ -833,7 +769,7 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              SettingsTile(
+                              BBSettingsTile(
                                   title: "Restart Private API & Services",
                                   subtitle: controller.isRestartingPrivateAPI.value &&
                                           SocketSvc.state.value == SocketState.connected
@@ -841,11 +777,10 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                                       : SocketSvc.state.value == SocketState.connected
                                           ? "Restart the Private API"
                                           : "Disconnected, cannot restart",
-                                  backgroundColor: tileColor,
-                                  leading: const SettingsLeadingIcon(
+                                  leading: const BBSettingsIcon(
                                       iosIcon: CupertinoIcons.exclamationmark_shield,
                                       materialIcon: Icons.gpp_maybe,
-                                      containerColor: Colors.orange),
+                                      color: Colors.orange),
                                   onTap: () async {
                                     if (SocketSvc.state.value != SocketState.connected ||
                                         controller.isRestartingPrivateAPI.value) return;
@@ -889,15 +824,16 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                             ],
                           ),
                         )),
-                    Obx(() => SettingsTile(
+                    const SettingsDivider(),
+                    Obx(() => BBSettingsTile(
                         title: "Restart BlueBubbles Server",
                         subtitle: (controller.isRestarting.value)
                             ? "Restart in progress..."
                             : "This will briefly disconnect you",
-                        leading: const SettingsLeadingIcon(
+                        leading: const BBSettingsIcon(
                           iosIcon: CupertinoIcons.desktopcomputer,
                           materialIcon: Icons.dvr,
-                          containerColor: Colors.redAccent,
+                          color: Colors.redAccent,
                         ),
                         onTap: () async {
                           if (controller.isRestarting.value) return;
@@ -949,16 +885,15 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               const SettingsDivider(),
-                              SettingsTile(
+                              BBSettingsTile(
                                 title: "Check for Server Updates",
                                 subtitle: SocketSvc.state.value == SocketState.connected
                                     ? "Check for new BlueBubbles Server updates"
                                     : "Disconnected, cannot check for updates",
-                                backgroundColor: tileColor,
-                                leading: const SettingsLeadingIcon(
+                                leading: const BBSettingsIcon(
                                     iosIcon: CupertinoIcons.desktopcomputer,
                                     materialIcon: Icons.dvr,
-                                    containerColor: Colors.green),
+                                    color: Colors.green),
                                 onTap: () async {
                                   if (SocketSvc.state.value != SocketState.connected) return;
 

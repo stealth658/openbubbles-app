@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:isolate';
 import 'dart:math';
 import 'dart:ui';
@@ -7,18 +6,18 @@ import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:async_task/async_task_extension.dart';
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:bluebubbles/app/components/custom/custom_error_box.dart';
+import 'package:bluebubbles/app/layouts/conversation_list/pages/conversation_list.dart';
 import 'package:bluebubbles/helpers/backend/startup_tasks.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/network/http_overrides.dart';
-import 'package:bluebubbles/utils/logger/logger.dart';
-import 'package:bluebubbles/utils/window_effects.dart';
-import 'package:bluebubbles/app/layouts/conversation_list/pages/conversation_list.dart';
+import 'package:bluebubbles/core/logger/logger.dart';
+import 'package:bluebubbles/core/utils/window_effects_utils.dart';
 import 'package:bluebubbles/app/layouts/startup/failure_to_start.dart';
 import 'package:bluebubbles/app/layouts/setup/setup_view.dart';
 import 'package:bluebubbles/app/layouts/startup/splash_screen.dart';
 import 'package:bluebubbles/app/wrappers/titlebar_wrapper.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
-import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/data/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:collection/collection.dart';
 import 'package:easy_debounce/easy_debounce.dart';
@@ -104,7 +103,7 @@ Future<Null> initApp(bool bubble, List<String> arguments) async {
       /* ----- SPLASH SCREEN INITIALIZATION ----- */
       if (!SettingsSvc.settings.finishedSetup.value && !kIsWeb && !kIsDesktop) {
         runApp(MaterialApp(
-            home: SplashScreen(shouldNavigate: false),
+            home: const SplashScreen(shouldNavigate: false),
             theme: ThemeData(
               colorScheme: ColorScheme.fromSwatch(
                   backgroundColor:
@@ -294,7 +293,7 @@ class Main extends StatelessWidget {
           // Prevent scrolling with multiple fingers accelerating the scrolling
           multitouchDragStrategy: MultitouchDragStrategy.latestPointer,
         ),
-        home: Home(),
+        home: const Home(),
         shortcuts: {
           LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.comma): const OpenSettingsIntent(),
           LogicalKeySet(LogicalKeyboardKey.alt, LogicalKeyboardKey.keyN): const OpenNewChatCreatorIntent(),
@@ -677,7 +676,7 @@ class _HomeState extends OptimizedState<Home> with WidgetsBindingObserver, TrayL
                     return PopScope(
                       canPop: false,
                       child: TitleBarWrapper(
-                          child: kIsWeb || kIsDesktop ? SetupView() : SplashScreen(shouldNavigate: fullyLoaded)),
+                          child: kIsWeb || kIsDesktop ? const SetupView() : SplashScreen(shouldNavigate: fullyLoaded)),
                     );
                   }
                 },

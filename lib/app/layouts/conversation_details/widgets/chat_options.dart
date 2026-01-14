@@ -1,4 +1,6 @@
 import 'package:adaptive_theme/adaptive_theme.dart';
+import 'package:bluebubbles/app/components/dialogs/dialogs.dart';
+import 'package:bluebubbles/app/components/settings/settings.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/dialogs/chat_sync_dialog.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/dialogs/timeframe_picker.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/reply/reply_thread_popup.dart';
@@ -6,7 +8,7 @@ import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/theming/avatar/avatar_crop.dart';
-import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/data/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -44,11 +46,11 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
               child: Text("OPTIONS & ACTIONS",
                   style: context.theme.textTheme.bodyMedium!.copyWith(color: context.theme.colorScheme.outline)),
             ),
-            SettingsSection(
+            BBSettingsSection(
               backgroundColor: tileColor,
               children: [
                 if (!kIsWeb && !kIsDesktop && (FilesystemSvc.androidInfo?.version.sdkInt ?? 0) >= 30)
-                  SettingsTile(
+                  BBSettingsTile(
                     title: "Notification Settings",
                     subtitle: "Customize notification sounds, importance, and more for this specific chat",
                     trailing: Padding(
@@ -57,14 +59,13 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
                         iOS ? CupertinoIcons.bell : Icons.notifications_on,
                       ),
                     ),
-                    isThreeLine: true,
                     onTap: () async {
                       await MethodChannelSvc.invokeMethod("open-conversation-notification-settings",
                           {"channel_id": chat.guid, "display_name": chat.getTitle()});
                     },
                   ),
                 if (!kIsWeb)
-                  SettingsTile(
+                  BBSettingsTile(
                     title: "Change Chat Avatar",
                     trailing: Padding(
                       padding: const EdgeInsets.only(right: 15.0),
@@ -74,53 +75,34 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
                     ),
                     onTap: () {
                       if (chat.customAvatarPath != null) {
-                        showDialog(
+                        BBAlertDialog.show<String>(
                           context: context,
-                          builder: (BuildContext context) {
-                            return AlertDialog(
-                                backgroundColor: context.theme.colorScheme.properSurface,
-                                title: Text("Custom Avatar", style: context.theme.textTheme.titleLarge),
-                                content: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text("You already have a custom avatar for this chat. What would you like to do?",
-                                        style: context.theme.textTheme.bodyLarge),
-                                  ],
-                                ),
-                                actions: <Widget>[
-                                  TextButton(
-                                    child: Text("Cancel",
-                                        style: context.theme.textTheme.bodyLarge!
-                                            .copyWith(color: context.theme.colorScheme.primary)),
-                                    onPressed: () {
-                                      Navigator.of(context).pop();
-                                    },
-                                  ),
-                                  TextButton(
-                                    child: Text("Reset",
-                                        style: context.theme.textTheme.bodyLarge!
-                                            .copyWith(color: context.theme.colorScheme.primary)),
-                                    onPressed: () {
-                                      File file = File(chat.customAvatarPath!);
-                                      file.delete();
-                                      chat.customAvatarPath = null;
-                                      chat.saveAsync(updateCustomAvatarPath: true);
-                                      Navigator.of(context, rootNavigator: true).pop();
-                                    },
-                                  ),
-                                  TextButton(
-                                    child: Text("Set New",
-                                        style: context.theme.textTheme.bodyLarge!
-                                            .copyWith(color: context.theme.colorScheme.primary)),
-                                    onPressed: () {
-                                      Navigator.of(context).pop();
-                                      Get.to(() => AvatarCrop(chat: chat));
-                                    },
-                                  ),
-                                ]);
-                          },
+                          title: "Custom Avatar",
+                          message: "You already have a custom avatar for this chat. What would you like to do?",
+                          actions: [
+                            BBDialogAction(
+                              label: "Cancel",
+                              type: BBDialogButtonType.cancel,
+                              onPressed: () => Navigator.of(context).pop(),
+                            ),
+                            BBDialogAction(
+                              label: "Reset",
+                              onPressed: () {
+                                File file = File(chat.customAvatarPath!);
+                                file.delete();
+                                chat.customAvatarPath = null;
+                                chat.saveAsync(updateCustomAvatarPath: true);
+                                Navigator.of(context, rootNavigator: true).pop();
+                              },
+                            ),
+                            BBDialogAction(
+                              label: "Set New",
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                                Get.to(() => AvatarCrop(chat: chat));
+                              },
+                            ),
+                          ],
                         );
                       } else {
                         Get.to(() => AvatarCrop(chat: chat));
@@ -128,10 +110,9 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
                     },
                   ),
                 if (iOS)
-                  SettingsTile(
+                  BBSettingsTile(
                       title: "View Bookmarks",
                       subtitle: "See your bookmarked messages",
-                      backgroundColor: tileColor,
                       trailing: Padding(
                         padding: const EdgeInsets.only(right: 15.0),
                         child: Icon(iOS ? CupertinoIcons.bookmark : Icons.bookmark),
@@ -139,10 +120,9 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
                       onTap: () async {
                         showBookmarksThread(cvc(widget.chat), context);
                       }),
-                SettingsTile(
+                BBSettingsTile(
                     title: "Fetch Chat Details",
                     subtitle: "Get the latest chat title and participants from the server",
-                    backgroundColor: tileColor,
                     trailing: Padding(
                       padding: const EdgeInsets.only(right: 15.0),
                       child: Icon(iOS ? CupertinoIcons.chat_bubble : Icons.sms),
@@ -151,19 +131,20 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
                       await ChatsSvc.fetchChat(chat.guid);
                       showSnackbar("Notice", "Fetched details!");
                     }),
-                SettingsTile(
+                BBSettingsTile(
                   title: "Fetch More Messages",
                   subtitle: "Fetches up to 100 messages after the last message stored locally",
-                  isThreeLine: true,
                   trailing: Padding(
                     padding: const EdgeInsets.only(right: 15.0),
                     child: Icon(iOS ? CupertinoIcons.cloud_download : Icons.file_download),
                   ),
                   onTap: () async {
-                    await showDialog(
+                    await BBCustomDialog.show(
                       context: context,
-                      barrierDismissible: false,
-                      builder: (context) => ChatSyncDialog(
+                      config: const BBCustomDialogConfig(
+                        barrierDismissible: false,
+                      ),
+                      content: ChatSyncDialog(
                         chat: chat,
                         withOffset: true,
                         initialMessage: "Fetching more messages...",
@@ -172,7 +153,7 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
                     );
                   },
                 ),
-                SettingsTile(
+                BBSettingsTile(
                   title: "Sync Last 25 Messages",
                   subtitle: "Resyncs the 25 most recent messages from the server",
                   trailing: Padding(
@@ -180,31 +161,35 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
                     child: Icon(iOS ? CupertinoIcons.arrow_counterclockwise : Icons.replay),
                   ),
                   onTap: () {
-                    showDialog(
+                    BBCustomDialog.show(
                       context: context,
-                      barrierDismissible: false,
-                      builder: (context) =>
-                          ChatSyncDialog(chat: chat, initialMessage: "Resyncing messages...", limit: 25),
+                      config: const BBCustomDialogConfig(
+                        barrierDismissible: false,
+                      ),
+                      content: ChatSyncDialog(
+                        chat: chat,
+                        initialMessage: "Resyncing messages...",
+                        limit: 25,
+                      ),
                     );
                   },
                 ),
                 if (!kIsWeb && !chat.isGroup && SettingsSvc.settings.enablePrivateAPI.value) const SettingsDivider(),
                 if (!kIsWeb && !chat.isGroup && SettingsSvc.settings.enablePrivateAPI.value)
-                  SettingsSwitch(
+                  BBSettingsSwitch(
                     title: "Send Typing Indicators",
-                    initialVal: chat.autoSendTypingIndicators ?? SettingsSvc.settings.privateSendTypingIndicators.value,
+                    value: chat.autoSendTypingIndicators ?? SettingsSvc.settings.privateSendTypingIndicators.value,
                     onChanged: (value) {
                       chat.toggleAutoTypeAsync(value);
                       setState(() {});
                     },
-                    backgroundColor: tileColor,
                   ),
                 if (!kIsWeb && !chat.isGroup && SettingsSvc.settings.enablePrivateAPI.value)
-                  SettingsSwitch(
+                  BBSettingsSwitch(
                       title: "Follow Global Setting",
                       subtitle:
                           "Typing Indicators ${SettingsSvc.settings.privateSendTypingIndicators.value ? "Enabled" : "Disabled"}",
-                      initialVal: chat.autoSendTypingIndicators == null,
+                      value: chat.autoSendTypingIndicators == null,
                       onChanged: (value) {
                         if (!value) {
                           chat.toggleAutoTypeAsync(SettingsSvc.settings.privateSendTypingIndicators.value);
@@ -215,22 +200,21 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
                       }),
                 if (!kIsWeb && !chat.isGroup && SettingsSvc.settings.enablePrivateAPI.value) const SettingsDivider(),
                 if (!kIsWeb && !chat.isGroup && SettingsSvc.settings.enablePrivateAPI.value)
-                  SettingsSwitch(
+                  BBSettingsSwitch(
                     title:
                         "${SettingsSvc.settings.privateManualMarkAsRead.value ? "Automatically " : ""}Send Read Receipts",
-                    initialVal: chat.autoSendReadReceipts ?? SettingsSvc.settings.privateMarkChatAsRead.value,
+                    value: chat.autoSendReadReceipts ?? SettingsSvc.settings.privateMarkChatAsRead.value,
                     onChanged: (value) {
                       chat.toggleAutoReadAsync(value);
                       setState(() {});
                     },
-                    backgroundColor: tileColor,
                   ),
                 if (!kIsWeb && !chat.isGroup && SettingsSvc.settings.enablePrivateAPI.value)
-                  SettingsSwitch(
+                  BBSettingsSwitch(
                     title: "Follow Global Setting",
                     subtitle:
                         "${SettingsSvc.settings.privateManualMarkAsRead.value ? "Automatic " : ""}Read Receipts ${SettingsSvc.settings.privateMarkChatAsRead.value ? "Enabled" : "Disabled"}",
-                    initialVal: chat.autoSendReadReceipts == null,
+                    value: chat.autoSendReadReceipts == null,
                     onChanged: (value) {
                       if (!value) {
                         chat.toggleAutoReadAsync(SettingsSvc.settings.privateMarkChatAsRead.value);
@@ -243,10 +227,10 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
                 if ((!kIsWeb && !chat.isGroup && SettingsSvc.settings.enablePrivateAPI.value) || chat.isGroup)
                   const SettingsDivider(),
                 if (chat.isGroup)
-                  SettingsSwitch(
+                  BBSettingsSwitch(
                     title: "Lock Chat Name",
                     subtitle: "Keep the current chat name on this device, even if someone else in the chat changes it",
-                    initialVal: chat.lockChatName,
+                    value: chat.lockChatName,
                     onChanged: (value) {
                       chat.lockChatName = value;
                       chat.saveAsync(updateLockChatName: true);
@@ -254,10 +238,10 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
                     },
                   ),
                 if (chat.isGroup)
-                  SettingsSwitch(
+                  BBSettingsSwitch(
                     title: "Lock Chat Icon",
                     subtitle: "Keep the current chat icon on this device, even if someone else in the chat changes it",
-                    initialVal: chat.lockChatIcon,
+                    value: chat.lockChatIcon,
                     onChanged: (value) {
                       chat.lockChatIcon = value;
                       chat.saveAsync(updateLockChatIcon: true);
@@ -266,9 +250,9 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
                   ),
                 if (chat.isGroup) const SettingsDivider(),
                 if (!kIsWeb)
-                  SettingsSwitch(
+                  BBSettingsSwitch(
                     title: "Pin Conversation",
-                    initialVal: chat.isPinned!,
+                    value: chat.isPinned!,
                     onChanged: (value) {
                       final chatState = ChatsSvc.getChatState(chat.guid);
                       if (chatState != null) {
@@ -278,12 +262,11 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
                       }
                       setState(() {});
                     },
-                    backgroundColor: tileColor,
                   ),
                 if (!kIsWeb)
-                  SettingsSwitch(
+                  BBSettingsSwitch(
                     title: "Mute Conversation",
-                    initialVal: chat.muteType == "mute",
+                    value: chat.muteType == "mute",
                     onChanged: (value) {
                       final chatState = ChatsSvc.getChatState(chat.guid);
                       if (chatState != null) {
@@ -293,12 +276,11 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
                       }
                       setState(() {});
                     },
-                    backgroundColor: tileColor,
                   ),
                 if (!kIsWeb)
-                  SettingsSwitch(
+                  BBSettingsSwitch(
                     title: "Archive Conversation",
-                    initialVal: chat.isArchived!,
+                    value: chat.isArchived!,
                     onChanged: (value) {
                       final chatState = ChatsSvc.getChatState(chat.guid);
                       if (chatState != null) {
@@ -308,58 +290,35 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
                       }
                       setState(() {});
                     },
-                    backgroundColor: tileColor,
                   ),
                 if (!kIsWeb)
-                  SettingsTile(
+                  BBSettingsTile(
                     title: "Clear Transcript",
                     subtitle: "Delete all messages for this chat on this device",
                     trailing: Padding(
                       padding: const EdgeInsets.only(right: 15.0),
                       child: Icon(iOS ? CupertinoIcons.trash : Icons.delete_outlined),
                     ),
-                    onTap: () {
-                      showDialog(
+                    onTap: () async {
+                      final confirmed = await BBAlertDialog.confirm(
                         context: context,
-                        builder: (BuildContext context) {
-                          return AlertDialog(
-                              backgroundColor: context.theme.colorScheme.properSurface,
-                              title: Text("Are You Sure?", style: context.theme.textTheme.titleLarge),
-                              content: Text(
-                                'Clearing the transcript will permanently delete all messages in this chat. It will also prevent any previous messages from being loaded by the app, until you perform a full reset.',
-                                style: context.theme.textTheme.bodyLarge,
-                              ),
-                              actions: <Widget>[
-                                TextButton(
-                                  child: Text("Cancel",
-                                      style: context.theme.textTheme.bodyLarge!
-                                          .copyWith(color: context.theme.colorScheme.primary)),
-                                  onPressed: () {
-                                    Navigator.of(context).pop();
-                                  },
-                                ),
-                                TextButton(
-                                  child: Text("Yes",
-                                      style: context.theme.textTheme.bodyLarge!
-                                          .copyWith(color: context.theme.colorScheme.primary)),
-                                  onPressed: () async {
-                                    Navigator.of(context).pop();
-                                    chat.clearTranscript();
-                                    EventDispatcherSvc.emit("refresh-messagebloc", {"chatGuid": chat.guid});
-                                  },
-                                ),
-                              ]);
-                        },
+                        title: "Are You Sure?",
+                        message: 'Clearing the transcript will permanently delete all messages in this chat. It will also prevent any previous messages from being loaded by the app, until you perform a full reset.',
+                        confirmLabel: "Yes",
+                        isDestructive: true,
                       );
+                      if (confirmed) {
+                        chat.clearTranscript();
+                        EventDispatcherSvc.emit("refresh-messagebloc", {"chatGuid": chat.guid});
+                      }
                     },
                   ),
                 if (!kIsWeb)
-                  SettingsTile(
+                  BBSettingsTile(
                     title: "Download Chat Transcript",
                     subtitle: kIsDesktop
                         ? "Left click for a plaintext transcript\nRight click for a PDF transcript"
                         : "Tap for a plaintext transcript\nTap and hold for a PDF transcript",
-                    isThreeLine: true,
                     trailing: Padding(
                       padding: const EdgeInsets.only(right: 15.0),
                       child: Icon(iOS ? CupertinoIcons.doc_text : Icons.note_outlined),
@@ -368,23 +327,12 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
                       final date =
                           await showTimeframePicker("Select Timeframe", context, additionalTimeframes: {"6 Hours": 6});
                       if (date == null) return;
-                      showDialog(
+                      BBProgressDialog.show(
                         context: context,
-                        builder: (context) => AlertDialog(
-                          title: Text("Generating document...", style: context.theme.textTheme.titleLarge),
-                          content: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            mainAxisSize: MainAxisSize.min,
-                            children: <Widget>[
-                              const SizedBox(
-                                height: 15.0,
-                              ),
-                              buildProgressIndicator(context),
-                            ],
-                          ),
-                          backgroundColor: context.theme.colorScheme.properSurface,
+                        title: "Generating document...",
+                        config: const BBProgressDialogConfig(
+                          barrierDismissible: false,
                         ),
-                        barrierDismissible: false,
                       );
                       final messages = (await Chat.getMessagesAsync(chat, limit: 0, includeDeleted: true))
                           .reversed
@@ -421,22 +369,12 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
                       final date =
                           await showTimeframePicker("Select Timeframe", context, additionalTimeframes: {"6 Hours": 6});
                       if (date == null) return;
-                      showDialog(
+                      BBProgressDialog.show(
                         context: context,
-                        builder: (context) => AlertDialog(
-                          title: Text("Generating PDF...", style: context.theme.textTheme.titleLarge),
-                          content: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              mainAxisSize: MainAxisSize.min,
-                              children: <Widget>[
-                                const SizedBox(
-                                  height: 15.0,
-                                ),
-                                buildProgressIndicator(context),
-                              ]),
-                          backgroundColor: context.theme.colorScheme.properSurface,
+                        title: "Generating PDF...",
+                        config: const BBProgressDialogConfig(
+                          barrierDismissible: false,
                         ),
-                        barrierDismissible: false,
                       );
                       final messages = (await Chat.getMessagesAsync(chat, limit: 0, includeDeleted: true))
                           .reversed

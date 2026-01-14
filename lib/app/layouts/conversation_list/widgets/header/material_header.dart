@@ -1,9 +1,9 @@
+import 'package:bluebubbles/data/models/native/chat.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/pages/conversation_list.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/header/header_widgets.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/pages/search/search_view.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
-import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
@@ -11,7 +11,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 
 class MaterialHeader extends CustomStateful<ConversationListController> {
-  const MaterialHeader({Key? key, required super.parentController});
+  const MaterialHeader({super.key, required super.parentController});
 
   @override
   State<StatefulWidget> createState() => _MaterialHeaderState();
@@ -100,7 +100,7 @@ class _MaterialHeaderState extends CustomState<MaterialHeader, void, Conversatio
                                           onPressed: () async {
                                             NavigationSvc.pushLeft(
                                               context,
-                                              SearchView(),
+                                              const SearchView(),
                                             );
                                           },
                                           icon: Icon(

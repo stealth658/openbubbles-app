@@ -4,7 +4,7 @@ import 'dart:ui';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/misc/tail_clipper.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/data/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
@@ -14,7 +14,7 @@ import 'package:simple_animations/simple_animations.dart';
 import 'package:supercharged/supercharged.dart';
 
 class BubbleEffects extends StatefulWidget {
-  BubbleEffects({
+  const BubbleEffects({
     super.key,
     required this.child,
     required this.message,
@@ -203,7 +203,7 @@ class _BubbleEffectsState extends OptimizedState<BubbleEffects> {
           );
         }
         if (effect == MessageEffect.loud) {
-          return Container(
+          return SizedBox(
             width: value1 == 1 ? null : size.width * value1,
             height: value1 == 1 ? null : size.height * value1,
             child: FittedBox(
@@ -217,7 +217,7 @@ class _BubbleEffectsState extends OptimizedState<BubbleEffects> {
           );
         }
         if (effect == MessageEffect.slam) {
-          return Container(
+          return SizedBox(
             width: value1 == 1 ? null : size.width * value1,
             height: value1 == 1 ? null : size.height * value1,
             child: FittedBox(

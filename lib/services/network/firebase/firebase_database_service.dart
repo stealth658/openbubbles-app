@@ -1,5 +1,5 @@
 import 'package:bluebubbles/helpers/backend/settings_helpers.dart';
-import 'package:bluebubbles/utils/logger/logger.dart';
+import 'package:bluebubbles/core/logger/logger.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:dio/dio.dart';
@@ -8,7 +8,7 @@ import 'package:firebase_dart/implementation/pure_dart.dart';
 import 'package:firebase_dart/src/firestore.dart' show FirebaseFirestore;
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart' hide Response;
-import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/data/database/models.dart';
 
 FirebaseDatabaseService fdb = Get.isRegistered<FirebaseDatabaseService>()
     ? Get.find<FirebaseDatabaseService>()

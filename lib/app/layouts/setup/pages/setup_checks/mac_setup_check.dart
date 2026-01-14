@@ -6,6 +6,8 @@ import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class MacSetupCheck extends StatelessWidget {
+  const MacSetupCheck({super.key});
+
   @override
   Widget build(BuildContext context) {
     return SetupPageTemplate(

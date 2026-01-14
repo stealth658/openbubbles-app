@@ -19,13 +19,13 @@ import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/reply/
 import 'package:bluebubbles/app/wrappers/titlebar_wrapper.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/services/services.dart';
-import 'package:bluebubbles/utils/logger/logger.dart';
+import 'package:bluebubbles/core/logger/logger.dart';
 import 'package:bluebubbles/utils/share.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/cupertino.dart' as cupertino;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' hide BackButton;
-import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/data/database/models.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:flutter_svg/svg.dart';
@@ -257,8 +257,8 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
                           builder: (context, size, child) {
                             return Transform.scale(
                               scale: size.clamp(1, double.infinity),
-                              child: child,
                               alignment: message.isFromMe! ? Alignment.centerRight : Alignment.centerLeft,
+                              child: child,
                             );
                           },
                         ),
@@ -575,7 +575,7 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
         actions: [
           Obx(
             () => downloadingAttachments.value
-                ? Container(height: 0, width: 0)
+                ? const SizedBox(height: 0, width: 0)
                 : TextButton(
                     child: Text("Close",
                         style:
@@ -658,7 +658,7 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
         actions: [
           Obx(
             () => downloadingAttachments.value
-                ? Container(height: 0, width: 0)
+                ? const SizedBox(height: 0, width: 0)
                 : TextButton(
                     child: Text("Close",
                         style:

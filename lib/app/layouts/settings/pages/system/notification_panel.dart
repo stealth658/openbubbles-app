@@ -1,13 +1,15 @@
-import 'package:bluebubbles/helpers/helpers.dart';
+import 'package:bluebubbles/app/components/settings/settings.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/pages/conversation_list.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/tile/conversation_tile.dart';
+import 'package:bluebubbles/helpers/helpers.dart';
+import 'package:bluebubbles/app/components/dialogs/dialogs.dart';
 import 'package:bluebubbles/app/layouts/settings/dialogs/notification_settings_dialog.dart';
 import 'package:bluebubbles/app/wrappers/scrollbar_wrapper.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/reaction_type_picker.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
-import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/data/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:animated_size_and_fade/animated_size_and_fade.dart';
 import 'package:flutter/cupertino.dart';
@@ -16,6 +18,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:universal_html/html.dart' as uh;
+import 'package:bluebubbles/app/components/base/base.dart';
 
 class NotificationPanel extends StatefulWidget {
   const NotificationPanel({super.key});
@@ -50,21 +53,22 @@ class _NotificationPanelState extends OptimizedState<NotificationPanel> with Sin
                     padding: EdgeInsets.only(bottom: 8.0, left: iOS ? 30 : 15),
                     child: Text("Notifications".psCapitalize, style: iOS ? iosSubtitle : materialSubtitle),
                   )),
-            SettingsSection(backgroundColor: tileColor, children: [
+            BBSettingsSection(
+              backgroundColor: tileColor,
+              children: [
               if (!kIsWeb)
-                Obx(() => SettingsSwitch(
+                Obx(() => BBSettingsSwitch(
                       onChanged: (bool val) async {
                         SettingsSvc.settings.notifyOnChatList.value = val;
                         await SettingsSvc.settings.saveOneAsync('notifyOnChatList');
                       },
-                      initialVal: SettingsSvc.settings.notifyOnChatList.value,
+                      value: SettingsSvc.settings.notifyOnChatList.value,
                       title: "Send Notifications on Chat List",
                       subtitle: "Sends notifications for new messages while in the chat list or chat creator",
                       isThreeLine: true,
-                      backgroundColor: tileColor,
                     )),
               if (kIsWeb)
-                SettingsTile(
+                BBSettingsTile(
                   onTap: () async {
                     String res = await uh.Notification.requestPermission();
                     setState(() {});
@@ -75,24 +79,22 @@ class _NotificationPanelState extends OptimizedState<NotificationPanel> with Sin
                       : uh.Notification.permission == "denied"
                           ? "Notifications denied, please update your browser settings to re-enable notifications"
                           : "Click to enable notifications",
-                  backgroundColor: tileColor,
                 ),
               const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
-              Obx(() => SettingsSwitch(
+              Obx(() => BBSettingsSwitch(
                     onChanged: (bool val) async {
                       SettingsSvc.settings.notifyReactions.value = val;
                       await SettingsSvc.settings.saveOneAsync('notifyReactions');
                     },
-                    initialVal: SettingsSvc.settings.notifyReactions.value,
+                    value: SettingsSvc.settings.notifyReactions.value,
                     title: "Notify for Reactions",
                     subtitle: "Sends notifications for incoming reactions",
-                    backgroundColor: tileColor,
                   )),
               const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
-              Obx(() => SettingsSwitch(
+              Obx(() => BBSettingsSwitch(
                     title: "Text Detection",
                     subtitle: "Mute all chats except when your choice of text is found in a message",
-                    initialVal: SettingsSvc.settings.globalTextDetection.value.isNotEmpty,
+                    value: SettingsSvc.settings.globalTextDetection.value.isNotEmpty,
                     onChanged: (bool val) async {
                       if (!val) {
                         SettingsSvc.settings.globalTextDetection.value = "";
@@ -101,26 +103,25 @@ class _NotificationPanelState extends OptimizedState<NotificationPanel> with Sin
                       }
                       final TextEditingController controller = TextEditingController();
                       controller.text = SettingsSvc.settings.globalTextDetection.value;
-                      await showDialog(
+                      await BBCustomDialog.show(
                         context: context,
-                        builder: (context) => TextDetectionDialog(controller),
+                        content: TextDetectionDialog(controller),
                       );
                       SettingsSvc.settings.globalTextDetection.value = controller.text;
                       await SettingsSvc.settings.saveOneAsync('globalTextDetection');
                     },
-                    backgroundColor: tileColor,
                   )),
               Obx(() => SettingsSvc.settings.globalTextDetection.value.isNotEmpty
-                  ? SettingsTile(
+                  ? BBSettingsTile(
                       title: "Whitelisted Phrases",
                       subtitle: SettingsSvc.settings.globalTextDetection.value,
                       leading: Icon(iOS ? CupertinoIcons.pencil : Icons.edit_outlined),
                       onTap: () async {
                         final TextEditingController controller = TextEditingController();
                         controller.text = SettingsSvc.settings.globalTextDetection.value;
-                        await showDialog(
+                        await BBCustomDialog.show(
                           context: context,
-                          builder: (context) => TextDetectionDialog(controller),
+                          content: TextDetectionDialog(controller),
                         );
                         SettingsSvc.settings.globalTextDetection.value = controller.text;
                         await SettingsSvc.settings.saveOneAsync('globalTextDetection');
@@ -128,30 +129,28 @@ class _NotificationPanelState extends OptimizedState<NotificationPanel> with Sin
                     )
                   : const SizedBox.shrink())
             ]),
-            SettingsHeader(iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Advanced"),
-            SettingsSection(
+            const BBSettingsHeader(text: "Advanced"),
+            BBSettingsSection(
               backgroundColor: tileColor,
               children: [
-                Obx(() => SettingsSwitch(
+                Obx(() => BBSettingsSwitch(
                       onChanged: (bool val) async {
                         SettingsSvc.settings.hideTextPreviews.value = val;
                         await SettingsSvc.settings.saveOneAsync('hideTextPreviews');
                       },
-                      initialVal: SettingsSvc.settings.hideTextPreviews.value,
+                      value: SettingsSvc.settings.hideTextPreviews.value,
                       title: "Hide Message Text",
                       subtitle: "Replaces message text with 'iMessage' in notifications",
-                      backgroundColor: tileColor,
                     )),
                 const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
-                Obx(() => SettingsSwitch(
+                Obx(() => BBSettingsSwitch(
                       onChanged: (bool val) async {
                         SettingsSvc.settings.showIncrementalSync.value = val;
                         await SettingsSvc.settings.saveOneAsync('showIncrementalSync');
                       },
-                      initialVal: SettingsSvc.settings.showIncrementalSync.value,
+                      value: SettingsSvc.settings.showIncrementalSync.value,
                       title: "Notify When Incremental Sync Complete",
                       subtitle: "Show a snackbar whenever a message sync is completed",
-                      backgroundColor: tileColor,
                       isThreeLine: true,
                     )),
                 if (!kIsWeb && !kIsDesktop) ...[
@@ -161,15 +160,14 @@ class _NotificationPanelState extends OptimizedState<NotificationPanel> with Sin
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
-                        Obx(() => SettingsSwitch(
+                        Obx(() => BBSettingsSwitch(
                               onChanged: (bool val) async {
                                 SettingsSvc.settings.notificationReactionAction.value = val;
                                 await SettingsSvc.settings.saveOneAsync('notificationReactionAction');
                               },
-                              initialVal: SettingsSvc.settings.notificationReactionAction.value,
+                              value: SettingsSvc.settings.notificationReactionAction.value,
                               title: "Quick Reaction from Notifications",
                               subtitle: "Add a quick reaction button to your notifications (requires Private API)",
-                              backgroundColor: tileColor,
                               isThreeLine: true,
                             )),
                       ],
@@ -313,7 +311,7 @@ class _NotificationPanelState extends OptimizedState<NotificationPanel> with Sin
                                           padding: const EdgeInsets.only(left: 8.0),
                                           child: Align(
                                             alignment: Alignment.bottomLeft,
-                                            child: Container(
+                                            child: SizedBox(
                                               height: 50,
                                               child: Align(
                                                 alignment: Alignment.centerLeft,
@@ -348,7 +346,7 @@ class _NotificationPanelState extends OptimizedState<NotificationPanel> with Sin
                       ),
                     ),
                   ),
-                  if (!kIsWeb) ChatList(),
+                  if (!kIsWeb) const ChatList(),
                 ],
               ),
               bottomNavigationBar: kIsWeb
@@ -378,6 +376,8 @@ class _NotificationPanelState extends OptimizedState<NotificationPanel> with Sin
 }
 
 class ChatList extends StatefulWidget {
+  const ChatList({super.key});
+
   @override
   State<StatefulWidget> createState() => ChatListState();
 }
@@ -426,7 +426,7 @@ class ChatListState extends OptimizedState<ChatList> {
                           style: context.theme.textTheme.labelLarge,
                         ),
                       ),
-                      buildProgressIndicator(context, size: 15),
+                      const BBLoadingIndicator(size: 15),
                     ],
                   ),
                 ),
@@ -479,9 +479,9 @@ class ChatListState extends OptimizedState<ChatList> {
                                 .copyWith(color: context.theme.colorScheme.properOnSurface),
                           ),
                           onSelect: (_) async {
-                            await showDialog(
+                            await BBCustomDialog.show(
                               context: context,
-                              builder: (context) => NotificationSettingsDialog(chat, () {
+                              content: NotificationSettingsDialog(chat, () {
                                 setState(() {});
                               }),
                             );

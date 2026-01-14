@@ -21,7 +21,7 @@ class SettingsScaffold extends StatelessWidget {
   final Widget? stickySuffix;
   final Widget? fab;
 
-  SettingsScaffold({
+  SettingsScaffold({super.key, 
     required this.title,
     required this.initialHeader,
     required this.iosSubtitle,
@@ -153,7 +153,7 @@ class SettingsScaffold extends StatelessWidget {
                                       padding: const EdgeInsets.only(left: 8.0),
                                       child: Align(
                                         alignment: Alignment.bottomLeft,
-                                        child: Container(
+                                        child: SizedBox(
                                           height: 50,
                                           child: Align(
                                             alignment: Alignment.centerLeft,
@@ -164,7 +164,7 @@ class SettingsScaffold extends StatelessWidget {
                                     ),
                                     Align(
                                       alignment: Alignment.bottomRight,
-                                      child: Container(
+                                      child: SizedBox(
                                         height: 50,
                                         child: Align(
                                           alignment: Alignment.centerRight,

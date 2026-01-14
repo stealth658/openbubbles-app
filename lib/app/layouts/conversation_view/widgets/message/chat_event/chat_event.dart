@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/data/database/models.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/material.dart';
@@ -8,7 +8,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 class ChatEvent extends StatelessWidget {
-  ChatEvent({
+  const ChatEvent({
     super.key,
     required this.part,
     required this.message,

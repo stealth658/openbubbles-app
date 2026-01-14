@@ -1,14 +1,16 @@
 import 'package:adaptive_theme/adaptive_theme.dart';
+import 'package:bluebubbles/app/components/dialogs/dialogs.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/content/next_button.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
-import 'package:bluebubbles/utils/window_effects.dart';
+import 'package:bluebubbles/app/components/settings/settings.dart';
+import 'package:bluebubbles/app/components/settings/bb_settings_subtitle.dart';
+import 'package:bluebubbles/core/utils/window_effects_utils.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/theming/avatar/custom_avatar_color_panel.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/theming/avatar/custom_avatar_panel.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/theming/advanced/advanced_theming_panel.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
-import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/data/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
@@ -40,7 +42,7 @@ class ThemingPanelController extends StatefulController {
 }
 
 class ThemingPanel extends CustomStateful<ThemingPanelController> {
-  ThemingPanel() : super(parentController: Get.put(ThemingPanelController()));
+  ThemingPanel({super.key}) : super(parentController: Get.put(ThemingPanelController()));
 
   @override
   State<StatefulWidget> createState() => _ThemingPanelState();
@@ -61,11 +63,11 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
           SliverList(
             delegate: SliverChildListDelegate(
               <Widget>[
-                SettingsSection(
+                BBSettingsSection(
                   backgroundColor: tileColor,
                   children: [
-                    SettingsOptions<AdaptiveThemeMode>(
-                      initial: AdaptiveTheme.of(context).mode,
+                    BBSettingsDropdown<AdaptiveThemeMode>(
+                      value: AdaptiveTheme.of(context).mode,
                       onChanged: (val) {
                         if (val == null) return;
                         AdaptiveTheme.of(context).setThemeMode(val);
@@ -75,20 +77,18 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                       options: AdaptiveThemeMode.values,
                       textProcessing: (val) => val.toString().split(".").last,
                       title: "App Theme",
-                      secondaryColor: headerColor,
                     ),
                     if (!kIsWeb) const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     if (!kIsWeb)
-                      SettingsTile(
+                      BBSettingsTile(
                         title: "Advanced Theming",
                         subtitle:
                             "Customize app colors and font sizes with custom themes\n${ThemeStruct.getLightTheme().name}   |   ${ThemeStruct.getDarkTheme().name}",
                         trailing: const NextButton(),
-                        isThreeLine: true,
                         onTap: () async {
                           Navigator.of(context).push(
                             CupertinoPageRoute(
-                              builder: (context) => AdvancedThemingPanel(),
+                              builder: (context) => const AdvancedThemingPanel(),
                             ),
                           );
                         },
@@ -113,15 +113,13 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                         divisions: 4)),
                   ],
                 ),
-                SettingsHeader(
-                    iosSubtitle: iosSubtitle,
-                    materialSubtitle: materialSubtitle,
+                BBSettingsHeader(
                     text: "Skin${kIsDesktop ? "" : " and Layout"}"),
-                SettingsSection(
+                BBSettingsSection(
                   backgroundColor: tileColor,
                   children: [
-                    Obx(() => SettingsOptions<Skins>(
-                          initial: SettingsSvc.settings.skin.value,
+                    Obx(() => BBSettingsDropdown<Skins>(
+                          value: SettingsSvc.settings.skin.value,
                           onChanged: (val) async {
                             if (val == null) return;
                             await ChatsSvc.setAllInactive();
@@ -134,26 +132,24 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                           textProcessing: (val) => val.name,
                           capitalize: false,
                           title: "App Skin",
-                          secondaryColor: headerColor,
                         )),
                     if (!kIsDesktop) const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     if (!kIsDesktop)
-                      Obx(() => SettingsSwitch(
+                      Obx(() => BBSettingsSwitch(
                             onChanged: (bool val) async {
                               SettingsSvc.settings.tabletMode.value = val;
                               await SettingsSvc.settings.saveOneAsync('tabletMode');
                               // update the conversation view UI
                               EventDispatcherSvc.emit('split-refresh', null);
                             },
-                            initialVal: SettingsSvc.settings.tabletMode.value,
+                            value: SettingsSvc.settings.tabletMode.value,
                             title: "Tablet Mode",
-                            backgroundColor: tileColor,
                             subtitle: "Enables tablet mode (split view) depending on screen width",
                             isThreeLine: true,
                           )),
                     if (!kIsWeb && !kIsDesktop) const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     if (!kIsWeb && !kIsDesktop)
-                      Obx(() => SettingsSwitch(
+                      Obx(() => BBSettingsSwitch(
                             onChanged: (bool val) async {
                               SettingsSvc.settings.immersiveMode.value = val;
                               await SettingsSvc.settings.saveOneAsync('immersiveMode');
@@ -165,31 +161,28 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                               }
                               EventDispatcherSvc.emit('theme-update', null);
                             },
-                            initialVal: SettingsSvc.settings.immersiveMode.value,
+                            value: SettingsSvc.settings.immersiveMode.value,
                             title: "Immersive Mode",
-                            backgroundColor: tileColor,
                             subtitle:
                                 "Makes the bottom navigation bar transparent. This option is best used with gesture navigation.",
                             isThreeLine: true,
                           )),
                     if (!kIsWeb && !kIsDesktop)
-                      const SettingsSubtitle(
-                        subtitle:
+                      const BBSettingsSubtitle(
+                        text:
                             "Note: This option may cause slight choppiness in some animations due to an Android limitation.",
                       ),
                   ],
                 ),
                 if (kIsDesktop && Platform.isWindows)
-                  SettingsHeader(
-                    iosSubtitle: iosSubtitle,
-                    materialSubtitle: materialSubtitle,
+                  const BBSettingsHeader(
                     text: "Window Effect",
                   ),
                 if (kIsDesktop && Platform.isWindows)
-                  SettingsSection(backgroundColor: tileColor, children: [
+                  BBSettingsSection(backgroundColor: tileColor, children: [
                     Obx(
-                      () => SettingsOptions<WindowEffect>(
-                        initial: SettingsSvc.settings.windowEffect.value,
+                      () => BBSettingsDropdown<WindowEffect>(
+                        value: SettingsSvc.settings.windowEffect.value,
                         options: WindowEffects.effects,
                         textProcessing: (WindowEffect effect) => effect.toString().substring("WindowEffect.".length),
                         onChanged: (WindowEffect? effect) async {
@@ -215,20 +208,20 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                         title: "Window Effect",
                         subtitle:
                             "${WindowEffects.descriptions[SettingsSvc.settings.windowEffect.value]}\n\nOperating System Version: ${Platform.operatingSystemVersion}\nBuild number: ${parsedWindowsVersion()}${parsedWindowsVersion() < 22000 && SettingsSvc.settings.windowEffect.value == WindowEffect.acrylic ? "\n\n⚠️ This effect causes window movement lag on Windows 10" : ""}",
-                        secondaryColor: headerColor,
+
                         capitalize: true,
                       ),
                     ),
                     if (SettingsSvc.settings.skin.value == Skins.iOS)
-                      Obx(() => SettingsSubtitle(
+                      Obx(() => BBSettingsSubtitle(
                             unlimitedSpace: true,
-                            subtitle:
+                            text:
                                 "${WindowEffects.descriptions[SettingsSvc.settings.windowEffect.value]}\n\nOperating System Version: ${Platform.operatingSystemVersion}\nBuild number: ${parsedWindowsVersion()}${parsedWindowsVersion() < 22000 && SettingsSvc.settings.windowEffect.value == WindowEffect.acrylic ? "\n\n⚠️ This effect causes window movement lag on Windows 10" : ""}",
                           )),
                     Obx(() {
                       if (WindowEffects.dependsOnColor() &&
                           !WindowEffects.isDark(color: context.theme.colorScheme.background)) {
-                        return SettingsTile(
+                        return BBSettingsTile(
                           title: "Background Opacity (Light)",
                           trailing: SettingsSvc.settings.windowEffectCustomOpacityLight.value !=
                                   WindowEffects.defaultOpacity(dark: false)
@@ -265,7 +258,7 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                     Obx(() {
                       if (WindowEffects.dependsOnColor() &&
                           WindowEffects.isDark(color: context.theme.colorScheme.background)) {
-                        return SettingsTile(
+                        return BBSettingsTile(
                           title: "Background Opacity (Dark)",
                           trailing: SettingsSvc.settings.windowEffectCustomOpacityDark.value !=
                                   WindowEffects.defaultOpacity(dark: true)
@@ -300,14 +293,13 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                       return const SizedBox.shrink();
                     }),
                   ]),
-                SettingsHeader(iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Colors"),
-                SettingsSection(
+                const BBSettingsHeader(text: "Colors"),
+                BBSettingsSection(
                   backgroundColor: tileColor,
                   children: [
                     if (kIsDesktop)
-                      Obx(() => SettingsSwitch(
-                            initialVal: SettingsSvc.settings.useDesktopAccent.value,
-                            backgroundColor: tileColor,
+                      Obx(() => BBSettingsSwitch(
+                            value: SettingsSvc.settings.useDesktopAccent.value,
                             title:
                                 "Use ${Platform.isWindows ? "Windows" : Platform.isLinux ? "Linux" : "MacOS"} Accent Color",
                             subtitle:
@@ -322,14 +314,13 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                     if (!kIsWeb && !kIsDesktop && ThemeSvc.monetPalette != null)
                       Obx(() {
                         if (iOS) {
-                          return SettingsTile(
+                          return BBSettingsTile(
                             title: "Material You",
                             subtitle:
                                 "Use Android 12's Monet engine to provide wallpaper-based coloring to your theme. Tap for more info.",
                             onTap: () {
                               showMonetDialog(context);
                             },
-                            isThreeLine: true,
                           );
                         } else {
                           return const SizedBox.shrink();
@@ -340,8 +331,8 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                         onTap: () {
                           showMonetDialog(context);
                         },
-                        child: SettingsOptions<Monet>(
-                          initial: SettingsSvc.settings.monetTheming.value,
+                        child: BBSettingsDropdown<Monet>(
+                          value: SettingsSvc.settings.monetTheming.value,
                           onChanged: (val) async {
                             // disable colors from music
                             final currentTheme = ThemeStruct.getLightTheme();
@@ -361,14 +352,13 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                           title: "Material You",
                           subtitle:
                               "Use Android 12's Monet engine to provide wallpaper-based coloring to your theme. Tap for more info.",
-                          secondaryColor: headerColor,
                         ),
                       ),
                     if (!kIsWeb && !kIsDesktop && ThemeSvc.monetPalette != null)
                       const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     if (!kIsWeb && !kIsDesktop)
                       Obx(
-                        () => SettingsSwitch(
+                        () => BBSettingsSwitch(
                           onChanged: (bool val) async {
                             if (val) {
                               await MethodChannelSvc.invokeMethod("request-notification-listener-permission");
@@ -404,43 +394,40 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                               await SettingsSvc.settings.saveOneAsync('colorsFromMedia');
                             }
                           },
-                          initialVal: SettingsSvc.settings.colorsFromMedia.value,
+                          value: SettingsSvc.settings.colorsFromMedia.value,
                           title: "Colors from Media",
-                          backgroundColor: tileColor,
                           subtitle: "Pull app colors from currently playing media",
                         ),
                       ),
                     if (!kIsWeb && !kIsDesktop)
-                      const SettingsSubtitle(
+                      const BBSettingsSubtitle(
                         unlimitedSpace: true,
-                        subtitle:
+                        text:
                             "Note: Requires full notification access. Enabling this option will set a custom Music Theme as the selected theme. Media art with mostly blacks or whites may not produce any change in theming.",
                       ),
                     if (!kIsWeb && !kIsDesktop) const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
-                    Obx(() => SettingsSwitch(
+                    Obx(() => BBSettingsSwitch(
                           onChanged: (bool val) async {
                             SettingsSvc.settings.colorfulAvatars.value = val;
                             await SettingsSvc.settings.saveOneAsync('colorfulAvatars');
                           },
-                          initialVal: SettingsSvc.settings.colorfulAvatars.value,
+                          value: SettingsSvc.settings.colorfulAvatars.value,
                           title: "Colorful Avatars",
-                          backgroundColor: tileColor,
                           subtitle: "Gives letter avatars a splash of color",
                         )),
                     const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
-                    Obx(() => SettingsSwitch(
+                    Obx(() => BBSettingsSwitch(
                           onChanged: (bool val) async {
                             SettingsSvc.settings.colorfulBubbles.value = val;
                             await SettingsSvc.settings.saveOneAsync('colorfulBubbles');
                           },
-                          initialVal: SettingsSvc.settings.colorfulBubbles.value,
+                          value: SettingsSvc.settings.colorfulBubbles.value,
                           title: "Colorful Bubbles",
-                          backgroundColor: tileColor,
                           subtitle: "Gives received message bubbles a splash of color",
                         )),
                     if (!kIsWeb) const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     if (!kIsWeb)
-                      SettingsTile(
+                      BBSettingsTile(
                         title: "Custom Avatar Colors",
                         trailing: const NextButton(),
                         onTap: () async {
@@ -453,13 +440,13 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                       ),
                     if (!kIsWeb) const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     if (!kIsWeb)
-                      SettingsTile(
+                      BBSettingsTile(
                         title: "Custom Avatars",
                         trailing: const NextButton(),
                         onTap: () async {
                           NavigationSvc.pushSettings(
                             context,
-                            CustomAvatarPanel(),
+                            const CustomAvatarPanel(),
                           );
                         },
                         subtitle: "Customize the avatar for different chats",
@@ -469,8 +456,8 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                 if (!kIsWeb && !kIsDesktop)
                   Obx(() {
                     if (controller.refreshRates.length > 2) {
-                      return SettingsHeader(
-                          iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Refresh Rate");
+                      return const BBSettingsHeader(
+                          text: "Refresh Rate");
                     } else {
                       return const SizedBox.shrink();
                     }
@@ -478,11 +465,11 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                 if (!kIsWeb && !kIsDesktop)
                   Obx(() {
                     if (controller.refreshRates.length > 2) {
-                      return SettingsSection(
+                      return BBSettingsSection(
                         backgroundColor: tileColor,
                         children: [
-                          Obx(() => SettingsOptions<int>(
-                                initial: controller.currentMode.value,
+                          Obx(() => BBSettingsDropdown<int>(
+                                value: controller.currentMode.value,
                                 onChanged: (val) async {
                                   if (val == null) return;
                                   controller.currentMode.value = val;
@@ -493,7 +480,6 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                                 options: controller.refreshRates,
                                 textProcessing: (val) => val == 0 ? "Auto" : "$val Hz",
                                 title: "Display",
-                                secondaryColor: headerColor,
                               )),
                         ],
                       );
@@ -501,13 +487,13 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                       return const SizedBox.shrink();
                     }
                   }),
-                SettingsHeader(iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Text and Font"),
-                SettingsSection(
+                const BBSettingsHeader(text: "Text and Font"),
+                BBSettingsSection(
                   backgroundColor: tileColor,
                   children: [
                     Obx(() {
                       if (!FilesystemSvc.fontExistsOnDisk.value) {
-                        return SettingsTile(
+                        return BBSettingsTile(
                           onTap: () async {
                             if (kIsWeb) {
                               try {
@@ -534,64 +520,54 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                               }
                             }
 
-                            showDialog(
+                            BBCustomDialog.show(
                               context: context,
-                              builder: (context) => AlertDialog(
-                                backgroundColor: context.theme.colorScheme.properSurface,
-                                title: Text("Downloading font file...", style: context.theme.textTheme.titleLarge),
-                                content: Column(
+                              title: "Downloading font file...",
+                              content: Obx(() => Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     mainAxisSize: MainAxisSize.min,
                                     children: <Widget>[
-                                      Obx(
-                                        () => Text(
-                                            '${HttpSvc.fontDownloadProgress.value != null && HttpSvc.fontDownloadTotalSize.value != null ? (HttpSvc.fontDownloadProgress.value! * HttpSvc.fontDownloadTotalSize.value! / 1000).getFriendlySize(withSuffix: false) : ""} / ${((HttpSvc.fontDownloadTotalSize.value ?? 0).toDouble() / 1000).getFriendlySize()} (${((HttpSvc.fontDownloadProgress.value ?? 0) * 100).floor()}%)',
-                                            style: context.theme.textTheme.bodyLarge),
-                                      ),
+                                      Text(
+                                          '${HttpSvc.fontDownloadProgress.value != null && HttpSvc.fontDownloadTotalSize.value != null ? (HttpSvc.fontDownloadProgress.value! * HttpSvc.fontDownloadTotalSize.value! / 1000).getFriendlySize(withSuffix: false) : ""} / ${((HttpSvc.fontDownloadTotalSize.value ?? 0).toDouble() / 1000).getFriendlySize()} (${((HttpSvc.fontDownloadProgress.value ?? 0) * 100).floor()}%)',
+                                          style: Theme.of(context).textTheme.bodyLarge),
                                       const SizedBox(height: 10.0),
-                                      Obx(
-                                        () => ClipRRect(
-                                          borderRadius: BorderRadius.circular(20),
-                                          child: LinearProgressIndicator(
-                                            backgroundColor: context.theme.colorScheme.outline,
-                                            valueColor:
-                                                AlwaysStoppedAnimation<Color>(context.theme.colorScheme.primary),
-                                            value: HttpSvc.fontDownloadProgress.value,
-                                            minHeight: 5,
-                                          ),
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(20),
+                                        child: LinearProgressIndicator(
+                                          backgroundColor: Theme.of(context).colorScheme.outline,
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
+                                          value: HttpSvc.fontDownloadProgress.value,
+                                          minHeight: 5,
                                         ),
                                       ),
                                       const SizedBox(
                                         height: 15.0,
                                       ),
-                                      Obx(() => Text(
-                                            HttpSvc.fontDownloadProgress.value == 1
-                                                ? "Download Complete!"
-                                                : "You can close this dialog. The font will continue to download in the background.",
-                                            textAlign: TextAlign.center,
-                                            style: context.theme.textTheme.bodyLarge,
-                                          )),
-                                    ]),
-                                actions: [
-                                  Obx(
-                                    () => HttpSvc.downloadingFont.value
-                                        ? Container(height: 0, width: 0)
-                                        : TextButton(
-                                            child: Text("Close",
-                                                style: context.theme.textTheme.bodyLarge!
-                                                    .copyWith(color: context.theme.colorScheme.primary)),
-                                            onPressed: () async {
-                                              Get.closeAllSnackbars();
-                                              Navigator.of(context, rootNavigator: true).pop();
-                                              Future.delayed(const Duration(milliseconds: 400), () {
-                                                HttpSvc.fontDownloadProgress.value = null;
-                                                HttpSvc.fontDownloadTotalSize.value = null;
-                                              });
-                                            },
-                                          ),
-                                  ),
-                                ],
-                              ),
+                                      Text(
+                                        HttpSvc.fontDownloadProgress.value == 1
+                                            ? "Download Complete!"
+                                            : "You can close this dialog. The font will continue to download in the background.",
+                                        textAlign: TextAlign.center,
+                                        style: Theme.of(context).textTheme.bodyLarge,
+                                      ),
+                                      if (!HttpSvc.downloadingFont.value) ...[
+                                        const SizedBox(height: 20),
+                                        ElevatedButton(
+                                          onPressed: () async {
+                                            Get.closeAllSnackbars();
+                                            Navigator.of(context, rootNavigator: true).pop();
+                                            Future.delayed(const Duration(milliseconds: 400), () {
+                                              HttpSvc.fontDownloadProgress.value = null;
+                                              HttpSvc.fontDownloadTotalSize.value = null;
+                                            });
+                                          },
+                                          child: const Text("Close"),
+                                        ),
+                                      ],
+                                    ],
+                                  )),
+                              actions: const [],
                             );
 
                             HttpSvc.downloadAppleEmojiFont();
@@ -607,7 +583,7 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                     }),
                     Obx(() {
                       if (FilesystemSvc.fontExistsOnDisk.value) {
-                        return SettingsTile(
+                        return BBSettingsTile(
                           onTap: () async {
                             if (kIsWeb) {
                               final txn = FilesystemSvc.webDb.transaction("BBStore", idbModeReadWrite);
@@ -638,23 +614,10 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
   }
 
   void showMonetDialog(BuildContext context) {
-    showDialog(
+    BBAlertDialog.alert(
         context: context,
-        builder: (context) => AlertDialog(
-              title: Text("Monet Theming Info", style: context.theme.textTheme.titleLarge),
-              backgroundColor: context.theme.colorScheme.properSurface,
-              content: Text(
-                "Harmonize - Overwrites primary color and blends remainder of colors with the current theme colors\r\n"
-                "Full - Overwrites primary, background, and accent colors, along with other minor colors.\r\n",
-                style: context.theme.textTheme.bodyLarge,
-              ),
-              actions: [
-                TextButton(
-                  child: Text("OK",
-                      style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ],
-            ));
+        title: "Monet Theming Info",
+        message: "Harmonize - Overwrites primary color and blends remainder of colors with the current theme colors\r\n"
+            "Full - Overwrites primary, background, and accent colors, along with other minor colors.\r\n");
   }
 }

@@ -1,5 +1,5 @@
 import 'package:bluebubbles/env.dart';
-import 'package:bluebubbles/services/backend/settings/settings_service.dart';
+import 'package:bluebubbles/services/storage/settings_service.dart';
 import 'package:bluebubbles/services/backend/actions/app_actions.dart';
 import 'package:get_it/get_it.dart';
 import 'package:bluebubbles/services/isolates/global_isolate.dart';

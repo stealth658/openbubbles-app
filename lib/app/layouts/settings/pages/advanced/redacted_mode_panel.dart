@@ -6,14 +6,17 @@ import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/attach
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/misc/message_sender.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/misc/tail_clipper.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
+import 'package:bluebubbles/app/components/settings/settings.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/data/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class RedactedModePanel extends StatefulWidget {
+  const RedactedModePanel({super.key});
+
   @override
   State<StatefulWidget> createState() => _RedactedModePanelState();
 }
@@ -66,7 +69,7 @@ class _RedactedModePanelState extends OptimizedState<RedactedModePanel> {
           SliverList(
             delegate: SliverChildListDelegate(
               <Widget>[
-                SettingsSection(
+                BBSettingsSection(
                   backgroundColor: tileColor,
                   children: [
                     const Padding(
@@ -190,17 +193,16 @@ class _RedactedModePanelState extends OptimizedState<RedactedModePanel> {
                     );
                   }),
                 ),
-                SettingsSection(
+                BBSettingsSection(
                   backgroundColor: tileColor,
                   children: [
-                    Obx(() => SettingsSwitch(
+                    Obx(() => BBSettingsSwitch(
                           onChanged: (bool val) async {
                             SettingsSvc.settings.redactedMode.value = val;
                             await saveSettings('redactedMode');
                           },
-                          initialVal: SettingsSvc.settings.redactedMode.value,
+                          value: SettingsSvc.settings.redactedMode.value,
                           title: "Enable Redacted Mode",
-                          backgroundColor: tileColor,
                         )),
                   ],
                 ),
@@ -209,53 +211,48 @@ class _RedactedModePanelState extends OptimizedState<RedactedModePanel> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          SettingsHeader(
-                              iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Customization"),
-                          SettingsSection(
+                          const BBSettingsHeader(text: "Customization"),
+                          BBSettingsSection(
                             backgroundColor: tileColor,
                             children: [
-                              SettingsSwitch(
+                              BBSettingsSwitch(
                                 onChanged: (bool val) async {
                                   SettingsSvc.settings.hideMessageContent.value = val;
                                   await saveSettings('hideMessageContent');
                                 },
-                                initialVal: SettingsSvc.settings.hideMessageContent.value,
+                                value: SettingsSvc.settings.hideMessageContent.value,
                                 title: "Hide Message Content",
-                                backgroundColor: tileColor,
                                 subtitle: "Replace message text with generated lorem ipsum",
                               ),
                               const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
-                              SettingsSwitch(
+                              BBSettingsSwitch(
                                 onChanged: (bool val) async {
                                   SettingsSvc.settings.hideAttachments.value = val;
                                   await saveSettings('hideAttachments');
                                 },
-                                initialVal: SettingsSvc.settings.hideAttachments.value,
+                                value: SettingsSvc.settings.hideAttachments.value,
                                 title: "Hide Attachments",
-                                backgroundColor: tileColor,
                                 subtitle: "Replace attachments with placeholder boxes",
                               ),
                               const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
-                              SettingsSwitch(
+                              BBSettingsSwitch(
                                 onChanged: (bool val) async {
                                   SettingsSvc.settings.hideContactInfo.value = val;
                                   await saveSettings('hideContactInfo');
                                 },
-                                initialVal: SettingsSvc.settings.hideContactInfo.value,
+                                value: SettingsSvc.settings.hideContactInfo.value,
                                 title: "Hide Contact Info",
-                                backgroundColor: tileColor,
                                 subtitle: "Replace contact info with fake names and hide contact photos",
                                 isThreeLine: true,
                               ),
                               const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
-                              SettingsSwitch(
+                              BBSettingsSwitch(
                                 onChanged: (bool val) async {
                                   SettingsSvc.settings.generateFakeAvatars.value = val;
                                   await saveSettings('generateFakeAvatars');
                                 },
-                                initialVal: SettingsSvc.settings.generateFakeAvatars.value,
+                                value: SettingsSvc.settings.generateFakeAvatars.value,
                                 title: "Generate Fake Avatars",
-                                backgroundColor: tileColor,
                                 subtitle: "Use the Dice Bear service to generate fake avatars for contacts",
                                 isThreeLine: true,
                               ),

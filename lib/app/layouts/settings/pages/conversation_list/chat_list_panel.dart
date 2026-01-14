@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:bluebubbles/app/components/settings/settings.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/content/next_button.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/conversation_list/pinned_order_panel.dart';
@@ -12,6 +13,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class ChatListPanel extends StatefulWidget {
+  const ChatListPanel({super.key});
+
   @override
   State<StatefulWidget> createState() => _ChatListPanelState();
 }
@@ -30,114 +33,106 @@ class _ChatListPanelState extends OptimizedState<ChatListPanel> {
           SliverList(
             delegate: SliverChildListDelegate(
               <Widget>[
-                SettingsSection(
+                BBSettingsSection(
                   backgroundColor: tileColor,
                   children: [
-                    Obx(() => SettingsSwitch(
+                    Obx(() => BBSettingsSwitch(
                           onChanged: (bool val) async {
                             SettingsSvc.settings.showConnectionIndicator.value = val;
                             await SettingsSvc.settings.saveOneAsync('showConnectionIndicator');
                           },
-                          initialVal: SettingsSvc.settings.showConnectionIndicator.value,
+                          value: SettingsSvc.settings.showConnectionIndicator.value,
                           title: "Show Connection Indicator",
                           subtitle: "Show a visual status indicator when the app is not connected to the server",
-                          backgroundColor: tileColor,
                         )),
                     const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
-                    Obx(() => SettingsSwitch(
+                    Obx(() => BBSettingsSwitch(
                           onChanged: (bool val) async {
                             SettingsSvc.settings.showSyncIndicator.value = val;
                             await SettingsSvc.settings.saveOneAsync('showSyncIndicator');
                           },
-                          initialVal: SettingsSvc.settings.showSyncIndicator.value,
+                          value: SettingsSvc.settings.showSyncIndicator.value,
                           title: "Show Sync Indicator in Chat List",
                           subtitle:
                               "Enables a small indicator at the top left to show when the app is syncing messages",
-                          backgroundColor: tileColor,
                           isThreeLine: true,
                         )),
                     const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
-                    Obx(() => SettingsSwitch(
+                    Obx(() => BBSettingsSwitch(
                           onChanged: (bool val) async {
                             SettingsSvc.settings.statusIndicatorsOnChats.value = val;
                             await SettingsSvc.settings.saveOneAsync('statusIndicatorsOnChats');
                           },
-                          initialVal: SettingsSvc.settings.statusIndicatorsOnChats.value,
+                          value: SettingsSvc.settings.statusIndicatorsOnChats.value,
                           title: "Message Status Indicators",
                           subtitle:
                               "Adds status indicators to the chat list for the sent / delivered / read status of your most recent message",
-                          backgroundColor: tileColor,
                           isThreeLine: true,
                         )),
                   ],
                 ),
-                SettingsHeader(iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Filtering"),
-                SettingsSection(
+                const BBSettingsHeader(text: "Filtering"),
+                BBSettingsSection(
                   backgroundColor: tileColor,
                   children: [
-                    Obx(() => SettingsSwitch(
+                    Obx(() => BBSettingsSwitch(
                           onChanged: (bool val) async {
                             SettingsSvc.settings.filteredChatList.value = val;
                             await SettingsSvc.settings.saveOneAsync('filteredChatList');
                           },
-                          initialVal: SettingsSvc.settings.filteredChatList.value,
+                          value: SettingsSvc.settings.filteredChatList.value,
                           title: "Filtered Chat List",
                           subtitle:
                               "Filters the chat list based on parameters set in iMessage (usually this removes old, inactive chats)",
-                          backgroundColor: tileColor,
                           isThreeLine: true,
                         )),
                     const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
-                    Obx(() => SettingsSwitch(
+                    Obx(() => BBSettingsSwitch(
                           onChanged: (bool val) async {
                             SettingsSvc.settings.filterUnknownSenders.value = val;
                             await SettingsSvc.settings.saveOneAsync('filterUnknownSenders');
                           },
-                          initialVal: SettingsSvc.settings.filterUnknownSenders.value,
+                          value: SettingsSvc.settings.filterUnknownSenders.value,
                           title: "Filter Unknown Senders",
                           subtitle:
                               "Turn off notifications for senders who aren't in your contacts and sort them into a separate chat list",
-                          backgroundColor: tileColor,
                           isThreeLine: true,
                         )),
                     if (!kIsWeb) const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     if (!kIsWeb)
-                      Obx(() => SettingsSwitch(
+                      Obx(() => BBSettingsSwitch(
                             onChanged: (bool val) async {
                               SettingsSvc.settings.unarchiveOnNewMessage.value = val;
                               await SettingsSvc.settings.saveOneAsync('unarchiveOnNewMessage');
                             },
-                            initialVal: SettingsSvc.settings.unarchiveOnNewMessage.value,
+                            value: SettingsSvc.settings.unarchiveOnNewMessage.value,
                             title: "Unarchive Chats On New Message",
                             subtitle: "Automatically unarchive chats when a new message is received",
-                            backgroundColor: tileColor,
                             isThreeLine: true,
                           )),
                   ],
                 ),
-                SettingsHeader(iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Appearance"),
-                SettingsSection(
+                const BBSettingsHeader(text: "Appearance"),
+                BBSettingsSection(
                   backgroundColor: tileColor,
                   children: [
-                    Obx(() => SettingsSwitch(
+                    Obx(() => BBSettingsSwitch(
                           onChanged: (bool val) async {
                             SettingsSvc.settings.hideDividers.value = val;
                             await SettingsSvc.settings.saveOneAsync('hideDividers');
                           },
-                          initialVal: SettingsSvc.settings.hideDividers.value,
+                          value: SettingsSvc.settings.hideDividers.value,
                           title: "Hide Dividers",
-                          backgroundColor: tileColor,
                           subtitle: "Hides dividers between tiles",
                         )),
                     const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
-                    Obx(() => SettingsSwitch(
+                    Obx(() => BBSettingsSwitch(
                           onChanged: (bool val) async {
                             SettingsSvc.settings.denseChatTiles.value = val;
                             await SettingsSvc.settings.saveOneAsync('denseChatTiles');
                           },
-                          initialVal: SettingsSvc.settings.denseChatTiles.value,
+                          value: SettingsSvc.settings.denseChatTiles.value,
                           title: "Dense Conversation Tiles",
-                          backgroundColor: tileColor,
                           subtitle: "Compresses chat tile size on the conversation list page",
                           isThreeLine: true,
                         )),
@@ -145,10 +140,9 @@ class _ChatListPanelState extends OptimizedState<ChatListPanel> {
                     if (!kIsDesktop && !kIsWeb)
                       Obx(() {
                         if (iOS) {
-                          return const SettingsTile(
+                          return const BBSettingsTile(
                             title: "Pin Configuration",
                             subtitle: "The row and column count of the pin grid. ",
-                            isThreeLine: true,
                           );
                         } else {
                           return const SizedBox.shrink();
@@ -167,16 +161,15 @@ class _ChatListPanelState extends OptimizedState<ChatListPanel> {
                                 ),
                               ),
                               Flexible(
-                                child: SettingsOptions<int>(
+                                child: BBSettingsDropdown<int>(
                                   onChanged: (int? val) async {
                                     if (val == null) return;
                                     SettingsSvc.settings.pinRowsPortrait.value = val.toInt();
                                     await SettingsSvc.settings.saveOneAsync('pinRowsPortrait');
                                   },
                                   options: List.generate(4, (index) => index + 1),
-                                  initial: SettingsSvc.settings.pinRowsPortrait.value,
+                                  value: SettingsSvc.settings.pinRowsPortrait.value,
                                   title: '',
-                                  secondaryColor: context.theme.colorScheme.secondary,
                                   textProcessing: (val) => val.toString(),
                                 ),
                               ),
@@ -200,16 +193,15 @@ class _ChatListPanelState extends OptimizedState<ChatListPanel> {
                                 ),
                               ),
                               Flexible(
-                                child: SettingsOptions<int>(
+                                child: BBSettingsDropdown<int>(
                                   onChanged: (int? val) async {
                                     if (val == null) return;
                                     SettingsSvc.settings.pinRowsLandscape.value = val.toInt();
                                     await SettingsSvc.settings.saveOneAsync('pinRowsLandscape');
                                   },
                                   options: List.generate(4, (index) => index + 1),
-                                  initial: SettingsSvc.settings.pinRowsLandscape.value,
+                                  value: SettingsSvc.settings.pinRowsLandscape.value,
                                   title: '',
-                                  secondaryColor: context.theme.colorScheme.secondary,
                                   textProcessing: (val) => val.toString(),
                                 ),
                               ),
@@ -233,16 +225,15 @@ class _ChatListPanelState extends OptimizedState<ChatListPanel> {
                                 ),
                               ),
                               Flexible(
-                                child: SettingsOptions<int>(
+                                child: BBSettingsDropdown<int>(
                                   onChanged: (int? val) async {
                                     if (val == null) return;
                                     SettingsSvc.settings.pinColumnsPortrait.value = val.toInt();
                                     await SettingsSvc.settings.saveOneAsync('pinColumnsPortrait');
                                   },
                                   options: List.generate(4, (index) => index + 1),
-                                  initial: SettingsSvc.settings.pinColumnsPortrait.value,
+                                  value: SettingsSvc.settings.pinColumnsPortrait.value,
                                   title: '',
-                                  secondaryColor: context.theme.colorScheme.secondary,
                                   textProcessing: (val) => val.toString(),
                                 ),
                               ),
@@ -257,7 +248,7 @@ class _ChatListPanelState extends OptimizedState<ChatListPanel> {
                     if (kIsDesktop)
                       Obx(() {
                         if (iOS) {
-                          return SettingsTile(
+                          return BBSettingsTile(
                             title:
                                 "Pinned Chat Configuration (${SettingsSvc.settings.pinRowsPortrait.value} row${SettingsSvc.settings.pinRowsPortrait.value > 1 ? "s" : ""} of ${SettingsSvc.settings.pinColumnsLandscape})",
                             subtitle:
@@ -285,8 +276,8 @@ class _ChatListPanelState extends OptimizedState<ChatListPanel> {
                                           ),
                                         ),
                                         Flexible(
-                                          child: SettingsOptions<int>(
-                                            initial: SettingsSvc.settings.pinRowsPortrait.value,
+                                          child: BBSettingsDropdown<int>(
+                                            value: SettingsSvc.settings.pinRowsPortrait.value,
                                             options: List.generate(4, (index) => index + 1),
                                             onChanged: (int? val) async {
                                               if (val == null) return;
@@ -294,7 +285,6 @@ class _ChatListPanelState extends OptimizedState<ChatListPanel> {
                                               await SettingsSvc.settings.saveOneAsync('pinRowsPortrait');
                                             },
                                             title: "Pin Rows",
-                                            secondaryColor: context.theme.colorScheme.secondary,
                                             textProcessing: (val) => val.toString(),
                                           ),
                                         ),
@@ -310,8 +300,8 @@ class _ChatListPanelState extends OptimizedState<ChatListPanel> {
                                           ),
                                         ),
                                         Flexible(
-                                          child: SettingsOptions<int>(
-                                            initial: SettingsSvc.settings.pinColumnsLandscape.value,
+                                          child: BBSettingsDropdown<int>(
+                                            value: SettingsSvc.settings.pinColumnsLandscape.value,
                                             options: List.generate(5, (index) => index + 2),
                                             onChanged: (int? val) async {
                                               if (val == null) return;
@@ -319,7 +309,6 @@ class _ChatListPanelState extends OptimizedState<ChatListPanel> {
                                               await SettingsSvc.settings.saveOneAsync('pinColumnsLandscape');
                                             },
                                             title: "Pins Per Row",
-                                            secondaryColor: context.theme.colorScheme.secondary,
                                             textProcessing: (val) => val.toString(),
                                           ),
                                         ),
@@ -448,34 +437,32 @@ class _ChatListPanelState extends OptimizedState<ChatListPanel> {
                     if (kIsDesktop && iOS) const SizedBox(height: 24),
                     if (!kIsWeb) const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     if (!kIsWeb)
-                      SettingsTile(
+                      BBSettingsTile(
                         title: "Pinned Order",
                         subtitle: "Set the order for your pinned chats",
                         onTap: () {
                           NavigationSvc.pushSettings(
                             context,
-                            PinnedOrderPanel(),
+                            const PinnedOrderPanel(),
                           );
                         },
                         trailing: const NextButton(),
                       ),
                   ],
                 ),
+                if (!kIsWeb && !kIsDesktop && !iOS) const BBSettingsHeader(text: "Swipe Actions"),
                 if (!kIsWeb && !kIsDesktop && !iOS)
-                  SettingsHeader(iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Swipe Actions"),
-                if (!kIsWeb && !kIsDesktop && !iOS)
-                  SettingsSection(
+                  BBSettingsSection(
                     backgroundColor: tileColor,
                     children: [
-                      Obx(() => SettingsSwitch(
+                      Obx(() => BBSettingsSwitch(
                             onChanged: (bool val) async {
                               SettingsSvc.settings.swipableConversationTiles.value = val;
                               await SettingsSvc.settings.saveOneAsync('swipableConversationTiles');
                             },
-                            initialVal: SettingsSvc.settings.swipableConversationTiles.value,
+                            value: SettingsSvc.settings.swipableConversationTiles.value,
                             title: "Swipe Actions for Conversation Tiles",
                             subtitle: "Enables swipe actions for conversation tiles when using Material theme",
-                            backgroundColor: tileColor,
                           )),
                       Obx(() {
                         if (SettingsSvc.settings.swipableConversationTiles.value) {
@@ -483,8 +470,8 @@ class _ChatListPanelState extends OptimizedState<ChatListPanel> {
                             color: tileColor,
                             child: Column(
                               children: [
-                                SettingsOptions<MaterialSwipeAction>(
-                                  initial: SettingsSvc.settings.materialRightAction.value,
+                                BBSettingsDropdown<MaterialSwipeAction>(
+                                  value: SettingsSvc.settings.materialRightAction.value,
                                   onChanged: (val) async {
                                     if (val != null) {
                                       SettingsSvc.settings.materialRightAction.value = val;
@@ -495,10 +482,10 @@ class _ChatListPanelState extends OptimizedState<ChatListPanel> {
                                   textProcessing: (val) =>
                                       val.toString().split(".")[1].replaceAll("_", " ").capitalizeFirst!,
                                   title: "Swipe Right Action",
-                                  secondaryColor: headerColor,
+                                  backgroundColor: headerColor,
                                 ),
-                                SettingsOptions<MaterialSwipeAction>(
-                                  initial: SettingsSvc.settings.materialLeftAction.value,
+                                BBSettingsDropdown<MaterialSwipeAction>(
+                                  value: SettingsSvc.settings.materialLeftAction.value,
                                   onChanged: (val) async {
                                     if (val != null) {
                                       SettingsSvc.settings.materialLeftAction.value = val;
@@ -509,7 +496,7 @@ class _ChatListPanelState extends OptimizedState<ChatListPanel> {
                                   textProcessing: (val) =>
                                       val.toString().split(".")[1].replaceAll("_", " ").capitalizeFirst!,
                                   title: "Swipe Left Action",
-                                  secondaryColor: headerColor,
+                                  backgroundColor: headerColor,
                                 ),
                               ],
                             ),
@@ -520,38 +507,36 @@ class _ChatListPanelState extends OptimizedState<ChatListPanel> {
                       }),
                     ],
                   ),
-                SettingsHeader(iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Misc"),
-                Obx(() => SettingsSection(
+                const BBSettingsHeader(text: "Misc"),
+                Obx(() => BBSettingsSection(
                       backgroundColor: tileColor,
                       children: [
                         if (SettingsSvc.settings.skin.value == Skins.iOS)
-                          SettingsSwitch(
+                          BBSettingsSwitch(
                             onChanged: (bool val) async {
                               SettingsSvc.settings.moveChatCreatorToHeader.value = val;
                               await SettingsSvc.settings.saveOneAsync('moveChatCreatorToHeader');
                             },
-                            initialVal: SettingsSvc.settings.moveChatCreatorToHeader.value,
+                            value: SettingsSvc.settings.moveChatCreatorToHeader.value,
                             title: "Move Chat Creator Button to Header",
                             subtitle: "Replaces the floating button at the bottom to a fixed button at the top",
-                            backgroundColor: tileColor,
                             isThreeLine: true,
                           ),
                         if (SettingsSvc.settings.skin.value == Skins.iOS && !kIsWeb && !kIsDesktop)
                           const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                         if (!kIsWeb && !kIsDesktop)
-                          SettingsSwitch(
+                          BBSettingsSwitch(
                             onChanged: (bool val) async {
                               SettingsSvc.settings.cameraFAB.value = val;
                               await SettingsSvc.settings.saveOneAsync('cameraFAB');
                             },
-                            initialVal: SettingsSvc.settings.cameraFAB.value,
+                            value: SettingsSvc.settings.cameraFAB.value,
                             title: SettingsSvc.settings.skin.value != Skins.iOS
                                 ? "Long Press for Camera"
                                 : "Add Camera Button",
                             subtitle: SettingsSvc.settings.skin.value != Skins.iOS
                                 ? "Long press the start chat button to easily send a picture to a chat"
                                 : "Adds a dedicated camera button near the new chat creator button to easily send pictures",
-                            backgroundColor: tileColor,
                             isThreeLine: true,
                           ),
                       ],

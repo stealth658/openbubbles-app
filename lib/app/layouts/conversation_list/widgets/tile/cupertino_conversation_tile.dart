@@ -1,11 +1,12 @@
 import 'dart:async';
 
+import 'package:bluebubbles/data/database/database.dart';
+import 'package:bluebubbles/data/models/native/message.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/dialogs/conversation_peek_view.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/tile/conversation_tile.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
-import 'package:bluebubbles/database/database.dart';
-import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/objectbox.g.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -13,7 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class CupertinoConversationTile extends CustomStateful<ConversationTileController> {
-  const CupertinoConversationTile({Key? key, required super.parentController});
+  const CupertinoConversationTile({super.key, required super.parentController});
 
   @override
   State<StatefulWidget> createState() => _CupertinoConversationTileState();
@@ -137,7 +138,7 @@ class _CupertinoConversationTileState extends CustomState<CupertinoConversationT
 }
 
 class CupertinoTrailing extends CustomStateful<ConversationTileController> {
-  const CupertinoTrailing({Key? key, required super.parentController});
+  const CupertinoTrailing({super.key, required super.parentController});
 
   @override
   State<StatefulWidget> createState() => _CupertinoTrailingState();
@@ -276,7 +277,7 @@ class _CupertinoTrailingState extends CustomState<CupertinoTrailing, void, Conve
 }
 
 class UnreadIcon extends CustomStateful<ConversationTileController> {
-  const UnreadIcon({Key? key, required super.parentController});
+  const UnreadIcon({super.key, required super.parentController});
 
   @override
   State<StatefulWidget> createState() => _UnreadIconState();

@@ -1,7 +1,6 @@
-import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
+import 'package:bluebubbles/app/components/dialogs/dialogs.dart';
 import 'package:bluebubbles/services/services.dart';
-import 'package:bluebubbles/utils/logger/logger.dart';
+import 'package:bluebubbles/core/logger/logger.dart';
 import 'package:desktop_webview_auth/desktop_webview_auth.dart';
 import 'package:desktop_webview_auth/google.dart';
 import 'package:flutter/foundation.dart';
@@ -24,28 +23,19 @@ Future<String?> googleOAuth(BuildContext context) async {
   if (Platform.isAndroid || kIsWeb) {
     // on web, show a dialog to make sure users allow scopes
     if (kIsWeb) {
-      await showDialog(
+      await BBAlertDialog.show(
         context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            backgroundColor: context.theme.colorScheme.properSurface,
-            title: Text("Important Notice", style: context.theme.textTheme.titleLarge),
-            content: Text(
-              'Please make sure to allow BlueBubbles to see, edit, configure, and delete your Google Cloud data after signing in. BlueBubbles will only use this ability to find your server URL.',
-              style: context.theme.textTheme.bodyLarge,
-            ),
-            actions: <Widget>[
-              TextButton(
-                child: Text("OK",
-                    style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          );
-        },
+        config: const BBAlertDialogConfig(barrierDismissible: false),
+        title: "Important Notice",
+        message:
+            'Please make sure to allow BlueBubbles to see, edit, configure, and delete your Google Cloud data after signing in. BlueBubbles will only use this ability to find your server URL.',
+        actions: [
+          BBDialogAction(
+            label: "OK",
+            type: BBDialogButtonType.primary,
+            onPressed: () {},
+          ),
+        ],
       );
     }
 
@@ -146,43 +136,15 @@ Future<void> requestPassword(
     BuildContext context, String serverUrl, Future<void> Function(String url, String password) connect) async {
   final TextEditingController passController = TextEditingController();
   final RxBool enabled = false.obs;
-  await showDialog(
-    barrierDismissible: false,
+  await BBCustomDialog.show(
     context: context,
-    builder: (_) {
-      return Obx(
-        () => AlertDialog(
-          actions: [
-            TextButton(
-              child: Text("Cancel",
-                  style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
-              onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
-            ),
-            AnimatedContainer(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              duration: const Duration(milliseconds: 100),
-              child: AbsorbPointer(
-                absorbing: !enabled.value,
-                child: TextButton(
-                  child: Text(
-                    "OK",
-                    style: context.theme.textTheme.bodyLarge!.copyWith(
-                      color: enabled.value ? context.theme.colorScheme.primary : context.theme.disabledColor,
-                    ),
-                  ),
-                  onPressed: () async {
-                    if (passController.text.isEmpty) {
-                      return;
-                    }
-                    Navigator.of(context, rootNavigator: true).pop();
-                  },
-                ),
-              ),
-            ),
-          ],
-          content: TextField(
+    title: "Server Password",
+    config: const BBCustomDialogConfig(barrierDismissible: false),
+    content: Obx(
+      () => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
             controller: passController,
             decoration: const InputDecoration(
               labelText: "Password",
@@ -203,11 +165,26 @@ Future<void> requestPassword(
               Navigator.of(context, rootNavigator: true).pop();
             },
           ),
-          title: Text("Enter Server Password", style: context.theme.textTheme.titleLarge),
-          backgroundColor: context.theme.colorScheme.properSurface,
-        ),
-      );
-    },
+        ],
+      ),
+    ),
+    actions: [
+      BBDialogAction(
+        label: "Cancel",
+        type: BBDialogButtonType.cancel,
+        onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
+      ),
+      BBDialogAction(
+        label: "OK",
+        type: BBDialogButtonType.primary,
+        onPressed: () async {
+          if (passController.text.isEmpty || !enabled.value) {
+            return;
+          }
+          Navigator.of(context, rootNavigator: true).pop();
+        },
+      ),
+    ],
   );
 
   await connect(serverUrl, passController.text);

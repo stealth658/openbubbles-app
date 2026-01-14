@@ -1,14 +1,14 @@
 import 'dart:async';
 
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
-import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/data/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:universal_io/io.dart';
 
 class StickerHolder extends StatefulWidget {
-  StickerHolder({super.key, required this.stickerMessages, required this.controller});
+  const StickerHolder({super.key, required this.stickerMessages, required this.controller});
   final Iterable<Message> stickerMessages;
   final ConversationViewController controller;
 

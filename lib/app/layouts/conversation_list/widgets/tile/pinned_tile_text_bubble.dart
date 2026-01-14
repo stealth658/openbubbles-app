@@ -2,9 +2,11 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/tile/conversation_tile.dart';
+import 'package:bluebubbles/data/database/database.dart';
+import 'package:bluebubbles/data/models/native/chat.dart';
+import 'package:bluebubbles/data/models/native/message.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/database/database.dart';
-import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/objectbox.g.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:faker/faker.dart' hide Color;
@@ -13,7 +15,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class PinnedTileTextBubble extends CustomStateful<ConversationTileController> {
-  PinnedTileTextBubble({
+  const PinnedTileTextBubble({
     super.key,
     required this.chat,
     required this.size,

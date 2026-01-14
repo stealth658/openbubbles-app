@@ -1,6 +1,6 @@
-import 'package:bluebubbles/helpers/helpers.dart';
+import 'package:bluebubbles/app/components/dialogs/dialogs.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
-import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/data/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -30,34 +30,28 @@ void showMetadataDialog(Attachment a, BuildContext context) {
     ));
   }
 
-  showDialog(
+  BBCustomDialog.show(
     context: context,
-    builder: (context) => AlertDialog(
-      title: Text(
-        "Metadata",
-        style: context.theme.textTheme.titleLarge,
-      ),
-      backgroundColor: context.theme.colorScheme.properSurface,
-      content: SizedBox(
-        width: NavigationSvc.width(context) * 3 / 5,
-        height: context.height * 1 / 4,
-        child: Container(
-          padding: const EdgeInsets.all(10.0),
-          decoration:
-              BoxDecoration(color: context.theme.colorScheme.background, borderRadius: BorderRadius.circular(10)),
-          child: ListView(
-            physics: ThemeSwitcher.getScrollPhysics(),
-            children: metaWidgets,
-          ),
+    title: "Metadata",
+    content: SizedBox(
+      width: NavigationSvc.width(context) * 3 / 5,
+      height: context.height * 1 / 4,
+      child: Container(
+        padding: const EdgeInsets.all(10.0),
+        decoration:
+            BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(10)),
+        child: ListView(
+          physics: ThemeSwitcher.getScrollPhysics(),
+          children: metaWidgets,
         ),
       ),
-      actions: [
-        TextButton(
-          child: Text("Close",
-              style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ],
     ),
+    actions: [
+      BBDialogAction(
+        label: "Close",
+        type: BBDialogButtonType.cancel,
+        onPressed: () => Navigator.of(context).pop(),
+      ),
+    ],
   );
 }

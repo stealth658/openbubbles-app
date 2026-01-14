@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:bluebubbles/app/components/base/base.dart' hide BBDialogAction;
+import 'package:bluebubbles/app/components/dialogs/dialogs.dart';
 import 'package:bluebubbles/app/layouts/settings/dialogs/custom_headers_dialog.dart';
 import 'package:bluebubbles/app/layouts/setup/dialogs/failed_to_scan_dialog.dart';
 import 'package:bluebubbles/app/layouts/setup/pages/page_template.dart';
@@ -9,7 +11,7 @@ import 'package:bluebubbles/app/layouts/setup/setup_view.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/backend/settings_helpers.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/data/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/cupertino.dart';
@@ -21,6 +23,8 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:universal_io/io.dart';
 
 class ServerCredentials extends StatefulWidget {
+  const ServerCredentials({super.key});
+
   @override
   State<ServerCredentials> createState() => _ServerCredentialsState();
 }
@@ -96,7 +100,7 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
               ),
               child: usableProjects.isNotEmpty
                   ? SingleChildScrollView(
-                      child: Container(
+                      child: SizedBox(
                         width: double.maxFinite,
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
@@ -391,7 +395,7 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
                             node: focusScopeNode,
                             child: Column(
                               children: [
-                                Container(
+                                SizedBox(
                                   width: context.width * 2 / 3,
                                   child: TextField(
                                     cursorColor: context.theme.colorScheme.primary,
@@ -412,7 +416,7 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
                                   ),
                                 ),
                                 const SizedBox(height: 20),
-                                Container(
+                                SizedBox(
                                   width: context.width * 2 / 3,
                                   child: TextField(
                                     cursorColor: context.theme.colorScheme.primary,
@@ -434,8 +438,8 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
                                       suffixIcon: Focus(
                                         canRequestFocus: false,
                                         descendantsAreFocusable: false,
-                                        child: IconButton(
-                                          icon: Icon(obscureText ? Icons.visibility_off : Icons.visibility),
+                                        child: BBIconButton(
+                                          icon: obscureText ? Icons.visibility_off : Icons.visibility,
                                           color: context.theme.colorScheme.outline,
                                           onPressed: () {
                                             setState(() {
@@ -576,7 +580,7 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
       final response = await Navigator.of(context).push(
         CupertinoPageRoute(
           builder: (BuildContext context) {
-            return QRCodeScanner();
+            return const QRCodeScanner();
           },
         ),
       );
@@ -603,9 +607,7 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
     } catch (e) {
       showDialog(
         context: context,
-        builder: (BuildContext context) {
-          return FailedToScanDialog(title: "Error", exception: e.toString());
-        },
+        builder: (context) => FailedToScanDialog(title: "Error", exception: e.toString()),
       );
     }
   }
@@ -653,25 +655,10 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
     await saveNewServerUrl(addr, saveAdditionalSettings: ["guidAuthKey"]);
 
     // Request data from the API
-    showDialog(
+    BBProgressDialog.show(
       context: context,
+      title: "Fetching server info...",
       barrierDismissible: false,
-      builder: (context) {
-        return PopScope(
-          canPop: false,
-          child: AlertDialog(
-            title: Text(
-              "Fetching server info...",
-              style: context.theme.textTheme.titleLarge,
-            ),
-            backgroundColor: context.theme.colorScheme.properSurface,
-            content: LinearProgressIndicator(
-              backgroundColor: context.theme.colorScheme.outline,
-              valueColor: AlwaysStoppedAnimation<Color>(context.theme.colorScheme.primary),
-            ),
-          ),
-        );
-      },
     );
 
     dio.Response? serverResponse;
@@ -716,31 +703,11 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
         await SettingsSvc.saveFCMData(fcmData);
       } catch (_) {
         if (Platform.isAndroid) {
-          showDialog(
-            barrierDismissible: false,
+          await BBAlertDialog.alert(
             context: Get.context!,
-            builder: (BuildContext context) {
-              return AlertDialog(
-                title: Text(
-                  "No Firebase Detected",
-                  style: context.theme.textTheme.titleLarge,
-                ),
-                content: Text(
-                  "We couldn't find a Firebase setup on your server. To receive notifications, please enable the background service option from Settings > Misc & Advanced.",
-                  style: context.theme.textTheme.bodyLarge,
-                ),
-                backgroundColor: context.theme.colorScheme.properSurface,
-                actions: <Widget>[
-                  TextButton(
-                    child: Text("Close",
-                        style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                  ),
-                ],
-              );
-            },
+            title: "No Firebase Detected",
+            message:
+                "We couldn't find a Firebase setup on your server. To receive notifications, please enable the background service option from Settings > Misc & Advanced.",
           );
         }
       }
@@ -751,7 +718,7 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
 }
 
 class ErrorText extends CustomStateful<SetupViewController> {
-  ErrorText({required super.parentController});
+  const ErrorText({super.key, required super.parentController});
 
   @override
   State<StatefulWidget> createState() => _ErrorTextState();
@@ -770,7 +737,7 @@ class _ErrorTextState extends CustomState<ErrorText, String, SetupViewController
       mainAxisSize: MainAxisSize.min,
       children: [
         if (controller.error.isNotEmpty)
-          Container(
+          SizedBox(
             width: context.width * 2 / 3,
             child: Align(
               alignment: Alignment.center,

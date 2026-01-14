@@ -1,6 +1,6 @@
+import 'package:bluebubbles/app/components/settings/settings.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/advanced/private_api_panel.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/content/next_button.dart';
-import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -18,8 +18,7 @@ class PrivateAPITile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() => SettingsTile(
-          backgroundColor: tileColor,
+    return Obx(() => BBSettingsTile(
           title: "Private API Features",
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
@@ -45,10 +44,10 @@ class PrivateAPITile extends StatelessWidget {
               (Route route) => route.isFirst,
             );
           },
-          leading: SettingsLeadingIcon(
+          leading: BBSettingsIcon(
             iosIcon: CupertinoIcons.exclamationmark_shield_fill,
             materialIcon: Icons.gpp_maybe,
-            containerColor: SettingsSvc.settings.enablePrivateAPI.value
+            color: SettingsSvc.settings.enablePrivateAPI.value
                 ? SettingsSvc.settings.serverPrivateAPI.value == false
                     ? Colors.redAccent
                     : Colors.green

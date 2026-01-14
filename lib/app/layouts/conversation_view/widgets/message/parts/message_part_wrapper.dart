@@ -10,7 +10,7 @@ import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/reacti
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/reply/reply_bubble.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/text/text_bubble.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/data/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -69,7 +69,7 @@ class MessagePartWrapper extends StatelessWidget {
               "Editing message...",
               style: context.theme.textTheme.titleLarge,
             ),
-            content: Container(
+            content: SizedBox(
               height: 70,
               child: Center(
                 child: CircularProgressIndicator(

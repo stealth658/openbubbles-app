@@ -5,7 +5,7 @@ import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/app/components/avatars/contact_avatar_widget.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
-import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/data/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -13,7 +13,7 @@ import 'package:get/get.dart';
 import 'package:universal_io/io.dart';
 
 class ContactAvatarGroupWidget extends StatefulWidget {
-  ContactAvatarGroupWidget({
+  const ContactAvatarGroupWidget({
     super.key,
     required this.chat,
     this.size = 40,
@@ -116,7 +116,7 @@ class _ContactAvatarGroupWidgetState extends OptimizedState<ContactAvatarGroupWi
           );
         }
 
-        return Container(
+        return SizedBox(
           width: avatarSize,
           height: avatarSize,
           child: participants.length > 1

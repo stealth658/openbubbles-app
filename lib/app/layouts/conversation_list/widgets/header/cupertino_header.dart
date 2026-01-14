@@ -12,7 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class CupertinoHeader extends StatelessWidget {
-  const CupertinoHeader({Key? key, required this.controller});
+  const CupertinoHeader({super.key, required this.controller});
 
   final ConversationListController controller;
 
@@ -58,7 +58,7 @@ class CupertinoHeader extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      SyncIndicator(size: 16),
+                      const SyncIndicator(size: 16),
                       const SizedBox(width: 10.0),
                       ClipOval(
                         child: Material(
@@ -70,7 +70,7 @@ class CupertinoHeader extends StatelessWidget {
                               child: Icon(CupertinoIcons.search,
                                   color: context.theme.colorScheme.properOnSurface, size: 18),
                               onTap: () {
-                                NavigationSvc.pushLeft(context, SearchView());
+                                NavigationSvc.pushLeft(context, const SearchView());
                               },
                             ),
                           ),
@@ -136,7 +136,7 @@ class CupertinoHeader extends StatelessWidget {
 }
 
 class CupertinoMiniHeader extends StatelessWidget {
-  const CupertinoMiniHeader({Key? key, required this.controller});
+  const CupertinoMiniHeader({super.key, required this.controller});
 
   final ConversationListController controller;
 

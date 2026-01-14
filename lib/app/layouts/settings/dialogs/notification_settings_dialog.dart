@@ -1,12 +1,13 @@
+import 'package:bluebubbles/app/components/dialogs/dialogs.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/services/backend_ui_interop/event_dispatcher.dart';
-import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/services/events/event_dispatcher.dart';
+import 'package:bluebubbles/data/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class NotificationSettingsDialog extends StatelessWidget {
-  NotificationSettingsDialog(this.chat, this.updateParent, {super.key});
+  const NotificationSettingsDialog(this.chat, this.updateParent, {super.key});
   final Chat chat;
   final VoidCallback updateParent;
 
@@ -41,77 +42,73 @@ class NotificationSettingsDialog extends StatelessWidget {
               Navigator.of(context, rootNavigator: true).pop();
               List<String?> names = chat.handles.map((e) => e.displayName).toList();
               List<String> existing = chat.muteArgs?.split(",") ?? [];
-              showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                        title: Text("Mute Individuals", style: context.theme.textTheme.titleLarge),
-                        backgroundColor: context.theme.colorScheme.properSurface,
-                        content: SingleChildScrollView(
-                          child: Container(
-                            width: double.maxFinite,
-                            child: StatefulBuilder(builder: (context, setState) {
-                              return Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Padding(
-                                    padding: EdgeInsets.all(8.0),
-                                    child: Text("Select the individuals you would like to mute"),
-                                  ),
-                                  ConstrainedBox(
-                                    constraints: BoxConstraints(
-                                      maxHeight: context.mediaQuery.size.height * 0.4,
-                                    ),
-                                    child: ListView.builder(
-                                      shrinkWrap: true,
-                                      itemCount: chat.handles.length,
-                                      findChildIndexCallback: (key) =>
-                                          findChildIndexByKey(chat.handles, key, (item) => item.address),
-                                      itemBuilder: (context, index) {
-                                        return CheckboxListTile(
-                                          key: ValueKey(chat.handles[index].address),
-                                          value: existing.contains(chat.handles[index].address),
-                                          onChanged: (val) {
-                                            setState(() {
-                                              if (val!) {
-                                                existing.add(chat.handles[index].address);
-                                              } else {
-                                                existing
-                                                    .removeWhere((element) => element == chat.handles[index].address);
-                                              }
-                                            });
-                                          },
-                                          activeColor: context.theme.colorScheme.primary,
-                                          title: Text(names[index] ?? chat.handles[index].address,
-                                              style: context.theme.textTheme.bodyLarge),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                ],
-                              );
-                            }),
+              BBCustomDialog.show(
+                context: context,
+                title: "Mute Individuals",
+                content: SingleChildScrollView(
+                  child: SizedBox(
+                    width: double.maxFinite,
+                    child: StatefulBuilder(builder: (context, setState) {
+                      return Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: Text("Select the individuals you would like to mute"),
                           ),
-                        ),
-                        actions: [
-                          TextButton(
-                              child: Text("OK",
-                                  style: context.theme.textTheme.bodyLarge!
-                                      .copyWith(color: context.theme.colorScheme.primary)),
-                              onPressed: () {
-                                if (existing.isEmpty) {
-                                  showSnackbar("Error", "Please select at least one person!");
-                                  return;
-                                }
-                                ChatsSvc.setChatMuted(chat, false);
-                                chat.muteType = "mute_individuals";
-                                chat.muteArgs = existing.join(",");
-                                Navigator.of(context, rootNavigator: true).pop();
-                                chat.saveAsync(updateMuteType: true, updateMuteArgs: true);
-                                updateParent.call();
-                                EventDispatcherSvc.emit("refresh", null);
-                              }),
+                          ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxHeight: Get.context!.height * 0.4,
+                            ),
+                            child: ListView.builder(
+                              shrinkWrap: true,
+                              itemCount: chat.handles.length,
+                              findChildIndexCallback: (key) =>
+                                  findChildIndexByKey(chat.handles, key, (item) => item.address),
+                              itemBuilder: (context, index) {
+                                return CheckboxListTile(
+                                  key: ValueKey(chat.handles[index].address),
+                                  value: existing.contains(chat.handles[index].address),
+                                  onChanged: (val) {
+                                    setState(() {
+                                      if (val!) {
+                                        existing.add(chat.handles[index].address);
+                                      } else {
+                                        existing.removeWhere((element) => element == chat.handles[index].address);
+                                      }
+                                    });
+                                  },
+                                  activeColor: Theme.of(context).colorScheme.primary,
+                                  title: Text(names[index] ?? chat.handles[index].address,
+                                      style: Theme.of(context).textTheme.bodyLarge),
+                                );
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          ElevatedButton(
+                            onPressed: () {
+                              if (existing.isEmpty) {
+                                showSnackbar("Error", "Please select at least one person!");
+                                return;
+                              }
+                              ChatsSvc.setChatMuted(chat, false);
+                              chat.muteType = "mute_individuals";
+                              chat.muteArgs = existing.join(",");
+                              Navigator.of(context, rootNavigator: true).pop();
+                              chat.saveAsync(updateMuteType: true, updateMuteArgs: true);
+                              updateParent.call();
+                              EventDispatcherSvc.emit("refresh", null);
+                            },
+                            child: const Text("OK"),
+                          ),
                         ],
-                      ));
+                      );
+                    }),
+                  ),
+                ),
+                actions: const [],
+              );
             },
           ),
         ListTile(
@@ -206,7 +203,7 @@ class NotificationSettingsDialog extends StatelessWidget {
 }
 
 class TextDetectionDialog extends StatelessWidget {
-  TextDetectionDialog(this.controller, {super.key});
+  const TextDetectionDialog(this.controller, {super.key});
   final TextEditingController controller;
 
   @override

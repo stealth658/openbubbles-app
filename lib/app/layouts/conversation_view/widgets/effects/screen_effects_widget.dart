@@ -19,7 +19,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class ScreenEffectsWidget extends StatefulWidget {
-  const ScreenEffectsWidget();
+  const ScreenEffectsWidget({super.key});
 
   @override
   State<StatefulWidget> createState() {

@@ -1,4 +1,5 @@
-import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
+import 'package:bluebubbles/app/components/settings/settings.dart';
+import 'package:bluebubbles/app/components/dialogs/dialogs.dart';
 
 import '../../pages/misc/misc_panel.dart';
 import '../../pages/scheduling/message_reminders_panel.dart';
@@ -26,11 +27,11 @@ import 'package:bluebubbles/app/layouts/settings/pages/system/notification_panel
 import 'package:bluebubbles/app/layouts/settings/pages/theming/theming_panel.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/content/next_button.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
-import 'package:bluebubbles/database/database.dart';
-import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/data/database/database.dart';
+import 'package:bluebubbles/data/database/models.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/services.dart';
-import 'package:bluebubbles/utils/logger/logger.dart';
+import 'package:bluebubbles/core/logger/logger.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -58,12 +59,10 @@ List<Widget> buildSettingItemList({
   // return searchable items, headers, tiles, or sections
   return [
     if (!kIsWeb && (!iOS || kIsDesktop))
-      SearchableSettingItem(
+      const SearchableSettingItem(
         title: "Profile",
-        child: SettingsHeader(
+        child: BBSettingsHeader(
           height: 40,
-          iosSubtitle: iosSubtitle,
-          materialSubtitle: materialSubtitle,
           text: "Profile",
         ),
       ),
@@ -72,11 +71,10 @@ List<Widget> buildSettingItemList({
         title: SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value
             ? "User Name"
             : SettingsSvc.settings.userName.value,
-        child: SettingsSection(
+        child: BBSettingsSection(
           backgroundColor: tileColor,
           children: [
-            SettingsTile(
-              backgroundColor: tileColor,
+            BBSettingsTile(
               title: SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value
                   ? "User Name"
                   : SettingsSvc.settings.userName.value,
@@ -84,11 +82,11 @@ List<Widget> buildSettingItemList({
               onTap: () {
                 ns.pushAndRemoveSettingsUntil(
                   context,
-                  ProfilePanel(),
+                  const ProfilePanel(),
                   (route) => route.isFirst,
                 );
               },
-              leading: ContactAvatarWidget(
+              leading: const ContactAvatarWidget(
                 handle: null,
                 borderThickness: 0.1,
                 editable: false,
@@ -101,12 +99,10 @@ List<Widget> buildSettingItemList({
         ),
       ),
     if (!kIsWeb)
-      SearchableSettingItem(
+      const SearchableSettingItem(
         title: "Server & Message Management",
-        child: SettingsHeader(
+        child: BBSettingsHeader(
           height: 40,
-          iosSubtitle: iosSubtitle,
-          materialSubtitle: materialSubtitle,
           text: "Server & Message Management",
         ),
       ),
@@ -134,7 +130,7 @@ List<Widget> buildSettingItemList({
         );
       },
       // Helps search
-      child: SettingsSection(
+      child: BBSettingsSection(
         backgroundColor: tileColor,
         children: [
           // Optimized reactive tile for connection state
@@ -150,21 +146,20 @@ List<Widget> buildSettingItemList({
             SearchableSettingItem(
                 title: "Scheduled Messages",
                 searchTags: ["Scheduled Messages"],
-                child: SettingsTile(
-                  backgroundColor: tileColor,
+                child: BBSettingsTile(
                   title: "Scheduled Messages",
                   onTap: () {
                     ns.pushAndRemoveSettingsUntil(
                       context,
-                      ScheduledMessagesPanel(),
+                      const ScheduledMessagesPanel(),
                       (Route route) => route.isFirst,
                     );
                   },
                   trailing: const NextButton(),
-                  leading: const SettingsLeadingIcon(
+                  leading: const BBSettingsIcon(
                     iosIcon: CupertinoIcons.calendar,
                     materialIcon: Icons.schedule_send_outlined,
-                    containerColor: Colors.redAccent,
+                    color: Colors.redAccent,
                   ),
                 )),
 
@@ -173,30 +168,29 @@ List<Widget> buildSettingItemList({
             SearchableSettingItem(
               title: "Message Reminders",
               searchTags: ["Message Reminders"],
-              child: SettingsTile(
-                backgroundColor: tileColor,
+              child: BBSettingsTile(
                 title: "Message Reminders",
                 onTap: () {
                   ns.pushAndRemoveSettingsUntil(
                     context,
-                    MessageRemindersPanel(),
+                    const MessageRemindersPanel(),
                     (Route route) => route.isFirst,
                   );
                 },
                 trailing: const NextButton(),
-                leading: const SettingsLeadingIcon(
+                leading: const BBSettingsIcon(
                   iosIcon: CupertinoIcons.alarm_fill,
                   materialIcon: Icons.alarm,
-                  containerColor: Colors.blueAccent,
+                  color: Colors.blueAccent,
                 ),
               ),
             ),
         ],
       ),
     ),
-    SearchableSettingItem(
+    const SearchableSettingItem(
         title: "Appearance",
-        child: SettingsHeader(iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Appearance")),
+        child: BBSettingsHeader(text: "Appearance")),
     SearchableSettingItem(
         title: "Appearance Settings",
         searchTags: [
@@ -220,11 +214,10 @@ List<Widget> buildSettingItemList({
             (Route route) => route.isFirst,
           );
         },
-        child: SettingsSection(
+        child: BBSettingsSection(
           backgroundColor: tileColor,
           children: [
-            SettingsTile(
-              backgroundColor: tileColor,
+            BBSettingsTile(
               title: "Appearance Settings",
               onTap: () {
                 ns.pushAndRemoveSettingsUntil(
@@ -242,18 +235,16 @@ List<Widget> buildSettingItemList({
                 const SizedBox(width: 5),
                 const NextButton(),
               ]),
-              leading: const SettingsLeadingIcon(
+              leading: const BBSettingsIcon(
                   iosIcon: CupertinoIcons.paintbrush_fill,
                   materialIcon: Icons.palette,
-                  containerColor: Colors.blueGrey),
+                  color: Colors.blueGrey),
             ),
           ],
         )),
-    SearchableSettingItem(
+    const SearchableSettingItem(
       title: "Application Settings", // Title to search
-      child: SettingsHeader(
-        iosSubtitle: iosSubtitle,
-        materialSubtitle: materialSubtitle,
+      child: BBSettingsHeader(
         text: "Application Settings",
       ),
     ),
@@ -280,25 +271,24 @@ List<Widget> buildSettingItemList({
           onTap: () {
             ns.pushAndRemoveSettingsUntil(
               context,
-              AttachmentPanel(),
+              const AttachmentPanel(),
               (Route route) => route.isFirst,
             );
           },
-          child: SettingsTile(
-            backgroundColor: tileColor,
+          child: BBSettingsTile(
             title: "Media Settings",
             onTap: () {
               ns.pushAndRemoveSettingsUntil(
                 context,
-                AttachmentPanel(),
+                const AttachmentPanel(),
                 (Route route) => route.isFirst,
               );
             },
-            leading: const SettingsLeadingIcon(
+            leading: const BBSettingsIcon(
               iosIcon: CupertinoIcons.photo_fill,
               materialIcon: Icons.attachment,
               iconSize: 18,
-              containerColor: Colors.deepPurpleAccent,
+              color: Colors.deepPurpleAccent,
             ),
             trailing: const NextButton(),
           ),
@@ -320,24 +310,23 @@ List<Widget> buildSettingItemList({
           onTap: () {
             ns.pushAndRemoveSettingsUntil(
               context,
-              NotificationPanel(),
+              const NotificationPanel(),
               (Route route) => route.isFirst,
             );
           },
-          child: SettingsTile(
-            backgroundColor: tileColor,
+          child: BBSettingsTile(
             title: "Notification Settings",
             onTap: () {
               ns.pushAndRemoveSettingsUntil(
                 context,
-                NotificationPanel(),
+                const NotificationPanel(),
                 (Route route) => route.isFirst,
               );
             },
-            leading: const SettingsLeadingIcon(
+            leading: const BBSettingsIcon(
               iosIcon: CupertinoIcons.bell_fill,
               materialIcon: Icons.notifications_on,
-              containerColor: Colors.redAccent,
+              color: Colors.redAccent,
             ),
             trailing: const NextButton(),
           ),
@@ -368,24 +357,23 @@ List<Widget> buildSettingItemList({
           onTap: () {
             ns.pushAndRemoveSettingsUntil(
               context,
-              ChatListPanel(),
+              const ChatListPanel(),
               (Route route) => route.isFirst,
             );
           },
-          child: SettingsTile(
-            backgroundColor: tileColor,
+          child: BBSettingsTile(
             title: "Chat List Settings",
             onTap: () {
               ns.pushAndRemoveSettingsUntil(
                 context,
-                ChatListPanel(),
+                const ChatListPanel(),
                 (Route route) => route.isFirst,
               );
             },
-            leading: const SettingsLeadingIcon(
+            leading: const BBSettingsIcon(
               iosIcon: CupertinoIcons.square_list_fill,
               materialIcon: Icons.list,
-              containerColor: Colors.blueAccent,
+              color: Colors.blueAccent,
             ),
             trailing: const NextButton(),
           ),
@@ -418,24 +406,23 @@ List<Widget> buildSettingItemList({
           onTap: () {
             ns.pushAndRemoveSettingsUntil(
               context,
-              ConversationPanel(),
+              const ConversationPanel(),
               (Route route) => route.isFirst,
             );
           },
-          child: SettingsTile(
-            backgroundColor: tileColor,
+          child: BBSettingsTile(
             title: "Conversation Settings",
             onTap: () {
               ns.pushAndRemoveSettingsUntil(
                 context,
-                ConversationPanel(),
+                const ConversationPanel(),
                 (Route route) => route.isFirst,
               );
             },
-            leading: const SettingsLeadingIcon(
+            leading: const BBSettingsIcon(
               iosIcon: CupertinoIcons.chat_bubble_fill,
               materialIcon: Icons.sms,
-              containerColor: Colors.green,
+              color: Colors.green,
             ),
             trailing: const NextButton(),
           ),
@@ -460,21 +447,20 @@ List<Widget> buildSettingItemList({
               onTap: () {
                 ns.pushAndRemoveSettingsUntil(
                   context,
-                  DesktopPanel(),
+                  const DesktopPanel(),
                   (Route route) => route.isFirst,
                 );
               },
-              child: SettingsTile(
-                backgroundColor: tileColor,
+              child: BBSettingsTile(
                 title: "Desktop Settings",
                 onTap: () {
                   ns.pushAndRemoveSettingsUntil(
                     context,
-                    DesktopPanel(),
+                    const DesktopPanel(),
                     (Route route) => route.isFirst,
                   );
                 },
-                leading: const SettingsLeadingIcon(
+                leading: const BBSettingsIcon(
                   iosIcon: CupertinoIcons.desktopcomputer,
                   materialIcon: Icons.desktop_windows,
                 ),
@@ -503,21 +489,20 @@ List<Widget> buildSettingItemList({
           onTap: () {
             ns.pushAndRemoveSettingsUntil(
               context,
-              MiscPanel(),
+              const MiscPanel(),
               (Route route) => route.isFirst,
             );
           },
-          child: SettingsTile(
-            backgroundColor: tileColor,
+          child: BBSettingsTile(
             title: "More Settings",
             onTap: () {
               ns.pushAndRemoveSettingsUntil(
                 context,
-                MiscPanel(),
+                const MiscPanel(),
                 (Route route) => route.isFirst,
               );
             },
-            leading: const SettingsLeadingIcon(
+            leading: const BBSettingsIcon(
               iosIcon: CupertinoIcons.ellipsis_circle_fill,
               materialIcon: Icons.more_vert,
             ),
@@ -545,32 +530,29 @@ List<Widget> buildSettingItemList({
         onTap: () {
           ns.pushAndRemoveSettingsUntil(
             context,
-            DesktopPanel(),
+            const DesktopPanel(),
             (Route route) => route.isFirst,
           );
         },
-        child: SettingsTile(
-          backgroundColor: tileColor,
+        child: BBSettingsTile(
           title: "Desktop Settings",
           onTap: () {
             ns.pushAndRemoveSettingsUntil(
               context,
-              DesktopPanel(),
+              const DesktopPanel(),
               (Route route) => route.isFirst,
             );
           },
-          leading: const SettingsLeadingIcon(
+          leading: const BBSettingsIcon(
             iosIcon: CupertinoIcons.desktopcomputer,
             materialIcon: Icons.desktop_windows,
           ),
           trailing: const NextButton(),
         ),
       ),
-    SearchableSettingItem(
+    const SearchableSettingItem(
       title: "Advanced", // Title to search
-      child: SettingsHeader(
-        iosSubtitle: iosSubtitle,
-        materialSubtitle: materialSubtitle,
+      child: BBSettingsHeader(
         text: "Advanced",
       ),
     ),
@@ -617,7 +599,7 @@ List<Widget> buildSettingItemList({
           onTap: () async {
             ns.pushAndRemoveSettingsUntil(
               context,
-              RedactedModePanel(),
+              const RedactedModePanel(),
               (Route route) => route.isFirst,
             );
           },
@@ -632,25 +614,24 @@ List<Widget> buildSettingItemList({
             onTap: () async {
               ns.pushAndRemoveSettingsUntil(
                 context,
-                TaskerPanel(),
+                const TaskerPanel(),
                 (Route route) => route.isFirst,
               );
             },
-            child: SettingsTile(
-              backgroundColor: tileColor,
+            child: BBSettingsTile(
               title: "Tasker Integration",
               trailing: const NextButton(),
               onTap: () async {
                 ns.pushAndRemoveSettingsUntil(
                   context,
-                  TaskerPanel(),
+                  const TaskerPanel(),
                   (Route route) => route.isFirst,
                 );
               },
-              leading: const SettingsLeadingIcon(
+              leading: const BBSettingsIcon(
                 iosIcon: CupertinoIcons.bolt_fill,
                 materialIcon: Icons.electric_bolt_outlined,
-                containerColor: Colors.orangeAccent,
+                color: Colors.orangeAccent,
               ),
             ),
           ),
@@ -662,23 +643,22 @@ List<Widget> buildSettingItemList({
           onTap: () async {
             ns.pushAndRemoveSettingsUntil(
               context,
-              NotificationProvidersPanel(),
+              const NotificationProvidersPanel(),
               (Route route) => route.isFirst,
             );
           }, // On tap to search
-          child: SettingsTile(
-            backgroundColor: tileColor,
+          child: BBSettingsTile(
             onTap: () async {
               ns.pushAndRemoveSettingsUntil(
                 context,
-                NotificationProvidersPanel(),
+                const NotificationProvidersPanel(),
                 (Route route) => route.isFirst,
               );
             },
-            leading: const SettingsLeadingIcon(
+            leading: const BBSettingsIcon(
               iosIcon: CupertinoIcons.bell,
               materialIcon: Icons.notifications,
-              containerColor: Colors.green,
+              color: Colors.green,
             ),
             title: "Notification Providers",
             trailing: const NextButton(),
@@ -703,23 +683,22 @@ List<Widget> buildSettingItemList({
           onTap: () async {
             ns.pushAndRemoveSettingsUntil(
               context,
-              TroubleshootPanel(),
+              const TroubleshootPanel(),
               (Route route) => route.isFirst,
             );
           },
-          child: SettingsTile(
-            backgroundColor: tileColor,
+          child: BBSettingsTile(
             onTap: () async {
               ns.pushAndRemoveSettingsUntil(
                 context,
-                TroubleshootPanel(),
+                const TroubleshootPanel(),
                 (Route route) => route.isFirst,
               );
             },
-            leading: const SettingsLeadingIcon(
+            leading: const BBSettingsIcon(
               iosIcon: CupertinoIcons.wrench_fill,
               materialIcon: Icons.adb,
-              containerColor: Colors.blueAccent,
+              color: Colors.blueAccent,
             ),
             title: "Developer Tools",
             subtitle: "View logs, troubleshoot bugs, and more",
@@ -729,9 +708,9 @@ List<Widget> buildSettingItemList({
       ],
     ),
 
-    SearchableSettingItem(
+    const SearchableSettingItem(
       title: "Backup and restore",
-      child: SettingsHeader(iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Backup and Restore"),
+      child: BBSettingsHeader(text: "Backup and Restore"),
     ),
 
     SettingsSection(
@@ -750,24 +729,23 @@ List<Widget> buildSettingItemList({
           onTap: () {
             ns.pushAndRemoveSettingsUntil(
               context,
-              BackupRestorePanel(),
+              const BackupRestorePanel(),
               (Route route) => route.isFirst,
             );
           },
-          child: SettingsTile(
-            backgroundColor: tileColor,
+          child: BBSettingsTile(
             onTap: () {
               ns.pushAndRemoveSettingsUntil(
                 context,
-                BackupRestorePanel(),
+                const BackupRestorePanel(),
                 (Route route) => route.isFirst,
               );
             },
             trailing: const NextButton(),
-            leading: const SettingsLeadingIcon(
+            leading: const BBSettingsIcon(
               iosIcon: CupertinoIcons.cloud_upload_fill,
               materialIcon: Icons.backup,
-              containerColor: Colors.amber,
+              color: Colors.amber,
             ),
             title: "Backup & Restore",
             subtitle: "Backup and restore all app settings and custom themes",
@@ -777,8 +755,7 @@ List<Widget> buildSettingItemList({
         if (!kIsWeb && !kIsDesktop)
           SearchableSettingItem(
             title: "Export Contacts", // Title to search
-            child: SettingsTile(
-              backgroundColor: tileColor,
+            child: BBSettingsTile(
               onTap: () async {
                 void closeDialog() {
                   Get.closeAllSnackbars();
@@ -789,9 +766,9 @@ List<Widget> buildSettingItemList({
                   });
                 }
 
-                showDialog(
+                BBCustomDialog.show(
                   context: context,
-                  builder: (context) => ContactUploadProgress(
+                  content: ContactUploadProgress(
                     progress: progress,
                     totalSize: totalSize,
                     uploadingContacts: uploadingContacts,
@@ -825,10 +802,10 @@ List<Widget> buildSettingItemList({
                   return Response(requestOptions: RequestOptions(path: ''));
                 });
               },
-              leading: const SettingsLeadingIcon(
-                iosIcon: CupertinoIcons.group_solid,
+              leading: const BBSettingsIcon(
+                iosIcon: CupertinoIcons.person_2_fill,
                 materialIcon: Icons.contacts,
-                containerColor: Colors.green,
+                color: Colors.green,
               ),
               title: "Export Contacts",
               subtitle: "Send contacts to server for use on the desktop app",
@@ -837,7 +814,7 @@ List<Widget> buildSettingItemList({
         // About & Links Section
         SearchableSettingItem(
           title: "Leave Us a Review", // Title to search
-          child: SettingsTile(
+          child: BBSettingsTile(
             title: "Leave Us a Review",
             subtitle:
                 "Enjoying the app? Leave us a review on the ${Platform.isAndroid ? 'Google Play Store' : 'Microsoft Store'}!",
@@ -845,47 +822,45 @@ List<Widget> buildSettingItemList({
               final InAppReview inAppReview = InAppReview.instance;
               inAppReview.openStoreListing(microsoftStoreId: '9P3XF8KJ0LSM');
             },
-            leading: const SettingsLeadingIcon(
+            leading: const BBSettingsIcon(
               iosIcon: CupertinoIcons.star_fill,
               materialIcon: Icons.star,
-              containerColor: Colors.blue,
+              color: Colors.blue,
             ),
-            isThreeLine: false,
           ),
         ),
 
         if (!kIsWeb && (Platform.isAndroid || Platform.isWindows))
           SearchableSettingItem(
             title: "Make a Donation", // Title to search
-            child: SettingsTile(
+            child: BBSettingsTile(
               title: "Make a Donation",
               subtitle: "Support the developers by making a one-time or recurring donation to the BlueBubbles Team!",
               onTap: () async {
                 await launchUrl(Uri(scheme: "https", host: "bluebubbles.app", path: "donate"),
                     mode: LaunchMode.externalApplication);
               },
-              leading: const SettingsLeadingIcon(
+              leading: const BBSettingsIcon(
                 iosIcon: CupertinoIcons.money_dollar_circle,
                 materialIcon: Icons.attach_money,
-                containerColor: Colors.green,
+                color: Colors.green,
               ),
-              isThreeLine: false,
             ),
           ),
 
         SearchableSettingItem(
           title: "Join Our Discord", // Title to search
-          child: SettingsTile(
+          child: BBSettingsTile(
             title: "Join Our Discord",
             subtitle: "Join our Discord server to chat with other BlueBubbles users and the developers",
             onTap: () async {
               await launchUrl(Uri(scheme: "https", host: "discord.gg", path: "hbx7EhNFjp"),
                   mode: LaunchMode.externalApplication);
             },
-            leading: SettingsLeadingIcon(
+            leading: BBSettingsIcon(
               iosIcon: Icons.discord,
               materialIcon: Icons.discord,
-              containerColor: HexColor('#7785CC'),
+              color: HexColor('#7785CC'),
             ),
           ),
         ),
@@ -905,26 +880,25 @@ List<Widget> buildSettingItemList({
           onTap: () {
             ns.pushAndRemoveSettingsUntil(
               context,
-              AboutPanel(),
+              const AboutPanel(),
               (Route route) => route.isFirst,
             );
           },
-          child: SettingsTile(
-            backgroundColor: tileColor,
+          child: BBSettingsTile(
             title: "About & More",
             subtitle: "Links, Changelog, & More",
             onTap: () {
               ns.pushAndRemoveSettingsUntil(
                 context,
-                AboutPanel(),
+                const AboutPanel(),
                 (Route route) => route.isFirst,
               );
             },
             trailing: const NextButton(),
-            leading: const SettingsLeadingIcon(
+            leading: const BBSettingsIcon(
               iosIcon: CupertinoIcons.info_circle_fill,
               materialIcon: Icons.info,
-              containerColor: Colors.blueAccent,
+              color: Colors.blueAccent,
             ),
           ),
         ),
@@ -933,51 +907,27 @@ List<Widget> buildSettingItemList({
         if (!kIsWeb)
           SearchableSettingItem(
             title: "Delete All Attachments", // Title to search
-            child: SettingsTile(
-              backgroundColor: tileColor,
-              onTap: () {
-                showDialog(
-                  barrierDismissible: true,
+            child: BBSettingsTile(
+              onTap: () async {
+                final confirmed = await BBAlertDialog.confirm(
                   context: context,
-                  builder: (BuildContext context) {
-                    return AlertDialog(
-                      title: Text(
-                        "Are you sure?",
-                        style: context.theme.textTheme.titleLarge,
-                      ),
-                      content: Text(
-                        "This will remove all attachments from this app. Recent attachments will be automatically re-downloaded when you enter a chat. This will not delete attachments from your server.",
-                        style: context.theme.textTheme.bodyLarge,
-                      ),
-                      backgroundColor: context.theme.colorScheme.properSurface,
-                      actions: <Widget>[
-                        TextButton(
-                          child: Text("No",
-                              style: context.theme.textTheme.bodyLarge!
-                                  .copyWith(color: context.theme.colorScheme.primary)),
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                          },
-                        ),
-                        TextButton(
-                          child: Text("Yes",
-                              style: context.theme.textTheme.bodyLarge!
-                                  .copyWith(color: context.theme.colorScheme.primary)),
-                          onPressed: () async {
-                            final dir = Directory("${FilesystemSvc.appDocDir.path}/attachments");
-                            await dir.delete(recursive: true);
-                            showSnackbar("Success", "Deleted cached attachments");
-                          },
-                        ),
-                      ],
-                    );
-                  },
+                  title: "Are you sure?",
+                  message: "This will remove all attachments from this app. Recent attachments will be automatically re-downloaded when you enter a chat. This will not delete attachments from your server.",
+                  confirmLabel: "Yes",
+                  cancelLabel: "No",
+                  isDestructive: true,
                 );
+
+                if (confirmed) {
+                  final dir = Directory("${FilesystemSvc.appDocDir.path}/attachments");
+                  await dir.delete(recursive: true);
+                  showSnackbar("Success", "Deleted cached attachments");
+                }
               },
-              leading: SettingsLeadingIcon(
+              leading: BBSettingsIcon(
                 iosIcon: CupertinoIcons.trash_slash_fill,
                 materialIcon: Icons.delete_forever_outlined,
-                containerColor: Colors.red[700],
+                color: Colors.red[700],
               ),
               title: "Delete All Attachments",
               subtitle: "Remove all attachments from this app",
@@ -987,69 +937,45 @@ List<Widget> buildSettingItemList({
         if (!kIsWeb)
           SearchableSettingItem(
             title: "Reset App", // Title to search
-            child: SettingsTile(
-              backgroundColor: tileColor,
-              onTap: () {
-                showDialog(
-                  barrierDismissible: false,
+            child: BBSettingsTile(
+              onTap: () async {
+                final confirmed = await BBAlertDialog.confirm(
                   context: context,
-                  builder: (BuildContext context) {
-                    return AlertDialog(
-                      title: Text(
-                        "Are you sure?",
-                        style: context.theme.textTheme.titleLarge,
-                      ),
-                      content: Text(
-                        "This will delete all app data, including your settings, messages, attachments, and more. This action cannot be undone. It is recommended that you take a backup of your settings before proceeding. This will also close the app once the process is complete.",
-                        style: context.theme.textTheme.bodyLarge,
-                      ),
-                      backgroundColor: context.theme.colorScheme.properSurface,
-                      actions: <Widget>[
-                        TextButton(
-                          child: Text("No",
-                              style: context.theme.textTheme.bodyLarge!
-                                  .copyWith(color: context.theme.colorScheme.primary)),
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                          },
-                        ),
-                        TextButton(
-                          child: Text("Yes",
-                              style: context.theme.textTheme.bodyLarge!
-                                  .copyWith(color: context.theme.colorScheme.primary)),
-                          onPressed: () async {
-                            FilesystemSvc.deleteDB();
-                            SocketSvc.forgetConnection();
-                            SettingsSvc.settings = Settings();
-                            await SettingsSvc.settings.saveAsync();
-
-                            await PrefsSvc.i.clear();
-                            await PrefsSvc.i.setString("selected-dark", "OLED Dark");
-                            await PrefsSvc.i.setString("selected-light", "Bright White");
-                            Database.themes.putMany(ThemesService.defaultThemes);
-
-                            await FCMData.deleteFcmData();
-
-                            try {
-                              if (FirebaseSvc.token != null) {
-                                await MethodChannelSvc.invokeMethod("firebase-delete-token");
-                              }
-                            } catch (e, s) {
-                              Logger.error("Failed to delete Firebase FCM token", error: e, trace: s);
-                            }
-
-                            exit(0);
-                          },
-                        ),
-                      ],
-                    );
-                  },
+                  title: "Are you sure?",
+                  message: "This will delete all app data, including your settings, messages, attachments, and more. This action cannot be undone. It is recommended that you take a backup of your settings before proceeding. This will also close the app once the process is complete.",
+                  confirmLabel: "Yes",
+                  cancelLabel: "No",
+                  isDestructive: true,
                 );
+
+                if (confirmed) {
+                  FilesystemSvc.deleteDB();
+                  SocketSvc.forgetConnection();
+                  SettingsSvc.settings = Settings();
+                  await SettingsSvc.settings.saveAsync();
+
+                  await PrefsSvc.i.clear();
+                  await PrefsSvc.i.setString("selected-dark", "OLED Dark");
+                  await PrefsSvc.i.setString("selected-light", "Bright White");
+                  Database.themes.putMany(ThemesService.defaultThemes);
+
+                  await FCMData.deleteFcmData();
+
+                  try {
+                    if (FirebaseSvc.token != null) {
+                      await MethodChannelSvc.invokeMethod("firebase-delete-token");
+                    }
+                  } catch (e, s) {
+                    Logger.error("Failed to delete Firebase FCM token", error: e, trace: s);
+                  }
+
+                  exit(0);
+                }
               },
-              leading: SettingsLeadingIcon(
+              leading: BBSettingsIcon(
                 iosIcon: CupertinoIcons.refresh_circled_solid,
                 materialIcon: Icons.refresh_rounded,
-                containerColor: Colors.red[700],
+                color: Colors.red[700],
               ),
               title: kIsWeb ? "Logout" : "Reset App",
               subtitle: kIsWeb ? null : "Resets the app to default settings",

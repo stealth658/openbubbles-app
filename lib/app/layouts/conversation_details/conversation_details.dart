@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:bluebubbles/app/components/base/base.dart';
+import 'package:bluebubbles/app/components/dialogs/dialogs.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/widgets/attachments_loader.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/widgets/chat_info.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/widgets/chat_options.dart';
@@ -11,8 +13,8 @@ import 'package:bluebubbles/app/layouts/conversation_details/widgets/participant
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
-import 'package:bluebubbles/database/database.dart';
-import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/data/database/database.dart';
+import 'package:bluebubbles/data/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -23,7 +25,7 @@ import 'package:get/get.dart';
 class ConversationDetails extends StatefulWidget {
   final Chat chat;
 
-  ConversationDetails({super.key, required this.chat});
+  const ConversationDetails({super.key, required this.chat});
 
   @override
   State<ConversationDetails> createState() => _ConversationDetailsState();
@@ -127,9 +129,9 @@ class _ConversationDetailsState extends OptimizedState<ConversationDetails> with
                 actions: [
                   Obx(() {
                     if (selected.isNotEmpty) {
-                      return IconButton(
-                        icon: Icon(iOS ? CupertinoIcons.xmark : Icons.close,
-                            color: context.theme.colorScheme.onBackground),
+                      return BBIconButton(
+                        icon: iOS ? CupertinoIcons.xmark : Icons.close,
+                        color: context.theme.colorScheme.onBackground,
                         onPressed: () {
                           selected.clear();
                         },
@@ -140,9 +142,9 @@ class _ConversationDetailsState extends OptimizedState<ConversationDetails> with
                   }),
                   Obx(() {
                     if (selected.isNotEmpty) {
-                      return IconButton(
-                        icon: Icon(iOS ? CupertinoIcons.cloud_download : Icons.file_download,
-                            color: context.theme.colorScheme.onBackground),
+                      return BBIconButton(
+                        icon: iOS ? CupertinoIcons.cloud_download : Icons.file_download,
+                        color: context.theme.colorScheme.onBackground,
                         onPressed: () {
                           final attachments = media.where((e) => selected.contains(e.guid!));
                           for (Attachment a in attachments) {
@@ -190,32 +192,16 @@ class _ConversationDetailsState extends OptimizedState<ConversationDetails> with
                             child: Icon(Icons.error_outline, color: context.theme.colorScheme.error, size: 20),
                           ),
                           onTap: () async {
-                            showDialog(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return AlertDialog(
-                                    backgroundColor: context.theme.colorScheme.properSurface,
-                                    title: Text(
-                                      "Leaving chat...",
-                                      style: context.theme.textTheme.titleLarge,
-                                    ),
-                                    content: Container(
-                                      height: 70,
-                                      child: Center(
-                                        child: CircularProgressIndicator(
-                                          backgroundColor: context.theme.colorScheme.properSurface,
-                                          valueColor: AlwaysStoppedAnimation<Color>(context.theme.colorScheme.primary),
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                });
+                            BBProgressDialog.show(
+                              context: context,
+                              title: "Leaving Chat",
+                              message: "Leaving chat...",
+                            );
                             final response = await HttpSvc.leaveChat(chat.guid);
+                            Navigator.of(context, rootNavigator: true).pop(); // Close progress dialog
                             if (response.statusCode == 200) {
-                              Navigator.of(context, rootNavigator: true).pop();
                               showSnackbar("Notice", "Left chat successfully!");
                             } else {
-                              Navigator.of(context, rootNavigator: true).pop();
                               showSnackbar("Error", "Failed to leave chat!");
                             }
                           },

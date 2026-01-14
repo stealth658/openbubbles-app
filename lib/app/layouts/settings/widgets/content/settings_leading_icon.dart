@@ -1,8 +1,9 @@
-import 'package:bluebubbles/helpers/types/constants.dart';
+import 'package:bluebubbles/core/constants/app_constants.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+@Deprecated('Use BBSettingsIcon from package:bluebubbles/app/app.dart instead')
 class SettingsLeadingIcon extends StatelessWidget {
   final IconData iosIcon;
   final IconData materialIcon;
@@ -11,7 +12,7 @@ class SettingsLeadingIcon extends StatelessWidget {
   final double? iconSize;
   final double? iconSizeMaterial;
 
-  const SettingsLeadingIcon({
+  const SettingsLeadingIcon({super.key, 
     required this.iosIcon,
     required this.materialIcon,
     this.boxSize,

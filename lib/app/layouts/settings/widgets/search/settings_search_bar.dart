@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:bluebubbles/app/components/base/base.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/search/settings_search_bar_ios.dart';
 import 'package:flutter/material.dart';
 
@@ -72,8 +73,8 @@ class _SettingsSearchBarState extends State<SettingsSearchBar> {
               hintStyle: MaterialStateProperty.all(
                 TextStyle(
                   color: Theme.of(context).brightness == Brightness.dark
-                      ? Colors.white.withOpacity(0.5)
-                      : Colors.black.withOpacity(0.5),
+                      ? Colors.white.withValues(alpha: 0.5)
+                      : Colors.black.withValues(alpha: 0.5),
                 ),
               ),
               padding: const WidgetStatePropertyAll<EdgeInsets>(
@@ -86,7 +87,8 @@ class _SettingsSearchBarState extends State<SettingsSearchBar> {
                 if (searchValue.isNotEmpty)
                   Tooltip(
                     message: 'Clear search',
-                    child: IconButton(
+                    child: BBIconButton(
+                      icon: Icons.clear,
                       onPressed: () {
                         _debounceTimer?.cancel();
                         setState(() {
@@ -96,7 +98,6 @@ class _SettingsSearchBarState extends State<SettingsSearchBar> {
                         });
                         widget.onChanged?.call('');
                       },
-                      icon: const Icon(Icons.clear),
                     ),
                   ),
               ],
