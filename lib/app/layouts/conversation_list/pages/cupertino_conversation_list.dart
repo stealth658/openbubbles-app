@@ -9,6 +9,7 @@ import 'package:bluebubbles/app/layouts/conversation_list/widgets/header/cuperti
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/app/wrappers/scrollbar_wrapper.dart';
 import 'package:bluebubbles/services/services.dart';
+import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -17,7 +18,7 @@ import 'package:get/get.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 class CupertinoConversationList extends StatefulWidget {
-  const CupertinoConversationList({super.key, required this.parentController});
+  const CupertinoConversationList({Key? key, required this.parentController});
 
   final ConversationListController parentController;
 

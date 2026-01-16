@@ -1,4 +1,3 @@
-import 'package:bluebubbles/app/components/settings/settings.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/server/server_management_panel.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/search/searchable_setting_item.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/search/settings_search_breadcrumb_tile.dart';
@@ -17,7 +16,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart' hide Response;
 
 class SettingsPage extends StatefulWidget {
-  const SettingsPage({
+  SettingsPage({
     super.key,
     this.initialPage,
   });
@@ -137,8 +136,8 @@ class _SettingsPageState extends OptimizedState<SettingsPage> {
                                     (tag) => tag.toLowerCase().contains(lowerQuery),
                                   );
 
-                                  // Check if this is a header (contains BBSettingsHeader widget)
-                                  final isHeader = item.child.runtimeType.toString().contains('BBSettingsHeader');
+                                  // Check if this is a header (contains SettingsHeader widget)
+                                  final isHeader = item.child.runtimeType.toString().contains('SettingsHeader');
 
                                   // If it's a header and we're searching, check if the next section has matches
                                   bool shouldShowHeader = true;
@@ -173,11 +172,11 @@ class _SettingsPageState extends OptimizedState<SettingsPage> {
                                       }
                                     }
                                   }
-                                } else if (item is SettingsSection || item is BBSettingsSection) {
+                                } else if (item is SettingsSection) {
                                   // Section → recurse into children
                                   final sectionWidgets = <Widget>[];
 
-                                  if (item is SettingsSection && item.searchableSettingsItems != null) {
+                                  if (item.searchableSettingsItems != null) {
                                     final matchingItems = item.searchableSettingsItems!.where((childItem) {
                                       final titleMatches = childItem.title.toLowerCase().contains(lowerQuery);
                                       final tagMatches = childItem.searchTags.any(
@@ -212,8 +211,8 @@ class _SettingsPageState extends OptimizedState<SettingsPage> {
                                         }
                                       }
                                     }
-                                  } else if (searchQuery.isEmpty) {
-                                    // Section with non-searchable children or BBSettingsSection → show if no search
+                                  } else if (item.children != null && searchQuery.isEmpty) {
+                                    // Section with non-searchable children → show if no search
                                     sectionWidgets.add(item);
                                   }
 

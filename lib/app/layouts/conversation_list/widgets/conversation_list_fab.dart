@@ -10,7 +10,7 @@ import 'package:flutter/rendering.dart';
 import 'package:get/get.dart';
 
 class ConversationListFAB extends CustomStateful<ConversationListController> {
-  const ConversationListFAB({super.key, required super.parentController});
+  const ConversationListFAB({Key? key, required super.parentController});
 
   @override
   State<StatefulWidget> createState() => _ConversationListFABState();

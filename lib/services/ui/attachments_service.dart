@@ -1,11 +1,10 @@
 import 'dart:convert';
 
-import 'package:bluebubbles/app/components/dialogs/dialogs.dart';
-import 'package:bluebubbles/data/database/models.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/backend/interfaces/image_interface.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/core/logger/logger.dart';
+import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:file_picker/file_picker.dart' hide PlatformFile;
 import 'package:flutter/foundation.dart';
@@ -260,33 +259,56 @@ class AttachmentsService extends GetxService {
       if (savePath == null) {
         return showSnackbar('Error', 'You didn\'t select a file path!');
       } else if (await File(savePath).exists()) {
-        final confirmed = await BBAlertDialog.confirm(
+        await showDialog(
+          barrierDismissible: false,
           context: Get.context!,
-          title: "Confirm save",
-          message: "This file already exists.\nAre you sure you want to overwrite it?",
-        );
-        
-        if (confirmed) {
-          if (file.path != null) {
-            await File(file.path!).copy(savePath);
-          } else {
-            await File(savePath).writeAsBytes(file.bytes!);
-          }
-          showSnackbar(
-            'Success',
-            'Saved attachment to $savePath!',
-            durationMs: 3000,
-            button: TextButton(
-              style: TextButton.styleFrom(
-                backgroundColor: Get.theme.colorScheme.surfaceVariant,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text(
+                "Confirm save",
+                style: context.theme.textTheme.titleLarge,
               ),
-              onPressed: () {
-                launchUrl(Uri.file(savePath));
-              },
-              child: Text("OPEN FILE", style: TextStyle(color: Get.theme.colorScheme.onSurfaceVariant)),
-            ),
-          );
-        }
+              content: Text("This file already exists.\nAre you sure you want to overwrite it?",
+                  style: context.theme.textTheme.bodyLarge),
+              backgroundColor: context.theme.colorScheme.properSurface,
+              actions: <Widget>[
+                TextButton(
+                  child: Text("No",
+                      style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+                TextButton(
+                  child: Text("Yes",
+                      style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+                  onPressed: () async {
+                    if (file.path != null) {
+                      await File(file.path!).copy(savePath);
+                    } else {
+                      await File(savePath).writeAsBytes(file.bytes!);
+                    }
+                    Navigator.of(context).pop();
+                    showSnackbar(
+                      'Success',
+                      'Saved attachment to $savePath!',
+                      durationMs: 3000,
+                      button: TextButton(
+                        style: TextButton.styleFrom(
+                          backgroundColor: Get.theme.colorScheme.surfaceVariant,
+                        ),
+                        onPressed: () {
+                          launchUrl(Uri.file(savePath));
+                        },
+                        child: Text("OPEN FILE", style: TextStyle(color: Get.theme.colorScheme.onSurfaceVariant)),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            );
+          },
+        );
       } else {
         if (file.path != null) {
           await File(file.path!).copy(savePath);

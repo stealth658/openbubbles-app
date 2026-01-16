@@ -1,8 +1,7 @@
-import 'package:bluebubbles/app/components/dialogs/dialogs.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/dialogs/address_picker.dart';
-import 'package:bluebubbles/core/logger/logger.dart';
+import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/app/components/avatars/contact_avatar_widget.dart';
-import 'package:bluebubbles/data/database/models.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -36,7 +35,7 @@ class ContactTile extends StatelessWidget {
     return contact?.emails.isNotEmpty ?? false;
   }
 
-  const ContactTile({
+  ContactTile({
     super.key,
     required this.handle,
     required this.chat,
@@ -173,14 +172,24 @@ class ContactTile extends StatelessWidget {
                   backgroundColor: Colors.red,
                   icon: SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.trash : Icons.delete_outlined,
                   onPressed: (_) async {
-                    BBProgressDialog.show(
-                      context: context,
-                      title: "Removing Participant",
-                      message: "Removing participant...",
-                    );
+                    showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            backgroundColor: context.theme.colorScheme.properSurface,
+                            title: Text(
+                              "Removing participant...",
+                              style: context.theme.textTheme.titleLarge,
+                            ),
+                            content: Container(
+                              height: 70,
+                              child: Center(child: buildProgressIndicator(context)),
+                            ),
+                          );
+                        });
 
                     HttpSvc.chatParticipant("remove", chat.guid, handle.address).then((response) async {
-                      Navigator.of(context, rootNavigator: true).pop(); // Close progress dialog
+                      Navigator.of(context, rootNavigator: true).pop();
                       Logger.info("Removed participant ${handle.address}");
                       showSnackbar("Notice", "Removed participant from chat!");
                     }).catchError((err, stack) {

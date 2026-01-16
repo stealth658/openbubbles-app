@@ -4,15 +4,14 @@ import 'package:bluebubbles/app/layouts/conversation_list/pages/search/search_vi
 import 'package:bluebubbles/app/layouts/conversation_view/pages/conversation_view.dart';
 import 'package:bluebubbles/app/layouts/findmy/findmy_page.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/profile/profile_panel.dart';
-import 'package:bluebubbles/data/models/global/settings.dart';
-import 'package:bluebubbles/data/models/native/contact.dart';
-import 'package:bluebubbles/data/models/native/fcm_data.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/pages/conversation_list.dart';
 import 'package:bluebubbles/app/layouts/settings/settings_page.dart';
 import 'package:bluebubbles/app/layouts/setup/setup_view.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/app/wrappers/titlebar_wrapper.dart';
+import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
 import 'package:bluebubbles/services/backend/interfaces/message_interface.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
@@ -23,7 +22,7 @@ import 'package:get/get.dart';
 import 'package:pull_down_button/pull_down_button.dart';
 
 class HeaderText extends StatelessWidget {
-  const HeaderText({super.key, required this.controller, this.fontSize});
+  const HeaderText({Key? key, required this.controller, this.fontSize});
 
   final ConversationListController controller;
   final double? fontSize;
@@ -52,7 +51,7 @@ class HeaderText extends StatelessWidget {
 class SyncIndicator extends StatelessWidget {
   final double size;
 
-  const SyncIndicator({super.key, this.size = 12});
+  SyncIndicator({this.size = 12});
 
   @override
   Widget build(BuildContext context) {
@@ -68,7 +67,7 @@ class SyncIndicator extends StatelessWidget {
 class OverflowMenu extends StatelessWidget {
   final bool extraItems;
   final ConversationListController? controller;
-  const OverflowMenu({super.key, this.extraItems = false, this.controller});
+  const OverflowMenu({this.extraItems = false, this.controller});
 
   @override
   Widget build(BuildContext context) {
@@ -378,7 +377,7 @@ class CupertinoOverflowMenu extends StatelessWidget {
 Future<void> goToSearch(BuildContext context) async {
   final current = NavigationSvc.ratio(context);
   EventDispatcherSvc.emit("override-split", 0.3);
-  await NavigationSvc.pushLeft(context, const SearchView());
+  await NavigationSvc.pushLeft(context, SearchView());
   EventDispatcherSvc.emit("override-split", current);
 }
 
@@ -440,7 +439,7 @@ void logout(BuildContext context) {
               await PrefsSvc.i.setString("selected-dark", "OLED Dark");
               await PrefsSvc.i.setString("selected-light", "Bright White");
               Get.offAll(
-                  () => const PopScope(
+                  () => PopScope(
                         canPop: false,
                         child: TitleBarWrapper(child: SetupView()),
                       ),
@@ -470,7 +469,7 @@ Future<void> goToSettings(BuildContext context) async {
   await Navigator.of(Get.context!).push(
     ThemeSwitcher.buildPageRoute(
       builder: (BuildContext context) {
-        return const SettingsPage();
+        return SettingsPage();
       },
     ),
   );
@@ -500,5 +499,5 @@ void goToArchived(BuildContext context) {
 }
 
 void goToProfile(BuildContext context) {
-  NavigationSvc.pushLeft(context, const ProfilePanel());
+  NavigationSvc.pushLeft(context, ProfilePanel());
 }

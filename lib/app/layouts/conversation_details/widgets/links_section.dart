@@ -1,11 +1,11 @@
-import 'package:bluebubbles/app/app.dart';
+import 'dart:math';
+
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/interactive/url_preview.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
-import 'package:bluebubbles/data/database/database.dart';
-import 'package:bluebubbles/data/database/models.dart';
+import 'package:bluebubbles/database/database.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/services.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
@@ -82,49 +82,65 @@ class _LinksSectionState extends OptimizedState<LinksSection> {
 
     return SliverMainAxisGroup(
       slivers: [
-        const SliverToBoxAdapter(
-          child: BBSectionHeader(text: "LINKS"),
+        SliverPadding(
+          padding: const EdgeInsets.only(top: 20, bottom: 5, left: 20),
+          sliver: SliverToBoxAdapter(
+            child: Text(
+              "LINKS",
+              style: context.theme.textTheme.bodyMedium!.copyWith(
+                color: context.theme.colorScheme.outline,
+              ),
+            ),
+          ),
         ),
         if (_isLoading)
-          const SliverToBoxAdapter(
+          SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.symmetric(
-                vertical: BBSpacing.lg,
-                horizontal: BBSpacing.lg,
-              ),
+              padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 20.0),
               child: Center(
-                child: BBLoadingIndicator(size: 24),
+                child: buildProgressIndicator(context, size: 24),
               ),
             ),
           )
         else if (links.isEmpty)
           SliverToBoxAdapter(
-            child: BBEmptyState(
-              message: "No links",
-              icon: iOS ? CupertinoIcons.link : Icons.link,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 20.0),
+              child: Center(
+                child: Text(
+                  "No links",
+                  style: context.theme.textTheme.bodyMedium!.copyWith(
+                    color: context.theme.colorScheme.outline,
+                  ),
+                ),
+              ),
             ),
           )
         else
           SliverPadding(
-            padding: BBMediaGrid.getGridPadding(SettingsSvc.settings.skin.value),
+            padding: EdgeInsets.only(
+              left: SettingsSvc.settings.skin.value == Skins.iOS ? 20 : 10,
+              right: SettingsSvc.settings.skin.value == Skins.iOS ? 20 : 10,
+              top: 10,
+              bottom: 10,
+            ),
             sliver: SliverToBoxAdapter(
               child: MasonryGridView.count(
-                crossAxisCount: BBMediaGrid.calculateCrossAxisCount(context),
-                mainAxisSpacing: BBMediaGrid.mainAxisSpacing,
-                crossAxisSpacing: BBMediaGrid.crossAxisSpacing,
+                crossAxisCount: max(2, NavigationSvc.width(context) ~/ 200),
+                mainAxisSpacing: 10,
+                crossAxisSpacing: 10,
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemBuilder: (context, index) {
                   if (links[index].payloadData?.urlData?.firstOrNull == null) {
                     return const Text("Failed to load link!");
                   }
-                  final skin = SettingsSvc.settings.skin.value;
                   return Material(
                     color: context.theme.colorScheme.properSurface,
-                    borderRadius: BBRadius.largeBR(skin),
+                    borderRadius: BorderRadius.circular(20),
                     clipBehavior: Clip.antiAlias,
                     child: InkWell(
-                      borderRadius: BBRadius.largeBR(skin),
+                      borderRadius: BorderRadius.circular(20),
                       onTap: () async {
                         final data = links[index].payloadData!.urlData!.first;
                         if ((data.url ?? data.originalUrl) == null) return;

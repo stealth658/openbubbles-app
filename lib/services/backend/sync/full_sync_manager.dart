@@ -1,8 +1,8 @@
 import 'package:async_task/async_task_extension.dart';
-import 'package:bluebubbles/core/logger/logger.dart';
+import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/backend/sync/sync_manager_impl.dart';
-import 'package:bluebubbles/data/database/models.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -103,7 +103,7 @@ class FullSyncManager extends SyncManager {
                 if (contact != null) {
                   displayName = contact.displayName;
                 } else if (!addr.contains("@")) {
-                  displayName = formatPhoneNumber(addr);
+                  displayName = await formatPhoneNumber(addr);
                 } else {
                   displayName = addr;
                 }

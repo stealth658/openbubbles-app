@@ -1,4 +1,4 @@
-import 'package:bluebubbles/core/logger/logger.dart';
+import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:convert/convert.dart';
 import 'package:exif/exif.dart';
 import 'package:flutter/foundation.dart';

@@ -1,4 +1,3 @@
-import 'package:bluebubbles/app/components/settings/settings.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -8,8 +7,6 @@ import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class TaskerPanel extends StatefulWidget {
-  const TaskerPanel({super.key});
-
   @override
   State<StatefulWidget> createState() => _TaskerPanelState();
 }
@@ -28,7 +25,7 @@ class _TaskerPanelState extends OptimizedState<TaskerPanel> {
           SliverList(
             delegate: SliverChildListDelegate(
               <Widget>[
-                BBSettingsSection(
+                SettingsSection(
                   backgroundColor: tileColor,
                   children: [
                     const Padding(
@@ -37,9 +34,11 @@ class _TaskerPanelState extends OptimizedState<TaskerPanel> {
                         "BlueBubbles has the ability to integrate with Tasker. Fetch your server URL from Tasker or send server events to Tasker to use in your integrations! If you've made something cool, feel free to share it on our Discord!",
                       ),
                     ),
-                    BBSettingsTile(
+                    SettingsTile(
+                      backgroundColor: tileColor,
                       title: "Tasker Integration Details",
                       subtitle: "View more details on how to create Tasker integrations with BlueBubbles",
+                      isThreeLine: true,
                       onTap: () async {
                         await launchUrl(
                             Uri(
@@ -48,25 +47,27 @@ class _TaskerPanelState extends OptimizedState<TaskerPanel> {
                                 path: "client/usage-guides/tasker-integration"),
                             mode: LaunchMode.externalApplication);
                       },
-                      leading: const BBSettingsIcon(
+                      leading: const SettingsLeadingIcon(
                         iosIcon: CupertinoIcons.info_circle,
                         materialIcon: Icons.info_outline,
                       ),
                     ),
                   ],
                 ),
-                const BBSettingsHeader(text: "Integration Settings"),
-                BBSettingsSection(
+                SettingsHeader(
+                    iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Integration Settings"),
+                SettingsSection(
                   backgroundColor: tileColor,
                   children: [
-                    Obx(() => BBSettingsSwitch(
+                    Obx(() => SettingsSwitch(
                           onChanged: (bool val) async {
                             SettingsSvc.settings.sendEventsToTasker.value = val;
                             await SettingsSvc.settings.saveOneAsync('sendEventsToTasker');
                           },
-                          value: SettingsSvc.settings.sendEventsToTasker.value,
+                          initialVal: SettingsSvc.settings.sendEventsToTasker.value,
                           title: "Send Events to Tasker",
                           subtitle: "Send events emitted by the server to Tasker via Intent broadcasts",
+                          backgroundColor: tileColor,
                         )),
                   ],
                 ),

@@ -2,10 +2,9 @@ import 'dart:async';
 
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
-import 'package:bluebubbles/app/components/settings/settings.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/app/components/avatars/contact_avatar_widget.dart';
-import 'package:bluebubbles/data/database/models.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -29,7 +28,7 @@ class CustomAvatarColorPanelController extends StatefulController {
 
     List<Widget> items = [];
     for (Handle item in handles) {
-      items.add(BBSettingsTile(
+      items.add(SettingsTile(
         title: item.displayName,
         subtitle: "Tap avatar to change color",
         trailing: ContactAvatarWidget(handle: item),
@@ -41,7 +40,7 @@ class CustomAvatarColorPanelController extends StatefulController {
 }
 
 class CustomAvatarColorPanel extends CustomStateful<CustomAvatarColorPanelController> {
-  CustomAvatarColorPanel({super.key}) : super(parentController: Get.put(CustomAvatarColorPanelController()));
+  CustomAvatarColorPanel() : super(parentController: Get.put(CustomAvatarColorPanelController()));
 
   @override
   State<StatefulWidget> createState() => _CustomAvatarColorPanelState();

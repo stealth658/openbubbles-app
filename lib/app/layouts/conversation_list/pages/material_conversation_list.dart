@@ -13,7 +13,7 @@ import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:get/get.dart';
 
 class MaterialConversationList extends StatefulWidget {
-  const MaterialConversationList({super.key, required this.parentController});
+  const MaterialConversationList({Key? key, required this.parentController});
 
   final ConversationListController parentController;
 

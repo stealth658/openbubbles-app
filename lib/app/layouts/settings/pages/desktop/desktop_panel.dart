@@ -2,13 +2,11 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:animated_size_and_fade/animated_size_and_fade.dart';
-import 'package:bluebubbles/app/components/base/base.dart';
-import 'package:bluebubbles/app/components/settings/settings.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/app/components/avatars/contact_avatar_widget.dart';
-import 'package:bluebubbles/data/database/models.dart' hide PlatformFile;
+import 'package:bluebubbles/database/models.dart' hide PlatformFile;
 import 'package:bluebubbles/services/services.dart';
 import 'package:collection/collection.dart';
 import 'package:file_picker/file_picker.dart';
@@ -20,8 +18,6 @@ import 'package:reorderables/reorderables.dart';
 import 'package:window_manager/window_manager.dart';
 
 class DesktopPanel extends StatefulWidget {
-  const DesktopPanel({super.key});
-
   @override
   State<StatefulWidget> createState() => _DesktopPanelState();
 }
@@ -55,22 +51,23 @@ class _DesktopPanelState extends OptimizedState<DesktopPanel> {
         SliverList(
           delegate: SliverChildListDelegate(
             <Widget>[
-              BBSettingsSection(
+              SettingsSection(
                 backgroundColor: tileColor,
                 children: [
-                  Obx(() => BBSettingsSwitch(
+                  Obx(() => SettingsSwitch(
                         onChanged: (bool val) async {
                           SettingsSvc.settings.launchAtStartup.value = await SettingsSvc.setupLaunchAtStartup(
                               val, SettingsSvc.settings.launchAtStartupMinimized.value);
                           await SettingsSvc.settings.saveOneAsync('launchAtStartup');
                         },
-                        value: SettingsSvc.settings.launchAtStartup.value,
+                        initialVal: SettingsSvc.settings.launchAtStartup.value,
                         title: "Launch on Startup",
                         subtitle: "Automatically open the desktop app on startup.",
-                        leading: const BBSettingsIcon(
+                        backgroundColor: tileColor,
+                        leading: const SettingsLeadingIcon(
                           iosIcon: CupertinoIcons.rocket,
                           materialIcon: Icons.rocket_launch_outlined,
-                          color: Colors.blue,
+                          containerColor: Colors.blue,
                         ),
                       )),
                   Obx(() => AnimatedSizeAndFade.showHide(
@@ -85,21 +82,22 @@ class _DesktopPanelState extends OptimizedState<DesktopPanel> {
                                 child: SettingsDivider(color: context.theme.colorScheme.surfaceVariant),
                               ),
                             ),
-                            BBSettingsSwitch(
+                            SettingsSwitch(
                               onChanged: (bool val) async {
                                 SettingsSvc.settings.launchAtStartupMinimized.value = val;
                                 SettingsSvc.settings.launchAtStartup.value = await SettingsSvc.setupLaunchAtStartup(
                                     SettingsSvc.settings.launchAtStartup.value, val);
                                 await SettingsSvc.settings.saveOneAsync('launchAtStartupMinimized');
                               },
-                              value: SettingsSvc.settings.launchAtStartupMinimized.value,
+                              initialVal: SettingsSvc.settings.launchAtStartupMinimized.value,
                               title: "Launch on Startup Minimized",
                               subtitle:
                                   "Automatically open the desktop app on startup, but minimized to the system tray",
-                              leading: const BBSettingsIcon(
+                              backgroundColor: tileColor,
+                              leading: const SettingsLeadingIcon(
                                 iosIcon: CupertinoIcons.eye_slash,
                                 materialIcon: Icons.hide_image_outlined,
-                                color: Colors.deepPurple,
+                                containerColor: Colors.deepPurple,
                               ),
                             ),
                           ],
@@ -114,20 +112,21 @@ class _DesktopPanelState extends OptimizedState<DesktopPanel> {
                       ),
                     ),
                   if (Platform.isLinux)
-                    Obx(() => BBSettingsSwitch(
+                    Obx(() => SettingsSwitch(
                           onChanged: (bool val) async {
                             SettingsSvc.settings.useCustomTitleBar.value = val;
                             await windowManager.setTitleBarStyle(val ? TitleBarStyle.hidden : TitleBarStyle.normal);
                             await SettingsSvc.settings.saveOneAsync('useCustomTitleBar');
                           },
-                          value: SettingsSvc.settings.useCustomTitleBar.value,
+                          initialVal: SettingsSvc.settings.useCustomTitleBar.value,
                           title: "Use Custom TitleBar",
                           subtitle:
                               "Enable the custom titlebar. This is necessary on non-GNOME systems, and will not look good on GNOME systems. This is also necessary for 'Minimize to Tray' to work correctly.",
-                          leading: const BBSettingsIcon(
+                          backgroundColor: tileColor,
+                          leading: const SettingsLeadingIcon(
                             iosIcon: CupertinoIcons.macwindow,
                             materialIcon: Icons.tab_outlined,
-                            color: Colors.orange,
+                            containerColor: Colors.orange,
                           ),
                         )),
                   Obx(() {
@@ -144,18 +143,19 @@ class _DesktopPanelState extends OptimizedState<DesktopPanel> {
                   }),
                   Obx(() {
                     if (SettingsSvc.settings.useCustomTitleBar.value || !Platform.isLinux) {
-                      return BBSettingsSwitch(
+                      return SettingsSwitch(
                         onChanged: (bool val) async {
                           SettingsSvc.settings.minimizeToTray.value = val;
                           await SettingsSvc.settings.saveOneAsync('minimizeToTray');
                         },
-                        value: SettingsSvc.settings.minimizeToTray.value,
+                        initialVal: SettingsSvc.settings.minimizeToTray.value,
                         title: "Minimize to Tray",
                         subtitle: "When enabled, clicking the minimize button will minimize the app to the system tray",
-                        leading: const BBSettingsIcon(
+                        backgroundColor: tileColor,
+                        leading: const SettingsLeadingIcon(
                           iosIcon: CupertinoIcons.tray_arrow_down,
                           materialIcon: Icons.expand_circle_down_outlined,
-                          color: Colors.indigo,
+                          containerColor: Colors.indigo,
                         ),
                       );
                     }
@@ -173,48 +173,50 @@ class _DesktopPanelState extends OptimizedState<DesktopPanel> {
                     }
                     return const SizedBox.shrink();
                   }),
-                  Obx(() => BBSettingsSwitch(
+                  Obx(() => SettingsSwitch(
                         onChanged: (bool val) async {
                           SettingsSvc.settings.closeToTray.value = val;
                           await windowManager.setPreventClose(val);
                           await SettingsSvc.settings.saveOneAsync('closeToTray');
                         },
-                        value: SettingsSvc.settings.closeToTray.value,
+                        initialVal: SettingsSvc.settings.closeToTray.value,
                         title: "Close to Tray",
                         subtitle: "When enabled, clicking the close button will minimize the app to the system tray",
-                        leading: const BBSettingsIcon(
+                        backgroundColor: tileColor,
+                        leading: const SettingsLeadingIcon(
                           iosIcon: CupertinoIcons.tray_arrow_down_fill,
                           materialIcon: Icons.expand_circle_down,
-                          color: Colors.green,
+                          containerColor: Colors.green,
                         ),
                       )),
                 ],
               ),
-              const BBSettingsHeader(text: "Notifications"),
-              BBSettingsSection(
+              SettingsHeader(iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Notifications"),
+              SettingsSection(
                 backgroundColor: tileColor,
                 children: [
-                  Obx(() => BBSettingsSwitch(
+                  Obx(() => SettingsSwitch(
                         onChanged: (bool val) async {
                           SettingsSvc.settings.desktopNotifications.value = val;
                           await SettingsSvc.settings.saveOneAsync('desktopNotifications');
                         },
-                        value: SettingsSvc.settings.desktopNotifications.value,
+                        initialVal: SettingsSvc.settings.desktopNotifications.value,
                         title: "Desktop Notifications",
                         subtitle: "Enable desktop notifications for new messages",
-                        leading: const BBSettingsIcon(
+                        backgroundColor: tileColor,
+                        leading: const SettingsLeadingIcon(
                           iosIcon: CupertinoIcons.bell,
                           materialIcon: Icons.notifications_outlined,
-                          color: Colors.red,
+                          containerColor: Colors.red,
                         ),
                       )),
                   Obx(() => AnimatedSizeAndFade.showHide(
                         show: SettingsSvc.settings.desktopNotifications.value,
-                        child: BBSettingsTile(
-                          leading: const BBSettingsIcon(
+                        child: SettingsTile(
+                          leading: const SettingsLeadingIcon(
                             iosIcon: CupertinoIcons.folder,
                             materialIcon: Icons.folder_outlined,
-                            color: Colors.purple,
+                            containerColor: Colors.purple,
                           ),
                           title:
                               "${SettingsSvc.settings.desktopNotificationSoundPath.value == null ? "Add" : "Change"} Notification Sound",
@@ -239,12 +241,12 @@ class _DesktopPanelState extends OptimizedState<DesktopPanel> {
                               ? Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    BBIconButton(
+                                    IconButton(
                                         icon: playingNotificationSound.value
-                                            ? (SettingsSvc.settings.skin.value == Skins.iOS
+                                            ? Icon(SettingsSvc.settings.skin.value == Skins.iOS
                                                 ? CupertinoIcons.stop
                                                 : Icons.stop_outlined)
-                                            : (SettingsSvc.settings.skin.value == Skins.iOS
+                                            : Icon(SettingsSvc.settings.skin.value == Skins.iOS
                                                 ? CupertinoIcons.play
                                                 : Icons.play_arrow_outlined),
                                         onPressed: () async {
@@ -258,10 +260,10 @@ class _DesktopPanelState extends OptimizedState<DesktopPanel> {
                                                 .open(Media(SettingsSvc.settings.desktopNotificationSoundPath.value!));
                                           }
                                         }),
-                                    BBIconButton(
-                                      icon: SettingsSvc.settings.skin.value == Skins.iOS
+                                    IconButton(
+                                      icon: Icon(SettingsSvc.settings.skin.value == Skins.iOS
                                           ? CupertinoIcons.trash
-                                          : Icons.delete_outline,
+                                          : Icons.delete_outline),
                                       onPressed: () async {
                                         File file = File(SettingsSvc.settings.desktopNotificationSoundPath.value!);
                                         if (await file.exists()) {
@@ -279,11 +281,11 @@ class _DesktopPanelState extends OptimizedState<DesktopPanel> {
                   Obx(() => AnimatedSizeAndFade.showHide(
                       show: SettingsSvc.settings.desktopNotifications.value &&
                           SettingsSvc.settings.desktopNotificationSoundPath.value != null,
-                      child: const BBSettingsTile(
-                        leading: BBSettingsIcon(
+                      child: const SettingsTile(
+                        leading: SettingsLeadingIcon(
                           iosIcon: CupertinoIcons.volume_up,
                           materialIcon: Icons.volume_up_outlined,
-                          color: Colors.cyan,
+                          containerColor: Colors.cyan,
                         ),
                         title: "Notification Sound Volume",
                         subtitle: "Controls the volume of the notification sounds",
@@ -312,14 +314,15 @@ class _DesktopPanelState extends OptimizedState<DesktopPanel> {
                       )),
                   Obx(() => AnimatedSizeAndFade.showHide(
                         show: SettingsSvc.settings.desktopNotifications.value,
-                        child: BBSettingsTile(
+                        child: SettingsTile(
                           title: "Actions",
                           subtitle:
                               "Click actions to toggle them. Drag actions to move them. ${Platform.isWindows ? "You can select up to 5 actions." : "The number of actions actually visible varies by distribution."} Tapback actions require Private API to be enabled.",
-                          leading: const BBSettingsIcon(
+                          isThreeLine: true,
+                          leading: const SettingsLeadingIcon(
                             iosIcon: CupertinoIcons.bolt,
                             materialIcon: Icons.bolt_outlined,
-                            color: Colors.brown,
+                            containerColor: Colors.brown,
                           ),
                         ),
                       )),
@@ -333,8 +336,8 @@ class _DesktopPanelState extends OptimizedState<DesktopPanel> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: <Widget>[
                                     if (Platform.isWindows)
-                                      BBSettingsSwitch(
-                                        value: SettingsSvc.settings.showReplyField.value,
+                                      SettingsSwitch(
+                                        initialVal: SettingsSvc.settings.showReplyField.value,
                                         onChanged: (value) async {
                                           SettingsSvc.settings.showReplyField.value = value;
                                           maxActions.value = value ? 4 : 5;
@@ -343,10 +346,10 @@ class _DesktopPanelState extends OptimizedState<DesktopPanel> {
                                           }
                                           await SettingsSvc.settings.saveOneAsync('showReplyField');
                                         },
-                                        leading: const BBSettingsIcon(
+                                        leading: const SettingsLeadingIcon(
                                           iosIcon: CupertinoIcons.arrowshape_turn_up_left,
                                           materialIcon: Icons.reply_outlined,
-                                          color: Colors.orange,
+                                          containerColor: Colors.orange,
                                         ),
                                         title: "Show Reply Field",
                                         subtitle:
@@ -483,7 +486,7 @@ class _DesktopPanelState extends OptimizedState<DesktopPanel> {
                                   context.width;
                                   NavigationSvc.listener.value;
                                   double width = min(NavigationSvc.width(context) / 2, 400);
-                                  return SizedBox(
+                                  return Container(
                                       width: NavigationSvc.width(context) > 1500
                                           ? 800
                                           : min(NavigationSvc.width(context) / 2, 400),

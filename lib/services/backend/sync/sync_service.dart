@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:bluebubbles/helpers/ui/ui_helpers.dart';
 import 'package:bluebubbles/services/backend/interfaces/contact_interface.dart';
 import 'package:bluebubbles/services/backend/interfaces/sync_interface.dart';
-import 'package:bluebubbles/core/logger/logger.dart';
+import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:get/get.dart' hide Response;
 import 'package:get_it/get_it.dart';

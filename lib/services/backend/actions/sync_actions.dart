@@ -1,5 +1,5 @@
 import 'package:bluebubbles/services/services.dart';
-import 'package:bluebubbles/core/logger/logger.dart';
+import 'package:bluebubbles/utils/logger/logger.dart';
 
 class SyncActions {
   /// Performs an incremental sync of chats

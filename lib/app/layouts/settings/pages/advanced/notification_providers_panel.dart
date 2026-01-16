@@ -1,20 +1,19 @@
+import 'dart:convert';
 import 'dart:io';
 
-import 'package:bluebubbles/app/components/settings/settings.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/advanced/firebase_panel.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/advanced/unified_push.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/content/next_button.dart';
-import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart' as legacy;
+import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
-import 'package:bluebubbles/core/constants/app_constants.dart';
+import 'package:bluebubbles/helpers/types/constants.dart';
+import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class NotificationProvidersPanel extends StatefulWidget {
-  const NotificationProvidersPanel({super.key});
-
   @override
   State<StatefulWidget> createState() => _NotificationProvidersState();
 }
@@ -22,7 +21,7 @@ class NotificationProvidersPanel extends StatefulWidget {
 class _NotificationProvidersState extends OptimizedState<NotificationProvidersPanel> {
   @override
   Widget build(BuildContext context) {
-    return legacy.SettingsScaffold(
+    return SettingsScaffold(
         title: "Notification Providers",
         initialHeader: "Overview",
         iosSubtitle: iosSubtitle,
@@ -32,7 +31,7 @@ class _NotificationProvidersState extends OptimizedState<NotificationProvidersPa
         bodySlivers: [
           SliverList(
               delegate: SliverChildListDelegate(<Widget>[
-            BBSettingsSection(backgroundColor: tileColor, children: [
+            SettingsSection(backgroundColor: tileColor, children: [
               Padding(
                 padding: const EdgeInsets.only(bottom: 8, left: 15, top: 15, right: 15),
                 child: RichText(
@@ -64,18 +63,17 @@ class _NotificationProvidersState extends OptimizedState<NotificationProvidersPa
                 ),
               ),
             ]),
-            const BBSettingsHeader(text: "Providers"),
-            BBSettingsSection(
+            SettingsHeader(iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Providers"),
+            SettingsSection(
               backgroundColor: tileColor,
-
               children: [
-                BBSettingsTile(
+                SettingsTile(
                     title: "Google Firebase (FCM)",
                     subtitle: "Receive notifications using Google Services",
                     onTap: () async {
                       NavigationSvc.pushSettings(
                         context,
-                        const FirebasePanel(),
+                        FirebasePanel(),
                       );
                     },
                     leading: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
@@ -111,9 +109,9 @@ class _NotificationProvidersState extends OptimizedState<NotificationProvidersPa
                                               width: 33, fit: BoxFit.contain)))))))
                     ]),
                     trailing: const NextButton()),
-                if (Platform.isAndroid) const legacy.SettingsDivider(),
+                if (Platform.isAndroid) const SettingsDivider(),
                 if (Platform.isAndroid)
-                  Obx(() => BBSettingsSwitch(
+                  Obx(() => SettingsSwitch(
                         onChanged: (bool val) async {
                           SettingsSvc.settings.keepAppAlive.value = val;
                           SettingsSvc.settings.customHeaders.value = HttpSvc.headers;
@@ -125,17 +123,18 @@ class _NotificationProvidersState extends OptimizedState<NotificationProvidersPa
                             await MethodChannelSvc.invokeMethod("stop-foreground-service");
                           }
                         },
-                        value: SettingsSvc.settings.keepAppAlive.value,
+                        initialVal: SettingsSvc.settings.keepAppAlive.value,
                         title: "Background Service",
                         subtitle: "Keep an always-open socket connection to the server for notifications",
                         isThreeLine: true,
-                        leading: const BBSettingsIcon(
+                        backgroundColor: tileColor,
+                        leading: const SettingsLeadingIcon(
                             iosIcon: CupertinoIcons.bolt_badge_a_fill,
                             materialIcon: Icons.bolt,
-                            color: Colors.blueAccent),
+                            containerColor: Colors.blueAccent),
                       )),
-                const legacy.SettingsDivider(),
-                BBSettingsTile(
+                const SettingsDivider(),
+                SettingsTile(
                     title: "Unified Push",
                     subtitle: "Receive notifications using a custom distributor",
                     onTap: () async {
@@ -144,10 +143,10 @@ class _NotificationProvidersState extends OptimizedState<NotificationProvidersPa
                         UnifiedPushPanel(),
                       );
                     },
-                    leading: const BBSettingsIcon(
+                    leading: const SettingsLeadingIcon(
                       iosIcon: CupertinoIcons.bell_circle,
                       materialIcon: Icons.circle_notifications_outlined,
-                      color: Colors.purpleAccent,
+                      containerColor: Colors.purpleAccent,
                     ),
                     trailing: const NextButton()),
               ],

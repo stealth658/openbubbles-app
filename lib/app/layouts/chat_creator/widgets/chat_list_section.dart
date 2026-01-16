@@ -1,12 +1,11 @@
 import 'package:bluebubbles/app/layouts/chat_creator/chat_creator.dart';
 import 'package:bluebubbles/app/layouts/chat_creator/widgets/chat_creator_tile.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
-import 'package:bluebubbles/data/database/models.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:bluebubbles/app/components/base/base.dart';
 
 /// Extracted widget for the chat/contact list to isolate rebuilds
 /// Only rebuilds when filteredChats or filteredContacts changes
@@ -44,7 +43,7 @@ class ChatListSection extends StatelessWidget {
                       style: context.theme.textTheme.labelLarge,
                     ),
                   ),
-                  const BBLoadingIndicator(size: 15),
+                  buildProgressIndicator(context, size: 15),
                 ],
               );
             }

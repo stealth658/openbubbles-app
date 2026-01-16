@@ -2,14 +2,13 @@ import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/material.dart';
 
-@Deprecated('Use BBSettingsHeader from package:bluebubbles/app/app.dart instead')
 class SettingsHeader extends StatelessWidget {
   final TextStyle? iosSubtitle;
   final TextStyle? materialSubtitle;
   final String text;
   final double? height;
 
-  const SettingsHeader({super.key, 
+  SettingsHeader({
     required this.iosSubtitle,
     required this.materialSubtitle,
     required this.text,

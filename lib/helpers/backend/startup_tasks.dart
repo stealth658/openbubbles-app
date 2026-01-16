@@ -6,11 +6,11 @@ import 'dart:ui' show AppLifecycleState;
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:bluebubbles/env.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/data/database/database.dart';
+import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/services/isolates/global_isolate.dart';
 import 'package:bluebubbles/services/isolates/incremental_sync_isolate.dart';
 import 'package:bluebubbles/services/services.dart';
-import 'package:bluebubbles/core/logger/logger.dart';
+import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:in_app_review/in_app_review.dart';
@@ -139,7 +139,7 @@ class StartupTasks {
     Logger.info("All parallel services ready");
 
     Logger.info("Registering NavigatorService...");
-    GetIt.I.registerSingleton<NavigationService>(NavigationService());
+    GetIt.I.registerSingleton<NavigatorService>(NavigatorService());
 
     // Do not init here. We will init after authentication
     Logger.info("Registering ChatsService, SocketService, and NotificationsService...");

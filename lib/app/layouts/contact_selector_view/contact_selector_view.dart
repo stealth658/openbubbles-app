@@ -4,7 +4,7 @@ import 'package:bluebubbles/app/components/avatars/contact_avatar_widget.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
-import 'package:bluebubbles/data/database/models.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -12,7 +12,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_acrylic/window_effect.dart';
 import 'package:get/get.dart' hide Response;
 import 'package:slugify/slugify.dart';
-import 'package:bluebubbles/app/components/base/base.dart';
 
 class ContactSelectorView extends StatefulWidget {
   const ContactSelectorView({
@@ -115,8 +114,8 @@ class ContactSelectorViewState extends OptimizedState<ContactSelectorView> {
                         color: context.theme.colorScheme.outline,
                       ),
                       suffixIcon: searchController.text.isNotEmpty
-                          ? BBIconButton(
-                              icon: Icons.clear,
+                          ? IconButton(
+                              icon: const Icon(Icons.clear),
                               onPressed: () {
                                 searchController.clear();
                               },
@@ -152,7 +151,7 @@ class ContactSelectorViewState extends OptimizedState<ContactSelectorView> {
                                             style: context.theme.textTheme.labelLarge,
                                           ),
                                         ),
-                                        const BBLoadingIndicator(size: 15),
+                                        buildProgressIndicator(context, size: 15),
                                       ],
                                     );
                                   }

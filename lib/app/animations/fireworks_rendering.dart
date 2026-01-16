@@ -3,7 +3,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
 class Fireworks extends LeafRenderObjectWidget {
-  const Fireworks({
+  Fireworks({
     super.key,
     required this.controller,
   });

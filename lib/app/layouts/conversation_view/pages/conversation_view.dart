@@ -4,19 +4,19 @@ import 'package:bluebubbles/app/layouts/conversation_view/widgets/messages_view_
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/text_field/conversation_text_field.dart';
 import 'package:bluebubbles/app/wrappers/gradient_background_wrapper.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
-import 'package:bluebubbles/core/logger/logger.dart';
-import 'package:bluebubbles/data/models/native/chat.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/pages/messages_view.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/effects/screen_effects_widget.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
+import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_acrylic/window_effect.dart';
 import 'package:get/get.dart';
 
 class ConversationView extends StatefulWidget {
-  const ConversationView({
+  ConversationView({
     super.key,
     required this.chat,
     this.customService,

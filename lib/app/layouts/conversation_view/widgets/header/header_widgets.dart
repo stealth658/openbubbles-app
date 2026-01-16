@@ -4,7 +4,7 @@ import 'dart:typed_data';
 import 'package:bluebubbles/app/layouts/chat_creator/chat_creator.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/data/database/models.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -12,7 +12,7 @@ import 'package:get/get.dart';
 import 'package:universal_io/io.dart';
 
 class ManualMark extends StatefulWidget {
-  const ManualMark({super.key, required this.controller});
+  const ManualMark({required this.controller});
 
   final ConversationViewController controller;
 
@@ -134,7 +134,7 @@ class ManualMarkState extends OptimizedState<ManualMark> {
 }
 
 class ConnectionIndicator extends StatelessWidget {
-  const ConnectionIndicator({super.key});
+  const ConnectionIndicator();
 
   bool get noniOS => SettingsSvc.settings.skin.value != Skins.iOS;
 

@@ -1,10 +1,10 @@
 import "dart:math";
 
 import "package:bluebubbles/helpers/helpers.dart";
-import "package:bluebubbles/data/database/models.dart";
+import "package:bluebubbles/database/models.dart";
 import "package:bluebubbles/services/services.dart";
-import 'package:bluebubbles/core/utils/emoji_utils.dart';
-import "package:bluebubbles/core/utils/emoticons_utils.dart";
+import 'package:bluebubbles/utils/emoji.dart';
+import "package:bluebubbles/utils/emoticons.dart";
 import "package:collection/collection.dart";
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
@@ -391,9 +391,8 @@ class SpellCheckTextEditingController extends TextEditingController {
 
           final prevMistakeEnd = i == 0 ? 0 : mistakes[i - 1].endOffset - offset;
           final leadingNonMistakeText = chunk.substring(prevMistakeEnd, mistakeStart);
-          if (leadingNonMistakeText.isNotEmpty) {
+          if (leadingNonMistakeText.isNotEmpty)
             spans.addAll(buildAppleEmojiTextSpans(text: leadingNonMistakeText, style: style));
-          }
 
           spans.add(
             TextSpan(
@@ -416,9 +415,8 @@ class SpellCheckTextEditingController extends TextEditingController {
           if (i == mistakes.length - 1) {
             final nextMistakeStart = i == mistakes.length - 1 ? chunk.length : mistakes[i + 1].offset - offset;
             final trailingNonMistakeText = chunk.substring(mistakeEnd, nextMistakeStart);
-            if (trailingNonMistakeText.isNotEmpty) {
+            if (trailingNonMistakeText.isNotEmpty)
               spans.addAll(buildAppleEmojiTextSpans(text: trailingNonMistakeText, style: style));
-            }
           }
         }
         return TextSpan(children: spans);

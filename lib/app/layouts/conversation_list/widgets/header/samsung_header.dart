@@ -9,7 +9,7 @@ import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:get/get.dart';
 
 class SamsungHeader extends CustomStateful<ConversationListController> {
-  const SamsungHeader({super.key, required super.parentController});
+  const SamsungHeader({Key? key, required super.parentController});
 
   @override
   State<StatefulWidget> createState() => _SamsungHeaderState();
@@ -86,7 +86,7 @@ class _SamsungHeaderState extends CustomState<SamsungHeader, void, ConversationL
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             HeaderText(controller: controller, fontSize: 20),
-                            const SyncIndicator(),
+                            SyncIndicator(),
                           ],
                         ),
                       ),
@@ -95,7 +95,7 @@ class _SamsungHeaderState extends CustomState<SamsungHeader, void, ConversationL
                 ),
                 Align(
                   alignment: Alignment.bottomRight,
-                  child: SizedBox(
+                  child: Container(
                     height: (kToolbarHeight + (kIsDesktop ? 20 : 0)),
                     child: Align(
                       alignment: Alignment.center,
@@ -131,7 +131,7 @@ class _SamsungHeaderState extends CustomState<SamsungHeader, void, ConversationL
                                     onPressed: () async {
                                       NavigationSvc.pushLeft(
                                         context,
-                                        const SearchView(),
+                                        SearchView(),
                                       );
                                     },
                                     icon: Icon(
@@ -168,7 +168,7 @@ class _SamsungHeaderState extends CustomState<SamsungHeader, void, ConversationL
 }
 
 class ExpandedHeaderText extends CustomStateful<ConversationListController> {
-  const ExpandedHeaderText({super.key, required super.parentController});
+  const ExpandedHeaderText({Key? key, required super.parentController});
 
   @override
   State<StatefulWidget> createState() => _ExpandedHeaderTextState();

@@ -3,7 +3,7 @@ import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/setup/dialogs/connecting_dialog.dart';
 import 'package:bluebubbles/app/layouts/setup/dialogs/failed_to_scan_dialog.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
-import 'package:bluebubbles/data/database/models.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -12,7 +12,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart' hide Response;
 
 class ManualEntryDialog extends StatefulWidget {
-  const ManualEntryDialog({super.key, required this.onConnect, required this.onClose});
+  ManualEntryDialog({super.key, required this.onConnect, required this.onClose});
   final Function() onConnect;
   final Function() onClose;
 
@@ -183,9 +183,9 @@ class _ManualEntryDialogState extends OptimizedState<ManualEntryDialog> {
         ),
         actions: [
           TextButton(
-            onPressed: widget.onClose,
             child: Text("Cancel",
                 style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+            onPressed: widget.onClose,
           ),
           TextButton(
             child: Text("OK",

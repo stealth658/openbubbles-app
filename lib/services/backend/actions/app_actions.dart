@@ -1,4 +1,4 @@
-import 'package:bluebubbles/services/storage/settings_service.dart';
+import 'package:bluebubbles/services/backend/settings/settings_service.dart';
 
 class AppActions {
   static Future<Map<String, dynamic>> checkForUpdate() async {

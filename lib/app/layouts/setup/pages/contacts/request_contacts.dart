@@ -1,4 +1,4 @@
-import 'package:bluebubbles/app/components/dialogs/dialogs.dart';
+import 'package:bluebubbles/helpers/ui/theme_helpers.dart';
 import 'package:bluebubbles/app/layouts/setup/pages/page_template.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/material.dart';
@@ -7,8 +7,6 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:universal_io/io.dart';
 
 class RequestContacts extends StatelessWidget {
-  const RequestContacts({super.key});
-
   @override
   Widget build(BuildContext context) {
     return SetupPageTemplate(
@@ -41,14 +39,40 @@ class RequestContacts extends StatelessWidget {
         }
 
         if (!hasPermission) {
-          final bool confirmed = await BBAlertDialog.confirm(
+          return await showDialog(
             context: context,
-            title: "Notice",
-            message: "We weren't able to access your contacts.\n\nAre you sure you want to proceed without contacts?",
-            confirmLabel: "Yes",
-            cancelLabel: "No",
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: Text(
+                  "Notice",
+                  style: context.theme.textTheme.titleLarge,
+                ),
+                backgroundColor: context.theme.colorScheme.properSurface,
+                content: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text(
+                      "We weren't able to access your contacts.\n\nAre you sure you want to proceed without contacts?",
+                      style: context.theme.textTheme.bodyLarge),
+                ),
+                actions: <Widget>[
+                  TextButton(
+                    child: Text("No",
+                        style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+                    onPressed: () {
+                      Navigator.of(context).pop(false);
+                    },
+                  ),
+                  TextButton(
+                    child: Text("Yes",
+                        style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+                    onPressed: () {
+                      Navigator.of(context).pop(true);
+                    },
+                  ),
+                ],
+              );
+            },
           );
-          return confirmed;
         } else {
           return true;
         }

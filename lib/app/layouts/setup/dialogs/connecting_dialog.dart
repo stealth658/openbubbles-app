@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class ConnectingDialog extends StatefulWidget {
-  const ConnectingDialog({super.key, required this.onConnect});
+  ConnectingDialog({super.key, required this.onConnect});
   final Function(bool) onConnect;
 
   @override

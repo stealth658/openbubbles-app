@@ -1,15 +1,13 @@
 import 'dart:io';
 
-import 'package:bluebubbles/app/components/dialogs/dialogs.dart';
-import 'package:bluebubbles/app/components/settings/settings.dart' hide SquircleBorder;
 import 'package:bluebubbles/app/layouts/settings/pages/server/oauth_panel.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/content/next_button.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
-import 'package:bluebubbles/data/database/models.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/services.dart';
-import 'package:bluebubbles/core/logger/logger.dart';
+import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -17,8 +15,6 @@ import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class FirebasePanel extends StatefulWidget {
-  const FirebasePanel({super.key});
-
   @override
   State<StatefulWidget> createState() => _FirebasePanelState();
 }
@@ -37,7 +33,7 @@ class _FirebasePanelState extends OptimizedState<FirebasePanel> {
           SliverList(
             delegate: SliverChildListDelegate(
               <Widget>[
-                BBSettingsSection(
+                SettingsSection(
                   backgroundColor: tileColor,
                   children: [
                     Padding(
@@ -68,30 +64,34 @@ class _FirebasePanelState extends OptimizedState<FirebasePanel> {
                         ),
                       ),
                     ),
-                    BBSettingsTile(
+                    SettingsTile(
+                      backgroundColor: tileColor,
                       title: "Open Firebase Console",
                       subtitle:
                           "${kIsDesktop || kIsWeb ? 'Click' : 'Tap'} to open the Firebase Console. Login to view your Firebase Project.",
+                      isThreeLine: true,
                       onTap: () async {
                         await launchUrl(Uri(scheme: "https", host: "console.firebase.google.com"),
                             mode: LaunchMode.externalApplication);
                       },
-                      leading: const BBSettingsIcon(
+                      leading: const SettingsLeadingIcon(
                         iosIcon: CupertinoIcons.arrow_up_right,
                         materialIcon: Icons.arrow_outward_outlined,
+                        containerColor: Colors.blueAccent,
                       ),
                     ),
                   ],
                 ),
-                const BBSettingsHeader(
-                    text: "Firebase Cloud Messaging"),
-                BBSettingsSection(
+                SettingsHeader(
+                    iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Firebase Cloud Messaging"),
+                SettingsSection(
                   backgroundColor: tileColor,
                   children: [
                     Obx(() {
                       final _enabled = (kIsDesktop || SettingsSvc.settings.firstFcmRegisterDate.value != 0) &&
                           !SettingsSvc.fcmData.isNull;
-                      return BBSettingsTile(
+                      return SettingsTile(
+                          backgroundColor: tileColor,
                           title: "Firebase Status",
                           trailing: Row(mainAxisSize: MainAxisSize.min, children: [
                             Text(
@@ -100,10 +100,10 @@ class _FirebasePanelState extends OptimizedState<FirebasePanel> {
                                   .apply(color: context.theme.colorScheme.outline.withValues(alpha: 0.85)),
                             )
                           ]),
-                          leading: BBSettingsIcon(
+                          leading: SettingsLeadingIcon(
                             iosIcon: CupertinoIcons.settings,
                             materialIcon: Icons.settings,
-                            color: _enabled ? Colors.green : Colors.redAccent,
+                            containerColor: _enabled ? Colors.green : Colors.redAccent,
                           ));
                     }),
                     Obx(() {
@@ -119,7 +119,8 @@ class _FirebasePanelState extends OptimizedState<FirebasePanel> {
                           (SocketSvc.socket?.connected ?? false);
                       if (_enabled) return const SizedBox.shrink();
 
-                      return BBSettingsTile(
+                      return SettingsTile(
+                        backgroundColor: tileColor,
                         title: "Load Configurations from Server",
                         subtitle: 'Download Firebase configurations directly from your server.',
                         trailing: Obx(() => SettingsSvc.settings.skin.value != Skins.Material
@@ -131,7 +132,7 @@ class _FirebasePanelState extends OptimizedState<FirebasePanel> {
                                 size: 18,
                               )
                             : const SizedBox.shrink()),
-                        leading: const BBSettingsIcon(
+                        leading: const SettingsLeadingIcon(
                           iosIcon: CupertinoIcons.cloud_download,
                           materialIcon: Icons.download,
                         ),
@@ -153,36 +154,50 @@ class _FirebasePanelState extends OptimizedState<FirebasePanel> {
                             }
                           });
 
-                          // Show a custom dialog with reactive content
-                          BBCustomDialog.show(
+                          showDialog(
                             context: context,
-                            config: const BBCustomDialogConfig(barrierDismissible: false),
-                            title: "Firebase Configurations",
-                            content: Obx(() {
-                              return Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  if (isLoading.value)
-                                    const SizedBox(
-                                      height: 70,
-                                      width: 70,
-                                      child: Center(
-                                        child: CircularProgressIndicator(),
-                                      ),
-                                    )
-                                  else
-                                    Text(error.value ?? "Successfully loaded Firebase Configurations!"),
-                                  if (!isLoading.value) ...[
-                                    const SizedBox(height: 20),
-                                    ElevatedButton(
-                                      onPressed: () => Navigator.of(context).pop(),
-                                      child: const Text("OK"),
-                                    ),
-                                  ],
-                                ],
-                              );
-                            }),
-                            actions: const [],
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                  backgroundColor: context.theme.colorScheme.properSurface,
+                                  title: Obx(() => Text(
+                                      error.value != null
+                                          ? "Error!"
+                                          : isLoading.value
+                                              ? "Loading..."
+                                              : "Done!",
+                                      style: context.theme.textTheme.titleLarge)),
+                                  content: Obx(() {
+                                    if (isLoading.value) {
+                                      return Container(
+                                        height: 70,
+                                        width: 70,
+                                        child: Center(
+                                          child: CircularProgressIndicator(
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(context.theme.colorScheme.primary),
+                                          ),
+                                        ),
+                                      );
+                                    } else {
+                                      return Text(
+                                        error.value ?? "Successfully loaded Firebase Configurations!",
+                                        style: context.theme.textTheme.bodyLarge,
+                                      );
+                                    }
+                                  }),
+                                  actions: <Widget>[
+                                    Obx(() => (isLoading.value == true)
+                                        ? const SizedBox.shrink()
+                                        : TextButton(
+                                            child: Text("Close",
+                                                style: context.theme.textTheme.bodyLarge!
+                                                    .copyWith(color: context.theme.colorScheme.primary)),
+                                            onPressed: () {
+                                              Navigator.of(context).pop();
+                                            },
+                                          )),
+                                  ]);
+                            },
                           );
 
                           await fdb.fetchFirebaseConfig();
@@ -201,7 +216,7 @@ class _FirebasePanelState extends OptimizedState<FirebasePanel> {
                           SettingsSvc.settings.firstFcmRegisterDate.value != 0 && !SettingsSvc.fcmData.isNull;
                       if (_enabled && !isSnap) return const SizedBox.shrink();
 
-                      return BBSettingsTile(
+                      return SettingsTile(
                           leading: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                             Obx(() => Material(
                                 shape: SettingsSvc.settings.skin.value == Skins.Samsung
@@ -238,8 +253,9 @@ class _FirebasePanelState extends OptimizedState<FirebasePanel> {
                           ]),
                           title: "Load Configurations from Google",
                           subtitle: "Sign in with Google to load your Firebase configurations.",
+                          backgroundColor: tileColor,
                           onTap: () {
-                            NavigationSvc.pushSettings(context, const OauthPanel());
+                            NavigationSvc.pushSettings(context, OauthPanel());
                           },
                           trailing: const NextButton());
                     }),
@@ -256,7 +272,8 @@ class _FirebasePanelState extends OptimizedState<FirebasePanel> {
                             SettingsSvc.settings.firstFcmRegisterDate.value != 0 && !SettingsSvc.fcmData.isNull;
                         if (!_enabled) return const SizedBox.shrink();
 
-                        return BBSettingsTile(
+                        return SettingsTile(
+                          backgroundColor: tileColor,
                           title: "Re-register Device with Server",
                           trailing: Obx(() => SettingsSvc.settings.skin.value != Skins.Material
                               ? Icon(
@@ -267,7 +284,7 @@ class _FirebasePanelState extends OptimizedState<FirebasePanel> {
                                   size: 18,
                                 )
                               : const SizedBox.shrink()),
-                          leading: const BBSettingsIcon(
+                          leading: const SettingsLeadingIcon(
                             iosIcon: CupertinoIcons.device_phone_portrait,
                             materialIcon: Icons.devices,
                           ),
@@ -287,38 +304,41 @@ class _FirebasePanelState extends OptimizedState<FirebasePanel> {
                 Obx(() {
                   final _enabled = SettingsSvc.settings.firstFcmRegisterDate.value != 0 && !SettingsSvc.fcmData.isNull;
                   if (!_enabled) return const SizedBox.shrink();
-                  return const BBSettingsHeader(text: "Project Details");
+                  return SettingsHeader(
+                      iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Project Details");
                 }),
-                BBSettingsSection(
+                SettingsSection(
                   backgroundColor: tileColor,
                   children: [
                     Obx(() {
                       final _enabled =
                           SettingsSvc.settings.firstFcmRegisterDate.value != 0 && !SettingsSvc.fcmData.isNull;
                       if (!_enabled) return const SizedBox.shrink();
-                      return Padding(
-                          padding: const EdgeInsets.only(bottom: 8.0, left: 22, top: 8.0, right: 15),
-                          child: SelectableText.rich(
-                            TextSpan(children: [
-                              const TextSpan(text: "Project ID: ", style: TextStyle(fontWeight: FontWeight.bold)),
-                              TextSpan(text: SettingsSvc.fcmData.projectID!),
-                              const TextSpan(text: "\n"),
-                              const TextSpan(text: "App ID: ", style: TextStyle(fontWeight: FontWeight.bold)),
-                              TextSpan(text: SettingsSvc.fcmData.applicationID!),
-                              const TextSpan(text: "\n"),
-                              const TextSpan(text: "Firebase URL: ", style: TextStyle(fontWeight: FontWeight.bold)),
-                              TextSpan(text: SettingsSvc.fcmData.firebaseURL ?? "N/A"),
-                            ]),
-                          ));
+                      return Container(
+                          child: Padding(
+                              padding: const EdgeInsets.only(bottom: 8.0, left: 22, top: 8.0, right: 15),
+                              child: SelectableText.rich(
+                                TextSpan(children: [
+                                  const TextSpan(text: "Project ID: ", style: TextStyle(fontWeight: FontWeight.bold)),
+                                  TextSpan(text: SettingsSvc.fcmData.projectID!),
+                                  const TextSpan(text: "\n"),
+                                  const TextSpan(text: "App ID: ", style: TextStyle(fontWeight: FontWeight.bold)),
+                                  TextSpan(text: SettingsSvc.fcmData.applicationID!),
+                                  const TextSpan(text: "\n"),
+                                  const TextSpan(text: "Firebase URL: ", style: TextStyle(fontWeight: FontWeight.bold)),
+                                  TextSpan(text: SettingsSvc.fcmData.firebaseURL ?? "N/A"),
+                                ]),
+                              )));
                     }),
                   ],
                 ),
                 Obx(() {
                   final _enabled = SettingsSvc.settings.firstFcmRegisterDate.value != 0 && !SettingsSvc.fcmData.isNull;
                   if (!_enabled) return const SizedBox.shrink();
-                  return const BBSettingsHeader(text: "Danger Zone");
+                  return SettingsHeader(
+                      iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Danger Zone");
                 }),
-                BBSettingsSection(
+                SettingsSection(
                   backgroundColor: tileColor,
                   children: [
                     Obx(() {
@@ -326,7 +346,8 @@ class _FirebasePanelState extends OptimizedState<FirebasePanel> {
                           SettingsSvc.settings.firstFcmRegisterDate.value != 0 && !SettingsSvc.fcmData.isNull;
                       if (!_enabled) return const SizedBox.shrink();
 
-                      return BBSettingsTile(
+                      return SettingsTile(
+                          backgroundColor: tileColor,
                           title: "Clear Configurations",
                           trailing: Row(mainAxisSize: MainAxisSize.min, children: [
                             Text(
@@ -335,37 +356,56 @@ class _FirebasePanelState extends OptimizedState<FirebasePanel> {
                                   .apply(color: context.theme.colorScheme.outline.withValues(alpha: 0.85)),
                             )
                           ]),
-                          leading: const BBSettingsIcon(
+                          leading: const SettingsLeadingIcon(
                             iosIcon: CupertinoIcons.trash,
                             materialIcon: Icons.delete,
-                            color: Colors.redAccent,
+                            containerColor: Colors.redAccent,
                           ),
-                          onTap: () async {
-                            final confirmed = await BBAlertDialog.confirm(
+                          onTap: () {
+                            showDialog(
                               context: context,
-                              title: "Are You Sure?",
-                              message:
-                                  'This will remove all Firebase configurations from the app. You will no longer receive notifications or Server URL updates from Firebase and you will need to re-register your device if you want to use Firebase again. This will also close the app. Are you sure you want to continue?',
-                              confirmLabel: "Yes",
-                              cancelLabel: "Cancel",
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                    backgroundColor: context.theme.colorScheme.properSurface,
+                                    title: Text("Are You Sure?", style: context.theme.textTheme.titleLarge),
+                                    content: Text(
+                                      'This will remove all Firebase configurations from the app. You will no longer receive notifications or Server URL updates from Firebase and you will need to re-register your device if you want to use Firebase again. This will also close the app. Are you sure you want to continue?',
+                                      style: context.theme.textTheme.bodyLarge,
+                                    ),
+                                    actions: <Widget>[
+                                      TextButton(
+                                        child: Text("Cancel",
+                                            style: context.theme.textTheme.bodyLarge!
+                                                .copyWith(color: context.theme.colorScheme.primary)),
+                                        onPressed: () {
+                                          Navigator.of(context).pop();
+                                        },
+                                      ),
+                                      TextButton(
+                                        child: Text("Yes",
+                                            style: context.theme.textTheme.bodyLarge!
+                                                .copyWith(color: context.theme.colorScheme.primary)),
+                                        onPressed: () async {
+                                          // Clear the FCM data from the database, shared preferences, and locally
+                                          await FCMData.deleteFcmData();
+
+                                          // Delete the Firebase FCM token
+                                          try {
+                                            if (FirebaseSvc.token != null) {
+                                              await MethodChannelSvc.invokeMethod("firebase-delete-token");
+                                            }
+                                          } catch (e, s) {
+                                            Logger.error("Failed to delete Firebase FCM token", error: e, trace: s);
+                                          }
+
+                                          SettingsSvc.settings.firstFcmRegisterDate.value = 0;
+                                          await SettingsSvc.settings.saveOneAsync('firstFcmRegisterDate');
+                                          exit(0);
+                                        },
+                                      ),
+                                    ]);
+                              },
                             );
-                            if (confirmed == true) {
-                              // Clear the FCM data from the database, shared preferences, and locally
-                              await FCMData.deleteFcmData();
-
-                              // Delete the Firebase FCM token
-                              try {
-                                if (FirebaseSvc.token != null) {
-                                  await MethodChannelSvc.invokeMethod("firebase-delete-token");
-                                }
-                              } catch (e, s) {
-                                Logger.error("Failed to delete Firebase FCM token", error: e, trace: s);
-                              }
-
-                              SettingsSvc.settings.firstFcmRegisterDate.value = 0;
-                              await SettingsSvc.settings.saveOneAsync('firstFcmRegisterDate');
-                              exit(0);
-                            }
                           });
                     }),
                   ],

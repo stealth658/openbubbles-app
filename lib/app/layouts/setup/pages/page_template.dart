@@ -8,7 +8,7 @@ import 'package:shimmer/shimmer.dart';
 import 'package:simple_animations/simple_animations.dart';
 
 class SetupPageTemplate extends StatelessWidget {
-  SetupPageTemplate({super.key, 
+  SetupPageTemplate({
     required this.title,
     required this.subtitle,
     this.aboveTitle,
@@ -113,7 +113,7 @@ class PageContent extends StatelessWidget {
           padding: const EdgeInsets.all(8.0),
           child: Align(
             alignment: Alignment.centerLeft,
-            child: SizedBox(
+            child: Container(
               width: context.width * 2 / 3,
               child: Text(title,
                   style: context.theme.textTheme.displayMedium!

@@ -1,6 +1,6 @@
-import 'package:bluebubbles/app/components/settings/settings.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/advanced/redacted_mode_panel.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/content/next_button.dart';
+import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -18,7 +18,8 @@ class RedactedModeTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() => BBSettingsTile(
+    return Obx(() => SettingsTile(
+          backgroundColor: tileColor,
           title: "Redacted Mode",
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
@@ -36,14 +37,14 @@ class RedactedModeTile extends StatelessWidget {
           onTap: () async {
             NavigationSvc.pushAndRemoveSettingsUntil(
               context,
-              const RedactedModePanel(),
+              RedactedModePanel(),
               (Route route) => route.isFirst,
             );
           },
-          leading: BBSettingsIcon(
+          leading: SettingsLeadingIcon(
             iosIcon: CupertinoIcons.wand_stars,
             materialIcon: Icons.auto_fix_high,
-            color: SettingsSvc.settings.redactedMode.value ? Colors.green : Colors.redAccent,
+            containerColor: SettingsSvc.settings.redactedMode.value ? Colors.green : Colors.redAccent,
           ),
         ));
   }

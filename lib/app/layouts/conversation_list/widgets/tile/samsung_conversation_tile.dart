@@ -1,17 +1,16 @@
 import 'package:async_task/async_task_extension.dart';
-import 'package:bluebubbles/data/database/database.dart';
-import 'package:bluebubbles/data/models/native/message.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/tile/conversation_tile.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
-import 'package:bluebubbles/objectbox.g.dart';
+import 'package:bluebubbles/database/database.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class SamsungConversationTile extends CustomStateful<ConversationTileController> {
-  const SamsungConversationTile({super.key, required super.parentController});
+  const SamsungConversationTile({Key? key, required super.parentController});
 
   @override
   State<StatefulWidget> createState() => _SamsungConversationTileState();
@@ -104,7 +103,7 @@ class _SamsungConversationTileState extends CustomState<SamsungConversationTile,
 }
 
 class SamsungTrailing extends CustomStateful<ConversationTileController> {
-  const SamsungTrailing({super.key, required super.parentController});
+  const SamsungTrailing({Key? key, required super.parentController});
 
   @override
   State<StatefulWidget> createState() => _SamsungTrailingState();
@@ -243,7 +242,7 @@ class _SamsungTrailingState extends CustomState<SamsungTrailing, void, Conversat
 }
 
 class UnreadIcon extends CustomStateful<ConversationTileController> {
-  const UnreadIcon({super.key, required super.parentController});
+  const UnreadIcon({Key? key, required super.parentController});
 
   @override
   State<StatefulWidget> createState() => _UnreadIconState();

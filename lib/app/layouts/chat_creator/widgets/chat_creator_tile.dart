@@ -2,9 +2,9 @@ import 'package:bluebubbles/app/components/avatars/contact_avatar_group_widget.d
 import 'package:bluebubbles/app/components/avatars/contact_avatar_widget.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/data/database/models.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
-import 'package:bluebubbles/core/utils/string_utils.dart';
+import 'package:bluebubbles/utils/string_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -32,6 +32,36 @@ class ChatCreatorTile extends StatefulWidget {
 }
 
 class _ChatCreatorTileState extends OptimizedState<ChatCreatorTile> {
+  String? _formattedPhone;
+  bool _isFormatting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.format && !_isFormatting) {
+      _formatPhoneNumber();
+    }
+  }
+
+  @override
+  void didUpdateWidget(ChatCreatorTile oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.format && widget.subtitle != oldWidget.subtitle && !_isFormatting) {
+      _formatPhoneNumber();
+    }
+  }
+
+  Future<void> _formatPhoneNumber() async {
+    _isFormatting = true;
+    final formatted = await formatPhoneNumber(cleansePhoneNumber(widget.subtitle));
+    if (mounted) {
+      setState(() {
+        _formattedPhone = formatted;
+        _isFormatting = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return ListTile(
@@ -50,7 +80,7 @@ class _ChatCreatorTileState extends OptimizedState<ChatCreatorTile> {
           overflow: TextOverflow.ellipsis,
         ),
         subtitle: Text(
-          widget.format ? (formatPhoneNumber(cleansePhoneNumber(widget.subtitle))) : widget.subtitle,
+          widget.format ? (_formattedPhone ?? widget.subtitle) : widget.subtitle,
           style: context.theme.textTheme.bodySmall!.copyWith(color: context.theme.colorScheme.outline),
         ),
         leading: Padding(

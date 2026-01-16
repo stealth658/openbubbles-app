@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
 class Laser extends LeafRenderObjectWidget {
-  const Laser({
+  Laser({
     super.key,
     required this.controller,
   });

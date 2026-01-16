@@ -215,8 +215,8 @@ class CupertinoAlertDialog extends StatelessWidget {
     );
     if (actions.isNotEmpty) {
       actionSection = _CupertinoAlertActionSection(
-        scrollController: actionScrollController,
         children: actions,
+        scrollController: actionScrollController,
       );
     }
 
@@ -1205,7 +1205,7 @@ class CupertinoDialogAction extends StatelessWidget {
 //
 // See [_RenderCupertinoDialogActions] for specific layout policy details.
 class _CupertinoDialogActionsRenderWidget extends MultiChildRenderObjectWidget {
-  const _CupertinoDialogActionsRenderWidget({
+  _CupertinoDialogActionsRenderWidget({
     required List<Widget> actionButtons,
     double dividerThickness = 0.0,
   })  : _dividerThickness = dividerThickness,

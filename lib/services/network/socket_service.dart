@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:bluebubbles/helpers/backend/settings_helpers.dart';
-import 'package:bluebubbles/core/utils/crypto_utils.dart';
-import 'package:bluebubbles/core/logger/logger.dart';
+import 'package:bluebubbles/utils/crypto_utils.dart';
+import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';

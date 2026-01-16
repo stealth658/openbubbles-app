@@ -5,7 +5,7 @@ import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/misc/t
 import 'package:bluebubbles/app/layouts/setup/pages/page_template.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/data/database/models.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
@@ -15,8 +15,6 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:simple_animations/simple_animations.dart';
 
 class WelcomePage extends StatefulWidget {
-  const WelcomePage({super.key});
-
   @override
   State<WelcomePage> createState() => _WelcomePageState();
 }

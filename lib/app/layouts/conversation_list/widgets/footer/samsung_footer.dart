@@ -1,12 +1,12 @@
 import 'package:bluebubbles/app/layouts/conversation_list/pages/conversation_list.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
-import 'package:bluebubbles/data/models/native/chat.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class SamsungFooter extends CustomStateful<ConversationListController> {
-  const SamsungFooter({super.key, required super.parentController});
+  const SamsungFooter({Key? key, required super.parentController});
 
   @override
   State<StatefulWidget> createState() => _SamsungFooterState();

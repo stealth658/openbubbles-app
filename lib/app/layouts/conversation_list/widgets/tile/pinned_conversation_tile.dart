@@ -2,9 +2,6 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/typing/typing_indicator.dart';
-import 'package:bluebubbles/data/database/database.dart';
-import 'package:bluebubbles/data/models/native/chat.dart';
-import 'package:bluebubbles/data/models/native/handle.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/dialogs/conversation_peek_view.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/pages/conversation_list.dart';
@@ -13,7 +10,8 @@ import 'package:bluebubbles/app/layouts/conversation_list/widgets/tile/pinned_ti
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/reaction/reaction.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/app/components/avatars/contact_avatar_group_widget.dart';
-import 'package:bluebubbles/objectbox.g.dart';
+import 'package:bluebubbles/database/database.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -171,7 +169,7 @@ class _PinnedConversationTileState extends CustomState<PinnedConversationTile, v
 }
 
 class UnreadIcon extends CustomStateful<ConversationTileController> {
-  const UnreadIcon({super.key, required this.width, required super.parentController});
+  const UnreadIcon({Key? key, required this.width, required super.parentController});
 
   final double width;
 
@@ -213,7 +211,7 @@ class _UnreadIconState extends CustomState<UnreadIcon, void, ConversationTileCon
 }
 
 class MuteIcon extends CustomStateful<ConversationTileController> {
-  const MuteIcon({super.key, required this.width, required super.parentController});
+  const MuteIcon({Key? key, required this.width, required super.parentController});
 
   final double width;
 
@@ -266,7 +264,7 @@ class _MuteIconState extends CustomState<MuteIcon, void, ConversationTileControl
 class ChatTitle extends CustomStateful<ConversationTileController> {
   final double width;
 
-  const ChatTitle({super.key, required this.width, required super.parentController});
+  const ChatTitle({Key? key, required this.width, required super.parentController});
 
   @override
   State<StatefulWidget> createState() => _ChatTitleState();
@@ -387,7 +385,7 @@ class PinnedIndicators extends StatelessWidget {
   final ConversationTileController controller;
   final double width;
 
-  const PinnedIndicators({super.key, required this.width, required this.controller});
+  PinnedIndicators({required this.width, required this.controller});
 
   @override
   Widget build(BuildContext context) {
@@ -443,7 +441,7 @@ class PinnedIndicators extends StatelessWidget {
 }
 
 class ReactionIcon extends CustomStateful<ConversationTileController> {
-  const ReactionIcon({super.key, required this.width, required super.parentController});
+  const ReactionIcon({Key? key, required this.width, required super.parentController});
 
   final double width;
 

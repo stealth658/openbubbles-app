@@ -13,7 +13,7 @@ import 'package:bluebubbles/app/components/circle_progress_bar.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/helpers/ui/attributed_body_helpers.dart';
-import 'package:bluebubbles/data/database/models.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -22,7 +22,7 @@ import 'package:intl/intl.dart';
 import 'package:tuple/tuple.dart';
 
 class AttachmentHolder extends CustomStateful<MessageWidgetController> {
-  const AttachmentHolder({
+  AttachmentHolder({
     super.key,
     required super.parentController,
     required this.message,
@@ -243,12 +243,6 @@ class _AttachmentHolderState extends CustomState<AttachmentHolder, void, Message
                                                   style: TextButton.styleFrom(
                                                     visualDensity: VisualDensity.compact,
                                                   ),
-                                                  onPressed: progress.item2.value < 1
-                                                      ? () {
-                                                          MessageHandlerSvc.latestCancelToken
-                                                              ?.cancel("User cancelled send.");
-                                                        }
-                                                      : null,
                                                   child: progress.item2.value < 1
                                                       ? Text("Cancel",
                                                           style: context.theme.textTheme.bodyLarge!
@@ -256,6 +250,12 @@ class _AttachmentHolderState extends CustomState<AttachmentHolder, void, Message
                                                       : Text("Waiting for iMessage...",
                                                           style: context.theme.textTheme.bodyLarge!,
                                                           textAlign: TextAlign.center),
+                                                  onPressed: progress.item2.value < 1
+                                                      ? () {
+                                                          MessageHandlerSvc.latestCancelToken
+                                                              ?.cancel("User cancelled send.");
+                                                        }
+                                                      : null,
                                                 ),
                                             ],
                                           );
@@ -303,17 +303,17 @@ class _AttachmentHolderState extends CustomState<AttachmentHolder, void, Message
                                         style: TextButton.styleFrom(
                                           visualDensity: VisualDensity.compact,
                                         ),
-                                        onPressed: _content.item2.value < 1
-                                            ? () {
-                                                MessageHandlerSvc.latestCancelToken?.cancel("User cancelled send.");
-                                              }
-                                            : null,
                                         child: _content.item2.value < 1
                                             ? Text("Cancel",
                                                 style: context.theme.textTheme.bodyLarge!
                                                     .copyWith(color: context.theme.colorScheme.primary))
                                             : Text("Waiting for iMessage...",
                                                 style: context.theme.textTheme.bodyLarge!, textAlign: TextAlign.center),
+                                        onPressed: _content.item2.value < 1
+                                            ? () {
+                                                MessageHandlerSvc.latestCancelToken?.cancel("User cancelled send.");
+                                              }
+                                            : null,
                                       ),
                                   ],
                                 );

@@ -1,4 +1,3 @@
-import 'package:bluebubbles/app/components/dialogs/dialogs.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -19,9 +18,12 @@ Future<DateTime?> showTimeframePicker(String title, BuildContext context,
 
   final ScrollController controller = ScrollController();
 
-  // Create a list of row widgets where the left side of the row is the "relative" timeframe
-  // and the right side is the raw date range
-  List<Widget> selections = tfSelections.entries.map((entry) {
+  return await showDialog<DateTime>(
+    context: context,
+    builder: (BuildContext dialogContext) {
+      // Create a list of row widgets where the left side of the row is the "relative" timeframe
+      // and the right side is the raw date range
+      List<Widget> selections = tfSelections.entries.map((entry) {
         late DateTime tmpDate;
 
         if (presetsAhead) {
@@ -62,31 +64,31 @@ Future<DateTime?> showTimeframePicker(String title, BuildContext context,
 
         return InkWell(
             onTap: () {
-              Navigator.of(context).pop(tmpDate);
+              Navigator.of(dialogContext).pop(tmpDate);
             },
             child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 10.0),
                 decoration: BoxDecoration(
-                    border: Border(bottom: BorderSide(color: context.theme.dividerColor.withValues(alpha: 0.2)))),
+                    border: Border(bottom: BorderSide(color: dialogContext.theme.dividerColor.withValues(alpha: 0.2)))),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Row(
                       children: [
-                        Icon(icon, color: context.theme.colorScheme.secondary),
+                        Icon(icon, color: dialogContext.theme.colorScheme.secondary),
                         Container(
                           constraints: const BoxConstraints(minWidth: 5),
                         ),
                         Text("${entry.key}${(selectionSuffix != null ? " $selectionSuffix" : "")}",
-                            style: context.theme.textTheme.bodyLarge!.copyWith(fontWeight: FontWeight.w400)),
+                            style: dialogContext.theme.textTheme.bodyLarge!.copyWith(fontWeight: FontWeight.w400)),
                       ],
                     ),
                     Container(
                       constraints: const BoxConstraints(minWidth: 20),
                     ),
                     Text(dateStr,
-                        style: context.theme.textTheme.bodyLarge!
-                            .copyWith(color: context.theme.colorScheme.secondary),
+                        style: dialogContext.theme.textTheme.bodyLarge!
+                            .copyWith(color: dialogContext.theme.colorScheme.secondary),
                         overflow: TextOverflow.fade),
                   ],
                 )));
@@ -96,14 +98,14 @@ Future<DateTime?> showTimeframePicker(String title, BuildContext context,
       selections.add(InkWell(
           onTap: () async {
             DateTime? finalDate = await showDatePicker(
-                context: context,
+                context: dialogContext,
                 initialDate: DateTime.now().toLocal(),
                 firstDate: DateTime.now().toLocal().subtract(const Duration(days: 365)),
                 lastDate: DateTime.now().toLocal().add(const Duration(days: 365)));
 
             // If the user selected a date and the time picker is enabled, show the time picker
             if (showHourPicker && finalDate != null) {
-              final messageTime = await showTimePicker(context: context, initialTime: TimeOfDay.now());
+              final messageTime = await showTimePicker(context: dialogContext, initialTime: TimeOfDay.now());
               if (messageTime != null) {
                 finalDate =
                     DateTime(finalDate.year, finalDate.month, finalDate.day, messageTime.hour, messageTime.minute);
@@ -123,10 +125,10 @@ Future<DateTime?> showTimeframePicker(String title, BuildContext context,
               }
 
               if (finalDate != null) {
-                Navigator.of(context).pop(finalDate);
+                Navigator.of(dialogContext).pop(finalDate);
               }
             } else if (finalDate != null) {
-              Navigator.of(context).pop(finalDate);
+              Navigator.of(dialogContext).pop(finalDate);
             }
           },
           child: Container(
@@ -136,36 +138,41 @@ Future<DateTime?> showTimeframePicker(String title, BuildContext context,
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.edit_calendar_outlined, color: context.theme.colorScheme.secondary),
+                      Icon(Icons.edit_calendar_outlined, color: dialogContext.theme.colorScheme.secondary),
                       Container(
                         constraints: const BoxConstraints(minWidth: 5),
                       ),
                       Padding(
                           padding: const EdgeInsets.only(top: 2),
                           child: Text("Custom Date",
-                              style: context.theme.textTheme.bodyLarge!.copyWith(fontWeight: FontWeight.w400))),
+                              style: dialogContext.theme.textTheme.bodyLarge!.copyWith(fontWeight: FontWeight.w400))),
                     ],
                   ),
                   Icon(
                     Icons.arrow_forward_ios,
                     size: 14,
-                    color: context.theme.colorScheme.secondary,
+                    color: dialogContext.theme.colorScheme.secondary,
                   )
                 ],
               ))));
 
-  return await BBCustomDialog.show<DateTime>(
-    context: context,
-    title: title,
-    content: Scrollbar(
-        thumbVisibility: true,
-        controller: controller,
-        radius: const Radius.circular(10.0),
-        child: SingleChildScrollView(
+      return AlertDialog(
+        title: Text(
+          title,
+          style: dialogContext.theme.textTheme.titleLarge,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
+        content: Scrollbar(
+            thumbVisibility: true,
             controller: controller,
-            child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: Column(mainAxisSize: MainAxisSize.min, children: selections)))),
-    actions: const [],
+            radius: const Radius.circular(10.0),
+            child: SingleChildScrollView(
+                controller: controller,
+                child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                    child: Column(mainAxisSize: MainAxisSize.min, children: selections)))),
+        backgroundColor: dialogContext.theme.colorScheme.properSurface,
+      );
+    },
   );
 }

@@ -1,13 +1,12 @@
-import 'package:bluebubbles/core/constants/app_constants.dart';
+import 'package:bluebubbles/helpers/types/constants.dart';
 import 'package:bluebubbles/helpers/ui/theme_helpers.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-@Deprecated('Use BBSettingsDropdown from package:bluebubbles/app/app.dart instead')
 class SettingsOptions<T extends Object> extends StatelessWidget {
-  const SettingsOptions({
+  SettingsOptions({
     super.key,
     required this.onChanged,
     required this.options,

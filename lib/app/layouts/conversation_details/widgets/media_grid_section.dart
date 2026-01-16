@@ -1,7 +1,9 @@
-import 'package:bluebubbles/app/app.dart';
+import 'dart:math';
+
 import 'package:bluebubbles/app/layouts/conversation_details/widgets/media_gallery_card.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
-import 'package:bluebubbles/data/database/models.dart';
+import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -44,11 +46,7 @@ class _MediaGridSectionState extends OptimizedState<MediaGridSection> {
     return SliverMainAxisGroup(
       slivers: [
         SliverPadding(
-          padding: const EdgeInsets.only(
-            top: BBSpacing.lg,
-            bottom: BBSpacing.xs,
-            left: BBSpacing.lg,
-          ),
+          padding: const EdgeInsets.only(top: 20, bottom: 5, left: 20),
           sliver: SliverToBoxAdapter(
             child: Text(
               "IMAGES & VIDEOS",
@@ -59,43 +57,51 @@ class _MediaGridSectionState extends OptimizedState<MediaGridSection> {
           ),
         ),
         if (widget.isLoading)
-          const SliverToBoxAdapter(
+          SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.symmetric(
-                vertical: BBSpacing.lg,
-                horizontal: BBSpacing.lg,
-              ),
+              padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 20.0),
               child: Center(
-                child: BBLoadingIndicator(size: 24),
+                child: buildProgressIndicator(context, size: 24),
               ),
             ),
           )
         else if (widget.media.isEmpty)
           SliverToBoxAdapter(
-            child: BBEmptyState(
-              message: "No images or videos",
-              icon: iOS ? CupertinoIcons.photo : Icons.photo,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 20.0),
+              child: Center(
+                child: Text(
+                  "No images or videos",
+                  style: context.theme.textTheme.bodyMedium!.copyWith(
+                    color: context.theme.colorScheme.outline,
+                  ),
+                ),
+              ),
             ),
           )
         else
           SliverPadding(
-            padding: BBMediaGrid.getGridPadding(SettingsSvc.settings.skin.value),
+            padding: EdgeInsets.only(
+              left: SettingsSvc.settings.skin.value == Skins.iOS ? 20 : 10,
+              right: SettingsSvc.settings.skin.value == Skins.iOS ? 20 : 10,
+              top: 10,
+              bottom: 10,
+            ),
             sliver: SliverGrid(
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: BBMediaGrid.calculateCrossAxisCount(context),
-                mainAxisSpacing: BBMediaGrid.mainAxisSpacing,
-                crossAxisSpacing: BBMediaGrid.crossAxisSpacing,
+                crossAxisCount: max(2, NavigationSvc.width(context) ~/ 200),
+                mainAxisSpacing: 10,
+                crossAxisSpacing: 10,
               ),
               delegate: SliverChildBuilderDelegate(
                 (context, int index) {
-                  final skin = SettingsSvc.settings.skin.value;
                   return Obx(() => AnimatedContainer(
                         duration: const Duration(milliseconds: 250),
                         margin: EdgeInsets.all(
-                          widget.selected.contains(widget.media[index].guid) ? BBSpacing.sm : 0,
+                          widget.selected.contains(widget.media[index].guid) ? 10 : 0,
                         ),
                         decoration: BoxDecoration(
-                          borderRadius: BBRadius.largeBR(skin),
+                          borderRadius: BorderRadius.circular(20),
                         ),
                         clipBehavior: Clip.antiAlias,
                         child: GestureDetector(

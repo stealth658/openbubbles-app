@@ -6,7 +6,7 @@ import 'package:bluebubbles/app/layouts/fullscreen_media/fullscreen_holder.dart'
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/data/database/models.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/cupertino.dart';
@@ -21,7 +21,7 @@ class VideoPlayer extends StatefulWidget {
   final Attachment attachment;
   final bool isFromMe;
 
-  const VideoPlayer(
+  VideoPlayer(
       {super.key, required this.file, required this.attachment, required this.controller, required this.isFromMe});
 
   final ConversationViewController? controller;

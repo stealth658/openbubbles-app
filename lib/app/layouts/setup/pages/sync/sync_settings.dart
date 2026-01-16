@@ -11,8 +11,6 @@ import 'package:get/get.dart';
 class SyncSettings extends StatelessWidget {
   final controller = Get.find<SetupViewController>();
 
-  SyncSettings({super.key});
-
   @override
   Widget build(BuildContext context) {
     return SetupPageTemplate(
@@ -143,7 +141,7 @@ class SyncSettings extends StatelessWidget {
 }
 
 class NumberOfMessagesText extends CustomStateful<SetupViewController> {
-  const NumberOfMessagesText({super.key, required super.parentController});
+  NumberOfMessagesText({required super.parentController});
 
   @override
   State<StatefulWidget> createState() => _NumberOfMessagesTextState();
@@ -196,7 +194,7 @@ class _NumberOfMessagesTextState extends CustomState<NumberOfMessagesText, int, 
 }
 
 class NumberOfMessagesSlider extends CustomStateful<SetupViewController> {
-  const NumberOfMessagesSlider({super.key, required super.parentController});
+  NumberOfMessagesSlider({required super.parentController});
 
   @override
   State<StatefulWidget> createState() => _NumberOfMessagesSliderState();
@@ -240,7 +238,7 @@ class _NumberOfMessagesSliderState extends CustomState<NumberOfMessagesSlider, i
 }
 
 class StatefulSwitch extends CustomStateful<SetupViewController> {
-  const StatefulSwitch({super.key, required super.parentController, required this.initial, required this.update});
+  StatefulSwitch({required super.parentController, required this.initial, required this.update});
 
   final bool initial;
   final Function(bool) update;
@@ -273,7 +271,7 @@ class _StatefulSwitchState extends CustomState<StatefulSwitch, int, SetupViewCon
 }
 
 class TimeFilterDropdown extends CustomStateful<SetupViewController> {
-  const TimeFilterDropdown({super.key, required super.parentController});
+  TimeFilterDropdown({required super.parentController});
 
   @override
   State<StatefulWidget> createState() => _TimeFilterDropdownState();

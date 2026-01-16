@@ -5,13 +5,11 @@ import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/settings/dialogs/create_new_theme_dialog.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/content/advanced_theming_tile.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
-import 'package:bluebubbles/app/components/settings/settings.dart';
-import 'package:bluebubbles/app/components/settings/bb_settings_subtitle.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/app/wrappers/scrollbar_wrapper.dart';
-import 'package:bluebubbles/data/database/models.dart';
-import 'package:bluebubbles/services/storage/shared_preferences_service.dart';
+import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
@@ -22,7 +20,7 @@ import 'package:tuple/tuple.dart';
 import 'package:universal_io/io.dart';
 
 class AdvancedThemingContent extends StatefulWidget {
-  const AdvancedThemingContent({super.key, required this.isDarkMode, required this.controller});
+  AdvancedThemingContent({super.key, required this.isDarkMode, required this.controller});
   final bool isDarkMode;
   final StreamController controller;
 
@@ -51,17 +49,16 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
     widget.controller.stream.listen((event) {
       BuildContext _context = context;
       showDialog(
-        context: context,
-        builder: (context) => CreateNewThemeDialog(_context, widget.isDarkMode, currentTheme, (newTheme) async {
-          allThemes.add(newTheme);
-          currentTheme = newTheme;
-          if (widget.isDarkMode) {
-            await ThemeSvc.changeTheme(_context, dark: currentTheme);
-          } else {
-            await ThemeSvc.changeTheme(_context, light: currentTheme);
-          }
-        }),
-      );
+          context: context,
+          builder: (context) => CreateNewThemeDialog(_context, widget.isDarkMode, currentTheme, (newTheme) async {
+                allThemes.add(newTheme);
+                currentTheme = newTheme;
+                if (widget.isDarkMode) {
+                  await ThemeSvc.changeTheme(_context, dark: currentTheme);
+                } else {
+                  await ThemeSvc.changeTheme(_context, light: currentTheme);
+                }
+              }));
     });
   }
 
@@ -79,16 +76,18 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
         physics: ThemeSwitcher.getScrollPhysics(),
         slivers: <Widget>[
           SliverToBoxAdapter(
-            child: BBSettingsSection(backgroundColor: tileColor, children: [
-              BBSettingsDropdown<ThemeStruct>(
+            child: SettingsSection(backgroundColor: tileColor, children: [
+              SettingsOptions<ThemeStruct>(
                 title: "Selected Theme",
-                value: currentTheme,
+                initial: currentTheme,
+                clampWidth: false,
                 options: allThemes.where((a) => !a.name.contains("🌙") && !a.name.contains("☀")).toList()
                   ..add(ThemeStruct(name: "Divider1"))
                   ..addAll(allThemes.where((a) => widget.isDarkMode ? a.name.contains("🌙") : a.name.contains("☀")))
                   ..add(ThemeStruct(name: "Divider2"))
                   ..addAll(allThemes.where((a) => !widget.isDarkMode ? a.name.contains("🌙") : a.name.contains("☀"))),
                 textProcessing: (struct) => struct.name.toUpperCase(),
+                secondaryColor: headerColor,
                 useCupertino: false,
                 materialCustomWidgets: (struct) => struct.name.contains("Divider")
                     ? Divider(color: context.theme.colorScheme.outline, thickness: 2, height: 2)
@@ -219,7 +218,7 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
                   EventDispatcherSvc.emit('theme-update', null);
                 },
               ),
-              BBSettingsSwitch(
+              SettingsSwitch(
                 onChanged: (bool val) async {
                   currentTheme.gradientBg = val;
                   currentTheme.save();
@@ -229,8 +228,9 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
                     await ThemeSvc.changeTheme(context, light: currentTheme);
                   }
                 },
-                value: currentTheme.gradientBg,
+                initialVal: currentTheme.gradientBg,
                 title: "Gradient Message View Background",
+                backgroundColor: tileColor,
                 subtitle:
                     "Make the background of the messages view an animated gradient based on the background and primary colors",
                 isThreeLine: true,
@@ -247,9 +247,10 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
                         child: SettingsDivider(color: context.theme.colorScheme.surfaceVariant),
                       ),
                     ),
-                    BBSettingsTile(
+                    SettingsTile(
                       title: "Generate From Image",
                       subtitle: "Overwrite this theme by generating a color palette from an image",
+                      backgroundColor: tileColor,
                       onTap: () async {
                         final res = await FilePicker.platform.pickFiles(
                             withData: true, type: FileType.custom, allowedExtensions: ['png', 'jpg', 'jpeg']);
@@ -291,8 +292,8 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
                   ],
                 ),
               ),
-              const BBSettingsSubtitle(
-                text:
+              const SettingsSubtitle(
+                subtitle:
                     "Tap to edit the base color\nLong press to edit the color for elements displayed on top of the base color\nDouble tap to learn how the colors are used",
                 unlimitedSpace: true,
               ),
@@ -359,13 +360,15 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
             ),
           ),
           SliverToBoxAdapter(
-            child: BBSettingsSection(
+            child: SettingsSection(
               backgroundColor: tileColor,
               children: [
-                BBSettingsDropdown<String>(
+                SettingsOptions<String>(
                   title: "Selected Font",
-                  value: currentTheme.googleFont,
+                  initial: currentTheme.googleFont,
+                  clampWidth: false,
                   options: ['Default', ...GoogleFonts.asMap().keys],
+                  secondaryColor: headerColor,
                   useCupertino: false,
                   textProcessing: (str) => str,
                   onChanged: (value) async {
@@ -381,8 +384,8 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
                     }
                   },
                 ),
-                const BBSettingsSubtitle(
-                  text:
+                const SettingsSubtitle(
+                  subtitle:
                       "Font previews are not shown here since each font must be downloaded and saved from the internet. To see what a font looks like, either select it in the dropdown or visit fonts.google.com to view previews for all available fonts.",
                   unlimitedSpace: true,
                 ),

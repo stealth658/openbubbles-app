@@ -1,23 +1,21 @@
 import 'dart:async';
 
-import 'package:bluebubbles/app/components/base/base.dart';
-import 'package:bluebubbles/app/components/dialogs/dialogs.dart';
 import 'package:bluebubbles/app/components/custom_text_editing_controllers.dart';
 import 'package:bluebubbles/app/layouts/chat_creator/widgets/chat_list_section.dart';
 import 'package:bluebubbles/app/layouts/chat_creator/widgets/message_type_toggle.dart';
 import 'package:bluebubbles/app/layouts/chat_creator/widgets/selected_contact_chip.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/pages/conversation_view.dart';
-import 'package:bluebubbles/app/layouts/conversation_view/pages/messages_view.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/text_field/conversation_text_field.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/app/wrappers/titlebar_wrapper.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
+import 'package:bluebubbles/app/layouts/conversation_view/pages/messages_view.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
-import 'package:bluebubbles/data/database/database.dart';
-import 'package:bluebubbles/data/database/models.dart';
+import 'package:bluebubbles/database/database.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/backend/interfaces/contact_interface.dart';
 import 'package:bluebubbles/services/services.dart';
-import 'package:bluebubbles/core/utils/string_utils.dart';
+import 'package:bluebubbles/utils/string_utils.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -329,15 +327,35 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
             ),
             actions: [
               if (!canCreateGroupChats)
-                BBIconButton(
-                  icon: iOS ? CupertinoIcons.exclamationmark_circle : Icons.error_outline,
-                  color: context.theme.colorScheme.error,
+                IconButton(
+                  icon: Icon(iOS ? CupertinoIcons.exclamationmark_circle : Icons.error_outline,
+                      color: context.theme.colorScheme.error),
                   onPressed: () {
-                    BBAlertDialog.alert(
-                      context: Get.context!,
-                      title: "Group Chat Creation",
-                      message: "Creating group chats from BlueBubbles is not possible on macOS 11 (Big Sur) and later due to limitations from Apple. You must setup the Private API to gain this feature.",
-                    );
+                    showDialog(
+                        barrierDismissible: false,
+                        context: Get.context!,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            title: Text(
+                              "Group Chat Creation",
+                              style: context.theme.textTheme.titleLarge,
+                            ),
+                            content: Text(
+                                "Creating group chats from BlueBubbles is not possible on macOS 11 (Big Sur) and later due to limitations from Apple. You must setup the Private API to gain this feature.",
+                                style: context.theme.textTheme.bodyLarge),
+                            backgroundColor: context.theme.colorScheme.properSurface,
+                            actions: <Widget>[
+                              TextButton(
+                                child: Text("Close",
+                                    style: context.theme.textTheme.bodyLarge!
+                                        .copyWith(color: context.theme.colorScheme.primary)),
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                            ],
+                          );
+                        });
                   },
                 ),
             ],
@@ -608,11 +626,26 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
                                 .map((e) => e.address.isEmail ? e.address : cleansePhoneNumber(e.address))
                                 .toList();
                             final method = iMessage ? "iMessage" : "SMS";
-                            BBProgressDialog.show(
-                              context: context,
-                              title: "Creating Chat",
-                              message: "Creating a new $method chat...",
-                            );
+                            showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return AlertDialog(
+                                    backgroundColor: context.theme.colorScheme.properSurface,
+                                    title: Text(
+                                      "Creating a new $method chat...",
+                                      style: context.theme.textTheme.titleLarge,
+                                    ),
+                                    content: Container(
+                                      height: 70,
+                                      child: Center(
+                                        child: CircularProgressIndicator(
+                                          backgroundColor: context.theme.colorScheme.properSurface,
+                                          valueColor: AlwaysStoppedAnimation<Color>(context.theme.colorScheme.primary),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                });
                             HttpSvc.createChat(participants, textController.text, method).then((response) async {
                               // Load the chat data and save it to the DB
                               Chat newChat = Chat.fromMap(response.data["data"]);
@@ -667,13 +700,34 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
                               );
                             }).catchError((error) {
                               Navigator.of(context).pop();
-                              BBAlertDialog.alert(
-                                context: context,
-                                title: "Failed to create chat!",
-                                message: error is Response
-                                    ? "Reason: (${error.data["error"]["type"]}) -> ${error.data["error"]["message"]}"
-                                    : error.toString(),
-                              );
+                              showDialog(
+                                  barrierDismissible: false,
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return AlertDialog(
+                                      backgroundColor: context.theme.colorScheme.properSurface,
+                                      title: Text(
+                                        "Failed to create chat!",
+                                        style: context.theme.textTheme.titleLarge,
+                                      ),
+                                      content: Text(
+                                        error is Response
+                                            ? "Reason: (${error.data["error"]["type"]}) -> ${error.data["error"]["message"]}"
+                                            : error.toString(),
+                                        style: context.theme.textTheme.bodyLarge,
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          child: Text("OK",
+                                              style: context.theme.textTheme.bodyLarge!
+                                                  .copyWith(color: Get.context!.theme.colorScheme.primary)),
+                                          onPressed: () {
+                                            Navigator.of(context).pop();
+                                          },
+                                        )
+                                      ],
+                                    );
+                                  });
                               if (!createCompleter!.isCompleted) {
                                 createCompleter?.completeError(error);
                               }

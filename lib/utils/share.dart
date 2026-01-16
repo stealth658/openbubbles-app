@@ -1,10 +1,8 @@
 import 'dart:convert';
 
-import 'package:bluebubbles/app/components/base/base.dart' hide BBDialogAction;
-import 'package:bluebubbles/app/components/dialogs/dialogs.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/services.dart';
-import 'package:bluebubbles/data/database/models.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
@@ -36,33 +34,39 @@ class Share {
 
     _serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!_serviceEnabled) {
-      final actions = <BBDialogAction>[
-        if (!kIsDesktop || !Platform.isLinux)
-          BBDialogAction(
-            label: "Cancel",
-            type: BBDialogButtonType.cancel,
-            onPressed: () => Navigator.of(Get.context!, rootNavigator: true).pop(),
-          ),
-        if (!kIsDesktop || !Platform.isLinux)
-          BBDialogAction(
-            label: "Open Settings",
-            type: BBDialogButtonType.primary,
-            onPressed: () async => await Geolocator.openLocationSettings(),
-          ),
-        if (kIsDesktop && Platform.isLinux)
-          BBDialogAction(
-            label: "OK",
-            type: BBDialogButtonType.primary,
-            onPressed: () => Navigator.of(Get.context!, rootNavigator: true).pop(),
-          ),
-      ];
-
-      await BBAlertDialog.show(
-        context: Get.context!,
-        title: "Location Services",
-        message: "Location Services must be enabled to send Locations",
-        actions: actions,
-      );
+      await showDialog(
+          context: Get.context!,
+          builder: (context) => AlertDialog(
+                backgroundColor: Get.theme.colorScheme.properSurface,
+                title: Text(
+                  "Location Services",
+                  style: Get.textTheme.titleLarge,
+                ),
+                content: Text(
+                  "Location Services must be enabled to send Locations",
+                  style: Get.textTheme.bodyLarge,
+                ),
+                actions: [
+                  if (!kIsDesktop || !Platform.isLinux)
+                    TextButton(
+                        onPressed: () => Navigator.of(Get.context!, rootNavigator: true).pop(),
+                        child: Text("Cancel",
+                            style:
+                                context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary))),
+                  if (!kIsDesktop || !Platform.isLinux)
+                    TextButton(
+                        onPressed: () async => await Geolocator.openLocationSettings(),
+                        child: Text("Open Settings",
+                            style:
+                                context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary))),
+                  if (kIsDesktop && Platform.isLinux)
+                    TextButton(
+                        onPressed: () => Navigator.of(Get.context!, rootNavigator: true).pop(),
+                        child: Text("OK",
+                            style:
+                                context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary))),
+                ],
+              ));
       if (!_serviceEnabled) {
         return;
       }
@@ -74,23 +78,26 @@ class Share {
         _permissionGranted = await Geolocator.requestPermission();
       }
       if (_permissionGranted == LocationPermission.denied || _permissionGranted == LocationPermission.deniedForever) {
-        await BBAlertDialog.show(
-          context: Get.context!,
-          title: "Location Permission",
-          message: "BlueBubbles needs the Location permission to send Locations",
-          actions: [
-            BBDialogAction(
-              label: "Cancel",
-              type: BBDialogButtonType.cancel,
-              onPressed: () => Navigator.of(Get.context!, rootNavigator: true).pop(),
-            ),
-            BBDialogAction(
-              label: "Open Settings",
-              type: BBDialogButtonType.primary,
-              onPressed: () async => await Geolocator.openLocationSettings(),
-            ),
-          ],
-        );
+        await showDialog(
+            context: Get.context!,
+            builder: (context) => AlertDialog(
+                  backgroundColor: Get.theme.colorScheme.properSurface,
+                  title: Text("Location Permission", style: Get.textTheme.titleLarge),
+                  content: Text(
+                    "BlueBubbles needs the Location permission to send Locations",
+                    style: Get.textTheme.bodyLarge,
+                  ),
+                  actions: [
+                    TextButton(
+                        onPressed: () => Navigator.of(Get.context!, rootNavigator: true).pop(),
+                        child: Text("Cancel",
+                            style: Get.textTheme.bodyLarge!.copyWith(color: Get.theme.colorScheme.primary))),
+                    TextButton(
+                        onPressed: () async => await Geolocator.openLocationSettings(),
+                        child: Text("Open Settings",
+                            style: Get.textTheme.bodyLarge!.copyWith(color: Get.theme.colorScheme.primary)))
+                  ],
+                ));
         if (_permissionGranted == LocationPermission.denied || _permissionGranted == LocationPermission.deniedForever) {
           return;
         }
@@ -123,78 +130,78 @@ class Share {
     if (kIsDesktop || kIsWeb) {
       cvc(chat).showingOverlays = true;
     }
-    await BBCustomDialog.show(
-      context: Get.context!,
-      title: "Send Location?",
-      content: FutureBuilder(
-          future: getLocationPreview(),
-          builder: (context, snapshot) {
-            if (snapshot.data != null) {
-              _attachmentGuid = snapshot.data!.item1;
-              fileName = snapshot.data!.item2;
-              bytes = snapshot.data!.item3;
-              url = snapshot.data!.item4;
-              title = snapshot.data!.item5;
-            }
-            if (url == null) {
-              return const Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text("Loading Location..."),
-                  SizedBox(height: 10),
-                  BBLoadingIndicator(),
+    await showDialog(
+        context: Get.context!,
+        builder: (context) => FutureBuilder(
+            future: getLocationPreview(),
+            builder: (context, snapshot) {
+              if (snapshot.data != null) {
+                _attachmentGuid = snapshot.data!.item1;
+                fileName = snapshot.data!.item2;
+                bytes = snapshot.data!.item3;
+                url = snapshot.data!.item4;
+                title = snapshot.data!.item5;
+              }
+              if (url == null) {
+                return AbsorbPointer(
+                  child: AlertDialog(
+                    backgroundColor: Get.theme.colorScheme.properSurface,
+                    title: Text("Loading Location...", style: Get.textTheme.titleLarge),
+                    content: buildProgressIndicator(context),
+                  ),
+                );
+              }
+              return AlertDialog(
+                backgroundColor: Get.theme.colorScheme.properSurface,
+                title: Text("Send Location?", style: Get.textTheme.titleLarge),
+                content: Container(
+                  width: 150,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Image.network(
+                        url!,
+                        gaplessPlayback: true,
+                        filterQuality: FilterQuality.none,
+                        errorBuilder: (_, __, ___) {
+                          return const SizedBox.shrink();
+                        },
+                        frameBuilder: (_, child, frame, __) {
+                          if (frame == null) {
+                            return Center(
+                              heightFactor: 1,
+                              child: buildProgressIndicator(context),
+                            );
+                          } else {
+                            return child;
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 15),
+                      Text(
+                        title ?? "No location details found",
+                        style: context.theme.textTheme.bodyMedium!.apply(fontWeightDelta: 2),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.of(Get.context!, rootNavigator: true).pop(),
+                      child: Text("Cancel",
+                          style: Get.textTheme.bodyLarge!.copyWith(color: Get.theme.colorScheme.primary))),
+                  TextButton(
+                      onPressed: () {
+                        send = true;
+                        Navigator.of(Get.context!, rootNavigator: true).pop();
+                      },
+                      child:
+                          Text("Send", style: Get.textTheme.bodyLarge!.copyWith(color: Get.theme.colorScheme.primary)))
                 ],
               );
-            }
-            return SizedBox(
-              width: 150,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Image.network(
-                    url!,
-                    gaplessPlayback: true,
-                    filterQuality: FilterQuality.none,
-                    errorBuilder: (_, __, ___) {
-                      return const SizedBox.shrink();
-                    },
-                    frameBuilder: (_, child, frame, __) {
-                      if (frame == null) {
-                        return const Center(
-                          heightFactor: 1,
-                          child: BBLoadingIndicator(),
-                        );
-                      } else {
-                        return child;
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 15),
-                  Text(
-                    title ?? "No location details found",
-                    style: Theme.of(context).textTheme.bodyMedium!.apply(fontWeightDelta: 2),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            );
-          }),
-      actions: [
-        BBDialogAction(
-          label: "Cancel",
-          type: BBDialogButtonType.cancel,
-          onPressed: () {},
-        ),
-        BBDialogAction(
-          label: "Send",
-          type: BBDialogButtonType.primary,
-          onPressed: () {
-            send = true;
-          },
-        ),
-      ],
-    );
+            }));
     if (kIsDesktop || kIsWeb) {
       cvc(chat).showingOverlays = false;
     }

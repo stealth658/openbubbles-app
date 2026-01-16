@@ -1,11 +1,12 @@
 import 'package:async_task/async_task_extension.dart';
-import 'package:bluebubbles/data/database/database.dart';
-import 'package:bluebubbles/core/logger/logger.dart';
+import 'package:bluebubbles/database/database.dart';
+import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/backend/sync/sync_manager_impl.dart';
-import 'package:bluebubbles/data/database/models.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:dio/dio.dart';
+import 'package:get/get.dart' hide Response;
 import 'package:tuple/tuple.dart';
 import 'package:universal_io/io.dart';
 import 'package:windows_taskbar/windows_taskbar.dart';
@@ -106,7 +107,7 @@ class HandleSyncManager extends SyncManager {
           h.defaultEmail = backedUpHandle?.defaultEmail;
           h.defaultPhone = backedUpHandle?.defaultPhone;
           if (!h.address.contains("@") && h.formattedAddress == null) {
-            h.formattedAddress = formatPhoneNumber(h.address);
+            h.formattedAddress = await formatPhoneNumber(h.address);
           }
 
           // Contact matching is now handled automatically by ContactServiceV2

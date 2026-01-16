@@ -1,6 +1,5 @@
 import 'package:animated_size_and_fade/animated_size_and_fade.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/app/components/settings/settings.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/reaction_type_picker.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
@@ -72,7 +71,7 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
             delegate: SliverChildListDelegate(
               <Widget>[
                 Obx(
-                  () => BBSettingsSection(
+                  () => SettingsSection(
                     backgroundColor: tileColor,
                     children: [
                       if (!SettingsSvc.settings.enablePrivateAPI.value ||
@@ -116,7 +115,8 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
                           ),
                         ),
                       if (SettingsSvc.settings.serverPrivateAPI.value != true)
-                        BBSettingsTile(
+                        SettingsTile(
+                          backgroundColor: tileColor,
                           title: "Set up Private API Features",
                           subtitle: "View instructions on how to set up these features",
                           onTap: () async {
@@ -124,23 +124,24 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
                                 Uri(scheme: "https", host: "docs.bluebubbles.app", path: "helper-bundle/installation"),
                                 mode: LaunchMode.externalApplication);
                           },
-                          leading: const BBSettingsIcon(
+                          leading: const SettingsLeadingIcon(
                             iosIcon: CupertinoIcons.checkmark_shield,
                             materialIcon: Icons.privacy_tip,
                           ),
                         ),
                       if (SettingsSvc.settings.serverPrivateAPI.value != true) const SettingsDivider(),
                       Obx(
-                        () => BBSettingsSwitch(
+                        () => SettingsSwitch(
                           onChanged: (bool val) async {
                             SettingsSvc.settings.enablePrivateAPI.value = val;
                             await SettingsSvc.settings.saveOneAsync('enablePrivateAPI');
                           },
-                          value: SettingsSvc.settings.enablePrivateAPI.value,
+                          initialVal: SettingsSvc.settings.enablePrivateAPI.value,
                           title: "Enable Private API Features",
                           subtitle: SettingsSvc.settings.serverPrivateAPI.value != null
                               ? "Private API features are ${SettingsSvc.settings.serverPrivateAPI.value! ? "set up" : "not set up"} on the server${!SettingsSvc.settings.serverPrivateAPI.value! ? "!" : ""}"
                               : null,
+                          backgroundColor: tileColor,
                         ),
                       ),
                     ],
@@ -150,23 +151,24 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
                   () => AnimatedSizeAndFade.showHide(
                     show: SettingsSvc.settings.enablePrivateAPI.value,
                     child: Column(mainAxisSize: MainAxisSize.min, children: [
-                      const BBSettingsHeader(
-                          text: "Private API Settings"),
-                      BBSettingsSection(
+                      SettingsHeader(
+                          iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Private API Settings"),
+                      SettingsSection(
                         backgroundColor: tileColor,
                         children: [
-                          BBSettingsSwitch(
+                          SettingsSwitch(
                             onChanged: (bool val) async {
                               SettingsSvc.settings.privateSendTypingIndicators.value = val;
                               await SettingsSvc.settings.saveOneAsync('privateSendTypingIndicators');
                             },
-                            value: SettingsSvc.settings.privateSendTypingIndicators.value,
+                            initialVal: SettingsSvc.settings.privateSendTypingIndicators.value,
                             title: "Send Typing Indicators",
                             subtitle: "Sends typing indicators to other iMessage users",
-                            leading: const BBSettingsIcon(
+                            backgroundColor: tileColor,
+                            leading: const SettingsLeadingIcon(
                               iosIcon: CupertinoIcons.keyboard_chevron_compact_down,
                               materialIcon: Icons.keyboard_alt_outlined,
-                              color: Colors.green,
+                              containerColor: Colors.green,
                             ),
                           ),
                           AnimatedSizeAndFade(
@@ -175,7 +177,7 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       const SettingsDivider(),
-                                      BBSettingsSwitch(
+                                      SettingsSwitch(
                                           onChanged: (bool val) async {
                                             SettingsSvc.settings.privateMarkChatAsRead.value = val;
                                             final toSave = ['privateMarkChatAsRead'];
@@ -186,15 +188,16 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
 
                                             await SettingsSvc.settings.saveManyAsync(toSave);
                                           },
-                                          value: SettingsSvc.settings.privateMarkChatAsRead.value,
+                                          initialVal: SettingsSvc.settings.privateMarkChatAsRead.value,
                                           title: "Automatic Mark Read / Send Read Receipts",
                                           subtitle:
                                               "Marks chats read in the iMessage app on your server and sends read receipts to other iMessage users",
+                                          backgroundColor: tileColor,
                                           isThreeLine: true,
-                                          leading: const BBSettingsIcon(
+                                          leading: const SettingsLeadingIcon(
                                             iosIcon: CupertinoIcons.rectangle_fill_badge_checkmark,
                                             materialIcon: Icons.playlist_add_check,
-                                            color: Colors.blueAccent,
+                                            containerColor: Colors.blueAccent,
                                           )),
                                     ],
                                   )
@@ -206,28 +209,29 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 const SettingsDivider(),
-                                BBSettingsSwitch(
+                                SettingsSwitch(
                                   onChanged: (bool val) async {
                                     SettingsSvc.settings.privateManualMarkAsRead.value = val;
                                     await SettingsSvc.settings.saveOneAsync('privateManualMarkAsRead');
                                   },
-                                  value: SettingsSvc.settings.privateManualMarkAsRead.value,
+                                  initialVal: SettingsSvc.settings.privateManualMarkAsRead.value,
                                   title: "Manual Mark Read / Send Read Receipts",
                                   subtitle: "Only mark a chat read when pressing the manual mark read button",
+                                  backgroundColor: tileColor,
                                   isThreeLine: true,
-                                  leading: const BBSettingsIcon(
+                                  leading: const SettingsLeadingIcon(
                                     iosIcon: CupertinoIcons.check_mark_circled,
                                     materialIcon: Icons.check_circle_outline,
-                                    color: Colors.orange,
+                                    containerColor: Colors.orange,
                                   ),
                                 ),
                               ],
                             ),
                           ),
                           const SettingsDivider(),
-                          BBSettingsSwitch(
+                          SettingsSwitch(
                             title: "Double-${kIsWeb || kIsDesktop ? "Click" : "Tap"} Message for Quick Tapback",
-                            value: SettingsSvc.settings.enableQuickTapback.value,
+                            initialVal: SettingsSvc.settings.enableQuickTapback.value,
                             onChanged: (bool val) async {
                               SettingsSvc.settings.enableQuickTapback.value = val;
                               final toSave = ['enableQuickTapback'];
@@ -240,11 +244,12 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
                             },
                             subtitle:
                                 "Send a tapback of your choosing when double ${kIsWeb || kIsDesktop ? "click" : "tapp"}ing a message",
+                            backgroundColor: tileColor,
                             isThreeLine: true,
-                            leading: const BBSettingsIcon(
+                            leading: const SettingsLeadingIcon(
                               iosIcon: CupertinoIcons.rays,
                               materialIcon: Icons.touch_app_outlined,
-                              color: Colors.purple,
+                              containerColor: Colors.purple,
                             ),
                           ),
                           AnimatedSizeAndFade.showHide(
@@ -270,18 +275,19 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 const SettingsDivider(),
-                                BBSettingsSwitch(
+                                SettingsSwitch(
                                   title: "Up Arrow for Quick Edit",
-                                  value: SettingsSvc.settings.editLastSentMessageOnUpArrow.value,
+                                  initialVal: SettingsSvc.settings.editLastSentMessageOnUpArrow.value,
                                   onChanged: (bool val) async {
                                     SettingsSvc.settings.editLastSentMessageOnUpArrow.value = val;
                                     await SettingsSvc.settings.saveOneAsync('editLastSentMessageOnUpArrow');
                                   },
                                   subtitle: "Press the Up Arrow to begin editing the last message you sent",
-                                  leading: const BBSettingsIcon(
+                                  backgroundColor: tileColor,
+                                  leading: const SettingsLeadingIcon(
                                     iosIcon: CupertinoIcons.arrow_up_square,
                                     materialIcon: Icons.arrow_circle_up,
-                                    color: Colors.redAccent,
+                                    containerColor: Colors.redAccent,
                                   ),
                                 ),
                               ],
@@ -293,19 +299,20 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 const SettingsDivider(),
-                                BBSettingsSwitch(
+                                SettingsSwitch(
                                   onChanged: (bool val) async {
                                     SettingsSvc.settings.privateSubjectLine.value = val;
                                     await SettingsSvc.settings.saveOneAsync('privateSubjectLine');
                                   },
-                                  value: SettingsSvc.settings.privateSubjectLine.value,
+                                  initialVal: SettingsSvc.settings.privateSubjectLine.value,
                                   title: "Send Subject Lines",
                                   subtitle: "Show the subject line field when sending a message",
+                                  backgroundColor: tileColor,
                                   isThreeLine: true,
-                                  leading: const BBSettingsIcon(
+                                  leading: const SettingsLeadingIcon(
                                     iosIcon: CupertinoIcons.textformat,
                                     materialIcon: Icons.text_format_rounded,
-                                    color: Colors.blueAccent,
+                                    containerColor: Colors.blueAccent,
                                   ),
                                 ),
                               ],
@@ -317,19 +324,20 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 const SettingsDivider(),
-                                BBSettingsSwitch(
+                                SettingsSwitch(
                                   onChanged: (bool val) async {
                                     SettingsSvc.settings.privateAPISend.value = val;
                                     await SettingsSvc.settings.saveOneAsync('privateAPISend');
                                   },
-                                  value: SettingsSvc.settings.privateAPISend.value,
+                                  initialVal: SettingsSvc.settings.privateAPISend.value,
                                   title: "Private API Send",
                                   subtitle: "Send regular iMessages using the Private API for much faster speed",
+                                  backgroundColor: tileColor,
                                   isThreeLine: true,
-                                  leading: const BBSettingsIcon(
+                                  leading: const SettingsLeadingIcon(
                                     iosIcon: CupertinoIcons.bubble_right,
                                     materialIcon: Icons.chat_bubble_outline,
-                                    color: Colors.green,
+                                    containerColor: Colors.green,
                                   ),
                                 ),
                               ],
@@ -341,19 +349,20 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 const SettingsDivider(),
-                                BBSettingsSwitch(
+                                SettingsSwitch(
                                   onChanged: (bool val) async {
                                     SettingsSvc.settings.privateAPIAttachmentSend.value = val;
                                     await SettingsSvc.settings.saveOneAsync('privateAPIAttachmentSend');
                                   },
-                                  value: SettingsSvc.settings.privateAPIAttachmentSend.value,
+                                  initialVal: SettingsSvc.settings.privateAPIAttachmentSend.value,
                                   title: "Private API Attachment Send",
                                   subtitle: "Send attachments using the Private API",
+                                  backgroundColor: tileColor,
                                   isThreeLine: true,
-                                  leading: const BBSettingsIcon(
+                                  leading: const SettingsLeadingIcon(
                                     iosIcon: CupertinoIcons.paperclip,
                                     materialIcon: Icons.attach_file_outlined,
-                                    color: Colors.teal,
+                                    containerColor: Colors.teal,
                                   ),
                                 ),
                               ],

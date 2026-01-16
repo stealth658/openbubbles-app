@@ -5,18 +5,13 @@ import 'dart:math';
 import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/message_holder.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/messages_view_components.dart';
-import 'package:bluebubbles/core/logger/logger.dart';
-import 'package:bluebubbles/data/database/database.dart';
-import 'package:bluebubbles/data/models/global/platform_file.dart';
-import 'package:bluebubbles/data/models/global/queue_items.dart';
-import 'package:bluebubbles/data/models/native/chat.dart';
-import 'package:bluebubbles/data/models/native/message.dart';
-import 'package:bluebubbles/data/models/web/media_kit.dart';
+import 'package:bluebubbles/database/database.dart';
+import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/wrappers/scrollbar_wrapper.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
-import 'package:bluebubbles/objectbox.g.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:collection/collection.dart';
 import 'package:defer_pointer/defer_pointer.dart';
@@ -33,7 +28,7 @@ class MessagesView extends StatefulWidget {
   final MessagesService? customService;
   final ConversationViewController controller;
 
-  const MessagesView({
+  MessagesView({
     super.key,
     this.customService,
     required this.controller,
@@ -620,7 +615,7 @@ class MessagesViewState extends OptimizedState<MessagesView> {
 }
 
 class Loader extends StatelessWidget {
-  const Loader({super.key, this.text});
+  const Loader({this.text});
 
   final String? text;
 

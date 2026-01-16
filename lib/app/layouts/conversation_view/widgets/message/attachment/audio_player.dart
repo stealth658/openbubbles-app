@@ -5,7 +5,7 @@ import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 // it does actually export (Web only)
 // ignore: undefined_hidden_name
-import 'package:bluebubbles/data/database/models.dart' hide PlayerState;
+import 'package:bluebubbles/database/models.dart' hide PlayerState;
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -15,7 +15,7 @@ class AudioPlayer extends StatefulWidget {
   final Attachment? attachment;
   final String? transcript;
 
-  const AudioPlayer({
+  AudioPlayer({
     super.key,
     required this.file,
     required this.attachment,

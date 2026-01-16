@@ -1,7 +1,7 @@
 import 'dart:math';
 
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/services/storage/settings_service.dart';
+import 'package:bluebubbles/services/backend/settings/settings_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';

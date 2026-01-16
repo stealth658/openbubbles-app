@@ -1,8 +1,8 @@
 import 'dart:async';
 
-import 'package:bluebubbles/data/database/models.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
-import 'package:bluebubbles/core/logger/logger.dart';
+import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/services/backend/queue/queue_impl.dart';
 import 'package:get/get.dart';
 

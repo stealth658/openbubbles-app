@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/attachment/live_photo_mixin.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/data/database/models.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -16,7 +16,7 @@ class ImageViewer extends StatefulWidget {
   final Attachment attachment;
   final bool isFromMe;
 
-  const ImageViewer({
+  ImageViewer({
     super.key,
     required this.file,
     required this.attachment,

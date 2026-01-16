@@ -1,7 +1,7 @@
-import 'package:bluebubbles/data/models/native/chat.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/tile/conversation_tile.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/pages/conversation_list.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -11,7 +11,7 @@ class ListItem extends StatelessWidget {
   final Chat chat;
   final ConversationListController controller;
   final VoidCallback update;
-  const ListItem({super.key, required this.chat, required this.controller, required this.update});
+  ListItem({required this.chat, required this.controller, required this.update});
 
   MaterialSwipeAction get leftAction => SettingsSvc.settings.materialLeftAction.value;
   MaterialSwipeAction get rightAction => SettingsSvc.settings.materialRightAction.value;
@@ -35,7 +35,6 @@ class ListItem extends StatelessWidget {
                       ? Colors.blue
                       : Colors.red,
       child: Align(
-        alignment: left ? Alignment.centerRight : Alignment.centerLeft,
         child: Row(
           mainAxisAlignment: left ? MainAxisAlignment.end : MainAxisAlignment.start,
           children: <Widget>[
@@ -75,6 +74,7 @@ class ListItem extends StatelessWidget {
             ),
           ],
         ),
+        alignment: left ? Alignment.centerRight : Alignment.centerLeft,
       ),
     );
   }

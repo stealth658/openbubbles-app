@@ -1,14 +1,12 @@
 import 'package:animated_size_and_fade/animated_size_and_fade.dart';
 import 'package:bluebubbles/app/components/avatars/contact_avatar_group_widget.dart';
-import 'package:bluebubbles/app/components/dialogs/dialogs.dart';
-import 'package:bluebubbles/app/components/settings/settings.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/dialogs/timeframe_picker.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
-import 'package:bluebubbles/data/database/models.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/services/services.dart';
-import 'package:bluebubbles/core/logger/logger.dart';
+import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -18,7 +16,10 @@ import 'package:get/get.dart' hide Response;
 import 'package:numberpicker/numberpicker.dart';
 
 class CreateScheduledMessage extends StatefulWidget {
-  const CreateScheduledMessage({super.key, this.existing});
+  CreateScheduledMessage({
+    Key? key,
+    this.existing,
+  });
 
   final ScheduledMessage? existing;
 
@@ -91,11 +92,26 @@ class _CreateScheduledMessageState extends OptimizedState<CreateScheduledMessage
                   color: context.theme.colorScheme.onPrimary, size: 25),
               onPressed: () async {
                 if (date.isBefore(DateTime.now())) return showSnackbar("Error", "Pick a date in the future!");
-                BBProgressDialog.show(
-                  context: context,
-                  title: "Scheduling message...",
-                  barrierDismissible: false,
-                );
+                showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        backgroundColor: context.theme.colorScheme.properSurface,
+                        title: Text(
+                          "Scheduling message...",
+                          style: context.theme.textTheme.titleLarge,
+                        ),
+                        content: Container(
+                          height: 70,
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              backgroundColor: context.theme.colorScheme.properSurface,
+                              valueColor: AlwaysStoppedAnimation<Color>(context.theme.colorScheme.primary),
+                            ),
+                          ),
+                        ),
+                      );
+                    });
                 Response? response;
                 if (widget.existing != null) {
                   response = await HttpSvc.updateScheduled(
@@ -152,9 +168,9 @@ class _CreateScheduledMessageState extends OptimizedState<CreateScheduledMessage
       bodySlivers: [
         SliverList(
           delegate: SliverChildListDelegate([
-            BBSettingsSection(backgroundColor: tileColor, children: [
-              BBSettingsDropdown<Chat>(
-                value: ChatsSvc.findChatByGuid(selectedChat)!,
+            SettingsSection(backgroundColor: tileColor, children: [
+              SettingsOptions<Chat>(
+                initial: ChatsSvc.findChatByGuid(selectedChat)!,
                 options: ChatsSvc.allChats,
                 onChanged: (Chat? val) {
                   if (val == null) return;
@@ -163,9 +179,10 @@ class _CreateScheduledMessageState extends OptimizedState<CreateScheduledMessage
                   });
                 },
                 title: "Select Chat",
-
+                secondaryColor: headerColor,
                 textProcessing: (val) => val.toString(),
                 useCupertino: false,
+                clampWidth: false,
                 materialCustomWidgets: (chat) => Row(
                   children: [
                     ContactAvatarGroupWidget(
@@ -243,14 +260,16 @@ class _CreateScheduledMessageState extends OptimizedState<CreateScheduledMessage
                 ),
               ),
             ]),
-            const BBSettingsHeader(
+            SettingsHeader(
+              iosSubtitle: iosSubtitle,
+              materialSubtitle: materialSubtitle,
               text: "Schedule",
             ),
-            BBSettingsSection(
+            SettingsSection(
               backgroundColor: tileColor,
               children: [
-                BBSettingsDropdown<String>(
-                  value: schedule,
+                SettingsOptions<String>(
+                  initial: schedule,
                   options: ["once", "recurring"],
                   onChanged: (String? val) {
                     if (val == null) return;
@@ -259,6 +278,7 @@ class _CreateScheduledMessageState extends OptimizedState<CreateScheduledMessage
                     });
                   },
                   title: "Schedule",
+                  secondaryColor: headerColor,
                   textProcessing: (val) => val.capitalizeFirst!,
                 ),
                 AnimatedSizeAndFade.showHide(
@@ -308,10 +328,10 @@ class _CreateScheduledMessageState extends OptimizedState<CreateScheduledMessage
                     ),
                     Padding(
                       padding: const EdgeInsets.only(bottom: 5.0),
-                      child: BBSettingsDropdown<String>(
+                      child: SettingsOptions<String>(
                         title: "With frequency:",
                         options: ["hourly", "daily", "weekly", "monthly", "yearly"],
-                        value: frequency,
+                        initial: frequency,
                         textProcessing: (val) => "${frequencyToText[val]!.capitalizeFirst!}${interval == 1 ? "" : "s"}",
                         onChanged: (val) {
                           if (val == null) return;
@@ -319,11 +339,12 @@ class _CreateScheduledMessageState extends OptimizedState<CreateScheduledMessage
                             frequency = val;
                           });
                         },
+                        secondaryColor: headerColor,
                       ),
                     ),
                   ]),
                 ),
-                BBSettingsTile(
+                SettingsTile(
                   title: "Pick date and time",
                   subtitle: "Current: ${buildSeparatorDateSamsung(date)} at ${buildTime(date)}",
                   onTap: () async {
@@ -337,10 +358,12 @@ class _CreateScheduledMessageState extends OptimizedState<CreateScheduledMessage
                 ),
               ],
             ),
-            const BBSettingsHeader(
+            SettingsHeader(
+              iosSubtitle: iosSubtitle,
+              materialSubtitle: materialSubtitle,
               text: "Summary",
             ),
-            BBSettingsSection(
+            SettingsSection(
               backgroundColor: tileColor,
               children: [
                 Padding(

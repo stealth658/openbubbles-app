@@ -1,6 +1,6 @@
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
-import 'package:bluebubbles/data/database/models.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/cupertino.dart';
@@ -9,7 +9,7 @@ import 'package:get/get.dart';
 import 'package:universal_io/io.dart';
 
 class ContactAvatarWidget extends StatefulWidget {
-  const ContactAvatarWidget(
+  ContactAvatarWidget(
       {super.key,
       this.size,
       this.fontSize,
@@ -94,7 +94,7 @@ class _ContactAvatarWidgetState extends OptimizedState<ContactAvatarWidget> {
     final Color color = await showColorPickerDialog(
       context,
       widget.handle?.color != null ? HexColor(widget.handle!.color!) : toColorGradient(widget.handle!.address)[0],
-      title: SizedBox(
+      title: Container(
           width: NavigationSvc.width(context) - 112,
           child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             Text('Choose a Color', style: context.theme.textTheme.titleLarge),

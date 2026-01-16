@@ -2,12 +2,11 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:ui' as ui;
 
-import 'package:bluebubbles/app/components/dialogs/dialogs.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/tile/conversation_tile.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/data/database/models.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
-import 'package:bluebubbles/core/logger/logger.dart';
+import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -21,13 +20,13 @@ class BackButton extends StatelessWidget {
   final bool Function()? onPressed;
   final Color? color;
 
-  const BackButton({super.key, this.color, this.onPressed});
+  const BackButton({this.color, this.onPressed});
 
   @override
   Widget build(BuildContext context) {
     return Material(
       color: Colors.transparent,
-      child: SizedBox(
+      child: Container(
         width: 48,
         child: XGestureDetector(
           supportTouch: true,
@@ -110,9 +109,6 @@ Widget buildBackButton(BuildContext context,
   );
 }
 
-/// @deprecated Use BBLoadingIndicator from package:bluebubbles/app/components/base/base.dart instead.
-/// This helper will be removed in a future version.
-@Deprecated('Use BBLoadingIndicator instead. Example: BBLoadingIndicator(size: 20)')
 Widget buildProgressIndicator(BuildContext context, {double size = 20, double strokeWidth = 2}) {
   return SettingsSvc.settings.skin.value == Skins.iOS
       ? Theme(
@@ -284,19 +280,41 @@ Future<void> showConversationTileMenu(
             behavior: HitTestBehavior.opaque,
             onTap: () async {
               Navigator.pop(context); // Remove PopupMenuItem
-              final confirmed = await BBAlertDialog.confirm(
+              showDialog(
+                barrierDismissible: false,
                 context: context,
-                title: "Are you sure?",
-                message: "This chat will be deleted from this device only",
-                confirmLabel: "Yes",
-                cancelLabel: "No",
-                isDestructive: true,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: Text(
+                      "Are you sure?",
+                      style: context.theme.textTheme.titleLarge,
+                    ),
+                    content: Text("This chat will be deleted from this device only",
+                        style: context.theme.textTheme.bodyLarge),
+                    backgroundColor: context.theme.colorScheme.properSurface,
+                    actions: <Widget>[
+                      TextButton(
+                        child: Text("No",
+                            style:
+                                context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+                        onPressed: () {
+                          Navigator.of(context).pop(); //Remove AlertDialog
+                        },
+                      ),
+                      TextButton(
+                        child: Text("Yes",
+                            style:
+                                context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+                        onPressed: () async {
+                          ChatsSvc.removeChat(chat);
+                          ChatsSvc.softDeleteChat(chat);
+                          Navigator.pop(context); //Remove AlertDialog
+                        },
+                      ),
+                    ],
+                  );
+                },
               );
-              
-              if (confirmed) {
-                ChatsSvc.removeChat(chat);
-                ChatsSvc.softDeleteChat(chat);
-              }
             },
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 12.0),
@@ -652,39 +670,25 @@ Future<ui.Image> loadImage(Uint8List data) async {
   return completer.future;
 }
 
-/// @deprecated Use BBAlertDialog.confirm() instead
-/// 
-/// Legacy helper function for "Are you sure?" confirmation dialogs.
-/// Kept for backward compatibility but will be removed in future versions.
-/// 
-/// For new code, use:
-/// ```dart
-/// final confirmed = await BBAlertDialog.confirm(
-///   context: context,
-///   title: "Are you sure?",
-///   message: "Your message here",
-/// );
-/// if (confirmed) { /* do action */ }
-/// ```
 AlertDialog areYouSure(BuildContext context,
     {Widget? content, String? title = "Are you sure?", required Function onNo, required Function onYes}) {
   return AlertDialog(
     title: Text(
       title ?? "Are you sure?",
-      style: Theme.of(context).textTheme.titleLarge,
+      style: context.theme.textTheme.titleLarge,
     ),
     content: content,
-    backgroundColor: Theme.of(context).colorScheme.surface,
+    backgroundColor: context.theme.colorScheme.properSurface,
     actions: <Widget>[
       TextButton(
-        child: Text("No", style: Theme.of(context).textTheme.bodyLarge!.copyWith(color: Theme.of(context).colorScheme.primary)),
+        child: Text("No", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
         onPressed: () {
           onNo.call();
         },
       ),
       TextButton(
         child:
-            Text("Yes", style: Theme.of(context).textTheme.bodyLarge!.copyWith(color: Theme.of(context).colorScheme.primary)),
+            Text("Yes", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
         onPressed: () async {
           onYes.call();
         },

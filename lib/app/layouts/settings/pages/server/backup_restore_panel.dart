@@ -1,14 +1,12 @@
 import 'dart:convert';
 
-import 'package:bluebubbles/app/components/dialogs/dialogs.dart';
-import 'package:bluebubbles/app/components/settings/settings.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
-import 'package:bluebubbles/data/database/models.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
-import 'package:bluebubbles/core/logger/logger.dart';
-import 'package:bluebubbles/core/utils/share_utils.dart';
+import 'package:bluebubbles/utils/logger/logger.dart';
+import 'package:bluebubbles/utils/share.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
@@ -23,10 +21,11 @@ import 'package:path_provider/path_provider.dart';
 import 'package:universal_html/html.dart' as html;
 import 'package:universal_io/io.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:bluebubbles/app/components/base/base.dart' hide BBDialogAction;
 
 class BackupRestorePanel extends StatefulWidget {
-  const BackupRestorePanel({super.key});
+  BackupRestorePanel({
+    Key? key,
+  });
 
   @override
   State<BackupRestorePanel> createState() => _BackupRestorePanelState();
@@ -104,23 +103,34 @@ class _BackupRestorePanelState extends OptimizedState<BackupRestorePanel> {
   }
 
   Future<bool?> showMethodDialog() async {
-    return await BBAlertDialog.show<bool>(
-      context: context,
-      title: "Choose Backup Location",
-      message: "Local - Save a backup to this device.\nCloud - Save a backup to the server for use across all your devices.",
-      actions: [
-        BBDialogAction(
-          label: "Local",
-          type: BBDialogButtonType.cancel,
-          onPressed: () => Navigator.of(context).pop(false),
-        ),
-        BBDialogAction(
-          label: "Cloud",
-          type: BBDialogButtonType.primary,
-          onPressed: () => Navigator.of(context).pop(true),
-        ),
-      ],
-    );
+    return await showDialog<bool>(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            backgroundColor: context.theme.colorScheme.properSurface,
+            title: Text(
+              "Choose Backup Location",
+              style: context.theme.textTheme.titleLarge,
+            ),
+            content: Text(
+                "Local - Save a backup to this device.\nCloud - Save a backup to the server for use across all your devices.",
+                style: context.theme.textTheme.bodyLarge),
+            actions: [
+              TextButton(
+                  child: Text("Local",
+                      style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+                  onPressed: () {
+                    Navigator.of(context).pop(false);
+                  }),
+              TextButton(
+                  child: Text("Cloud",
+                      style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+                  onPressed: () {
+                    Navigator.of(context).pop(true);
+                  }),
+            ],
+          );
+        });
   }
 
   @override
@@ -162,7 +172,7 @@ class _BackupRestorePanelState extends OptimizedState<BackupRestorePanel> {
                                 style: context.theme.textTheme.labelLarge,
                               ),
                             ),
-                            if (fetching == true) const BBLoadingIndicator(size: 15),
+                            if (fetching == true) buildProgressIndicator(context, size: 15),
                           ],
                         ),
                       ),
@@ -206,103 +216,117 @@ class _BackupRestorePanelState extends OptimizedState<BackupRestorePanel> {
                                   trailing: Row(mainAxisSize: MainAxisSize.min, children: [
                                     IconButton(
                                         icon: Icon(iOS ? CupertinoIcons.arrow_2_circlepath : Icons.sync),
-                                        onPressed: () async {
-                                          final confirmed = await BBAlertDialog.confirm(
+                                        onPressed: () {
+                                          showDialog(
                                             context: context,
-                                            title: "Overwrite Backup?",
-                                            message: "Are you sure you want to replace this backup with your current Settings?",
-                                            isDestructive: true,
+                                            builder: (_context) => areYouSure(
+                                              _context,
+                                              title: "Overwrite Backup?",
+                                              content: const Text(
+                                                  "Are you sure you want to replace this backup with your current Settings?"),
+                                              onNo: () => Navigator.of(_context).pop(),
+                                              onYes: () async {
+                                                Map<String, dynamic> json =
+                                                    SettingsSvc.settings.toMap(includeAll: false);
+                                                json["description"] = item["description"];
+                                                json["timestamp"] = DateTime.now().millisecondsSinceEpoch;
+                                                Response response = await HttpSvc.setSettings(item["name"], json);
+                                                Navigator.of(_context).pop();
+                                                if (response.statusCode != 200) {
+                                                  showSnackbar(
+                                                    "Error",
+                                                    "Somthing went wrong",
+                                                  );
+                                                } else {
+                                                  showSnackbar(
+                                                    "Success",
+                                                    "Settings exported successfully to server",
+                                                  );
+                                                }
+                                                setState(() {
+                                                  fetching = true;
+                                                  settings.clear();
+                                                  themes.clear();
+                                                });
+                                                getBackups();
+                                              },
+                                            ),
                                           );
-                                          
-                                          if (confirmed) {
-                                            Map<String, dynamic> json =
-                                                SettingsSvc.settings.toMap(includeAll: false);
-                                            json["description"] = item["description"];
-                                            json["timestamp"] = DateTime.now().millisecondsSinceEpoch;
-                                            Response response = await HttpSvc.setSettings(item["name"], json);
-                                            if (response.statusCode != 200) {
-                                              showSnackbar(
-                                                "Error",
-                                                "Somthing went wrong",
-                                              );
-                                            } else {
-                                              showSnackbar(
-                                                "Success",
-                                                "Settings exported successfully to server",
-                                              );
-                                            }
-                                            setState(() {
-                                              fetching = true;
-                                              settings.clear();
-                                              themes.clear();
-                                            });
-                                            getBackups();
-                                          }
                                         }),
                                     IconButton(
                                         icon: Icon(iOS ? CupertinoIcons.trash : Icons.delete_outlined),
-                                        onPressed: () async {
-                                          final confirmed = await BBAlertDialog.confirm(
+                                        onPressed: () {
+                                          showDialog(
                                             context: context,
-                                            title: "Delete Backup?",
-                                            message: "Are you sure you want to delete this settings backup?",
-                                            isDestructive: true,
+                                            builder: (context) => areYouSure(context,
+                                                title: "Delete Backup?",
+                                                content:
+                                                    const Text("Are you sure you want to delete this settings backup?"),
+                                                onNo: () => Navigator.of(context).pop(),
+                                                onYes: () {
+                                                  deleteSettings(item["name"]);
+                                                  Navigator.of(context).pop();
+                                                }),
                                           );
-                                          
-                                          if (confirmed) {
-                                            deleteSettings(item["name"]);
-                                            Navigator.of(context).pop();
-                                          }
                                         })
                                   ]),
-                                  onTap: () async {
-                                    final confirmed = await BBAlertDialog.confirm(
+                                  onTap: () {
+                                    showDialog(
                                       context: context,
-                                      title: "Restore Backup?",
-                                      message: "Are you sure you want to restore this backup, overwriting your current Settings?",
-                                      isDestructive: true,
+                                      builder: (context) => areYouSure(context,
+                                          title: "Restore Backup?",
+                                          content: const Text(
+                                              "Are you sure you want to restore this backup, overwriting your current Settings?"),
+                                          onNo: () => Navigator.of(context).pop(),
+                                          onYes: () {
+                                            Navigator.of(context).pop();
+                                            try {
+                                              Settings.updateFromMap(item);
+                                              showSnackbar("Success", "Settings restored successfully");
+                                            } catch (e, s) {
+                                              Logger.error("Failed to restore settings backup!", error: e, trace: s);
+                                              showSnackbar(
+                                                  "Error", "Failed to restore settings backup! Error: ${e.toString()}");
+                                            }
+                                          }),
                                     );
-                                    
-                                    if (confirmed) {
-                                      try {
-                                        Settings.updateFromMap(item);
-                                        showSnackbar("Success", "Settings restored successfully");
-                                      } catch (e, s) {
-                                        Logger.error("Failed to restore settings backup!", error: e, trace: s);
-                                        showSnackbar(
-                                            "Error", "Failed to restore settings backup! Error: ${e.toString()}");
-                                      }
-                                    }
                                   },
                                   onLongPress: () async {
                                     const encoder = JsonEncoder.withIndent("     ");
                                     final str = encoder.convert(item);
-                                    BBCustomDialog.show(
+                                    showDialog(
                                       context: context,
-                                      title: "Settings Data",
-                                      content: SizedBox(
-                                        width: NavigationSvc.width(context) * 3 / 5,
-                                        height: context.height * 1 / 4,
-                                        child: Container(
-                                          padding: const EdgeInsets.all(10.0),
-                                          decoration: BoxDecoration(
-                                              color: Theme.of(context).colorScheme.surface,
-                                              borderRadius: const BorderRadius.all(Radius.circular(10))),
-                                          child: SingleChildScrollView(
-                                            child: SelectableText(
-                                              str,
-                                              style: Theme.of(context).textTheme.bodyLarge,
+                                      builder: (context) => AlertDialog(
+                                        title: Text(
+                                          "Settings Data",
+                                          style: context.theme.textTheme.titleLarge,
+                                        ),
+                                        backgroundColor: context.theme.colorScheme.properSurface,
+                                        content: SizedBox(
+                                          width: NavigationSvc.width(context) * 3 / 5,
+                                          height: context.height * 1 / 4,
+                                          child: Container(
+                                            padding: const EdgeInsets.all(10.0),
+                                            decoration: BoxDecoration(
+                                                color: context.theme.colorScheme.background,
+                                                borderRadius: const BorderRadius.all(Radius.circular(10))),
+                                            child: SingleChildScrollView(
+                                              child: SelectableText(
+                                                str,
+                                                style: context.theme.textTheme.bodyLarge,
+                                              ),
                                             ),
                                           ),
                                         ),
+                                        actions: [
+                                          TextButton(
+                                            child: Text("Close",
+                                                style: context.theme.textTheme.bodyLarge!
+                                                    .copyWith(color: context.theme.colorScheme.primary)),
+                                            onPressed: () => Navigator.of(context).pop(),
+                                          ),
+                                        ],
                                       ),
-                                      actions: [
-                                        BBDialogAction(
-                                          label: "Close",
-                                          type: BBDialogButtonType.cancel,
-                                          onPressed: () => Navigator.of(context).pop(),
-                                        ),
-                                      ],
                                     );
                                   },
                                   isThreeLine: !isNullOrEmpty(item["description"]),
@@ -345,14 +369,25 @@ class _BackupRestorePanelState extends OptimizedState<BackupRestorePanel> {
                                 if (name.isEmpty) {
                                   return showSnackbar("Error", "Provide a name!");
                                 } else if (settings.firstWhereOrNull((s) => s["name"] == name) != null) {
-                                  final confirmed = await BBAlertDialog.confirm(
+                                  bool yes = false;
+                                  await showDialog(
                                     context: _context,
-                                    title: "Overwrite Backup?",
-                                    message: "Are you sure you want to replace this backup with your current Settings?",
-                                    isDestructive: true,
+                                    builder: (__context) => areYouSure(
+                                      __context,
+                                      title: "Overwrite Backup?",
+                                      content: const Text(
+                                          "Are you sure you want to replace this backup with your current Settings?"),
+                                      onNo: () {
+                                        Navigator.of(__context).pop();
+                                      },
+                                      onYes: () {
+                                        Navigator.of(__context).pop();
+                                        Navigator.of(_context).pop();
+                                        yes = true;
+                                      },
+                                    ),
                                   );
-                                  if (!confirmed) return;
-                                  Navigator.of(_context).pop();
+                                  if (!yes) return;
                                 } else {
                                   Navigator.of(_context).pop();
                                 }
@@ -431,10 +466,16 @@ class _BackupRestorePanelState extends OptimizedState<BackupRestorePanel> {
                                 getBackups();
                               }
 
-                              BBCustomDialog.show(
-                                context: context,
-                                title: "Settings Backup Creation",
-                                content: Column(
+                              showDialog(
+                                  context: context,
+                                  builder: (context) {
+                                    return AlertDialog(
+                                      title: Text(
+                                        "Settings Backup Creation",
+                                        style: context.theme.textTheme.titleLarge,
+                                      ),
+                                      backgroundColor: context.theme.colorScheme.properSurface,
+                                      content: Column(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           Focus(
@@ -448,17 +489,17 @@ class _BackupRestorePanelState extends OptimizedState<BackupRestorePanel> {
                                               return KeyEventResult.ignored;
                                             },
                                             child: TextField(
-                                              cursorColor: Theme.of(context).colorScheme.primary,
+                                              cursorColor: context.theme.colorScheme.primary,
                                               autocorrect: true,
                                               autofocus: true,
                                               controller: nameController,
                                               textInputAction: TextInputAction.next,
                                               decoration: InputDecoration(
                                                 enabledBorder: OutlineInputBorder(
-                                                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                                                    borderSide: BorderSide(color: context.theme.colorScheme.outline),
                                                     borderRadius: BorderRadius.circular(20)),
                                                 focusedBorder: OutlineInputBorder(
-                                                    borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
+                                                    borderSide: BorderSide(color: context.theme.colorScheme.primary),
                                                     borderRadius: BorderRadius.circular(20)),
                                                 labelText: "Name",
                                               ),
@@ -477,7 +518,7 @@ class _BackupRestorePanelState extends OptimizedState<BackupRestorePanel> {
                                               return KeyEventResult.ignored;
                                             },
                                             child: TextField(
-                                              cursorColor: Theme.of(context).colorScheme.primary,
+                                              cursorColor: context.theme.colorScheme.primary,
                                               autocorrect: true,
                                               autofocus: false,
                                               controller: descController,
@@ -487,10 +528,10 @@ class _BackupRestorePanelState extends OptimizedState<BackupRestorePanel> {
                                               },
                                               decoration: InputDecoration(
                                                 enabledBorder: OutlineInputBorder(
-                                                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                                                    borderSide: BorderSide(color: context.theme.colorScheme.outline),
                                                     borderRadius: BorderRadius.circular(20)),
                                                 focusedBorder: OutlineInputBorder(
-                                                    borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
+                                                    borderSide: BorderSide(color: context.theme.colorScheme.primary),
                                                     borderRadius: BorderRadius.circular(20)),
                                                 labelText: "Description (Optional)",
                                               ),
@@ -498,19 +539,26 @@ class _BackupRestorePanelState extends OptimizedState<BackupRestorePanel> {
                                           ),
                                         ],
                                       ),
-                                actions: [
-                                  BBDialogAction(
-                                    label: "Cancel",
-                                    type: BBDialogButtonType.cancel,
-                                    onPressed: () => Navigator.of(context).pop(),
-                                  ),
-                                  BBDialogAction(
-                                    label: "OK",
-                                    type: BBDialogButtonType.primary,
-                                    onPressed: () => onDone.call(context),
-                                  ),
-                                ],
-                              );
+                                      actions: [
+                                        TextButton(
+                                          child: Text("Cancel",
+                                              style: context.theme.textTheme.bodyLarge!
+                                                  .copyWith(color: context.theme.colorScheme.primary)),
+                                          onPressed: () {
+                                            Navigator.of(context).pop();
+                                          },
+                                        ),
+                                        TextButton(
+                                          child: Text("OK",
+                                              style: context.theme.textTheme.bodyLarge!
+                                                  .copyWith(color: context.theme.colorScheme.primary)),
+                                          onPressed: () {
+                                            onDone.call(context);
+                                          },
+                                        ),
+                                      ],
+                                    );
+                                  });
                             },
                           ),
                         ),
@@ -539,32 +587,36 @@ class _BackupRestorePanelState extends OptimizedState<BackupRestorePanel> {
                               final res = await FilePicker.platform
                                   .pickFiles(withData: true, type: FileType.custom, allowedExtensions: ["json"]);
                               if (res == null || res.files.isEmpty || res.files.first.bytes == null) return;
-                              final confirmed = await BBAlertDialog.confirm(
+                              showDialog(
                                 context: context,
-                                title: "Restore Settings?",
-                                message: "Are you sure you want to restore this backup, overwriting your current Settings?",
-                                isDestructive: true,
+                                builder: (context) => areYouSure(context,
+                                    title: "Restore Settings?",
+                                    content: const Text(
+                                        "Are you sure you want to restore this backup, overwriting your current Settings?"),
+                                    onNo: () => Navigator.of(context).pop(),
+                                    onYes: () {
+                                      Navigator.of(context).pop();
+                                      try {
+                                        String jsonString = const Utf8Decoder().convert(res.files.first.bytes!);
+                                        Map<String, dynamic> json = jsonDecode(jsonString);
+                                        Settings.updateFromMap(json);
+                                        showSnackbar("Success", "Settings restored successfully");
+                                      } catch (e, s) {
+                                        Logger.error("Failed to restore settings backup!", error: e, trace: s);
+                                        showSnackbar(
+                                            "Error", "Failed to restore settings backup! Error: ${e.toString()}");
+                                      }
+                                    }),
                               );
-                              
-                              if (confirmed) {
-                                try {
-                                  String jsonString = const Utf8Decoder().convert(res.files.first.bytes!);
-                                  Map<String, dynamic> json = jsonDecode(jsonString);
-                                  Settings.updateFromMap(json);
-                                  showSnackbar("Success", "Settings restored successfully");
-                                } catch (e, s) {
-                                  Logger.error("Failed to restore settings backup!", error: e, trace: s);
-                                  showSnackbar(
-                                      "Error", "Failed to restore settings backup! Error: ${e.toString()}");
-                                }
-                              }
                             },
                           ),
                         ),
                       ],
                     ),
                   if (fetching == false)
-                    const BBSettingsHeader(
+                    SettingsHeader(
+                      iosSubtitle: iosSubtitle,
+                      materialSubtitle: materialSubtitle,
                       text: "Theme Backups",
                     ),
                   if (fetching == false)
@@ -655,17 +707,18 @@ class _BackupRestorePanelState extends OptimizedState<BackupRestorePanel> {
                                         ),
                                   trailing: IconButton(
                                     icon: Icon(iOS ? CupertinoIcons.trash : Icons.delete_outlined),
-                                    onPressed: () async {
-                                      final confirmed = await BBAlertDialog.confirm(
+                                    onPressed: () {
+                                      showDialog(
                                         context: context,
-                                        title: "Delete Backup?",
-                                        message: "Are you sure you want to delete this theme backup?",
-                                        isDestructive: true,
+                                        builder: (context) => areYouSure(context,
+                                            title: "Delete Backup?",
+                                            content: const Text("Are you sure you want to delete this theme backup?"),
+                                            onNo: () => Navigator.of(context).pop(),
+                                            onYes: () {
+                                              deleteTheme(item["name"]);
+                                              Navigator.of(context).pop();
+                                            }),
                                       );
-                                      
-                                      if (confirmed) {
-                                        deleteTheme(item["name"]);
-                                      }
                                     },
                                   ),
                                   onTap: () async {
@@ -673,55 +726,64 @@ class _BackupRestorePanelState extends OptimizedState<BackupRestorePanel> {
                                       return showSnackbar("Error",
                                           "This theme was created on the old theming engine and cannot be restored");
                                     }
-                                    final confirmed = await BBAlertDialog.confirm(
+                                    showDialog(
                                       context: context,
-                                      title: "Restore Backup?",
-                                      message: "Are you sure you want to restore this backup, overwriting your current theme?",
-                                      isDestructive: true,
+                                      builder: (context) => areYouSure(context,
+                                          title: "Restore Backup?",
+                                          content: const Text(
+                                              "Are you sure you want to restore this backup, overwriting your current theme?"),
+                                          onNo: () => Navigator.of(context).pop(),
+                                          onYes: () {
+                                            Navigator.of(context).pop();
+                                            try {
+                                              ThemeStruct object = ThemeStruct.fromMap(item);
+                                              object.id = null;
+                                              object.save();
+                                              showSnackbar("Success", "Theme restored successfully");
+                                            } catch (e, s) {
+                                              Logger.error("Failed to restore theme backup!", error: e, trace: s);
+                                              showSnackbar(
+                                                  "Error", "Failed to restore theme backup! Error: ${e.toString()}");
+                                            }
+                                          }),
                                     );
-                                    
-                                    if (confirmed) {
-                                      try {
-                                        ThemeStruct object = ThemeStruct.fromMap(item);
-                                        object.id = null;
-                                        object.save();
-                                        showSnackbar("Success", "Theme restored successfully");
-                                      } catch (e, s) {
-                                        Logger.error("Failed to restore theme backup!", error: e, trace: s);
-                                        showSnackbar(
-                                            "Error", "Failed to restore theme backup! Error: ${e.toString()}");
-                                      }
-                                    }
                                   },
                                   onLongPress: () async {
                                     const encoder = JsonEncoder.withIndent("     ");
                                     final str = encoder.convert(item);
-                                    BBCustomDialog.show(
+                                    showDialog(
                                       context: context,
-                                      title: "Theme Data",
-                                      content: SizedBox(
-                                        width: NavigationSvc.width(context) * 3 / 5,
-                                        height: context.height * 1 / 4,
-                                        child: Container(
-                                          padding: const EdgeInsets.all(10.0),
-                                          decoration: BoxDecoration(
-                                              color: Theme.of(context).colorScheme.surface,
-                                              borderRadius: const BorderRadius.all(Radius.circular(10))),
-                                          child: SingleChildScrollView(
-                                            child: SelectableText(
-                                              str,
-                                              style: Theme.of(context).textTheme.bodyLarge,
+                                      builder: (context) => AlertDialog(
+                                        title: Text(
+                                          "Theme Data",
+                                          style: context.theme.textTheme.titleLarge,
+                                        ),
+                                        backgroundColor: context.theme.colorScheme.properSurface,
+                                        content: SizedBox(
+                                          width: NavigationSvc.width(context) * 3 / 5,
+                                          height: context.height * 1 / 4,
+                                          child: Container(
+                                            padding: const EdgeInsets.all(10.0),
+                                            decoration: BoxDecoration(
+                                                color: context.theme.colorScheme.background,
+                                                borderRadius: const BorderRadius.all(Radius.circular(10))),
+                                            child: SingleChildScrollView(
+                                              child: SelectableText(
+                                                str,
+                                                style: context.theme.textTheme.bodyLarge,
+                                              ),
                                             ),
                                           ),
                                         ),
+                                        actions: [
+                                          TextButton(
+                                            child: Text("Close",
+                                                style: context.theme.textTheme.bodyLarge!
+                                                    .copyWith(color: context.theme.colorScheme.primary)),
+                                            onPressed: () => Navigator.of(context).pop(),
+                                          ),
+                                        ],
                                       ),
-                                      actions: [
-                                        BBDialogAction(
-                                          label: "Close",
-                                          type: BBDialogButtonType.cancel,
-                                          onPressed: () => Navigator.of(context).pop(),
-                                        ),
-                                      ],
                                     );
                                   },
                                 );
@@ -871,29 +933,31 @@ class _BackupRestorePanelState extends OptimizedState<BackupRestorePanel> {
                                   .pickFiles(withData: true, type: FileType.custom, allowedExtensions: ["json"]);
                               if (res == null || res.files.isEmpty || res.files.first.bytes == null) return;
 
-                              final confirmed = await BBAlertDialog.confirm(
+                              showDialog(
                                 context: context,
-                                title: "Restore Backup?",
-                                message: "Are you sure you want to restore this backup, overwriting your current theme?",
-                                isDestructive: true,
+                                builder: (context) => areYouSure(context,
+                                    title: "Restore Backup?",
+                                    content: const Text(
+                                        "Are you sure you want to restore this backup, overwriting your current theme?"),
+                                    onNo: () => Navigator.of(context).pop(),
+                                    onYes: () {
+                                      Navigator.of(context).pop();
+                                      try {
+                                        String jsonString = const Utf8Decoder().convert(res.files.first.bytes!);
+                                        List<dynamic> json = jsonDecode(jsonString);
+                                        for (var e in json) {
+                                          ThemeStruct object = ThemeStruct.fromMap(e);
+                                          if (object.isPreset) continue;
+                                          object.id = null;
+                                          object.save();
+                                        }
+                                        showSnackbar("Success", "Theming restored successfully");
+                                      } catch (e, s) {
+                                        Logger.error("Failed to restore theme backup!", error: e, trace: s);
+                                        showSnackbar("Error", "Failed to restore theme backup! Error: ${e.toString()}");
+                                      }
+                                    }),
                               );
-                              
-                              if (confirmed) {
-                                try {
-                                  String jsonString = const Utf8Decoder().convert(res.files.first.bytes!);
-                                  List<dynamic> json = jsonDecode(jsonString);
-                                  for (var e in json) {
-                                    ThemeStruct object = ThemeStruct.fromMap(e);
-                                    if (object.isPreset) continue;
-                                    object.id = null;
-                                    object.save();
-                                  }
-                                  showSnackbar("Success", "Theming restored successfully");
-                                } catch (e, s) {
-                                  Logger.error("Failed to restore theme backup!", error: e, trace: s);
-                                  showSnackbar("Error", "Failed to restore theme backup! Error: ${e.toString()}");
-                                }
-                              }
                             },
                           ),
                         ),

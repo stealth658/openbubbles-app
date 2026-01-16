@@ -2,9 +2,9 @@ import 'dart:convert';
 
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/app/layouts/fullscreen_media/fullscreen_holder.dart';
-import 'package:bluebubbles/core/logger/logger.dart';
+import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/data/database/models.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/utils/share.dart';
 import 'package:collection/collection.dart';
@@ -20,7 +20,7 @@ import 'package:universal_io/io.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class OtherFile extends StatelessWidget {
-  const OtherFile({
+  OtherFile({
     super.key,
     required this.attachment,
     required this.file,

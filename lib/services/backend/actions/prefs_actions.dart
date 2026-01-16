@@ -1,6 +1,6 @@
-import 'package:bluebubbles/services/storage/shared_preferences_service.dart';
-import 'package:bluebubbles/services/storage/settings_service.dart';
-import 'package:bluebubbles/data/models/global/settings.dart';
+import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
+import 'package:bluebubbles/services/backend/settings/settings_service.dart';
+import 'package:bluebubbles/database/global/settings.dart';
 
 class PrefsActions {
   static Future<void> saveReplyToMessageState(Map<String, dynamic> data) async {

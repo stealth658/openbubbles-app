@@ -1,10 +1,9 @@
 import 'dart:async';
 
-import 'package:bluebubbles/app/components/base/base.dart';
 import 'package:bluebubbles/app/layouts/fullscreen_media/dialogs/metadata_dialog.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/data/database/models.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 
 // (needed for custom back button)
@@ -18,7 +17,7 @@ import 'package:media_kit_video/media_kit_video_controls/media_kit_video_control
 import 'package:universal_html/html.dart' as html;
 
 class FullscreenVideo extends StatefulWidget {
-  const FullscreenVideo({
+  FullscreenVideo({
     super.key,
     required this.file,
     required this.attachment,
@@ -315,29 +314,37 @@ class _FullscreenVideoState extends OptimizedState<FullscreenVideo> with Automat
                               height: 60,
                               decoration: BoxDecoration(
                                 color:
-                                    samsung ? Colors.black : context.theme.colorScheme.properSurface.withValues(alpha: 0.9),
+                                    samsung ? Colors.black : context.theme.colorScheme.properSurface.withOpacity(0.9),
                               ),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                 children: [
-                                  BBIconButton(
-                                    icon: CupertinoIcons.cloud_download,
-                                    color: samsung ? Colors.white : context.theme.colorScheme.primary,
+                                  IconButton(
+                                    icon: Icon(
+                                      CupertinoIcons.cloud_download,
+                                      color: samsung ? Colors.white : context.theme.colorScheme.primary,
+                                    ),
                                     onPressed: () => AttachmentsSvc.saveToDisk(widget.file),
                                   ),
-                                  BBIconButton(
-                                    icon: CupertinoIcons.info,
-                                    color: samsung ? Colors.white : context.theme.colorScheme.primary,
+                                  IconButton(
+                                    icon: Icon(
+                                      CupertinoIcons.info,
+                                      color: samsung ? Colors.white : context.theme.colorScheme.primary,
+                                    ),
                                     onPressed: () => showMetadataDialog(widget.attachment, context),
                                   ),
-                                  BBIconButton(
-                                    icon: CupertinoIcons.refresh,
-                                    color: samsung ? Colors.white : context.theme.colorScheme.primary,
+                                  IconButton(
+                                    icon: Icon(
+                                      CupertinoIcons.refresh,
+                                      color: samsung ? Colors.white : context.theme.colorScheme.primary,
+                                    ),
                                     onPressed: () => refreshAttachment(),
                                   ),
-                                  BBIconButton(
-                                    icon: muted.value ? CupertinoIcons.volume_mute : CupertinoIcons.volume_up,
-                                    color: samsung ? Colors.white : context.theme.colorScheme.primary,
+                                  IconButton(
+                                    icon: Icon(
+                                      muted.value ? CupertinoIcons.volume_mute : CupertinoIcons.volume_up,
+                                      color: samsung ? Colors.white : context.theme.colorScheme.primary,
+                                    ),
                                     onPressed: () async {
                                       muted.toggle();
                                       await videoController.player.setVolume(muted.value ? 0.0 : 100.0);

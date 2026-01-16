@@ -1,6 +1,6 @@
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/data/database/models.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/cupertino.dart';
@@ -9,7 +9,7 @@ import 'package:get/get.dart';
 import 'package:universal_io/io.dart';
 
 class UnsupportedInteractive extends StatefulWidget {
-  const UnsupportedInteractive({
+  UnsupportedInteractive({
     super.key,
     required this.message,
     required this.payloadData,

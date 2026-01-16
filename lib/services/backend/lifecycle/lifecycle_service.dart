@@ -2,11 +2,11 @@ import 'dart:async';
 import 'dart:isolate';
 import 'dart:ui' hide window;
 
-import 'package:bluebubbles/data/database/database.dart';
+import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/helpers/backend/startup_tasks.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/core/logger/logger.dart';
+import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';

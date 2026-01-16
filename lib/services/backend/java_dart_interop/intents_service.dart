@@ -1,17 +1,16 @@
 import 'dart:async';
 
-import 'package:bluebubbles/app/components/dialogs/dialogs.dart';
-import 'package:bluebubbles/app/layouts/conversation_view/pages/conversation_view.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/scheduling/scheduled_messages_panel.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/server/server_management_panel.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/helpers/backend/startup_tasks.dart';
 import 'package:bluebubbles/helpers/ui/facetime_helpers.dart';
 
-import 'package:bluebubbles/core/logger/logger.dart';
+import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/chat_creator/chat_creator.dart';
-import 'package:bluebubbles/data/database/models.dart';
+import 'package:bluebubbles/app/layouts/conversation_view/pages/conversation_view.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' hide Intent;
@@ -116,11 +115,26 @@ class IntentsService {
 
   Future<void> answerFaceTime(String callUuid) async {
     if (Get.context != null) {
-      BBProgressDialog.show(
-        context: Get.context!,
-        title: "Generating link for call...",
-        barrierDismissible: false,
-      );
+      showDialog(
+          context: Get.context!,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              backgroundColor: context.theme.colorScheme.properSurface,
+              title: Text(
+                "Generating link for call...",
+                style: context.theme.textTheme.titleLarge,
+              ),
+              content: Container(
+                height: 70,
+                child: Center(
+                  child: CircularProgressIndicator(
+                    backgroundColor: context.theme.colorScheme.properSurface,
+                    valueColor: AlwaysStoppedAnimation<Color>(context.theme.colorScheme.primary),
+                  ),
+                ),
+              ),
+            );
+          });
       hideFaceTimeOverlay(callUuid);
     }
 
@@ -176,7 +190,7 @@ class IntentsService {
       Navigator.of(Get.context!).push(
         ThemeSwitcher.buildPageRoute(
           builder: (BuildContext context) {
-            return const ScheduledMessagesPanel();
+            return ScheduledMessagesPanel();
           },
         ),
       );

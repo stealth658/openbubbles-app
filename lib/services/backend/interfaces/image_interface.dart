@@ -1,4 +1,4 @@
-import 'package:bluebubbles/data/database/models.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/env.dart';
 import 'package:bluebubbles/services/backend/actions/image_actions.dart';
 import 'package:flutter/foundation.dart';

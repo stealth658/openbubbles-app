@@ -27,9 +27,9 @@ class FailedToConnectDialog extends StatelessWidget {
         ),
         actions: [
           TextButton(
-              onPressed: onDismiss,
               child: Text("OK",
-                  style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary))),
+                  style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+              onPressed: onDismiss),
         ],
       ),
     );

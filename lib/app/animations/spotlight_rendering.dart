@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
 class Spotlight extends LeafRenderObjectWidget {
-  const Spotlight({
+  Spotlight({
     super.key,
     required this.controller,
   });

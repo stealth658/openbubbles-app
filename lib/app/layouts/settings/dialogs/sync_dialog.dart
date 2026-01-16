@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class SyncDialog extends StatefulWidget {
-  const SyncDialog({super.key, required this.manager});
+  SyncDialog({super.key, required this.manager});
 
   final IncrementalSyncManager manager;
 
@@ -20,7 +20,7 @@ class _SyncDialogState extends OptimizedState<SyncDialog> {
       backgroundColor: context.theme.colorScheme.properSurface,
       title: Obx(() => Text(widget.manager.progress.value >= 1 ? "Done syncing!" : "Syncing messages....",
           style: context.theme.textTheme.titleLarge)),
-      content: SizedBox(
+      content: Container(
         height: 5,
         child: Center(
           child: Obx(() => LinearProgressIndicator(

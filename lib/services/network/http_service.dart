@@ -1,12 +1,12 @@
-import 'package:bluebubbles/data/database/models.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/helpers/ui/ui_helpers.dart';
-import 'package:bluebubbles/core/logger/logger.dart';
+import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/services.dart';
 import 'package:native_dio_adapter/native_dio_adapter.dart';
 import 'package:flutter/foundation.dart';
-// import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart' hide Response, FormData, MultipartFile;
 import 'package:universal_io/io.dart';
 import 'package:get_it/get_it.dart';
@@ -1260,130 +1260,130 @@ class HttpService {
   }
 
   /// Test most API GET requests (the ones that don't have required parameters)
-  // void testAPI() {
-  //   Stopwatch s = Stopwatch();
-  //   group("API Service Test", () {
-  //     test("Ping", () async {
-  //       s.start();
-  //       var res = await ping();
-  //       expect(res.data['message'], "pong");
-  //       s.stop();
-  //       Logger.info("Request took ${s.elapsedMilliseconds} ms");
-  //     });
-  //     test("Server Info", () async {
-  //       s.start();
-  //       var res = await serverInfo();
-  //       expect(res.data['status'], 200);
-  //       s.stop();
-  //       Logger.info("Request took ${s.elapsedMilliseconds} ms");
-  //     });
-  //     test("Server Stat Totals", () async {
-  //       s.start();
-  //       var res = await serverStatTotals();
-  //       expect(res.data['status'], 200);
-  //       s.stop();
-  //       Logger.info("Request took ${s.elapsedMilliseconds} ms");
-  //     });
-  //     test("Server Stat Media", () async {
-  //       s.start();
-  //       var res = await serverStatMedia();
-  //       expect(res.data['status'], 200);
-  //       s.stop();
-  //       Logger.info("Request took ${s.elapsedMilliseconds} ms");
-  //     });
-  //     test("Server Logs", () async {
-  //       s.start();
-  //       var res = await serverLogs();
-  //       expect(res.data['status'], 200);
-  //       s.stop();
-  //       Logger.info("Request took ${s.elapsedMilliseconds} ms");
-  //     });
-  //     test("FCM Client", () async {
-  //       s.start();
-  //       var res = await fcmClient();
-  //       expect(res.data['status'], 200);
-  //       s.stop();
-  //       Logger.info("Request took ${s.elapsedMilliseconds} ms");
-  //     });
-  //     test("Attachment Count", () async {
-  //       s.start();
-  //       var res = await attachmentCount();
-  //       expect(res.data['status'], 200);
-  //       s.stop();
-  //       Logger.info("Request took ${s.elapsedMilliseconds} ms");
-  //     });
-  //     test("Chats", () async {
-  //       s.start();
-  //       var res = await chats();
-  //       expect(res.data['status'], 200);
-  //       s.stop();
-  //       Logger.info("Request took ${s.elapsedMilliseconds} ms");
-  //     });
-  //     test("Chat Count", () async {
-  //       s.start();
-  //       var res = await chatCount();
-  //       expect(res.data['status'], 200);
-  //       s.stop();
-  //       Logger.info("Request took ${s.elapsedMilliseconds} ms");
-  //     });
-  //     test("Message Count", () async {
-  //       s.start();
-  //       var res = await messageCount();
-  //       expect(res.data['status'], 200);
-  //       s.stop();
-  //       Logger.info("Request took ${s.elapsedMilliseconds} ms");
-  //     });
-  //     test("My Message Count", () async {
-  //       s.start();
-  //       var res = await messageCount(onlyMe: true);
-  //       expect(res.data['status'], 200);
-  //       s.stop();
-  //       Logger.info("Request took ${s.elapsedMilliseconds} ms");
-  //     });
-  //     test("Messages", () async {
-  //       s.start();
-  //       var res = await messages();
-  //       expect(res.data['status'], 200);
-  //       s.stop();
-  //       Logger.info("Request took ${s.elapsedMilliseconds} ms");
-  //     });
-  //     test("Handle Count", () async {
-  //       s.start();
-  //       var res = await handleCount();
-  //       expect(res.data['status'], 200);
-  //       s.stop();
-  //       Logger.info("Request took ${s.elapsedMilliseconds} ms");
-  //     });
-  //     test("iCloud Contacts", () async {
-  //       s.start();
-  //       var res = await contacts();
-  //       expect(res.data['status'], 200);
-  //       s.stop();
-  //       Logger.info("Request took ${s.elapsedMilliseconds} ms");
-  //     });
-  //     test("Theme Backup", () async {
-  //       s.start();
-  //       var res = await getTheme();
-  //       expect(res.data['status'], 200);
-  //       s.stop();
-  //       Logger.info("Request took ${s.elapsedMilliseconds} ms");
-  //     });
-  //     test("Settings Backup", () async {
-  //       s.start();
-  //       var res = await getSettings();
-  //       expect(res.data['status'], 200);
-  //       s.stop();
-  //       Logger.info("Request took ${s.elapsedMilliseconds} ms");
-  //     });
-  //     test("Landing Page", () async {
-  //       s.start();
-  //       var res = await landingPage();
-  //       expect(res.statusCode, 200);
-  //       s.stop();
-  //       Logger.info("Request took ${s.elapsedMilliseconds} ms");
-  //     });
-  //   });
-  // }
+  void testAPI() {
+    Stopwatch s = Stopwatch();
+    group("API Service Test", () {
+      test("Ping", () async {
+        s.start();
+        var res = await ping();
+        expect(res.data['message'], "pong");
+        s.stop();
+        Logger.info("Request took ${s.elapsedMilliseconds} ms");
+      });
+      test("Server Info", () async {
+        s.start();
+        var res = await serverInfo();
+        expect(res.data['status'], 200);
+        s.stop();
+        Logger.info("Request took ${s.elapsedMilliseconds} ms");
+      });
+      test("Server Stat Totals", () async {
+        s.start();
+        var res = await serverStatTotals();
+        expect(res.data['status'], 200);
+        s.stop();
+        Logger.info("Request took ${s.elapsedMilliseconds} ms");
+      });
+      test("Server Stat Media", () async {
+        s.start();
+        var res = await serverStatMedia();
+        expect(res.data['status'], 200);
+        s.stop();
+        Logger.info("Request took ${s.elapsedMilliseconds} ms");
+      });
+      test("Server Logs", () async {
+        s.start();
+        var res = await serverLogs();
+        expect(res.data['status'], 200);
+        s.stop();
+        Logger.info("Request took ${s.elapsedMilliseconds} ms");
+      });
+      test("FCM Client", () async {
+        s.start();
+        var res = await fcmClient();
+        expect(res.data['status'], 200);
+        s.stop();
+        Logger.info("Request took ${s.elapsedMilliseconds} ms");
+      });
+      test("Attachment Count", () async {
+        s.start();
+        var res = await attachmentCount();
+        expect(res.data['status'], 200);
+        s.stop();
+        Logger.info("Request took ${s.elapsedMilliseconds} ms");
+      });
+      test("Chats", () async {
+        s.start();
+        var res = await chats();
+        expect(res.data['status'], 200);
+        s.stop();
+        Logger.info("Request took ${s.elapsedMilliseconds} ms");
+      });
+      test("Chat Count", () async {
+        s.start();
+        var res = await chatCount();
+        expect(res.data['status'], 200);
+        s.stop();
+        Logger.info("Request took ${s.elapsedMilliseconds} ms");
+      });
+      test("Message Count", () async {
+        s.start();
+        var res = await messageCount();
+        expect(res.data['status'], 200);
+        s.stop();
+        Logger.info("Request took ${s.elapsedMilliseconds} ms");
+      });
+      test("My Message Count", () async {
+        s.start();
+        var res = await messageCount(onlyMe: true);
+        expect(res.data['status'], 200);
+        s.stop();
+        Logger.info("Request took ${s.elapsedMilliseconds} ms");
+      });
+      test("Messages", () async {
+        s.start();
+        var res = await messages();
+        expect(res.data['status'], 200);
+        s.stop();
+        Logger.info("Request took ${s.elapsedMilliseconds} ms");
+      });
+      test("Handle Count", () async {
+        s.start();
+        var res = await handleCount();
+        expect(res.data['status'], 200);
+        s.stop();
+        Logger.info("Request took ${s.elapsedMilliseconds} ms");
+      });
+      test("iCloud Contacts", () async {
+        s.start();
+        var res = await contacts();
+        expect(res.data['status'], 200);
+        s.stop();
+        Logger.info("Request took ${s.elapsedMilliseconds} ms");
+      });
+      test("Theme Backup", () async {
+        s.start();
+        var res = await getTheme();
+        expect(res.data['status'], 200);
+        s.stop();
+        Logger.info("Request took ${s.elapsedMilliseconds} ms");
+      });
+      test("Settings Backup", () async {
+        s.start();
+        var res = await getSettings();
+        expect(res.data['status'], 200);
+        s.stop();
+        Logger.info("Request took ${s.elapsedMilliseconds} ms");
+      });
+      test("Landing Page", () async {
+        s.start();
+        var res = await landingPage();
+        expect(res.statusCode, 200);
+        s.stop();
+        Logger.info("Request took ${s.elapsedMilliseconds} ms");
+      });
+    });
+  }
 }
 
 /// Intercepts API requests, responses, and errors and logs them to console

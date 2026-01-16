@@ -1,13 +1,12 @@
 import 'dart:async';
 
-import 'package:bluebubbles/app/components/base/base.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/attachment/live_photo_mixin.dart';
 import 'package:bluebubbles/app/layouts/fullscreen_media/dialogs/metadata_dialog.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
-import 'package:bluebubbles/core/utils/share_utils.dart';
+import 'package:bluebubbles/utils/share.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
-import 'package:bluebubbles/data/database/models.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/backend/interfaces/image_interface.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
@@ -20,7 +19,7 @@ import 'package:photo_view/photo_view.dart';
 import 'dart:io';
 
 class FullscreenImage extends StatefulWidget {
-  const FullscreenImage({
+  FullscreenImage({
     super.key,
     required this.file,
     required this.attachment,
@@ -154,7 +153,7 @@ class _FullscreenImageState extends OptimizedState<FullscreenImage> with Automat
                         ? MemoryImage(bytes!) as ImageProvider
                         : FileImage(File(compatiblePath ?? file.path!)),
                     loadingBuilder: (BuildContext context, ImageChunkEvent? ev) {
-                      return const Center(child: BBLoadingIndicator());
+                      return Center(child: buildProgressIndicator(context));
                     },
                     scaleStateChangedCallback: (scale) {
                       if (scale == PhotoViewScaleState.zoomedIn ||
@@ -171,7 +170,7 @@ class _FullscreenImageState extends OptimizedState<FullscreenImage> with Automat
                   )
                 : hasError
                     ? Center(child: Text("Failed to load image", style: context.theme.textTheme.bodyLarge))
-                    : const Center(child: BBLoadingIndicator()),
+                    : Center(child: buildProgressIndicator(context)),
             // Live photo video overlay
             if (attachment.hasLivePhoto) buildLivePhotoOverlay(),
             if (!iOS)
@@ -284,34 +283,42 @@ class _FullscreenImageState extends OptimizedState<FullscreenImage> with Automat
                     child: Container(
                       height: 60,
                       decoration: BoxDecoration(
-                        color: samsung ? Colors.black : context.theme.colorScheme.properSurface.withValues(alpha: 0.9),
+                        color: samsung ? Colors.black : context.theme.colorScheme.properSurface.withOpacity(0.9),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          BBIconButton(
-                            icon: CupertinoIcons.cloud_download,
-                            color: samsung ? Colors.white : context.theme.colorScheme.primary,
+                          IconButton(
+                            icon: Icon(
+                              CupertinoIcons.cloud_download,
+                              color: samsung ? Colors.white : context.theme.colorScheme.primary,
+                            ),
                             onPressed: () => AttachmentsSvc.saveToDisk(widget.file),
                           ),
                           if (!kIsWeb && !kIsDesktop)
-                            BBIconButton(
-                              icon: CupertinoIcons.share,
-                              color: samsung ? Colors.white : context.theme.colorScheme.primary,
+                            IconButton(
+                              icon: Icon(
+                                CupertinoIcons.share,
+                                color: samsung ? Colors.white : context.theme.colorScheme.primary,
+                              ),
                               onPressed: () {
                                 if (widget.file.path != null) {
                                   Share.files([widget.file.path!]);
                                 }
                               },
                             ),
-                          BBIconButton(
-                            icon: CupertinoIcons.info,
-                            color: samsung ? Colors.white : context.theme.colorScheme.primary,
+                          IconButton(
+                            icon: Icon(
+                              CupertinoIcons.info,
+                              color: samsung ? Colors.white : context.theme.colorScheme.primary,
+                            ),
                             onPressed: () => showMetadataDialog(widget.attachment, context),
                           ),
-                          BBIconButton(
-                            icon: CupertinoIcons.refresh,
-                            color: samsung ? Colors.white : context.theme.colorScheme.primary,
+                          IconButton(
+                            icon: Icon(
+                              CupertinoIcons.refresh,
+                              color: samsung ? Colors.white : context.theme.colorScheme.primary,
+                            ),
                             onPressed: () => refreshAttachment(),
                           ),
                         ],

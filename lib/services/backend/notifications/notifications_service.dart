@@ -8,7 +8,7 @@ import 'package:bluebubbles/app/layouts/settings/pages/server/server_management_
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/helpers/ui/facetime_helpers.dart';
-import 'package:bluebubbles/data/database/models.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
@@ -721,7 +721,7 @@ class NotificationsService {
           Navigator.of(Get.context!).push(
             ThemeSwitcher.buildPageRoute(
               builder: (BuildContext context) {
-                return const ScheduledMessagesPanel();
+                return ScheduledMessagesPanel();
               },
             ),
           );

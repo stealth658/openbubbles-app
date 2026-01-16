@@ -3,7 +3,6 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
 
-import 'package:bluebubbles/app/components/dialogs/dialogs.dart';
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:bluebubbles/app/components/avatars/contact_avatar_widget.dart';
 import 'package:bluebubbles/app/layouts/findmy/findmy_location_clipper.dart';
@@ -12,11 +11,11 @@ import 'package:bluebubbles/app/wrappers/scrollbar_wrapper.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/app/wrappers/trackpad_bug_wrapper.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/app/components/settings/settings.dart';
-import 'package:bluebubbles/data/database/models.dart';
+import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/services/services.dart';
-import 'package:bluebubbles/core/logger/logger.dart';
+import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -31,7 +30,6 @@ import 'package:maps_launcher/maps_launcher.dart';
 import 'package:sliding_up_panel2/sliding_up_panel2.dart';
 import 'package:universal_io/io.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:bluebubbles/app/components/base/base.dart' hide BBDialogAction;
 
 class FindMyPage extends StatefulWidget {
   const FindMyPage({super.key});
@@ -399,15 +397,15 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
                         style: context.theme.textTheme.labelLarge,
                       ),
                     ),
-                    if (fetching == true) const BBLoadingIndicator(size: 15),
+                    if (fetching == true) buildProgressIndicator(context, size: 15),
                   ],
                 ),
               ),
             ),
           if (devicesWithLocation.isNotEmpty)
-            const BBSettingsHeader(text: "Devices"),
+            SettingsHeader(iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Devices"),
           if (devicesWithLocation.isNotEmpty)
-            BBSettingsSection(
+            SettingsSection(
               backgroundColor: tileColor,
               children: [
                 Material(
@@ -455,32 +453,39 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
                         onLongPress: () async {
                           const encoder = JsonEncoder.withIndent("     ");
                           final str = encoder.convert(item.toJson());
-                          BBCustomDialog.show(
+                          showDialog(
                             context: context,
-                            title: "Raw FindMy Data",
-                            content: SizedBox(
-                              width: NavigationSvc.width(context) * 3 / 5,
-                              height: context.height * 1 / 4,
-                              child: Container(
-                                padding: const EdgeInsets.all(10.0),
-                                decoration: BoxDecoration(
-                                    color: Theme.of(context).colorScheme.surface,
-                                    borderRadius: const BorderRadius.all(Radius.circular(10))),
-                                child: SingleChildScrollView(
-                                  child: SelectableText(
-                                    str,
-                                    style: Theme.of(context).textTheme.bodyLarge,
+                            builder: (context) => AlertDialog(
+                              title: Text(
+                                "Raw FindMy Data",
+                                style: context.theme.textTheme.titleLarge,
+                              ),
+                              backgroundColor: context.theme.colorScheme.properSurface,
+                              content: SizedBox(
+                                width: NavigationSvc.width(context) * 3 / 5,
+                                height: context.height * 1 / 4,
+                                child: Container(
+                                  padding: const EdgeInsets.all(10.0),
+                                  decoration: BoxDecoration(
+                                      color: context.theme.colorScheme.background,
+                                      borderRadius: const BorderRadius.all(Radius.circular(10))),
+                                  child: SingleChildScrollView(
+                                    child: SelectableText(
+                                      str,
+                                      style: context.theme.textTheme.bodyLarge,
+                                    ),
                                   ),
                                 ),
                               ),
+                              actions: [
+                                TextButton(
+                                  child: Text("Close",
+                                      style: context.theme.textTheme.bodyLarge!
+                                          .copyWith(color: context.theme.colorScheme.primary)),
+                                  onPressed: () => Navigator.of(context).pop(),
+                                ),
+                              ],
                             ),
-                            actions: [
-                              BBDialogAction(
-                                label: "Close",
-                                type: BBDialogButtonType.cancel,
-                                onPressed: () => Navigator.of(context).pop(),
-                              ),
-                            ],
                           );
                         },
                       );
@@ -491,7 +496,7 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
               ],
             ),
           if (devicesWithoutLocation.isNotEmpty)
-            BBSettingsSection(
+            SettingsSection(
               backgroundColor: tileColor,
               children: [
                 Material(
@@ -523,32 +528,39 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
                                 onLongPress: () async {
                                   const encoder = JsonEncoder.withIndent("     ");
                                   final str = encoder.convert(item.toJson());
-                                  BBCustomDialog.show(
+                                  showDialog(
                                     context: context,
-                                    title: "Raw FindMy Data",
-                                    content: SizedBox(
-                                      width: NavigationSvc.width(context) * 3 / 5,
-                                      height: context.height * 1 / 4,
-                                      child: Container(
-                                        padding: const EdgeInsets.all(10.0),
-                                        decoration: BoxDecoration(
-                                            color: Theme.of(context).colorScheme.surface,
-                                            borderRadius: const BorderRadius.all(Radius.circular(10))),
-                                        child: SingleChildScrollView(
-                                          child: SelectableText(
-                                            str,
-                                            style: Theme.of(context).textTheme.bodyLarge,
+                                    builder: (context) => AlertDialog(
+                                      title: Text(
+                                        "Raw FindMy Data",
+                                        style: context.theme.textTheme.titleLarge,
+                                      ),
+                                      backgroundColor: context.theme.colorScheme.properSurface,
+                                      content: SizedBox(
+                                        width: NavigationSvc.width(context) * 3 / 5,
+                                        height: context.height * 1 / 4,
+                                        child: Container(
+                                          padding: const EdgeInsets.all(10.0),
+                                          decoration: BoxDecoration(
+                                              color: context.theme.colorScheme.background,
+                                              borderRadius: const BorderRadius.all(Radius.circular(10))),
+                                          child: SingleChildScrollView(
+                                            child: SelectableText(
+                                              str,
+                                              style: context.theme.textTheme.bodyLarge,
+                                            ),
                                           ),
                                         ),
                                       ),
+                                      actions: [
+                                        TextButton(
+                                          child: Text("Close",
+                                              style: context.theme.textTheme.bodyLarge!
+                                                  .copyWith(color: context.theme.colorScheme.primary)),
+                                          onPressed: () => Navigator.of(context).pop(),
+                                        ),
+                                      ],
                                     ),
-                                    actions: [
-                                      BBDialogAction(
-                                        label: "Close",
-                                        type: BBDialogButtonType.cancel,
-                                        onPressed: () => Navigator.of(context).pop(),
-                                      ),
-                                    ],
                                   );
                                 },
                               ))
@@ -580,15 +592,15 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
                         style: context.theme.textTheme.labelLarge,
                       ),
                     ),
-                    if (fetching == true) const BBLoadingIndicator(size: 15),
+                    if (fetching == true) buildProgressIndicator(context, size: 15),
                   ],
                 ),
               ),
             ),
           if (itemsWithLocation.isNotEmpty)
-            const BBSettingsHeader(text: "Items"),
+            SettingsHeader(iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Items"),
           if (itemsWithLocation.isNotEmpty)
-            BBSettingsSection(
+            SettingsSection(
               backgroundColor: tileColor,
               children: [
                 Material(
@@ -634,32 +646,39 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
                         onLongPress: () async {
                           const encoder = JsonEncoder.withIndent("     ");
                           final str = encoder.convert(item.toJson());
-                          BBCustomDialog.show(
+                          showDialog(
                             context: context,
-                            title: "Raw FindMy Data",
-                            content: SizedBox(
-                              width: NavigationSvc.width(context) * 3 / 5,
-                              height: context.height * 1 / 4,
-                              child: Container(
-                                padding: const EdgeInsets.all(10.0),
-                                decoration: BoxDecoration(
-                                    color: Theme.of(context).colorScheme.surface,
-                                    borderRadius: const BorderRadius.all(Radius.circular(10))),
-                                child: SingleChildScrollView(
-                                  child: SelectableText(
-                                    str,
-                                    style: Theme.of(context).textTheme.bodyLarge,
+                            builder: (context) => AlertDialog(
+                              title: Text(
+                                "Raw FindMy Data",
+                                style: context.theme.textTheme.titleLarge,
+                              ),
+                              backgroundColor: context.theme.colorScheme.properSurface,
+                              content: SizedBox(
+                                width: NavigationSvc.width(context) * 3 / 5,
+                                height: context.height * 1 / 4,
+                                child: Container(
+                                  padding: const EdgeInsets.all(10.0),
+                                  decoration: BoxDecoration(
+                                      color: context.theme.colorScheme.background,
+                                      borderRadius: const BorderRadius.all(Radius.circular(10))),
+                                  child: SingleChildScrollView(
+                                    child: SelectableText(
+                                      str,
+                                      style: context.theme.textTheme.bodyLarge,
+                                    ),
                                   ),
                                 ),
                               ),
+                              actions: [
+                                TextButton(
+                                  child: Text("Close",
+                                      style: context.theme.textTheme.bodyLarge!
+                                          .copyWith(color: context.theme.colorScheme.primary)),
+                                  onPressed: () => Navigator.of(context).pop(),
+                                ),
+                              ],
                             ),
-                            actions: [
-                              BBDialogAction(
-                                label: "Close",
-                                type: BBDialogButtonType.cancel,
-                                onPressed: () => Navigator.of(context).pop(),
-                              ),
-                            ],
                           );
                         },
                       );
@@ -670,7 +689,7 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
               ],
             ),
           if (itemsWithoutLocation.isNotEmpty)
-            BBSettingsSection(
+            SettingsSection(
               backgroundColor: tileColor,
               children: [
                 Material(
@@ -701,32 +720,39 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
                                 onLongPress: () async {
                                   const encoder = JsonEncoder.withIndent("     ");
                                   final str = encoder.convert(item.toJson());
-                                  BBCustomDialog.show(
+                                  showDialog(
                                     context: context,
-                                    title: "Raw FindMy Data",
-                                    content: SizedBox(
-                                      width: NavigationSvc.width(context) * 3 / 5,
-                                      height: context.height * 1 / 4,
-                                      child: Container(
-                                        padding: const EdgeInsets.all(10.0),
-                                        decoration: BoxDecoration(
-                                            color: Theme.of(context).colorScheme.surface,
-                                            borderRadius: const BorderRadius.all(Radius.circular(10))),
-                                        child: SingleChildScrollView(
-                                          child: SelectableText(
-                                            str,
-                                            style: Theme.of(context).textTheme.bodyLarge,
+                                    builder: (context) => AlertDialog(
+                                      title: Text(
+                                        "Raw FindMy Data",
+                                        style: context.theme.textTheme.titleLarge,
+                                      ),
+                                      backgroundColor: context.theme.colorScheme.properSurface,
+                                      content: SizedBox(
+                                        width: NavigationSvc.width(context) * 3 / 5,
+                                        height: context.height * 1 / 4,
+                                        child: Container(
+                                          padding: const EdgeInsets.all(10.0),
+                                          decoration: BoxDecoration(
+                                              color: context.theme.colorScheme.background,
+                                              borderRadius: const BorderRadius.all(Radius.circular(10))),
+                                          child: SingleChildScrollView(
+                                            child: SelectableText(
+                                              str,
+                                              style: context.theme.textTheme.bodyLarge,
+                                            ),
                                           ),
                                         ),
                                       ),
+                                      actions: [
+                                        TextButton(
+                                          child: Text("Close",
+                                              style: context.theme.textTheme.bodyLarge!
+                                                  .copyWith(color: context.theme.colorScheme.primary)),
+                                          onPressed: () => Navigator.of(context).pop(),
+                                        ),
+                                      ],
                                     ),
-                                    actions: [
-                                      BBDialogAction(
-                                        label: "Close",
-                                        type: BBDialogButtonType.cancel,
-                                        onPressed: () => Navigator.of(context).pop(),
-                                      ),
-                                    ],
                                   );
                                 },
                               ))
@@ -758,15 +784,15 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
                         style: context.theme.textTheme.labelLarge,
                       ),
                     ),
-                    if (fetching2 == true) const BBLoadingIndicator(size: 15),
+                    if (fetching2 == true) buildProgressIndicator(context, size: 15),
                   ],
                 ),
               ),
             ),
           if (friendsWithLocation.isNotEmpty)
-            const BBSettingsHeader(text: "Friends"),
+            SettingsHeader(iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Friends"),
           if (friendsWithLocation.isNotEmpty)
-            BBSettingsSection(
+            SettingsSection(
               backgroundColor: tileColor,
               children: [
                 Material(
@@ -789,7 +815,7 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
                                 children: [
                                   if (item.status == LocationStatus.live)
                                     const Icon(CupertinoIcons.largecircle_fill_circle),
-                                  if (item.locatingInProgress) const BBLoadingIndicator(),
+                                  if (item.locatingInProgress) buildProgressIndicator(context),
                                   ButtonTheme(
                                     minWidth: 1,
                                     child: TextButton(
@@ -819,32 +845,39 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
                         onLongPress: () async {
                           const encoder = JsonEncoder.withIndent("     ");
                           final str = encoder.convert(item.toJson());
-                          BBCustomDialog.show(
+                          showDialog(
                             context: context,
-                            title: "Raw FindMy Data",
-                            content: SizedBox(
-                              width: NavigationSvc.width(context) * 3 / 5,
-                              height: context.height / 2,
-                              child: Container(
-                                padding: const EdgeInsets.all(10.0),
-                                decoration: BoxDecoration(
-                                    color: Theme.of(context).colorScheme.surface,
-                                    borderRadius: const BorderRadius.all(Radius.circular(10))),
-                                child: SingleChildScrollView(
-                                  child: SelectableText(
-                                    str,
-                                    style: Theme.of(context).textTheme.bodyLarge,
+                            builder: (context) => AlertDialog(
+                              title: Text(
+                                "Raw FindMy Data",
+                                style: context.theme.textTheme.titleLarge,
+                              ),
+                              backgroundColor: context.theme.colorScheme.properSurface,
+                              content: SizedBox(
+                                width: NavigationSvc.width(context) * 3 / 5,
+                                height: context.height / 2,
+                                child: Container(
+                                  padding: const EdgeInsets.all(10.0),
+                                  decoration: BoxDecoration(
+                                      color: context.theme.colorScheme.background,
+                                      borderRadius: const BorderRadius.all(Radius.circular(10))),
+                                  child: SingleChildScrollView(
+                                    child: SelectableText(
+                                      str,
+                                      style: context.theme.textTheme.bodyLarge,
+                                    ),
                                   ),
                                 ),
                               ),
+                              actions: [
+                                TextButton(
+                                  child: Text("Close",
+                                      style: context.theme.textTheme.bodyLarge!
+                                          .copyWith(color: context.theme.colorScheme.primary)),
+                                  onPressed: () => Navigator.of(context).pop(),
+                                ),
+                              ],
                             ),
-                            actions: [
-                              BBDialogAction(
-                                label: "Close",
-                                type: BBDialogButtonType.cancel,
-                                onPressed: () => Navigator.of(context).pop(),
-                              ),
-                            ],
                           );
                         },
                       );
@@ -855,7 +888,7 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
               ],
             ),
           if (friendsWithoutLocation.isNotEmpty)
-            BBSettingsSection(
+            SettingsSection(
               backgroundColor: tileColor,
               children: [
                 Material(
@@ -875,32 +908,39 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
                                 onLongPress: () async {
                                   const encoder = JsonEncoder.withIndent("     ");
                                   final str = encoder.convert(item.toJson());
-                                  BBCustomDialog.show(
+                                  showDialog(
                                     context: context,
-                                    title: "Raw FindMy Data",
-                                    content: SizedBox(
-                                      width: NavigationSvc.width(context) * 3 / 5,
-                                      height: context.height * 1 / 4,
-                                      child: Container(
-                                        padding: const EdgeInsets.all(10.0),
-                                        decoration: BoxDecoration(
-                                            color: Theme.of(context).colorScheme.surface,
-                                            borderRadius: const BorderRadius.all(Radius.circular(10))),
-                                        child: SingleChildScrollView(
-                                          child: SelectableText(
-                                            str,
-                                            style: Theme.of(context).textTheme.bodyLarge,
+                                    builder: (context) => AlertDialog(
+                                      title: Text(
+                                        "Raw FindMy Data",
+                                        style: context.theme.textTheme.titleLarge,
+                                      ),
+                                      backgroundColor: context.theme.colorScheme.properSurface,
+                                      content: SizedBox(
+                                        width: NavigationSvc.width(context) * 3 / 5,
+                                        height: context.height * 1 / 4,
+                                        child: Container(
+                                          padding: const EdgeInsets.all(10.0),
+                                          decoration: BoxDecoration(
+                                              color: context.theme.colorScheme.background,
+                                              borderRadius: const BorderRadius.all(Radius.circular(10))),
+                                          child: SingleChildScrollView(
+                                            child: SelectableText(
+                                              str,
+                                              style: context.theme.textTheme.bodyLarge,
+                                            ),
                                           ),
                                         ),
                                       ),
+                                      actions: [
+                                        TextButton(
+                                          child: Text("Close",
+                                              style: context.theme.textTheme.bodyLarge!
+                                                  .copyWith(color: context.theme.colorScheme.primary)),
+                                          onPressed: () => Navigator.of(context).pop(),
+                                        ),
+                                      ],
                                     ),
-                                    actions: [
-                                      BBDialogAction(
-                                        label: "Close",
-                                        type: BBDialogButtonType.cancel,
-                                        onPressed: () => Navigator.of(context).pop(),
-                                      ),
-                                    ],
                                   );
                                 },
                               ))
@@ -962,10 +1002,10 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
                               shape: BoxShape.circle,
                               color: Theme.of(context).colorScheme.properSurface.withValues(alpha: 0.9),
                             ),
-                            child: SizedBox(
+                            child: Container(
                               width: 48,
                               child: refreshing || refreshing2
-                                  ? const BBLoadingIndicator()
+                                  ? buildProgressIndicator(context)
                                   : IconButton(
                                       iconSize: 22,
                                       icon: Icon(iOS ? CupertinoIcons.arrow_counterclockwise : Icons.refresh,
@@ -1025,7 +1065,7 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
                     ),
                   if (!samsung) buildDesktopTabBar(),
                   Expanded(
-                    child: SizedBox(
+                    child: Container(
                       width: 500,
                       child: TabBarView(
                         controller: tabController,
@@ -1350,11 +1390,11 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
                   child: Container(
                     width: 48,
                     height: 48,
+                    child: buildBackButton(context, padding: const EdgeInsets.only(right: 2)),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: Theme.of(context).colorScheme.properSurface.withValues(alpha: 0.9),
                     ),
-                    child: buildBackButton(context, padding: const EdgeInsets.only(right: 2)),
                   )),
             if (!samsung && canRefresh)
               Positioned(
@@ -1367,10 +1407,10 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
                     shape: BoxShape.circle,
                     color: Theme.of(context).colorScheme.properSurface.withValues(alpha: 0.9),
                   ),
-                  child: SizedBox(
+                  child: Container(
                     width: 48,
                     child: refreshing || refreshing2
-                        ? const BBLoadingIndicator()
+                        ? buildProgressIndicator(context)
                         : IconButton(
                             iconSize: 22,
                             icon: Icon(iOS ? CupertinoIcons.arrow_counterclockwise : Icons.refresh,
@@ -1447,14 +1487,14 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
   Widget buildSamsungAppBar(BuildContext context, String title) {
     final actions = [
       if (canRefresh)
-        SizedBox(
+        Container(
           width: 48,
           height: 48,
           child: Container(
             width: 48,
             margin: const EdgeInsets.only(right: 8),
             child: refreshing || refreshing2
-                ? const BBLoadingIndicator()
+                ? buildProgressIndicator(context)
                 : IconButton(
                     iconSize: 22,
                     icon: Icon(iOS ? CupertinoIcons.arrow_counterclockwise : Icons.refresh,
@@ -1524,7 +1564,7 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
                 padding: const EdgeInsets.only(left: 8.0),
                 child: Align(
                   alignment: Alignment.bottomLeft,
-                  child: SizedBox(
+                  child: Container(
                     height: 50,
                     child: Align(
                       alignment: Alignment.centerLeft,
@@ -1535,7 +1575,7 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
               ),
               Align(
                 alignment: Alignment.bottomRight,
-                child: SizedBox(
+                child: Container(
                   height: 50,
                   child: Align(
                     alignment: Alignment.centerRight,

@@ -3,7 +3,7 @@ import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/attach
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/attachment/video_player.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/data/database/models.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -13,7 +13,7 @@ import 'package:tuple/tuple.dart';
 import 'package:universal_io/io.dart';
 
 class EmbeddedMedia extends CustomStateful<MessageWidgetController> {
-  const EmbeddedMedia({
+  EmbeddedMedia({
     super.key,
     required this.message,
     required super.parentController,

@@ -1,4 +1,4 @@
-import 'package:bluebubbles/data/database/models.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 

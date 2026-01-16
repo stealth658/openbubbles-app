@@ -7,8 +7,8 @@ class FadeOnScroll extends StatefulWidget {
   final double fullOpacityOffset;
   final Widget child;
 
-  const FadeOnScroll(
-      {super.key,
+  FadeOnScroll(
+      {Key? key,
       required this.scrollController,
       required this.child,
       this.zeroOpacityOffset = 0,

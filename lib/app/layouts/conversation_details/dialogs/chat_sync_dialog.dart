@@ -1,12 +1,12 @@
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/data/database/models.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class ChatSyncDialog extends StatefulWidget {
-  const ChatSyncDialog({super.key, required this.chat, this.initialMessage, this.withOffset = false, this.limit = 100});
+  ChatSyncDialog({super.key, required this.chat, this.initialMessage, this.withOffset = false, this.limit = 100});
 
   final Chat chat;
   final String? initialMessage;

@@ -2,10 +2,6 @@ import 'dart:async';
 
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/typing/typing_indicator.dart';
 import 'package:bluebubbles/app/state/chat_state.dart';
-import 'package:bluebubbles/data/database/database.dart';
-import 'package:bluebubbles/data/models/native/chat.dart';
-import 'package:bluebubbles/data/models/native/handle.dart';
-import 'package:bluebubbles/data/models/native/message.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/pages/conversation_list.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/tile/cupertino_conversation_tile.dart';
@@ -15,7 +11,8 @@ import 'package:bluebubbles/app/layouts/conversation_view/pages/conversation_vie
 import 'package:bluebubbles/app/components/avatars/contact_avatar_group_widget.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
-import 'package:bluebubbles/objectbox.g.dart';
+import 'package:bluebubbles/database/database.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:faker/faker.dart';
 import 'package:flutter/foundation.dart';
@@ -177,7 +174,7 @@ class _ConversationTileState extends CustomState<ConversationTile, void, Convers
 }
 
 class ChatTitle extends CustomStateful<ConversationTileController> {
-  const ChatTitle({super.key, required super.parentController, required this.style});
+  const ChatTitle({Key? key, required super.parentController, required this.style});
 
   final TextStyle style;
 
@@ -298,7 +295,7 @@ class _ChatTitleState extends CustomState<ChatTitle, void, ConversationTileContr
 }
 
 class ChatSubtitle extends CustomStateful<ConversationTileController> {
-  const ChatSubtitle({super.key, required super.parentController, required this.style});
+  const ChatSubtitle({Key? key, required super.parentController, required this.style});
 
   final TextStyle style;
 
@@ -449,7 +446,7 @@ class ChatLeading extends StatefulWidget {
   final ConversationTileController controller;
   final Widget? unreadIcon;
 
-  const ChatLeading({super.key, required this.controller, this.unreadIcon});
+  ChatLeading({required this.controller, this.unreadIcon});
 
   @override
   ChatLeadingState createState() => ChatLeadingState();

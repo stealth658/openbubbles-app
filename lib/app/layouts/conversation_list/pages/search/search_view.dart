@@ -2,15 +2,12 @@ import 'package:bluebubbles/app/components/avatars/contact_avatar_group_widget.d
 import 'package:bluebubbles/app/layouts/chat_selector_view/chat_selector_view.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/dialogs/timeframe_picker.dart';
 import 'package:bluebubbles/app/layouts/handle_selector_view/handle_selector_view.dart';
-import 'package:bluebubbles/data/database/database.dart';
-import 'package:bluebubbles/data/models/native/chat.dart';
-import 'package:bluebubbles/data/models/native/handle.dart';
-import 'package:bluebubbles/data/models/native/message.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/pages/conversation_view.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
-import 'package:bluebubbles/objectbox.g.dart';
+import 'package:bluebubbles/database/database.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/cupertino.dart';
@@ -38,7 +35,7 @@ class SearchResult {
 }
 
 class SearchView extends StatefulWidget {
-  const SearchView({
+  SearchView({
     super.key,
   });
 
@@ -320,7 +317,7 @@ class SearchViewState extends OptimizedState<SearchView> {
                                           ),
                                           child: const CupertinoActivityIndicator(),
                                         )
-                                      : SizedBox(
+                                      : Container(
                                           height: 20,
                                           width: 20,
                                           child: Center(
@@ -389,6 +386,26 @@ class SearchViewState extends OptimizedState<SearchView> {
                           constraints: BoxConstraints(minWidth: (NavigationSvc.width(context) * 0.9) / 2),
                           fillColor: context.theme.colorScheme.primary.withValues(alpha: 0.2),
                           splashColor: context.theme.colorScheme.primary.withValues(alpha: 0.2),
+                          children: [
+                            const Row(
+                              children: [
+                                Padding(
+                                  padding: EdgeInsets.all(8.0),
+                                  child: Text("Search Device"),
+                                ),
+                                Icon(Icons.storage_outlined, size: 16),
+                              ],
+                            ),
+                            const Row(
+                              children: [
+                                Padding(
+                                  padding: EdgeInsets.all(8.0),
+                                  child: Text("Search Mac"),
+                                ),
+                                Icon(Icons.cloud_outlined, size: 16),
+                              ],
+                            ),
+                          ],
                           borderRadius: BorderRadius.circular(20),
                           selectedBorderColor: context.theme.colorScheme.primary,
                           selectedColor: context.theme.colorScheme.primary,
@@ -412,26 +429,6 @@ class SearchViewState extends OptimizedState<SearchView> {
                               currentSearch = null;
                             });
                           },
-                          children: [
-                            const Row(
-                              children: [
-                                Padding(
-                                  padding: EdgeInsets.all(8.0),
-                                  child: Text("Search Device"),
-                                ),
-                                Icon(Icons.storage_outlined, size: 16),
-                              ],
-                            ),
-                            const Row(
-                              children: [
-                                Padding(
-                                  padding: EdgeInsets.all(8.0),
-                                  child: Text("Search Mac"),
-                                ),
-                                Icon(Icons.cloud_outlined, size: 16),
-                              ],
-                            ),
-                          ],
                         ),
                       );
                     }),

@@ -1,8 +1,5 @@
-import 'package:bluebubbles/app/app.dart';
-import 'package:bluebubbles/app/components/dialogs/dialogs.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
-import 'package:bluebubbles/app/components/settings/bb_settings_subtitle.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:file_picker/file_picker.dart';
@@ -11,8 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class AttachmentPanel extends StatefulWidget {
-  const AttachmentPanel({super.key});
-
   @override
   State<StatefulWidget> createState() => _AttachmentPanelState();
 }
@@ -31,34 +26,37 @@ class _AttachmentPanelState extends OptimizedState<AttachmentPanel> {
           SliverList(
             delegate: SliverChildListDelegate(
               <Widget>[
-                BBSettingsSection(
+                SettingsSection(
                   backgroundColor: tileColor,
                   children: [
-                    Obx(() => BBSettingsSwitch(
+                    Obx(() => SettingsSwitch(
                           onChanged: (bool val) async {
                             SettingsSvc.settings.autoDownload.value = val;
                             await SettingsSvc.settings.saveOneAsync('autoDownload');
                           },
-                          value: SettingsSvc.settings.autoDownload.value,
+                          initialVal: SettingsSvc.settings.autoDownload.value,
                           title: "Auto-download Attachments",
                           subtitle:
                               "Automatically downloads new attachments from the server and caches them internally",
+                          backgroundColor: tileColor,
                           isThreeLine: true,
                         )),
                     const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
-                    Obx(() => BBSettingsSwitch(
+                    Obx(() => SettingsSwitch(
                           onChanged: (bool val) async {
                             SettingsSvc.settings.onlyWifiDownload.value = val;
                             await SettingsSvc.settings.saveOneAsync('onlyWifiDownload');
                           },
-                          value: SettingsSvc.settings.onlyWifiDownload.value,
+                          initialVal: SettingsSvc.settings.onlyWifiDownload.value,
                           title: "Only Auto-download Attachments on WiFi",
+                          backgroundColor: tileColor,
                         )),
                     const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
-                    Obx(() => BBSettingsTile(
+                    Obx(() => SettingsTile(
                           title: "Max Concurrent Downloads",
                           subtitle:
                               "Maximum number of attachments to download simultaneously (${SettingsSvc.settings.maxConcurrentDownloads.value})",
+                          backgroundColor: tileColor,
                         )),
                     Obx(() => SettingsSlider(
                           startingVal: SettingsSvc.settings.maxConcurrentDownloads.value.toDouble(),
@@ -73,21 +71,23 @@ class _AttachmentPanelState extends OptimizedState<AttachmentPanel> {
                         )),
                     if (!kIsWeb && !kIsDesktop) const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     if (!kIsWeb && !kIsDesktop)
-                      Obx(() => BBSettingsSwitch(
+                      Obx(() => SettingsSwitch(
                             onChanged: (bool val) async {
                               SettingsSvc.settings.autoSave.value = val;
                               await SettingsSvc.settings.saveOneAsync('autoSave');
                             },
-                            value: SettingsSvc.settings.autoSave.value,
+                            initialVal: SettingsSvc.settings.autoSave.value,
                             title: "Auto-save Attachments",
                             subtitle: "Automatically saves all attachments to folders selected below",
+                            backgroundColor: tileColor,
                             isThreeLine: true,
                           )),
                     const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
-                    Obx(() => BBSettingsTile(
+                    Obx(() => SettingsTile(
                           title: "Image Preview Quality",
                           subtitle:
                               "Adjust quality for image previews (${(SettingsSvc.settings.previewImageQuality.value * 100).toInt()}%)",
+                          backgroundColor: tileColor,
                         )),
                     Obx(() => SettingsSlider(
                           startingVal: SettingsSvc.settings.previewImageQuality.value,
@@ -102,38 +102,74 @@ class _AttachmentPanelState extends OptimizedState<AttachmentPanel> {
                         )),
                     if (!kIsWeb && !kIsDesktop) const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     if (!kIsWeb && !kIsDesktop)
-                      Obx(() => BBSettingsTile(
+                      Obx(() => SettingsTile(
                             title: "Save Media Location",
                             subtitle: "Saving images and videos to ${SettingsSvc.settings.autoSavePicsLocation.value}",
+                            backgroundColor: tileColor,
                             onTap: () async {
-                              final result = await BBInputDialog.text(
-                                context: context,
-                                title: "Enter Relative Path",
-                                placeholder: "Relative Path",
-                                message: "Pictures/",
-                              );
-                              
-                              if (result != null) {
-                                if (result.isEmpty) {
-                                  SettingsSvc.settings.autoSavePicsLocation.value = "Pictures";
-                                } else {
-                                  final regex = RegExp(r"^[a-zA-Z0-9-_]+");
-                                  if (!regex.hasMatch(result) || result.endsWith("/")) {
-                                    showSnackbar("Error", "Enter a valid path!");
-                                    return;
-                                  }
-                                  SettingsSvc.settings.autoSavePicsLocation.value = "Pictures/$result";
-                                }
-                                await SettingsSvc.settings.saveOneAsync('autoSavePicsLocation');
-                              }
+                              final TextEditingController pathController = TextEditingController();
+                              await showDialog(
+                                  context: context,
+                                  builder: (_) {
+                                    return AlertDialog(
+                                      actions: [
+                                        TextButton(
+                                          child: Text("Cancel",
+                                              style: context.theme.textTheme.bodyLarge!
+                                                  .copyWith(color: context.theme.colorScheme.primary)),
+                                          onPressed: () => Get.back(),
+                                        ),
+                                        TextButton(
+                                          child: Text("OK",
+                                              style: context.theme.textTheme.bodyLarge!
+                                                  .copyWith(color: context.theme.colorScheme.primary)),
+                                          onPressed: () async {
+                                            if (pathController.text.isEmpty) {
+                                              Navigator.of(context, rootNavigator: true).pop();
+                                              SettingsSvc.settings.autoSavePicsLocation.value = "Pictures";
+                                            } else {
+                                              final regex = RegExp(r"^[a-zA-Z0-9-_]+");
+                                              if (!regex.hasMatch(pathController.text) ||
+                                                  pathController.text.endsWith("/")) {
+                                                showSnackbar("Error", "Enter a valid path!");
+                                                return;
+                                              }
+                                              Navigator.of(context, rootNavigator: true).pop();
+                                              SettingsSvc.settings.autoSavePicsLocation.value =
+                                                  "Pictures/${pathController.text}";
+                                            }
+                                            await SettingsSvc.settings.saveOneAsync('autoSavePicsLocation');
+                                          },
+                                        ),
+                                      ],
+                                      content: Row(
+                                        children: [
+                                          Text("Pictures/", style: context.theme.textTheme.titleMedium),
+                                          const SizedBox(width: 10),
+                                          Expanded(
+                                            child: TextField(
+                                              controller: pathController,
+                                              decoration: const InputDecoration(
+                                                labelText: "Relative Path",
+                                                border: OutlineInputBorder(),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      title: Text("Enter Relative Path", style: context.theme.textTheme.titleLarge),
+                                      backgroundColor: context.theme.colorScheme.properSurface,
+                                    );
+                                  });
                             },
                           )),
                     if (!kIsWeb && !kIsDesktop) const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     if (!kIsWeb && !kIsDesktop)
-                      Obx(() => BBSettingsTile(
+                      Obx(() => SettingsTile(
                             title: "Save Documents Location",
                             subtitle:
                                 "Saving documents and videos to ${SettingsSvc.settings.autoSaveDocsLocation.value.replaceAll("/storage/emulated/0/", "")}",
+                            backgroundColor: tileColor,
                             onTap: () async {
                               final savePath = await FilePicker.platform.getDirectoryPath(
                                 initialDirectory: SettingsSvc.settings.autoSaveDocsLocation.value,
@@ -148,54 +184,59 @@ class _AttachmentPanelState extends OptimizedState<AttachmentPanel> {
                           )),
                     if (!kIsWeb && !kIsDesktop) const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     if (!kIsWeb && !kIsDesktop)
-                      Obx(() => BBSettingsSwitch(
+                      Obx(() => SettingsSwitch(
                             onChanged: (bool val) async {
                               SettingsSvc.settings.askWhereToSave.value = val;
                               await SettingsSvc.settings.saveOneAsync('askWhereToSave');
                             },
-                            value: SettingsSvc.settings.askWhereToSave.value,
+                            initialVal: SettingsSvc.settings.askWhereToSave.value,
                             title: "Ask Where to Save Attachments",
                             subtitle: "Ask where to save attachments when manually downloading",
+                            backgroundColor: tileColor,
                             isThreeLine: true,
                           )),
                   ],
                 ),
-                const BBSettingsHeader(text: "Video Mute Behavior"),
-                BBSettingsSection(
+                SettingsHeader(
+                    iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Video Mute Behavior"),
+                SettingsSection(
                   backgroundColor: tileColor,
                   children: [
-                    const BBSettingsSubtitle(
-                      text: "Set where videos start playing muted",
+                    const SettingsSubtitle(
+                      subtitle: "Set where videos start playing muted",
                       bottomPadding: false,
                     ),
-                    Obx(() => BBSettingsSwitch(
+                    Obx(() => SettingsSwitch(
                           onChanged: (bool val) async {
                             SettingsSvc.settings.startVideosMuted.value = val;
                             await SettingsSvc.settings.saveOneAsync('startVideosMuted');
                           },
-                          value: SettingsSvc.settings.startVideosMuted.value,
+                          initialVal: SettingsSvc.settings.startVideosMuted.value,
                           title: "Mute in Attachment Preview",
+                          backgroundColor: tileColor,
                         )),
                     const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
-                    Obx(() => BBSettingsSwitch(
+                    Obx(() => SettingsSwitch(
                           onChanged: (bool val) async {
                             SettingsSvc.settings.startVideosMutedFullscreen.value = val;
                             await SettingsSvc.settings.saveOneAsync('startVideosMutedFullscreen');
                           },
-                          value: SettingsSvc.settings.startVideosMutedFullscreen.value,
+                          initialVal: SettingsSvc.settings.startVideosMutedFullscreen.value,
                           title: "Mute in Fullscreen Player",
+                          backgroundColor: tileColor,
                         )),
                   ],
                 ),
                 if (!kIsWeb)
-                  const BBSettingsHeader(text: "Attachment Viewer"),
+                  SettingsHeader(
+                      iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Attachment Viewer"),
                 if (!kIsWeb)
-                  BBSettingsSection(
+                  SettingsSection(
                     backgroundColor: tileColor,
                     children: [
                       Obx(() {
                         if (iOS) {
-                          return BBSettingsTile(
+                          return SettingsTile(
                             title: kIsDesktop ? "Arrow key direction" : "Swipe direction",
                             subtitle:
                                 "Set the ${kIsDesktop ? "arrow key" : "swipe direction"} to go to previous media items",
@@ -204,8 +245,8 @@ class _AttachmentPanelState extends OptimizedState<AttachmentPanel> {
                           return const SizedBox.shrink();
                         }
                       }),
-                      Obx(() => BBSettingsDropdown<SwipeDirection>(
-                            value: SettingsSvc.settings.fullscreenViewerSwipeDir.value,
+                      Obx(() => SettingsOptions<SwipeDirection>(
+                            initial: SettingsSvc.settings.fullscreenViewerSwipeDir.value,
                             onChanged: (val) async {
                               if (val == null) return;
                               SettingsSvc.settings.fullscreenViewerSwipeDir.value = val;
@@ -216,7 +257,7 @@ class _AttachmentPanelState extends OptimizedState<AttachmentPanel> {
                             capitalize: false,
                             title: "Swipe Direction",
                             subtitle: "Set the swipe direction to go to previous media items",
-                            backgroundColor: headerColor,
+                            secondaryColor: headerColor,
                           )),
                     ],
                   ),

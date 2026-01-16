@@ -1,8 +1,7 @@
-import 'package:bluebubbles/core/classes/language_codes.dart';
+import 'package:bluebubbles/helpers/types/classes/language_codes.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
-import 'package:bluebubbles/app/components/settings/settings.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
@@ -15,8 +14,6 @@ import 'package:secure_application/secure_application.dart';
 import 'package:universal_io/io.dart';
 
 class MiscPanel extends StatefulWidget {
-  const MiscPanel({super.key});
-
   @override
   State<StatefulWidget> createState() => _MiscPanelState();
 }
@@ -36,11 +33,11 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
           delegate: SliverChildListDelegate(
             <Widget>[
               if (!kIsWeb && !(kIsDesktop && !Platform.isWindows))
-                BBSettingsSection(
+                SettingsSection(
                   backgroundColor: tileColor,
                   children: [
                     if (SettingsSvc.canAuthenticate)
-                      Obx(() => BBSettingsSwitch(
+                      Obx(() => SettingsSwitch(
                             onChanged: (bool val) async {
                               var localAuth = LocalAuthentication();
                               bool didAuthenticate = await localAuth.authenticate(
@@ -59,13 +56,14 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                                 await SettingsSvc.settings.saveOneAsync('shouldSecure');
                               }
                             },
-                            value: SettingsSvc.settings.shouldSecure.value,
+                            initialVal: SettingsSvc.settings.shouldSecure.value,
                             title: "Secure App",
                             subtitle: "Secure app with ${kIsDesktop ? "Windows Security" : "a fingerprint or pin"}",
-                            leading: BBSettingsIcon(
+                            backgroundColor: tileColor,
+                            leading: SettingsLeadingIcon(
                                 iosIcon: CupertinoIcons.lock_fill,
                                 materialIcon: Icons.lock,
-                                color:
+                                containerColor:
                                     (SettingsSvc.settings.shouldSecure.value) ? Colors.green : Colors.redAccent),
                           )),
                     if (SettingsSvc.canAuthenticate)
@@ -115,8 +113,8 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                     if (SettingsSvc.canAuthenticate && !kIsDesktop)
                       Obx(() {
                         if (SettingsSvc.settings.shouldSecure.value) {
-                          return BBSettingsDropdown<SecurityLevel>(
-                            value: SettingsSvc.settings.securityLevel.value,
+                          return SettingsOptions<SecurityLevel>(
+                            initial: SettingsSvc.settings.securityLevel.value,
                             onChanged: (val) async {
                               var localAuth = LocalAuthentication();
                               bool didAuthenticate = await localAuth.authenticate(
@@ -138,6 +136,7 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                             options: SecurityLevel.values,
                             textProcessing: (val) => val.toString().split(".")[1].replaceAll("_", " ").capitalizeFirst!,
                             title: "Security Level",
+                            secondaryColor: headerColor,
                           );
                         } else {
                           return const SizedBox.shrink();
@@ -145,52 +144,56 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                       }),
                     if (SettingsSvc.canAuthenticate && !kIsDesktop) const SettingsDivider(),
                     if (!kIsWeb && !kIsDesktop)
-                      Obx(() => BBSettingsSwitch(
+                      Obx(() => SettingsSwitch(
                             onChanged: (bool val) async {
                               SettingsSvc.settings.incognitoKeyboard.value = val;
                               await SettingsSvc.settings.saveOneAsync('incognitoKeyboard');
                             },
-                            value: SettingsSvc.settings.incognitoKeyboard.value,
+                            initialVal: SettingsSvc.settings.incognitoKeyboard.value,
                             title: "Incognito Keyboard",
                             subtitle:
                                 "Disables keyboard suggestions and prevents the keyboard from learning or storing any words you type in the message text field",
                             isThreeLine: true,
-                            leading: const BBSettingsIcon(
+                            backgroundColor: tileColor,
+                            leading: const SettingsLeadingIcon(
                                 iosIcon: CupertinoIcons.keyboard,
                                 materialIcon: Icons.keyboard,
-                                color: Colors.teal),
+                                containerColor: Colors.teal),
                           )),
                   ],
                 ),
               if (!kIsWeb && !kIsDesktop || SettingsSvc.canAuthenticate)
-              const BBSettingsHeader(text: "Speed & Responsiveness"),
-              BBSettingsSection(
+                SettingsHeader(
+                    iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Speed & Responsiveness"),
+              SettingsSection(
                 backgroundColor: tileColor,
                 children: [
-                  Obx(() => BBSettingsSwitch(
+                  Obx(() => SettingsSwitch(
                         onChanged: (bool val) async {
                           SettingsSvc.settings.highPerfMode.value = val;
                           await SettingsSvc.settings.saveOneAsync('highPerfMode');
                         },
-                        value: SettingsSvc.settings.highPerfMode.value,
+                        initialVal: SettingsSvc.settings.highPerfMode.value,
                         title: "High Performance Mode",
                         subtitle: "Removes inline images and videos to boost performance on lower-end devices",
                         isThreeLine: true,
-                        leading: const BBSettingsIcon(
+                        backgroundColor: tileColor,
+                        leading: const SettingsLeadingIcon(
                             iosIcon: CupertinoIcons.speedometer,
                             materialIcon: Icons.speed_outlined,
-                            color: Colors.green),
+                            containerColor: Colors.green),
                       )),
                   const SettingsDivider(),
                   Obx(() {
                     if (iOS) {
-                      return const BBSettingsTile(
+                      return const SettingsTile(
                         title: "Scroll Speed Multiplier",
                         subtitle: "Controls how fast scrolling occurs",
-                        leading: BBSettingsIcon(
+                        isThreeLine: true,
+                        leading: SettingsLeadingIcon(
                             iosIcon: CupertinoIcons.arrow_up_down_square,
                             materialIcon: Icons.mouse_outlined,
-                            color: Colors.orange),
+                            containerColor: Colors.orange),
                       );
                     } else {
                       return const SizedBox.shrink();
@@ -217,16 +220,17 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                   }),
                 ],
               ),
-              const BBSettingsHeader(text: "Networking"),
-              BBSettingsSection(
+              SettingsHeader(iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Networking"),
+              SettingsSection(
                 backgroundColor: tileColor,
                 children: [
-                  Obx(() => BBSettingsTile(
+                  Obx(() => SettingsTile(
                         title: "API Timeout Duration",
                         subtitle:
                             "Controls the duration (in seconds) until a network request will time out.\nIncrease this setting if you have poor connection.",
-                        leading: const BBSettingsIcon(
-                            iosIcon: CupertinoIcons.stopwatch, materialIcon: Icons.timer, color: Colors.red),
+                        isThreeLine: true,
+                        leading: const SettingsLeadingIcon(
+                            iosIcon: CupertinoIcons.stopwatch, materialIcon: Icons.timer, containerColor: Colors.red),
                         trailing: SettingsSvc.settings.apiTimeout.value != 30000
                             ? ElevatedButton(
                                 onPressed: () async {
@@ -264,63 +268,70 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                         )),
                   ),
                   const SettingsDivider(padding: EdgeInsets.zero),
-                  Obx(() => BBSettingsSwitch(
+                  Obx(() => SettingsSwitch(
                         onChanged: (bool val) async {
                           SettingsSvc.settings.cancelQueuedMessages.toggle();
                           await SettingsSvc.settings.saveOneAsync('cancelQueuedMessages');
                         },
-                        value: SettingsSvc.settings.cancelQueuedMessages.value,
+                        initialVal: SettingsSvc.settings.cancelQueuedMessages.value,
                         title: "Cancel Queued Messages on Failure",
                         subtitle: "Cancel messages queued to send in a chat if one fails before them",
+                        backgroundColor: tileColor,
                         isThreeLine: true,
-                        leading: const BBSettingsIcon(
+                        leading: const SettingsLeadingIcon(
                             iosIcon: CupertinoIcons.hand_raised,
                             materialIcon: Icons.back_hand_outlined,
-                            color: Colors.orange),
+                            containerColor: Colors.orange),
                       )),
                 ],
               ),
-              const BBSettingsHeader(text: "Other"),
-              BBSettingsSection(
+              SettingsHeader(
+                iosSubtitle: iosSubtitle,
+                materialSubtitle: materialSubtitle,
+                text: "Other",
+              ),
+              SettingsSection(
                 backgroundColor: tileColor,
                 children: [
-                  Obx(() => BBSettingsSwitch(
+                  Obx(() => SettingsSwitch(
                         onChanged: (bool val) async {
                           SettingsSvc.settings.replaceEmoticonsWithEmoji.value = val;
                           await SettingsSvc.settings.saveOneAsync('replaceEmoticonsWithEmoji');
                         },
-                        value: SettingsSvc.settings.replaceEmoticonsWithEmoji.value,
+                        initialVal: SettingsSvc.settings.replaceEmoticonsWithEmoji.value,
                         title: "Replace Emoticons with Emoji",
                         subtitle: "Replace emoticons like :), :D, etc. with their corresponding emojis",
-                        leading: const BBSettingsIcon(
+                        backgroundColor: tileColor,
+                        leading: const SettingsLeadingIcon(
                             iosIcon: CupertinoIcons.smiley,
                             materialIcon: Icons.emoji_emotions_outlined,
-                            color: Colors.indigo),
+                            containerColor: Colors.indigo),
                       )),
                   const SettingsDivider(),
                   if (kIsDesktop || kIsWeb)
-                    Obx(() => BBSettingsSwitch(
+                    Obx(() => SettingsSwitch(
                           onChanged: (bool val) async {
                             SettingsSvc.settings.spellcheck.value = val;
                             await SettingsSvc.settings.saveOneAsync('spellcheck');
                           },
-                          value: SettingsSvc.settings.spellcheck.value,
+                          initialVal: SettingsSvc.settings.spellcheck.value,
                           title: "Enable Spellcheck",
-                          leading: const BBSettingsIcon(
+                          backgroundColor: tileColor,
+                          leading: const SettingsLeadingIcon(
                               iosIcon: CupertinoIcons.textformat_abc_dottedunderline,
                               materialIcon: Icons.spellcheck_outlined,
-                              color: Colors.cyan),
+                              containerColor: Colors.cyan),
                         )),
                   if (kIsDesktop || kIsWeb)
                     Obx(() => SettingsSvc.settings.spellcheck.value
-                        ? BBSettingsDropdown<(String, String)>(
+                        ? SettingsOptions<(String, String)>(
                             useCupertino: false,
                             onChanged: (val) async {
                               if (val == null) return;
                               SettingsSvc.settings.spellcheckLanguage.value = val.$2;
                               await SettingsSvc.settings.saveOneAsync('spellcheckLanguage');
                             },
-                            value: languageNameAndCodes
+                            initial: languageNameAndCodes
                                     .firstWhereOrNull((l) => l.$2 == SettingsSvc.settings.spellcheckLanguage.value) ??
                                 ("Auto", "auto"),
                             options: [("Auto", "auto"), ...languageNameAndCodes],
@@ -330,17 +341,18 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                           )
                         : const SizedBox.shrink()),
                   if (kIsDesktop || kIsWeb) const SettingsDivider(),
-                  Obx(() => BBSettingsSwitch(
+                  Obx(() => SettingsSwitch(
                         onChanged: (bool val) async {
                           SettingsSvc.settings.sendDelay.value = val ? 3 : 0;
                           await SettingsSvc.settings.saveOneAsync('sendDelay');
                         },
-                        value: !isNullOrZero(SettingsSvc.settings.sendDelay.value),
+                        initialVal: !isNullOrZero(SettingsSvc.settings.sendDelay.value),
                         title: "Send Delay",
                         subtitle:
                             "Adds a delay before sending a message to prevent accidental sends. During this time, you can cancel the message.",
-                        leading: const BBSettingsIcon(
-                            iosIcon: CupertinoIcons.timer, materialIcon: Icons.timer, color: Colors.green),
+                        backgroundColor: tileColor,
+                        leading: const SettingsLeadingIcon(
+                            iosIcon: CupertinoIcons.timer, materialIcon: Icons.timer, containerColor: Colors.green),
                       )),
                   Obx(() {
                     if (!isNullOrZero(SettingsSvc.settings.sendDelay.value)) {
@@ -362,21 +374,22 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                     }
                   }),
                   const SettingsDivider(),
-                  Obx(() => BBSettingsSwitch(
+                  Obx(() => SettingsSwitch(
                         onChanged: (bool val) async {
                           SettingsSvc.settings.use24HrFormat.value = val;
                           await SettingsSvc.settings.saveOneAsync('use24HrFormat');
                         },
-                        value: SettingsSvc.settings.use24HrFormat.value,
+                        initialVal: SettingsSvc.settings.use24HrFormat.value,
                         title: "Use 24 Hour Format for Times",
-                        leading: const BBSettingsIcon(
+                        backgroundColor: tileColor,
+                        leading: const SettingsLeadingIcon(
                             iosIcon: CupertinoIcons.clock,
                             materialIcon: Icons.access_time,
-                            color: Colors.blue),
+                            containerColor: Colors.blue),
                       )),
                   const SettingsDivider(),
                   if (Platform.isAndroid)
-                    Obx(() => BBSettingsSwitch(
+                    Obx(() => SettingsSwitch(
                           onChanged: (bool val) async {
                             SettingsSvc.settings.allowUpsideDownRotation.value = val;
                             await SettingsSvc.settings.saveOneAsync('allowUpsideDownRotation');
@@ -387,23 +400,25 @@ class _MiscPanelState extends OptimizedState<MiscPanel> {
                               if (SettingsSvc.settings.allowUpsideDownRotation.value) DeviceOrientation.portraitDown,
                             ]);
                           },
-                          value: SettingsSvc.settings.allowUpsideDownRotation.value,
+                          initialVal: SettingsSvc.settings.allowUpsideDownRotation.value,
                           title: "Allow Upside-Down Rotation",
-                          leading: const BBSettingsIcon(
+                          backgroundColor: tileColor,
+                          leading: const SettingsLeadingIcon(
                               iosIcon: CupertinoIcons.rotate_right,
                               materialIcon: Icons.screen_rotation,
-                              color: Colors.orange),
+                              containerColor: Colors.orange),
                         )),
                   if (Platform.isAndroid) const SettingsDivider(),
                   Obx(() {
                     if (iOS) {
-                      return const BBSettingsTile(
+                      return const SettingsTile(
                         title: "Maximum Group Avatar Count",
                         subtitle: "Controls the maximum number of contact avatars in a group chat's widget",
-                        leading: BBSettingsIcon(
+                        isThreeLine: true,
+                        leading: SettingsLeadingIcon(
                             iosIcon: CupertinoIcons.person_2,
                             materialIcon: Icons.people,
-                            color: Colors.purple),
+                            containerColor: Colors.purple),
                       );
                     } else {
                       return const SizedBox.shrink();

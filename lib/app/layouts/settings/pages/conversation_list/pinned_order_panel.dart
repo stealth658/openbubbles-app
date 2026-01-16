@@ -10,11 +10,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:get/get.dart';
-import 'package:bluebubbles/app/components/base/base.dart';
 
 class PinnedOrderPanel extends StatelessWidget {
-  const PinnedOrderPanel({super.key});
-
   @override
   Widget build(BuildContext context) {
     final Rx<Color> _backgroundColor = (kIsDesktop && SettingsSvc.settings.windowEffect.value == WindowEffect.disabled
@@ -43,7 +40,6 @@ class PinnedOrderPanel extends StatelessWidget {
             preferredSize: Size(NavigationSvc.width(context), 80),
             child: ClipRRect(
               child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
                 child: AppBar(
                   systemOverlayStyle:
                       ThemeData.estimateBrightnessForColor(context.theme.colorScheme.background) == Brightness.dark
@@ -70,6 +66,7 @@ class PinnedOrderPanel extends StatelessWidget {
                         }),
                   ],
                 ),
+                filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
               ),
             ),
           ),
@@ -96,7 +93,7 @@ class PinnedOrderPanel extends StatelessWidget {
                                   style: context.theme.textTheme.labelLarge,
                                 ),
                               ),
-                              const BBLoadingIndicator(size: 15),
+                              buildProgressIndicator(context, size: 15),
                             ],
                           ),
                         ),

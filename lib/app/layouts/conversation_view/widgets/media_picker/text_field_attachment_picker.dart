@@ -2,11 +2,11 @@ import 'dart:async';
 
 import 'package:bluebubbles/app/layouts/conversation_details/dialogs/timeframe_picker.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
-import 'package:bluebubbles/data/models/global/platform_file.dart';
 import 'package:bluebubbles/utils/share.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/media_picker/attachment_picker_file.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
+import 'package:bluebubbles/database/global/platform_file.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:file_picker/file_picker.dart' hide PlatformFile;
 import 'package:file_picker/file_picker.dart' as pf;
@@ -63,7 +63,17 @@ class _AttachmentPickerState extends OptimizedState<AttachmentPicker> {
         return;
       }
 
-      List<AssetPathEntity> list = await PhotoManager.getAssetPathList(onlyAll: true);
+      List<AssetPathEntity> list = await PhotoManager.getAssetPathList(
+        onlyAll: true,
+        filterOption: FilterOptionGroup(
+          orders: [
+            const OrderOption(
+              type: OrderOptionType.createDate,
+              asc: false, // false = descending, newest first
+            ),
+          ],
+        ),
+      );
       if (list.isNotEmpty) {
         _images = await list.first.getAssetListRange(start: 0, end: 24);
 
