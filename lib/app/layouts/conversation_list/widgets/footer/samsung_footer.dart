@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class SamsungFooter extends CustomStateful<ConversationListController> {
-  const SamsungFooter({Key? key, required super.parentController});
+  const SamsungFooter({super.key, required super.parentController});
 
   @override
   State<StatefulWidget> createState() => _SamsungFooterState();

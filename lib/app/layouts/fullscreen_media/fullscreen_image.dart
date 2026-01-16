@@ -19,7 +19,7 @@ import 'package:photo_view/photo_view.dart';
 import 'dart:io';
 
 class FullscreenImage extends StatefulWidget {
-  FullscreenImage({
+  const FullscreenImage({
     super.key,
     required this.file,
     required this.attachment,

@@ -10,7 +10,7 @@ class GamePigeon extends StatefulWidget {
   final iMessageAppData data;
   final Message message;
 
-  GamePigeon({
+  const GamePigeon({
     super.key,
     required this.data,
     required this.message,

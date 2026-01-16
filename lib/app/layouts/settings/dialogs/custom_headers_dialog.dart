@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
@@ -26,7 +25,7 @@ Future<bool> showCustomHeadersDialog(BuildContext context) async {
           title: Text("Custom Headers", style: context.theme.textTheme.titleLarge),
           backgroundColor: context.theme.colorScheme.properSurface,
           content: SingleChildScrollView(
-            child: Container(
+            child: SizedBox(
               width: double.maxFinite,
               child: StatefulBuilder(builder: (context, setState) {
                 return Column(

@@ -16,7 +16,7 @@ import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:get/get.dart';
 
 class SamsungConversationList extends StatefulWidget {
-  const SamsungConversationList({Key? key, required this.parentController});
+  const SamsungConversationList({super.key, required this.parentController});
 
   final ConversationListController parentController;
 

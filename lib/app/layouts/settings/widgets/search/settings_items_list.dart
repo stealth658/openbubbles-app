@@ -1,4 +1,3 @@
-import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
 
 import '../../pages/misc/misc_panel.dart';
 import '../../pages/scheduling/message_reminders_panel.dart';
@@ -84,11 +83,11 @@ List<Widget> buildSettingItemList({
               onTap: () {
                 ns.pushAndRemoveSettingsUntil(
                   context,
-                  ProfilePanel(),
+                  const ProfilePanel(),
                   (route) => route.isFirst,
                 );
               },
-              leading: ContactAvatarWidget(
+              leading: const ContactAvatarWidget(
                 handle: null,
                 borderThickness: 0.1,
                 editable: false,
@@ -156,7 +155,7 @@ List<Widget> buildSettingItemList({
                   onTap: () {
                     ns.pushAndRemoveSettingsUntil(
                       context,
-                      ScheduledMessagesPanel(),
+                      const ScheduledMessagesPanel(),
                       (Route route) => route.isFirst,
                     );
                   },
@@ -179,7 +178,7 @@ List<Widget> buildSettingItemList({
                 onTap: () {
                   ns.pushAndRemoveSettingsUntil(
                     context,
-                    MessageRemindersPanel(),
+                    const MessageRemindersPanel(),
                     (Route route) => route.isFirst,
                   );
                 },
@@ -280,7 +279,7 @@ List<Widget> buildSettingItemList({
           onTap: () {
             ns.pushAndRemoveSettingsUntil(
               context,
-              AttachmentPanel(),
+              const AttachmentPanel(),
               (Route route) => route.isFirst,
             );
           },
@@ -290,7 +289,7 @@ List<Widget> buildSettingItemList({
             onTap: () {
               ns.pushAndRemoveSettingsUntil(
                 context,
-                AttachmentPanel(),
+                const AttachmentPanel(),
                 (Route route) => route.isFirst,
               );
             },
@@ -320,7 +319,7 @@ List<Widget> buildSettingItemList({
           onTap: () {
             ns.pushAndRemoveSettingsUntil(
               context,
-              NotificationPanel(),
+              const NotificationPanel(),
               (Route route) => route.isFirst,
             );
           },
@@ -330,7 +329,7 @@ List<Widget> buildSettingItemList({
             onTap: () {
               ns.pushAndRemoveSettingsUntil(
                 context,
-                NotificationPanel(),
+                const NotificationPanel(),
                 (Route route) => route.isFirst,
               );
             },
@@ -368,7 +367,7 @@ List<Widget> buildSettingItemList({
           onTap: () {
             ns.pushAndRemoveSettingsUntil(
               context,
-              ChatListPanel(),
+              const ChatListPanel(),
               (Route route) => route.isFirst,
             );
           },
@@ -378,7 +377,7 @@ List<Widget> buildSettingItemList({
             onTap: () {
               ns.pushAndRemoveSettingsUntil(
                 context,
-                ChatListPanel(),
+                const ChatListPanel(),
                 (Route route) => route.isFirst,
               );
             },
@@ -418,7 +417,7 @@ List<Widget> buildSettingItemList({
           onTap: () {
             ns.pushAndRemoveSettingsUntil(
               context,
-              ConversationPanel(),
+              const ConversationPanel(),
               (Route route) => route.isFirst,
             );
           },
@@ -428,7 +427,7 @@ List<Widget> buildSettingItemList({
             onTap: () {
               ns.pushAndRemoveSettingsUntil(
                 context,
-                ConversationPanel(),
+                const ConversationPanel(),
                 (Route route) => route.isFirst,
               );
             },
@@ -460,7 +459,7 @@ List<Widget> buildSettingItemList({
               onTap: () {
                 ns.pushAndRemoveSettingsUntil(
                   context,
-                  DesktopPanel(),
+                  const DesktopPanel(),
                   (Route route) => route.isFirst,
                 );
               },
@@ -470,7 +469,7 @@ List<Widget> buildSettingItemList({
                 onTap: () {
                   ns.pushAndRemoveSettingsUntil(
                     context,
-                    DesktopPanel(),
+                    const DesktopPanel(),
                     (Route route) => route.isFirst,
                   );
                 },
@@ -503,7 +502,7 @@ List<Widget> buildSettingItemList({
           onTap: () {
             ns.pushAndRemoveSettingsUntil(
               context,
-              MiscPanel(),
+              const MiscPanel(),
               (Route route) => route.isFirst,
             );
           },
@@ -513,7 +512,7 @@ List<Widget> buildSettingItemList({
             onTap: () {
               ns.pushAndRemoveSettingsUntil(
                 context,
-                MiscPanel(),
+                const MiscPanel(),
                 (Route route) => route.isFirst,
               );
             },
@@ -545,7 +544,7 @@ List<Widget> buildSettingItemList({
         onTap: () {
           ns.pushAndRemoveSettingsUntil(
             context,
-            DesktopPanel(),
+            const DesktopPanel(),
             (Route route) => route.isFirst,
           );
         },
@@ -555,7 +554,7 @@ List<Widget> buildSettingItemList({
           onTap: () {
             ns.pushAndRemoveSettingsUntil(
               context,
-              DesktopPanel(),
+              const DesktopPanel(),
               (Route route) => route.isFirst,
             );
           },
@@ -617,7 +616,7 @@ List<Widget> buildSettingItemList({
           onTap: () async {
             ns.pushAndRemoveSettingsUntil(
               context,
-              RedactedModePanel(),
+              const RedactedModePanel(),
               (Route route) => route.isFirst,
             );
           },
@@ -632,7 +631,7 @@ List<Widget> buildSettingItemList({
             onTap: () async {
               ns.pushAndRemoveSettingsUntil(
                 context,
-                TaskerPanel(),
+                const TaskerPanel(),
                 (Route route) => route.isFirst,
               );
             },
@@ -643,7 +642,7 @@ List<Widget> buildSettingItemList({
               onTap: () async {
                 ns.pushAndRemoveSettingsUntil(
                   context,
-                  TaskerPanel(),
+                  const TaskerPanel(),
                   (Route route) => route.isFirst,
                 );
               },
@@ -662,7 +661,7 @@ List<Widget> buildSettingItemList({
           onTap: () async {
             ns.pushAndRemoveSettingsUntil(
               context,
-              NotificationProvidersPanel(),
+              const NotificationProvidersPanel(),
               (Route route) => route.isFirst,
             );
           }, // On tap to search
@@ -671,7 +670,7 @@ List<Widget> buildSettingItemList({
             onTap: () async {
               ns.pushAndRemoveSettingsUntil(
                 context,
-                NotificationProvidersPanel(),
+                const NotificationProvidersPanel(),
                 (Route route) => route.isFirst,
               );
             },
@@ -703,7 +702,7 @@ List<Widget> buildSettingItemList({
           onTap: () async {
             ns.pushAndRemoveSettingsUntil(
               context,
-              TroubleshootPanel(),
+              const TroubleshootPanel(),
               (Route route) => route.isFirst,
             );
           },
@@ -712,7 +711,7 @@ List<Widget> buildSettingItemList({
             onTap: () async {
               ns.pushAndRemoveSettingsUntil(
                 context,
-                TroubleshootPanel(),
+                const TroubleshootPanel(),
                 (Route route) => route.isFirst,
               );
             },
@@ -750,7 +749,7 @@ List<Widget> buildSettingItemList({
           onTap: () {
             ns.pushAndRemoveSettingsUntil(
               context,
-              BackupRestorePanel(),
+              const BackupRestorePanel(),
               (Route route) => route.isFirst,
             );
           },
@@ -759,7 +758,7 @@ List<Widget> buildSettingItemList({
             onTap: () {
               ns.pushAndRemoveSettingsUntil(
                 context,
-                BackupRestorePanel(),
+                const BackupRestorePanel(),
                 (Route route) => route.isFirst,
               );
             },
@@ -905,7 +904,7 @@ List<Widget> buildSettingItemList({
           onTap: () {
             ns.pushAndRemoveSettingsUntil(
               context,
-              AboutPanel(),
+              const AboutPanel(),
               (Route route) => route.isFirst,
             );
           },
@@ -916,7 +915,7 @@ List<Widget> buildSettingItemList({
             onTap: () {
               ns.pushAndRemoveSettingsUntil(
                 context,
-                AboutPanel(),
+                const AboutPanel(),
                 (Route route) => route.isFirst,
               );
             },

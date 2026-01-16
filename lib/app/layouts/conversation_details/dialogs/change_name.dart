@@ -28,7 +28,7 @@ void showChangeName(Chat chat, String method, BuildContext context) {
                             controller.text.isEmpty ? "Removing name..." : "Changing name to ${controller.text}...",
                             style: context.theme.textTheme.titleLarge,
                           ),
-                          content: Container(
+                          content: SizedBox(
                             height: 70,
                             child: Center(
                               child: CircularProgressIndicator(

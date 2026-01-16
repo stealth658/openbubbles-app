@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class SettingsOptions<T extends Object> extends StatelessWidget {
-  SettingsOptions({
+  const SettingsOptions({
     super.key,
     required this.onChanged,
     required this.options,

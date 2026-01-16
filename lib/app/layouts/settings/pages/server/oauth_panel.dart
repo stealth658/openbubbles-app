@@ -9,9 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class OauthPanel extends StatefulWidget {
-  OauthPanel({
-    Key? key,
-  });
+  const OauthPanel({super.key});
 
   @override
   State<OauthPanel> createState() => _OauthPanelState();
@@ -129,7 +127,7 @@ class _OauthPanelState extends OptimizedState<OauthPanel> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (error.isNotEmpty)
-                  Container(
+                  SizedBox(
                     width: context.width * 2 / 3,
                     child: Align(
                       alignment: Alignment.center,
@@ -184,7 +182,7 @@ class _OauthPanelState extends OptimizedState<OauthPanel> {
                 ),
                 child: usableProjects.isNotEmpty
                     ? SingleChildScrollView(
-                        child: Container(
+                        child: SizedBox(
                           width: double.maxFinite,
                           child: Column(
                             mainAxisSize: MainAxisSize.min,

@@ -154,7 +154,7 @@ class Share {
               return AlertDialog(
                 backgroundColor: Get.theme.colorScheme.properSurface,
                 title: Text("Send Location?", style: Get.textTheme.titleLarge),
-                content: Container(
+                content: SizedBox(
                   width: 150,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,

@@ -17,7 +17,7 @@ import 'package:media_kit_video/media_kit_video_controls/media_kit_video_control
 import 'package:universal_html/html.dart' as html;
 
 class FullscreenVideo extends StatefulWidget {
-  FullscreenVideo({
+  const FullscreenVideo({
     super.key,
     required this.file,
     required this.attachment,

@@ -15,6 +15,8 @@ import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class FirebasePanel extends StatefulWidget {
+  const FirebasePanel({super.key});
+
   @override
   State<StatefulWidget> createState() => _FirebasePanelState();
 }
@@ -168,7 +170,7 @@ class _FirebasePanelState extends OptimizedState<FirebasePanel> {
                                       style: context.theme.textTheme.titleLarge)),
                                   content: Obx(() {
                                     if (isLoading.value) {
-                                      return Container(
+                                      return SizedBox(
                                         height: 70,
                                         width: 70,
                                         child: Center(
@@ -255,7 +257,7 @@ class _FirebasePanelState extends OptimizedState<FirebasePanel> {
                           subtitle: "Sign in with Google to load your Firebase configurations.",
                           backgroundColor: tileColor,
                           onTap: () {
-                            NavigationSvc.pushSettings(context, OauthPanel());
+                            NavigationSvc.pushSettings(context, const OauthPanel());
                           },
                           trailing: const NextButton());
                     }),

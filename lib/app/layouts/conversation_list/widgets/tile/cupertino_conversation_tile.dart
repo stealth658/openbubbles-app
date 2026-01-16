@@ -13,7 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class CupertinoConversationTile extends CustomStateful<ConversationTileController> {
-  const CupertinoConversationTile({Key? key, required super.parentController});
+  const CupertinoConversationTile({super.key, required super.parentController});
 
   @override
   State<StatefulWidget> createState() => _CupertinoConversationTileState();
@@ -137,7 +137,7 @@ class _CupertinoConversationTileState extends CustomState<CupertinoConversationT
 }
 
 class CupertinoTrailing extends CustomStateful<ConversationTileController> {
-  const CupertinoTrailing({Key? key, required super.parentController});
+  const CupertinoTrailing({super.key, required super.parentController});
 
   @override
   State<StatefulWidget> createState() => _CupertinoTrailingState();
@@ -276,7 +276,7 @@ class _CupertinoTrailingState extends CustomState<CupertinoTrailing, void, Conve
 }
 
 class UnreadIcon extends CustomStateful<ConversationTileController> {
-  const UnreadIcon({Key? key, required super.parentController});
+  const UnreadIcon({super.key, required super.parentController});
 
   @override
   State<StatefulWidget> createState() => _UnreadIconState();

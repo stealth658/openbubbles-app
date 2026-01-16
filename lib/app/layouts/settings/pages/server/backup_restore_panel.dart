@@ -23,9 +23,7 @@ import 'package:universal_io/io.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class BackupRestorePanel extends StatefulWidget {
-  BackupRestorePanel({
-    Key? key,
-  });
+  const BackupRestorePanel({super.key});
 
   @override
   State<BackupRestorePanel> createState() => _BackupRestorePanelState();

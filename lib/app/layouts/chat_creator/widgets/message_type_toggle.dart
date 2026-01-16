@@ -25,6 +25,11 @@ class MessageTypeToggle extends StatelessWidget {
         constraints: BoxConstraints(minWidth: (NavigationSvc.width(context) - 35) / 2),
         fillColor: context.theme.colorScheme.bubble(context, iMessage).withValues(alpha: 0.2),
         splashColor: context.theme.colorScheme.bubble(context, iMessage).withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(20),
+        selectedBorderColor: context.theme.colorScheme.bubble(context, iMessage),
+        selectedColor: context.theme.colorScheme.bubble(context, iMessage),
+        isSelected: [iMessage, sms],
+        onPressed: onToggle,
         children: const [
           Row(
             children: [
@@ -45,11 +50,6 @@ class MessageTypeToggle extends StatelessWidget {
             ],
           ),
         ],
-        borderRadius: BorderRadius.circular(20),
-        selectedBorderColor: context.theme.colorScheme.bubble(context, iMessage),
-        selectedColor: context.theme.colorScheme.bubble(context, iMessage),
-        isSelected: [iMessage, sms],
-        onPressed: onToggle,
       ),
     );
   }

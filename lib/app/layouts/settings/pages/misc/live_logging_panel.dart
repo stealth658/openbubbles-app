@@ -11,6 +11,8 @@ import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:get/get.dart';
 
 class LiveLoggingPanel extends StatefulWidget {
+  const LiveLoggingPanel({super.key});
+
   @override
   State<StatefulWidget> createState() => _LiveLoggingPanel();
 }
@@ -92,6 +94,7 @@ class _LiveLoggingPanel extends State<LiveLoggingPanel> {
               preferredSize: Size(NavigationSvc.width(context), 80),
               child: ClipRRect(
                 child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
                   child: AppBar(
                     systemOverlayStyle:
                         ThemeData.estimateBrightnessForColor(context.theme.colorScheme.background) == Brightness.dark
@@ -141,7 +144,6 @@ class _LiveLoggingPanel extends State<LiveLoggingPanel> {
                       ),
                     ],
                   ),
-                  filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
                 ),
               ),
             ),

@@ -19,7 +19,7 @@ import 'package:universal_io/io.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class MaterialHeader extends StatelessWidget implements PreferredSizeWidget {
-  const MaterialHeader({Key? key, required this.controller});
+  const MaterialHeader({super.key, required this.controller});
 
   final ConversationViewController controller;
 
@@ -227,6 +227,9 @@ class MaterialHeader extends StatelessWidget implements PreferredSizeWidget {
             ],
           )),
       Positioned(
+        bottom: 0,
+        left: 0,
+        right: 0,
         child: Obx(() => TweenAnimationBuilder<double>(
             duration: controller.chat.sendProgress.value == 0
                 ? Duration.zero
@@ -247,9 +250,6 @@ class MaterialHeader extends StatelessWidget implements PreferredSizeWidget {
                     minHeight: 3,
                   ),
                 ))),
-        bottom: 0,
-        left: 0,
-        right: 0,
       ),
     ]);
   }

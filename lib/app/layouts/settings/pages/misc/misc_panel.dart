@@ -14,6 +14,8 @@ import 'package:secure_application/secure_application.dart';
 import 'package:universal_io/io.dart';
 
 class MiscPanel extends StatefulWidget {
+  const MiscPanel({super.key});
+
   @override
   State<StatefulWidget> createState() => _MiscPanelState();
 }

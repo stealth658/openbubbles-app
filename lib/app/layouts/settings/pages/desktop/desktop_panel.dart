@@ -18,6 +18,8 @@ import 'package:reorderables/reorderables.dart';
 import 'package:window_manager/window_manager.dart';
 
 class DesktopPanel extends StatefulWidget {
+  const DesktopPanel({super.key});
+
   @override
   State<StatefulWidget> createState() => _DesktopPanelState();
 }
@@ -486,7 +488,7 @@ class _DesktopPanelState extends OptimizedState<DesktopPanel> {
                                   context.width;
                                   NavigationSvc.listener.value;
                                   double width = min(NavigationSvc.width(context) / 2, 400);
-                                  return Container(
+                                  return SizedBox(
                                       width: NavigationSvc.width(context) > 1500
                                           ? 800
                                           : min(NavigationSvc.width(context) / 2, 400),

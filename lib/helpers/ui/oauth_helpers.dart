@@ -1,5 +1,4 @@
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:desktop_webview_auth/desktop_webview_auth.dart';

@@ -40,7 +40,7 @@ class CustomAvatarColorPanelController extends StatefulController {
 }
 
 class CustomAvatarColorPanel extends CustomStateful<CustomAvatarColorPanelController> {
-  CustomAvatarColorPanel() : super(parentController: Get.put(CustomAvatarColorPanelController()));
+  CustomAvatarColorPanel({super.key}) : super(parentController: Get.put(CustomAvatarColorPanelController()));
 
   @override
   State<StatefulWidget> createState() => _CustomAvatarColorPanelState();

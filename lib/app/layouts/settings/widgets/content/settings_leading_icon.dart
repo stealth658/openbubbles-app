@@ -11,7 +11,7 @@ class SettingsLeadingIcon extends StatelessWidget {
   final double? iconSize;
   final double? iconSizeMaterial;
 
-  const SettingsLeadingIcon({
+  const SettingsLeadingIcon({super.key, 
     required this.iosIcon,
     required this.materialIcon,
     this.boxSize,

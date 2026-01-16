@@ -12,7 +12,7 @@ import 'package:get/get.dart';
 import 'package:universal_io/io.dart';
 
 class ManualMark extends StatefulWidget {
-  const ManualMark({required this.controller});
+  const ManualMark({super.key, required this.controller});
 
   final ConversationViewController controller;
 
@@ -134,7 +134,7 @@ class ManualMarkState extends OptimizedState<ManualMark> {
 }
 
 class ConnectionIndicator extends StatelessWidget {
-  const ConnectionIndicator();
+  const ConnectionIndicator({super.key});
 
   bool get noniOS => SettingsSvc.settings.skin.value != Skins.iOS;
 

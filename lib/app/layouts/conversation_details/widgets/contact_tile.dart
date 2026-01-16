@@ -35,7 +35,7 @@ class ContactTile extends StatelessWidget {
     return contact?.emails.isNotEmpty ?? false;
   }
 
-  ContactTile({
+  const ContactTile({
     super.key,
     required this.handle,
     required this.chat,
@@ -181,7 +181,7 @@ class ContactTile extends StatelessWidget {
                               "Removing participant...",
                               style: context.theme.textTheme.titleLarge,
                             ),
-                            content: Container(
+                            content: SizedBox(
                               height: 70,
                               child: Center(child: buildProgressIndicator(context)),
                             ),

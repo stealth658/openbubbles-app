@@ -19,6 +19,8 @@ import 'package:simple_animations/simple_animations.dart';
 import 'package:tuple/tuple.dart';
 
 class SyncProgress extends StatefulWidget {
+  const SyncProgress({super.key});
+
   @override
   State<SyncProgress> createState() => _SyncProgressState();
 }
@@ -159,7 +161,7 @@ class _SyncProgressState extends OptimizedState<SyncProgress> {
                           Navigator.of(Get.context!).push(
                             ThemeSwitcher.buildPageRoute(
                               builder: (BuildContext context) {
-                                return SettingsPage(
+                                return const SettingsPage(
                                   initialPage: BackupRestorePanel(),
                                 );
                               },

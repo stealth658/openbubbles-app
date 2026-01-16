@@ -191,7 +191,7 @@ void sendEffectAction(
                                 ),
                                 Padding(
                                   padding: const EdgeInsets.symmetric(vertical: 20.0),
-                                  child: Container(
+                                  child: SizedBox(
                                     height: 50,
                                     width: NavigationSvc.width(context) / 2,
                                     child: CupertinoSlidingSegmentedControl<String>(

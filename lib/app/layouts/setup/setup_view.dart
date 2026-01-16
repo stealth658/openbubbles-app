@@ -45,7 +45,7 @@ class SetupViewController extends StatefulController {
 }
 
 class SetupView extends StatefulWidget {
-  SetupView({super.key});
+  const SetupView({super.key});
 
   @override
   State<SetupView> createState() => _SetupViewState();
@@ -106,6 +106,8 @@ class _SetupViewState extends OptimizedState<SetupView> {
 class SetupHeader extends StatelessWidget {
   final SetupViewController controller = Get.find<SetupViewController>();
 
+  SetupHeader({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -144,7 +146,7 @@ class SetupHeader extends StatelessWidget {
 }
 
 class PageNumber extends CustomStateful<SetupViewController> {
-  PageNumber({required super.parentController});
+  const PageNumber({super.key, required super.parentController});
 
   @override
   State<StatefulWidget> createState() => _PageNumberState();
@@ -177,6 +179,8 @@ class _PageNumberState extends CustomState<PageNumber, int, SetupViewController>
 class SetupPages extends StatelessWidget {
   final SetupViewController controller = Get.find<SetupViewController>();
 
+  SetupPages({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Expanded(
@@ -208,13 +212,13 @@ class SetupPages extends StatelessWidget {
         physics: const NeverScrollableScrollPhysics(),
         controller: controller.pageController,
         children: <Widget>[
-          WelcomePage(),
-          if (!kIsWeb && !kIsDesktop) RequestContacts(),
-          if (!kIsWeb && !kIsDesktop) BatteryOptimizationCheck(),
-          MacSetupCheck(),
-          ServerCredentials(),
+          const WelcomePage(),
+          if (!kIsWeb && !kIsDesktop) const RequestContacts(),
+          if (!kIsWeb && !kIsDesktop) const BatteryOptimizationCheck(),
+          const MacSetupCheck(),
+          const ServerCredentials(),
           if (!kIsWeb) SyncSettings(),
-          SyncProgress(),
+          const SyncProgress(),
           //ThemeSelector(),
         ],
       ),

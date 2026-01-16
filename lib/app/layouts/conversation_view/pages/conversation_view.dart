@@ -16,7 +16,7 @@ import 'package:flutter_acrylic/window_effect.dart';
 import 'package:get/get.dart';
 
 class ConversationView extends StatefulWidget {
-  ConversationView({
+  const ConversationView({
     super.key,
     required this.chat,
     this.customService,

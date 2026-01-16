@@ -10,6 +10,8 @@ import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:get/get.dart';
 
 class LoggingPanel extends StatefulWidget {
+  const LoggingPanel({super.key});
+
   @override
   State<StatefulWidget> createState() => _LoggingPanel();
 }
@@ -93,6 +95,7 @@ class _LoggingPanel extends State<LoggingPanel> {
               preferredSize: Size(NavigationSvc.width(context), 80),
               child: ClipRRect(
                 child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
                   child: AppBar(
                     systemOverlayStyle:
                         ThemeData.estimateBrightnessForColor(context.theme.colorScheme.background) == Brightness.dark
@@ -147,7 +150,6 @@ class _LoggingPanel extends State<LoggingPanel> {
                       ),
                     ],
                   ),
-                  filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
                 ),
               ),
             ),

@@ -8,6 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class AttachmentPanel extends StatefulWidget {
+  const AttachmentPanel({super.key});
+
   @override
   State<StatefulWidget> createState() => _AttachmentPanelState();
 }

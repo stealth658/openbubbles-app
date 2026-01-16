@@ -94,7 +94,7 @@ class _ChatInfoState extends OptimizedState<ChatInfo> {
                 "Updating group photo...",
                 style: context.theme.textTheme.titleLarge,
               ),
-              content: Container(
+              content: SizedBox(
                 height: 70,
                 child: Center(
                   child: CircularProgressIndicator(

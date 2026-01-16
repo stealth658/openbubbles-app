@@ -14,7 +14,7 @@ import 'package:mime_type/mime_type.dart';
 import 'package:universal_io/io.dart';
 
 class PickedAttachment extends StatefulWidget {
-  PickedAttachment({
+  const PickedAttachment({
     super.key,
     required this.data,
     required this.controller,

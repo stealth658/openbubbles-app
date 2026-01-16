@@ -7,6 +7,8 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:universal_io/io.dart';
 
 class RequestContacts extends StatelessWidget {
+  const RequestContacts({super.key});
+
   @override
   Widget build(BuildContext context) {
     return SetupPageTemplate(

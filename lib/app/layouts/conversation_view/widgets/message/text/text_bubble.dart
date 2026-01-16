@@ -9,7 +9,7 @@ import 'package:simple_animations/simple_animations.dart';
 import 'package:supercharged/supercharged.dart';
 
 class TextBubble extends CustomStateful<MessageWidgetController> {
-  TextBubble({
+  const TextBubble({
     super.key,
     required super.parentController,
     required this.message,
@@ -82,8 +82,9 @@ class _TextBubbleState extends CustomState<TextBubble, void, MessageWidgetContro
   }
 
   List<Color> getBubbleColors() {
-    if (selected && !iOS)
+    if (selected && !iOS) {
       return [context.theme.colorScheme.tertiaryContainer, context.theme.colorScheme.tertiaryContainer];
+    }
     List<Color> bubbleColors = [context.theme.colorScheme.properSurface, context.theme.colorScheme.properSurface];
     if (SettingsSvc.settings.colorfulBubbles.value && !message.isFromMe!) {
       if (message.handleRelation.target?.color == null) {

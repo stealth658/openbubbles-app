@@ -37,19 +37,19 @@ class _TypingIndicatorState extends OptimizedState<TypingIndicator> {
                     height: 50,
                     width: 80,
                     color: context.theme.colorScheme.properSurface,
-                    child: Stack(
+                    child: const Stack(
                       alignment: Alignment.center,
                       children: [
                         Positioned(
                           top: 15,
                           right: 12,
                           child: Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               AnimatedDot(index: 2),
                               AnimatedDot(index: 1),
                               AnimatedDot(index: 0),
                             ],
-                            mainAxisSize: MainAxisSize.min,
                           ),
                         )
                       ],
@@ -57,6 +57,7 @@ class _TypingIndicatorState extends OptimizedState<TypingIndicator> {
                   ),
                 )
               : Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Padding(
                       padding: const EdgeInsets.only(left: 10, right: 10),
@@ -67,11 +68,10 @@ class _TypingIndicatorState extends OptimizedState<TypingIndicator> {
                         borderThickness: 0.1,
                       ),
                     ),
-                    AnimatedDot(index: 2),
-                    AnimatedDot(index: 1),
-                    AnimatedDot(index: 0),
+                    const AnimatedDot(index: 2),
+                    const AnimatedDot(index: 1),
+                    const AnimatedDot(index: 0),
                   ],
-                  mainAxisSize: MainAxisSize.min,
                 ))
           : const SizedBox.shrink(),
     );
@@ -80,7 +80,7 @@ class _TypingIndicatorState extends OptimizedState<TypingIndicator> {
 
 class AnimatedDot extends StatefulWidget {
   final int index;
-  AnimatedDot({required this.index});
+  const AnimatedDot({super.key, required this.index});
 
   @override
   State<AnimatedDot> createState() => _AnimatedDotState();

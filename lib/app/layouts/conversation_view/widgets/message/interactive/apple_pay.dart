@@ -7,7 +7,7 @@ class ApplePay extends StatefulWidget {
   final iMessageAppData data;
   final Message message;
 
-  ApplePay({
+  const ApplePay({
     super.key,
     required this.data,
     required this.message,

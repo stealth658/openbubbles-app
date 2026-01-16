@@ -635,7 +635,7 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
                                       "Creating a new $method chat...",
                                       style: context.theme.textTheme.titleLarge,
                                     ),
-                                    content: Container(
+                                    content: SizedBox(
                                       height: 70,
                                       child: Center(
                                         child: CircularProgressIndicator(

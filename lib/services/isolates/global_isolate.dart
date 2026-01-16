@@ -381,7 +381,7 @@ class GlobalIsolate {
       final String uuid = isolateRequest.uuid;
       final type = isolateRequest.type;
       final dynamic data = isolateRequest.data;
-      print('Received request: $type');
+      Logger.debug('Received request: $type');
 
       try {
         final action = actionMap[type];
@@ -434,9 +434,9 @@ class GlobalIsolate {
           }
         }
 
-        print('Returning request: $type');
-      } catch (e) {
-        print('Error in isolate action: $e');
+        Logger.debug('Returning request: $type');
+      } catch (e, s) {
+        Logger.error('Error in isolate action: $e', trace: s);
 
         // Send standardized error response
         sendPort.send(

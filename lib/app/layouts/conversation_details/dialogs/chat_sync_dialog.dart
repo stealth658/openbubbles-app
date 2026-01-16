@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class ChatSyncDialog extends StatefulWidget {
-  ChatSyncDialog({super.key, required this.chat, this.initialMessage, this.withOffset = false, this.limit = 100});
+  const ChatSyncDialog({super.key, required this.chat, this.initialMessage, this.withOffset = false, this.limit = 100});
 
   final Chat chat;
   final String? initialMessage;

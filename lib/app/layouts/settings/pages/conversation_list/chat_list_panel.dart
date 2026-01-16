@@ -12,6 +12,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class ChatListPanel extends StatefulWidget {
+  const ChatListPanel({super.key});
+
   @override
   State<StatefulWidget> createState() => _ChatListPanelState();
 }
@@ -454,7 +456,7 @@ class _ChatListPanelState extends OptimizedState<ChatListPanel> {
                         onTap: () {
                           NavigationSvc.pushSettings(
                             context,
-                            PinnedOrderPanel(),
+                            const PinnedOrderPanel(),
                           );
                         },
                         trailing: const NextButton(),

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class SettingsSwitch extends StatelessWidget {
-  SettingsSwitch({
+  const SettingsSwitch({
     super.key,
     required this.initialVal,
     required this.onChanged,

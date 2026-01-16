@@ -391,8 +391,9 @@ class SpellCheckTextEditingController extends TextEditingController {
 
           final prevMistakeEnd = i == 0 ? 0 : mistakes[i - 1].endOffset - offset;
           final leadingNonMistakeText = chunk.substring(prevMistakeEnd, mistakeStart);
-          if (leadingNonMistakeText.isNotEmpty)
+          if (leadingNonMistakeText.isNotEmpty) {
             spans.addAll(buildAppleEmojiTextSpans(text: leadingNonMistakeText, style: style));
+          }
 
           spans.add(
             TextSpan(
@@ -415,8 +416,9 @@ class SpellCheckTextEditingController extends TextEditingController {
           if (i == mistakes.length - 1) {
             final nextMistakeStart = i == mistakes.length - 1 ? chunk.length : mistakes[i + 1].offset - offset;
             final trailingNonMistakeText = chunk.substring(mistakeEnd, nextMistakeStart);
-            if (trailingNonMistakeText.isNotEmpty)
+            if (trailingNonMistakeText.isNotEmpty) {
               spans.addAll(buildAppleEmojiTextSpans(text: trailingNonMistakeText, style: style));
+            }
           }
         }
         return TextSpan(children: spans);

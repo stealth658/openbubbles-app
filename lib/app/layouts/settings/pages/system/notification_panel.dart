@@ -313,7 +313,7 @@ class _NotificationPanelState extends OptimizedState<NotificationPanel> with Sin
                                           padding: const EdgeInsets.only(left: 8.0),
                                           child: Align(
                                             alignment: Alignment.bottomLeft,
-                                            child: Container(
+                                            child: SizedBox(
                                               height: 50,
                                               child: Align(
                                                 alignment: Alignment.centerLeft,
@@ -348,7 +348,7 @@ class _NotificationPanelState extends OptimizedState<NotificationPanel> with Sin
                       ),
                     ),
                   ),
-                  if (!kIsWeb) ChatList(),
+                  if (!kIsWeb) const ChatList(),
                 ],
               ),
               bottomNavigationBar: kIsWeb
@@ -378,6 +378,8 @@ class _NotificationPanelState extends OptimizedState<NotificationPanel> with Sin
 }
 
 class ChatList extends StatefulWidget {
+  const ChatList({super.key});
+
   @override
   State<StatefulWidget> createState() => ChatListState();
 }

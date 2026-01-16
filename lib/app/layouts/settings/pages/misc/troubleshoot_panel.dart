@@ -2,7 +2,6 @@ import 'package:bluebubbles/app/layouts/settings/pages/misc/logging_panel.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/content/log_level_selector.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/content/next_button.dart';
 import 'package:bluebubbles/helpers/backend/settings_helpers.dart';
-import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
 import 'package:bluebubbles/services/backend/sync/chat_sync_manager.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
@@ -19,6 +18,8 @@ import 'package:universal_io/io.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class TroubleshootPanel extends StatefulWidget {
+  const TroubleshootPanel({super.key});
+
   @override
   State<StatefulWidget> createState() => _TroubleshootPanelState();
 }
@@ -143,7 +144,7 @@ class _TroubleshootPanelState extends OptimizedState<TroubleshootPanel> {
                     onTap: () {
                       NavigationSvc.pushSettings(
                         context,
-                        LoggingPanel(),
+                        const LoggingPanel(),
                       );
                     },
                     trailing: const NextButton(),

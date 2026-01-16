@@ -174,7 +174,7 @@ class _ConversationTileState extends CustomState<ConversationTile, void, Convers
 }
 
 class ChatTitle extends CustomStateful<ConversationTileController> {
-  const ChatTitle({Key? key, required super.parentController, required this.style});
+  const ChatTitle({super.key, required super.parentController, required this.style});
 
   final TextStyle style;
 
@@ -295,7 +295,7 @@ class _ChatTitleState extends CustomState<ChatTitle, void, ConversationTileContr
 }
 
 class ChatSubtitle extends CustomStateful<ConversationTileController> {
-  const ChatSubtitle({Key? key, required super.parentController, required this.style});
+  const ChatSubtitle({super.key, required super.parentController, required this.style});
 
   final TextStyle style;
 
@@ -446,7 +446,7 @@ class ChatLeading extends StatefulWidget {
   final ConversationTileController controller;
   final Widget? unreadIcon;
 
-  ChatLeading({required this.controller, this.unreadIcon});
+  const ChatLeading({super.key, required this.controller, this.unreadIcon});
 
   @override
   ChatLeadingState createState() => ChatLeadingState();

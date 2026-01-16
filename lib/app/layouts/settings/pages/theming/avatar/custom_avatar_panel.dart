@@ -11,6 +11,8 @@ import 'package:get/get.dart';
 import 'package:universal_io/io.dart';
 
 class CustomAvatarPanel extends StatefulWidget {
+  const CustomAvatarPanel({super.key});
+
   @override
   State<StatefulWidget> createState() => _CustomAvatarPanelState();
 }

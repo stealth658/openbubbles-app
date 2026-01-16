@@ -11,9 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart' hide Response;
 
 class ScheduledMessagesPanel extends StatefulWidget {
-  ScheduledMessagesPanel({
-    Key? key,
-  });
+  const ScheduledMessagesPanel({super.key});
 
   @override
   State<ScheduledMessagesPanel> createState() => _ScheduledMessagesPanelState();
@@ -74,7 +72,7 @@ class _ScheduledMessagesPanelState extends OptimizedState<ScheduledMessagesPanel
           onPressed: () async {
             final result = await NavigationSvc.pushSettings(
               context,
-              CreateScheduledMessage(),
+              const CreateScheduledMessage(),
             );
             if (result is ScheduledMessage) {
               scheduled.add(result);

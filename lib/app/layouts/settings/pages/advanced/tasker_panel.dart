@@ -7,6 +7,8 @@ import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class TaskerPanel extends StatefulWidget {
+  const TaskerPanel({super.key});
+
   @override
   State<StatefulWidget> createState() => _TaskerPanelState();
 }

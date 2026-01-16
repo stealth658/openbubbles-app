@@ -1026,7 +1026,7 @@ packages:
     source: hosted
     version: "1.0.3"
   flutter_map:
-    dependency: "direct overridden"
+    dependency: "direct main"
     description:
       path: "."
       ref: "67cca68e9f6db59649af56b6454e5f58efcedbbe"
@@ -1051,7 +1051,7 @@ packages:
     source: hosted
     version: "1.0.5"
   flutter_native_splash:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: flutter_native_splash
       sha256: "4fb9f4113350d3a80841ce05ebf1976a36de622af7d19aca0ca9a9911c7ff002"
@@ -1214,7 +1214,7 @@ packages:
     source: hosted
     version: "4.7.3"
   get_it:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: get_it
       sha256: ae78de7c3f2304b8d81f2bb6e320833e5e81de942188542328f074978cc0efa9
@@ -2608,7 +2608,7 @@ packages:
     source: hosted
     version: "0.6.0"
   rxdart:
-    dependency: "direct overridden"
+    dependency: "direct main"
     description:
       name: rxdart
       sha256: "5c3004a4a8dbb94bd4bf5412a4def4acdaa12e12f269737a5751369e12d1a962"

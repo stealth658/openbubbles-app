@@ -8,8 +8,7 @@ import 'package:simple_animations/simple_animations.dart';
 class GradientBackground extends CustomStateful<ConversationViewController> {
   final Widget child;
 
-  GradientBackground({
-    Key? key,
+  const GradientBackground({super.key, 
     required this.child,
     required ConversationViewController controller,
   }) : super(parentController: controller);

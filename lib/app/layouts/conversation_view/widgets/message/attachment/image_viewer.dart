@@ -16,7 +16,7 @@ class ImageViewer extends StatefulWidget {
   final Attachment attachment;
   final bool isFromMe;
 
-  ImageViewer({
+  const ImageViewer({
     super.key,
     required this.file,
     required this.attachment,

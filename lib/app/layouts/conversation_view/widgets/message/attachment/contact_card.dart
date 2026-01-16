@@ -15,7 +15,7 @@ import 'package:universal_html/html.dart' as html;
 import 'package:universal_io/io.dart';
 
 class ContactCard extends StatefulWidget {
-  ContactCard({
+  const ContactCard({
     super.key,
     required this.file,
     required this.attachment,

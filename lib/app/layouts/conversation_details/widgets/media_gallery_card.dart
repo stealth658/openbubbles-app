@@ -19,7 +19,7 @@ import 'package:universal_io/io.dart';
 import 'package:video_player/video_player.dart';
 
 class MediaGalleryCard extends StatefulWidget {
-  MediaGalleryCard({super.key, required this.attachment});
+  const MediaGalleryCard({super.key, required this.attachment});
   final Attachment attachment;
 
   @override

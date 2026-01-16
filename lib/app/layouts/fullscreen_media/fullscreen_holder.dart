@@ -16,7 +16,7 @@ import 'package:gesture_x_detector/gesture_x_detector.dart';
 import 'package:get/get.dart';
 
 class FullscreenMediaHolder extends StatefulWidget {
-  FullscreenMediaHolder(
+  const FullscreenMediaHolder(
       {super.key,
       required this.attachment,
       required this.showInteractions,

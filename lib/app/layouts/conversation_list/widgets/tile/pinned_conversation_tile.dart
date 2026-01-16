@@ -169,7 +169,7 @@ class _PinnedConversationTileState extends CustomState<PinnedConversationTile, v
 }
 
 class UnreadIcon extends CustomStateful<ConversationTileController> {
-  const UnreadIcon({Key? key, required this.width, required super.parentController});
+  const UnreadIcon({super.key, required this.width, required super.parentController});
 
   final double width;
 
@@ -211,7 +211,7 @@ class _UnreadIconState extends CustomState<UnreadIcon, void, ConversationTileCon
 }
 
 class MuteIcon extends CustomStateful<ConversationTileController> {
-  const MuteIcon({Key? key, required this.width, required super.parentController});
+  const MuteIcon({super.key, required this.width, required super.parentController});
 
   final double width;
 
@@ -264,7 +264,7 @@ class _MuteIconState extends CustomState<MuteIcon, void, ConversationTileControl
 class ChatTitle extends CustomStateful<ConversationTileController> {
   final double width;
 
-  const ChatTitle({Key? key, required this.width, required super.parentController});
+  const ChatTitle({super.key, required this.width, required super.parentController});
 
   @override
   State<StatefulWidget> createState() => _ChatTitleState();
@@ -385,7 +385,7 @@ class PinnedIndicators extends StatelessWidget {
   final ConversationTileController controller;
   final double width;
 
-  PinnedIndicators({required this.width, required this.controller});
+  const PinnedIndicators({super.key, required this.width, required this.controller});
 
   @override
   Widget build(BuildContext context) {
@@ -441,7 +441,7 @@ class PinnedIndicators extends StatelessWidget {
 }
 
 class ReactionIcon extends CustomStateful<ConversationTileController> {
-  const ReactionIcon({Key? key, required this.width, required super.parentController});
+  const ReactionIcon({super.key, required this.width, required super.parentController});
 
   final double width;
 

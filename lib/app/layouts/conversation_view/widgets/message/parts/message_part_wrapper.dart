@@ -69,7 +69,7 @@ class MessagePartWrapper extends StatelessWidget {
               "Editing message...",
               style: context.theme.textTheme.titleLarge,
             ),
-            content: Container(
+            content: SizedBox(
               height: 70,
               child: Center(
                 child: CircularProgressIndicator(

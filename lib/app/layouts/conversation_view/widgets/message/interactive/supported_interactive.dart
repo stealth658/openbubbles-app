@@ -11,7 +11,7 @@ class SupportedInteractive extends StatefulWidget {
   final iMessageAppData data;
   final Message message;
 
-  SupportedInteractive({
+  const SupportedInteractive({
     super.key,
     required this.data,
     required this.message,

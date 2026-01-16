@@ -13,7 +13,7 @@ import 'package:get/get.dart';
 import 'package:universal_io/io.dart';
 
 class ContactAvatarGroupWidget extends StatefulWidget {
-  ContactAvatarGroupWidget({
+  const ContactAvatarGroupWidget({
     super.key,
     required this.chat,
     this.size = 40,
@@ -116,7 +116,7 @@ class _ContactAvatarGroupWidgetState extends OptimizedState<ContactAvatarGroupWi
           );
         }
 
-        return Container(
+        return SizedBox(
           width: avatarSize,
           height: avatarSize,
           child: participants.length > 1

@@ -21,6 +21,8 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:universal_io/io.dart';
 
 class ServerCredentials extends StatefulWidget {
+  const ServerCredentials({super.key});
+
   @override
   State<ServerCredentials> createState() => _ServerCredentialsState();
 }
@@ -96,7 +98,7 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
               ),
               child: usableProjects.isNotEmpty
                   ? SingleChildScrollView(
-                      child: Container(
+                      child: SizedBox(
                         width: double.maxFinite,
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
@@ -391,7 +393,7 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
                             node: focusScopeNode,
                             child: Column(
                               children: [
-                                Container(
+                                SizedBox(
                                   width: context.width * 2 / 3,
                                   child: TextField(
                                     cursorColor: context.theme.colorScheme.primary,
@@ -412,7 +414,7 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
                                   ),
                                 ),
                                 const SizedBox(height: 20),
-                                Container(
+                                SizedBox(
                                   width: context.width * 2 / 3,
                                   child: TextField(
                                     cursorColor: context.theme.colorScheme.primary,
@@ -576,7 +578,7 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
       final response = await Navigator.of(context).push(
         CupertinoPageRoute(
           builder: (BuildContext context) {
-            return QRCodeScanner();
+            return const QRCodeScanner();
           },
         ),
       );
@@ -751,7 +753,7 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
 }
 
 class ErrorText extends CustomStateful<SetupViewController> {
-  ErrorText({required super.parentController});
+  const ErrorText({super.key, required super.parentController});
 
   @override
   State<StatefulWidget> createState() => _ErrorTextState();
@@ -770,7 +772,7 @@ class _ErrorTextState extends CustomState<ErrorText, String, SetupViewController
       mainAxisSize: MainAxisSize.min,
       children: [
         if (controller.error.isNotEmpty)
-          Container(
+          SizedBox(
             width: context.width * 2 / 3,
             child: Align(
               alignment: Alignment.center,

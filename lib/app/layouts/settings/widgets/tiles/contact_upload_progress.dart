@@ -61,11 +61,11 @@ class ContactUploadProgress extends StatelessWidget {
           () => uploadingContacts.value
               ? const SizedBox.shrink()
               : TextButton(
+                  onPressed: onClose,
                   child: Text(
                     "Close",
                     style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary),
                   ),
-                  onPressed: onClose,
                 ),
         ),
       ],

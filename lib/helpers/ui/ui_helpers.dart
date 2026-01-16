@@ -20,13 +20,13 @@ class BackButton extends StatelessWidget {
   final bool Function()? onPressed;
   final Color? color;
 
-  const BackButton({this.color, this.onPressed});
+  const BackButton({super.key, this.color, this.onPressed});
 
   @override
   Widget build(BuildContext context) {
     return Material(
       color: Colors.transparent,
-      child: Container(
+      child: SizedBox(
         width: 48,
         child: XGestureDetector(
           supportTouch: true,

@@ -37,7 +37,7 @@ class RedactedModeTile extends StatelessWidget {
           onTap: () async {
             NavigationSvc.pushAndRemoveSettingsUntil(
               context,
-              RedactedModePanel(),
+              const RedactedModePanel(),
               (Route route) => route.isFirst,
             );
           },

@@ -15,7 +15,7 @@ import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class InteractiveHolder extends CustomStateful<MessageWidgetController> {
-  InteractiveHolder({
+  const InteractiveHolder({
     super.key,
     required super.parentController,
     required this.message,

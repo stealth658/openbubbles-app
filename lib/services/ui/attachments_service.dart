@@ -24,6 +24,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:vcf_dart/vcf_dart.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 
+// ignore: non_constant_identifier_names
 AttachmentsService AttachmentsSvc =
     Get.isRegistered<AttachmentsService>() ? Get.find<AttachmentsService>() : Get.put(AttachmentsService());
 

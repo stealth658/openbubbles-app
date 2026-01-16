@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
 class Love extends LeafRenderObjectWidget {
-  Love({
+  const Love({
     super.key,
     required this.controller,
   });

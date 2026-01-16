@@ -35,7 +35,7 @@ class SearchResult {
 }
 
 class SearchView extends StatefulWidget {
-  SearchView({
+  const SearchView({
     super.key,
   });
 
@@ -317,7 +317,7 @@ class SearchViewState extends OptimizedState<SearchView> {
                                           ),
                                           child: const CupertinoActivityIndicator(),
                                         )
-                                      : Container(
+                                      : SizedBox(
                                           height: 20,
                                           width: 20,
                                           child: Center(
@@ -386,26 +386,6 @@ class SearchViewState extends OptimizedState<SearchView> {
                           constraints: BoxConstraints(minWidth: (NavigationSvc.width(context) * 0.9) / 2),
                           fillColor: context.theme.colorScheme.primary.withValues(alpha: 0.2),
                           splashColor: context.theme.colorScheme.primary.withValues(alpha: 0.2),
-                          children: [
-                            const Row(
-                              children: [
-                                Padding(
-                                  padding: EdgeInsets.all(8.0),
-                                  child: Text("Search Device"),
-                                ),
-                                Icon(Icons.storage_outlined, size: 16),
-                              ],
-                            ),
-                            const Row(
-                              children: [
-                                Padding(
-                                  padding: EdgeInsets.all(8.0),
-                                  child: Text("Search Mac"),
-                                ),
-                                Icon(Icons.cloud_outlined, size: 16),
-                              ],
-                            ),
-                          ],
                           borderRadius: BorderRadius.circular(20),
                           selectedBorderColor: context.theme.colorScheme.primary,
                           selectedColor: context.theme.colorScheme.primary,
@@ -429,6 +409,26 @@ class SearchViewState extends OptimizedState<SearchView> {
                               currentSearch = null;
                             });
                           },
+                          children: [
+                            const Row(
+                              children: [
+                                Padding(
+                                  padding: EdgeInsets.all(8.0),
+                                  child: Text("Search Device"),
+                                ),
+                                Icon(Icons.storage_outlined, size: 16),
+                              ],
+                            ),
+                            const Row(
+                              children: [
+                                Padding(
+                                  padding: EdgeInsets.all(8.0),
+                                  child: Text("Search Mac"),
+                                ),
+                                Icon(Icons.cloud_outlined, size: 16),
+                              ],
+                            ),
+                          ],
                         ),
                       );
                     }),

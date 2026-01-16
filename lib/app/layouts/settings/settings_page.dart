@@ -16,7 +16,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart' hide Response;
 
 class SettingsPage extends StatefulWidget {
-  SettingsPage({
+  const SettingsPage({
     super.key,
     this.initialPage,
   });

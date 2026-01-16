@@ -6,8 +6,6 @@ import 'package:bluebubbles/services/network/http_service.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:media_kit/media_kit.dart';
-import 'package:media_kit_video/media_kit_video.dart';
 import 'package:path/path.dart' as p;
 
 /// Mixin that provides live photo functionality for image viewers

@@ -18,6 +18,8 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class AboutPanel extends StatefulWidget {
+  const AboutPanel({super.key});
+
   @override
   State<StatefulWidget> createState() => _AboutPanelState();
 }
@@ -231,7 +233,7 @@ class _AboutPanelState extends OptimizedState<AboutPanel> {
                                   title: Text('Keyboard Shortcuts', style: context.theme.textTheme.titleLarge),
                                   scrollable: true,
                                   backgroundColor: context.theme.colorScheme.properSurface,
-                                  content: Container(
+                                  content: SizedBox(
                                     height: MediaQuery.of(context).size.height / 2,
                                     child: SingleChildScrollView(
                                       child: DataTable(

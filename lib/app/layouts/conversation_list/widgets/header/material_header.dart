@@ -11,7 +11,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 
 class MaterialHeader extends CustomStateful<ConversationListController> {
-  const MaterialHeader({Key? key, required super.parentController});
+  const MaterialHeader({super.key, required super.parentController});
 
   @override
   State<StatefulWidget> createState() => _MaterialHeaderState();
@@ -100,7 +100,7 @@ class _MaterialHeaderState extends CustomState<MaterialHeader, void, Conversatio
                                           onPressed: () async {
                                             NavigationSvc.pushLeft(
                                               context,
-                                              SearchView(),
+                                              const SearchView(),
                                             );
                                           },
                                           icon: Icon(

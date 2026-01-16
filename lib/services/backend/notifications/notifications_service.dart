@@ -202,7 +202,8 @@ class NotificationsService {
       if (message.guid != null && message.dateCreated != null) {
         // Determine if reaction action should be shown (only if Private API is enabled & not a reaction message)
         final bool showReactionAction = SettingsSvc.settings.enablePrivateAPI.value &&
-            SettingsSvc.settings.notificationReactionAction.value && message.associatedMessageGuid == null;
+            SettingsSvc.settings.notificationReactionAction.value &&
+            message.associatedMessageGuid == null;
         final String reactionType = SettingsSvc.settings.notificationReactionActionType.value;
 
         await MethodChannelSvc.invokeMethod("create-incoming-message-notification", {
@@ -233,7 +234,9 @@ class NotificationsService {
       if (ChatsSvc.isChatActive(chat.guid)) return;
       if (ChatsSvc.activeChat == null &&
           Get.rawRoute?.settings.name == "/" &&
-          !SettingsSvc.settings.notifyOnChatList.value) return;
+          !SettingsSvc.settings.notifyOnChatList.value) {
+        return;
+      }
     }
 
     await createNotification(chat, message);
@@ -721,7 +724,7 @@ class NotificationsService {
           Navigator.of(Get.context!).push(
             ThemeSwitcher.buildPageRoute(
               builder: (BuildContext context) {
-                return ScheduledMessagesPanel();
+                return const ScheduledMessagesPanel();
               },
             ),
           );

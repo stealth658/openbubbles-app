@@ -13,7 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class PinnedTileTextBubble extends CustomStateful<ConversationTileController> {
-  PinnedTileTextBubble({
+  const PinnedTileTextBubble({
     super.key,
     required this.chat,
     required this.size,

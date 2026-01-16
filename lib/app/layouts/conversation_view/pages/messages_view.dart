@@ -28,7 +28,7 @@ class MessagesView extends StatefulWidget {
   final MessagesService? customService;
   final ConversationViewController controller;
 
-  MessagesView({
+  const MessagesView({
     super.key,
     this.customService,
     required this.controller,
@@ -194,8 +194,9 @@ class MessagesViewState extends OptimizedState<MessagesView> {
   }
 
   void updateReplies({bool updateConversation = true}) async {
-    if (!showSmartReplies || isNullOrEmpty(_messages) || kIsWeb || kIsDesktop || !mounted || !LifecycleSvc.isAlive)
+    if (!showSmartReplies || isNullOrEmpty(_messages) || kIsWeb || kIsDesktop || !mounted || !LifecycleSvc.isAlive) {
       return;
+    }
 
     if (updateConversation) {
       _messages.reversed
@@ -615,7 +616,7 @@ class MessagesViewState extends OptimizedState<MessagesView> {
 }
 
 class Loader extends StatelessWidget {
-  const Loader({this.text});
+  const Loader({super.key, this.text});
 
   final String? text;
 

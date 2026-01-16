@@ -2,6 +2,9 @@ import 'package:bluebubbles/database/models.dart';
 import 'package:dice_bear/dice_bear.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+
+// Necessary for ObjectBox annotations
+// ignore: unnecessary_import
 import 'package:objectbox/objectbox.dart';
 
 /// ContactV2 - New contact entity designed for N:M relationship with Handles

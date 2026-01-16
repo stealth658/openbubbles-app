@@ -16,10 +16,7 @@ import 'package:get/get.dart' hide Response;
 import 'package:numberpicker/numberpicker.dart';
 
 class CreateScheduledMessage extends StatefulWidget {
-  CreateScheduledMessage({
-    Key? key,
-    this.existing,
-  });
+  const CreateScheduledMessage({super.key, this.existing});
 
   final ScheduledMessage? existing;
 
@@ -101,7 +98,7 @@ class _CreateScheduledMessageState extends OptimizedState<CreateScheduledMessage
                           "Scheduling message...",
                           style: context.theme.textTheme.titleLarge,
                         ),
-                        content: Container(
+                        content: SizedBox(
                           height: 70,
                           child: Center(
                             child: CircularProgressIndicator(

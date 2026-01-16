@@ -8,7 +8,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 class ChatEvent extends StatelessWidget {
-  ChatEvent({
+  const ChatEvent({
     super.key,
     required this.part,
     required this.message,

@@ -103,9 +103,7 @@ class ServerManagementPanelController extends StatefulController {
 }
 
 class ServerManagementPanel extends CustomStateful<ServerManagementPanelController> {
-  ServerManagementPanel({
-    Key? key,
-  }) : super(parentController: Get.put(ServerManagementPanelController()));
+  ServerManagementPanel({super.key}) : super(parentController: Get.put(ServerManagementPanelController()));
 
   @override
   State<ServerManagementPanel> createState() => _ServerManagementPanelState();
@@ -315,7 +313,7 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                                     backgroundColor: context.theme.colorScheme.properSurface,
                                     content: AspectRatio(
                                       aspectRatio: 1,
-                                      child: Container(
+                                      child: SizedBox(
                                         height: 320,
                                         width: 320,
                                         child: QrImageView(
@@ -478,7 +476,7 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                                 await Navigator.of(context).push(
                                   CupertinoPageRoute(
                                     builder: (BuildContext context) {
-                                      return QRCodeScanner();
+                                      return const QRCodeScanner();
                                     },
                                   ),
                                 ),
@@ -615,11 +613,11 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                       subtitle: "Fetch Firebase Config by Signing in with Google",
                       backgroundColor: tileColor,
                       onTap: () {
-                        NavigationSvc.pushSettings(context, OauthPanel());
+                        NavigationSvc.pushSettings(context, const OauthPanel());
                       },
-                      trailing: ThemeSwitcher(
-                        iOSSkin: const Icon(CupertinoIcons.chevron_forward),
-                        materialSkin: const Icon(Icons.chevron_right),
+                      trailing: const ThemeSwitcher(
+                        iOSSkin: Icon(CupertinoIcons.chevron_forward),
+                        materialSkin: Icon(Icons.chevron_right),
                       ),
                     ),
                   const SettingsDivider(),
@@ -803,7 +801,9 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                           // Prevent restarting more than once every 30 seconds
                           int now = DateTime.now().toUtc().millisecondsSinceEpoch;
                           if (controller.lastRestartMessages != null &&
-                              now - controller.lastRestartMessages! < 1000 * 30) return;
+                              now - controller.lastRestartMessages! < 1000 * 30) {
+                            return;
+                          }
 
                           // Save the last time we restarted
                           controller.lastRestartMessages = now;
@@ -848,14 +848,18 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                                       containerColor: Colors.orange),
                                   onTap: () async {
                                     if (SocketSvc.state.value != SocketState.connected ||
-                                        controller.isRestartingPrivateAPI.value) return;
+                                        controller.isRestartingPrivateAPI.value) {
+                                      return;
+                                    }
 
                                     controller.isRestartingPrivateAPI.value = true;
 
                                     // Prevent restarting more than once every 30 seconds
                                     int now = DateTime.now().toUtc().millisecondsSinceEpoch;
                                     if (controller.lastRestartPrivateAPI != null &&
-                                        now - controller.lastRestartPrivateAPI! < 1000 * 30) return;
+                                        now - controller.lastRestartPrivateAPI! < 1000 * 30) {
+                                      return;
+                                    }
 
                                     // Save the last time we restarted
                                     controller.lastRestartPrivateAPI = now;

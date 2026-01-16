@@ -1,7 +1,6 @@
 import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/content/next_button.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
 import 'package:bluebubbles/utils/window_effects.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/theming/avatar/custom_avatar_color_panel.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/theming/avatar/custom_avatar_panel.dart';
@@ -40,7 +39,7 @@ class ThemingPanelController extends StatefulController {
 }
 
 class ThemingPanel extends CustomStateful<ThemingPanelController> {
-  ThemingPanel() : super(parentController: Get.put(ThemingPanelController()));
+  ThemingPanel({super.key}) : super(parentController: Get.put(ThemingPanelController()));
 
   @override
   State<StatefulWidget> createState() => _ThemingPanelState();
@@ -88,7 +87,7 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                         onTap: () async {
                           Navigator.of(context).push(
                             CupertinoPageRoute(
-                              builder: (context) => AdvancedThemingPanel(),
+                              builder: (context) => const AdvancedThemingPanel(),
                             ),
                           );
                         },
@@ -459,7 +458,7 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                         onTap: () async {
                           NavigationSvc.pushSettings(
                             context,
-                            CustomAvatarPanel(),
+                            const CustomAvatarPanel(),
                           );
                         },
                         subtitle: "Customize the avatar for different chats",
@@ -575,7 +574,7 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                                 actions: [
                                   Obx(
                                     () => HttpSvc.downloadingFont.value
-                                        ? Container(height: 0, width: 0)
+                                        ? const SizedBox(height: 0, width: 0)
                                         : TextButton(
                                             child: Text("Close",
                                                 style: context.theme.textTheme.bodyLarge!

@@ -124,7 +124,7 @@ class IntentsService {
                 "Generating link for call...",
                 style: context.theme.textTheme.titleLarge,
               ),
-              content: Container(
+              content: SizedBox(
                 height: 70,
                 child: Center(
                   child: CircularProgressIndicator(
@@ -190,7 +190,7 @@ class IntentsService {
       Navigator.of(Get.context!).push(
         ThemeSwitcher.buildPageRoute(
           builder: (BuildContext context) {
-            return ScheduledMessagesPanel();
+            return const ScheduledMessagesPanel();
           },
         ),
       );

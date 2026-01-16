@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
 class Balloons extends LeafRenderObjectWidget {
-  Balloons({
+  const Balloons({
     super.key,
     required this.controller,
   });

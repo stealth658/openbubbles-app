@@ -15,6 +15,8 @@ import 'package:path/path.dart';
 import 'package:universal_io/io.dart';
 
 class ConversationPanel extends StatefulWidget {
+  const ConversationPanel({super.key});
+
   @override
   State<StatefulWidget> createState() => _ConversationPanelState();
 }
@@ -134,7 +136,7 @@ class _ConversationPanelState extends OptimizedState<ConversationPanel> {
                       onTap: () {
                         NavigationSvc.pushSettings(
                           context,
-                          MessageOptionsOrderPanel(),
+                          const MessageOptionsOrderPanel(),
                         );
                       },
                       trailing: const NextButton(),

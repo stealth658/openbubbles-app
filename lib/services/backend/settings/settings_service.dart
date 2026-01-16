@@ -7,7 +7,6 @@ import 'package:bluebubbles/app/wrappers/scrollbar_wrapper.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
-import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
 import 'package:bluebubbles/services/backend/interfaces/app_interface.dart';
 import 'package:bluebubbles/services/backend/interfaces/server_interface.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -516,7 +515,9 @@ class SettingsService {
     }
 
     if (!updateInfo.available ||
-        (updateInfo.version != null && PrefsSvc.i.getString("server-update-check") == updateInfo.version)) return;
+        (updateInfo.version != null && PrefsSvc.i.getString("server-update-check") == updateInfo.version)) {
+      return;
+    }
 
     showDialog(
       context: Get.context!,

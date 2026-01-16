@@ -1,12 +1,11 @@
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/services/backend_ui_interop/event_dispatcher.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class NotificationSettingsDialog extends StatelessWidget {
-  NotificationSettingsDialog(this.chat, this.updateParent, {super.key});
+  const NotificationSettingsDialog(this.chat, this.updateParent, {super.key});
   final Chat chat;
   final VoidCallback updateParent;
 
@@ -47,7 +46,7 @@ class NotificationSettingsDialog extends StatelessWidget {
                         title: Text("Mute Individuals", style: context.theme.textTheme.titleLarge),
                         backgroundColor: context.theme.colorScheme.properSurface,
                         content: SingleChildScrollView(
-                          child: Container(
+                          child: SizedBox(
                             width: double.maxFinite,
                             child: StatefulBuilder(builder: (context, setState) {
                               return Column(
@@ -206,7 +205,7 @@ class NotificationSettingsDialog extends StatelessWidget {
 }
 
 class TextDetectionDialog extends StatelessWidget {
-  TextDetectionDialog(this.controller, {super.key});
+  const TextDetectionDialog(this.controller, {super.key});
   final TextEditingController controller;
 
   @override

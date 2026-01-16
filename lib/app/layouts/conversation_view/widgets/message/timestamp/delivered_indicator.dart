@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class DeliveredIndicator extends CustomStateful<MessageWidgetController> {
-  DeliveredIndicator({
+  const DeliveredIndicator({
     super.key,
     required super.parentController,
     required this.forceShow,

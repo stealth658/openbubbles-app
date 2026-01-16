@@ -9,7 +9,7 @@ import 'package:get/get.dart';
 import 'package:universal_io/io.dart';
 
 class UnsupportedInteractive extends StatefulWidget {
-  UnsupportedInteractive({
+  const UnsupportedInteractive({
     super.key,
     required this.message,
     required this.payloadData,

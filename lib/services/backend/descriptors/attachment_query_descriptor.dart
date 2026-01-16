@@ -1,6 +1,4 @@
 import 'package:bluebubbles/database/models.dart';
-import 'package:bluebubbles/objectbox.g.dart';
-import 'package:objectbox/objectbox.dart';
 
 /// Serializable query descriptor for Attachment queries that can cross isolate boundaries.
 /// Since ObjectBox Condition objects cannot be serialized, this class provides a way to

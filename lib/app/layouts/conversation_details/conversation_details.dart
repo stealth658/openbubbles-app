@@ -23,7 +23,7 @@ import 'package:get/get.dart';
 class ConversationDetails extends StatefulWidget {
   final Chat chat;
 
-  ConversationDetails({super.key, required this.chat});
+  const ConversationDetails({super.key, required this.chat});
 
   @override
   State<ConversationDetails> createState() => _ConversationDetailsState();
@@ -199,7 +199,7 @@ class _ConversationDetailsState extends OptimizedState<ConversationDetails> with
                                       "Leaving chat...",
                                       style: context.theme.textTheme.titleLarge,
                                     ),
-                                    content: Container(
+                                    content: SizedBox(
                                       height: 70,
                                       child: Center(
                                         child: CircularProgressIndicator(

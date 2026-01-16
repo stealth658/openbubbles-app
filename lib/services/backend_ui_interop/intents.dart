@@ -29,7 +29,7 @@ class OpenSettingsAction extends Action<OpenSettingsIntent> {
       await Navigator.of(Get.context!).push(
         ThemeSwitcher.buildPageRoute(
           builder: (BuildContext context) {
-            return SettingsPage();
+            return const SettingsPage();
           },
         ),
       );
@@ -88,7 +88,7 @@ class OpenSearchAction extends Action<OpenSearchIntent> {
     if (SettingsSvc.settings.finishedSetup.value) {
       NavigationSvc.pushLeft(
         context,
-        SearchView(),
+        const SearchView(),
       );
     }
     return null;

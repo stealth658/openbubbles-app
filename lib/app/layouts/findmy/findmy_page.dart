@@ -1002,7 +1002,7 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
                               shape: BoxShape.circle,
                               color: Theme.of(context).colorScheme.properSurface.withValues(alpha: 0.9),
                             ),
-                            child: Container(
+                            child: SizedBox(
                               width: 48,
                               child: refreshing || refreshing2
                                   ? buildProgressIndicator(context)
@@ -1065,7 +1065,7 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
                     ),
                   if (!samsung) buildDesktopTabBar(),
                   Expanded(
-                    child: Container(
+                    child: SizedBox(
                       width: 500,
                       child: TabBarView(
                         controller: tabController,
@@ -1390,11 +1390,11 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
                   child: Container(
                     width: 48,
                     height: 48,
-                    child: buildBackButton(context, padding: const EdgeInsets.only(right: 2)),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: Theme.of(context).colorScheme.properSurface.withValues(alpha: 0.9),
                     ),
+                    child: buildBackButton(context, padding: const EdgeInsets.only(right: 2)),
                   )),
             if (!samsung && canRefresh)
               Positioned(
@@ -1407,7 +1407,7 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
                     shape: BoxShape.circle,
                     color: Theme.of(context).colorScheme.properSurface.withValues(alpha: 0.9),
                   ),
-                  child: Container(
+                  child: SizedBox(
                     width: 48,
                     child: refreshing || refreshing2
                         ? buildProgressIndicator(context)
@@ -1487,7 +1487,7 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
   Widget buildSamsungAppBar(BuildContext context, String title) {
     final actions = [
       if (canRefresh)
-        Container(
+        SizedBox(
           width: 48,
           height: 48,
           child: Container(
@@ -1564,7 +1564,7 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
                 padding: const EdgeInsets.only(left: 8.0),
                 child: Align(
                   alignment: Alignment.bottomLeft,
-                  child: Container(
+                  child: SizedBox(
                     height: 50,
                     child: Align(
                       alignment: Alignment.centerLeft,
@@ -1575,7 +1575,7 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
               ),
               Align(
                 alignment: Alignment.bottomRight,
-                child: Container(
+                child: SizedBox(
                   height: 50,
                   child: Align(
                     alignment: Alignment.centerRight,

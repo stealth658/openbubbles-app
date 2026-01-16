@@ -21,7 +21,7 @@ class VideoPlayer extends StatefulWidget {
   final Attachment attachment;
   final bool isFromMe;
 
-  VideoPlayer(
+  const VideoPlayer(
       {super.key, required this.file, required this.attachment, required this.controller, required this.isFromMe});
 
   final ConversationViewController? controller;

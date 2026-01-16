@@ -14,6 +14,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class RedactedModePanel extends StatefulWidget {
+  const RedactedModePanel({super.key});
+
   @override
   State<StatefulWidget> createState() => _RedactedModePanelState();
 }

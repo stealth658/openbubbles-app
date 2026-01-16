@@ -15,6 +15,8 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:simple_animations/simple_animations.dart';
 
 class WelcomePage extends StatefulWidget {
+  const WelcomePage({super.key});
+
   @override
   State<WelcomePage> createState() => _WelcomePageState();
 }

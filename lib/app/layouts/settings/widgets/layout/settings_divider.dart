@@ -8,7 +8,7 @@ class SettingsDivider extends StatelessWidget {
   final Color? color;
   final EdgeInsets padding;
 
-  const SettingsDivider({
+  const SettingsDivider({super.key, 
     this.thickness = 1,
     this.color,
     this.padding = const EdgeInsets.only(left: 66.0),

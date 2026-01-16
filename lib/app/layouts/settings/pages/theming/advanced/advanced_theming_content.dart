@@ -9,7 +9,6 @@ import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/app/wrappers/scrollbar_wrapper.dart';
 import 'package:bluebubbles/database/models.dart';
-import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
@@ -20,7 +19,7 @@ import 'package:tuple/tuple.dart';
 import 'package:universal_io/io.dart';
 
 class AdvancedThemingContent extends StatefulWidget {
-  AdvancedThemingContent({super.key, required this.isDarkMode, required this.controller});
+  const AdvancedThemingContent({super.key, required this.isDarkMode, required this.controller});
   final bool isDarkMode;
   final StreamController controller;
 

@@ -12,7 +12,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_acrylic/window_effect.dart';
 import 'package:get/get.dart' hide Response;
 import 'package:slugify/slugify.dart';
-import 'package:supercharged/supercharged.dart';
 
 class ChatSelectorView extends StatefulWidget {
   const ChatSelectorView({

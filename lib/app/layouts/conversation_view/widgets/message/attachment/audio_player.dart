@@ -15,7 +15,7 @@ class AudioPlayer extends StatefulWidget {
   final Attachment? attachment;
   final String? transcript;
 
-  AudioPlayer({
+  const AudioPlayer({
     super.key,
     required this.file,
     required this.attachment,

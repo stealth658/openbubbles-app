@@ -13,7 +13,7 @@ import 'package:universal_io/io.dart';
 class AvatarCrop extends StatefulWidget {
   final int? index;
   final Chat? chat;
-  AvatarCrop({this.index, this.chat});
+  const AvatarCrop({super.key, this.index, this.chat});
 
   @override
   State<AvatarCrop> createState() => _AvatarCropState();
@@ -134,14 +134,14 @@ class _AvatarCropState extends OptimizedState<AvatarCrop> {
               ],
             ),
           ),
-          body: Container(
+          body: SizedBox(
             width: double.infinity,
             height: double.infinity,
             child: Center(
               child: Column(
                 children: [
                   if (_imageData != null)
-                    Container(
+                    SizedBox(
                       height: context.height / 2,
                       child: Crop(
                         controller: _cropController,
@@ -162,7 +162,7 @@ class _AvatarCropState extends OptimizedState<AvatarCrop> {
                       ),
                     ),
                   if (_imageData == null)
-                    Container(
+                    SizedBox(
                       height: context.height / 2,
                       child: Center(
                         child: Text("Pick an image to crop it for a custom avatar",
@@ -187,7 +187,7 @@ class _AvatarCropState extends OptimizedState<AvatarCrop> {
                           context: context,
                           builder: (context) => AlertDialog(
                             title: Text("Saving avatar...", style: context.theme.textTheme.titleLarge),
-                            content: Container(
+                            content: SizedBox(
                               height: 70,
                               child: Center(
                                 child: buildProgressIndicator(context),
@@ -219,7 +219,7 @@ class _AvatarCropState extends OptimizedState<AvatarCrop> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text("Saving avatar...", style: context.theme.textTheme.titleLarge),
-        content: Container(
+        content: SizedBox(
           height: 70,
           child: Center(
             child: buildProgressIndicator(context),

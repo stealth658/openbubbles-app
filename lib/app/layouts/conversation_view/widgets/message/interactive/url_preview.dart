@@ -21,7 +21,7 @@ class UrlPreview extends StatefulWidget {
   final Message message;
   final PlatformFile? file;
 
-  UrlPreview({
+  const UrlPreview({
     super.key,
     required this.data,
     required this.message,

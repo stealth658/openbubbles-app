@@ -14,7 +14,7 @@ import 'package:simple_animations/simple_animations.dart';
 import 'package:supercharged/supercharged.dart';
 
 class BubbleEffects extends StatefulWidget {
-  BubbleEffects({
+  const BubbleEffects({
     super.key,
     required this.child,
     required this.message,
@@ -203,7 +203,7 @@ class _BubbleEffectsState extends OptimizedState<BubbleEffects> {
           );
         }
         if (effect == MessageEffect.loud) {
-          return Container(
+          return SizedBox(
             width: value1 == 1 ? null : size.width * value1,
             height: value1 == 1 ? null : size.height * value1,
             child: FittedBox(
@@ -217,7 +217,7 @@ class _BubbleEffectsState extends OptimizedState<BubbleEffects> {
           );
         }
         if (effect == MessageEffect.slam) {
-          return Container(
+          return SizedBox(
             width: value1 == 1 ? null : size.width * value1,
             height: value1 == 1 ? null : size.height * value1,
             child: FittedBox(

@@ -257,8 +257,8 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
                           builder: (context, size, child) {
                             return Transform.scale(
                               scale: size.clamp(1, double.infinity),
-                              child: child,
                               alignment: message.isFromMe! ? Alignment.centerRight : Alignment.centerLeft,
+                              child: child,
                             );
                           },
                         ),
@@ -575,7 +575,7 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
         actions: [
           Obx(
             () => downloadingAttachments.value
-                ? Container(height: 0, width: 0)
+                ? const SizedBox(height: 0, width: 0)
                 : TextButton(
                     child: Text("Close",
                         style:
@@ -658,7 +658,7 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
         actions: [
           Obx(
             () => downloadingAttachments.value
-                ? Container(height: 0, width: 0)
+                ? const SizedBox(height: 0, width: 0)
                 : TextButton(
                     child: Text("Close",
                         style:

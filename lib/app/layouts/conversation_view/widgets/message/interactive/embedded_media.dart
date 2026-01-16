@@ -13,7 +13,7 @@ import 'package:tuple/tuple.dart';
 import 'package:universal_io/io.dart';
 
 class EmbeddedMedia extends CustomStateful<MessageWidgetController> {
-  EmbeddedMedia({
+  const EmbeddedMedia({
     super.key,
     required this.message,
     required super.parentController,

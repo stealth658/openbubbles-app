@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class ThemeSwitcher extends StatefulWidget {
-  ThemeSwitcher({super.key, required this.iOSSkin, required this.materialSkin, this.samsungSkin});
+  const ThemeSwitcher({super.key, required this.iOSSkin, required this.materialSkin, this.samsungSkin});
   final Widget iOSSkin;
   final Widget materialSkin;
   final Widget? samsungSkin;
@@ -19,7 +19,7 @@ class ThemeSwitcher extends StatefulWidget {
             pageBuilder: (context, animation, secondaryAnimation) => builder.call(context),
             transitionsBuilder: (context, animation, secondaryAnimation, child) {
               return CustomCupertinoPageTransition(
-                  primaryRouteAnimation: animation, child: child, linearTransition: false);
+                  primaryRouteAnimation: animation, linearTransition: false, child: child);
             });
       case Skins.Material:
         return MaterialPageRoute<T>(builder: builder);

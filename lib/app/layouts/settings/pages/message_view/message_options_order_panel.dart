@@ -12,6 +12,8 @@ import 'package:flutter_acrylic/window_effect.dart';
 import 'package:get/get.dart';
 
 class MessageOptionsOrderPanel extends StatefulWidget {
+  const MessageOptionsOrderPanel({super.key});
+
   @override
   State<StatefulWidget> createState() => _MessageOptionsOrderPanelState();
 }
@@ -57,6 +59,7 @@ class _MessageOptionsOrderPanelState extends OptimizedState<MessageOptionsOrderP
             preferredSize: Size(NavigationSvc.width(context), 80),
             child: ClipRRect(
               child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
                 child: AppBar(
                   systemOverlayStyle:
                       ThemeData.estimateBrightnessForColor(context.theme.colorScheme.background) == Brightness.dark
@@ -84,7 +87,6 @@ class _MessageOptionsOrderPanelState extends OptimizedState<MessageOptionsOrderP
                     ),
                   ],
                 ),
-                filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
               ),
             ),
           ),

@@ -20,7 +20,7 @@ import 'package:universal_io/io.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class OtherFile extends StatelessWidget {
-  OtherFile({
+  const OtherFile({
     super.key,
     required this.attachment,
     required this.file,

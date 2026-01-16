@@ -10,7 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class MaterialConversationTile extends CustomStateful<ConversationTileController> {
-  const MaterialConversationTile({Key? key, required super.parentController});
+  const MaterialConversationTile({super.key, required super.parentController});
 
   @override
   State<StatefulWidget> createState() => _MaterialConversationTileState();
@@ -133,7 +133,7 @@ class _MaterialConversationTileState extends CustomState<MaterialConversationTil
 }
 
 class MaterialTrailing extends CustomStateful<ConversationTileController> {
-  const MaterialTrailing({Key? key, required super.parentController});
+  const MaterialTrailing({super.key, required super.parentController});
 
   @override
   State<StatefulWidget> createState() => _MaterialTrailingState();
@@ -293,7 +293,7 @@ class _MaterialTrailingState extends CustomState<MaterialTrailing, void, Convers
 }
 
 class UnreadIcon extends CustomStateful<ConversationTileController> {
-  const UnreadIcon({Key? key, required super.parentController});
+  const UnreadIcon({super.key, required super.parentController});
 
   @override
   State<StatefulWidget> createState() => _UnreadIconState();

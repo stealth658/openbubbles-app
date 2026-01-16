@@ -9,7 +9,7 @@ import 'package:get/get.dart';
 import 'package:universal_io/io.dart';
 
 class OldThemesDialog extends StatelessWidget {
-  OldThemesDialog(this.oldThemes, this.clearOld, {super.key});
+  const OldThemesDialog(this.oldThemes, this.clearOld, {super.key});
   // ignore: deprecated_member_use_from_same_package
   final List<ThemeObject> oldThemes;
   final Function() clearOld;
@@ -20,7 +20,7 @@ class OldThemesDialog extends StatelessWidget {
       title: Text("Old Themes", style: context.theme.textTheme.titleLarge),
       backgroundColor: context.theme.colorScheme.properSurface,
       content: SingleChildScrollView(
-        child: Container(
+        child: SizedBox(
           width: double.maxFinite,
           child: StatefulBuilder(builder: (context, setState) {
             return Column(
@@ -51,7 +51,7 @@ class OldThemesDialog extends StatelessWidget {
                                         style: context.theme.textTheme.titleLarge),
                                     backgroundColor: context.theme.colorScheme.properSurface,
                                     content: SingleChildScrollView(
-                                      child: Container(
+                                      child: SizedBox(
                                         width: double.maxFinite,
                                         child: StatefulBuilder(builder: (context, setState) {
                                           return ConstrainedBox(

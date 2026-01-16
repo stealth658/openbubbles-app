@@ -49,7 +49,7 @@ void showAddParticipant(BuildContext context, Chat chat) {
                           title: Text("Pick Contact", style: context.theme.textTheme.titleLarge),
                           backgroundColor: context.theme.colorScheme.properSurface,
                           content: SingleChildScrollView(
-                            child: Container(
+                            child: SizedBox(
                               width: double.maxFinite,
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
@@ -113,7 +113,7 @@ void showAddParticipant(BuildContext context, Chat chat) {
                           "Adding ${participantController.text}...",
                           style: context.theme.textTheme.titleLarge,
                         ),
-                        content: Container(
+                        content: SizedBox(
                           height: 70,
                           child: Center(
                             child: CircularProgressIndicator(

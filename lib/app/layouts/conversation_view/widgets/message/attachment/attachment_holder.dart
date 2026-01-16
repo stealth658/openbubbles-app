@@ -22,7 +22,7 @@ import 'package:intl/intl.dart';
 import 'package:tuple/tuple.dart';
 
 class AttachmentHolder extends CustomStateful<MessageWidgetController> {
-  AttachmentHolder({
+  const AttachmentHolder({
     super.key,
     required super.parentController,
     required this.message,
@@ -243,6 +243,12 @@ class _AttachmentHolderState extends CustomState<AttachmentHolder, void, Message
                                                   style: TextButton.styleFrom(
                                                     visualDensity: VisualDensity.compact,
                                                   ),
+                                                  onPressed: progress.item2.value < 1
+                                                      ? () {
+                                                          MessageHandlerSvc.latestCancelToken
+                                                              ?.cancel("User cancelled send.");
+                                                        }
+                                                      : null,
                                                   child: progress.item2.value < 1
                                                       ? Text("Cancel",
                                                           style: context.theme.textTheme.bodyLarge!
@@ -250,12 +256,6 @@ class _AttachmentHolderState extends CustomState<AttachmentHolder, void, Message
                                                       : Text("Waiting for iMessage...",
                                                           style: context.theme.textTheme.bodyLarge!,
                                                           textAlign: TextAlign.center),
-                                                  onPressed: progress.item2.value < 1
-                                                      ? () {
-                                                          MessageHandlerSvc.latestCancelToken
-                                                              ?.cancel("User cancelled send.");
-                                                        }
-                                                      : null,
                                                 ),
                                             ],
                                           );
@@ -303,17 +303,17 @@ class _AttachmentHolderState extends CustomState<AttachmentHolder, void, Message
                                         style: TextButton.styleFrom(
                                           visualDensity: VisualDensity.compact,
                                         ),
+                                        onPressed: _content.item2.value < 1
+                                            ? () {
+                                                MessageHandlerSvc.latestCancelToken?.cancel("User cancelled send.");
+                                              }
+                                            : null,
                                         child: _content.item2.value < 1
                                             ? Text("Cancel",
                                                 style: context.theme.textTheme.bodyLarge!
                                                     .copyWith(color: context.theme.colorScheme.primary))
                                             : Text("Waiting for iMessage...",
                                                 style: context.theme.textTheme.bodyLarge!, textAlign: TextAlign.center),
-                                        onPressed: _content.item2.value < 1
-                                            ? () {
-                                                MessageHandlerSvc.latestCancelToken?.cancel("User cancelled send.");
-                                              }
-                                            : null,
                                       ),
                                   ],
                                 );

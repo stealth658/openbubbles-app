@@ -19,7 +19,7 @@ import 'package:get/get.dart';
 import 'package:universal_io/io.dart';
 
 class CupertinoHeader extends StatelessWidget implements PreferredSizeWidget {
-  const CupertinoHeader({Key? key, required this.controller});
+  const CupertinoHeader({super.key, required this.controller});
 
   final ConversationViewController controller;
 
@@ -156,6 +156,9 @@ class CupertinoHeader extends StatelessWidget implements PreferredSizeWidget {
                 ),
               ),
               Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
                 child: Obx(() => TweenAnimationBuilder<double>(
                     duration: controller.chat.sendProgress.value == 0
                         ? Duration.zero
@@ -176,9 +179,6 @@ class CupertinoHeader extends StatelessWidget implements PreferredSizeWidget {
                             minHeight: 3,
                           ),
                         ))),
-                bottom: 0,
-                left: 0,
-                right: 0,
               ),
             ],
           )),

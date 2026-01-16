@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:isolate';
 import 'dart:math';
 import 'dart:ui';
@@ -104,7 +103,7 @@ Future<Null> initApp(bool bubble, List<String> arguments) async {
       /* ----- SPLASH SCREEN INITIALIZATION ----- */
       if (!SettingsSvc.settings.finishedSetup.value && !kIsWeb && !kIsDesktop) {
         runApp(MaterialApp(
-            home: SplashScreen(shouldNavigate: false),
+            home: const SplashScreen(shouldNavigate: false),
             theme: ThemeData(
               colorScheme: ColorScheme.fromSwatch(
                   backgroundColor:
@@ -294,7 +293,7 @@ class Main extends StatelessWidget {
           // Prevent scrolling with multiple fingers accelerating the scrolling
           multitouchDragStrategy: MultitouchDragStrategy.latestPointer,
         ),
-        home: Home(),
+        home: const Home(),
         shortcuts: {
           LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.comma): const OpenSettingsIntent(),
           LogicalKeySet(LogicalKeyboardKey.alt, LogicalKeyboardKey.keyN): const OpenNewChatCreatorIntent(),
@@ -677,7 +676,7 @@ class _HomeState extends OptimizedState<Home> with WidgetsBindingObserver, TrayL
                     return PopScope(
                       canPop: false,
                       child: TitleBarWrapper(
-                          child: kIsWeb || kIsDesktop ? SetupView() : SplashScreen(shouldNavigate: fullyLoaded)),
+                          child: kIsWeb || kIsDesktop ? const SetupView() : SplashScreen(shouldNavigate: fullyLoaded)),
                     );
                   }
                 },

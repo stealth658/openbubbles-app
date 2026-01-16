@@ -42,7 +42,7 @@ class FilesystemService {
     if (!kIsWeb) {
       //ignore: unnecessary_cast, we need this as a workaround
       appDocDir =
-          (kIsDesktop ? await getApplicationSupportDirectory() : await getApplicationDocumentsDirectory()) as Directory;
+          (kIsDesktop ? await getApplicationSupportDirectory() : await getApplicationDocumentsDirectory());
       if (isMsix) {
         final String appDataRoot = joinAll(split(appDocDir.absolute.path).slice(0, 4));
         final Directory msStoreLocation = Directory(join(appDataRoot, "Local", "Packages",

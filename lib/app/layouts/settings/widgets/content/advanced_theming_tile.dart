@@ -1,7 +1,6 @@
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
-import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/material.dart';
@@ -9,7 +8,7 @@ import 'package:get/get.dart';
 import 'package:tuple/tuple.dart';
 
 class AdvancedThemingTile extends StatefulWidget {
-  AdvancedThemingTile({super.key, required this.currentTheme, required this.tuple, required this.editable});
+  const AdvancedThemingTile({super.key, required this.currentTheme, required this.tuple, required this.editable});
   final ThemeStruct currentTheme;
   final Tuple2<MapEntry<String, Color>, MapEntry<String, Color>?> tuple;
   final bool editable;

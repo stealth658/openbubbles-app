@@ -13,7 +13,7 @@ import 'package:url_launcher/url_launcher.dart';
 class LegacyUrlPreview extends StatefulWidget {
   final Message message;
 
-  LegacyUrlPreview({
+  const LegacyUrlPreview({
     super.key,
     required this.message,
   });

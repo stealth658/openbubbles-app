@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:bluebubbles/app/layouts/settings/pages/advanced/firebase_panel.dart';
@@ -7,13 +6,14 @@ import 'package:bluebubbles/app/layouts/settings/widgets/content/next_button.dar
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/types/constants.dart';
-import 'package:bluebubbles/services/backend/settings/shared_preferences_service.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class NotificationProvidersPanel extends StatefulWidget {
+  const NotificationProvidersPanel({super.key});
+
   @override
   State<StatefulWidget> createState() => _NotificationProvidersState();
 }
@@ -73,7 +73,7 @@ class _NotificationProvidersState extends OptimizedState<NotificationProvidersPa
                     onTap: () async {
                       NavigationSvc.pushSettings(
                         context,
-                        FirebasePanel(),
+                        const FirebasePanel(),
                       );
                     },
                     leading: Column(mainAxisAlignment: MainAxisAlignment.center, children: [

@@ -12,7 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class ReplyBubble extends CustomStateful<MessageWidgetController> {
-  ReplyBubble({
+  const ReplyBubble({
     super.key,
     required super.parentController,
     required this.part,

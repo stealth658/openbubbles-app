@@ -13,7 +13,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 class AdvancedThemingPanel extends StatefulWidget {
-  AdvancedThemingPanel({super.key});
+  const AdvancedThemingPanel({super.key});
 
   @override
   State<AdvancedThemingPanel> createState() => _AdvancedThemingPanelState();

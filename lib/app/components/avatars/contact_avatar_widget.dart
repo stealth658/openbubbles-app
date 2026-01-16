@@ -9,7 +9,7 @@ import 'package:get/get.dart';
 import 'package:universal_io/io.dart';
 
 class ContactAvatarWidget extends StatefulWidget {
-  ContactAvatarWidget(
+  const ContactAvatarWidget(
       {super.key,
       this.size,
       this.fontSize,
@@ -94,7 +94,7 @@ class _ContactAvatarWidgetState extends OptimizedState<ContactAvatarWidget> {
     final Color color = await showColorPickerDialog(
       context,
       widget.handle?.color != null ? HexColor(widget.handle!.color!) : toColorGradient(widget.handle!.address)[0],
-      title: Container(
+      title: SizedBox(
           width: NavigationSvc.width(context) - 112,
           child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             Text('Choose a Color', style: context.theme.textTheme.titleLarge),

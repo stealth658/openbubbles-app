@@ -15,7 +15,7 @@ import 'package:skeletonizer/skeletonizer.dart';
 import 'package:universal_io/io.dart';
 
 class ProfilePanel extends StatefulWidget {
-  ProfilePanel({super.key});
+  const ProfilePanel({super.key});
 
   @override
   State<ProfilePanel> createState() => _ProfilePanelState();
@@ -98,7 +98,7 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
   void updatePhoto() async {
     Navigator.of(context).push(
       ThemeSwitcher.buildPageRoute(
-        builder: (context) => AvatarCrop(),
+        builder: (context) => const AvatarCrop(),
       ),
     );
   }
@@ -135,7 +135,7 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
                         onTap: () async {
                           updatePhoto();
                         },
-                        child: ContactAvatarWidget(
+                        child: const ContactAvatarWidget(
                           handle: null,
                           borderThickness: 0.1,
                           editable: false,
@@ -244,7 +244,7 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
                     color: Colors.transparent,
                     child: ListTile(
                       mouseCursor: MouseCursor.defer,
-                      leading: ContactAvatarWidget(
+                      leading: const ContactAvatarWidget(
                         handle: null,
                         borderThickness: 0.1,
                         editable: false,

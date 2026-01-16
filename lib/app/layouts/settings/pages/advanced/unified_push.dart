@@ -14,7 +14,7 @@ class UnifiedPushPanelController extends StatefulController {
 }
 
 class UnifiedPushPanel extends CustomStateful<UnifiedPushPanelController> {
-  UnifiedPushPanel() : super(parentController: Get.put(UnifiedPushPanelController()));
+  UnifiedPushPanel({super.key}) : super(parentController: Get.put(UnifiedPushPanelController()));
 
   @override
   State<UnifiedPushPanel> createState() => _UnifiedPushPanelState();
