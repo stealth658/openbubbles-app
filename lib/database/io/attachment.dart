@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/objectbox.g.dart';
+import 'package:bluebubbles/generated/objectbox.g.dart';
 import 'package:bluebubbles/database/io/message.dart';
 import 'package:bluebubbles/services/backend/descriptors/attachment_query_descriptor.dart';
 import 'package:bluebubbles/services/backend/interfaces/attachment_interface.dart';

@@ -1,5 +1,5 @@
 import 'package:bluebubbles/database/database.dart';
-import 'package:bluebubbles/objectbox.g.dart';
+import 'package:bluebubbles/generated/objectbox.g.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:objectbox/objectbox.dart';

@@ -14,16 +14,16 @@ import 'package:objectbox/internal.dart'
 import 'package:objectbox/objectbox.dart' as obx;
 import 'package:objectbox_flutter_libs/objectbox_flutter_libs.dart';
 
-import 'database/io/attachment.dart';
-import 'database/io/chat.dart';
-import 'database/io/contact.dart';
-import 'database/io/contact_v2.dart';
-import 'database/io/fcm_data.dart';
-import 'database/io/handle.dart';
-import 'database/io/message.dart';
-import 'database/io/theme.dart';
-import 'database/io/theme_entry.dart';
-import 'database/io/theme_object.dart';
+import '../database/io/attachment.dart';
+import '../database/io/chat.dart';
+import '../database/io/contact.dart';
+import '../database/io/contact_v2.dart';
+import '../database/io/fcm_data.dart';
+import '../database/io/handle.dart';
+import '../database/io/message.dart';
+import '../database/io/theme.dart';
+import '../database/io/theme_entry.dart';
+import '../database/io/theme_object.dart';
 
 export 'package:objectbox/objectbox.dart'; // so that callers only have to import this file
 
