@@ -28,7 +28,6 @@ import 'package:flutter/scheduler.dart' hide Priority;
 import 'package:flutter/services.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:get/get.dart';
 import 'package:google_ml_kit/google_ml_kit.dart' hide Message;
@@ -67,13 +66,7 @@ Future<Null> bubble() async {
 //ignore: prefer_void_to_null
 Future<Null> initApp(bool bubble, List<String> arguments) async {
   runZonedGuarded<Future<void>>(() async {
-    WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
-
-    // Preserve the splash screen until we manually remove it
-    if (!bubble) {
-      FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
-    }
-
+    WidgetsFlutterBinding.ensureInitialized();
     await StartupTasks.initStartupServices(isBubble: bubble);
 
     /* ----- RANDOM STUFF INITIALIZATION ----- */
@@ -538,27 +531,7 @@ class _HomeState extends OptimizedState<Home> with WidgetsBindingObserver, TrayL
         setState(() {
           fullyLoaded = true;
         });
-        // Remove splash screen immediately if setup is not finished
-        FlutterNativeSplash.remove();
       } else {
-        // Wait for ChatsSvc to load the first batch before removing splash
-        ChatsSvc.loadedFirstChatBatch.listen((loadedChatBatch) {
-          if (loadedChatBatch) {
-            debugPrint('[SPLASH] First chat batch loaded, removing splash screen');
-            FlutterNativeSplash.remove();
-          }
-        });
-
-        ChatsSvc.loadedAllChats.then((_) {
-          debugPrint('[SPLASH] Loaded all chats, removing splash screen if still present');
-          FlutterNativeSplash.remove();
-        });
-
-        // Fallback: remove splash after 10 seconds even if loadedChatBatch doesn't trigger
-        Future.delayed(const Duration(seconds: 10), () {
-          FlutterNativeSplash.remove();
-        });
-
         if ((FilesystemSvc.androidInfo?.version.sdkInt ?? 0) >= 33) {
           Permission.notification.request();
         }
