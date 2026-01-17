@@ -233,6 +233,11 @@ flutter_native_splash:
     icon_background_color: "#FFFFFF"
     icon_background_color_dark: "000000"
 
+objectbox:
+  # Writes objectbox-model.json and objectbox.g.dart to lib/generated
+  # This helps separate generated code from handwritten code.
+  output_dir: generated
+
 #   flutter_test:
 #     sdk: flutter
 
