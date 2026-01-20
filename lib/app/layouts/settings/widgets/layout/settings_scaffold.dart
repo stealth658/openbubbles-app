@@ -21,7 +21,8 @@ class SettingsScaffold extends StatelessWidget {
   final Widget? stickySuffix;
   final Widget? fab;
 
-  SettingsScaffold({super.key, 
+  SettingsScaffold({
+    super.key,
     required this.title,
     required this.initialHeader,
     required this.iosSubtitle,

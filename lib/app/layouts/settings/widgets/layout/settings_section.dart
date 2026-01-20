@@ -10,7 +10,8 @@ class SettingsSection extends StatelessWidget {
   final List<SearchableSettingItem>? searchableSettingsItems;
   final Color backgroundColor;
 
-  const SettingsSection({super.key, 
+  const SettingsSection({
+    super.key,
     this.children,
     required this.backgroundColor,
     this.searchableSettingsItems,

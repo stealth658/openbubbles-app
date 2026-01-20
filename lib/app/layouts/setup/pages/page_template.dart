@@ -8,7 +8,8 @@ import 'package:shimmer/shimmer.dart';
 import 'package:simple_animations/simple_animations.dart';
 
 class SetupPageTemplate extends StatelessWidget {
-  SetupPageTemplate({super.key, 
+  SetupPageTemplate({
+    super.key,
     required this.title,
     required this.subtitle,
     this.aboveTitle,

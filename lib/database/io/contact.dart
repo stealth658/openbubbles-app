@@ -8,6 +8,8 @@ import 'package:collection/collection.dart';
 import 'package:dice_bear/dice_bear.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+// ignore: library_prefixes
+import 'package:fast_contacts/fast_contacts.dart' as FastContacts;
 // (needed when generating objectbox model code)
 // ignore: unnecessary_import
 import 'package:objectbox/objectbox.dart';
@@ -149,6 +151,23 @@ class Contact {
       structuredName: StructuredName.fromMap(m['structuredName']),
       avatar: m['avatar'] == null ? null : base64Decode(m['avatar']!),
     );
+  }
+
+  static Future<Contact> fromFastContact(FastContacts.Contact contact) async {
+    return Contact(
+        id: contact.id,
+        displayName: contact.displayName,
+        phones: contact.phones.map((e) => formatPhoneNumber(e.number)).toList(),
+        emails: contact.emails.map((e) => e.address).toList(),
+        structuredName: StructuredName(
+          namePrefix: "",
+          givenName: "",
+          middleName: "",
+          familyName: "",
+          nameSuffix: "",
+        ),
+        avatar:
+            await FastContacts.FastContacts.getContactImage(contact.id, size: FastContacts.ContactImageSize.thumbnail));
   }
 
   @override

@@ -44,6 +44,12 @@ class MessagesViewState extends OptimizedState<MessagesView> {
   late bool noMoreMessages = widget.customService != null;
   List<Message> _messages = <Message>[];
 
+  // GlobalKey for SliverAnimatedList
+  GlobalKey<SliverAnimatedListState> _listKey = GlobalKey<SliverAnimatedListState>();
+
+  // Track which message is currently being animated (for individual additions only)
+  String? _animatingMessageGuid;
+
   // Notifier for list structure changes only (add/remove)
   final ValueNotifier<int> _listVersion = ValueNotifier<int>(0);
 
@@ -109,10 +115,12 @@ class MessagesViewState extends OptimizedState<MessagesView> {
       _messages = messageService.struct.messages;
       _messages.sort(Message.sort);
       // Initialize message widget controllers
-      _messages.forEach((m) {
+      for (var m in _messages) {
         final c = mwc(m);
         c.cvController = controller;
-      });
+      }
+      // Recreate the list key to force SliverAnimatedList to rebuild with correct item count
+      _listKey = GlobalKey<SliverAnimatedListState>();
       setState(() {});
       // scroll to message if needed
       if (searchMessage != null) {
@@ -265,12 +273,13 @@ class MessagesViewState extends OptimizedState<MessagesView> {
       c.cvController = controller;
     }
 
-    // Update the list and rebuild - let SliverAnimatedList recalculate based on new length
+    // Update the list without animation (bulk load)
     _messages = newMessagesFromService;
     _messages.sort(Message.sort);
     fetching = false;
 
-    Logger.debug("loadNextChunk: Updated _messages list to ${_messages.length} items, calling setState");
+    // Batch loading: recreate the list key to force rebuild without animation
+    _listKey = GlobalKey<SliverAnimatedListState>();
     setState(() {});
   }
 
@@ -300,13 +309,24 @@ class MessagesViewState extends OptimizedState<MessagesView> {
     final c = mwc(message);
     c.cvController = controller;
 
-    Logger.debug("handleNewMessage: Added message at index $insertIndex, _messages now has ${_messages.length} items");
+    // Mark this message for animation
+    _animatingMessageGuid = message.guid;
 
-    // Debounced setState to prevent rapid rebuilds
+    // Use insertItem to animate the list sliding up to make space
+    const duration = Duration(milliseconds: 450);
+    _listKey.currentState?.insertItem(
+      insertIndex,
+      duration: duration,
+    );
+
+    // Update version tracker
     _listVersion.value++;
-    _setStateDebouncer?.cancel();
-    _setStateDebouncer = Timer(const Duration(milliseconds: 16), () {
-      if (mounted) setState(() {});
+
+    // Clear animation flag after animation completes
+    Future.delayed(duration, () {
+      if (mounted) {
+        _animatingMessageGuid = null;
+      }
     });
 
     if (insertIndex == 0 && showSmartReplies) {
@@ -537,64 +557,86 @@ class MessagesViewState extends OptimizedState<MessagesView> {
                             const SliverToBoxAdapter(
                               child: Loader(text: "Loading surrounding message context..."),
                             ),
-                          SliverList(
-                            delegate: SliverChildBuilderDelegate(
-                              (BuildContext context, int index) {
-                                try {
-                                  // paginate
-                                  if (index >= _messages.length) {
-                                    if (!noMoreMessages && initialized && index == _messages.length) {
-                                      if (!fetching) {
-                                        loadNextChunk();
+                          Builder(
+                            builder: (context) {
+                              return SliverAnimatedList(
+                                key: _listKey,
+                                initialItemCount: _messages.length + 1,
+                                itemBuilder: (BuildContext context, int index, Animation<double> animation) {
+                                  try {
+                                    // paginate
+                                    if (index >= _messages.length) {
+                                      if (!noMoreMessages && initialized && index == _messages.length) {
+                                        if (!fetching) {
+                                          loadNextChunk();
+                                        }
+                                        return const Loader();
                                       }
-                                      return const Loader();
+
+                                      return const SizedBox.shrink();
                                     }
 
-                                    return const SizedBox.shrink();
-                                  }
+                                    Message? olderMessage;
+                                    Message? newerMessage;
+                                    if (index + 1 < _messages.length) {
+                                      olderMessage = _messages[index + 1];
+                                    }
+                                    if (index - 1 >= 0) {
+                                      newerMessage = _messages[index - 1];
+                                    }
 
-                                  Message? olderMessage;
-                                  Message? newerMessage;
-                                  if (index + 1 < _messages.length) {
-                                    olderMessage = _messages[index + 1];
-                                  }
-                                  if (index - 1 >= 0) {
-                                    newerMessage = _messages[index - 1];
-                                  }
-
-                                  final message = _messages[index];
-                                  return RepaintBoundary(
-                                    child: Padding(
-                                      key: ValueKey(message.guid ?? 'unknown-$index'),
-                                      padding: const EdgeInsets.only(left: 5.0, right: 5.0),
-                                      child: AutoScrollTag(
-                                        key: ValueKey("${message.guid ?? 'unknown-$index'}-scrolling"),
-                                        index: index,
-                                        controller: scrollController,
-                                        highlightColor: context.theme.colorScheme.surface.withValues(alpha: 0.7),
-                                        child: MessageHolder(
-                                          cvController: controller,
-                                          message: message,
-                                          oldMessageGuid: olderMessage?.guid,
-                                          newMessageGuid: newerMessage?.guid,
+                                    final message = _messages[index];
+                                    final messageWidget = RepaintBoundary(
+                                      child: Padding(
+                                        key: ValueKey(message.guid ?? 'unknown-$index'),
+                                        padding: const EdgeInsets.only(left: 5.0, right: 5.0),
+                                        child: AutoScrollTag(
+                                          key: ValueKey("${message.guid ?? 'unknown-$index'}-scrolling"),
+                                          index: index,
+                                          controller: scrollController,
+                                          highlightColor: context.theme.colorScheme.surface.withValues(alpha: 0.7),
+                                          child: MessageHolder(
+                                            cvController: controller,
+                                            message: message,
+                                            oldMessageGuid: olderMessage?.guid,
+                                            newMessageGuid: newerMessage?.guid,
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                  );
-                                } catch (e, stack) {
-                                  Logger.error("Error in SliverList itemBuilder at index $index",
-                                      error: e, trace: stack);
-                                  return SizedBox(
-                                    key: ValueKey('error-$index'),
-                                    height: 50,
-                                    child: Center(
-                                      child: Text('Error loading message at index $index'),
-                                    ),
-                                  );
-                                }
-                              },
-                              childCount: _messages.length + 1,
-                            ),
+                                    );
+
+                                    // Only animate the message if it's being individually added
+                                    // The list itself handles the slide-up animation via insertItem
+                                    // We just fade the message in
+                                    if (message.guid == _animatingMessageGuid && animation.value < 1.0) {
+                                      return FadeTransition(
+                                        opacity: animation.drive(
+                                          Tween<double>(begin: 0.0, end: 1.0).chain(CurveTween(
+                                              curve: const Interval(
+                                            0.6,
+                                            1.0,
+                                            curve: Curves.easeOut,
+                                          ))),
+                                        ),
+                                        child: messageWidget,
+                                      );
+                                    }
+
+                                    return messageWidget;
+                                  } catch (e, stack) {
+                                    Logger.error("Error in SliverAnimatedList itemBuilder at index $index",
+                                        error: e, trace: stack);
+                                    return SizedBox(
+                                      key: ValueKey('error-$index'),
+                                      height: 50,
+                                      child: Center(
+                                        child: Text('Error loading message at index $index'),
+                                      ),
+                                    );
+                                  }
+                                },
+                              );
+                            },
                           ),
                           const SliverPadding(
                             padding: EdgeInsets.all(70),

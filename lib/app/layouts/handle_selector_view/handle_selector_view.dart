@@ -224,16 +224,10 @@ class HandleSelectorViewState extends OptimizedState<HandleSelectorView> {
                                               overflow: TextOverflow.ellipsis,
                                             ),
                                             subtitle: handle.address.isPhoneNumber
-                                                ? FutureBuilder<String>(
-                                                    future: formatPhoneNumber(cleansePhoneNumber(handle.address)),
-                                                    initialData: handle.address,
-                                                    builder: (context, snapshot) {
-                                                      return Text(
-                                                        snapshot.data ?? "",
-                                                        style: context.theme.textTheme.bodySmall!
-                                                            .copyWith(color: context.theme.colorScheme.outline),
-                                                      );
-                                                    },
+                                                ? Text(
+                                                    formatPhoneNumber(cleansePhoneNumber(handle.address)),
+                                                    style: context.theme.textTheme.bodySmall!
+                                                        .copyWith(color: context.theme.colorScheme.outline),
                                                   )
                                                 : Text(
                                                     handle.address,

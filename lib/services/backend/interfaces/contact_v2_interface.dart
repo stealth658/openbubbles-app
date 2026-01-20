@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:bluebubbles/env.dart';
 import 'package:bluebubbles/services/backend/actions/contact_v2_actions.dart';
 import 'package:bluebubbles/services/isolates/global_isolate.dart';
+import 'package:fast_contacts/fast_contacts.dart';
 import 'package:get_it/get_it.dart';
 
 /// ContactV2Interface provides the bridge between the main isolate and the GlobalIsolate
@@ -87,6 +88,22 @@ class ContactV2Interface {
       return await GetIt.I<GlobalIsolate>()
           .send<List<Map<String, dynamic>>>(IsolateRequestType.getAllContacts, input: <String, dynamic>{});
     }
+  }
+
+  /// We don't want to have to serialize and deserialize the objects over the isolate,
+  /// so we just won't use the isolate and we'll use FastContacts directly here.
+  /// This should be fine since FastContacts is already optimized for performance.
+  static Future<List<Contact>> getAddressBook() async {
+    return await FastContacts.getAllContacts(
+      fields: List<ContactField>.from(ContactField.values)
+        ..removeWhere((e) => [
+              ContactField.company,
+              ContactField.department,
+              ContactField.jobDescription,
+              ContactField.emailLabels,
+              ContactField.phoneLabels
+            ].contains(e)),
+    );
   }
 
   /// Fetch network contacts for web/desktop (from server)

@@ -13,7 +13,7 @@ import 'package:bluebubbles/app/layouts/conversation_view/pages/messages_view.da
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/database/models.dart';
-import 'package:bluebubbles/services/backend/interfaces/contact_interface.dart';
+import 'package:bluebubbles/services/backend/interfaces/contact_v2_interface.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/utils/string_utils.dart';
 import 'package:dio/dio.dart';
@@ -130,9 +130,8 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
 
     updateObx(() async {
       if (widget.initialAttachments.isEmpty && !kIsWeb) {
-        // Use ContactInterface to load contacts in isolate - more efficient than runAsync
-        final contactMaps = await ContactInterface.getAllContactsAsync();
-        contacts = contactMaps.map((e) => Contact.fromMap(e)).toList();
+        final contactMaps = await ContactV2Interface.getAddressBook();
+        contacts = await Future.wait(contactMaps.map((e) => Contact.fromFastContact(e)));
         if (mounted) {
           setState(() {
             filteredContacts = List<Contact>.from(contacts);

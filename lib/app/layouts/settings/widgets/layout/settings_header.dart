@@ -8,7 +8,8 @@ class SettingsHeader extends StatelessWidget {
   final String text;
   final double? height;
 
-  const SettingsHeader({super.key, 
+  const SettingsHeader({
+    super.key,
     required this.iosSubtitle,
     required this.materialSubtitle,
     required this.text,
