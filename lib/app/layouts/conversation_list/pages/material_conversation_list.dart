@@ -72,12 +72,15 @@ class _MaterialConversationListState extends OptimizedState<MaterialConversation
               ? ConversationListFAB(parentController: controller)
               : const SizedBox.shrink(),
           body: Obx(() {
+            // Force reactivity by accessing observable values first
+            final loaded = ChatsSvc.loadedFirstChatBatch.value;
+            
             final _chats = ChatsSvc.getFilteredChats(
               showArchived: showArchived,
               showUnknown: showUnknown,
             );
 
-            if (!ChatsSvc.loadedFirstChatBatch.value || _chats.isEmpty) {
+            if (!loaded || _chats.isEmpty) {
               return Center(
                 child: Padding(
                   padding: const EdgeInsets.only(top: 100),
@@ -86,7 +89,7 @@ class _MaterialConversationListState extends OptimizedState<MaterialConversation
                       Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: Text(
-                          !ChatsSvc.loadedFirstChatBatch.value
+                          !loaded
                               ? "Loading chats..."
                               : showArchived
                                   ? "You have no archived chats"
@@ -97,7 +100,7 @@ class _MaterialConversationListState extends OptimizedState<MaterialConversation
                           textAlign: TextAlign.center,
                         ),
                       ),
-                      if (!ChatsSvc.loadedFirstChatBatch.value) buildProgressIndicator(context, size: 15),
+                      if (!loaded) buildProgressIndicator(context, size: 15),
                     ],
                   ),
                 ),

@@ -86,6 +86,8 @@ class _SamsungConversationListState extends OptimizedState<SamsungConversationLi
               showScrollbar: true,
               controller: controller.samsungScrollController,
               child: Obx(() {
+                // Force reactivity by accessing observable values first
+                final loaded = ChatsSvc.loadedFirstChatBatch.value;
                 final _chats = ChatsSvc.getFilteredChats(
                   showArchived: controller.showArchivedChats,
                   showUnknown: controller.showUnknownSenders,
@@ -98,7 +100,7 @@ class _SamsungConversationListState extends OptimizedState<SamsungConversationLi
                   controller: controller.samsungScrollController,
                   slivers: [
                     SamsungHeader(parentController: controller),
-                    if (!ChatsSvc.loadedFirstChatBatch.value || _unpinnedChats.isEmpty)
+                    if (!loaded || _unpinnedChats.isEmpty)
                       SliverToBoxAdapter(
                         child: Center(
                           child: Padding(
@@ -108,7 +110,7 @@ class _SamsungConversationListState extends OptimizedState<SamsungConversationLi
                                 Padding(
                                   padding: const EdgeInsets.all(8.0),
                                   child: Text(
-                                    !ChatsSvc.loadedFirstChatBatch.value
+                                    !loaded
                                         ? "Loading chats..."
                                         : showArchived
                                             ? "You have no archived chats"
@@ -119,7 +121,7 @@ class _SamsungConversationListState extends OptimizedState<SamsungConversationLi
                                     textAlign: TextAlign.center,
                                   ),
                                 ),
-                                if (!ChatsSvc.loadedFirstChatBatch.value) buildProgressIndicator(context, size: 15),
+                                if (!loaded) buildProgressIndicator(context, size: 15),
                               ],
                             ),
                           ),

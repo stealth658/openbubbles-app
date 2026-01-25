@@ -47,8 +47,8 @@ class MessagesViewState extends OptimizedState<MessagesView> {
   // GlobalKey for SliverAnimatedList
   GlobalKey<SliverAnimatedListState> _listKey = GlobalKey<SliverAnimatedListState>();
 
-  // Track which message is currently being animated (for individual additions only)
-  String? _animatingMessageGuid;
+  // Track which messages are currently being animated (for individual additions only)
+  final Set<String> _animatingMessageGuids = {};
 
   // Notifier for list structure changes only (add/remove)
   final ValueNotifier<int> _listVersion = ValueNotifier<int>(0);
@@ -309,11 +309,15 @@ class MessagesViewState extends OptimizedState<MessagesView> {
     final c = mwc(message);
     c.cvController = controller;
 
-    // Mark this message for animation
-    _animatingMessageGuid = message.guid;
+    // Mark this message for animation (all new messages)
+    if (message.guid != null) {
+      _animatingMessageGuids.add(message.guid!);
+    }
 
-    // Use insertItem to animate the list sliding up to make space
-    const duration = Duration(milliseconds: 450);
+    // Use insertItem to animate the list sliding up to make space (all messages)
+    const duration = Duration(milliseconds: 1250);
+    Logger.test('Inserting message at index $insertIndex with duration ${duration.inMilliseconds}ms');
+    Logger.test('Current State Version: ${_listKey.currentState}');
     _listKey.currentState?.insertItem(
       insertIndex,
       duration: duration,
@@ -323,11 +327,13 @@ class MessagesViewState extends OptimizedState<MessagesView> {
     _listVersion.value++;
 
     // Clear animation flag after animation completes
-    Future.delayed(duration, () {
-      if (mounted) {
-        _animatingMessageGuid = null;
-      }
-    });
+    if (message.guid != null) {
+      Future.delayed(duration, () {
+        if (mounted) {
+          _animatingMessageGuids.remove(message.guid);
+        }
+      });
+    }
 
     if (insertIndex == 0 && showSmartReplies) {
       _addMessageToSmartReply(message);
@@ -605,20 +611,53 @@ class MessagesViewState extends OptimizedState<MessagesView> {
                                       ),
                                     );
 
-                                    // Only animate the message if it's being individually added
-                                    // The list itself handles the slide-up animation via insertItem
-                                    // We just fade the message in
-                                    if (message.guid == _animatingMessageGuid && animation.value < 1.0) {
-                                      return FadeTransition(
-                                        opacity: animation.drive(
-                                          Tween<double>(begin: 0.0, end: 1.0).chain(CurveTween(
-                                              curve: const Interval(
-                                            0.6,
-                                            1.0,
-                                            curve: Curves.easeOut,
-                                          ))),
+                                    // Animate sent messages with size + slide + fade (only if outgoing from this device)
+                                    final isFromMe = message.isFromMe ?? false;
+                                    if (isFromMe && message.isOutgoing && message.guid != null && _animatingMessageGuids.contains(message.guid)) {
+                                      return SizeTransition(
+                                        sizeFactor: animation.drive(
+                                          CurveTween(curve: Curves.easeOut),
                                         ),
-                                        child: messageWidget,
+                                        child: SlideTransition(
+                                          position: animation.drive(
+                                            Tween<Offset>(
+                                              begin: const Offset(0.0, 0.3),
+                                              end: Offset.zero,
+                                            ).chain(CurveTween(curve: Curves.easeOut)),
+                                          ),
+                                          child: FadeTransition(
+                                            opacity: animation.drive(
+                                              Tween<double>(begin: 0.0, end: 1.0).chain(
+                                                CurveTween(
+                                                  curve: const Interval(
+                                                    0.9,
+                                                    1.0,
+                                                    curve: Curves.easeOut,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            child: messageWidget,
+                                          ),
+                                        ),
+                                      );
+                                    }
+
+                                    // Animate other messages with size + slide only (received or from other devices)
+                                    if (message.guid != null && _animatingMessageGuids.contains(message.guid)) {
+                                      return SizeTransition(
+                                        sizeFactor: animation.drive(
+                                          CurveTween(curve: Curves.easeOut),
+                                        ),
+                                        child: SlideTransition(
+                                          position: animation.drive(
+                                            Tween<Offset>(
+                                              begin: const Offset(0.0, 0.3),
+                                              end: Offset.zero,
+                                            ).chain(CurveTween(curve: Curves.easeOut)),
+                                          ),
+                                          child: messageWidget,
+                                        ),
                                       );
                                     }
 

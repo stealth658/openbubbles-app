@@ -81,6 +81,9 @@ class CupertinoConversationListState extends OptimizedState<CupertinoConversatio
                   slivers: <Widget>[
                     if (!showArchived && !showUnknown) CupertinoHeader(controller: controller),
                     Obx(() {
+                      // Force reactivity by accessing observable values first
+                      // ignore: unused_local_variable
+                      final loaded = ChatsSvc.loadedFirstChatBatch.value;
                       NavigationSvc.listener.value;
                       final _chats = ChatsSvc.getFilteredChats(
                           showArchived: showArchived, showUnknown: showUnknown, pinnedOnly: true);
@@ -210,10 +213,12 @@ class CupertinoConversationListState extends OptimizedState<CupertinoConversatio
                       );
                     }),
                     Obx(() {
+                      // Force reactivity by accessing observable values first
+                      final loaded = ChatsSvc.loadedFirstChatBatch.value;
                       final _chats = ChatsSvc.getFilteredChats(
                           showArchived: showArchived, showUnknown: showUnknown, excludePinned: true);
 
-                      if (!ChatsSvc.loadedFirstChatBatch.value || _chats.isEmpty) {
+                      if (!loaded || _chats.isEmpty) {
                         return SliverToBoxAdapter(
                           child: Center(
                             child: Padding(
@@ -223,7 +228,7 @@ class CupertinoConversationListState extends OptimizedState<CupertinoConversatio
                                   Padding(
                                     padding: const EdgeInsets.all(8.0),
                                     child: Text(
-                                      !ChatsSvc.loadedFirstChatBatch.value
+                                      !loaded
                                           ? "Loading chats..."
                                           : showArchived
                                               ? "You have no archived chats"
@@ -234,7 +239,7 @@ class CupertinoConversationListState extends OptimizedState<CupertinoConversatio
                                       textAlign: TextAlign.center,
                                     ),
                                   ),
-                                  if (!ChatsSvc.loadedFirstChatBatch.value) buildProgressIndicator(context, size: 15),
+                                  if (!loaded) buildProgressIndicator(context, size: 15),
                                 ],
                               ),
                             ),

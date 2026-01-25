@@ -116,7 +116,13 @@ class Message {
   String? get dbMetadata => metadata == null ? null : jsonEncode(metadata);
   set dbMetadata(String? json) => metadata = json == null ? null : jsonDecode(json) as Map<String, dynamic>;
 
+  @Transient()
   bool get isKeptAudio => itemType == 5 && subject != null;
+
+  // It's outgoing from this device is the guid starts with "temp" and isFromMe is true.
+  // A temp GUID is only assigned to outgoing messages before they are sent to the server.
+  @Transient()
+  bool get isOutgoing => isFromMe == true && guid != null && guid!.startsWith("temp");
 
   Message({
     this.id,

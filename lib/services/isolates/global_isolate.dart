@@ -12,6 +12,8 @@ import 'package:bluebubbles/services/isolates/isolate_event.dart';
 class GlobalIsolate {
   Isolate? _isolate;
   ReceivePort? _receivePort;
+  ReceivePort? _exitPort;
+  ReceivePort? _errorPort;
   SendPort? _sendPort;
   final Map<String, _RequestInfo> _pendingRequests = {};
   final StreamController<dynamic> _controller = StreamController.broadcast();
@@ -56,7 +58,16 @@ class GlobalIsolate {
 
   /// Starts the isolate if not already running
   Future<void> _ensureStarted() async {
-    if (_isRunning) return;
+    // If we think it's running, verify it's actually alive
+    if (_isRunning) {
+      // Simple sanity check - the exit port will notify us if it actually dies
+      if (!_verifyIsolateAlive()) {
+        Logger.warn('$isolateDebugName appears to be dead. Restarting...');
+        _cleanupDeadIsolate();
+      } else {
+        return;
+      }
+    }
     if (_isStarting) {
       // Wait for startup to complete if already in progress
       return _startCompleter.future;
@@ -68,8 +79,24 @@ class GlobalIsolate {
       // Create a new ReceivePort for this isolate instance
       _receivePort = ReceivePort();
 
+      // Create exit and error ports to monitor isolate lifecycle
+      _exitPort = ReceivePort();
+      _errorPort = ReceivePort();
+
       // Set up listener for the new port
       _receivePort!.listen(_handleIsolateMessage);
+
+      // Listen for isolate exit
+      _exitPort!.listen((message) {
+        Logger.warn('$isolateDebugName exited unexpectedly: $message');
+        _handleIsolateExit();
+      });
+
+      // Listen for isolate errors
+      _errorPort!.listen((message) {
+        Logger.error('$isolateDebugName encountered an error: $message');
+        // Note: errors don't necessarily mean the isolate died, just that an unhandled error occurred
+      });
 
       // Register the receive port with a name so it can be found by other isolates
       IsolateNameServer.registerPortWithName(_receivePort!.sendPort, isolatePortName);
@@ -81,6 +108,8 @@ class GlobalIsolate {
         getIsolateEntryPoint as void Function(List<dynamic>),
         [_receivePort!.sendPort, rootToken, getActionMap()],
         debugName: isolateDebugName,
+        onExit: _exitPort!.sendPort,
+        onError: _errorPort!.sendPort,
       );
       Logger.debug('$isolateDebugName started.');
 
@@ -143,6 +172,10 @@ class GlobalIsolate {
     _isolate?.kill(priority: Isolate.immediate);
     _receivePort?.close();
     _receivePort = null;
+    _exitPort?.close();
+    _exitPort = null;
+    _errorPort?.close();
+    _errorPort = null;
     _controller.close();
 
     // Complete all pending requests with an error
@@ -344,6 +377,61 @@ class GlobalIsolate {
         }
       });
     }
+  }
+
+  /// Verify that the isolate is actually alive and responsive
+  bool _verifyIsolateAlive() {
+    // Simple check: if we have a send port and isolate reference, assume it's alive
+    // The exit port will notify us if it dies
+    return _sendPort != null && _isolate != null;
+  }
+
+  /// Clean up a dead isolate without trying to kill it
+  void _cleanupDeadIsolate() {
+    Logger.warn('Cleaning up dead $isolateDebugName');
+    
+    // Don't try to kill the isolate since it's already dead
+    // Just clean up our local state
+    _receivePort?.close();
+    _receivePort = null;
+    _exitPort?.close();
+    _exitPort = null;
+    _errorPort?.close();
+    _errorPort = null;
+    
+    // Try to unregister the named port (may fail if already unregistered)
+    try {
+      IsolateNameServer.removePortNameMapping(isolatePortName);
+    } catch (e) {
+      // Ignore errors - port may already be unregistered
+    }
+    
+    // Complete all pending requests with an error
+    for (final requestInfo in _pendingRequests.values) {
+      if (!requestInfo.completer.isCompleted) {
+        requestInfo.completer.completeError('Isolate died unexpectedly');
+        requestInfo.timer?.cancel();
+      }
+    }
+    _pendingRequests.clear();
+    
+    _isolate = null;
+    _sendPort = null;
+    _isRunning = false;
+    _lastActivityTime = null;
+    
+    // Reset the start completer
+    if (_startCompleter.isCompleted) {
+      _startCompleter = Completer<void>();
+    }
+  }
+
+  /// Handle isolate exit (called when exit port receives a message)
+  void _handleIsolateExit() {
+    if (!_isRunning) return; // Already cleaned up
+    
+    Logger.warn('$isolateDebugName has exited');
+    _cleanupDeadIsolate();
   }
 
   /// Get the isolate entry point function

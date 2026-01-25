@@ -796,7 +796,7 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                                                                                   color: context
                                                                                                       .theme
                                                                                                       .colorScheme
-                                                                                                      .outline,
+                                                                                                      .inversePrimary,
                                                                                                   width: 1.5),
                                                                                               borderRadius:
                                                                                                   BorderRadius.circular(
@@ -812,7 +812,7 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                                                                                     color: context
                                                                                                         .theme
                                                                                                         .colorScheme
-                                                                                                        .outline),
+                                                                                                        .inversePrimary),
                                                                                             prefixIconConstraints:
                                                                                                 const BoxConstraints(
                                                                                                     minHeight: 0,
@@ -832,7 +832,7 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                                                                                 color: context
                                                                                                     .theme
                                                                                                     .colorScheme
-                                                                                                    .outline,
+                                                                                                    .inversePrimary,
                                                                                                 size: 22,
                                                                                               ),
                                                                                               onPressed: () {
@@ -923,7 +923,7 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                                                                                                 : context
                                                                                                                     .theme
                                                                                                                     .colorScheme
-                                                                                                                    .outline,
+                                                                                                                    .inversePrimary,
                                                                                                       ),
                                                                                                       alignment:
                                                                                                           Alignment
