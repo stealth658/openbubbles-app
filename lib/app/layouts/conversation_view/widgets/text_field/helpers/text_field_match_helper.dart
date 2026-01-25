@@ -26,7 +26,7 @@ class TextFieldMatchHelper {
     final matches = regExp.allMatches(newEmojiText);
     List<Emoji> allMatches = [];
     String emojiName = "";
-    
+
     if (matches.isNotEmpty && matches.first.start < textController.selection.start) {
       RegExpMatch match = matches.lastWhere((m) => m.start < textController.selection.start);
       if (newEmojiText[match.end - 1] == ":") {
@@ -37,7 +37,7 @@ class TextFieldMatchHelper {
       }
       Logger.info("${allMatches.length} matches found for: $emojiName");
     }
-    
+
     if (allMatches.isNotEmpty) {
       controller.mentionMatches.value = [];
       controller.mentionSelectedIndex.value = 0;
@@ -68,11 +68,11 @@ class TextFieldMatchHelper {
     final matches = regExp.allMatches(newEmojiText);
     List<Mentionable> allMatches = [];
     String mentionName = "";
-    
+
     if (matches.isNotEmpty && matches.first.start < textController.selection.start) {
       RegExpMatch match = matches.lastWhere((m) => m.start < textController.selection.start);
       final text = newEmojiText.substring(match.start, match.end);
-      
+
       if (text.endsWith("@")) {
         allMatches = controller.mentionables;
       } else if (newEmojiText[match.end - 1] == "@") {
@@ -85,8 +85,7 @@ class TextFieldMatchHelper {
         allMatches.addAll(controller.mentionables
             .where((e) =>
                 !allMatches.contains(e) &&
-                (e.address.toLowerCase().contains(mentionName) ||
-                    e.displayName.toLowerCase().contains(mentionName)))
+                (e.address.toLowerCase().contains(mentionName) || e.displayName.toLowerCase().contains(mentionName)))
             .toList());
       } else if (match.end >= textController.selection.start) {
         mentionName = newEmojiText.substring(match.start + 1, match.end).toLowerCase();
@@ -98,13 +97,12 @@ class TextFieldMatchHelper {
         allMatches.addAll(controller.mentionables
             .where((e) =>
                 !allMatches.contains(e) &&
-                (e.address.toLowerCase().contains(mentionName) ||
-                    e.displayName.toLowerCase().contains(mentionName)))
+                (e.address.toLowerCase().contains(mentionName) || e.displayName.toLowerCase().contains(mentionName)))
             .toList());
       }
       Logger.info("${allMatches.length} matches found for: $mentionName");
     }
-    
+
     if (allMatches.isNotEmpty) {
       controller.emojiMatches.value = [];
       controller.emojiSelectedIndex.value = 0;

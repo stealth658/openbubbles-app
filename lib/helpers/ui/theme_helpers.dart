@@ -173,13 +173,11 @@ extension BuildContextThemeHelpers on BuildContext {
 
   bool get samsung => SettingsSvc.settings.skin.value == Skins.Samsung;
 
-  Color get _headerColor =>
-      (ThemeSvc.inDarkMode(this) ? theme.colorScheme.background : theme.colorScheme.properSurface)
-          .withAlpha(SettingsSvc.settings.windowEffect.value != WindowEffect.disabled ? 20 : 255);
+  Color get _headerColor => (ThemeSvc.inDarkMode(this) ? theme.colorScheme.background : theme.colorScheme.properSurface)
+      .withAlpha(SettingsSvc.settings.windowEffect.value != WindowEffect.disabled ? 20 : 255);
 
-  Color get _tileColor =>
-      (ThemeSvc.inDarkMode(this) ? theme.colorScheme.properSurface : theme.colorScheme.background)
-          .withAlpha(SettingsSvc.settings.windowEffect.value != WindowEffect.disabled ? 100 : 255);
+  Color get _tileColor => (ThemeSvc.inDarkMode(this) ? theme.colorScheme.properSurface : theme.colorScheme.background)
+      .withAlpha(SettingsSvc.settings.windowEffect.value != WindowEffect.disabled ? 100 : 255);
 
   bool get _reverseMapping => SettingsSvc.settings.skin.value == Skins.Material && ThemeSvc.inDarkMode(this);
 

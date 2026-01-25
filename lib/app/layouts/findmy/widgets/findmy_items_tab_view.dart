@@ -7,22 +7,24 @@ import 'package:get/get.dart';
 
 class FindMyItemsTabView extends StatelessWidget {
   final FindMyController controller;
-  
+
   const FindMyItemsTabView({super.key, required this.controller});
-  
+
   @override
   Widget build(BuildContext context) {
     return Obx(() {
       final allItems = controller.devices.where((item) => item.isConsideredAccessory).toList();
-      
+
       final itemsWithLocation =
           allItems.where((item) => (item.address?.label ?? item.address?.mapItemFullAddress) != null).toList();
       final itemsWithoutLocation =
           allItems.where((item) => (item.address?.label ?? item.address?.mapItemFullAddress) == null).toList();
-      
+
       return SliverList(
         delegate: SliverChildListDelegate([
-          if (controller.fetching.value == null || controller.fetching.value == true || (controller.fetching.value == false && allItems.isEmpty))
+          if (controller.fetching.value == null ||
+              controller.fetching.value == true ||
+              (controller.fetching.value == false && allItems.isEmpty))
             _buildEmptyState(context),
           if (itemsWithLocation.isNotEmpty)
             SettingsHeader(
@@ -81,7 +83,7 @@ class FindMyItemsTabView extends StatelessWidget {
       );
     });
   }
-  
+
   Widget _buildEmptyState(BuildContext context) {
     return Center(
       child: Padding(

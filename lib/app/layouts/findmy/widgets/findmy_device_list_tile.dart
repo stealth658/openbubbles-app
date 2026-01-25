@@ -11,24 +11,24 @@ class FindMyDeviceListTile extends StatelessWidget {
   final FindMyDevice item;
   final FindMyController controller;
   final bool isItem;
-  
+
   const FindMyDeviceListTile({
     super.key,
     required this.item,
     required this.controller,
     this.isItem = false,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     final displayName = SettingsSvc.settings.redactedMode.value
         ? (isItem ? "Item" : "Device")
         : (item.name ?? (isItem ? "Unknown Item" : "Unknown Device"));
-    
+
     final displayLocation = SettingsSvc.settings.redactedMode.value
         ? "Location"
         : (item.address?.label ?? item.address?.mapItemFullAddress ?? "No location found");
-    
+
     return ListTile(
       mouseCursor: MouseCursor.defer,
       title: Text(displayName),
@@ -37,9 +37,8 @@ class FindMyDeviceListTile extends StatelessWidget {
           ? () async {
               await controller.panelController.close();
               await controller.completer.future;
-              final marker = controller.markers.values.firstWhere((e) =>
-                  e.point.latitude == item.location?.latitude &&
-                  e.point.longitude == item.location?.longitude);
+              final marker = controller.markers.values.firstWhere(
+                  (e) => e.point.latitude == item.location?.latitude && e.point.longitude == item.location?.longitude);
               controller.popupController.showPopupsOnlyFor([marker]);
               controller.mapController.move(LatLng(item.location!.latitude!, item.location!.longitude!), 10);
             }
@@ -53,8 +52,7 @@ class FindMyDeviceListTile extends StatelessWidget {
                   backgroundColor: context.theme.colorScheme.primaryContainer,
                 ),
                 onPressed: () async {
-                  await MapsLauncher.launchCoordinates(
-                      item.location!.latitude!, item.location!.longitude!);
+                  await MapsLauncher.launchCoordinates(item.location!.latitude!, item.location!.longitude!);
                 },
                 child: const Icon(Icons.directions, size: 20),
               ),

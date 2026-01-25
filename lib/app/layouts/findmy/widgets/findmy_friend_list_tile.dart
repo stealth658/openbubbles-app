@@ -14,14 +14,14 @@ class FindMyFriendListTile extends StatelessWidget {
   final FindMyFriend item;
   final FindMyController controller;
   final bool withLocation;
-  
+
   const FindMyFriendListTile({
     super.key,
     required this.item,
     required this.controller,
     this.withLocation = true,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     final displayLocation = SettingsSvc.settings.redactedMode.value
@@ -29,7 +29,7 @@ class FindMyFriendListTile extends StatelessWidget {
         : withLocation
             ? ("${item.shortAddress ?? "No location found"}${item.lastUpdated == null || item.status == LocationStatus.live ? "" : "\nLast updated ${buildDate(item.lastUpdated)}"}")
             : (item.longAddress ?? "No location found");
-    
+
     return ListTile(
       mouseCursor: withLocation ? SystemMouseCursors.click : MouseCursor.defer,
       leading: ContactAvatarWidget(handle: item.handle),
@@ -39,8 +39,7 @@ class FindMyFriendListTile extends StatelessWidget {
           ? Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (item.status == LocationStatus.live)
-                  const Icon(CupertinoIcons.largecircle_fill_circle),
+                if (item.status == LocationStatus.live) const Icon(CupertinoIcons.largecircle_fill_circle),
                 if (item.locatingInProgress) buildProgressIndicator(context),
                 ButtonTheme(
                   minWidth: 1,
@@ -64,8 +63,8 @@ class FindMyFriendListTile extends StatelessWidget {
                 await controller.panelController.close();
               }
               await controller.completer.future;
-              final marker = controller.markers.values.firstWhere(
-                  (e) => e.point.latitude == item.latitude && e.point.longitude == item.longitude);
+              final marker = controller.markers.values
+                  .firstWhere((e) => e.point.latitude == item.latitude && e.point.longitude == item.longitude);
               controller.popupController.showPopupsOnlyFor([marker]);
               controller.mapController.move(LatLng(item.latitude!, item.longitude!), 10);
             }

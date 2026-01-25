@@ -7,15 +7,17 @@ import 'package:get/get.dart';
 
 class FindMyFriendsTabView extends StatelessWidget {
   final FindMyController controller;
-  
+
   const FindMyFriendsTabView({super.key, required this.controller});
-  
+
   @override
   Widget build(BuildContext context) {
     return Obx(() {
       return SliverList(
         delegate: SliverChildListDelegate([
-          if (controller.fetching2.value == null || controller.fetching2.value == true || (controller.fetching2.value == false && controller.friends.isEmpty))
+          if (controller.fetching2.value == null ||
+              controller.fetching2.value == true ||
+              (controller.fetching2.value == false && controller.friends.isEmpty))
             _buildEmptyState(context),
           if (controller.friendsWithLocation.isNotEmpty)
             SettingsHeader(
@@ -74,7 +76,7 @@ class FindMyFriendsTabView extends StatelessWidget {
       );
     });
   }
-  
+
   Widget _buildEmptyState(BuildContext context) {
     return Center(
       child: Padding(

@@ -75,8 +75,7 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
                   child: Stack(
                     children: [
                       FindMyMapWidget(controller: controller),
-                      if (!context.samsung && controller.canRefresh.value)
-                        _buildRefreshButton(context, isTablet: true),
+                      if (!context.samsung && controller.canRefresh.value) _buildRefreshButton(context, isTablet: true),
                       if (kIsDesktop) _buildDesktopTitleBar(context),
                     ],
                   ),
@@ -140,10 +139,8 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
               SliverToBoxAdapter(
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
-                      minHeight: context.height -
-                          50 -
-                          context.mediaQueryPadding.top -
-                          context.mediaQueryViewPadding.top),
+                      minHeight:
+                          context.height - 50 - context.mediaQueryPadding.top - context.mediaQueryViewPadding.top),
                   child: CustomScrollView(
                     physics: const NeverScrollableScrollPhysics(),
                     shrinkWrap: true,
@@ -171,10 +168,8 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
               SliverToBoxAdapter(
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
-                      minHeight: context.height -
-                          50 -
-                          context.mediaQueryPadding.top -
-                          context.mediaQueryViewPadding.top),
+                      minHeight:
+                          context.height - 50 - context.mediaQueryPadding.top - context.mediaQueryViewPadding.top),
                   child: CustomScrollView(
                     physics: const NeverScrollableScrollPhysics(),
                     shrinkWrap: true,
@@ -202,10 +197,8 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
               SliverToBoxAdapter(
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
-                      minHeight: context.height -
-                          50 -
-                          context.mediaQueryPadding.top -
-                          context.mediaQueryViewPadding.top),
+                      minHeight:
+                          context.height - 50 - context.mediaQueryPadding.top - context.mediaQueryViewPadding.top),
                   child: CustomScrollView(
                     physics: const NeverScrollableScrollPhysics(),
                     shrinkWrap: true,
@@ -330,8 +323,7 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
                   child: buildBackButton(context, padding: const EdgeInsets.only(right: 2)),
                 ),
               ),
-            if (!context.samsung && controller.canRefresh.value)
-              _buildRefreshButton(context, isTablet: false),
+            if (!context.samsung && controller.canRefresh.value) _buildRefreshButton(context, isTablet: false),
             if (kIsDesktop) _buildDesktopTitleBar(context),
           ],
         ),
@@ -346,9 +338,7 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
         if (SettingsSvc.settings.skin.value != Skins.Samsung || kIsWeb || kIsDesktop) return false;
         final scrollDistance = context.height / 3 - 57;
 
-        if (scrollController.hasClients &&
-            scrollController.offset > 0 &&
-            scrollController.offset < scrollDistance) {
+        if (scrollController.hasClients && scrollController.offset > 0 && scrollController.offset < scrollDistance) {
           final double snapOffset = scrollController.offset / scrollDistance > 0.5 ? scrollDistance : 0;
 
           Future.microtask(() => scrollController.animateTo(snapOffset,

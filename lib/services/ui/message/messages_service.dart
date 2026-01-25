@@ -279,7 +279,7 @@ class MessagesService extends GetxController {
         Logger.debug("Incremented thread reply count for ${message.threadOriginatorGuid} to ${currentCount + 1}",
             tag: "MessageState");
       }
-      
+
       // Notify UI of update
       triggerMessageUpdate(message.threadOriginatorGuid!);
     }
@@ -428,10 +428,9 @@ class MessagesService extends GetxController {
           // Trigger UI updates for each message that has reactions
           for (final message in _messages) {
             if (message.associatedMessages.isNotEmpty) {
-              Logger.debug(
-                  "[loadChunk] Message ${message.guid} has ${message.associatedMessages.length} reactions",
+              Logger.debug("[loadChunk] Message ${message.guid} has ${message.associatedMessages.length} reactions",
                   tag: "MessageReactivity");
-              
+
               // MessageState already has the reactions loaded from the database
               // No need to update controller - reactions are accessed via messageState.associatedMessages
             }

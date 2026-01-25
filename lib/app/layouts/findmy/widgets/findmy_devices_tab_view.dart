@@ -7,29 +7,30 @@ import 'package:get/get.dart';
 
 class FindMyDevicesTabView extends StatelessWidget {
   final FindMyController controller;
-  
+
   const FindMyDevicesTabView({super.key, required this.controller});
-  
+
   @override
   Widget build(BuildContext context) {
     return Obx(() {
       final allDevices = controller.devices.where((item) => !item.isConsideredAccessory).toList();
-      
-      final devicesWithLocation = allDevices
-          .where((item) => (item.address?.label ?? item.address?.mapItemFullAddress) != null)
-          .map((element) {
+
+      final devicesWithLocation =
+          allDevices.where((item) => (item.address?.label ?? item.address?.mapItemFullAddress) != null).map((element) {
         if (element.safeLocations.isNotEmpty && element.safeLocations.first.name != null) {
           element.address?.label = element.safeLocations.first.name;
         }
         return element;
       }).toList();
-      
+
       final devicesWithoutLocation =
           allDevices.where((item) => (item.address?.label ?? item.address?.mapItemFullAddress) == null).toList();
-      
+
       return SliverList(
         delegate: SliverChildListDelegate([
-          if (controller.fetching.value == null || controller.fetching.value == true || (controller.fetching.value == false && allDevices.isEmpty))
+          if (controller.fetching.value == null ||
+              controller.fetching.value == true ||
+              (controller.fetching.value == false && allDevices.isEmpty))
             _buildEmptyState(context),
           if (devicesWithLocation.isNotEmpty)
             SettingsHeader(
@@ -86,7 +87,7 @@ class FindMyDevicesTabView extends StatelessWidget {
       );
     });
   }
-  
+
   Widget _buildEmptyState(BuildContext context) {
     return Center(
       child: Padding(

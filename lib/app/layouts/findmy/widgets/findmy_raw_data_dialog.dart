@@ -7,14 +7,14 @@ import 'package:get/get.dart';
 
 class FindMyRawDataDialog extends StatelessWidget {
   final dynamic item;
-  
+
   const FindMyRawDataDialog({super.key, required this.item});
-  
+
   @override
   Widget build(BuildContext context) {
     const encoder = JsonEncoder.withIndent("     ");
     final str = encoder.convert(item.toJson());
-    
+
     return AlertDialog(
       title: Text(
         "Raw FindMy Data",
@@ -27,8 +27,7 @@ class FindMyRawDataDialog extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(10.0),
           decoration: BoxDecoration(
-              color: context.theme.colorScheme.background,
-              borderRadius: const BorderRadius.all(Radius.circular(10))),
+              color: context.theme.colorScheme.background, borderRadius: const BorderRadius.all(Radius.circular(10))),
           child: SingleChildScrollView(
             child: SelectableText(
               str,
@@ -40,8 +39,7 @@ class FindMyRawDataDialog extends StatelessWidget {
       actions: [
         TextButton(
           child: Text("Close",
-              style: context.theme.textTheme.bodyLarge!
-                  .copyWith(color: context.theme.colorScheme.primary)),
+              style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ],

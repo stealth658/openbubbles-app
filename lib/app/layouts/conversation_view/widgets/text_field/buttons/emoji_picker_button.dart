@@ -8,18 +8,18 @@ import 'package:get/get.dart';
 /// Widget for the emoji picker button (desktop/web only)
 class EmojiPickerButton extends StatelessWidget {
   final ConversationViewController controller;
-  
+
   const EmojiPickerButton({
     super.key,
     required this.controller,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     if (!kIsDesktop && !kIsWeb) {
       return const SizedBox.shrink();
     }
-    
+
     return IconButton(
       icon: Icon(
         context.iOS ? CupertinoIcons.smiley_fill : Icons.emoji_emotions,

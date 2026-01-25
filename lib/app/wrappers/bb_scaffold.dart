@@ -28,7 +28,7 @@ class BBScaffold extends StatelessWidget {
   final PreferredSizeWidget? appBar;
 
   /// Background color override
-  /// 
+  ///
   /// If null, automatically uses transparent for window effects or theme background
   final Color? backgroundColor;
 

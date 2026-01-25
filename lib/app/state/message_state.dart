@@ -167,7 +167,7 @@ class MessageState {
   void addAssociatedMessageInternal(Message reaction, {String? tempGuid}) {
     // Try to find existing reaction by ID or GUID
     int index = associatedMessages.indexWhere((e) =>
-        (e.id == reaction.id && e.id != null) || 
+        (e.id == reaction.id && e.id != null) ||
         (e.guid == reaction.guid && !reaction.guid!.startsWith('temp')) ||
         (tempGuid != null && e.guid == tempGuid));
 

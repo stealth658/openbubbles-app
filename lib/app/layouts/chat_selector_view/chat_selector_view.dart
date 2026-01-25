@@ -73,120 +73,119 @@ class ChatSelectorViewState extends OptimizedState<ChatSelectorView> {
   Widget build(BuildContext context) {
     return BBScaffold(
       appBar: PreferredSize(
-            preferredSize: Size(NavigationSvc.width(context), kIsDesktop ? 90 : 50),
-            child: AppBar(
-                systemOverlayStyle: context.theme.colorScheme.brightness == Brightness.dark
-                    ? SystemUiOverlayStyle.light
-                    : SystemUiOverlayStyle.dark,
-                toolbarHeight: kIsDesktop ? 90 : 50,
-                elevation: 0,
-                scrolledUnderElevation: 3,
-                surfaceTintColor: context.theme.colorScheme.primary,
-                leading: buildBackButton(context),
-                backgroundColor: Colors.transparent,
-                centerTitle: SettingsSvc.settings.skin.value == Skins.iOS,
-                title: Text(
-                  "Select a Chat",
-                  style: context.theme.textTheme.titleLarge,
-                ))),
-        body: FocusScope(
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                child: TextField(
-                  controller: searchController,
-                  focusNode: searchNode,
-                  style: context.theme.textTheme.bodyLarge,
-                  decoration: InputDecoration(
-                      hintText: "Search for a chat...",
-                      hintStyle: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.outline),
-                      prefixIcon: Icon(
-                        Icons.search,
-                        color: context.theme.colorScheme.outline,
-                      ),
-                      suffixIcon: searchController.text.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(Icons.clear),
-                              onPressed: () {
-                                searchController.clear();
-                              },
-                            )
-                          : null,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide.none,
-                      ),
-                      filled: false),
-                ),
+          preferredSize: Size(NavigationSvc.width(context), kIsDesktop ? 90 : 50),
+          child: AppBar(
+              systemOverlayStyle: context.theme.colorScheme.brightness == Brightness.dark
+                  ? SystemUiOverlayStyle.light
+                  : SystemUiOverlayStyle.dark,
+              toolbarHeight: kIsDesktop ? 90 : 50,
+              elevation: 0,
+              scrolledUnderElevation: 3,
+              surfaceTintColor: context.theme.colorScheme.primary,
+              leading: buildBackButton(context),
+              backgroundColor: Colors.transparent,
+              centerTitle: SettingsSvc.settings.skin.value == Skins.iOS,
+              title: Text(
+                "Select a Chat",
+                style: context.theme.textTheme.titleLarge,
+              ))),
+      body: FocusScope(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: TextField(
+                controller: searchController,
+                focusNode: searchNode,
+                style: context.theme.textTheme.bodyLarge,
+                decoration: InputDecoration(
+                    hintText: "Search for a chat...",
+                    hintStyle: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.outline),
+                    prefixIcon: Icon(
+                      Icons.search,
+                      color: context.theme.colorScheme.outline,
+                    ),
+                    suffixIcon: searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              searchController.clear();
+                            },
+                          )
+                        : null,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide.none,
+                    ),
+                    filled: false),
               ),
-              Expanded(
-                child: Obx(() {
-                  return Align(
-                      alignment: Alignment.topCenter,
-                      child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 150),
-                          child: CustomScrollView(
-                            shrinkWrap: true,
-                            physics: ThemeSwitcher.getScrollPhysics(),
-                            slivers: <Widget>[
-                              SliverList(
-                                delegate: SliverChildBuilderDelegate((context, index) {
-                                  if (filteredChats.isEmpty) {
-                                    return Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Padding(
-                                          padding: const EdgeInsets.all(8.0),
-                                          child: Text(
-                                            "Loading chats...",
-                                            style: context.theme.textTheme.labelLarge,
-                                          ),
+            ),
+            Expanded(
+              child: Obx(() {
+                return Align(
+                    alignment: Alignment.topCenter,
+                    child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 150),
+                        child: CustomScrollView(
+                          shrinkWrap: true,
+                          physics: ThemeSwitcher.getScrollPhysics(),
+                          slivers: <Widget>[
+                            SliverList(
+                              delegate: SliverChildBuilderDelegate((context, index) {
+                                if (filteredChats.isEmpty) {
+                                  return Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Text(
+                                          "Loading chats...",
+                                          style: context.theme.textTheme.labelLarge,
                                         ),
-                                        buildProgressIndicator(context, size: 15),
-                                      ],
-                                    );
-                                  }
-                                  final chat = filteredChats[index];
-                                  final hideInfo = SettingsSvc.settings.redactedMode.value &&
-                                      SettingsSvc.settings.hideContactInfo.value;
-                                  String _title = chat.properTitle;
-                                  if (hideInfo) {
-                                    _title = chat.isGroup ? chat.fakeName : chat.handles[0].fakeName;
-                                  }
-                                  return Material(
-                                    color: Colors.transparent,
-                                    child: InkWell(
-                                      onTap: () {
-                                        widget.onSelect(chat);
-                                        Navigator.of(context, rootNavigator: true).pop();
-                                      },
-                                      child: ChatCreatorTile(
-                                        key: ValueKey(chat.guid),
-                                        title: _title,
-                                        subtitle: hideInfo
-                                            ? ""
-                                            : !chat.isGroup
-                                                ? (chat.handles.first.formattedAddress ?? chat.handles.first.address)
-                                                : chat.getChatCreatorSubtitle(),
-                                        chat: chat,
-                                        showTrailing: false,
                                       ),
-                                    ),
+                                      buildProgressIndicator(context, size: 15),
+                                    ],
                                   );
-                                },
-                                    childCount: filteredChats.length
-                                        .clamp(ChatsSvc.loadedAllChats.isCompleted ? 0 : 1, double.infinity)
-                                        .toInt()),
-                              )
-                            ],
-                          )));
-                }),
-              ),
-            ],
-          ),
+                                }
+                                final chat = filteredChats[index];
+                                final hideInfo = SettingsSvc.settings.redactedMode.value &&
+                                    SettingsSvc.settings.hideContactInfo.value;
+                                String _title = chat.properTitle;
+                                if (hideInfo) {
+                                  _title = chat.isGroup ? chat.fakeName : chat.handles[0].fakeName;
+                                }
+                                return Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    onTap: () {
+                                      widget.onSelect(chat);
+                                      Navigator.of(context, rootNavigator: true).pop();
+                                    },
+                                    child: ChatCreatorTile(
+                                      key: ValueKey(chat.guid),
+                                      title: _title,
+                                      subtitle: hideInfo
+                                          ? ""
+                                          : !chat.isGroup
+                                              ? (chat.handles.first.formattedAddress ?? chat.handles.first.address)
+                                              : chat.getChatCreatorSubtitle(),
+                                      chat: chat,
+                                      showTrailing: false,
+                                    ),
+                                  ),
+                                );
+                              },
+                                  childCount: filteredChats.length
+                                      .clamp(ChatsSvc.loadedAllChats.isCompleted ? 0 : 1, double.infinity)
+                                      .toInt()),
+                            )
+                          ],
+                        )));
+              }),
+            ),
+          ],
         ),
-
+      ),
     );
   }
 }

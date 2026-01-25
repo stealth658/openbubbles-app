@@ -82,116 +82,116 @@ class _LoggingPanel extends State<LoggingPanel> {
     }
     return BBAnnotatedRegion(
         child: Obx(
-          () => Scaffold(
-            backgroundColor: _backgroundColor.value,
-            appBar: PreferredSize(
-              preferredSize: Size(NavigationSvc.width(context), 80),
-              child: ClipRRect(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                  child: AppBar(
-                    systemOverlayStyle:
-                        ThemeData.estimateBrightnessForColor(context.theme.colorScheme.background) == Brightness.dark
-                            ? SystemUiOverlayStyle.light
-                            : SystemUiOverlayStyle.dark,
-                    toolbarHeight: kIsDesktop ? 80 : 50,
-                    elevation: 0,
-                    scrolledUnderElevation: 3,
-                    surfaceTintColor: context.theme.colorScheme.primary,
-                    leading: buildBackButton(context),
-                    backgroundColor: _backgroundColor.value,
-                    centerTitle: SettingsSvc.settings.skin.value == Skins.iOS,
-                    title: Text(
-                      "Logs",
-                      style: context.theme.textTheme.titleLarge,
-                    ),
-                    actions: [
-                      // Menu button with 2 options, Play/Pause and Clear
-                      PopupMenuButton(
-                        icon: const Icon(Icons.more_vert),
-                        itemBuilder: (context) => [
-                          PopupMenuItem(
-                            child: Obx(
-                              () => ListTile(
-                                leading: errorsOnly.value
-                                    ? const Icon(Icons.file_copy_outlined)
-                                    : const Icon(Icons.error_outline),
-                                title: Text(errorsOnly.value ? "Show All Logs" : "Show Only Errors"),
-                                onTap: () {
-                                  errorsOnly.toggle();
-                                  if (errorsOnly.value) {
-                                    loadLogs(true);
-                                  } else {
-                                    loadLogs(false);
-                                  }
-                                },
-                              ),
-                            ),
+      () => Scaffold(
+        backgroundColor: _backgroundColor.value,
+        appBar: PreferredSize(
+          preferredSize: Size(NavigationSvc.width(context), 80),
+          child: ClipRRect(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+              child: AppBar(
+                systemOverlayStyle:
+                    ThemeData.estimateBrightnessForColor(context.theme.colorScheme.background) == Brightness.dark
+                        ? SystemUiOverlayStyle.light
+                        : SystemUiOverlayStyle.dark,
+                toolbarHeight: kIsDesktop ? 80 : 50,
+                elevation: 0,
+                scrolledUnderElevation: 3,
+                surfaceTintColor: context.theme.colorScheme.primary,
+                leading: buildBackButton(context),
+                backgroundColor: _backgroundColor.value,
+                centerTitle: SettingsSvc.settings.skin.value == Skins.iOS,
+                title: Text(
+                  "Logs",
+                  style: context.theme.textTheme.titleLarge,
+                ),
+                actions: [
+                  // Menu button with 2 options, Play/Pause and Clear
+                  PopupMenuButton(
+                    icon: const Icon(Icons.more_vert),
+                    itemBuilder: (context) => [
+                      PopupMenuItem(
+                        child: Obx(
+                          () => ListTile(
+                            leading: errorsOnly.value
+                                ? const Icon(Icons.file_copy_outlined)
+                                : const Icon(Icons.error_outline),
+                            title: Text(errorsOnly.value ? "Show All Logs" : "Show Only Errors"),
+                            onTap: () {
+                              errorsOnly.toggle();
+                              if (errorsOnly.value) {
+                                loadLogs(true);
+                              } else {
+                                loadLogs(false);
+                              }
+                            },
                           ),
-                          PopupMenuItem(
-                            child: ListTile(
-                              leading: const Icon(Icons.refresh),
-                              title: const Text("Refresh"),
-                              onTap: () {
-                                _logs.clear();
-                                loadLogs(errorsOnly.value);
-                                setState(() {});
-                              },
-                            ),
-                          ),
-                        ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        child: ListTile(
+                          leading: const Icon(Icons.refresh),
+                          title: const Text("Refresh"),
+                          onTap: () {
+                            _logs.clear();
+                            loadLogs(errorsOnly.value);
+                            setState(() {});
+                          },
+                        ),
                       ),
                     ],
                   ),
-                ),
+                ],
               ),
             ),
-            body: ScrollbarWrapper(
-              showScrollbar: true,
-              controller: scrollController,
-              child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
-                  child: (_logs.isEmpty)
-                      ? const Center(
-                          child: Text(
-                            "No logs to display",
-                            style: TextStyle(fontSize: 16.0),
-                          ),
-                        )
-                      : ListView.separated(
-                          itemCount: _logs.length,
-                          shrinkWrap: true,
-                          controller: scrollController,
-                          separatorBuilder: (context, index) =>
-                              Divider(thickness: 0.25, color: context.theme.colorScheme.onSurface),
-                          itemBuilder: (context, index) {
-                            String log = _logs[index].trim();
-
-                            // Remove date
-                            log = log.split(' ').sublist(1).join(' ');
-
-                            // Print colorful
-                            Color textColor = context.theme.colorScheme.primary;
-                            if (log.startsWith('[ERROR]')) {
-                              textColor = Colors.red;
-                            } else if (log.startsWith('[WARNING]')) {
-                              textColor = Colors.orange;
-                            } else if (log.startsWith('[TRACE]')) {
-                              textColor = context.theme.colorScheme.primary;
-                            } else if (log.startsWith('[FATAL]')) {
-                              textColor = Colors.red;
-                            } else if (log.startsWith('[DEBUG]')) {
-                              textColor = context.theme.colorScheme.secondary;
-                            }
-
-                            return Text(
-                              log,
-                              style: TextStyle(fontSize: 12.0, color: textColor),
-                            );
-                          },
-                        )),
-            ),
           ),
-        ));
+        ),
+        body: ScrollbarWrapper(
+          showScrollbar: true,
+          controller: scrollController,
+          child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
+              child: (_logs.isEmpty)
+                  ? const Center(
+                      child: Text(
+                        "No logs to display",
+                        style: TextStyle(fontSize: 16.0),
+                      ),
+                    )
+                  : ListView.separated(
+                      itemCount: _logs.length,
+                      shrinkWrap: true,
+                      controller: scrollController,
+                      separatorBuilder: (context, index) =>
+                          Divider(thickness: 0.25, color: context.theme.colorScheme.onSurface),
+                      itemBuilder: (context, index) {
+                        String log = _logs[index].trim();
+
+                        // Remove date
+                        log = log.split(' ').sublist(1).join(' ');
+
+                        // Print colorful
+                        Color textColor = context.theme.colorScheme.primary;
+                        if (log.startsWith('[ERROR]')) {
+                          textColor = Colors.red;
+                        } else if (log.startsWith('[WARNING]')) {
+                          textColor = Colors.orange;
+                        } else if (log.startsWith('[TRACE]')) {
+                          textColor = context.theme.colorScheme.primary;
+                        } else if (log.startsWith('[FATAL]')) {
+                          textColor = Colors.red;
+                        } else if (log.startsWith('[DEBUG]')) {
+                          textColor = context.theme.colorScheme.secondary;
+                        }
+
+                        return Text(
+                          log,
+                          style: TextStyle(fontSize: 12.0, color: textColor),
+                        );
+                      },
+                    )),
+        ),
+      ),
+    ));
   }
 }

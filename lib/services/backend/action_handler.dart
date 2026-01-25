@@ -208,7 +208,8 @@ class ActionHandler extends GetxService {
         Logger.debug("[ActionHandler] Added temp reaction to parent MessageState ${m.associatedMessageGuid}",
             tag: "MessageReactivity");
       } else {
-        Logger.warn("[ActionHandler] Parent MessageState not found for temp reaction, will update when state is created",
+        Logger.warn(
+            "[ActionHandler] Parent MessageState not found for temp reaction, will update when state is created",
             tag: "MessageReactivity");
       }
     }

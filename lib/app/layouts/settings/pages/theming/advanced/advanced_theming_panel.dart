@@ -48,87 +48,87 @@ class _AdvancedThemingPanelState extends OptimizedState<AdvancedThemingPanel> wi
   @override
   Widget build(BuildContext context) {
     return BBScaffold(
-        backgroundColor: material ? tileColor : headerColor,
-        appBar: PreferredSize(
-          preferredSize: Size(NavigationSvc.width(context), 50),
-          child: AppBar(
-              systemOverlayStyle: context.theme.colorScheme.brightness == Brightness.dark
-                  ? SystemUiOverlayStyle.light
-                  : SystemUiOverlayStyle.dark,
-              toolbarHeight: 50,
-              elevation: 0,
-              scrolledUnderElevation: 3,
-              surfaceTintColor: context.theme.colorScheme.primary,
-              leading: buildBackButton(context),
-              backgroundColor: headerColor,
-              centerTitle: iOS,
-              title: Text(
-                "Advanced Theming",
-                style: context.theme.textTheme.titleLarge,
-              ),
-              actions: [
-                if (oldThemes.isNotEmpty)
-                  TextButton(
-                    child: Text("View Old",
-                        style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
-                    onPressed: () {
-                      showDialog(
-                          context: context,
-                          builder: (context) => OldThemesDialog(
-                                oldThemes,
-                                clearOld,
-                              ));
-                    },
-                  ),
-              ]),
-        ),
-        body: TabBarView(
-          controller: controller,
-          physics: const NeverScrollableScrollPhysics(),
-          children: <Widget>[
-            AdvancedThemingContent(
-              isDarkMode: false,
-              controller: streamController,
+      backgroundColor: material ? tileColor : headerColor,
+      appBar: PreferredSize(
+        preferredSize: Size(NavigationSvc.width(context), 50),
+        child: AppBar(
+            systemOverlayStyle: context.theme.colorScheme.brightness == Brightness.dark
+                ? SystemUiOverlayStyle.light
+                : SystemUiOverlayStyle.dark,
+            toolbarHeight: 50,
+            elevation: 0,
+            scrolledUnderElevation: 3,
+            surfaceTintColor: context.theme.colorScheme.primary,
+            leading: buildBackButton(context),
+            backgroundColor: headerColor,
+            centerTitle: iOS,
+            title: Text(
+              "Advanced Theming",
+              style: context.theme.textTheme.titleLarge,
             ),
-            AdvancedThemingContent(
-              isDarkMode: true,
-              controller: streamController,
-            )
-          ],
-        ),
-        floatingActionButton: FloatingActionButton.extended(
-            backgroundColor: context.theme.colorScheme.primary,
-            onPressed: () {
-              streamController.sink.add(null);
-            },
-            label: Text("Create New",
-                style: context.theme.textTheme.labelLarge!.copyWith(color: context.theme.colorScheme.onPrimary)),
-            icon: Icon(
-              iOS ? CupertinoIcons.pencil : Icons.edit,
-              color: context.theme.colorScheme.onPrimary,
-            )),
-        bottomNavigationBar: NavigationBar(
-          selectedIndex: index,
-          backgroundColor: headerColor,
-          destinations: [
-            NavigationDestination(
-              icon: Icon(iOS ? CupertinoIcons.sun_max : Icons.brightness_high),
-              label: "LIGHT THEME",
-            ),
-            NavigationDestination(
-              icon: Icon(
-                iOS ? CupertinoIcons.moon : Icons.brightness_3,
-              ),
-              label: "DARK THEME",
-            ),
-          ],
-          onDestinationSelected: (page) {
-            setState(() {
-              index = page;
-            });
-            controller.animateTo(page);
+            actions: [
+              if (oldThemes.isNotEmpty)
+                TextButton(
+                  child: Text("View Old",
+                      style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+                  onPressed: () {
+                    showDialog(
+                        context: context,
+                        builder: (context) => OldThemesDialog(
+                              oldThemes,
+                              clearOld,
+                            ));
+                  },
+                ),
+            ]),
+      ),
+      body: TabBarView(
+        controller: controller,
+        physics: const NeverScrollableScrollPhysics(),
+        children: <Widget>[
+          AdvancedThemingContent(
+            isDarkMode: false,
+            controller: streamController,
+          ),
+          AdvancedThemingContent(
+            isDarkMode: true,
+            controller: streamController,
+          )
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+          backgroundColor: context.theme.colorScheme.primary,
+          onPressed: () {
+            streamController.sink.add(null);
           },
-        ),
+          label: Text("Create New",
+              style: context.theme.textTheme.labelLarge!.copyWith(color: context.theme.colorScheme.onPrimary)),
+          icon: Icon(
+            iOS ? CupertinoIcons.pencil : Icons.edit,
+            color: context.theme.colorScheme.onPrimary,
+          )),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: index,
+        backgroundColor: headerColor,
+        destinations: [
+          NavigationDestination(
+            icon: Icon(iOS ? CupertinoIcons.sun_max : Icons.brightness_high),
+            label: "LIGHT THEME",
+          ),
+          NavigationDestination(
+            icon: Icon(
+              iOS ? CupertinoIcons.moon : Icons.brightness_3,
+            ),
+            label: "DARK THEME",
+          ),
+        ],
+        onDestinationSelected: (page) {
+          setState(() {
+            index = page;
+          });
+          controller.animateTo(page);
+        },
+      ),
     );
   }
 }

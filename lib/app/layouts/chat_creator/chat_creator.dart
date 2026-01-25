@@ -296,437 +296,436 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
   Widget build(BuildContext context) {
     return BBScaffold(
       appBar: PreferredSize(
-          preferredSize: Size(NavigationSvc.width(context), kIsDesktop ? 90 : 50),
-          child: AppBar(
-            systemOverlayStyle: context.theme.colorScheme.brightness == Brightness.dark
-                ? SystemUiOverlayStyle.light
-                : SystemUiOverlayStyle.dark,
-            toolbarHeight: kIsDesktop ? 90 : 50,
-            elevation: 0,
-            scrolledUnderElevation: 3,
-            surfaceTintColor: context.theme.colorScheme.primary,
-            leading: buildBackButton(context),
-            backgroundColor: Colors.transparent,
-            centerTitle: SettingsSvc.settings.skin.value == Skins.iOS,
-            title: Text(
-              "New Conversation",
-              style: context.theme.textTheme.titleLarge,
-            ),
-            actions: [
-              if (!canCreateGroupChats)
-                IconButton(
-                  icon: Icon(iOS ? CupertinoIcons.exclamationmark_circle : Icons.error_outline,
-                      color: context.theme.colorScheme.error),
-                  onPressed: () {
-                    showDialog(
-                        barrierDismissible: false,
-                        context: Get.context!,
-                        builder: (BuildContext context) {
-                          return AlertDialog(
-                            title: Text(
-                              "Group Chat Creation",
-                              style: context.theme.textTheme.titleLarge,
-                            ),
-                            content: Text(
-                                "Creating group chats from BlueBubbles is not possible on macOS 11 (Big Sur) and later due to limitations from Apple. You must setup the Private API to gain this feature.",
-                                style: context.theme.textTheme.bodyLarge),
-                            backgroundColor: context.theme.colorScheme.properSurface,
-                            actions: <Widget>[
-                              TextButton(
-                                child: Text("Close",
-                                    style: context.theme.textTheme.bodyLarge!
-                                        .copyWith(color: context.theme.colorScheme.primary)),
-                                onPressed: () {
-                                  Navigator.of(context).pop();
-                                },
-                              ),
-                            ],
-                          );
-                        });
-                  },
-                ),
-            ],
+        preferredSize: Size(NavigationSvc.width(context), kIsDesktop ? 90 : 50),
+        child: AppBar(
+          systemOverlayStyle: context.theme.colorScheme.brightness == Brightness.dark
+              ? SystemUiOverlayStyle.light
+              : SystemUiOverlayStyle.dark,
+          toolbarHeight: kIsDesktop ? 90 : 50,
+          elevation: 0,
+          scrolledUnderElevation: 3,
+          surfaceTintColor: context.theme.colorScheme.primary,
+          leading: buildBackButton(context),
+          backgroundColor: Colors.transparent,
+          centerTitle: SettingsSvc.settings.skin.value == Skins.iOS,
+          title: Text(
+            "New Conversation",
+            style: context.theme.textTheme.titleLarge,
           ),
-        ),
-      body: FocusScope(
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 5.0),
-                child: Row(
-                  children: [
-                    Text(
-                      "To: ",
-                      style: context.theme.textTheme.bodyMedium!.copyWith(color: context.theme.colorScheme.outline),
-                    ),
-                    Expanded(
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        physics: ThemeSwitcher.getScrollPhysics(),
-                        controller: addressScrollController,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            AnimatedSize(
-                              duration: const Duration(milliseconds: 250),
-                              curve: Curves.easeIn,
-                              alignment: Alignment.centerLeft,
-                              child: ConstrainedBox(
-                                constraints:
-                                    BoxConstraints(maxHeight: context.theme.textTheme.bodyMedium!.fontSize! + 20),
-                                child: Obx(() => ListView.builder(
-                                      itemCount: selectedContacts.length,
-                                      shrinkWrap: true,
-                                      scrollDirection: Axis.horizontal,
-                                      physics: const NeverScrollableScrollPhysics(),
-                                      findChildIndexCallback: (key) =>
-                                          findChildIndexByKey(selectedContacts, key, (item) => item.address),
-                                      itemBuilder: (context, index) {
-                                        final e = selectedContacts[index];
-                                        return SelectedContactChip(
-                                          key: ValueKey(e.address),
-                                          contact: e,
-                                          onRemove: () => removeSelected(e),
-                                        );
-                                      },
-                                    )),
-                              ),
-                            ),
-                            ConstrainedBox(
-                              constraints: BoxConstraints(maxWidth: NavigationSvc.width(context) - 50),
-                              child: Focus(
-                                onKeyEvent: (node, event) {
-                                  if (event is KeyDownEvent) {
-                                    if (event.logicalKey == LogicalKeyboardKey.backspace &&
-                                        (addressController.selection.start == 0 || addressController.text.isEmpty)) {
-                                      if (selectedContacts.isNotEmpty) {
-                                        removeSelected(selectedContacts.last);
-                                      }
-                                      return KeyEventResult.handled;
-                                    } else if (!HardwareKeyboard.instance.isShiftPressed &&
-                                        event.logicalKey == LogicalKeyboardKey.tab) {
-                                      messageNode.requestFocus();
-                                      return KeyEventResult.handled;
-                                    }
-                                  }
-                                  return KeyEventResult.ignored;
-                                },
-                                child: TextField(
-                                  textCapitalization: TextCapitalization.sentences,
-                                  focusNode: addressNode,
-                                  autocorrect: false,
-                                  controller: addressController,
-                                  style: context.theme.textTheme.bodyMedium,
-                                  maxLines: 1,
-                                  selectionControls:
-                                      iOS ? cupertinoTextSelectionControls : materialTextSelectionControls,
-                                  autofocus: kIsWeb || kIsDesktop,
-                                  enableIMEPersonalizedLearning: !SettingsSvc.settings.incognitoKeyboard.value,
-                                  textInputAction: TextInputAction.done,
-                                  cursorColor: context.theme.colorScheme.primary,
-                                  cursorHeight: context.theme.textTheme.bodyMedium!.fontSize! * 1.25,
-                                  decoration: InputDecoration(
-                                    border: InputBorder.none,
-                                    fillColor: Colors.transparent,
-                                    hintText: "Enter a name...",
-                                    hintStyle: context.theme.textTheme.bodyMedium!
-                                        .copyWith(color: context.theme.colorScheme.outline),
-                                  ),
-                                  onSubmitted: (String value) {
-                                    addressOnSubmitted();
-                                  },
-                                ),
-                              ),
+          actions: [
+            if (!canCreateGroupChats)
+              IconButton(
+                icon: Icon(iOS ? CupertinoIcons.exclamationmark_circle : Icons.error_outline,
+                    color: context.theme.colorScheme.error),
+                onPressed: () {
+                  showDialog(
+                      barrierDismissible: false,
+                      context: Get.context!,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: Text(
+                            "Group Chat Creation",
+                            style: context.theme.textTheme.titleLarge,
+                          ),
+                          content: Text(
+                              "Creating group chats from BlueBubbles is not possible on macOS 11 (Big Sur) and later due to limitations from Apple. You must setup the Private API to gain this feature.",
+                              style: context.theme.textTheme.bodyLarge),
+                          backgroundColor: context.theme.colorScheme.properSurface,
+                          actions: <Widget>[
+                            TextButton(
+                              child: Text("Close",
+                                  style: context.theme.textTheme.bodyLarge!
+                                      .copyWith(color: context.theme.colorScheme.primary)),
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                              },
                             ),
                           ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              MessageTypeToggle(
-                iMessage: iMessage,
-                sms: sms,
-                onToggle: (index) async {
-                  selectedContacts.clear();
-                  addressController.text = "";
-                  if (index == 0) {
-                    setState(() {
-                      iMessage = true;
-                      sms = false;
-                      filteredChats = List<Chat>.from(existingChats.where((e) => e.isIMessage));
-                    });
-                    await ChatsSvc.setAllInactive();
-                    fakeController.value = null;
-                  } else {
-                    setState(() {
-                      iMessage = false;
-                      sms = true;
-                      filteredChats = List<Chat>.from(existingChats.where((e) => !e.isIMessage));
-                    });
-                    await ChatsSvc.setAllInactive();
-                    fakeController.value = null;
-                  }
+                        );
+                      });
                 },
               ),
-              Expanded(
-                child: Theme(
-                  data: context.theme.copyWith(
-                    // in case some components still use legacy theming
-                    primaryColor: context.theme.colorScheme.bubble(context, iMessage),
-                    colorScheme: context.theme.colorScheme.copyWith(
-                      primary: context.theme.colorScheme.bubble(context, iMessage),
-                      onPrimary: context.theme.colorScheme.onBubble(context, iMessage),
-                      surface: SettingsSvc.settings.monetTheming.value == Monet.full
-                          ? null
-                          : (context.theme.extensions[BubbleColors] as BubbleColors?)?.receivedBubbleColor,
-                      onSurface: SettingsSvc.settings.monetTheming.value == Monet.full
-                          ? null
-                          : (context.theme.extensions[BubbleColors] as BubbleColors?)?.onReceivedBubbleColor,
-                    ),
+          ],
+        ),
+      ),
+      body: FocusScope(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 5.0),
+              child: Row(
+                children: [
+                  Text(
+                    "To: ",
+                    style: context.theme.textTheme.bodyMedium!.copyWith(color: context.theme.colorScheme.outline),
                   ),
-                  child: Obx(() {
-                    return AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 150),
-                      child: fakeController.value == null
-                          ? ChatListSection(
-                              filteredChats: filteredChats,
-                              filteredContacts: filteredContacts,
-                              selectedContacts: selectedContacts,
-                              onChatTap: addSelectedList,
-                              onContactTap: addSelected,
-                            )
-                          : Container(
-                              color: Colors.transparent,
-                              child: MessagesView(
-                                controller: fakeController.value!,
+                  Expanded(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      physics: ThemeSwitcher.getScrollPhysics(),
+                      controller: addressScrollController,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          AnimatedSize(
+                            duration: const Duration(milliseconds: 250),
+                            curve: Curves.easeIn,
+                            alignment: Alignment.centerLeft,
+                            child: ConstrainedBox(
+                              constraints:
+                                  BoxConstraints(maxHeight: context.theme.textTheme.bodyMedium!.fontSize! + 20),
+                              child: Obx(() => ListView.builder(
+                                    itemCount: selectedContacts.length,
+                                    shrinkWrap: true,
+                                    scrollDirection: Axis.horizontal,
+                                    physics: const NeverScrollableScrollPhysics(),
+                                    findChildIndexCallback: (key) =>
+                                        findChildIndexByKey(selectedContacts, key, (item) => item.address),
+                                    itemBuilder: (context, index) {
+                                      final e = selectedContacts[index];
+                                      return SelectedContactChip(
+                                        key: ValueKey(e.address),
+                                        contact: e,
+                                        onRemove: () => removeSelected(e),
+                                      );
+                                    },
+                                  )),
+                            ),
+                          ),
+                          ConstrainedBox(
+                            constraints: BoxConstraints(maxWidth: NavigationSvc.width(context) - 50),
+                            child: Focus(
+                              onKeyEvent: (node, event) {
+                                if (event is KeyDownEvent) {
+                                  if (event.logicalKey == LogicalKeyboardKey.backspace &&
+                                      (addressController.selection.start == 0 || addressController.text.isEmpty)) {
+                                    if (selectedContacts.isNotEmpty) {
+                                      removeSelected(selectedContacts.last);
+                                    }
+                                    return KeyEventResult.handled;
+                                  } else if (!HardwareKeyboard.instance.isShiftPressed &&
+                                      event.logicalKey == LogicalKeyboardKey.tab) {
+                                    messageNode.requestFocus();
+                                    return KeyEventResult.handled;
+                                  }
+                                }
+                                return KeyEventResult.ignored;
+                              },
+                              child: TextField(
+                                textCapitalization: TextCapitalization.sentences,
+                                focusNode: addressNode,
+                                autocorrect: false,
+                                controller: addressController,
+                                style: context.theme.textTheme.bodyMedium,
+                                maxLines: 1,
+                                selectionControls: iOS ? cupertinoTextSelectionControls : materialTextSelectionControls,
+                                autofocus: kIsWeb || kIsDesktop,
+                                enableIMEPersonalizedLearning: !SettingsSvc.settings.incognitoKeyboard.value,
+                                textInputAction: TextInputAction.done,
+                                cursorColor: context.theme.colorScheme.primary,
+                                cursorHeight: context.theme.textTheme.bodyMedium!.fontSize! * 1.25,
+                                decoration: InputDecoration(
+                                  border: InputBorder.none,
+                                  fillColor: Colors.transparent,
+                                  hintText: "Enter a name...",
+                                  hintStyle: context.theme.textTheme.bodyMedium!
+                                      .copyWith(color: context.theme.colorScheme.outline),
+                                ),
+                                onSubmitted: (String value) {
+                                  addressOnSubmitted();
+                                },
                               ),
                             ),
-                    );
-                  }),
-                ),
-              ),
-              Padding(
-                padding: EdgeInsets.only(
-                  left: 5.0,
-                  top: 10.0,
-                  bottom: 5.0 + MediaQuery.of(context).viewPadding.bottom,
-                ),
-                child: Theme(
-                  data: context.theme.copyWith(
-                    // in case some components still use legacy theming
-                    primaryColor: context.theme.colorScheme.bubble(context, iMessage),
-                    colorScheme: context.theme.colorScheme.copyWith(
-                      primary: context.theme.colorScheme.bubble(context, iMessage),
-                      onPrimary: context.theme.colorScheme.onBubble(context, iMessage),
-                      surface: SettingsSvc.settings.monetTheming.value == Monet.full
-                          ? null
-                          : (context.theme.extensions[BubbleColors] as BubbleColors?)?.receivedBubbleColor,
-                      onSurface: SettingsSvc.settings.monetTheming.value == Monet.full
-                          ? null
-                          : (context.theme.extensions[BubbleColors] as BubbleColors?)?.onReceivedBubbleColor,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  child: Focus(
-                    onKeyEvent: (node, event) {
-                      if (event is KeyDownEvent &&
-                          HardwareKeyboard.instance.isShiftPressed &&
-                          event.logicalKey == LogicalKeyboardKey.tab) {
-                        addressNode.requestFocus();
-                        return KeyEventResult.handled;
-                      }
-                      return KeyEventResult.ignored;
-                    },
-                    child: Obx(() => TextFieldComponent(
-                        focusNode: messageNode,
-                        textController: textController,
-                        controller: fakeController.value,
-                        recorderController: null,
-                        initialAttachments: widget.initialAttachments,
-                        sendMessage: ({String? effect}) async {
-                          addressOnSubmitted();
-                          final chat =
-                              fakeController.value?.chat ?? await findExistingChat(checkDeleted: true, update: false);
-                          bool existsOnServer = false;
-                          if (chat != null) {
-                            // if we don't error, then the chat exists
-                            try {
-                              await HttpSvc.singleChat(chat.guid);
-                              existsOnServer = true;
-                            } catch (_) {}
-                          }
-                          if (chat != null && existsOnServer) {
-                            sendInitialMessage() async {
-                              if (fakeController.value == null) {
-                                await ChatsSvc.setActiveChat(chat, clearNotifications: false);
-                                ChatsSvc.activeChat!.controller = cvc(chat);
-                                ChatsSvc.activeChat!.controller!.pickedAttachments.value = [];
-                                fakeController.value = ChatsSvc.activeChat!.controller;
-                              } else {
-                                fakeController.value!.textController.text = textController.text;
-                                fakeController.value!.pickedAttachments.value = widget.initialAttachments;
-                              }
-
-                              await fakeController.value!.send(
-                                widget.initialAttachments,
-                                fakeController.value!.textController.text,
-                                "",
-                                fakeController.value!.replyToMessage?.item1.threadOriginatorGuid ??
-                                    fakeController.value!.replyToMessage?.item1.guid,
-                                fakeController.value!.replyToMessage?.item2,
-                                effect,
-                                false,
-                              );
-
-                              fakeController.value!.replyToMessage = null;
-                              fakeController.value!.pickedAttachments.clear();
-                              fakeController.value!.textController.clear();
-                              fakeController.value!.subjectTextController.clear();
+                ],
+              ),
+            ),
+            MessageTypeToggle(
+              iMessage: iMessage,
+              sms: sms,
+              onToggle: (index) async {
+                selectedContacts.clear();
+                addressController.text = "";
+                if (index == 0) {
+                  setState(() {
+                    iMessage = true;
+                    sms = false;
+                    filteredChats = List<Chat>.from(existingChats.where((e) => e.isIMessage));
+                  });
+                  await ChatsSvc.setAllInactive();
+                  fakeController.value = null;
+                } else {
+                  setState(() {
+                    iMessage = false;
+                    sms = true;
+                    filteredChats = List<Chat>.from(existingChats.where((e) => !e.isIMessage));
+                  });
+                  await ChatsSvc.setAllInactive();
+                  fakeController.value = null;
+                }
+              },
+            ),
+            Expanded(
+              child: Theme(
+                data: context.theme.copyWith(
+                  // in case some components still use legacy theming
+                  primaryColor: context.theme.colorScheme.bubble(context, iMessage),
+                  colorScheme: context.theme.colorScheme.copyWith(
+                    primary: context.theme.colorScheme.bubble(context, iMessage),
+                    onPrimary: context.theme.colorScheme.onBubble(context, iMessage),
+                    surface: SettingsSvc.settings.monetTheming.value == Monet.full
+                        ? null
+                        : (context.theme.extensions[BubbleColors] as BubbleColors?)?.receivedBubbleColor,
+                    onSurface: SettingsSvc.settings.monetTheming.value == Monet.full
+                        ? null
+                        : (context.theme.extensions[BubbleColors] as BubbleColors?)?.onReceivedBubbleColor,
+                  ),
+                ),
+                child: Obx(() {
+                  return AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 150),
+                    child: fakeController.value == null
+                        ? ChatListSection(
+                            filteredChats: filteredChats,
+                            filteredContacts: filteredContacts,
+                            selectedContacts: selectedContacts,
+                            onChatTap: addSelectedList,
+                            onContactTap: addSelected,
+                          )
+                        : Container(
+                            color: Colors.transparent,
+                            child: MessagesView(
+                              controller: fakeController.value!,
+                            ),
+                          ),
+                  );
+                }),
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.only(
+                left: 5.0,
+                top: 10.0,
+                bottom: 5.0 + MediaQuery.of(context).viewPadding.bottom,
+              ),
+              child: Theme(
+                data: context.theme.copyWith(
+                  // in case some components still use legacy theming
+                  primaryColor: context.theme.colorScheme.bubble(context, iMessage),
+                  colorScheme: context.theme.colorScheme.copyWith(
+                    primary: context.theme.colorScheme.bubble(context, iMessage),
+                    onPrimary: context.theme.colorScheme.onBubble(context, iMessage),
+                    surface: SettingsSvc.settings.monetTheming.value == Monet.full
+                        ? null
+                        : (context.theme.extensions[BubbleColors] as BubbleColors?)?.receivedBubbleColor,
+                    onSurface: SettingsSvc.settings.monetTheming.value == Monet.full
+                        ? null
+                        : (context.theme.extensions[BubbleColors] as BubbleColors?)?.onReceivedBubbleColor,
+                  ),
+                ),
+                child: Focus(
+                  onKeyEvent: (node, event) {
+                    if (event is KeyDownEvent &&
+                        HardwareKeyboard.instance.isShiftPressed &&
+                        event.logicalKey == LogicalKeyboardKey.tab) {
+                      addressNode.requestFocus();
+                      return KeyEventResult.handled;
+                    }
+                    return KeyEventResult.ignored;
+                  },
+                  child: Obx(() => TextFieldComponent(
+                      focusNode: messageNode,
+                      textController: textController,
+                      controller: fakeController.value,
+                      recorderController: null,
+                      initialAttachments: widget.initialAttachments,
+                      sendMessage: ({String? effect}) async {
+                        addressOnSubmitted();
+                        final chat =
+                            fakeController.value?.chat ?? await findExistingChat(checkDeleted: true, update: false);
+                        bool existsOnServer = false;
+                        if (chat != null) {
+                          // if we don't error, then the chat exists
+                          try {
+                            await HttpSvc.singleChat(chat.guid);
+                            existsOnServer = true;
+                          } catch (_) {}
+                        }
+                        if (chat != null && existsOnServer) {
+                          sendInitialMessage() async {
+                            if (fakeController.value == null) {
+                              await ChatsSvc.setActiveChat(chat, clearNotifications: false);
+                              ChatsSvc.activeChat!.controller = cvc(chat);
+                              ChatsSvc.activeChat!.controller!.pickedAttachments.value = [];
+                              fakeController.value = ChatsSvc.activeChat!.controller;
+                            } else {
+                              fakeController.value!.textController.text = textController.text;
+                              fakeController.value!.pickedAttachments.value = widget.initialAttachments;
                             }
 
+                            await fakeController.value!.send(
+                              widget.initialAttachments,
+                              fakeController.value!.textController.text,
+                              "",
+                              fakeController.value!.replyToMessage?.item1.threadOriginatorGuid ??
+                                  fakeController.value!.replyToMessage?.item1.guid,
+                              fakeController.value!.replyToMessage?.item2,
+                              effect,
+                              false,
+                            );
+
+                            fakeController.value!.replyToMessage = null;
+                            fakeController.value!.pickedAttachments.clear();
+                            fakeController.value!.textController.clear();
+                            fakeController.value!.subjectTextController.clear();
+                          }
+
+                          NavigationSvc.pushAndRemoveUntil(
+                            Get.context!,
+                            ConversationView(chat: chat, fromChatCreator: true, onInit: sendInitialMessage),
+                            (route) => route.isFirst,
+                            // don't force close the active chat in tablet mode
+                            closeActiveChat: false,
+                            // only used in non-tablet mode context
+                            customRoute: PageRouteBuilder(
+                              pageBuilder: (_, __, ___) => TitleBarWrapper(
+                                  child:
+                                      ConversationView(chat: chat, fromChatCreator: true, onInit: sendInitialMessage)),
+                              transitionDuration: Duration.zero,
+                            ),
+                          );
+
+                          await Future.delayed(const Duration(milliseconds: 500));
+                        } else {
+                          if (!(createCompleter?.isCompleted ?? true)) return;
+                          // hard delete a chat that exists on BB but not on the server to make way for the proper server data
+                          if (chat != null) {
+                            ChatsSvc.removeChat(chat);
+                            ChatsSvc.deleteChat(chat);
+                          }
+                          createCompleter = Completer();
+                          final participants = selectedContacts
+                              .map((e) => e.address.isEmail ? e.address : cleansePhoneNumber(e.address))
+                              .toList();
+                          final method = iMessage ? "iMessage" : "SMS";
+                          showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  backgroundColor: context.theme.colorScheme.properSurface,
+                                  title: Text(
+                                    "Creating a new $method chat...",
+                                    style: context.theme.textTheme.titleLarge,
+                                  ),
+                                  content: SizedBox(
+                                    height: 70,
+                                    child: Center(
+                                      child: CircularProgressIndicator(
+                                        backgroundColor: context.theme.colorScheme.properSurface,
+                                        valueColor: AlwaysStoppedAnimation<Color>(context.theme.colorScheme.primary),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              });
+                          HttpSvc.createChat(participants, textController.text, method).then((response) async {
+                            // Load the chat data and save it to the DB
+                            Chat newChat = Chat.fromMap(response.data["data"]);
+                            newChat = await newChat.saveAsync();
+
+                            // Fetch the newly saved chat data from the DB
+                            // Throw an error if it wasn't saved correctly.
+                            final saved = await ChatsSvc.fetchChat(newChat.guid);
+                            if (saved == null) {
+                              return showSnackbar("Error", "Failed to save chat!");
+                            }
+
+                            // Update the chat in the chat list.
+                            // If it wasn't existing, add it.
+                            newChat = saved;
+                            bool updated = ChatsSvc.updateChat(newChat);
+                            if (!updated) {
+                              await ChatsSvc.addChat(newChat);
+                            }
+
+                            // Fetch the last message for the chat and save it.
+                            final messageRes = await HttpSvc.chatMessages(newChat.guid, limit: 1);
+                            if (messageRes.data["data"].length > 0) {
+                              final messages =
+                                  (messageRes.data["data"] as List<dynamic>).map((e) => Message.fromMap(e)).toList();
+                              await Chat.bulkSyncMessages(newChat, messages);
+                            }
+
+                            // Force close the message service for the chat so it can be reloaded.
+                            // If this isn't done, new messages will not show.
+                            MessagesSvc(newChat.guid).close(force: true);
+                            cvc(newChat).close();
+
+                            // Let awaiters know we completed
+                            createCompleter?.complete();
+
+                            // Navigate to the new chat
+                            Navigator.of(context).pop();
                             NavigationSvc.pushAndRemoveUntil(
                               Get.context!,
-                              ConversationView(chat: chat, fromChatCreator: true, onInit: sendInitialMessage),
+                              ConversationView(chat: newChat),
                               (route) => route.isFirst,
-                              // don't force close the active chat in tablet mode
-                              closeActiveChat: false,
-                              // only used in non-tablet mode context
                               customRoute: PageRouteBuilder(
                                 pageBuilder: (_, __, ___) => TitleBarWrapper(
-                                    child: ConversationView(
-                                        chat: chat, fromChatCreator: true, onInit: sendInitialMessage)),
+                                  child: ConversationView(
+                                    chat: newChat,
+                                    fromChatCreator: true,
+                                  ),
+                                ),
                                 transitionDuration: Duration.zero,
                               ),
                             );
-
-                            await Future.delayed(const Duration(milliseconds: 500));
-                          } else {
-                            if (!(createCompleter?.isCompleted ?? true)) return;
-                            // hard delete a chat that exists on BB but not on the server to make way for the proper server data
-                            if (chat != null) {
-                              ChatsSvc.removeChat(chat);
-                              ChatsSvc.deleteChat(chat);
-                            }
-                            createCompleter = Completer();
-                            final participants = selectedContacts
-                                .map((e) => e.address.isEmail ? e.address : cleansePhoneNumber(e.address))
-                                .toList();
-                            final method = iMessage ? "iMessage" : "SMS";
+                          }).catchError((error) {
+                            Navigator.of(context).pop();
                             showDialog(
+                                barrierDismissible: false,
                                 context: context,
                                 builder: (BuildContext context) {
                                   return AlertDialog(
                                     backgroundColor: context.theme.colorScheme.properSurface,
                                     title: Text(
-                                      "Creating a new $method chat...",
+                                      "Failed to create chat!",
                                       style: context.theme.textTheme.titleLarge,
                                     ),
-                                    content: SizedBox(
-                                      height: 70,
-                                      child: Center(
-                                        child: CircularProgressIndicator(
-                                          backgroundColor: context.theme.colorScheme.properSurface,
-                                          valueColor: AlwaysStoppedAnimation<Color>(context.theme.colorScheme.primary),
-                                        ),
-                                      ),
+                                    content: Text(
+                                      error is Response
+                                          ? "Reason: (${error.data["error"]["type"]}) -> ${error.data["error"]["message"]}"
+                                          : error.toString(),
+                                      style: context.theme.textTheme.bodyLarge,
                                     ),
+                                    actions: [
+                                      TextButton(
+                                        child: Text("OK",
+                                            style: context.theme.textTheme.bodyLarge!
+                                                .copyWith(color: Get.context!.theme.colorScheme.primary)),
+                                        onPressed: () {
+                                          Navigator.of(context).pop();
+                                        },
+                                      )
+                                    ],
                                   );
                                 });
-                            HttpSvc.createChat(participants, textController.text, method).then((response) async {
-                              // Load the chat data and save it to the DB
-                              Chat newChat = Chat.fromMap(response.data["data"]);
-                              newChat = await newChat.saveAsync();
-
-                              // Fetch the newly saved chat data from the DB
-                              // Throw an error if it wasn't saved correctly.
-                              final saved = await ChatsSvc.fetchChat(newChat.guid);
-                              if (saved == null) {
-                                return showSnackbar("Error", "Failed to save chat!");
-                              }
-
-                              // Update the chat in the chat list.
-                              // If it wasn't existing, add it.
-                              newChat = saved;
-                              bool updated = ChatsSvc.updateChat(newChat);
-                              if (!updated) {
-                                await ChatsSvc.addChat(newChat);
-                              }
-
-                              // Fetch the last message for the chat and save it.
-                              final messageRes = await HttpSvc.chatMessages(newChat.guid, limit: 1);
-                              if (messageRes.data["data"].length > 0) {
-                                final messages =
-                                    (messageRes.data["data"] as List<dynamic>).map((e) => Message.fromMap(e)).toList();
-                                await Chat.bulkSyncMessages(newChat, messages);
-                              }
-
-                              // Force close the message service for the chat so it can be reloaded.
-                              // If this isn't done, new messages will not show.
-                              MessagesSvc(newChat.guid).close(force: true);
-                              cvc(newChat).close();
-
-                              // Let awaiters know we completed
-                              createCompleter?.complete();
-
-                              // Navigate to the new chat
-                              Navigator.of(context).pop();
-                              NavigationSvc.pushAndRemoveUntil(
-                                Get.context!,
-                                ConversationView(chat: newChat),
-                                (route) => route.isFirst,
-                                customRoute: PageRouteBuilder(
-                                  pageBuilder: (_, __, ___) => TitleBarWrapper(
-                                    child: ConversationView(
-                                      chat: newChat,
-                                      fromChatCreator: true,
-                                    ),
-                                  ),
-                                  transitionDuration: Duration.zero,
-                                ),
-                              );
-                            }).catchError((error) {
-                              Navigator.of(context).pop();
-                              showDialog(
-                                  barrierDismissible: false,
-                                  context: context,
-                                  builder: (BuildContext context) {
-                                    return AlertDialog(
-                                      backgroundColor: context.theme.colorScheme.properSurface,
-                                      title: Text(
-                                        "Failed to create chat!",
-                                        style: context.theme.textTheme.titleLarge,
-                                      ),
-                                      content: Text(
-                                        error is Response
-                                            ? "Reason: (${error.data["error"]["type"]}) -> ${error.data["error"]["message"]}"
-                                            : error.toString(),
-                                        style: context.theme.textTheme.bodyLarge,
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          child: Text("OK",
-                                              style: context.theme.textTheme.bodyLarge!
-                                                  .copyWith(color: Get.context!.theme.colorScheme.primary)),
-                                          onPressed: () {
-                                            Navigator.of(context).pop();
-                                          },
-                                        )
-                                      ],
-                                    );
-                                  });
-                              if (!createCompleter!.isCompleted) {
-                                createCompleter?.completeError(error);
-                              }
-                            });
-                          }
-                        })),
-                  ),
+                            if (!createCompleter!.isCompleted) {
+                              createCompleter?.completeError(error);
+                            }
+                          });
+                        }
+                      })),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
+      ),
     );
   }
 }

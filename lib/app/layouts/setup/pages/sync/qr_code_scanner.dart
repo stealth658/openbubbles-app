@@ -18,15 +18,15 @@ class _QRCodeScannerState extends OptimizedState<QRCodeScanner> {
   @override
   Widget build(BuildContext context) {
     return BBScaffold(
-        body: MobileScanner(
-          key: qrKey,
-          onDetect: (capture) {
-            if (!scanned && !isNullOrEmpty(capture.barcodes.first.rawValue)) {
-              scanned = true;
-              Navigator.of(context).pop(capture.barcodes.first.rawValue);
-            }
-          },
-        ),
+      body: MobileScanner(
+        key: qrKey,
+        onDetect: (capture) {
+          if (!scanned && !isNullOrEmpty(capture.barcodes.first.rawValue)) {
+            scanned = true;
+            Navigator.of(context).pop(capture.barcodes.first.rawValue);
+          }
+        },
+      ),
     );
   }
 }

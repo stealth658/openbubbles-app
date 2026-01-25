@@ -13,31 +13,31 @@ class ConversationTextFieldLocalController extends GetxController {
   Timer? debounceEmojiSearch;
   Timer? debounceMentionSearch;
   Timer? debounceDraftSave;
-  
+
   // Previous state tracking
   final RxString oldText = "\n".obs;
   final Rx<TextSelection> oldTextFieldSelection = const TextSelection.collapsed(offset: 0).obs;
-  
+
   // Attachment picker visibility (moved from setState)
   final RxBool showAttachmentPickerLocal = false.obs;
-  
+
   @override
   void onClose() {
     cancelAllTimers();
     super.onClose();
   }
-  
+
   void cancelAllTimers() {
     debounceTyping?.cancel();
     debounceEmojiSearch?.cancel();
     debounceMentionSearch?.cancel();
     debounceDraftSave?.cancel();
   }
-  
+
   void updateOldText(String newText) {
     oldText.value = newText;
   }
-  
+
   void updateOldSelection(TextSelection selection) {
     oldTextFieldSelection.value = selection;
   }

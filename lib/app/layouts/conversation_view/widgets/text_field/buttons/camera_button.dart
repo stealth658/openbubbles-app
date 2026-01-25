@@ -13,19 +13,19 @@ import 'package:universal_io/io.dart';
 class CameraButton extends StatelessWidget {
   final ConversationViewController controller;
   final Future<void> Function({required String type}) openFullCamera;
-  
+
   const CameraButton({
     super.key,
     required this.controller,
     required this.openFullCamera,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     if (kIsWeb || !context.iOS || !Platform.isAndroid) {
       return const SizedBox.shrink();
     }
-    
+
     return GestureDetector(
       onLongPress: () {
         openFullCamera(type: 'video');
@@ -63,7 +63,7 @@ Future<void> openFullCamera(
   } else {
     file = await ImagePicker().pickVideo(source: ImageSource.camera);
   }
-  
+
   if (file != null) {
     controller.pickedAttachments.add(PlatformFile(
       path: file.path,

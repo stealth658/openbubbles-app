@@ -9,18 +9,18 @@ import 'package:universal_io/io.dart';
 /// Widget for the location sharing button (desktop only, not Linux)
 class LocationButton extends StatelessWidget {
   final Chat chat;
-  
+
   const LocationButton({
     super.key,
     required this.chat,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     if (!kIsDesktop || Platform.isLinux) {
       return const SizedBox.shrink();
     }
-    
+
     return IconButton(
       icon: Icon(
         context.iOS ? CupertinoIcons.location_solid : Icons.location_on_outlined,

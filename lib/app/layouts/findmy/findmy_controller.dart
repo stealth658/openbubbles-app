@@ -23,16 +23,16 @@ class FindMyController extends GetxController {
   final ScrollController devicesController = ScrollController();
   final ScrollController itemsController = ScrollController();
   final ScrollController friendsController = ScrollController();
-  
+
   // Map & Panel Controllers
   final PopupController popupController = PopupController();
   final MapController mapController = MapController();
   final PanelController panelController = PanelController();
   final completer = Completer<void>();
-  
+
   // Tab Controller (needs to be created with vsync in the widget)
   TabController? tabController;
-  
+
   // Observable state variables
   final RxInt tabIndex = 0.obs;
   final RxList<FindMyDevice> devices = <FindMyDevice>[].obs;
@@ -47,33 +47,33 @@ class FindMyController extends GetxController {
   final RxBool refreshing2 = false.obs;
   final RxBool canRefresh = false.obs;
   final RxBool hasMovedToCurrentLocation = false.obs;
-  
+
   StreamSubscription? locationSub;
-  
+
   @override
   void onInit() {
     super.onInit();
     getLocations();
-    
+
     // Setup socket listener
     SocketSvc.socket?.on("new-findmy-location", _handleNewFindMyLocation);
-    
+
     // Allow users to refresh after 30sec
     Future.delayed(const Duration(seconds: 30), () {
       canRefresh.value = true;
     });
   }
-  
+
   void _handleNewFindMyLocation(dynamic data) {
     try {
       final friend = FindMyFriend.fromJson(data);
       Logger.info("Received new location for ${friend.handle?.address}");
       if ((friend.latitude ?? 0) == 0 && (friend.longitude ?? 0) == 0) return;
-      
+
       final existingFriendIndex =
           friends.indexWhere((e) => e.handle?.uniqueAddressAndService == friend.handle?.uniqueAddressAndService);
       final existingFriend = existingFriendIndex == -1 ? null : friends[existingFriendIndex];
-      
+
       if (existingFriend == null ||
           existingFriend.status == null ||
           friend.locatingInProgress ||
@@ -81,17 +81,17 @@ class FindMyController extends GetxController {
               LocationStatus.values.indexOf(friend.status ?? LocationStatus.legacy)) {
         Logger.info("Updating map for ${friend.handle?.address}");
         friends[existingFriendIndex] = friend;
-        
+
         friendsWithLocation.value =
             friends.where((item) => (item.latitude ?? 0) != 0 && (item.longitude ?? 0) != 0).toList();
         friendsWithoutLocation.value =
             friends.where((item) => (item.latitude ?? 0) == 0 && (item.longitude ?? 0) == 0).toList();
-        
+
         buildFriendMarker(friend);
       }
     } catch (_) {}
   }
-  
+
   /// Fetches the FindMy data from the server.
   /// The toggles for refresh friends & devices are separate due to an inconsistency in the server API.
   /// As of v1.9.7 (server), the refresh devices endpoint doesn't return the devices data,
@@ -104,7 +104,7 @@ class FindMyController extends GetxController {
       if (granted == LocationPermission.denied) {
         granted = await Geolocator.requestPermission();
       }
-      
+
       if (granted == LocationPermission.whileInUse || granted == LocationPermission.always) {
         Geolocator.getCurrentPosition().then((loc) {
           location.value = loc;
@@ -112,7 +112,7 @@ class FindMyController extends GetxController {
           if (!kIsDesktop) {
             locationSub = Geolocator.getPositionStream().listen((event) {
               buildLocationMarker(event);
-              
+
               if (!hasMovedToCurrentLocation.value) {
                 mapController.move(LatLng(location.value!.latitude, location.value!.longitude), 10);
                 hasMovedToCurrentLocation.value = true;
@@ -122,7 +122,7 @@ class FindMyController extends GetxController {
         });
       }
     }
-    
+
     // Fetch friends data
     final response2 = refreshFriends
         ? await HttpSvc.refreshFindMyFriends().catchError((_) async {
@@ -134,15 +134,17 @@ class FindMyController extends GetxController {
             fetching2.value = null;
             return Response(requestOptions: RequestOptions(path: ''));
           });
-    
+
     if (response2.statusCode == 200 && response2.data['data'] != null) {
       try {
-        friends.value = (response2.data['data'] as List).map((e) => FindMyFriend.fromJson(e)).toList().cast<FindMyFriend>();
-        
-        friendsWithLocation.value = friends.where((item) => (item.latitude ?? 0) != 0 && (item.longitude ?? 0) != 0).toList();
+        friends.value =
+            (response2.data['data'] as List).map((e) => FindMyFriend.fromJson(e)).toList().cast<FindMyFriend>();
+
+        friendsWithLocation.value =
+            friends.where((item) => (item.latitude ?? 0) != 0 && (item.longitude ?? 0) != 0).toList();
         friendsWithoutLocation.value =
             friends.where((item) => (item.latitude ?? 0) == 0 && (item.longitude ?? 0) == 0).toList();
-        
+
         for (FindMyFriend e in friendsWithLocation) {
           buildFriendMarker(e);
         }
@@ -158,7 +160,7 @@ class FindMyController extends GetxController {
       fetching2.value = false;
       refreshing2.value = false;
     }
-    
+
     // Fetch devices data
     final response = refreshDevices
         ? await HttpSvc.refreshFindMyDevices().catchError((_) async {
@@ -170,11 +172,12 @@ class FindMyController extends GetxController {
             fetching.value = null;
             return Response(requestOptions: RequestOptions(path: ''));
           });
-    
+
     if (response.statusCode == 200 && response.data['data'] != null) {
       try {
-        devices.value = (response.data['data'] as List).map((e) => FindMyDevice.fromJson(e)).toList().cast<FindMyDevice>();
-        
+        devices.value =
+            (response.data['data'] as List).map((e) => FindMyDevice.fromJson(e)).toList().cast<FindMyDevice>();
+
         for (FindMyDevice e in devices.where((e) => e.location?.latitude != null && e.location?.longitude != null)) {
           buildDeviceMarker(e);
         }
@@ -190,7 +193,7 @@ class FindMyController extends GetxController {
       fetching.value = false;
       refreshing.value = false;
     }
-    
+
     // Call the FindMy Friends refresh anyways so that new data comes through the socket
     if (!refreshFriends) {
       HttpSvc.refreshFindMyFriends();
@@ -202,7 +205,7 @@ class FindMyController extends GetxController {
       });
     }
   }
-  
+
   void buildDeviceMarker(FindMyDevice e) {
     markers[e.id ?? randomString(6)] = Marker(
       key: ValueKey('device-${e.id ?? randomString(6)}'),
@@ -239,7 +242,7 @@ class FindMyController extends GetxController {
       alignment: Alignment.topCenter,
     );
   }
-  
+
   void buildFriendMarker(FindMyFriend friend) {
     markers[friend.handle?.uniqueAddressAndService ?? randomString(6)] = Marker(
       key: ValueKey('friend-${friend.handle?.uniqueAddressAndService ?? randomString(6)}'),
@@ -259,7 +262,7 @@ class FindMyController extends GetxController {
       alignment: Alignment.topCenter,
     );
   }
-  
+
   void buildLocationMarker(Position pos) {
     markers['current'] = Marker(
       key: const ValueKey('current'),
@@ -281,7 +284,10 @@ class FindMyController extends GetxController {
                     gradient: LinearGradient(
                       begin: AlignmentDirectional.center,
                       end: Alignment.topCenter,
-                      colors: [Get.context!.theme.colorScheme.primary, Get.context!.theme.colorScheme.primary.withAlpha(50)],
+                      colors: [
+                        Get.context!.theme.colorScheme.primary,
+                        Get.context!.theme.colorScheme.primary.withAlpha(50)
+                      ],
                     ),
                   ),
                 ),
@@ -307,7 +313,7 @@ class FindMyController extends GetxController {
       alignment: Alignment.topCenter,
     );
   }
-  
+
   @override
   void onClose() {
     locationSub?.cancel();
