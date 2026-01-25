@@ -7,6 +7,11 @@ import 'package:bluebubbles/app/components/custom_text_editing_controllers.dart'
 import 'package:bluebubbles/app/layouts/conversation_view/dialogs/custom_mention_dialog.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/media_picker/text_field_attachment_picker.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/send_animation.dart';
+import 'package:bluebubbles/app/layouts/conversation_view/widgets/text_field/buttons/camera_button.dart' as camera_btn;
+import 'package:bluebubbles/app/layouts/conversation_view/widgets/text_field/buttons/emoji_picker_button.dart';
+import 'package:bluebubbles/app/layouts/conversation_view/widgets/text_field/buttons/location_button.dart';
+import 'package:bluebubbles/app/layouts/conversation_view/widgets/text_field/conversation_text_field_local_controller.dart';
+import 'package:bluebubbles/app/layouts/conversation_view/widgets/text_field/helpers/text_field_match_helper.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/text_field/picked_attachments_holder.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/text_field/reply_holder.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/text_field/text_field_suffix.dart';
@@ -56,22 +61,13 @@ class ConversationTextField extends CustomStateful<ConversationViewController> {
 class ConversationTextFieldState extends CustomState<ConversationTextField, void, ConversationViewController>
     with TickerProviderStateMixin {
   final recorderController = kIsWeb ? null : RecorderController();
-
-  // typing indicators
-  String oldText = "\n";
-  Timer? _debounceTyping;
-  Timer? _debounceEmojiSearch;
-  Timer? _debounceMentionSearch;
-  Timer? _debounceDraftSave;
-
-  // previous text state
-  TextSelection oldTextFieldSelection = const TextSelection.collapsed(offset: 0);
+  final localController = ConversationTextFieldLocalController();
 
   Chat get chat => controller.chat;
 
   String get chatGuid => chat.guid;
 
-  bool get showAttachmentPicker => controller.showAttachmentPicker;
+  bool get showAttachmentPicker => localController.showAttachmentPickerLocal.value;
 
   late final double emojiPickerHeight = max(256, context.height * 0.4);
   late final emojiColumns =
@@ -91,7 +87,7 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
     controller.textController.processMentions();
 
     // Save state
-    oldTextFieldSelection = controller.textController.selection;
+    localController.oldTextFieldSelection.value = controller.textController.selection;
 
     if (controller.fromChatCreator) {
       controller.focusNode.requestFocus();
@@ -162,18 +158,17 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
 
   void focusListener(bool subject) async {
     final _focusNode = subject ? controller.subjectFocusNode : controller.focusNode;
-    // OPTIMIZATION: Only call setState if state actually needs to change
-    if (_focusNode.hasFocus && showAttachmentPicker) {
-      controller.showAttachmentPicker = false;
-      setState(() {});
+    // OPTIMIZATION: Only update if state actually needs to change
+    if (_focusNode.hasFocus && localController.showAttachmentPickerLocal.value) {
+      localController.showAttachmentPickerLocal.value = false;
     }
   }
 
   void textListener(bool subject) {
     // OPTIMIZATION: Debounce draft saving to avoid database writes on every keystroke
     if (!subject && controller.textController.text.trim().isNotEmpty) {
-      _debounceDraftSave?.cancel();
-      _debounceDraftSave = Timer(const Duration(milliseconds: 500), () {
+      localController.debounceDraftSave?.cancel();
+      localController.debounceDraftSave = Timer(const Duration(milliseconds: 500), () {
         chat.textFieldText = controller.textController.text;
       });
     }
@@ -182,10 +177,10 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
     final newText = "${controller.subjectTextController.text}\n${controller.textController.text}";
 
     // OPTIMIZATION: Early exit if only selection changed (cursor moved), not text content
-    if (newText == oldText) {
+    if (newText == localController.oldText.value) {
       // Text unchanged, only update selection tracking for mentions
       if (!subject) {
-        oldTextFieldSelection = controller.textController.selection;
+        localController.oldTextFieldSelection.value = controller.textController.selection;
       }
       return;
     }
@@ -204,16 +199,16 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
 
           // Now we determine which side of the mention to put the cursor on.
           // We can use the old selection to figure out if the user is moving left/right
-          if (oldTextFieldSelection.isCollapsed) {
-            if (oldTextFieldSelection.baseOffset > selection.baseOffset) {
+          if (localController.oldTextFieldSelection.value.isCollapsed) {
+            if (localController.oldTextFieldSelection.value.baseOffset > selection.baseOffset) {
               // moving left
-              oldTextFieldSelection = TextSelection.collapsed(offset: behindMatches.last.start);
-              controller.textController.selection = oldTextFieldSelection;
+              localController.oldTextFieldSelection.value = TextSelection.collapsed(offset: behindMatches.last.start);
+              controller.textController.selection = localController.oldTextFieldSelection.value;
               return;
-            } else if (oldTextFieldSelection.baseOffset < selection.baseOffset) {
+            } else if (localController.oldTextFieldSelection.value.baseOffset < selection.baseOffset) {
               // moving right
-              oldTextFieldSelection = TextSelection.collapsed(offset: behind.length + aheadMatches.first.end);
-              controller.textController.selection = oldTextFieldSelection;
+              localController.oldTextFieldSelection.value = TextSelection.collapsed(offset: behind.length + aheadMatches.first.end);
+              controller.textController.selection = localController.oldTextFieldSelection.value;
               return;
             }
           }
@@ -221,59 +216,59 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
           // If we get here then we need to pick the closest side
           if (selection.baseOffset - behindMatches.last.end < aheadMatches.first.start - selection.baseOffset) {
             // moving left
-            oldTextFieldSelection = TextSelection.collapsed(offset: behindMatches.last.start);
-            controller.textController.selection = oldTextFieldSelection;
+            localController.oldTextFieldSelection.value = TextSelection.collapsed(offset: behindMatches.last.start);
+            controller.textController.selection = localController.oldTextFieldSelection.value;
             return;
           } else {
             // Closer to right
-            oldTextFieldSelection = TextSelection.collapsed(offset: behind.length + aheadMatches.first.end);
-            controller.textController.selection = oldTextFieldSelection;
+            localController.oldTextFieldSelection.value = TextSelection.collapsed(offset: behind.length + aheadMatches.first.end);
+            controller.textController.selection = localController.oldTextFieldSelection.value;
             return;
           }
         }
       }
 
-      if (!selection.isCollapsed && oldTextFieldSelection.baseOffset == selection.baseOffset) {
-        if (oldTextFieldSelection.extentOffset < selection.extentOffset) {
+      if (!selection.isCollapsed && localController.oldTextFieldSelection.value.baseOffset == selection.baseOffset) {
+        if (localController.oldTextFieldSelection.value.extentOffset < selection.extentOffset) {
           // Means we're shift+selecting rightwards
           final behind = text.substring(0, selection.extentOffset);
           final ahead = text.substring(selection.extentOffset);
           final aheadMatches = MentionTextEditingController.escapingChar.allMatches(ahead);
           if (aheadMatches.length % 2 != 0) {
             // Assuming the rest of the code works, we're guaranteed to be inside a mention now
-            oldTextFieldSelection =
+            localController.oldTextFieldSelection.value =
                 TextSelection(baseOffset: selection.baseOffset, extentOffset: behind.length + aheadMatches.first.end);
-            controller.textController.selection = oldTextFieldSelection;
+            controller.textController.selection = localController.oldTextFieldSelection.value;
             return;
           }
-        } else if (oldTextFieldSelection.extentOffset > selection.extentOffset) {
+        } else if (localController.oldTextFieldSelection.value.extentOffset > selection.extentOffset) {
           // Means we're shift+selecting leftwards
           final behind = text.substring(0, selection.extentOffset);
           final behindMatches = MentionTextEditingController.escapingChar.allMatches(behind);
           if (behindMatches.length % 2 != 0) {
             // Assuming the rest of the code works, we're guaranteed to be inside a mention now
-            oldTextFieldSelection =
+            localController.oldTextFieldSelection.value =
                 TextSelection(baseOffset: selection.baseOffset, extentOffset: behindMatches.last.start);
-            controller.textController.selection = oldTextFieldSelection;
+            controller.textController.selection = localController.oldTextFieldSelection.value;
             return;
           }
         }
       }
 
-      oldTextFieldSelection = controller.textController.selection;
+      localController.oldTextFieldSelection.value = controller.textController.selection;
     }
 
-    _debounceTyping?.cancel();
-    oldText = newText;
+    localController.debounceTyping?.cancel();
+    localController.oldText.value = newText;
     // don't send a bunch of duplicate events for every typing change
     if (SettingsSvc.settings.enablePrivateAPI.value &&
         (chat.autoSendTypingIndicators ?? SettingsSvc.settings.privateSendTypingIndicators.value)) {
-      if (_debounceTyping == null) {
+      if (localController.debounceTyping == null) {
         SocketSvc.sendMessage("started-typing", {"chatGuid": chatGuid});
       }
-      _debounceTyping = Timer(const Duration(seconds: 3), () {
+      localController.debounceTyping = Timer(const Duration(seconds: 3), () {
         SocketSvc.sendMessage("stopped-typing", {"chatGuid": chatGuid});
-        _debounceTyping = null;
+        localController.debounceTyping = null;
       });
     }
 
@@ -283,118 +278,24 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
 
     // Debounce emoji search to avoid running regex on every keystroke
     if (newEmojiText.contains(":")) {
-      _debounceEmojiSearch?.cancel();
-      _debounceEmojiSearch = Timer(const Duration(milliseconds: 150), () {
-        _processEmojiMatches(subject);
+      localController.debounceEmojiSearch?.cancel();
+      localController.debounceEmojiSearch = Timer(const Duration(milliseconds: 150), () {
+        TextFieldMatchHelper.processEmojiMatches(controller, _controller, subject);
       });
     } else {
-      _debounceEmojiSearch?.cancel();
+      localController.debounceEmojiSearch?.cancel();
       controller.emojiMatches.value = [];
       controller.emojiSelectedIndex.value = 0;
     }
 
     // Debounce mention search to avoid running regex on every keystroke
     if (SettingsSvc.settings.enablePrivateAPI.value && !subject && newEmojiText.contains("@")) {
-      _debounceMentionSearch?.cancel();
-      _debounceMentionSearch = Timer(const Duration(milliseconds: 150), () {
-        _processMentionMatches(subject);
+      localController.debounceMentionSearch?.cancel();
+      localController.debounceMentionSearch = Timer(const Duration(milliseconds: 150), () {
+        TextFieldMatchHelper.processMentionMatches(controller, _controller, subject);
       });
     } else {
-      _debounceMentionSearch?.cancel();
-      controller.mentionMatches.value = [];
-      controller.mentionSelectedIndex.value = 0;
-    }
-  }
-
-  void _processEmojiMatches(bool subject) {
-    final _controller = subject ? controller.subjectTextController : controller.textController;
-    final newEmojiText = _controller.text;
-
-    if (!newEmojiText.contains(":")) {
-      controller.emojiMatches.value = [];
-      controller.emojiSelectedIndex.value = 0;
-      return;
-    }
-
-    final regExp = RegExp(r"(?<=^|[^a-zA-Z\d]):[^: \n]{2,}(?:(?=[ \n]|$)|:)", multiLine: true);
-    final matches = regExp.allMatches(newEmojiText);
-    List<Emoji> allMatches = [];
-    String emojiName = "";
-    if (matches.isNotEmpty && matches.first.start < _controller.selection.start) {
-      RegExpMatch match = matches.lastWhere((m) => m.start < _controller.selection.start);
-      if (newEmojiText[match.end - 1] == ":") {
-        // This will get handled by the text field controller
-      } else if (match.end >= _controller.selection.start) {
-        emojiName = newEmojiText.substring(match.start + 1, match.end).toLowerCase();
-        allMatches = limitGenerator(emojiQuery(emojiName), limit: 50).toSet().toList();
-      }
-      Logger.info("${allMatches.length} matches found for: $emojiName");
-    }
-    if (allMatches.isNotEmpty) {
-      controller.mentionMatches.value = [];
-      controller.mentionSelectedIndex.value = 0;
-      controller.emojiMatches.value = allMatches;
-      controller.emojiSelectedIndex.value = 0;
-    } else {
-      controller.emojiMatches.value = [];
-      controller.emojiSelectedIndex.value = 0;
-    }
-  }
-
-  void _processMentionMatches(bool subject) {
-    final _controller = subject ? controller.subjectTextController : controller.textController;
-    final newEmojiText = _controller.text;
-
-    if (!SettingsSvc.settings.enablePrivateAPI.value || subject || !newEmojiText.contains("@")) {
-      controller.mentionMatches.value = [];
-      controller.mentionSelectedIndex.value = 0;
-      return;
-    }
-
-    final regExp = RegExp(r"(?<=^|[^a-zA-Z\d])@(?:[^@ \n]+|$)(?=[ \n]|$)", multiLine: true);
-    final matches = regExp.allMatches(newEmojiText);
-    List<Mentionable> allMatches = [];
-    String mentionName = "";
-    if (matches.isNotEmpty && matches.first.start < _controller.selection.start) {
-      RegExpMatch match = matches.lastWhere((m) => m.start < _controller.selection.start);
-      final text = newEmojiText.substring(match.start, match.end);
-      if (text.endsWith("@")) {
-        allMatches = controller.mentionables;
-      } else if (newEmojiText[match.end - 1] == "@") {
-        mentionName = newEmojiText.substring(match.start + 1, match.end - 1).toLowerCase();
-        allMatches = controller.mentionables
-            .where((e) =>
-                e.address.toLowerCase().startsWith(mentionName.toLowerCase()) ||
-                e.displayName.toLowerCase().startsWith(mentionName.toLowerCase()))
-            .toList();
-        allMatches.addAll(controller.mentionables
-            .where((e) =>
-                !allMatches.contains(e) &&
-                (e.address.isCaseInsensitiveContains(mentionName) ||
-                    e.displayName.isCaseInsensitiveContains(mentionName)))
-            .toList());
-      } else if (match.end >= _controller.selection.start) {
-        mentionName = newEmojiText.substring(match.start + 1, match.end).toLowerCase();
-        allMatches = controller.mentionables
-            .where((e) =>
-                e.address.toLowerCase().startsWith(mentionName.toLowerCase()) ||
-                e.displayName.toLowerCase().startsWith(mentionName.toLowerCase()))
-            .toList();
-        allMatches.addAll(controller.mentionables
-            .where((e) =>
-                !allMatches.contains(e) &&
-                (e.address.isCaseInsensitiveContains(mentionName) ||
-                    e.displayName.isCaseInsensitiveContains(mentionName)))
-            .toList());
-      }
-      Logger.info("${allMatches.length} matches found for: $mentionName");
-    }
-    if (allMatches.isNotEmpty) {
-      controller.emojiMatches.value = [];
-      controller.emojiSelectedIndex.value = 0;
-      controller.mentionMatches.value = allMatches;
-      controller.mentionSelectedIndex.value = 0;
-    } else {
+      localController.debounceMentionSearch?.cancel();
       controller.mentionMatches.value = [];
       controller.mentionSelectedIndex.value = 0;
     }
@@ -415,10 +316,8 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
     controller.textController.dispose();
     controller.subjectTextController.dispose();
     recorderController?.dispose();
-    _debounceTyping?.cancel();
-    _debounceEmojiSearch?.cancel();
-    _debounceMentionSearch?.cancel();
-    _debounceDraftSave?.cancel();
+    localController.cancelAllTimers();
+    Get.delete<ConversationTextFieldLocalController>();
     if (chat.autoSendTypingIndicators ?? SettingsSvc.settings.privateSendTypingIndicators.value) {
       SocketSvc.sendMessage("stopped-typing", {"chatGuid": chatGuid});
     }
@@ -511,7 +410,7 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
     controller.subjectTextController.clear();
     controller.replyToMessage = null;
     controller.scheduledDate.value = null;
-    _debounceTyping = null;
+    localController.debounceTyping = null;
     // Remove the saved text field draft
     if ((chat.textFieldText ?? "").isNotEmpty) {
       chat.textFieldText = "";
@@ -646,9 +545,7 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
                       controller.focusNode.unfocus();
                       controller.subjectFocusNode.unfocus();
                     }
-                    setState(() {
-                      controller.showAttachmentPicker = !showAttachmentPicker;
-                    });
+                    localController.showAttachmentPickerLocal.value = !showAttachmentPicker;
                   }
                 },
               ),
@@ -1327,8 +1224,8 @@ class TextFieldComponentState extends State<TextFieldComponent> {
                 if (clipboardText == null) return;
 
                 TextSelection selection = controller!.lastFocusedTextController.selection;
-                String oldText = controller!.lastFocusedTextController.text;
-                String newText = oldText.replaceRange(selection.start, selection.end, clipboardText);
+                String localController.oldText.value = controller!.lastFocusedTextController.text;
+                String newText = localController.oldText.value.replaceRange(selection.start, selection.end, clipboardText);
                 controller!.lastFocusedTextController.value = TextEditingValue(
                   text: newText,
                   selection: TextSelection.fromPosition(
@@ -1364,8 +1261,8 @@ class TextFieldComponentState extends State<TextFieldComponent> {
             if (clipboardText == null) return;
 
             TextSelection selection = controller!.lastFocusedTextController.selection;
-            String oldText = controller!.lastFocusedTextController.text;
-            String newText = oldText.replaceRange(selection.start, selection.end, clipboardText);
+            String localController.oldText.value = controller!.lastFocusedTextController.text;
+            String newText = localController.oldText.value.replaceRange(selection.start, selection.end, clipboardText);
             controller!.lastFocusedTextController.value = TextEditingValue(
               text: newText,
               selection: TextSelection.fromPosition(
