@@ -27,7 +27,10 @@ class _ReplyHolderState extends OptimizedState<ReplyHolder> {
     return Obx(() {
       final message = widget.controller.replyToMessage?.item1;
       final part = widget.controller.replyToMessage?.item2 ?? 0;
-      final reply = message?.guid == null ? message : (getActiveMwc(message!.guid!)?.parts[part] ?? message);
+      final chatGuid = message?.chat.target?.guid ?? ChatsSvc.activeChat?.chat.guid;
+      final reply = message?.guid == null || chatGuid == null
+          ? message
+          : (MessagesSvc(chatGuid).getControllerIfExists(message!.guid!)?.parts[part] ?? message);
       final date = widget.controller.scheduledDate.value;
 
       if (reply == null && date == null) {

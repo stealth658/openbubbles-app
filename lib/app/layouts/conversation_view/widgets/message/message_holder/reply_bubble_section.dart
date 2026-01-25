@@ -34,7 +34,7 @@ class ReplyBubbleSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = getActiveMwc(replyTo.guid!);
+    final controller = MessagesSvc(chat.guid).getControllerIfExists(replyTo.guid!);
     if (controller == null) return const SizedBox.shrink();
 
     final part = replyTo.guid == message.threadOriginatorGuid ? message.normalizedThreadPart : 0;

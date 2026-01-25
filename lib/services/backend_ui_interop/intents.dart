@@ -108,7 +108,7 @@ class ReplyRecentAction extends Action<ReplyRecentIntent> {
   Object? invoke(covariant ReplyRecentIntent intent) async {
     final message = MessagesSvc(chat.guid).mostRecentReceived;
     if (message != null && SettingsSvc.settings.enablePrivateAPI.value) {
-      final parts = mwc(message).parts;
+      final parts = MessagesSvc(chat.guid).getOrCreateController(message).parts;
       cvc(chat).replyToMessage = Tuple2(message, parts.length - 1);
     }
     return null;

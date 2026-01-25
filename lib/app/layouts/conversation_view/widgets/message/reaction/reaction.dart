@@ -36,7 +36,9 @@ class ReactionWidgetState extends OptimizedState<ReactionWidget> {
   // This is already an RxList in MessageState, so changes propagate automatically
   Message get reaction {
     // First check if parent has MessageState with associatedMessages
-    final parentController = getActiveMwc(widget.message?.guid ?? '');
+    final chatGuid = widget.message?.chat.target?.guid ?? ChatsSvc.activeChat?.chat.guid;
+    final parentController =
+        chatGuid != null ? MessagesSvc(chatGuid).getControllerIfExists(widget.message?.guid ?? '') : null;
     if (parentController?.messageState != null) {
       // Find our reaction in the observable associatedMessages list
       final found = parentController!.messageState!.associatedMessages.firstWhereOrNull((m) =>
@@ -206,7 +208,8 @@ class ReactionWidgetState extends OptimizedState<ReactionWidget> {
                     ),
                     onTap: () {
                       final chat = ChatsSvc.activeChat!.chat;
-                      final selected = getActiveMwc(reaction.associatedMessageGuid!)!.message;
+                      final selected =
+                          MessagesSvc(chat.guid).getControllerIfExists(reaction.associatedMessageGuid!)!.message;
 
                       showDialog(
                         context: context,

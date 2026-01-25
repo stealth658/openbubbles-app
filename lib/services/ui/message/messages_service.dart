@@ -6,6 +6,7 @@ import 'package:bluebubbles/helpers/types/constants.dart';
 import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
+import 'package:bluebubbles/services/ui/message/message_widget_controller.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:collection/collection.dart';
 import 'package:dio/dio.dart';
@@ -44,6 +45,11 @@ class MessagesService extends GetxController {
   /// Key is message GUID, value is MessageState
   /// Provides O(1) lookups and granular observable fields
   final Map<String, MessageState> messageStates = {};
+
+  /// Map of message widget controllers
+  /// Key is message GUID, value is MessageWidgetController
+  /// Managed locally per conversation for better lifecycle control
+  final Map<String, MessageWidgetController> _controllers = {};
 
   /// Granular reactivity map to track individual message updates
   /// Key: message guid, Value: timestamp of last update
@@ -109,6 +115,49 @@ class MessagesService extends GetxController {
 
   // ========== End MessageState Management ==========
 
+  // ========== MessageWidgetController Management ==========
+
+  /// Get or create a MessageWidgetController for a specific message
+  /// Controllers are scoped to this MessagesService instance (one per conversation)
+  MessageWidgetController getOrCreateController(Message message) {
+    final guid = message.guid!;
+    if (!_controllers.containsKey(guid)) {
+      final controller = MessageWidgetController(message);
+      controller.onInit(); // Initialize the controller
+      controller.onReady(); // Ensure full GetX lifecycle initialization
+      _controllers[guid] = controller;
+      Logger.debug("Created MessageWidgetController for message $guid", tag: "MWC");
+    }
+    return _controllers[guid]!;
+  }
+
+  /// Get an existing controller if it exists, null otherwise
+  MessageWidgetController? getControllerIfExists(String guid) {
+    return _controllers[guid];
+  }
+
+  /// Dispose a specific controller by GUID
+  void disposeController(String guid) {
+    final controller = _controllers.remove(guid);
+    if (controller != null) {
+      controller.onClose(); // Properly clean up GetX lifecycle
+      controller.dispose();
+      Logger.debug("Disposed MessageWidgetController for message $guid", tag: "MWC");
+    }
+  }
+
+  /// Dispose all controllers (called when conversation is closed)
+  void disposeAllControllers() {
+    for (final controller in _controllers.values) {
+      controller.onClose(); // Properly clean up GetX lifecycle
+      controller.dispose();
+    }
+    _controllers.clear();
+    Logger.debug("Disposed all ${_controllers.length} MessageWidgetControllers", tag: "MWC");
+  }
+
+  // ========== End MessageWidgetController Management ==========
+
   void init(Chat c, Function(Message) onNewMessage, Function(Message, {String? oldGuid}) onUpdatedMessage,
       Function(Message) onDeletedMessage, Function(String) jumpToMessageFunc) {
     chat = c;
@@ -158,6 +207,7 @@ class MessagesService extends GetxController {
       countSub.cancel();
     }
     _init = false;
+    disposeAllControllers(); // Clean up all controllers
     messageStates.clear(); // Clean up message states
     super.onClose();
   }
@@ -212,7 +262,7 @@ class MessagesService extends GetxController {
         }
 
         // Get or create the controller - this ensures it exists
-        final mwcInstance = getActiveMwc(message.associatedMessageGuid!);
+        final mwcInstance = getControllerIfExists(message.associatedMessageGuid!);
         if (mwcInstance != null) {
           // Controller exists, update it
           mwcInstance.updateAssociatedMessage(message);
@@ -222,7 +272,7 @@ class MessagesService extends GetxController {
           // Controller doesn't exist yet, queue for retry
           Logger.warn("Parent controller not ready for reaction ${message.guid}, will retry", tag: "MessageReactivity");
           Future.delayed(const Duration(milliseconds: 100), () {
-            final retryMwc = getActiveMwc(message.associatedMessageGuid!);
+            final retryMwc = getControllerIfExists(message.associatedMessageGuid!);
             if (retryMwc != null) {
               retryMwc.updateAssociatedMessage(message);
               Logger.debug(
@@ -251,13 +301,13 @@ class MessagesService extends GetxController {
             tag: "MessageState");
       }
 
-      final mwcInstance = getActiveMwc(message.threadOriginatorGuid!);
+      final mwcInstance = getControllerIfExists(message.threadOriginatorGuid!);
       if (mwcInstance != null) {
         mwcInstance.updateThreadOriginator(message);
       } else {
         // Queue retry for thread originator
         Future.delayed(const Duration(milliseconds: 100), () {
-          getActiveMwc(message.threadOriginatorGuid!)?.updateThreadOriginator(message);
+          getControllerIfExists(message.threadOriginatorGuid!)?.updateThreadOriginator(message);
         });
       }
     }
@@ -411,7 +461,7 @@ class MessagesService extends GetxController {
                   tag: "MessageReactivity");
 
               // Get the controller if it exists and update it
-              final mwcInstance = getActiveMwc(message.guid!);
+              final mwcInstance = getControllerIfExists(message.guid!);
               if (mwcInstance != null) {
                 // Update the controller with the new associated messages
                 for (final reaction in message.associatedMessages) {
@@ -466,7 +516,7 @@ class MessagesService extends GetxController {
       final threadOriginator = Message.findOne(guid: guid);
       if (threadOriginator != null) {
         // create the controller so it can be rendered in a reply bubble
-        final c = mwc(threadOriginator);
+        final c = getOrCreateController(threadOriginator);
         c.cvController = controller;
         struct.addThreadOriginator(threadOriginator);
       }
@@ -477,7 +527,7 @@ class MessagesService extends GetxController {
     for (Message m in struct.messages.where((e) => e.itemType == 5 && e.subject != null)) {
       final otherMessage = struct.getMessage(m.subject!);
       if (otherMessage != null) {
-        final otherMwc = getActiveMwc(m.subject!) ?? mwc(otherMessage);
+        final otherMwc = getControllerIfExists(m.subject!) ?? getOrCreateController(otherMessage);
         otherMwc.audioWasKept.value = m.dateCreated;
       }
     }

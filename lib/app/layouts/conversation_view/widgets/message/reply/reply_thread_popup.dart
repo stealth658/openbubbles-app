@@ -125,10 +125,9 @@ void _buildThreadView(
                                                     child: MessageHolder(
                                                       cvController: cvController,
                                                       message: _messages[index],
-                                                      oldMessageGuid: index > 0 ? _messages[index - 1].guid : null,
-                                                      newMessageGuid: index < _messages.length - 1
-                                                          ? _messages[index + 1].guid
-                                                          : null,
+                                                      oldMessage: index > 0 ? _messages[index - 1] : null,
+                                                      newMessage:
+                                                          index < _messages.length - 1 ? _messages[index + 1] : null,
                                                       isReplyThread: true,
                                                       replyPart: index == 0 ? originatorPart : null,
                                                     ),

@@ -32,16 +32,16 @@ class MessageHolder extends CustomStateful<MessageWidgetController> {
   MessageHolder({
     super.key,
     required this.cvController,
-    this.oldMessageGuid,
-    this.newMessageGuid,
+    this.oldMessage,
+    this.newMessage,
     required this.message,
     this.isReplyThread = false,
     this.replyPart,
-  }) : super(parentController: getActiveMwc(message.guid!) ?? mwc(message));
+  }) : super(parentController: MessagesSvc(cvController.chat.guid).getOrCreateController(message));
 
   final Message message;
-  final String? oldMessageGuid;
-  final String? newMessageGuid;
+  final Message? oldMessage;
+  final Message? newMessage;
   final ConversationViewController cvController;
   final bool isReplyThread;
   final int? replyPart;
@@ -109,8 +109,8 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
       }
     } else {
       controller.cvController = widget.cvController;
-      controller.oldMessageGuid = widget.oldMessageGuid;
-      controller.newMessageGuid = widget.newMessageGuid;
+      controller.oldMessage = widget.oldMessage;
+      controller.newMessage = widget.newMessage;
       messageParts = controller.parts;
       replyOffsets = List.generate(messageParts.length, (_) => 0.0.obs);
       keys = List.generate(messageParts.length, (_) => GlobalKey());
@@ -249,7 +249,7 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                   message.threadOriginatorGuid != null &&
                                   message.showUpperMessage(olderMessage!) &&
                                   replyTo != null &&
-                                  getActiveMwc(replyTo!.guid!) != null)
+                                  service.getControllerIfExists(replyTo!.guid!) != null)
                                 Padding(
                                   padding: EdgeInsets.only(
                                       left: (showAvatar || alwaysShowAvatars) && replyTo!.isFromMe! ? 35 : 0),
@@ -301,7 +301,7 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                   olderMessage != null &&
                                   message.threadOriginatorGuid != null &&
                                   replyTo != null &&
-                                  getActiveMwc(replyTo!.guid!) != null)
+                                  service.getControllerIfExists(replyTo!.guid!) != null)
                                 ReplyBubbleSection(
                                   replyTo: replyTo!,
                                   message: message,

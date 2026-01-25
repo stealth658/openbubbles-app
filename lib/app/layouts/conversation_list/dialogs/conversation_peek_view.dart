@@ -82,9 +82,7 @@ class _ConversationPeekViewState extends OptimizedState<ConversationPeekView> wi
     if (!disposed) {
       cvController.close();
       MessagesSvc(widget.chat.guid).close();
-      for (Message m in widget.messages) {
-        getActiveMwc(m.guid!)?.close();
-      }
+      // Controllers are now disposed by MessagesService.onClose()
       controller.dispose();
     }
     super.dispose();
@@ -153,9 +151,7 @@ class _ConversationPeekViewState extends OptimizedState<ConversationPeekView> wi
                           onTap: () async {
                             cvController.close();
                             MessagesSvc(widget.chat.guid).close();
-                            for (Message m in widget.messages) {
-                              getActiveMwc(m.guid!)?.close();
-                            }
+                            // Controllers are disposed by MessagesService.onClose()
                             controller.dispose();
                             disposed = true;
                             Navigator.of(context).pop();
@@ -196,10 +192,9 @@ class _ConversationPeekViewState extends OptimizedState<ConversationPeekView> wi
                                             key: Key(widget.messages[index].guid!),
                                             cvController: cvController,
                                             message: widget.messages[index],
-                                            oldMessageGuid: index == widget.messages.length - 1
-                                                ? null
-                                                : widget.messages[index + 1].guid,
-                                            newMessageGuid: index == 0 ? null : widget.messages[index - 1].guid,
+                                            oldMessage:
+                                                index == widget.messages.length - 1 ? null : widget.messages[index + 1],
+                                            newMessage: index == 0 ? null : widget.messages[index - 1],
                                           ),
                                         ),
                                       ),

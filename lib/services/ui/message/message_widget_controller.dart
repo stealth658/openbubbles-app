@@ -12,23 +12,15 @@ import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 
-MessageWidgetController mwc(Message message) => Get.isRegistered<MessageWidgetController>(tag: message.guid)
-    ? Get.find<MessageWidgetController>(tag: message.guid)
-    : Get.put(MessageWidgetController(message), tag: message.guid);
-
-MessageWidgetController? getActiveMwc(String guid) =>
-    Get.isRegistered<MessageWidgetController>(tag: guid) ? Get.find<MessageWidgetController>(tag: guid) : null;
-
-class MessageWidgetController extends StatefulController with GetSingleTickerProviderStateMixin {
+class MessageWidgetController extends StatefulController {
   final RxBool showEdits = false.obs;
   final Rxn<DateTime> audioWasKept = Rxn<DateTime>(null);
 
   List<MessagePart> parts = [];
   Message message;
-  String? oldMessageGuid;
-  String? newMessageGuid;
+  Message? oldMessage;
+  Message? newMessage;
   ConversationViewController? cvController;
-  late final String tag;
   StreamSubscription? sub;
   bool built = false;
 
@@ -38,9 +30,7 @@ class MessageWidgetController extends StatefulController with GetSingleTickerPro
   /// Set to false when message content changes, forcing a rebuild on next access
   bool _partsCached = false;
 
-  MessageWidgetController(this.message) {
-    tag = message.guid!;
-  }
+  MessageWidgetController(this.message);
 
   /// Get the MessageState for this message from the MessagesService
   /// Returns null if no chat controller or message state doesn't exist
@@ -49,11 +39,6 @@ class MessageWidgetController extends StatefulController with GetSingleTickerPro
     final service = MessagesSvc(cvController!.chat.guid);
     return service.getMessageStateIfExists(message.guid!);
   }
-
-  Message? get newMessage =>
-      newMessageGuid == null ? null : MessagesSvc(cvController!.chat.guid).struct.getMessage(newMessageGuid!);
-  Message? get oldMessage =>
-      oldMessageGuid == null ? null : MessagesSvc(cvController!.chat.guid).struct.getMessage(oldMessageGuid!);
 
   @override
   void onInit() {
@@ -75,14 +60,12 @@ class MessageWidgetController extends StatefulController with GetSingleTickerPro
     }
   }
 
+  /// Dispose this controller and clean up resources
+  /// Called by MessagesService when controller is no longer needed
   @override
-  void onClose() {
-    sub?.cancel(); // Only cancels web listener now
-    super.onClose();
-  }
-
-  void close() {
-    Get.delete<MessageWidgetController>(tag: tag);
+  void dispose() {
+    sub?.cancel();
+    super.dispose();
   }
 
   void buildMessageParts({bool force = false}) {

@@ -202,7 +202,7 @@ class ActionHandler extends GetxService {
           tag: "MessageReactivity");
 
       // Update parent message's controller with temp reaction
-      final parentMwc = getActiveMwc(m.associatedMessageGuid!);
+      final parentMwc = MessagesSvc(c.guid).getControllerIfExists(m.associatedMessageGuid!);
       if (parentMwc != null) {
         parentMwc.updateAssociatedMessage(m, updateHolder: true);
         Logger.debug("[ActionHandler] Added temp reaction to parent controller ${m.associatedMessageGuid}",
@@ -277,7 +277,7 @@ class ActionHandler extends GetxService {
                 tag: "MessageReactivity");
 
             // Update the parent message's controller with the real reaction
-            final parentMwc = getActiveMwc(newMessage.associatedMessageGuid!);
+            final parentMwc = MessagesSvc(c.guid).getControllerIfExists(newMessage.associatedMessageGuid!);
             if (parentMwc != null) {
               parentMwc.updateAssociatedMessage(newMessage, updateHolder: true, tempGuid: m.guid);
               Logger.debug(

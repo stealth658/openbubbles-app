@@ -721,7 +721,7 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
   void showThread() {
     popDetails();
     if (message.threadOriginatorGuid != null) {
-      final mwc = getActiveMwc(message.threadOriginatorGuid!);
+      final mwc = service.getControllerIfExists(message.threadOriginatorGuid!);
       if (mwc == null) return showSnackbar("Error", "Failed to find thread!");
       showReplyThread(context, mwc.message, mwc.parts[message.normalizedThreadPart], service, cvController);
     } else {
@@ -771,7 +771,7 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
   void redownload() {
     if (isEmbeddedMedia) {
       popDetails();
-      getActiveMwc(message.guid!)?.updateWidgets<EmbeddedMedia>(null);
+      service.getControllerIfExists(message.guid!)?.updateWidgets<EmbeddedMedia>(null);
     } else {
       // Image caching is now handled by Flutter's image cache automatically
       for (Attachment? element in part.attachments) {
@@ -780,7 +780,7 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
         }
       }
       popDetails();
-      getActiveMwc(message.guid!)?.updateWidgets<AttachmentHolder>(null);
+      service.getControllerIfExists(message.guid!)?.updateWidgets<AttachmentHolder>(null);
     }
   }
 

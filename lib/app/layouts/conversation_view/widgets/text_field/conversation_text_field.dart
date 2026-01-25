@@ -1428,7 +1428,7 @@ class TextFieldComponentState extends State<TextFieldComponent> {
           SettingsSvc.serverDetailsSync().item4 >= 148) {
         final message = MessagesSvc(chat!.guid).mostRecentSent;
         if (message != null && !message.guid!.startsWith("temp")) {
-          final parts = mwc(message).parts;
+          final parts = MessagesSvc(chat!.guid).getOrCreateController(message).parts;
           final part = parts.filter((p) => p.text?.isNotEmpty ?? false).lastOrNull;
           if (part != null) {
             final FocusNode? node = kIsDesktop || kIsWeb ? FocusNode() : null;

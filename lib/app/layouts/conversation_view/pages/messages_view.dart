@@ -116,7 +116,7 @@ class MessagesViewState extends OptimizedState<MessagesView> {
       _messages.sort(Message.sort);
       // Initialize message widget controllers
       for (var m in _messages) {
-        final c = mwc(m);
+        final c = messageService.getOrCreateController(m);
         c.cvController = controller;
       }
       // Recreate the list key to force SliverAnimatedList to rebuild with correct item count
@@ -133,7 +133,7 @@ class MessagesViewState extends OptimizedState<MessagesView> {
       initialized = true;
       if (SettingsSvc.settings.scrollToLastUnread.value && chat.lastReadMessageGuid != null) {
         Future.delayed(const Duration(milliseconds: 100), () {
-          if (getActiveMwc(chat.lastReadMessageGuid!)?.built ?? false) return;
+          if (messageService.getControllerIfExists(chat.lastReadMessageGuid!)?.built ?? false) return;
           internalSmartReplies['scroll-last-read'] = _buildReply("Jump to oldest unread", onTap: () async {
             if (jumpingToOldestUnread.value) return;
             jumpingToOldestUnread.value = true;
@@ -152,11 +152,7 @@ class MessagesViewState extends OptimizedState<MessagesView> {
     chat.lastReadMessageGuid = _messages.first.guid;
     chat.saveAsync(updateLastReadMessageGuid: true);
     messageService.close(force: widget.customService != null);
-    for (Message m in _messages) {
-      if (m.guid != null) {
-        getActiveMwc(m.guid!)?.close();
-      }
-    }
+    // Controllers are now disposed by MessagesService.onClose()
     _setStateDebouncer?.cancel();
     _listVersion.dispose();
     super.dispose();
@@ -269,7 +265,7 @@ class MessagesViewState extends OptimizedState<MessagesView> {
 
     // Initialize message widget controllers for new messages
     for (final newMsg in newMessages) {
-      final c = mwc(newMsg);
+      final c = messageService.getOrCreateController(newMsg);
       c.cvController = controller;
     }
 
@@ -302,7 +298,7 @@ class MessagesViewState extends OptimizedState<MessagesView> {
     final insertIndex = _messages.indexOf(message);
 
     // Initialize message widget controller
-    final c = mwc(message);
+    final c = messageService.getOrCreateController(message);
     c.cvController = controller;
 
     // Mark this message for animation (all new messages)
@@ -596,8 +592,8 @@ class MessagesViewState extends OptimizedState<MessagesView> {
                                           child: MessageHolder(
                                             cvController: controller,
                                             message: message,
-                                            oldMessageGuid: olderMessage?.guid,
-                                            newMessageGuid: newerMessage?.guid,
+                                            oldMessage: olderMessage,
+                                            newMessage: newerMessage,
                                           ),
                                         ),
                                       ),
