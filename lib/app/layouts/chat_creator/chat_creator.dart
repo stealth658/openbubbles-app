@@ -62,13 +62,13 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
   final ScrollController addressScrollController = ScrollController();
 
   List<Contact> contacts = [];
-  List<Contact> filteredContacts = [];
+  final filteredContacts = <Contact>[].obs;
   List<Chat> existingChats = [];
-  List<Chat> filteredChats = [];
+  final filteredChats = <Chat>[].obs;
   late final RxList<SelectedContact> selectedContacts = List<SelectedContact>.from(widget.initialSelected).obs;
   final Rxn<ConversationViewController> fakeController = Rxn(null);
-  bool iMessage = true;
-  bool sms = false;
+  final iMessage = true.obs;
+  final sms = false.obs;
   String? oldText;
   ConversationViewController? oldController;
   Timer? _debounce;
@@ -108,7 +108,7 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
               .toList();
           final ids = _contacts.map((e) => e.id);
           final _chats = existingChats.where((e) =>
-              ((iMessage && e.isIMessage) || (sms && !e.isIMessage)) &&
+              ((iMessage.value && e.isIMessage) || (sms.value && !e.isIMessage)) &&
               ((e.title?.toLowerCase().contains(query) ?? false) ||
                   e.handles.firstWhereOrNull((e) =>
                           ids.contains(e.contact?.id) ||
@@ -118,13 +118,11 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
           return Tuple2(_contacts, _chats);
         }, Priority.animation);
         _debounce = null;
-        setState(() {
-          filteredContacts = List<Contact>.from(tuple.item1);
-          filteredChats = List<Chat>.from(tuple.item2);
-          if (addressController.text.isNotEmpty) {
-            filteredChats.sort((a, b) => a.handles.length.compareTo(b.handles.length));
-          }
-        });
+        filteredContacts.value = List<Contact>.from(tuple.item1);
+        filteredChats.value = List<Chat>.from(tuple.item2);
+        if (addressController.text.isNotEmpty) {
+          filteredChats.sort((a, b) => a.handles.length.compareTo(b.handles.length));
+        }
       });
     });
 
@@ -133,23 +131,18 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
         final contactMaps = await ContactV2Interface.getAddressBook();
         contacts = await Future.wait(contactMaps.map((e) => Contact.fromFastContact(e)));
         if (mounted) {
-          setState(() {
-            filteredContacts = List<Contact>.from(contacts);
-          });
+          filteredContacts.value = List<Contact>.from(contacts);
         }
       }
       if (ChatsSvc.loadedAllChats.isCompleted) {
         existingChats = ChatsSvc.allChats;
-        filteredChats = List<Chat>.from(existingChats.where((e) => e.isIMessage));
+        filteredChats.value = List<Chat>.from(existingChats.where((e) => e.isIMessage));
       } else {
         ChatsSvc.loadedAllChats.future.then((_) {
           existingChats = ChatsSvc.allChats;
-          setState(() {
-            filteredChats = List<Chat>.from(existingChats.where((e) => e.isIMessage));
-          });
+          filteredChats.value = List<Chat>.from(existingChats.where((e) => e.isIMessage));
         });
       }
-      setState(() {});
       if (widget.initialSelected.isNotEmpty) {
         findExistingChat();
       }
@@ -187,17 +180,13 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
       return null;
     }
     if (selectedContacts.firstWhereOrNull((element) => element.iMessage.value == false) != null) {
-      setState(() {
-        iMessage = false;
-        sms = true;
-        filteredChats = List<Chat>.from(existingChats.where((e) => !e.isIMessage));
-      });
+      iMessage.value = false;
+      sms.value = true;
+      filteredChats.value = List<Chat>.from(existingChats.where((e) => !e.isIMessage));
     } else {
-      setState(() {
-        iMessage = true;
-        sms = false;
-        filteredChats = List<Chat>.from(existingChats.where((e) => e.isIMessage));
-      });
+      iMessage.value = true;
+      sms.value = false;
+      filteredChats.value = List<Chat>.from(existingChats.where((e) => e.isIMessage));
     }
     Chat? existingChat;
     // try and find the chat simply by identifier
@@ -444,39 +433,35 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
                 ],
               ),
             ),
-            MessageTypeToggle(
-              iMessage: iMessage,
-              sms: sms,
+            Obx(() => MessageTypeToggle(
+              iMessage: iMessage.value,
+              sms: sms.value,
               onToggle: (index) async {
                 selectedContacts.clear();
                 addressController.text = "";
                 if (index == 0) {
-                  setState(() {
-                    iMessage = true;
-                    sms = false;
-                    filteredChats = List<Chat>.from(existingChats.where((e) => e.isIMessage));
-                  });
+                  iMessage.value = true;
+                  sms.value = false;
+                  filteredChats.value = List<Chat>.from(existingChats.where((e) => e.isIMessage));
                   await ChatsSvc.setAllInactive();
                   fakeController.value = null;
                 } else {
-                  setState(() {
-                    iMessage = false;
-                    sms = true;
-                    filteredChats = List<Chat>.from(existingChats.where((e) => !e.isIMessage));
-                  });
+                  iMessage.value = false;
+                  sms.value = true;
+                  filteredChats.value = List<Chat>.from(existingChats.where((e) => !e.isIMessage));
                   await ChatsSvc.setAllInactive();
                   fakeController.value = null;
                 }
               },
-            ),
+            )),
             Expanded(
-              child: Theme(
+              child: Obx(() => Theme(
                 data: context.theme.copyWith(
                   // in case some components still use legacy theming
-                  primaryColor: context.theme.colorScheme.bubble(context, iMessage),
+                  primaryColor: context.theme.colorScheme.bubble(context, iMessage.value),
                   colorScheme: context.theme.colorScheme.copyWith(
-                    primary: context.theme.colorScheme.bubble(context, iMessage),
-                    onPrimary: context.theme.colorScheme.onBubble(context, iMessage),
+                    primary: context.theme.colorScheme.bubble(context, iMessage.value),
+                    onPrimary: context.theme.colorScheme.onBubble(context, iMessage.value),
                     surface: SettingsSvc.settings.monetTheming.value == Monet.full
                         ? null
                         : (context.theme.extensions[BubbleColors] as BubbleColors?)?.receivedBubbleColor,
@@ -504,7 +489,7 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
                           ),
                   );
                 }),
-              ),
+              )),
             ),
             Padding(
               padding: EdgeInsets.only(
@@ -512,13 +497,13 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
                 top: 10.0,
                 bottom: 5.0 + MediaQuery.of(context).viewPadding.bottom,
               ),
-              child: Theme(
+              child: Obx(() => Theme(
                 data: context.theme.copyWith(
                   // in case some components still use legacy theming
-                  primaryColor: context.theme.colorScheme.bubble(context, iMessage),
+                  primaryColor: context.theme.colorScheme.bubble(context, iMessage.value),
                   colorScheme: context.theme.colorScheme.copyWith(
-                    primary: context.theme.colorScheme.bubble(context, iMessage),
-                    onPrimary: context.theme.colorScheme.onBubble(context, iMessage),
+                    primary: context.theme.colorScheme.bubble(context, iMessage.value),
+                    onPrimary: context.theme.colorScheme.onBubble(context, iMessage.value),
                     surface: SettingsSvc.settings.monetTheming.value == Monet.full
                         ? null
                         : (context.theme.extensions[BubbleColors] as BubbleColors?)?.receivedBubbleColor,
@@ -611,7 +596,7 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
                           final participants = selectedContacts
                               .map((e) => e.address.isEmail ? e.address : cleansePhoneNumber(e.address))
                               .toList();
-                          final method = iMessage ? "iMessage" : "SMS";
+                          final method = iMessage.value ? "iMessage" : "SMS";
                           showDialog(
                               context: context,
                               builder: (BuildContext context) {
@@ -720,7 +705,7 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
                           });
                         }
                       })),
-                ),
+                )),
               ),
             ),
           ],
