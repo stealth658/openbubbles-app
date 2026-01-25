@@ -30,49 +30,46 @@ class _CreateScheduledMessageState extends OptimizedState<CreateScheduledMessage
   late final TextEditingController numberController =
       TextEditingController(text: widget.existing?.schedule.interval?.toString() ?? '1');
 
-  late String selectedChat = widget.existing?.payload.chatGuid ?? ChatsSvc.allChats.first.guid;
-  late String schedule = widget.existing?.schedule.type ?? "once";
-  late String frequency = widget.existing?.schedule.intervalType ?? "daily";
-  late int interval = widget.existing?.schedule.interval ?? 1;
-  late DateTime date = widget.existing?.scheduledFor ?? DateTime.now();
-  late bool isEmpty = widget.existing?.payload.message.isNotEmpty ?? false;
+  late final RxString selectedChat = (widget.existing?.payload.chatGuid ?? ChatsSvc.allChats.first.guid).obs;
+  late final RxString schedule = (widget.existing?.schedule.type ?? "once").obs;
+  late final RxString frequency = (widget.existing?.schedule.intervalType ?? "daily").obs;
+  late final RxInt interval = (widget.existing?.schedule.interval ?? 1).obs;
+  late final Rx<DateTime> date = (widget.existing?.scheduledFor ?? DateTime.now()).obs;
+  late final RxBool isEmpty = (widget.existing?.payload.message.isNotEmpty ?? false).obs;
 
   @override
   void initState() {
     super.initState();
-    if (messageController.text.isEmpty && !isEmpty) {
-      isEmpty = true;
-      setState(() {});
-    } else if (isEmpty) {
-      isEmpty = false;
-      setState(() {});
+    if (messageController.text.isEmpty && !isEmpty.value) {
+      isEmpty.value = true;
+    } else if (isEmpty.value) {
+      isEmpty.value = false;
     }
     messageController.addListener(() {
-      if (messageController.text.isEmpty && !isEmpty) {
-        isEmpty = true;
-        setState(() {});
-      } else if (isEmpty) {
-        isEmpty = false;
-        setState(() {});
+      if (messageController.text.isEmpty && !isEmpty.value) {
+        isEmpty.value = true;
+      } else if (isEmpty.value) {
+        isEmpty.value = false;
       }
     });
     numberController.addListener(() {
       final value = int.tryParse(numberController.text) ?? 1;
-      if (interval != value) {
-        setState(() => interval = value);
+      if (interval.value != value) {
+        interval.value = value;
       }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final bool isFutureTime = date.isBefore(DateTime.now());
-    String? error;
-    if (isEmpty) {
-      error = "Please enter a message!";
-    } else if (isFutureTime) {
-      error = "Please pick a date in the future!";
-    }
+    return Obx(() {
+      final bool isFutureTime = date.value.isBefore(DateTime.now());
+      String? error;
+      if (isEmpty.value) {
+        error = "Please enter a message!";
+      } else if (isFutureTime) {
+        error = "Please pick a date in the future!";
+      }
 
     return SettingsScaffold(
       title: widget.existing != null ? "Edit Existing" : "Create New",
@@ -88,7 +85,7 @@ class _CreateScheduledMessageState extends OptimizedState<CreateScheduledMessage
               child: Icon(iOS ? CupertinoIcons.check_mark : Icons.done,
                   color: context.theme.colorScheme.onPrimary, size: 25),
               onPressed: () async {
-                if (date.isBefore(DateTime.now())) return showSnackbar("Error", "Pick a date in the future!");
+                if (date.value.isBefore(DateTime.now())) return showSnackbar("Error", "Pick a date in the future!");
                 showDialog(
                     context: context,
                     builder: (BuildContext context) {
@@ -113,31 +110,31 @@ class _CreateScheduledMessageState extends OptimizedState<CreateScheduledMessage
                 if (widget.existing != null) {
                   response = await HttpSvc.updateScheduled(
                       widget.existing!.id,
-                      selectedChat,
+                      selectedChat.value,
                       messageController.text,
-                      date.toUtc(),
-                      schedule == "once"
+                      date.value.toUtc(),
+                      schedule.value == "once"
                           ? {
                               "type": "once",
                             }
                           : {
                               "type": "recurring",
-                              "interval": interval,
-                              "intervalType": frequency,
+                              "interval": interval.value,
+                              "intervalType": frequency.value,
                             });
                 } else {
                   response = await HttpSvc.createScheduled(
-                      selectedChat,
+                      selectedChat.value,
                       messageController.text,
-                      date.toUtc(),
-                      schedule == "once"
+                      date.value.toUtc(),
+                      schedule.value == "once"
                           ? {
                               "type": "once",
                             }
                           : {
                               "type": "recurring",
-                              "interval": interval,
-                              "intervalType": frequency,
+                              "interval": interval.value,
+                              "intervalType": frequency.value,
                             });
                 }
                 if (kIsDesktop) {
@@ -167,13 +164,11 @@ class _CreateScheduledMessageState extends OptimizedState<CreateScheduledMessage
           delegate: SliverChildListDelegate([
             SettingsSection(backgroundColor: tileColor, children: [
               SettingsOptions<Chat>(
-                initial: ChatsSvc.findChatByGuid(selectedChat)!,
+                initial: ChatsSvc.findChatByGuid(selectedChat.value)!,
                 options: ChatsSvc.allChats,
                 onChanged: (Chat? val) {
                   if (val == null) return;
-                  setState(() {
-                    selectedChat = val.guid;
-                  });
+                  selectedChat.value = val.guid;
                 },
                 title: "Select Chat",
                 secondaryColor: headerColor,
@@ -266,20 +261,18 @@ class _CreateScheduledMessageState extends OptimizedState<CreateScheduledMessage
               backgroundColor: tileColor,
               children: [
                 SettingsOptions<String>(
-                  initial: schedule,
+                  initial: schedule.value,
                   options: ["once", "recurring"],
                   onChanged: (String? val) {
                     if (val == null) return;
-                    setState(() {
-                      schedule = val;
-                    });
+                    schedule.value = val;
                   },
                   title: "Schedule",
                   secondaryColor: headerColor,
                   textProcessing: (val) => val.capitalizeFirst!,
                 ),
                 AnimatedSizeAndFade.showHide(
-                  show: schedule == "recurring",
+                  show: schedule.value == "recurring",
                   child: Column(mainAxisSize: MainAxisSize.min, children: [
                     Row(
                       children: [
@@ -308,7 +301,7 @@ class _CreateScheduledMessageState extends OptimizedState<CreateScheduledMessage
                                     ),
                                   )
                                 : NumberPicker(
-                                    value: interval,
+                                    value: interval.value,
                                     minValue: 1,
                                     maxValue: 100,
                                     itemWidth: 50,
@@ -317,7 +310,7 @@ class _CreateScheduledMessageState extends OptimizedState<CreateScheduledMessage
                                     textStyle: context.theme.textTheme.bodyLarge!,
                                     selectedTextStyle: context.theme.textTheme.headlineMedium!
                                         .copyWith(color: context.theme.colorScheme.primary),
-                                    onChanged: (value) => setState(() => interval = value),
+                                    onChanged: (value) => interval.value = value,
                                   ),
                           ),
                         ),
@@ -328,13 +321,11 @@ class _CreateScheduledMessageState extends OptimizedState<CreateScheduledMessage
                       child: SettingsOptions<String>(
                         title: "With frequency:",
                         options: ["hourly", "daily", "weekly", "monthly", "yearly"],
-                        initial: frequency,
-                        textProcessing: (val) => "${frequencyToText[val]!.capitalizeFirst!}${interval == 1 ? "" : "s"}",
+                        initial: frequency.value,
+                        textProcessing: (val) => "${frequencyToText[val]!.capitalizeFirst!}${interval.value == 1 ? "" : "s"}",
                         onChanged: (val) {
                           if (val == null) return;
-                          setState(() {
-                            frequency = val;
-                          });
+                          frequency.value = val;
                         },
                         secondaryColor: headerColor,
                       ),
@@ -343,14 +334,12 @@ class _CreateScheduledMessageState extends OptimizedState<CreateScheduledMessage
                 ),
                 SettingsTile(
                   title: "Pick date and time",
-                  subtitle: "Current: ${buildSeparatorDateSamsung(date)} at ${buildTime(date)}",
+                  subtitle: "Current: ${buildSeparatorDateSamsung(date.value)} at ${buildTime(date.value)}",
                   onTap: () async {
                     final newDate = await showTimeframePicker("Pick date and time", context, presetsAhead: true);
                     if (newDate == null) return;
                     if (newDate.isBefore(DateTime.now())) return showSnackbar("Error", "Pick a date in the future!");
-                    setState(() {
-                      date = newDate;
-                    });
+                    date.value = newDate;
                   },
                 ),
               ],
@@ -370,7 +359,7 @@ class _CreateScheduledMessageState extends OptimizedState<CreateScheduledMessage
                     builder: (context, value, _) {
                       if (error != null) return Text(error, style: const TextStyle(color: Colors.red));
                       return Text(
-                          "Scheduling \"${messageController.text}\" to ${ChatsSvc.findChatByGuid(selectedChat)!.getTitle()}.\nScheduling $schedule${schedule == "recurring" ? " every $interval ${frequencyToText[frequency]}(s) starting" : ""} on ${buildSeparatorDateSamsung(date)} at ${buildTime(date)}.");
+                          "Scheduling \"${messageController.text}\" to ${ChatsSvc.findChatByGuid(selectedChat.value)!.getTitle()}.\nScheduling ${schedule.value}${schedule.value == "recurring" ? " every ${interval.value} ${frequencyToText[frequency.value]}(s) starting" : ""} on ${buildSeparatorDateSamsung(date.value)} at ${buildTime(date.value)}.");
                     },
                   ),
                 ),
@@ -380,5 +369,6 @@ class _CreateScheduledMessageState extends OptimizedState<CreateScheduledMessage
         ),
       ],
     );
+    });
   }
 }
