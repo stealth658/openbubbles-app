@@ -6,19 +6,20 @@ import 'package:bluebubbles/services/network/http_service.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:path/path.dart' as p;
 
 /// Mixin that provides live photo functionality for image viewers
 /// Handles downloading, caching, and playback of live photos
 mixin LivePhotoMixin<T extends StatefulWidget> on State<T> {
-  // Live photo state
-  bool isDownloadingLivePhoto = false;
-  double livePhotoProgress = 0.0;
+  // Live photo state - using GetX observables to minimize re-renders
+  final RxBool isDownloadingLivePhoto = false.obs;
+  final RxDouble livePhotoProgress = 0.0.obs;
   PlatformFile? livePhotoFile;
   Player? livePhotoPlayer;
   VideoController? livePhotoController;
-  bool isPlayingLivePhoto = false;
-  double livePhotoOpacity = 0.0;
+  final RxBool isPlayingLivePhoto = false.obs;
+  final RxDouble livePhotoOpacity = 0.0.obs;
 
   // Must be implemented by the using class
   Attachment get livePhotoAttachment;
@@ -38,17 +39,13 @@ mixin LivePhotoMixin<T extends StatefulWidget> on State<T> {
   }
 
   Future<void> handleLivePhotoTap() async {
-    if (isDownloadingLivePhoto || isPlayingLivePhoto) {
+    if (isDownloadingLivePhoto.value || isPlayingLivePhoto.value) {
       // If already playing, stop it with fade out
-      if (isPlayingLivePhoto) {
-        setState(() {
-          livePhotoOpacity = 0.0;
-        });
+      if (isPlayingLivePhoto.value) {
+        livePhotoOpacity.value = 0.0;
         await Future.delayed(const Duration(milliseconds: 200));
         if (mounted) {
-          setState(() {
-            isPlayingLivePhoto = false;
-          });
+          isPlayingLivePhoto.value = false;
           await livePhotoPlayer?.pause();
         }
       }
@@ -67,32 +64,24 @@ mixin LivePhotoMixin<T extends StatefulWidget> on State<T> {
       await Future.delayed(const Duration(milliseconds: 100));
 
       if (mounted) {
-        setState(() {
-          isPlayingLivePhoto = true;
-        });
+        isPlayingLivePhoto.value = true;
 
         // Fade in
         await Future.delayed(const Duration(milliseconds: 50));
         if (mounted) {
-          setState(() {
-            livePhotoOpacity = 1.0;
-          });
+          livePhotoOpacity.value = 1.0;
         }
       }
 
       // Auto-hide after video ends with fade out
       Future.delayed(Duration(milliseconds: livePhotoPlayer!.state.duration.inMilliseconds + 100), () async {
-        if (mounted && isPlayingLivePhoto) {
+        if (mounted && isPlayingLivePhoto.value) {
           // Fade out
-          setState(() {
-            livePhotoOpacity = 0.0;
-          });
+          livePhotoOpacity.value = 0.0;
           // Wait for fade animation to complete
           await Future.delayed(const Duration(milliseconds: 200));
           if (mounted) {
-            setState(() {
-              isPlayingLivePhoto = false;
-            });
+            isPlayingLivePhoto.value = false;
           }
         }
       });
@@ -124,32 +113,24 @@ mixin LivePhotoMixin<T extends StatefulWidget> on State<T> {
         await Future.delayed(const Duration(milliseconds: 100));
 
         if (mounted) {
-          setState(() {
-            isPlayingLivePhoto = true;
-          });
+          isPlayingLivePhoto.value = true;
 
           // Fade in
           await Future.delayed(const Duration(milliseconds: 50));
           if (mounted) {
-            setState(() {
-              livePhotoOpacity = 1.0;
-            });
+            livePhotoOpacity.value = 1.0;
           }
         }
 
         // Auto-hide after video ends with fade out
         Future.delayed(Duration(milliseconds: livePhotoPlayer!.state.duration.inMilliseconds + 100), () async {
-          if (mounted && isPlayingLivePhoto) {
+          if (mounted && isPlayingLivePhoto.value) {
             // Fade out
-            setState(() {
-              livePhotoOpacity = 0.0;
-            });
+            livePhotoOpacity.value = 0.0;
             // Wait for fade animation to complete
             await Future.delayed(const Duration(milliseconds: 200));
             if (mounted) {
-              setState(() {
-                isPlayingLivePhoto = false;
-              });
+              isPlayingLivePhoto.value = false;
             }
           }
         });
@@ -161,19 +142,15 @@ mixin LivePhotoMixin<T extends StatefulWidget> on State<T> {
     }
 
     // Download the live photo
-    setState(() {
-      isDownloadingLivePhoto = true;
-      livePhotoProgress = 0.0;
-    });
+    isDownloadingLivePhoto.value = true;
+    livePhotoProgress.value = 0.0;
 
     try {
       final response = await HttpSvc.downloadLivePhoto(
         livePhotoAttachment.guid!,
         onReceiveProgress: (count, total) {
           if (mounted) {
-            setState(() {
-              livePhotoProgress = total > 0 ? count / total : 0.0;
-            });
+            livePhotoProgress.value = total > 0 ? count / total : 0.0;
           }
         },
       );
@@ -195,50 +172,38 @@ mixin LivePhotoMixin<T extends StatefulWidget> on State<T> {
       await livePhotoPlayer!.setPlaylistMode(PlaylistMode.none);
       await livePhotoPlayer!.open(Media(livePhotoPath), play: false);
 
-      setState(() {
-        isDownloadingLivePhoto = false;
-      });
+      isDownloadingLivePhoto.value = false;
 
       // Start playback and wait for first frame to be ready
       await livePhotoPlayer!.play();
       await Future.delayed(const Duration(milliseconds: 100));
 
       if (mounted) {
-        setState(() {
-          isPlayingLivePhoto = true;
-        });
+        isPlayingLivePhoto.value = true;
 
         // Fade in
         await Future.delayed(const Duration(milliseconds: 50));
         if (mounted) {
-          setState(() {
-            livePhotoOpacity = 1.0;
-          });
+          livePhotoOpacity.value = 1.0;
         }
       }
 
       // Auto-hide after video ends with fade out
       Future.delayed(Duration(milliseconds: livePhotoPlayer!.state.duration.inMilliseconds + 100), () async {
-        if (mounted && isPlayingLivePhoto) {
+        if (mounted && isPlayingLivePhoto.value) {
           // Fade out
-          setState(() {
-            livePhotoOpacity = 0.0;
-          });
+          livePhotoOpacity.value = 0.0;
           // Wait for fade animation to complete
           await Future.delayed(const Duration(milliseconds: 200));
           if (mounted) {
-            setState(() {
-              isPlayingLivePhoto = false;
-            });
+            isPlayingLivePhoto.value = false;
           }
         }
       });
     } catch (ex) {
       Logger.error("Failed to download/play live photo", error: ex);
       if (mounted) {
-        setState(() {
-          isDownloadingLivePhoto = false;
-        });
+        isDownloadingLivePhoto.value = false;
       }
       showSnackbar("Error", "Failed to load live photo");
     }
@@ -255,21 +220,21 @@ mixin LivePhotoMixin<T extends StatefulWidget> on State<T> {
           color: Colors.black.withOpacity(0.3),
           borderRadius: BorderRadius.circular(14),
         ),
-        child: Stack(
+        child: Obx(() => Stack(
           alignment: Alignment.center,
           children: [
-            if (isDownloadingLivePhoto)
+            if (isDownloadingLivePhoto.value)
               SizedBox(
                 width: 24,
                 height: 24,
                 child: CircularProgressIndicator(
-                  value: livePhotoProgress,
+                  value: livePhotoProgress.value,
                   strokeWidth: 2,
                   valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
                   backgroundColor: Colors.white.withOpacity(0.3),
                 ),
               )
-            else if (isPlayingLivePhoto)
+            else if (isPlayingLivePhoto.value)
               const Icon(
                 CupertinoIcons.pause_fill,
                 color: Colors.white,
@@ -282,27 +247,29 @@ mixin LivePhotoMixin<T extends StatefulWidget> on State<T> {
                 size: 20,
               ),
           ],
-        ),
+        )),
       ),
     );
   }
 
   /// Build the live photo video overlay
   Widget buildLivePhotoOverlay() {
-    if (!isPlayingLivePhoto || livePhotoController == null) {
-      return const SizedBox.shrink();
-    }
+    return Obx(() {
+      if (!isPlayingLivePhoto.value || livePhotoController == null) {
+        return const SizedBox.shrink();
+      }
 
-    return Positioned.fill(
-      child: AnimatedOpacity(
-        opacity: livePhotoOpacity,
-        duration: const Duration(milliseconds: 200),
-        child: Video(
-          controller: livePhotoController!,
-          fit: BoxFit.cover,
-          controls: null,
+      return Positioned.fill(
+        child: AnimatedOpacity(
+          opacity: livePhotoOpacity.value,
+          duration: const Duration(milliseconds: 200),
+          child: Video(
+            controller: livePhotoController!,
+            fit: BoxFit.cover,
+            controls: null,
+          ),
         ),
-      ),
-    );
+      );
+    });
   }
 }
