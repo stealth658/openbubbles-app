@@ -30,9 +30,9 @@ class AdvancedThemingContent extends StatefulWidget {
 class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent> {
   late ThemeStruct currentTheme;
   List<ThemeStruct> allThemes = [];
-  bool editable = false;
-  double master = 1;
-  ThemeData? oldData;
+  final RxBool editable = false.obs;
+  final RxDouble master = 1.0.obs;
+  final Rxn<ThemeData> oldData = Rxn<ThemeData>();
   final _controller = ScrollController();
 
   @override
@@ -63,7 +63,7 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
 
   @override
   Widget build(BuildContext context) {
-    editable = !currentTheme.isPreset && SettingsSvc.settings.monetTheming.value == Monet.none;
+    editable.value = !currentTheme.isPreset && SettingsSvc.settings.monetTheming.value == Monet.none;
     final length =
         currentTheme.colors(widget.isDarkMode, returnMaterialYou: false).keys.where((e) => e != "outline").length ~/ 2 +
             1;
@@ -211,8 +211,7 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
                     await ThemeSvc.changeTheme(context, light: value);
                   }
                   currentTheme = value;
-                  editable = !currentTheme.isPreset;
-                  setState(() {});
+                  editable.value = !currentTheme.isPreset;
 
                   EventDispatcherSvc.emit('theme-update', null);
                 },
@@ -234,8 +233,8 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
                     "Make the background of the messages view an animated gradient based on the background and primary colors",
                 isThreeLine: true,
               ),
-              AnimatedSizeAndFade.showHide(
-                show: editable,
+              Obx(() => AnimatedSizeAndFade.showHide(
+                show: editable.value,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -257,8 +256,7 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
                         final image = MemoryImage(res.files.first.bytes!);
                         final swatch = await ColorScheme.fromImageProvider(
                             provider: image, brightness: widget.isDarkMode ? Brightness.dark : Brightness.light);
-                        oldData = currentTheme.data;
-                        setState(() {});
+                        oldData.value = currentTheme.data;
                         currentTheme.data = currentTheme.data.copyWith(colorScheme: swatch);
                         currentTheme.save();
                         if (widget.isDarkMode) {
@@ -267,17 +265,15 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
                           await ThemeSvc.changeTheme(context, light: currentTheme);
                         }
                       },
-                      trailing: oldData == null
+                      trailing: oldData.value == null
                           ? null
                           : TextButton(
                               style: TextButton.styleFrom(
                                 backgroundColor: context.theme.colorScheme.secondary,
                               ),
                               onPressed: () async {
-                                currentTheme.data = oldData!;
-                                setState(() {
-                                  oldData = null;
-                                });
+                                currentTheme.data = oldData.value!;
+                                oldData.value = null;
                                 currentTheme.save();
                                 if (widget.isDarkMode) {
                                   await ThemeSvc.changeTheme(context, dark: currentTheme);
@@ -290,7 +286,7 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
                     ),
                   ],
                 ),
-              ),
+              )),
               const SettingsSubtitle(
                 subtitle:
                     "Tap to edit the base color\nLong press to edit the color for elements displayed on top of the base color\nDouble tap to learn how the colors are used",
@@ -333,7 +329,7 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
           SliverGrid(
             delegate: SliverChildBuilderDelegate(
               (context, index) {
-                return AdvancedThemingTile(
+                return Obx(() => AdvancedThemingTile(
                   currentTheme: currentTheme,
                   tuple: Tuple2(
                       currentTheme.colors(widget.isDarkMode).entries.toList()[index < length - 1
@@ -342,8 +338,8 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
                       index < length - 1
                           ? currentTheme.colors(widget.isDarkMode).entries.toList()[index * 2 + 1]
                           : null),
-                  editable: editable,
-                );
+                  editable: editable.value,
+                ));
               },
               childCount: length,
             ),
@@ -395,22 +391,21 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
             delegate: SliverChildBuilderDelegate(
               (context, index) {
                 if (index == 0) {
-                  return SettingsSlider(
+                  return Obx(() => SettingsSlider(
                     leading: const Text("master"),
-                    startingVal: master,
+                    startingVal: master.value,
                     leadingMinWidth: context.theme.textTheme.bodyMedium!.fontSize! * 6,
                     update: (double val) {
-                      master = val;
+                      master.value = val;
                       final map = currentTheme.toMap();
                       final keys = currentTheme.textSizes.keys.toList();
                       for (String k in keys) {
                         map["data"]["textTheme"][k]['fontSize'] = ThemeStruct.defaultTextSizes[k]! * val;
                       }
                       currentTheme.data = ThemeStruct.fromMap(map).data;
-                      setState(() {});
                     },
                     onChangeEnd: (double val) async {
-                      master = val;
+                      master.value = val;
                       final map = currentTheme.toMap();
                       final keys = currentTheme.textSizes.keys.toList();
                       for (String k in keys) {
@@ -429,10 +424,10 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
                     max: 3,
                     divisions: 30,
                     formatValue: ((double val) => val.toStringAsFixed(2)),
-                  );
+                  ));
                 }
                 index = index - 1;
-                return SettingsSlider(
+                return Obx(() => SettingsSlider(
                   leading: Text(currentTheme.textSizes.keys.toList()[index]),
                   startingVal: currentTheme.textSizes.values.toList()[index] /
                       ThemeStruct.defaultTextSizes.values.toList()[index],
@@ -442,7 +437,6 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
                     map["data"]["textTheme"][currentTheme.textSizes.keys.toList()[index]]['fontSize'] =
                         ThemeStruct.defaultTextSizes.values.toList()[index] * val;
                     currentTheme.data = ThemeStruct.fromMap(map).data;
-                    setState(() {});
                   },
                   onChangeEnd: (double val) async {
                     final map = currentTheme.toMap();
@@ -461,7 +455,7 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
                   max: 3,
                   divisions: 30,
                   formatValue: ((double val) => val.toStringAsFixed(2)),
-                );
+                ));
               },
               childCount: currentTheme.textSizes.length + 1,
             ),
@@ -490,7 +484,7 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
                     } else {
                       await ThemeSvc.changeTheme(context, light: currentTheme);
                     }
-                    setState(() {});
+                    editable.value = !currentTheme.isPreset;
                   },
                 ),
               ),

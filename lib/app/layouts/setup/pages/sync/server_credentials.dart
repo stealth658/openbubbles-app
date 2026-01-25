@@ -33,16 +33,16 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
   final controller = Get.find<SetupViewController>();
   final FocusScopeNode focusScopeNode = FocusScopeNode(traversalEdgeBehavior: TraversalEdgeBehavior.stop);
 
-  bool showLoginButtons = true;
-  bool obscureText = true;
+  final RxBool showLoginButtons = true.obs;
+  final RxBool obscureText = true.obs;
 
-  String? token;
-  String? googleName;
-  String? googlePicture;
-  List<Map> usableProjects = [];
+  final Rxn<String> token = Rxn<String>();
+  final Rxn<String> googleName = Rxn<String>();
+  final Rxn<String> googlePicture = Rxn<String>();
+  final RxList<Map> usableProjects = <Map>[].obs;
   List<RxBool> triedConnecting = [];
   List<RxBool> reachable = [];
-  bool fetchingFirebase = false;
+  final RxBool fetchingFirebase = false.obs;
 
   @override
   Widget build(BuildContext context) {
@@ -52,14 +52,14 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
       subtitle: kIsWeb || kIsDesktop
           ? "Enter your server URL and password to access your messages."
           : "We've created a QR code on your server that you can scan with your phone for easy setup.\nAlternatively, you can manually input your URL and password.",
-      contentWrapper: (child) => AnimatedSize(
+      contentWrapper: (child) => Obx(() => AnimatedSize(
         duration: const Duration(milliseconds: 200),
-        child: !showLoginButtons && context.isPhone ? const SizedBox.shrink() : child,
-      ),
-      customButton: Column(
+        child: !showLoginButtons.value && context.isPhone ? const SizedBox.shrink() : child,
+      )),
+      customButton: Obx(() => Column(
         children: [
           ErrorText(parentController: controller),
-          if (token != null)
+          if (token.value != null)
             Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -74,14 +74,14 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (googlePicture != null)
+                      if (googlePicture.value != null)
                         ClipRRect(
                           borderRadius: BorderRadius.circular(20),
                           clipBehavior: Clip.antiAlias,
-                          child: Image.network(googlePicture!, width: 40, fit: BoxFit.contain),
+                          child: Image.network(googlePicture.value!, width: 40, fit: BoxFit.contain),
                         ),
                       const SizedBox(width: 10),
-                      Text(googleName ?? "Unknown",
+                      Text(googleName.value ?? "Unknown",
                           style: context.theme.textTheme.bodyLarge!
                               .apply(fontSizeFactor: 1.1, color: context.theme.colorScheme.onBackground)),
                     ],
@@ -89,8 +89,8 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
                 ),
               ],
             ),
-          if (token != null) const SizedBox(height: 40),
-          if (token != null)
+          if (token.value != null) const SizedBox(height: 40),
+          if (token.value != null)
             Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
@@ -105,11 +105,11 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
                           children: [
                             Padding(
                               padding: const EdgeInsets.all(10.0),
-                              child: Text(fetchingFirebase
+                              child: Text(fetchingFirebase.value
                                   ? "Loading Firebase projects"
                                   : "Select the Firebase project to use"),
                             ),
-                            if (!fetchingFirebase)
+                            if (!fetchingFirebase.value)
                               ConstrainedBox(
                                 constraints: BoxConstraints(
                                   maxHeight: context.mediaQuery.size.height * 0.4,
@@ -167,9 +167,9 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
                                   },
                                 ),
                               ),
-                            if (fetchingFirebase) const CircularProgressIndicator(),
+                            if (fetchingFirebase.value) const CircularProgressIndicator(),
                             const SizedBox(height: 10),
-                            if (!fetchingFirebase)
+                            if (!fetchingFirebase.value)
                               ElevatedButton(
                                 onPressed: () {
                                   for (int i = 0; i < triedConnecting.length; i++) {
@@ -178,7 +178,7 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
                                 },
                                 child: const Text("Retry Connections"),
                               ),
-                            if (!fetchingFirebase) const SizedBox(height: 10),
+                            if (!fetchingFirebase.value) const SizedBox(height: 10),
                           ],
                         ),
                       ),
@@ -194,7 +194,7 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
                       ),
                     ),
             ),
-          if (token != null) const SizedBox(height: 10),
+          if (token.value != null) const SizedBox(height: 10),
           Container(
             height: 40,
             padding: const EdgeInsets.all(2),
@@ -207,7 +207,7 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
             ),
           ),
           const SizedBox(height: 10),
-          if (token != null)
+          if (token.value != null)
             Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
@@ -227,11 +227,9 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
                   minimumSize: WidgetStateProperty.all(buttonSize),
                 ),
                 onPressed: () async {
-                  setState(() {
-                    token = null;
-                    googleName = null;
-                    googlePicture = null;
-                  });
+                  token.value = null;
+                  googleName.value = null;
+                  googlePicture.value = null;
                 },
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -243,8 +241,8 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
                 ),
               ),
             ),
-          if (token != null) const SizedBox(height: 10),
-          if (googleName == null && showLoginButtons && !isSnap)
+          if (token.value != null) const SizedBox(height: 10),
+          if (googleName.value == null && showLoginButtons.value && !isSnap)
             Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
@@ -264,21 +262,17 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
                   minimumSize: WidgetStateProperty.all(buttonSize),
                 ),
                 onPressed: () async {
-                  token = await googleOAuth(context);
-                  if (token != null) {
-                    final response = await HttpSvc.getGoogleInfo(token!);
-                    setState(() {
-                      googleName = response.data['name'];
-                      googlePicture = response.data['picture'];
-                      fetchingFirebase = true;
-                    });
-                    fetchFirebaseProjects(token!).then((List<Map> value) async {
-                      setState(() {
-                        usableProjects = value;
-                        triedConnecting = List.generate(usableProjects.length, (i) => false.obs);
-                        reachable = List.generate(usableProjects.length, (i) => false.obs);
-                        fetchingFirebase = false;
-                      });
+                  token.value = await googleOAuth(context);
+                  if (token.value != null) {
+                    final response = await HttpSvc.getGoogleInfo(token.value!);
+                    googleName.value = response.data['name'];
+                    googlePicture.value = response.data['picture'];
+                    fetchingFirebase.value = true;
+                    fetchFirebaseProjects(token.value!).then((List<Map> value) async {
+                      usableProjects.value = value;
+                      triedConnecting = List.generate(usableProjects.length, (i) => false.obs);
+                      reachable = List.generate(usableProjects.length, (i) => false.obs);
+                      fetchingFirebase.value = false;
                     });
                   }
                 },
@@ -296,8 +290,8 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
                 ),
               ),
             ),
-          if (googleName == null && showLoginButtons && !isSnap) const SizedBox(height: 10),
-          if (googleName == null && !kIsWeb && !kIsDesktop && showLoginButtons)
+          if (googleName.value == null && showLoginButtons.value && !isSnap) const SizedBox(height: 10),
+          if (googleName.value == null && !kIsWeb && !kIsDesktop && showLoginButtons.value)
             Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
@@ -334,8 +328,8 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
                 ),
               ),
             ),
-          if (googleName == null && !kIsWeb && !kIsDesktop && showLoginButtons) const SizedBox(height: 10),
-          if (googleName == null)
+          if (googleName.value == null && !kIsWeb && !kIsDesktop && showLoginButtons.value) const SizedBox(height: 10),
+          if (googleName.value == null)
             Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
@@ -359,9 +353,7 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
                   minimumSize: WidgetStateProperty.all(buttonSize),
                 ),
                 onPressed: () async {
-                  setState(() {
-                    showLoginButtons = !showLoginButtons;
-                  });
+                  showLoginButtons.value = !showLoginButtons.value;
                 },
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -375,9 +367,9 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
                 ),
               ),
             ),
-          AnimatedSize(
+          Obx(() => AnimatedSize(
             duration: const Duration(milliseconds: 200),
-            child: showLoginButtons
+            child: showLoginButtons.value
                 ? const SizedBox.shrink()
                 : Theme(
                     data: context.theme.copyWith(
@@ -437,17 +429,15 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
                                         canRequestFocus: false,
                                         descendantsAreFocusable: false,
                                         child: IconButton(
-                                          icon: Icon(obscureText ? Icons.visibility_off : Icons.visibility),
+                                          icon: Icon(obscureText.value ? Icons.visibility_off : Icons.visibility),
                                           color: context.theme.colorScheme.outline,
                                           onPressed: () {
-                                            setState(() {
-                                              obscureText = !obscureText;
-                                            });
+                                            obscureText.value = !obscureText.value;
                                           },
                                         ),
                                       ),
                                     ),
-                                    obscureText: obscureText,
+                                    obscureText: obscureText.value,
                                   ),
                                 ),
                               ],
@@ -480,9 +470,7 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
                                     minimumSize: WidgetStateProperty.all(const Size(30, 30)),
                                   ),
                                   onPressed: () async {
-                                    setState(() {
-                                      showLoginButtons = true;
-                                    });
+                                    showLoginButtons.value = true;
                                   },
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
@@ -544,9 +532,9 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
                       ),
                     ),
                   ),
-          ),
+          )),
         ],
-      ),
+      )),
     );
   }
 

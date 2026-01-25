@@ -18,8 +18,8 @@ class ScheduledMessagesPanel extends StatefulWidget {
 }
 
 class _ScheduledMessagesPanelState extends OptimizedState<ScheduledMessagesPanel> {
-  List<ScheduledMessage> scheduled = [];
-  bool? fetching = true;
+  final RxList<ScheduledMessage> scheduled = <ScheduledMessage>[].obs;
+  final Rx<bool?> fetching = Rx<bool?>(true);
 
   @override
   void initState() {
@@ -29,17 +29,13 @@ class _ScheduledMessagesPanelState extends OptimizedState<ScheduledMessagesPanel
 
   void getExistingMessages() async {
     final response = await HttpSvc.getScheduled().catchError((_) {
-      setState(() {
-        fetching = null;
-      });
+      fetching.value = null;
       return Response(requestOptions: RequestOptions(path: ''));
     });
     if (response.statusCode == 200 && response.data['data'] != null) {
-      scheduled =
+      scheduled.value =
           (response.data['data'] as List).map((e) => ScheduledMessage.fromJson(e)).toList().cast<ScheduledMessage>();
-      setState(() {
-        fetching = false;
-      });
+      fetching.value = false;
     }
   }
 
@@ -47,7 +43,6 @@ class _ScheduledMessagesPanelState extends OptimizedState<ScheduledMessagesPanel
     final response = await HttpSvc.deleteScheduled(item.id);
     if (response.statusCode == 200) {
       scheduled.remove(item);
-      setState(() {});
     } else {
       Logger.error(response.data);
       showSnackbar("Error", "Something went wrong!");
@@ -56,12 +51,13 @@ class _ScheduledMessagesPanelState extends OptimizedState<ScheduledMessagesPanel
 
   @override
   Widget build(BuildContext context) {
-    final oneTime = scheduled.where((e) => e.schedule.type == "once" && e.status == "pending").toList();
-    final oneTimeCompleted = scheduled.where((e) => e.schedule.type == "once" && e.status != "pending").toList();
-    final recurring = scheduled.where((e) => e.schedule.type == "recurring").toList();
-    return SettingsScaffold(
+    return Obx(() {
+      final oneTime = scheduled.where((e) => e.schedule.type == "once" && e.status == "pending").toList();
+      final oneTimeCompleted = scheduled.where((e) => e.schedule.type == "once" && e.status != "pending").toList();
+      final recurring = scheduled.where((e) => e.schedule.type == "recurring").toList();
+      return SettingsScaffold(
         title: "Scheduled Messages",
-        initialHeader: fetching == false && scheduled.isNotEmpty ? "Info" : null,
+        initialHeader: fetching.value == false && scheduled.isNotEmpty ? "Info" : null,
         iosSubtitle: iosSubtitle,
         materialSubtitle: materialSubtitle,
         tileColor: tileColor,
@@ -76,7 +72,6 @@ class _ScheduledMessagesPanelState extends OptimizedState<ScheduledMessagesPanel
             );
             if (result is ScheduledMessage) {
               scheduled.add(result);
-              setState(() {});
             }
           },
         ),
@@ -85,10 +80,8 @@ class _ScheduledMessagesPanelState extends OptimizedState<ScheduledMessagesPanel
             icon: Icon(iOS ? CupertinoIcons.arrow_counterclockwise : Icons.refresh,
                 color: context.theme.colorScheme.onBackground),
             onPressed: () {
-              setState(() {
-                fetching = true;
-                scheduled.clear();
-              });
+              fetching.value = true;
+              scheduled.clear();
               getExistingMessages();
             },
           ),
@@ -96,7 +89,7 @@ class _ScheduledMessagesPanelState extends OptimizedState<ScheduledMessagesPanel
         bodySlivers: [
           SliverList(
             delegate: SliverChildListDelegate([
-              if (fetching == null || fetching == true || (fetching == false && scheduled.isEmpty))
+              if (fetching.value == null || fetching.value == true || (fetching.value == false && scheduled.isEmpty))
                 Center(
                   child: Padding(
                     padding: const EdgeInsets.only(top: 100),
@@ -105,15 +98,15 @@ class _ScheduledMessagesPanelState extends OptimizedState<ScheduledMessagesPanel
                         Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: Text(
-                            fetching == null
+                            fetching.value == null
                                 ? "Something went wrong!"
-                                : fetching == false
+                                : fetching.value == false
                                     ? "You have no scheduled messages."
                                     : "Getting scheduled messages...",
                             style: context.theme.textTheme.labelLarge,
                           ),
                         ),
-                        if (fetching == true) buildProgressIndicator(context, size: 15),
+                        if (fetching.value == true) buildProgressIndicator(context, size: 15),
                       ],
                     ),
                   ),
@@ -170,7 +163,6 @@ class _ScheduledMessagesPanelState extends OptimizedState<ScheduledMessagesPanel
                               if (result is ScheduledMessage) {
                                 final index = scheduled.indexWhere((e) => e.id == item.id);
                                 scheduled[index] = result;
-                                setState(() {});
                               }
                             },
                           );
@@ -219,7 +211,6 @@ class _ScheduledMessagesPanelState extends OptimizedState<ScheduledMessagesPanel
                               if (result is ScheduledMessage) {
                                 final index = scheduled.indexWhere((e) => e.id == item.id);
                                 scheduled[index] = result;
-                                setState(() {});
                               }
                             },
                           );
@@ -270,5 +261,6 @@ class _ScheduledMessagesPanelState extends OptimizedState<ScheduledMessagesPanel
             ]),
           ),
         ]);
+    });
   }
 }
