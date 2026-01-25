@@ -21,18 +21,17 @@ class ManualEntryDialog extends StatefulWidget {
 }
 
 class _ManualEntryDialogState extends OptimizedState<ManualEntryDialog> {
-  bool connecting = false;
+  final connecting = false.obs;
   final TextEditingController urlController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  String? error;
+  final error = Rx<String?>(null);
 
   void connect(String url, String password) async {
     if (url.endsWith("/")) {
       url = url.substring(0, url.length - 1);
     }
     if (kIsWeb && url.startsWith("http://")) {
-      error = "HTTP URLs are not supported on Web! You must use an HTTPS URL.";
-      setState(() {});
+      error.value = "HTTP URLs are not supported on Web! You must use an HTTPS URL.";
       return;
     }
     // Check if the URL is valid
@@ -56,15 +55,13 @@ class _ManualEntryDialogState extends OptimizedState<ManualEntryDialog> {
 
     // If the URL is invalid, or the password is invalid, show an error
     if (!isValid || password.isEmpty) {
-      error = "Please enter a valid URL and password!";
-      setState(() {});
+      error.value = "Please enter a valid URL and password!";
       return;
     }
 
     String? addr = sanitizeServerAddress(address: url);
     if (addr == null) {
-      error = "Server address is invalid!";
-      setState(() {});
+      error.value = "Server address is invalid!";
       return;
     }
 
@@ -74,8 +71,7 @@ class _ManualEntryDialogState extends OptimizedState<ManualEntryDialog> {
     try {
       SocketSvc.restartSocket();
     } catch (e) {
-      error = e.toString();
-      if (mounted) setState(() {});
+      error.value = e.toString();
     }
   }
 
@@ -93,17 +89,17 @@ class _ManualEntryDialogState extends OptimizedState<ManualEntryDialog> {
       widget.onConnect();
     }).catchError((err) {
       if (err is Response) {
-        error = err.data["error"]["message"];
+        error.value = err.data["error"]["message"];
       } else {
-        error = err.toString();
+        error.value = err.toString();
       }
-      if (mounted) setState(() {});
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    if (!connecting) {
+    return Obx(() {
+      if (!connecting.value) {
       return AlertDialog(
         title: Text(
           "Enter Server Details",
@@ -163,8 +159,7 @@ class _ManualEntryDialogState extends OptimizedState<ManualEntryDialog> {
                   autofillHints: [AutofillHints.password],
                   onSubmitted: (_) {
                     connect(urlController.text, passwordController.text);
-                    connecting = true;
-                    if (mounted) setState(() {});
+                    connecting.value = true;
                   },
                   decoration: InputDecoration(
                     enabledBorder: OutlineInputBorder(
@@ -192,21 +187,20 @@ class _ManualEntryDialogState extends OptimizedState<ManualEntryDialog> {
                 style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
             onPressed: () {
               connect(urlController.text, passwordController.text);
-              connecting = true;
-              if (mounted) setState(() {});
+              connecting.value = true;
             },
           ),
         ],
       );
-    } else if (error == 'Google Services file not found.') {
+    } else if (error.value == 'Google Services file not found.') {
       return const FailedToScanDialog(
           title: "Connected! However...",
           exception:
               'Google Services file not found! If you plan to use Firebase for notifications, please setup Firebase via the BlueBubbles Server.');
-    } else if (error != null) {
+    } else if (error.value != null) {
       return FailedToScanDialog(
         title: "An error occured while trying to retreive data!",
-        exception: error,
+        exception: error.value,
       );
     } else {
       return ConnectingDialog(
@@ -214,15 +208,12 @@ class _ManualEntryDialogState extends OptimizedState<ManualEntryDialog> {
           if (result) {
             retreiveFCMData();
           } else {
-            if (mounted) {
-              setState(() {
-                error =
-                    "Failed to connect to ${sanitizeServerAddress()}! Please check that the url is correct (including http://) and the server logs for more info.";
-              });
-            }
+            error.value =
+                "Failed to connect to ${sanitizeServerAddress()}! Please check that the url is correct (including http://) and the server logs for more info.";
           }
         },
       );
     }
+    });
   }
 }

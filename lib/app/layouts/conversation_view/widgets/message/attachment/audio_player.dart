@@ -40,6 +40,8 @@ class _AudioPlayerState extends OptimizedState<AudioPlayer>
   PlayerController? controller;
   late final animController = AnimationController(
       vsync: this, duration: const Duration(milliseconds: 400), animationBehavior: AnimationBehavior.preserve);
+  final playerState = Rx<PlayerState?>(null);
+  final maxDuration = 0.obs;
 
   @override
   void initState() {
@@ -64,19 +66,20 @@ class _AudioPlayerState extends OptimizedState<AudioPlayer>
     if (controller == null) {
       controller = PlayerController()
         ..addListener(() {
-          setState(() {});
+          maxDuration.value = controller!.maxDuration;
         });
       controller!.onPlayerStateChanged.listen((event) {
         if ((controller!.playerState == PlayerState.paused || controller!.playerState == PlayerState.stopped) &&
             animController.value > 0) {
           animController.reverse();
         }
-        setState(() {});
+        playerState.value = controller!.playerState;
       });
       await controller!.preparePlayer(path: file.path!);
       if (attachment != null) cvController?.audioPlayers[attachment!.guid!] = controller!;
     }
-    setState(() {});
+    playerState.value = controller?.playerState;
+    maxDuration.value = controller?.maxDuration ?? 0;
   }
 
   @override
@@ -87,10 +90,10 @@ class _AudioPlayerState extends OptimizedState<AudioPlayer>
         child: Column(mainAxisSize: MainAxisSize.min, mainAxisAlignment: MainAxisAlignment.center, children: [
           Row(
             children: [
-              IconButton(
+              Obx(() => IconButton(
                 onPressed: () async {
                   if (controller == null) return;
-                  if (controller!.playerState == PlayerState.playing) {
+                  if (playerState.value == PlayerState.playing) {
                     animController.reverse();
                     await controller!.pausePlayer();
                   } else {
@@ -98,7 +101,6 @@ class _AudioPlayerState extends OptimizedState<AudioPlayer>
                     controller!.setFinishMode(finishMode: FinishMode.pause);
                     await controller!.startPlayer();
                   }
-                  setState(() {});
                 },
                 icon: AnimatedIcon(
                   icon: AnimatedIcons.play_pause,
@@ -106,8 +108,8 @@ class _AudioPlayerState extends OptimizedState<AudioPlayer>
                 ),
                 color: context.theme.colorScheme.properOnSurface,
                 visualDensity: VisualDensity.compact,
-              ),
-              (controller?.maxDuration ?? 0) == 0
+              )),
+              Obx(() => maxDuration.value == 0
                   ? SizedBox(width: NavigationSvc.width(context) * 0.25)
                   : AudioFileWaveforms(
                       size: Size(NavigationSvc.width(context) * 0.20, 40),
@@ -120,13 +122,13 @@ class _AudioPlayerState extends OptimizedState<AudioPlayer>
                           waveThickness: 2,
                           seekLineThickness: 2,
                           showSeekLine: false),
-                    ),
+                    )),
               const SizedBox(width: 5),
               Expanded(
                 child: Center(
                   heightFactor: 1,
-                  child: Text(prettyDuration(Duration(milliseconds: controller?.maxDuration ?? 0)),
-                      style: context.theme.textTheme.labelLarge!),
+                  child: Obx(() => Text(prettyDuration(Duration(milliseconds: maxDuration.value)),
+                      style: context.theme.textTheme.labelLarge!)),
                 ),
               ),
             ],
@@ -157,6 +159,9 @@ class _DesktopAudioPlayerState extends OptimizedState<AudioPlayer>
   Player? controller;
   late final animController = AnimationController(
       vsync: this, duration: const Duration(milliseconds: 400), animationBehavior: AnimationBehavior.preserve);
+  final isPlaying = false.obs;
+  final position = Duration.zero.obs;
+  final duration = Duration.zero.obs;
 
   @override
   void initState() {
@@ -180,7 +185,9 @@ class _DesktopAudioPlayerState extends OptimizedState<AudioPlayer>
     if (attachment != null) controller = cvController?.audioPlayersDesktop[attachment!.guid];
     if (controller == null) {
       controller = Player()
-        ..stream.position.listen((position) => setState(() {}))
+        ..stream.position.listen((pos) => position.value = pos)
+        ..stream.duration.listen((dur) => duration.value = dur)
+        ..stream.playing.listen((playing) => isPlaying.value = playing)
         ..stream.completed.listen((bool completed) async {
           if (completed) {
             await controller!.seek(Duration.zero);
@@ -189,13 +196,14 @@ class _DesktopAudioPlayerState extends OptimizedState<AudioPlayer>
             }
             animController.reverse();
           }
-          setState(() {});
         });
       await controller!.setPlaylistMode(PlaylistMode.none);
       await controller!.open(Media(file.path!), play: false);
       if (attachment != null) cvController?.audioPlayersDesktop[attachment!.guid!] = controller!;
     }
-    setState(() {});
+    isPlaying.value = controller?.state.playing ?? false;
+    position.value = controller?.state.position ?? Duration.zero;
+    duration.value = controller?.state.duration ?? Duration.zero;
   }
 
   @override
@@ -206,17 +214,16 @@ class _DesktopAudioPlayerState extends OptimizedState<AudioPlayer>
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            IconButton(
+            Obx(() => IconButton(
               onPressed: () async {
                 if (controller == null) return;
-                if (controller!.state.playing) {
+                if (isPlaying.value) {
                   animController.reverse();
                   await controller!.pause();
                 } else {
                   animController.forward();
                   await controller!.play();
                 }
-                setState(() {});
               },
               icon: AnimatedIcon(
                 icon: AnimatedIcons.play_pause,
@@ -224,24 +231,24 @@ class _DesktopAudioPlayerState extends OptimizedState<AudioPlayer>
               ),
               color: context.theme.colorScheme.properOnSurface,
               visualDensity: VisualDensity.compact,
-            ),
+            )),
             if (controller != null)
-              SizedBox(
+              Obx(() => SizedBox(
                 height: 30,
                 child: Slider(
-                  value: controller!.state.position.inSeconds.toDouble(),
+                  value: position.value.inSeconds.toDouble(),
                   onChanged: (double value) {
                     controller!.seek(Duration(seconds: value.toInt()));
                   },
                   min: 0,
-                  max: controller!.state.duration.inSeconds.toDouble(),
+                  max: duration.value.inSeconds.toDouble(),
                 ),
-              ),
-            Padding(
+              )),
+            Obx(() => Padding(
               padding: const EdgeInsets.only(left: 10, right: 16),
               child: Text(
-                  "${prettyDuration(controller?.state.position ?? Duration.zero)} / ${prettyDuration(controller?.state.duration ?? Duration.zero)}"),
-            )
+                  "${prettyDuration(position.value)} / ${prettyDuration(duration.value)}"),
+            ))
           ],
         ));
   }

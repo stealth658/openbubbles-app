@@ -183,7 +183,7 @@ class ChatTitle extends CustomStateful<ConversationTileController> {
 }
 
 class _ChatTitleState extends CustomState<ChatTitle, void, ConversationTileController> {
-  String title = "Unknown";
+  final title = "Unknown".obs;
   StreamSubscription? sub;
   String? cachedDisplayName = "";
   List<Handle> cachedParticipants = [];
@@ -197,7 +197,7 @@ class _ChatTitleState extends CustomState<ChatTitle, void, ConversationTileContr
     forceDelete = false;
     cachedDisplayName = controller.chat.displayName;
     cachedParticipants = controller.chat.handles;
-    title = controller.chat.getTitle();
+    title.value = controller.chat.getTitle();
     // run query after render has completed
     if (!kIsWeb) {
       updateObx(() {
@@ -212,10 +212,8 @@ class _ChatTitleState extends CustomState<ChatTitle, void, ConversationTileContr
           // check if we really need to update this widget
           if (chat.displayName != cachedDisplayName || chat.handles.length != cachedParticipants.length) {
             final newTitle = chat.getTitle();
-            if (newTitle != title) {
-              setState(() {
-                title = newTitle;
-              });
+            if (newTitle != title.value) {
+              title.value = newTitle;
             }
           }
           cachedDisplayName = chat.displayName;
@@ -239,10 +237,8 @@ class _ChatTitleState extends CustomState<ChatTitle, void, ConversationTileContr
           }
           if (changed) {
             final newTitle = controller.chat.getTitle();
-            if (newTitle != title) {
-              setState(() {
-                title = newTitle;
-              });
+            if (newTitle != title.value) {
+              title.value = newTitle;
             }
           }
         }
@@ -253,10 +249,8 @@ class _ChatTitleState extends CustomState<ChatTitle, void, ConversationTileContr
           // check if we really need to update this widget
           if (chat.displayName != cachedDisplayName || chat.handles.length != cachedParticipants.length) {
             final newTitle = chat.getTitle();
-            if (newTitle != title) {
-              setState(() {
-                title = newTitle;
-              });
+            if (newTitle != title.value) {
+              title.value = newTitle;
             }
           }
           cachedDisplayName = chat.displayName;
@@ -276,7 +270,7 @@ class _ChatTitleState extends CustomState<ChatTitle, void, ConversationTileContr
   Widget build(BuildContext context) {
     return Obx(() {
       final hideInfo = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
-      String _title = title;
+      String _title = title.value;
       if (hideInfo) {
         _title = controller.chat.isGroup ? controller.chat.fakeName : controller.chat.handles[0].fakeName;
       }
@@ -304,8 +298,8 @@ class ChatSubtitle extends CustomStateful<ConversationTileController> {
 }
 
 class _ChatSubtitleState extends CustomState<ChatSubtitle, void, ConversationTileController> {
-  String subtitle = "Unknown";
-  String fakeText = faker.lorem.words(1).join(" ");
+  final subtitle = "Unknown".obs;
+  final fakeText = faker.lorem.words(1).join(" ").obs;
   StreamSubscription? sub;
   String? cachedLatestMessageGuid = "";
   DateTime? cachedDateCreated;
@@ -320,7 +314,7 @@ class _ChatSubtitleState extends CustomState<ChatSubtitle, void, ConversationTil
     // keep controller in memory since the widget is part of a list
     // (it will be disposed when scrolled out of view)
     forceDelete = false;
-    subtitle = MessageHelper.getNotificationText(controller.chat.latestMessage);
+    subtitle.value = MessageHelper.getNotificationText(controller.chat.latestMessage);
     cachedLatestMessageGuid = controller.chat.latestMessage.guid!;
     cachedDateEdited = controller.chat.latestMessage.dateEdited;
     isFromMe = controller.chat.latestMessage.isFromMe!;
@@ -328,7 +322,7 @@ class _ChatSubtitleState extends CustomState<ChatSubtitle, void, ConversationTil
         !isFromMe ||
         controller.chat.latestMessage.dateDelivered != null ||
         controller.chat.latestMessage.dateRead != null;
-    fakeText = faker.lorem.words(subtitle.split(" ").length).join(" ");
+    fakeText.value = faker.lorem.words(subtitle.value.split(" ").length).join(" ");
     // run query after render has completed
     if (!kIsWeb) {
       updateObx(() {
@@ -347,18 +341,15 @@ class _ChatSubtitleState extends CustomState<ChatSubtitle, void, ConversationTil
           // check if we really need to update this widget
           if (message != null && (message.guid != cachedLatestMessageGuid || message.dateEdited != cachedDateEdited)) {
             String newSubtitle = MessageHelper.getNotificationText(message);
-            if (newSubtitle != subtitle) {
-              setState(() {
-                subtitle = newSubtitle;
-                fakeText = faker.lorem.words(subtitle.split(" ").length).join(" ");
-              });
+            if (newSubtitle != subtitle.value) {
+              subtitle.value = newSubtitle;
+              fakeText.value = faker.lorem.words(subtitle.value.split(" ").length).join(" ");
             }
           } else if (!controller.chat.isGroup &&
               message != null &&
               message.isFromMe! &&
               (message.dateDelivered != null || message.dateRead != null)) {
-            // update delivered status
-            setState(() {});
+            // update delivered status - no change needed, Obx will handle rebuild
           }
           cachedLatestMessageGuid = message?.guid;
           cachedDateEdited = message?.dateEdited;
@@ -370,11 +361,9 @@ class _ChatSubtitleState extends CustomState<ChatSubtitle, void, ConversationTil
         if (event.item1 != 'update-contacts') return;
         if (event.item2.isNotEmpty) {
           String newSubtitle = MessageHelper.getNotificationText(controller.chat.latestMessage);
-          if (newSubtitle != subtitle) {
-            setState(() {
-              subtitle = newSubtitle;
-              fakeText = faker.lorem.words(subtitle.split(" ").length).join(" ");
-            });
+          if (newSubtitle != subtitle.value) {
+            subtitle.value = newSubtitle;
+            fakeText.value = faker.lorem.words(subtitle.value.split(" ").length).join(" ");
           }
         }
       });
@@ -387,17 +376,14 @@ class _ChatSubtitleState extends CustomState<ChatSubtitle, void, ConversationTil
               controller.chat.isGroup || !isFromMe || message.dateDelivered != null || message.dateRead != null;
           if (message.guid != cachedLatestMessageGuid || message.dateEdited != cachedDateEdited) {
             String newSubtitle = MessageHelper.getNotificationText(message);
-            if (newSubtitle != subtitle) {
-              setState(() {
-                subtitle = newSubtitle;
-                fakeText = faker.lorem.words(subtitle.split(" ").length).join(" ");
-              });
+            if (newSubtitle != subtitle.value) {
+              subtitle.value = newSubtitle;
+              fakeText.value = faker.lorem.words(subtitle.value.split(" ").length).join(" ");
             }
           } else if (!controller.chat.isGroup &&
               message.isFromMe! &&
               (message.dateDelivered != null || message.dateRead != null)) {
-            // update delivered status
-            setState(() {});
+            // update delivered status - no change needed, Obx will handle rebuild
           }
           cachedDateCreated = message.dateCreated;
           cachedLatestMessageGuid = message.guid;
@@ -419,10 +405,10 @@ class _ChatSubtitleState extends CustomState<ChatSubtitle, void, ConversationTil
       final hideContent = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideMessageContent.value;
       final hideContacts = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
       String _subtitle = hideContent
-          ? fakeText
+          ? fakeText.value
           : hideContacts && !kIsWeb
               ? MessageHelper.getNotificationText(Message.findOne(guid: cachedLatestMessageGuid!)!)
-              : subtitle;
+              : subtitle.value;
 
       return RichText(
         text: TextSpan(
