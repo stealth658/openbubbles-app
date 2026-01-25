@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:bluebubbles/app/wrappers/bb_annotated_region.dart';
+import 'package:bluebubbles/app/wrappers/bb_scaffold.dart';
 import 'package:bluebubbles/helpers/ui/ui_helpers.dart';
 import 'package:bluebubbles/app/layouts/settings/dialogs/old_themes_dialog.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/theming/advanced/advanced_theming_content.dart';
@@ -47,8 +47,7 @@ class _AdvancedThemingPanelState extends OptimizedState<AdvancedThemingPanel> wi
 
   @override
   Widget build(BuildContext context) {
-    return BBAnnotatedRegion(
-      child: Scaffold(
+    return BBScaffold(
         backgroundColor: material ? tileColor : headerColor,
         appBar: PreferredSize(
           preferredSize: Size(NavigationSvc.width(context), 50),
@@ -130,7 +129,6 @@ class _AdvancedThemingPanelState extends OptimizedState<AdvancedThemingPanel> wi
             controller.animateTo(page);
           },
         ),
-      ),
     );
   }
 }

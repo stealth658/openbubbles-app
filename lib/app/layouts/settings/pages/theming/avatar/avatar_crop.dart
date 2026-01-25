@@ -1,5 +1,5 @@
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/app/wrappers/bb_annotated_region.dart';
+import 'package:bluebubbles/app/wrappers/bb_scaffold.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -90,9 +90,7 @@ class _AvatarCropState extends OptimizedState<AvatarCrop> {
 
   @override
   Widget build(BuildContext context) {
-    return BBAnnotatedRegion(
-      child: Scaffold(
-          backgroundColor: context.theme.colorScheme.background,
+    return BBScaffold(
           appBar: PreferredSize(
             preferredSize: Size(NavigationSvc.width(context), kIsDesktop ? 80 : 50),
             child: AppBar(
@@ -203,7 +201,7 @@ class _AvatarCropState extends OptimizedState<AvatarCrop> {
                 ],
               ),
             ),
-          )),
+          ),
     );
   }
 

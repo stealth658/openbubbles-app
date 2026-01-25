@@ -6,7 +6,7 @@ import 'package:bluebubbles/app/layouts/chat_creator/widgets/message_type_toggle
 import 'package:bluebubbles/app/layouts/chat_creator/widgets/selected_contact_chip.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/pages/conversation_view.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/text_field/conversation_text_field.dart';
-import 'package:bluebubbles/app/wrappers/bb_annotated_region.dart';
+import 'package:bluebubbles/app/wrappers/bb_scaffold.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/app/wrappers/titlebar_wrapper.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
@@ -23,7 +23,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_acrylic/window_effect.dart';
 import 'package:get/get.dart' hide Response;
 import 'package:slugify/slugify.dart';
 import 'package:tuple/tuple.dart';
@@ -295,12 +294,8 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
 
   @override
   Widget build(BuildContext context) {
-    return BBAnnotatedRegion(
-      child: Scaffold(
-        backgroundColor: SettingsSvc.settings.windowEffect.value != WindowEffect.disabled
-            ? Colors.transparent
-            : context.theme.colorScheme.background,
-        appBar: PreferredSize(
+    return BBScaffold(
+      appBar: PreferredSize(
           preferredSize: Size(NavigationSvc.width(context), kIsDesktop ? 90 : 50),
           child: AppBar(
             systemOverlayStyle: context.theme.colorScheme.brightness == Brightness.dark
@@ -353,7 +348,7 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
             ],
           ),
         ),
-        body: FocusScope(
+      body: FocusScope(
           child: Column(
             children: [
               Padding(
@@ -732,7 +727,6 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
             ],
           ),
         ),
-      ),
     );
   }
 }

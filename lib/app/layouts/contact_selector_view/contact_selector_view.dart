@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:bluebubbles/app/components/avatars/contact_avatar_widget.dart';
-import 'package:bluebubbles/app/wrappers/bb_annotated_region.dart';
+import 'package:bluebubbles/app/wrappers/bb_scaffold.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
@@ -10,7 +10,6 @@ import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_acrylic/window_effect.dart';
 import 'package:get/get.dart' hide Response;
 import 'package:slugify/slugify.dart';
 
@@ -68,12 +67,8 @@ class ContactSelectorViewState extends OptimizedState<ContactSelectorView> {
 
   @override
   Widget build(BuildContext context) {
-    return BBAnnotatedRegion(
-      child: Scaffold(
-        backgroundColor: SettingsSvc.settings.windowEffect.value != WindowEffect.disabled
-            ? Colors.transparent
-            : context.theme.colorScheme.background,
-        appBar: PreferredSize(
+    return BBScaffold(
+      appBar: PreferredSize(
             preferredSize: Size(NavigationSvc.width(context), kIsDesktop ? 90 : 50),
             child: AppBar(
                 systemOverlayStyle: context.theme.colorScheme.brightness == Brightness.dark
@@ -196,7 +191,7 @@ class ContactSelectorViewState extends OptimizedState<ContactSelectorView> {
             ],
           ),
         ),
-      ),
+
     );
   }
 }

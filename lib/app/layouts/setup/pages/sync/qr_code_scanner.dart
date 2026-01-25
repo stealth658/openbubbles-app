@@ -1,8 +1,7 @@
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/app/wrappers/bb_annotated_region.dart';
+import 'package:bluebubbles/app/wrappers/bb_scaffold.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 class QRCodeScanner extends StatefulWidget {
@@ -18,9 +17,7 @@ class _QRCodeScannerState extends OptimizedState<QRCodeScanner> {
 
   @override
   Widget build(BuildContext context) {
-    return BBAnnotatedRegion(
-      child: Scaffold(
-        backgroundColor: context.theme.colorScheme.background,
+    return BBScaffold(
         body: MobileScanner(
           key: qrKey,
           onDetect: (capture) {
@@ -30,7 +27,6 @@ class _QRCodeScannerState extends OptimizedState<QRCodeScanner> {
             }
           },
         ),
-      ),
     );
   }
 }
