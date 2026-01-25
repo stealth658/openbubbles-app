@@ -3,10 +3,9 @@ import 'dart:async';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/attachment/attachment_holder.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/interactive/interactive_holder.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/text/text_bubble.dart';
+import 'package:bluebubbles/app/state/message_state.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
-import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
-import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:collection/collection.dart';
@@ -30,50 +29,10 @@ class MessageWidgetController extends StatefulController with GetSingleTickerPro
   String? newMessageGuid;
   ConversationViewController? cvController;
   late final String tag;
-  late final StreamSubscription? sub;
+  StreamSubscription? sub;
   bool built = false;
 
   static const maxBubbleSizeFactor = 0.75;
-
-  /// Granular update flags to minimize re-renders
-  /// Only triggers rebuilds for specific components that need updating
-  ///
-  /// - addedChanged: Message added to chat (temp message)
-  /// - sentChanged: HTTP request completed
-  /// - deliveredChanged: Delivery status received
-  /// - readChanged: Read receipt received
-  /// - errorChanged: Error status changed
-  /// - reactionsChanged: Reactions added/removed
-  /// - contentChanged: Message content/text/parts changed
-  /// - threadRepliesChanged: Thread reply count changed
-  /// - editChanged: Message edited
-  /// - recipientNotifiedChanged: Recipient notification status changed
-  ///
-  /// This avoids unnecessary full MessageHolder rebuilds which cause scrolling jank
-  final RxBool addedChanged = false.obs;
-  final RxBool sentChanged = false.obs;
-  final RxBool deliveredChanged = false.obs;
-  final RxBool readChanged = false.obs;
-  final RxBool errorChanged = false.obs;
-  final RxBool reactionsChanged = false.obs;
-  final RxBool contentChanged = false.obs;
-  final RxBool threadRepliesChanged = false.obs;
-  final RxBool editChanged = false.obs;
-  final RxBool recipientNotifiedChanged = false.obs;
-
-  /// Per-message update stream for targeted component updates
-  /// Replaces global eventDispatcher to reduce O(n) listener overhead
-  final StreamController<MessageUpdateEvent> _updateStream = StreamController<MessageUpdateEvent>.broadcast();
-  Stream<MessageUpdateEvent> get updateStream => _updateStream.stream;
-
-  /// Emit a message update event
-  /// Used by ActionHandler and other services to notify of message state changes
-  void emitUpdateEvent(MessageUpdateType type) {
-    _updateStream.add(MessageUpdateEvent(
-      type: type,
-      message: message,
-    ));
-  }
 
   /// Cache for parsed message parts to avoid repeated expensive parsing
   /// Set to false when message content changes, forcing a rebuild on next access
@@ -81,6 +40,14 @@ class MessageWidgetController extends StatefulController with GetSingleTickerPro
 
   MessageWidgetController(this.message) {
     tag = message.guid!;
+  }
+
+  /// Get the MessageState for this message from the MessagesService
+  /// Returns null if no chat controller or message state doesn't exist
+  MessageState? get messageState {
+    if (cvController == null) return null;
+    final service = MessagesSvc(cvController!.chat.guid);
+    return service.getMessageStateIfExists(message.guid!);
   }
 
   Message? get newMessage =>
@@ -92,22 +59,12 @@ class MessageWidgetController extends StatefulController with GetSingleTickerPro
   void onInit() {
     super.onInit();
     buildMessageParts();
-    if (!kIsWeb && message.id != null) {
-      final messageQuery = Database.messages.query(Message_.id.equals(message.id!)).watch();
-      sub = messageQuery.listen((Query<Message> query) async {
-        if (message.id == null) return;
-        final _message = await runAsync(() {
-          return Database.messages.get(message.id!);
-        });
-        if (_message != null) {
-          if (_message.hasAttachments) {
-            _message.attachments = List<Attachment>.from(_message.dbAttachments);
-          }
-          _message.associatedMessages = message.associatedMessages;
-          updateMessage(_message);
-        }
-      });
-    } else if (kIsWeb) {
+    // Database watch removed - updates now flow through:
+    // ActionHandler → MessagesService → MessageState → UI (Obx)
+    // This eliminates duplicate updates and reduces DB query overhead
+
+    // Keep web listener for now as web doesn't use ActionHandler the same way
+    if (kIsWeb) {
       sub = WebListeners.messageUpdate.listen((tuple) {
         final _message = tuple.item1;
         final tempGuid = tuple.item2;
@@ -120,8 +77,7 @@ class MessageWidgetController extends StatefulController with GetSingleTickerPro
 
   @override
   void onClose() {
-    _updateStream.close();
-    sub?.cancel();
+    sub?.cancel(); // Only cancels web listener now
     super.onClose();
   }
 
@@ -276,81 +232,18 @@ class MessageWidgetController extends StatefulController with GetSingleTickerPro
     // Track what changed to minimize updates
     final hasDeliveryChanged = newItem.dateDelivered != message.dateDelivered;
     final hasReadChanged = newItem.dateRead != message.dateRead;
-    final hasNotifyChanged = newItem.didNotifyRecipient != message.didNotifyRecipient;
     final hasEdited = newItem.dateEdited != message.dateEdited;
-    final hasErrorChanged = newItem.error != message.error;
 
     // Handle delivery/read status changes (lightweight update)
-    if (hasDeliveryChanged || hasReadChanged || hasNotifyChanged) {
+    // MessageState will automatically update UI components
+    if (hasDeliveryChanged || hasReadChanged) {
       message = Message.merge(newItem, message);
       MessagesSvc(chat).updateMessage(message);
 
-      // Trigger specific update types based on what changed
-      if (hasDeliveryChanged) {
-        deliveredChanged.toggle();
-        _updateStream.add(MessageUpdateEvent(
-          type: MessageUpdateType.delivered,
-          message: message,
-        ));
-      }
-
-      if (hasReadChanged) {
-        readChanged.toggle();
-        _updateStream.add(MessageUpdateEvent(
-          type: MessageUpdateType.read,
-          message: message,
-        ));
-      }
-
-      if (hasNotifyChanged) {
-        recipientNotifiedChanged.toggle();
-        _updateStream.add(MessageUpdateEvent(
-          type: MessageUpdateType.recipientNotified,
-          message: message,
-        ));
-      }
-
-      // Update the latest 2 messages in case their indicators need to go away
-      final messages = MessagesSvc(chat)
-          .struct
-          .messages
-          .where((e) => e.isFromMe! && (e.dateDelivered != null || e.dateRead != null))
-          .toList()
-        ..sort(Message.sort);
-      for (Message m in messages.take(2)) {
-        final mwcInstance = getActiveMwc(m.guid!);
-        if (mwcInstance != null) {
-          if (hasDeliveryChanged) {
-            mwcInstance.deliveredChanged.toggle();
-            mwcInstance._updateStream.add(MessageUpdateEvent(
-              type: MessageUpdateType.delivered,
-              message: m,
-            ));
-          }
-          if (hasReadChanged) {
-            mwcInstance.readChanged.toggle();
-            mwcInstance._updateStream.add(MessageUpdateEvent(
-              type: MessageUpdateType.read,
-              message: m,
-            ));
-          }
-        }
-      }
-
-      // If message was also edited, rebuild parts and update full holder
+      // If message was also edited, rebuild parts
       if (hasEdited) {
         _partsCached = false;
         buildMessageParts(force: true);
-        editChanged.toggle();
-        _updateStream.add(MessageUpdateEvent(
-          type: MessageUpdateType.edit,
-          message: message,
-        ));
-        contentChanged.toggle();
-        _updateStream.add(MessageUpdateEvent(
-          type: MessageUpdateType.content,
-          message: message,
-        ));
       }
       return;
     }
@@ -361,39 +254,16 @@ class MessageWidgetController extends StatefulController with GetSingleTickerPro
       _partsCached = false;
       buildMessageParts(force: true);
       MessagesSvc(chat).updateMessage(message);
-      editChanged.toggle();
-      _updateStream.add(MessageUpdateEvent(
-        type: MessageUpdateType.edit,
-        message: message,
-      ));
-      contentChanged.toggle();
-      _updateStream.add(MessageUpdateEvent(
-        type: MessageUpdateType.content,
-        message: message,
-      ));
       return;
     }
 
-    // Handle error state changes (lightweight update - just icon)
-    if (hasErrorChanged) {
-      message = Message.merge(newItem, message);
-      MessagesSvc(chat).updateMessage(message);
-      errorChanged.toggle();
-      _updateStream.add(MessageUpdateEvent(
-        type: MessageUpdateType.error,
-        message: message,
-      ));
-      return;
-    }
+    // Handle any other changes (error state, etc.)
+    message = Message.merge(newItem, message);
+    MessagesSvc(chat).updateMessage(message);
   }
 
   void updateThreadOriginator(Message newItem) {
-    // Use granular update instead of full MessageProperties rebuild
-    threadRepliesChanged.toggle();
-    _updateStream.add(MessageUpdateEvent(
-      type: MessageUpdateType.threadReply,
-      message: message,
-    ));
+    // Thread updates are handled by MessageState - no action needed here
   }
 
   void updateAssociatedMessage(Message newItem, {bool updateHolder = true, String? tempGuid}) {
@@ -403,7 +273,6 @@ class MessageWidgetController extends StatefulController with GetSingleTickerPro
 
     // If not found by ID or temp GUID, check if this is replacing a temp reaction
     // Temp reactions have GUID starting with "temp-" or "error-" and no database ID
-    // The only alternative to this would be to
     if (index < 0) {
       index = message.associatedMessages.indexWhere((e) =>
           (e.guid?.startsWith("temp-") == true || e.guid?.startsWith("error-") == true) &&
@@ -420,52 +289,11 @@ class MessageWidgetController extends StatefulController with GetSingleTickerPro
       Logger.debug("[MWC] Added new reaction to ${message.guid}: ${newItem.associatedMessageType}",
           tag: "MessageReactivity");
     }
-    if (updateHolder) {
-      // Use granular update instead of full MessageHolder rebuild
-      reactionsChanged.toggle();
-      _updateStream.add(MessageUpdateEvent(
-        type: MessageUpdateType.reaction,
-        message: message,
-      ));
-      Logger.debug(
-          "[MWC] Triggered reaction update for ${message.guid} (now has ${message.associatedMessages.length} reactions)",
-          tag: "MessageReactivity");
-    }
+    // Updates are handled by MessageState - no flag toggle needed
   }
 
   void removeAssociatedMessage(Message toRemove) {
     message.associatedMessages.removeWhere((e) => e.id == toRemove.id);
-    // Use granular update instead of full MessageHolder rebuild
-    reactionsChanged.toggle();
-    _updateStream.add(MessageUpdateEvent(
-      type: MessageUpdateType.reaction,
-      message: message,
-    ));
+    // Updates are handled by MessageState - no flag toggle needed
   }
-}
-
-/// Enum defining types of message updates for targeted component rebuilds
-enum MessageUpdateType {
-  added, // User sent message (temp, HTTP request not completed)
-  sent, // HTTP request completed successfully
-  delivered, // Delivery status received (dateDelivered set or isDelivered = true)
-  read, // Read receipt received (dateRead set)
-  error, // Error occurred (message.error set or HTTP request failed)
-  reaction, // Reaction added/removed
-  threadReply, // Thread reply added
-  edit, // Message edited (dateEdited set)
-  recipientNotified, // Recipient was notified (didNotifyRecipient set)
-  content, // Message content changed (text, parts, etc.)
-}
-
-/// Event emitted when a message is updated
-/// Used for targeted component updates instead of global eventDispatcher
-class MessageUpdateEvent {
-  final MessageUpdateType type;
-  final Message message;
-
-  MessageUpdateEvent({
-    required this.type,
-    required this.message,
-  });
 }

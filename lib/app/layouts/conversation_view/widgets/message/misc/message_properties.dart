@@ -84,12 +84,10 @@ class _MessagePropertiesState extends CustomState<MessageProperties, void, Messa
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      // Observe granular thread replies flag to minimize rebuilds
-      controller.threadRepliesChanged.value;
+      // Observe granular MessageState fields for thread replies and edits
+      controller.messageState?.associatedMessages.length;
       // Also observe showEdits since that's toggled directly
       controller.showEdits.value;
-      // Watch coordinator trigger for immediate thread reply updates (bypasses ObjectBox latency)
-      muc.getUpdateTrigger(controller.cvController?.chat.guid ?? ChatsSvc.activeChat!.chat.guid, message.guid!)?.value;
 
       final props = getProperties();
       return AnimatedSize(

@@ -207,22 +207,9 @@ class ActionHandler extends GetxService {
         parentMwc.updateAssociatedMessage(m, updateHolder: true);
         Logger.debug("[ActionHandler] Added temp reaction to parent controller ${m.associatedMessageGuid}",
             tag: "MessageReactivity");
-
-        // Emit 'added' event for the temp reaction
-        parentMwc.emitUpdateEvent(MessageUpdateType.added);
       } else {
         Logger.warn("[ActionHandler] Parent controller not found for temp reaction, will update when controller loads",
             tag: "MessageReactivity");
-      }
-
-      // Trigger coordinator notification for immediate UI update
-      muc.notifyMessageUpdate(c.guid, m.associatedMessageGuid!);
-    } else {
-      // For regular messages, emit 'added' event
-      final mwc = getActiveMwc(m.guid!);
-      if (mwc != null) {
-        mwc.addedChanged.toggle();
-        mwc.emitUpdateEvent(MessageUpdateType.added);
       }
     }
 
@@ -248,13 +235,6 @@ class ActionHandler extends GetxService {
         final newMessage = Message.fromMap(response.data['data']);
         try {
           await matchMessageWithExisting(c, m.guid!, newMessage, existing: m);
-
-          // Emit 'sent' event when message successfully sent
-          final mwc = getActiveMwc(newMessage.guid!);
-          if (mwc != null) {
-            mwc.sentChanged.toggle();
-            mwc.emitUpdateEvent(MessageUpdateType.sent);
-          }
         } catch (ex) {
           Logger.warn("Failed to find message match for ${m.guid} -> ${newMessage.guid}!",
               error: ex, tag: "MessageStatus");
@@ -303,17 +283,11 @@ class ActionHandler extends GetxService {
               Logger.debug(
                   "[ActionHandler] Updated parent controller for ${newMessage.associatedMessageGuid} with real reaction ${newMessage.guid}",
                   tag: "MessageReactivity");
-
-              // Emit 'sent' event for the reaction
-              parentMwc.emitUpdateEvent(MessageUpdateType.sent);
             } else {
               Logger.warn(
                   "[ActionHandler] Parent controller not found for ${newMessage.associatedMessageGuid} when updating reaction",
                   tag: "MessageReactivity");
             }
-
-            // Trigger coordinator notification for immediate UI update
-            muc.notifyMessageUpdate(c.guid, newMessage.associatedMessageGuid!);
           }
         } catch (ex) {
           Logger.warn("Failed to find message match for ${m.guid} -> ${newMessage.guid}!",
@@ -608,9 +582,6 @@ class ActionHandler extends GetxService {
 
     // Reposition the chat in the chat list (more efficient than sorting the entire list)
     ChatsSvc.updateChat(c, override: true);
-
-    // Trigger immediate UI update via coordinator (bypasses ObjectBox watch latency)
-    muc.notifyMessageUpdate(c.guid, m.guid!);
   }
 
   Future<void> handleUpdatedMessage(Chat c, Message m, String? tempGuid, {bool checkExisting = true}) async {
@@ -643,8 +614,9 @@ class ActionHandler extends GetxService {
     // update the message in the DB
     await matchMessageWithExisting(c, tempGuid ?? m.guid!, m);
 
-    // Trigger immediate UI update via coordinator (bypasses ObjectBox watch latency)
-    muc.notifyMessageUpdate(c.guid, m.guid!);
+    // Update MessagesService which will update MessageState
+    // This ensures UI gets updated without needing DB watches on each message
+    MessagesSvc(c.guid).updateMessage(m, oldGuid: tempGuid);
   }
 
   Future<Chat> handleNewOrUpdatedChat(Chat partialData) async {

@@ -32,24 +32,10 @@ class _InteractiveHolderState extends CustomState<InteractiveHolder, void, Messa
   MessagePart get part => widget.message;
   Message get message => controller.message;
   PayloadData? get payloadData => message.payloadData;
-  late bool selected = controller.cvController?.isSelected(message.guid!) ?? false;
 
   @override
   void initState() {
     forceDelete = false;
-    if (controller.cvController != null && !iOS) {
-      ever<List<Message>>(controller.cvController!.selected, (event) {
-        if (controller.cvController!.isSelected(message.guid!) && !selected) {
-          setState(() {
-            selected = true;
-          });
-        } else if (!controller.cvController!.isSelected(message.guid!) && selected) {
-          setState(() {
-            selected = false;
-          });
-        }
-      });
-    }
     super.initState();
   }
 
@@ -59,123 +45,131 @@ class _InteractiveHolderState extends CustomState<InteractiveHolder, void, Messa
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return ColorFiltered(
-      colorFilter: ColorFilter.mode(
-          !selected ? Colors.transparent : context.theme.colorScheme.tertiaryContainer.withValues(alpha: 0.5),
-          BlendMode.srcOver),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: payloadData == null
-              ? null
-              : () async {
-                  String? url;
-                  if (payloadData!.type == PayloadType.url) {
-                    url = payloadData!.urlData!.first.url ?? payloadData!.urlData!.first.originalUrl;
-                  } else {
-                    url = payloadData!.appData!.first.url;
-                  }
-                  if (url != null && Uri.tryParse(url) != null) {
-                    await launchUrl(
-                      Uri.parse(url),
-                      mode: LaunchMode.externalApplication,
-                    );
-                  }
-                },
-          child: CustomPaint(
-            painter: iOS
+    return Obx(() {
+      // Observe selection state
+      final selected = !iOS && (controller.cvController?.selected.any((m) => m.guid == message.guid) ?? false);
+
+      return ColorFiltered(
+        colorFilter: ColorFilter.mode(
+            !selected ? Colors.transparent : context.theme.colorScheme.tertiaryContainer.withValues(alpha: 0.5),
+            BlendMode.srcOver),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: payloadData == null
                 ? null
-                : TailPainter(
-                    isFromMe: message.isFromMe!,
-                    showTail: false,
-                    color: context.theme.colorScheme.properSurface,
-                    width: 1.5,
+                : () async {
+                    String? url;
+                    if (payloadData!.type == PayloadType.url) {
+                      url = payloadData!.urlData!.first.url ?? payloadData!.urlData!.first.originalUrl;
+                    } else {
+                      url = payloadData!.appData!.first.url;
+                    }
+                    if (url != null && Uri.tryParse(url) != null) {
+                      await launchUrl(
+                        Uri.parse(url),
+                        mode: LaunchMode.externalApplication,
+                      );
+                    }
+                  },
+            child: CustomPaint(
+              painter: iOS
+                  ? null
+                  : TailPainter(
+                      isFromMe: message.isFromMe!,
+                      showTail: false,
+                      color: context.theme.colorScheme.properSurface,
+                      width: 1.5,
+                    ),
+              child: Ink(
+                color: iOS ? context.theme.colorScheme.properSurface : null,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: NavigationSvc.width(context) * (NavigationSvc.isTabletMode(context) ? 0.5 : 0.6),
+                    maxHeight: context.height * 0.6,
+                    minHeight: 40,
+                    minWidth: 40,
                   ),
-            child: Ink(
-              color: iOS ? context.theme.colorScheme.properSurface : null,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxWidth: NavigationSvc.width(context) * (NavigationSvc.isTabletMode(context) ? 0.5 : 0.6),
-                  maxHeight: context.height * 0.6,
-                  minHeight: 40,
-                  minWidth: 40,
-                ),
-                child: Padding(
-                  padding: EdgeInsets.only(left: message.isFromMe! ? 0 : 10, right: message.isFromMe! ? 10 : 0),
-                  child: AnimatedSize(
-                    duration: const Duration(milliseconds: 150),
-                    child: Center(
-                      heightFactor: 1,
-                      widthFactor: 1,
-                      child: SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideAttachments.value
-                          ? const Padding(padding: EdgeInsets.all(15), child: Text("Interactive Message"))
-                          : Opacity(
-                              opacity: message.guid!.startsWith("temp") ? 0.5 : 1,
-                              child: Builder(builder: (context) {
-                                if (payloadData == null && !(message.isLegacyUrlPreview)) {
-                                  switch (message.interactiveText) {
-                                    case "Handwritten Message":
-                                    case "Digital Touch Message":
-                                      if (SettingsSvc.settings.enablePrivateAPI.value &&
-                                          SettingsSvc.isMinBigSurSync &&
-                                          SettingsSvc.serverDetailsSync().item4 >= 226) {
-                                        return EmbeddedMedia(
+                  child: Padding(
+                    padding: EdgeInsets.only(left: message.isFromMe! ? 0 : 10, right: message.isFromMe! ? 10 : 0),
+                    child: AnimatedSize(
+                      duration: const Duration(milliseconds: 150),
+                      child: Center(
+                        heightFactor: 1,
+                        widthFactor: 1,
+                        child: SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideAttachments.value
+                            ? const Padding(padding: EdgeInsets.all(15), child: Text("Interactive Message"))
+                            : Obx(() {
+                                final isTempMessage = controller.messageState?.guid.value?.startsWith("temp") ?? false;
+                                return Opacity(
+                                    opacity: isTempMessage ? 0.5 : 1,
+                                    child: Builder(builder: (context) {
+                                      if (payloadData == null && !(message.isLegacyUrlPreview)) {
+                                        switch (message.interactiveText) {
+                                          case "Handwritten Message":
+                                          case "Digital Touch Message":
+                                            if (SettingsSvc.settings.enablePrivateAPI.value &&
+                                                SettingsSvc.isMinBigSurSync &&
+                                                SettingsSvc.serverDetailsSync().item4 >= 226) {
+                                              return EmbeddedMedia(
+                                                message: message,
+                                                parentController: controller,
+                                              );
+                                            } else {
+                                              return UnsupportedInteractive(
+                                                message: message,
+                                                payloadData: null,
+                                              );
+                                            }
+                                          default:
+                                            return UnsupportedInteractive(
+                                              message: message,
+                                              payloadData: null,
+                                            );
+                                        }
+                                      } else if (payloadData?.type == PayloadType.url || message.isLegacyUrlPreview) {
+                                        if (payloadData == null) {
+                                          return LegacyUrlPreview(
+                                            message: message,
+                                          );
+                                        }
+                                        return UrlPreview(
+                                          data: payloadData!.urlData!.first,
                                           message: message,
-                                          parentController: controller,
                                         );
                                       } else {
-                                        return UnsupportedInteractive(
-                                          message: message,
-                                          payloadData: null,
-                                        );
+                                        final data = payloadData!.appData!.first;
+                                        switch (message.interactiveText) {
+                                          case "YouTube":
+                                          case "Photos":
+                                          case "OpenTable":
+                                          case "iMessage Poll":
+                                          case "Shazam":
+                                          case "Google Maps":
+                                            return SupportedInteractive(
+                                              data: data,
+                                              message: message,
+                                            );
+                                          case "GamePigeon":
+                                            return GamePigeon(
+                                              data: data,
+                                              message: message,
+                                            );
+                                          case "Apple Pay":
+                                            return ApplePay(
+                                              data: data,
+                                              message: message,
+                                            );
+                                          default:
+                                            return UnsupportedInteractive(
+                                              message: message,
+                                              payloadData: data,
+                                            );
+                                        }
                                       }
-                                    default:
-                                      return UnsupportedInteractive(
-                                        message: message,
-                                        payloadData: null,
-                                      );
-                                  }
-                                } else if (payloadData?.type == PayloadType.url || message.isLegacyUrlPreview) {
-                                  if (payloadData == null) {
-                                    return LegacyUrlPreview(
-                                      message: message,
-                                    );
-                                  }
-                                  return UrlPreview(
-                                    data: payloadData!.urlData!.first,
-                                    message: message,
-                                  );
-                                } else {
-                                  final data = payloadData!.appData!.first;
-                                  switch (message.interactiveText) {
-                                    case "YouTube":
-                                    case "Photos":
-                                    case "OpenTable":
-                                    case "iMessage Poll":
-                                    case "Shazam":
-                                    case "Google Maps":
-                                      return SupportedInteractive(
-                                        data: data,
-                                        message: message,
-                                      );
-                                    case "GamePigeon":
-                                      return GamePigeon(
-                                        data: data,
-                                        message: message,
-                                      );
-                                    case "Apple Pay":
-                                      return ApplePay(
-                                        data: data,
-                                        message: message,
-                                      );
-                                    default:
-                                      return UnsupportedInteractive(
-                                        message: message,
-                                        payloadData: data,
-                                      );
-                                  }
-                                }
-                              })),
+                                    }));
+                              }),
+                      ),
                     ),
                   ),
                 ),
@@ -183,7 +177,7 @@ class _InteractiveHolderState extends CustomState<InteractiveHolder, void, Messa
             ),
           ),
         ),
-      ),
-    );
+      );
+    });
   }
 }

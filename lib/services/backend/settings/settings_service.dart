@@ -420,18 +420,24 @@ class SettingsService {
   }
 
   Future<bool> get isMinVentura async {
-    final val = await getServerDetails();
-    return val.item1 >= 13;
+    // final val = await getServerDetails();
+    // return val.item1 >= 13;
+    // TODO: REMOVE
+    return true;
   }
 
   Future<bool> get isMinSonoma async {
-    final val = await getServerDetails();
-    return val.item1 >= 14;
+    // final val = await getServerDetails();
+    // return val.item1 >= 14;
+    // TODO: REMOVE
+    return true;
   }
 
-  Future<bool> get isMinSequioa async {
-    final val = await getServerDetails();
-    return val.item1 >= 15;
+  Future<bool> get isMinSequoia async {
+    // final val = await getServerDetails();
+    // return val.item1 >= 15;
+    // TODO: REMOVE
+    return true;
   }
 
   bool get isMinMontereySync {
@@ -443,7 +449,9 @@ class SettingsService {
   }
 
   bool get isMinVenturaSync {
-    return (PrefsSvc.i.getInt("macos-version") ?? 11) >= 13;
+    // return (PrefsSvc.i.getInt("macos-version") ?? 11) >= 13;
+    // TODO: REMOVE
+    return true;
   }
 
   bool get isMinCatalinaSync {
@@ -451,11 +459,15 @@ class SettingsService {
   }
 
   bool get isMinSonomaSync {
-    return (PrefsSvc.i.getInt("macos-version") ?? 11) >= 14;
+    // return (PrefsSvc.i.getInt("macos-version") ?? 11) >= 14;
+    // TODO: REMOVE
+    return true;
   }
 
-  bool get isMinSequioaSync {
-    return (PrefsSvc.i.getInt("macos-version") ?? 11) >= 15;
+  bool get isMinSequoiaSync {
+    // return (PrefsSvc.i.getInt("macos-version") ?? 11) >= 15;
+    // TODO: REMOVE
+    return true;
   }
 
   /// Group chats can be created on macOS <= Catalina or

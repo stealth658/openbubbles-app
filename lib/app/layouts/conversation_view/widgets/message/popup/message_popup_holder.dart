@@ -147,34 +147,38 @@ class _MessagePopupHolderState extends OptimizedState<MessagePopupHolder> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      key: globalKey,
-      onDoubleTap: widget.isEditing
-          ? null
-          : SettingsSvc.settings.doubleTapForDetails.value || message.guid!.startsWith('temp')
-              ? () => openPopup()
-              : SettingsSvc.settings.enableQuickTapback.value && widget.cvController.chat.isIMessage
-                  ? () => sendTapback(null, widget.part.part)
-                  : null,
-      onLongPress: widget.isEditing
-          ? null
-          : SettingsSvc.settings.doubleTapForDetails.value &&
-                  SettingsSvc.settings.enableQuickTapback.value &&
-                  widget.cvController.chat.isIMessage &&
-                  !message.guid!.startsWith('temp')
-              ? () => sendTapback(null, widget.part.part)
-              : () => openPopup(),
-      onSecondaryTapUp: widget.isEditing
-          ? null
-          : (details) async {
-              if (!kIsWeb && !kIsDesktop) return;
-              if (kIsWeb) {
-                (await html.document.onContextMenu.first).preventDefault();
-              }
-              openPopup();
-            },
-      child: widget.child,
-    );
+    return Obx(() {
+      final isTempMessage =
+          widget.controller.messageState?.guid.value?.startsWith('temp') ?? message.guid!.startsWith('temp');
+      return GestureDetector(
+        key: globalKey,
+        onDoubleTap: widget.isEditing
+            ? null
+            : SettingsSvc.settings.doubleTapForDetails.value || isTempMessage
+                ? () => openPopup()
+                : SettingsSvc.settings.enableQuickTapback.value && widget.cvController.chat.isIMessage
+                    ? () => sendTapback(null, widget.part.part)
+                    : null,
+        onLongPress: widget.isEditing
+            ? null
+            : SettingsSvc.settings.doubleTapForDetails.value &&
+                    SettingsSvc.settings.enableQuickTapback.value &&
+                    widget.cvController.chat.isIMessage &&
+                    !isTempMessage
+                ? () => sendTapback(null, widget.part.part)
+                : () => openPopup(),
+        onSecondaryTapUp: widget.isEditing
+            ? null
+            : (details) async {
+                if (!kIsWeb && !kIsDesktop) return;
+                if (kIsWeb) {
+                  (await html.document.onContextMenu.first).preventDefault();
+                }
+                openPopup();
+              },
+        child: widget.child,
+      );
+    });
   }
 }
 

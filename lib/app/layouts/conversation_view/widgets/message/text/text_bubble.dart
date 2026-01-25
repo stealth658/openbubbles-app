@@ -32,7 +32,6 @@ class _TextBubbleState extends CustomState<TextBubble, void, MessageWidgetContro
 
   late MovieTween tween;
   Control anim = Control.stop;
-  late bool selected = controller.cvController?.isSelected(message.guid!) ?? false;
 
   @override
   void initState() {
@@ -65,23 +64,10 @@ class _TextBubbleState extends CustomState<TextBubble, void, MessageWidgetContro
         });
       }
     });
-    if (controller.cvController != null && !iOS) {
-      ever<List<Message>>(controller.cvController!.selected, (event) {
-        if (controller.cvController!.isSelected(message.guid!) && !selected) {
-          setState(() {
-            selected = true;
-          });
-        } else if (!controller.cvController!.isSelected(message.guid!) && selected) {
-          setState(() {
-            selected = false;
-          });
-        }
-      });
-    }
     super.initState();
   }
 
-  List<Color> getBubbleColors() {
+  List<Color> getBubbleColors(bool selected) {
     if (selected && !iOS) {
       return [context.theme.colorScheme.tertiaryContainer, context.theme.colorScheme.tertiaryContainer];
     }
@@ -101,92 +87,98 @@ class _TextBubbleState extends CustomState<TextBubble, void, MessageWidgetContro
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      constraints: BoxConstraints(
-        maxWidth: message.isBigEmoji
-            ? NavigationSvc.width(context)
-            : NavigationSvc.width(context) * MessageWidgetController.maxBubbleSizeFactor - 40,
-        minHeight: 40,
-      ),
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15).add(EdgeInsets.only(
-          left: message.isFromMe! || message.isBigEmoji ? 0 : 10,
-          right: message.isFromMe! && !message.isBigEmoji ? 10 : 0)),
-      color: message.isFromMe! && !message.isBigEmoji
-          ? (selected
-              ? context.theme.colorScheme.tertiaryContainer
-              : context.theme.colorScheme.primary.darkenAmount(message.guid!.startsWith("temp") ? 0.2 : 0))
-          : null,
-      decoration: message.isFromMe! || message.isBigEmoji
-          ? null
-          : BoxDecoration(
-              gradient: LinearGradient(
-                begin: AlignmentDirectional.bottomCenter,
-                end: AlignmentDirectional.topCenter,
-                colors: getBubbleColors(),
+    return Obx(() {
+      // Observe selection state and temp message state
+      final selected = !iOS && (controller.cvController?.selected.any((m) => m.guid == message.guid) ?? false);
+      final isTempMessage = controller.messageState?.guid.value?.startsWith("temp") ?? false;
+      return Container(
+        constraints: BoxConstraints(
+          maxWidth: message.isBigEmoji
+              ? NavigationSvc.width(context)
+              : NavigationSvc.width(context) * MessageWidgetController.maxBubbleSizeFactor - 40,
+          minHeight: 40,
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15).add(EdgeInsets.only(
+            left: message.isFromMe! || message.isBigEmoji ? 0 : 10,
+            right: message.isFromMe! && !message.isBigEmoji ? 10 : 0)),
+        color: message.isFromMe! && !message.isBigEmoji
+            ? (selected
+                ? context.theme.colorScheme.tertiaryContainer
+                : context.theme.colorScheme.primary.darkenAmount(isTempMessage ? 0.2 : 0))
+            : null,
+        decoration: message.isFromMe! || message.isBigEmoji
+            ? null
+            : BoxDecoration(
+                gradient: LinearGradient(
+                  begin: AlignmentDirectional.bottomCenter,
+                  end: AlignmentDirectional.topCenter,
+                  colors: getBubbleColors(selected),
+                ),
               ),
+        // alignment: Alignment.center,
+        child: FutureBuilder<List<InlineSpan>>(
+            future: buildEnrichedMessageSpans(
+              context,
+              part,
+              message,
+              colorOverride: selected
+                  ? context.theme.colorScheme.onTertiaryContainer
+                  : SettingsSvc.settings.colorfulBubbles.value && !message.isFromMe!
+                      ? getBubbleColors(selected).first.oppositeLightenOrDarken(75)
+                      : null,
+              hideBodyText: widget.subjectOnly,
             ),
-      // alignment: Alignment.center,
-      child: FutureBuilder<List<InlineSpan>>(
-          future: buildEnrichedMessageSpans(
-            context,
-            part,
-            message,
-            colorOverride: selected
-                ? context.theme.colorScheme.onTertiaryContainer
-                : SettingsSvc.settings.colorfulBubbles.value && !message.isFromMe!
-                    ? getBubbleColors().first.oppositeLightenOrDarken(75)
-                    : null,
-            hideBodyText: widget.subjectOnly,
-          ),
-          initialData: buildMessageSpans(
-            context,
-            part,
-            message,
-            colorOverride: selected
-                ? context.theme.colorScheme.onTertiaryContainer
-                : SettingsSvc.settings.colorfulBubbles.value && !message.isFromMe!
-                    ? getBubbleColors().first.oppositeLightenOrDarken(75)
-                    : null,
-            hideBodyText: widget.subjectOnly,
-          ),
-          builder: (context, snapshot) {
-            if (snapshot.data != null) {
-              if (effect == MessageEffect.gentle) {
-                return CustomAnimationBuilder<Movie>(
-                  control: anim,
-                  tween: tween,
-                  duration: const Duration(milliseconds: 1800),
-                  animationStatusListener: (status) {
-                    if (status == AnimationStatus.completed) {
-                      setState(() {
-                        anim = Control.stop;
-                      });
-                    }
-                  },
-                  builder: (context, anim, child) {
-                    final value1 = anim.get("size");
-                    return Transform.scale(scale: value1, alignment: Alignment.center, child: child);
-                  },
-                  child: RichText(
-                    text: TextSpan(
-                      children: snapshot.data!,
-                    ),
-                  ),
-                );
-              }
-              return Center(
-                widthFactor: 1,
-                child: Padding(
-                    padding: message.fullText.length == 1 ? const EdgeInsets.only(left: 3, right: 3) : EdgeInsets.zero,
+            initialData: buildMessageSpans(
+              context,
+              part,
+              message,
+              colorOverride: selected
+                  ? context.theme.colorScheme.onTertiaryContainer
+                  : SettingsSvc.settings.colorfulBubbles.value && !message.isFromMe!
+                      ? getBubbleColors(selected).first.oppositeLightenOrDarken(75)
+                      : null,
+              hideBodyText: widget.subjectOnly,
+            ),
+            builder: (context, snapshot) {
+              if (snapshot.data != null) {
+                if (effect == MessageEffect.gentle) {
+                  return CustomAnimationBuilder<Movie>(
+                    control: anim,
+                    tween: tween,
+                    duration: const Duration(milliseconds: 1800),
+                    animationStatusListener: (status) {
+                      if (status == AnimationStatus.completed) {
+                        setState(() {
+                          anim = Control.stop;
+                        });
+                      }
+                    },
+                    builder: (context, anim, child) {
+                      final value1 = anim.get("size");
+                      return Transform.scale(scale: value1, alignment: Alignment.center, child: child);
+                    },
                     child: RichText(
                       text: TextSpan(
                         children: snapshot.data!,
                       ),
-                    )),
-              );
-            }
-            return const SizedBox.shrink();
-          }),
-    );
+                    ),
+                  );
+                }
+                return Center(
+                  widthFactor: 1,
+                  child: Padding(
+                      padding:
+                          message.fullText.length == 1 ? const EdgeInsets.only(left: 3, right: 3) : EdgeInsets.zero,
+                      child: RichText(
+                        text: TextSpan(
+                          children: snapshot.data!,
+                        ),
+                      )),
+                );
+              }
+              return const SizedBox.shrink();
+            }),
+      );
+    });
   }
 }

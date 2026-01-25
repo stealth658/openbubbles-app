@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
@@ -25,34 +23,10 @@ class _DeliveredIndicatorState extends CustomState<DeliveredIndicator, void, Mes
   Message get message => controller.message;
   bool get showAvatar => (controller.cvController?.chat ?? ChatsSvc.activeChat!.chat).isGroup;
 
-  StreamSubscription? _updateSub;
-
-  @override
-  void initState() {
-    forceDelete = false;
-    super.initState();
-
-    // Listen to controller's update stream instead of global eventDispatcher
-    // This reduces overhead from O(n) global listeners to targeted per-message updates
-    _updateSub = controller.updateStream
-        .where((event) =>
-            event.type == MessageUpdateType.delivered ||
-            event.type == MessageUpdateType.read ||
-            event.type == MessageUpdateType.sent)
-        .listen((event) {
-      if (mounted) setState(() {});
-    });
-  }
-
-  @override
-  void dispose() {
-    _updateSub?.cancel();
-    super.dispose();
-  }
-
   bool get shouldShow {
     if (controller.audioWasKept.value != null) return true;
-    if (widget.forceShow || message.guid!.contains("temp")) return true;
+    final isTempMessage = controller.messageState?.guid.value?.contains("temp") ?? message.guid!.contains("temp");
+    if (widget.forceShow || isTempMessage) return true;
     if ((!message.isFromMe! && iOS) || (controller.parts.lastOrNull?.isUnsent ?? false)) return false;
     final messages = MessagesSvc(controller.cvController?.chat.guid ?? ChatsSvc.activeChat!.chat.guid)
         .struct
@@ -107,7 +81,7 @@ class _DeliveredIndicatorState extends CustomState<DeliveredIndicator, void, Mes
               : null);
     } else if (message.isDelivered) {
       return buildTwoPiece("Delivered", null);
-    } else if (message.guid!.contains("temp") &&
+    } else if ((controller.messageState?.guid.value?.contains("temp") ?? message.guid!.contains("temp")) &&
         !(controller.cvController?.chat ?? ChatsSvc.activeChat!.chat).isGroup &&
         !iOS) {
       return buildTwoPiece("Sending...", "");
@@ -125,9 +99,11 @@ class _DeliveredIndicatorState extends CustomState<DeliveredIndicator, void, Mes
       alignment: Alignment.bottomCenter,
       duration: const Duration(milliseconds: 250),
       child: Obx(() {
-        // Observe the granular delivery status flags to minimize rebuilds
-        controller.deliveredChanged.value;
-        controller.readChanged.value;
+        // Observe granular MessageState fields instead of boolean toggles
+        // This provides direct observation of actual data changes
+        controller.messageState?.guid.value;
+        controller.messageState?.dateDelivered.value;
+        controller.messageState?.dateRead.value;
         return shouldShow && getText().isNotEmpty
             ? Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 15).add(

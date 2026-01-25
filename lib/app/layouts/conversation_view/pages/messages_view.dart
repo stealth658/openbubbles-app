@@ -294,10 +294,6 @@ class MessagesViewState extends OptimizedState<MessagesView> {
     if (existingIndex != -1) {
       Logger.debug(
           "handleNewMessage: Message ${message.guid} already exists at index $existingIndex, skipping duplicate");
-      // Trigger update for this specific message via reactivity system
-      if (message.guid != null) {
-        muc.notifyMessageUpdate(chat.guid, message.guid!);
-      }
       return;
     }
 
@@ -372,10 +368,6 @@ class MessagesViewState extends OptimizedState<MessagesView> {
     if (index != -1) {
       _messages[index] = message;
       Logger.debug("handleUpdatedMessage: Updated message at index $index");
-      // Use reactivity system instead of setState to avoid full rebuild
-      if (message.guid != null) {
-        muc.notifyMessageUpdate(chat.guid, message.guid!);
-      }
     } else {
       Logger.warn("handleUpdatedMessage: Message ${message.guid ?? oldGuid} not found in list");
     }
@@ -613,7 +605,10 @@ class MessagesViewState extends OptimizedState<MessagesView> {
 
                                     // Animate sent messages with size + slide + fade (only if outgoing from this device)
                                     final isFromMe = message.isFromMe ?? false;
-                                    if (isFromMe && message.isOutgoing && message.guid != null && _animatingMessageGuids.contains(message.guid)) {
+                                    if (isFromMe &&
+                                        message.isOutgoing &&
+                                        message.guid != null &&
+                                        _animatingMessageGuids.contains(message.guid)) {
                                       return SizeTransition(
                                         sizeFactor: animation.drive(
                                           CurveTween(curve: Curves.easeOut),

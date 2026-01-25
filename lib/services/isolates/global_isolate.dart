@@ -389,7 +389,7 @@ class GlobalIsolate {
   /// Clean up a dead isolate without trying to kill it
   void _cleanupDeadIsolate() {
     Logger.warn('Cleaning up dead $isolateDebugName');
-    
+
     // Don't try to kill the isolate since it's already dead
     // Just clean up our local state
     _receivePort?.close();
@@ -398,14 +398,14 @@ class GlobalIsolate {
     _exitPort = null;
     _errorPort?.close();
     _errorPort = null;
-    
+
     // Try to unregister the named port (may fail if already unregistered)
     try {
       IsolateNameServer.removePortNameMapping(isolatePortName);
     } catch (e) {
       // Ignore errors - port may already be unregistered
     }
-    
+
     // Complete all pending requests with an error
     for (final requestInfo in _pendingRequests.values) {
       if (!requestInfo.completer.isCompleted) {
@@ -414,12 +414,12 @@ class GlobalIsolate {
       }
     }
     _pendingRequests.clear();
-    
+
     _isolate = null;
     _sendPort = null;
     _isRunning = false;
     _lastActivityTime = null;
-    
+
     // Reset the start completer
     if (_startCompleter.isCompleted) {
       _startCompleter = Completer<void>();
@@ -429,7 +429,7 @@ class GlobalIsolate {
   /// Handle isolate exit (called when exit port receives a message)
   void _handleIsolateExit() {
     if (!_isRunning) return; // Already cleaned up
-    
+
     Logger.warn('$isolateDebugName has exited');
     _cleanupDeadIsolate();
   }

@@ -99,7 +99,10 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
 
   Message get message => widget.controller.message;
 
-  bool get isSent => !message.guid!.startsWith('temp') && !message.guid!.startsWith('error');
+  bool get isSent {
+    final guid = widget.controller.messageState?.guid.value ?? message.guid;
+    return guid != null && !guid.startsWith('temp') && !guid.startsWith('error');
+  }
 
   bool get showDownload =>
       (isSent &&
@@ -845,8 +848,8 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
   }
 
   void toggleBookmark() {
-    message.isBookmarked = !message.isBookmarked;
-    message.save(updateIsBookmarked: true);
+    // Toggle bookmark through service to update both DB and MessageState
+    MessagesSvc(cvController.chat.guid).toggleBookmark(message);
     popDetails();
   }
 
@@ -994,7 +997,7 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
         ),
       if (SettingsSvc.isMinVenturaSync &&
           message.isFromMe! &&
-          !message.guid!.startsWith("temp") &&
+          !(widget.controller.messageState?.guid.value?.startsWith("temp") ?? message.guid!.startsWith("temp")) &&
           SettingsSvc.serverDetailsSync().item4 >= 148)
         DetailsMenuActionWidget(
           onTap: unsend,
@@ -1002,7 +1005,7 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
         ),
       if (SettingsSvc.isMinVenturaSync &&
           message.isFromMe! &&
-          !message.guid!.startsWith("temp") &&
+          !(widget.controller.messageState?.guid.value?.startsWith("temp") ?? message.guid!.startsWith("temp")) &&
           SettingsSvc.serverDetailsSync().item4 >= 148 &&
           (part.text?.isNotEmpty ?? false))
         DetailsMenuActionWidget(

@@ -74,7 +74,7 @@ class _MaterialConversationListState extends OptimizedState<MaterialConversation
           body: Obx(() {
             // Force reactivity by accessing observable values first
             final loaded = ChatsSvc.loadedFirstChatBatch.value;
-            
+
             final _chats = ChatsSvc.getFilteredChats(
               showArchived: showArchived,
               showUnknown: showUnknown,

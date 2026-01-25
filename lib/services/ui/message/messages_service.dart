@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:bluebubbles/app/state/message_state.dart';
 import 'package:bluebubbles/helpers/types/helpers/message_helper.dart';
 import 'package:bluebubbles/helpers/types/constants.dart';
 import 'package:bluebubbles/database/database.dart';
@@ -39,6 +40,11 @@ class MessagesService extends GetxController {
   bool _init = false;
   String? method;
 
+  /// Map of message states for granular reactivity
+  /// Key is message GUID, value is MessageState
+  /// Provides O(1) lookups and granular observable fields
+  final Map<String, MessageState> messageStates = {};
+
   /// Granular reactivity map to track individual message updates
   /// Key: message guid, Value: timestamp of last update
   final RxMap<String, int> messageUpdateTrigger = <String, int>{}.obs;
@@ -49,6 +55,59 @@ class MessagesService extends GetxController {
 
   Message? get mostRecentReceived =>
       (struct.messages.where((e) => !e.isFromMe!).toList()..sort(Message.sort)).firstOrNull;
+
+  // ========== MessageState Management ==========
+
+  /// Get or create a MessageState for a specific message GUID
+  /// Creates the state if it doesn't exist
+  /// Throws if message doesn't exist in struct
+  MessageState getMessageState(String guid) {
+    if (!messageStates.containsKey(guid)) {
+      final message = struct.getMessage(guid);
+      if (message == null) {
+        throw Exception('Cannot create MessageState: Message $guid not found in struct');
+      }
+      messageStates[guid] = MessageState(message);
+      Logger.debug("Created MessageState for message $guid", tag: "MessageState");
+    }
+    return messageStates[guid]!;
+  }
+
+  /// Get MessageState if it exists, null otherwise
+  /// Use this when you're not sure if the message exists
+  MessageState? getMessageStateIfExists(String guid) {
+    return messageStates[guid];
+  }
+
+  /// Sync a MessageState from the database
+  /// Call this after any external DB update that doesn't go through MessagesService
+  /// This ensures MessageState stays in sync with DB changes
+  void syncMessageStateFromDB(String guid) {
+    final message = Message.findOne(guid: guid);
+    if (message != null) {
+      final state = messageStates[guid];
+      if (state != null) {
+        state.updateFromMessage(message);
+        Logger.debug("Synced MessageState from DB for message $guid", tag: "MessageState");
+      } else {
+        // State doesn't exist, create it
+        messageStates[guid] = MessageState(message);
+        Logger.debug("Created MessageState from DB sync for message $guid", tag: "MessageState");
+      }
+    }
+  }
+
+  /// Ensure MessageStates exist for a list of messages
+  /// Creates states for messages that don't have them yet
+  void _ensureMessageStates(List<Message> messages) {
+    for (final message in messages) {
+      if (message.guid != null && !messageStates.containsKey(message.guid)) {
+        messageStates[message.guid!] = MessageState(message);
+      }
+    }
+  }
+
+  // ========== End MessageState Management ==========
 
   void init(Chat c, Function(Message) onNewMessage, Function(Message, {String? oldGuid}) onUpdatedMessage,
       Function(Message) onDeletedMessage, Function(String) jumpToMessageFunc) {
@@ -99,6 +158,7 @@ class MessagesService extends GetxController {
       countSub.cancel();
     }
     _init = false;
+    messageStates.clear(); // Clean up message states
     super.onClose();
   }
 
@@ -130,12 +190,26 @@ class MessagesService extends GetxController {
     // Add to struct first to ensure it's available for lookups
     struct.addMessages([message]);
 
+    // Create MessageState for this message
+    if (message.guid != null) {
+      messageStates[message.guid!] = MessageState(message);
+      Logger.debug("Created MessageState for new message ${message.guid}", tag: "MessageState");
+    }
+
     // Handle reactions with improved reactivity
     if (message.associatedMessageGuid != null) {
       final parentMessage = struct.getMessage(message.associatedMessageGuid!);
       if (parentMessage != null) {
         // Add to parent's associated messages list
         parentMessage.associatedMessages.add(message);
+
+        // Update parent MessageState with the new reaction
+        final parentState = messageStates[message.associatedMessageGuid!];
+        if (parentState != null) {
+          parentState.addAssociatedMessageInternal(message);
+          Logger.debug("Added reaction ${message.guid} to MessageState of parent ${message.associatedMessageGuid}",
+              tag: "MessageState");
+        }
 
         // Get or create the controller - this ensures it exists
         final mwcInstance = getActiveMwc(message.associatedMessageGuid!);
@@ -154,17 +228,12 @@ class MessagesService extends GetxController {
               Logger.debug(
                   "Retry successful: Updated reaction ${message.guid} on parent ${message.associatedMessageGuid}",
                   tag: "MessageReactivity");
-              // Trigger immediate UI update via coordinator
-              muc.notifyMessageUpdate(chat.guid, message.associatedMessageGuid!);
             } else {
               Logger.error("Retry failed: Parent controller still not found for reaction ${message.guid}",
                   tag: "MessageReactivity");
             }
           });
         }
-
-        // Trigger immediate UI update via coordinator (bypasses ObjectBox watch latency)
-        muc.notifyMessageUpdate(chat.guid, message.associatedMessageGuid!);
       } else {
         Logger.warn("Parent message not found for reaction ${message.guid} (parent: ${message.associatedMessageGuid})",
             tag: "MessageReactivity");
@@ -173,16 +242,22 @@ class MessagesService extends GetxController {
 
     // Handle thread originators with improved reactivity
     if (message.threadOriginatorGuid != null) {
+      // Update thread originator MessageState
+      final originatorState = messageStates[message.threadOriginatorGuid!];
+      if (originatorState != null) {
+        final currentCount = originatorState.threadReplyCount.value;
+        originatorState.updateThreadReplyCountInternal(currentCount + 1);
+        Logger.debug("Incremented thread reply count for ${message.threadOriginatorGuid} to ${currentCount + 1}",
+            tag: "MessageState");
+      }
+
       final mwcInstance = getActiveMwc(message.threadOriginatorGuid!);
       if (mwcInstance != null) {
         mwcInstance.updateThreadOriginator(message);
-        // Trigger immediate UI update for thread count
-        muc.notifyMessageUpdate(chat.guid, message.threadOriginatorGuid!);
       } else {
         // Queue retry for thread originator
         Future.delayed(const Duration(milliseconds: 100), () {
           getActiveMwc(message.threadOriginatorGuid!)?.updateThreadOriginator(message);
-          muc.notifyMessageUpdate(chat.guid, message.threadOriginatorGuid!);
         });
       }
     }
@@ -201,6 +276,27 @@ class MessagesService extends GetxController {
     struct.removeAttachments(toUpdate.attachments.map((e) => e!.guid!));
     struct.addMessages([updated]);
 
+    // Update MessageState
+    final guidToLookup = oldGuid ?? updated.guid!;
+    final messageState = messageStates[guidToLookup];
+    if (messageState != null) {
+      messageState.updateFromMessage(updated);
+      Logger.debug("Updated MessageState for message ${updated.guid}", tag: "MessageState");
+
+      // If guid changed (temp -> real), update the map
+      if (oldGuid != null && oldGuid != updated.guid) {
+        messageStates.remove(oldGuid);
+        if (updated.guid != null) {
+          messageStates[updated.guid!] = messageState;
+          Logger.debug("Moved MessageState from $oldGuid to ${updated.guid}", tag: "MessageState");
+        }
+      }
+    } else if (updated.guid != null) {
+      // State doesn't exist, create it
+      messageStates[updated.guid!] = MessageState(updated);
+      Logger.debug("Created MessageState for updated message ${updated.guid}", tag: "MessageState");
+    }
+
     // Trigger granular update for this specific message
     messageUpdateTrigger[updated.guid!] = DateTime.now().millisecondsSinceEpoch;
 
@@ -211,6 +307,11 @@ class MessagesService extends GetxController {
     struct.removeMessage(toRemove.guid!);
     struct.removeAttachments(toRemove.attachments.map((e) => e!.guid!));
     messageUpdateTrigger.remove(toRemove.guid!);
+
+    // Remove MessageState
+    messageStates.remove(toRemove.guid!);
+    Logger.debug("Removed MessageState for message ${toRemove.guid}", tag: "MessageState");
+
     removeFunc.call(toRemove);
   }
 
@@ -227,6 +328,60 @@ class MessagesService extends GetxController {
   /// Clear the update flag for a message after it's been processed
   void clearMessageUpdate(String guid) {
     messageUpdateTrigger.remove(guid);
+  }
+
+  /// Retry sending a failed message
+  /// Generates new temp GUID, clears error state, and updates both DB and MessageState
+  Future<void> retryFailedMessage(Message message, {String? oldGuid}) async {
+    final guidToDelete = oldGuid ?? message.guid!;
+
+    // Generate new temp GUID for retry
+    message.generateTempGuid();
+
+    // Clear error and delivery status
+    message.error = 0;
+    message.dateCreated = DateTime.now();
+    message.dateDelivered = null;
+    message.dateRead = null;
+
+    // Delete old errored message from DB and save with new temp GUID
+    await Message.delete(guidToDelete);
+    message.id = null;
+    message.save(chat: chat);
+
+    // Update struct and MessageState
+    final messageState = getMessageState(message.guid!);
+    messageState.updateErrorInternal(0);
+    messageState.updateDateCreatedInternal(message.dateCreated);
+    messageState.updateDateDeliveredInternal(null);
+    messageState.updateDateReadInternal(null);
+
+    // Update in struct
+    final index = struct.messages.indexWhere((m) => m.guid == guidToDelete);
+    if (index >= 0) {
+      struct.messages[index] = message;
+    }
+
+    // Clean up old MessageState and create new one
+    messageStates.remove(guidToDelete);
+    getMessageState(message.guid!);
+  }
+
+  /// Delete a message from DB, struct, and MessageState
+  Future<void> deleteMessage(Message message) async {
+    await Message.delete(message.guid!);
+    removeMessage(message);
+  }
+
+  /// Toggle bookmark status on a message
+  /// Updates DB and MessageState
+  void toggleBookmark(Message message) {
+    message.isBookmarked = !message.isBookmarked;
+    message.save(updateIsBookmarked: true);
+
+    // Update MessageState if it exists
+    final messageState = getMessageStateIfExists(message.guid!);
+    messageState?.updateIsBookmarkedInternal(message.isBookmarked);
   }
 
   Future<bool> loadChunk(int offset, ConversationViewController controller, {int limit = 25}) async {
@@ -269,9 +424,6 @@ class MessagesService extends GetxController {
                     "[loadChunk] No controller found for ${message.guid} with ${message.associatedMessages.length} reactions",
                     tag: "MessageReactivity");
               }
-
-              // Trigger immediate UI update via coordinator
-              muc.notifyMessageUpdate(chat.guid, message.guid!);
             }
           }
         },
@@ -300,6 +452,10 @@ class MessagesService extends GetxController {
     }
 
     struct.addMessages(_messages);
+
+    // Create MessageStates for all loaded messages
+    _ensureMessageStates(_messages);
+    Logger.debug("[loadChunk] Created MessageStates for ${_messages.length} messages", tag: "MessageState");
 
     // get thread originators
     for (Message m in _messages.where((e) => e.threadOriginatorGuid != null)) {
@@ -338,6 +494,8 @@ class MessagesService extends GetxController {
       _messages.add(around);
       _messages.sort(Message.sort);
       struct.addMessages(_messages);
+      // Create MessageStates for loaded messages
+      _ensureMessageStates(_messages);
     } else {
       final beforeResponse = await ChatsSvc.getMessages(
         chat.guid,
@@ -354,6 +512,8 @@ class MessagesService extends GetxController {
       _messages = beforeResponse.map((e) => Message.fromMap(e)).toList();
       _messages.sort(Message.sort);
       struct.addMessages(_messages);
+      // Create MessageStates for loaded messages
+      _ensureMessageStates(_messages);
     }
     isFetching = false;
   }
