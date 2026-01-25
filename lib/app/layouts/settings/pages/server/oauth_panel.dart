@@ -18,24 +18,23 @@ class OauthPanel extends StatefulWidget {
 class _OauthPanelState extends OptimizedState<OauthPanel> {
   _OauthPanelState();
 
-  String error = "";
-  bool showSignInButton = true;
+  final error = "".obs;
+  final showSignInButton = true.obs;
 
-  String? token;
-  String? googlePicture;
-  String? googleName;
-  List<Map> usableProjects = [];
-  List<RxBool> triedConnecting = [];
-  List<RxBool> reachable = [];
-  bool fetchingFirebase = false;
+  final token = Rx<String?>(null);
+  final googlePicture = Rx<String?>(null);
+  final googleName = Rx<String?>(null);
+  final usableProjects = <Map>[].obs;
+  final triedConnecting = <RxBool>[].obs;
+  final reachable = <RxBool>[].obs;
+  final fetchingFirebase = false.obs;
 
   Future<void> connect(String url, String password) async {
     if (url.endsWith("/")) {
       url = url.substring(0, url.length - 1);
     }
     if (kIsWeb && url.startsWith("http://")) {
-      error = "HTTP URLs are not supported on Web! You must use an HTTPS URL.";
-      setState(() {});
+      error.value = "HTTP URLs are not supported on Web! You must use an HTTPS URL.";
       return;
     }
     // Check if the URL is valid
@@ -59,8 +58,7 @@ class _OauthPanelState extends OptimizedState<OauthPanel> {
     // If the URL is invalid, show an error
     String? addr = sanitizeServerAddress(address: url);
     if (!isValid || addr == null) {
-      error = "Server address is invalid!";
-      setState(() {});
+      error.value = "Server address is invalid!";
       return;
     }
 
@@ -78,30 +76,28 @@ class _OauthPanelState extends OptimizedState<OauthPanel> {
     });
 
     if (serverResponse?.statusCode == 401) {
-      error = "Authentication failed. Incorrect password!";
+      error.value = "Authentication failed. Incorrect password!";
       SettingsSvc.settings.serverAddress.value = oldAddr;
       SettingsSvc.settings.guidAuthKey.value = oldPassword;
       await SettingsSvc.settings.saveManyAsync(["serverAddress", "guidAuthKey"]);
-      return setState(() {});
+      return;
     }
     if (serverResponse?.statusCode != 200) {
-      error = "Failed to connect to $addr! Please ensure your Server's URL is accessible from your device.";
+      error.value = "Failed to connect to $addr! Please ensure your Server's URL is accessible from your device.";
       SettingsSvc.settings.serverAddress.value = oldAddr;
       SettingsSvc.settings.guidAuthKey.value = oldPassword;
       await SettingsSvc.settings.saveManyAsync(["serverAddress", "guidAuthKey"]);
-      return setState(() {});
+      return;
     }
 
-    error = "";
-    setState(() {});
+    error.value = "";
 
     await saveNewServerUrl(addr, restartSocket: false, force: true, saveAdditionalSettings: ["guidAuthKey"]);
 
     try {
       SocketSvc.restartSocket();
     } catch (e) {
-      error = e.toString();
-      if (mounted) setState(() {});
+      error.value = e.toString();
     }
   }
 
@@ -109,7 +105,7 @@ class _OauthPanelState extends OptimizedState<OauthPanel> {
   Widget build(BuildContext context) {
     Size buttonSize = Size(NavigationSvc.width(context) * 2 / 3, 36);
 
-    return SettingsScaffold(
+    return Obx(() => SettingsScaffold(
       title: 'Sign-In With Google',
       initialHeader: '',
       iosSubtitle: null,
@@ -126,12 +122,12 @@ class _OauthPanelState extends OptimizedState<OauthPanel> {
             Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (error.isNotEmpty)
+                if (error.value.isNotEmpty)
                   SizedBox(
                     width: context.width * 2 / 3,
                     child: Align(
                       alignment: Alignment.center,
-                      child: Text(error,
+                      child: Text(error.value,
                           style: context.theme.textTheme.bodyLarge!
                               .apply(
                                 fontSizeDelta: 1.5,
@@ -140,10 +136,10 @@ class _OauthPanelState extends OptimizedState<OauthPanel> {
                               .copyWith(height: 2)),
                     ),
                   ),
-                if (error.isNotEmpty) const SizedBox(height: 20),
+                if (error.value.isNotEmpty) const SizedBox(height: 20),
               ],
             ),
-            if (token != null)
+            if (token.value != null)
               Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -158,14 +154,14 @@ class _OauthPanelState extends OptimizedState<OauthPanel> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        if (googlePicture != null)
+                        if (googlePicture.value != null)
                           ClipRRect(
                             borderRadius: BorderRadius.circular(20),
                             clipBehavior: Clip.antiAlias,
-                            child: Image.network(googlePicture!, width: 40, fit: BoxFit.contain),
+                            child: Image.network(googlePicture.value!, width: 40, fit: BoxFit.contain),
                           ),
                         const SizedBox(width: 10),
-                        Text(googleName ?? "Unknown",
+                        Text(googleName.value ?? "Unknown",
                             style: context.theme.textTheme.bodyLarge!
                                 .apply(fontSizeFactor: 1.1, color: context.theme.colorScheme.onBackground)),
                       ],
@@ -173,8 +169,8 @@ class _OauthPanelState extends OptimizedState<OauthPanel> {
                   ),
                 ],
               ),
-            if (token != null) const SizedBox(height: 40),
-            if (token != null)
+            if (token.value != null) const SizedBox(height: 40),
+            if (token.value != null)
               Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
@@ -189,11 +185,11 @@ class _OauthPanelState extends OptimizedState<OauthPanel> {
                             children: [
                               Padding(
                                 padding: const EdgeInsets.all(10.0),
-                                child: Text(fetchingFirebase
+                                child: Text(fetchingFirebase.value
                                     ? "Loading Firebase projects"
                                     : "Select the Firebase project to use"),
                               ),
-                              if (!fetchingFirebase)
+                              if (!fetchingFirebase.value)
                                 ConstrainedBox(
                                   constraints: BoxConstraints(
                                     maxHeight: context.mediaQuery.size.height * 0.4,
@@ -245,7 +241,7 @@ class _OauthPanelState extends OptimizedState<OauthPanel> {
                                             onTap: () async {
                                               await requestPassword(
                                                   context, usableProjects[index]['serverUrl'], connect);
-                                              if (error == "") {
+                                              if (error.value == "") {
                                                 Navigator.of(context).pop();
                                               }
                                             },
@@ -256,9 +252,9 @@ class _OauthPanelState extends OptimizedState<OauthPanel> {
                                     },
                                   ),
                                 ),
-                              if (fetchingFirebase) const CircularProgressIndicator(),
+                              if (fetchingFirebase.value) const CircularProgressIndicator(),
                               const SizedBox(height: 10),
-                              if (!fetchingFirebase)
+                              if (!fetchingFirebase.value)
                                 ElevatedButton(
                                   onPressed: () {
                                     for (int i = 0; i < triedConnecting.length; i++) {
@@ -267,7 +263,7 @@ class _OauthPanelState extends OptimizedState<OauthPanel> {
                                   },
                                   child: const Text("Retry Connections"),
                                 ),
-                              if (!fetchingFirebase) const SizedBox(height: 10),
+                              if (!fetchingFirebase.value) const SizedBox(height: 10),
                             ],
                           ),
                         ),
@@ -283,8 +279,8 @@ class _OauthPanelState extends OptimizedState<OauthPanel> {
                         ),
                       ),
               ),
-            if (token != null) const SizedBox(height: 10),
-            if (token != null)
+            if (token.value != null) const SizedBox(height: 10),
+            if (token.value != null)
               Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
@@ -304,11 +300,9 @@ class _OauthPanelState extends OptimizedState<OauthPanel> {
                     minimumSize: WidgetStateProperty.all(buttonSize),
                   ),
                   onPressed: () async {
-                    setState(() {
-                      token = null;
-                      googleName = null;
-                      googlePicture = null;
-                    });
+                    token.value = null;
+                    googleName.value = null;
+                    googlePicture.value = null;
                   },
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -320,8 +314,8 @@ class _OauthPanelState extends OptimizedState<OauthPanel> {
                   ),
                 ),
               ),
-            if (token != null) const SizedBox(height: 10),
-            if (googleName == null && showSignInButton)
+            if (token.value != null) const SizedBox(height: 10),
+            if (googleName.value == null && showSignInButton.value)
               Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
@@ -342,21 +336,17 @@ class _OauthPanelState extends OptimizedState<OauthPanel> {
                     minimumSize: WidgetStateProperty.all(buttonSize),
                   ),
                   onPressed: () async {
-                    token = await googleOAuth(context);
-                    if (token != null) {
-                      final response = await HttpSvc.getGoogleInfo(token!);
-                      setState(() {
-                        googleName = response.data['name'];
-                        googlePicture = response.data['picture'];
-                        fetchingFirebase = true;
-                      });
-                      fetchFirebaseProjects(token!).then((List<Map> value) async {
-                        setState(() {
-                          usableProjects = value;
-                          triedConnecting = List.generate(usableProjects.length, (i) => false.obs);
-                          reachable = List.generate(usableProjects.length, (i) => false.obs);
-                          fetchingFirebase = false;
-                        });
+                    token.value = await googleOAuth(context);
+                    if (token.value != null) {
+                      final response = await HttpSvc.getGoogleInfo(token.value!);
+                      googleName.value = response.data['name'];
+                      googlePicture.value = response.data['picture'];
+                      fetchingFirebase.value = true;
+                      fetchFirebaseProjects(token.value!).then((List<Map> value) async {
+                        usableProjects.value = value;
+                        triedConnecting.value = List.generate(usableProjects.length, (i) => false.obs);
+                        reachable.value = List.generate(usableProjects.length, (i) => false.obs);
+                        fetchingFirebase.value = false;
                       });
                     }
                   },
@@ -374,11 +364,11 @@ class _OauthPanelState extends OptimizedState<OauthPanel> {
                   ),
                 ),
               ),
-            if (googleName == null && showSignInButton) const SizedBox(height: 10),
+            if (googleName.value == null && showSignInButton.value) const SizedBox(height: 10),
           ],
         ),
       ),
       bodySlivers: [],
-    );
+    ));
   }
 }

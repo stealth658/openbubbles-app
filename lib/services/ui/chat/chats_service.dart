@@ -894,6 +894,64 @@ class ChatsService {
     state?.updateArchivedInternal(value);
   }
 
+  /// Set chat auto send read receipts
+  Future<void> setChatAutoSendReadReceipts(Chat chat, bool? value) async {
+    final state = getChatState(chat.guid);
+
+    if (state != null && state.autoSendReadReceipts.value == value) return;
+
+    // Update Chat model (use state.chat if available, otherwise use passed in chat)
+    final chatToUpdate = state?.chat ?? chat;
+    await chatToUpdate.toggleAutoReadAsync(value);
+
+    // Update state if available
+    state?.updateAutoSendReadReceiptsInternal(value);
+  }
+
+  /// Set chat auto send typing indicators
+  Future<void> setChatAutoSendTypingIndicators(Chat chat, bool? value) async {
+    final state = getChatState(chat.guid);
+
+    if (state != null && state.autoSendTypingIndicators.value == value) return;
+
+    // Update Chat model (use state.chat if available, otherwise use passed in chat)
+    final chatToUpdate = state?.chat ?? chat;
+    await chatToUpdate.toggleAutoTypeAsync(value);
+
+    // Update state if available
+    state?.updateAutoSendTypingIndicatorsInternal(value);
+  }
+
+  /// Set chat lock name status
+  Future<void> setChatLockName(Chat chat, bool value) async {
+    final state = getChatState(chat.guid);
+
+    if (state != null && state.lockChatName.value == value) return;
+
+    // Update Chat model (use state.chat if available, otherwise use passed in chat)
+    final chatToUpdate = state?.chat ?? chat;
+    chatToUpdate.lockChatName = value;
+    await chatToUpdate.saveAsync(updateLockChatName: true);
+
+    // Update state if available
+    state?.updateLockChatNameInternal(value);
+  }
+
+  /// Set chat lock icon status
+  Future<void> setChatLockIcon(Chat chat, bool value) async {
+    final state = getChatState(chat.guid);
+
+    if (state != null && state.lockChatIcon.value == value) return;
+
+    // Update Chat model (use state.chat if available, otherwise use passed in chat)
+    final chatToUpdate = state?.chat ?? chat;
+    chatToUpdate.lockChatIcon = value;
+    await chatToUpdate.saveAsync(updateLockChatIcon: true);
+
+    // Update state if available
+    state?.updateLockChatIconInternal(value);
+  }
+
   /// Set chat display name
   Future<void> setChatDisplayName(Chat chat, String? value) async {
     final state = getChatState(chat.guid);

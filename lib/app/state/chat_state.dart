@@ -91,6 +91,30 @@ class ChatState {
     }
   }
 
+  void updateAutoSendReadReceiptsInternal(bool? value) {
+    if (autoSendReadReceipts.value != value) {
+      autoSendReadReceipts.value = value;
+    }
+  }
+
+  void updateAutoSendTypingIndicatorsInternal(bool? value) {
+    if (autoSendTypingIndicators.value != value) {
+      autoSendTypingIndicators.value = value;
+    }
+  }
+
+  void updateLockChatNameInternal(bool value) {
+    if (lockChatName.value != value) {
+      lockChatName.value = value;
+    }
+  }
+
+  void updateLockChatIconInternal(bool value) {
+    if (lockChatIcon.value != value) {
+      lockChatIcon.value = value;
+    }
+  }
+
   void updateDisplayNameInternal(String? value) {
     if (displayName.value != value) {
       displayName.value = value;

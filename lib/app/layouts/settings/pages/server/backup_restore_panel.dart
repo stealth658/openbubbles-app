@@ -30,9 +30,9 @@ class BackupRestorePanel extends StatefulWidget {
 }
 
 class _BackupRestorePanelState extends OptimizedState<BackupRestorePanel> {
-  List<Map<String, dynamic>> settings = [];
-  List<Map<String, dynamic>> themes = [];
-  bool? fetching = true;
+  final settings = <Map<String, dynamic>>[].obs;
+  final themes = <Map<String, dynamic>>[].obs;
+  final fetching = Rx<bool?>(true);
 
   @override
   void initState() {
@@ -42,41 +42,31 @@ class _BackupRestorePanelState extends OptimizedState<BackupRestorePanel> {
 
   void getBackups() async {
     final response1 = await HttpSvc.getSettings().catchError((_) {
-      setState(() {
-        fetching = null;
-      });
+      fetching.value = null;
       return Response(requestOptions: RequestOptions(path: ''));
     });
     if (response1.statusCode == 200 && response1.data['data'] != null) {
-      settings = response1.data['data'].cast<Map<String, dynamic>>();
+      settings.value = response1.data['data'].cast<Map<String, dynamic>>();
       settings.sort((a, b) => DateTime.fromMillisecondsSinceEpoch(b['timestamp'] ?? 0)
           .compareTo(DateTime.fromMillisecondsSinceEpoch(a['timestamp'] ?? 0)));
       final response2 = await HttpSvc.getTheme().catchError((_) {
-        setState(() {
-          fetching = null;
-        });
+        fetching.value = null;
         return Response(requestOptions: RequestOptions(path: ''));
       });
       if (response2.statusCode == 200 && response2.data['data'] != null) {
-        themes = response2.data['data'].cast<Map<String, dynamic>>();
-        setState(() {
-          fetching = false;
-        });
+        themes.value = response2.data['data'].cast<Map<String, dynamic>>();
+        fetching.value = false;
       }
     }
   }
 
   void deleteSettings(String name) {
-    setState(() {
-      settings.removeWhere((element) => element["name"] == name);
-    });
+    settings.removeWhere((element) => element["name"] == name);
     HttpSvc.deleteSettings(name);
   }
 
   void deleteTheme(String name) {
-    setState(() {
-      themes.removeWhere((element) => element["name"] == name);
-    });
+    themes.removeWhere((element) => element["name"] == name);
     HttpSvc.deleteTheme(name);
   }
 
@@ -135,7 +125,7 @@ class _BackupRestorePanelState extends OptimizedState<BackupRestorePanel> {
   Widget build(BuildContext context) {
     return Obx(() => SettingsScaffold(
             title: "Backup and Restore",
-            initialHeader: fetching == false ? "Settings Backups" : null,
+            initialHeader: fetching.value == false ? "Settings Backups" : null,
             iosSubtitle: iosSubtitle,
             materialSubtitle: materialSubtitle,
             tileColor: tileColor,
@@ -145,11 +135,9 @@ class _BackupRestorePanelState extends OptimizedState<BackupRestorePanel> {
                 icon: Icon(iOS ? CupertinoIcons.arrow_counterclockwise : Icons.refresh,
                     color: context.theme.colorScheme.onBackground),
                 onPressed: () {
-                  setState(() {
-                    fetching = true;
-                    settings.clear();
-                    themes.clear();
-                  });
+                  fetching.value = true;
+                  settings.clear();
+                  themes.clear();
                   getBackups();
                 },
               ),
@@ -157,7 +145,7 @@ class _BackupRestorePanelState extends OptimizedState<BackupRestorePanel> {
             bodySlivers: [
               SliverList(
                 delegate: SliverChildListDelegate([
-                  if (fetching == null || fetching == true)
+                  if (fetching.value == null || fetching.value == true)
                     Center(
                       child: Padding(
                         padding: const EdgeInsets.only(top: 100),
@@ -166,11 +154,11 @@ class _BackupRestorePanelState extends OptimizedState<BackupRestorePanel> {
                             Padding(
                               padding: const EdgeInsets.all(8.0),
                               child: Text(
-                                fetching == null ? "Something went wrong!" : "Getting backups...",
+                                fetching.value == null ? "Something went wrong!" : "Getting backups...",
                                 style: context.theme.textTheme.labelLarge,
                               ),
                             ),
-                            if (fetching == true) buildProgressIndicator(context, size: 15),
+                            if (fetching.value == true) buildProgressIndicator(context, size: 15),
                           ],
                         ),
                       ),
@@ -241,11 +229,9 @@ class _BackupRestorePanelState extends OptimizedState<BackupRestorePanel> {
                                                     "Settings exported successfully to server",
                                                   );
                                                 }
-                                                setState(() {
-                                                  fetching = true;
-                                                  settings.clear();
-                                                  themes.clear();
-                                                });
+                                                fetching.value = true;
+                                                settings.clear();
+                                                themes.clear();
                                                 getBackups();
                                               },
                                             ),
@@ -456,11 +442,9 @@ class _BackupRestorePanelState extends OptimizedState<BackupRestorePanel> {
                                     ),
                                   );
                                 }
-                                setState(() {
-                                  fetching = true;
-                                  settings.clear();
-                                  themes.clear();
-                                });
+                                fetching.value = true;
+                                settings.clear();
+                                themes.clear();
                                 getBackups();
                               }
 
@@ -896,11 +880,9 @@ class _BackupRestorePanelState extends OptimizedState<BackupRestorePanel> {
                                   ),
                                 );
                               }
-                              setState(() {
-                                fetching = true;
-                                settings.clear();
-                                themes.clear();
-                              });
+                              fetching.value = true;
+                              settings.clear();
+                              themes.clear();
                               getBackups();
                             },
                           ),

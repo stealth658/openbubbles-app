@@ -190,126 +190,164 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
                 ),
                 if (!kIsWeb && !chat.isGroup && SettingsSvc.settings.enablePrivateAPI.value) const SettingsDivider(),
                 if (!kIsWeb && !chat.isGroup && SettingsSvc.settings.enablePrivateAPI.value)
-                  SettingsSwitch(
-                    title: "Send Typing Indicators",
-                    initialVal: chat.autoSendTypingIndicators ?? SettingsSvc.settings.privateSendTypingIndicators.value,
-                    onChanged: (value) {
-                      chat.toggleAutoTypeAsync(value);
-                      setState(() {});
-                    },
-                    backgroundColor: tileColor,
-                  ),
+                  Obx(() {
+                    final chatState = ChatsSvc.getChatState(chat.guid);
+                    return SettingsSwitch(
+                      title: "Send Typing Indicators",
+                      initialVal: chatState?.autoSendTypingIndicators.value ?? SettingsSvc.settings.privateSendTypingIndicators.value,
+                      onChanged: (value) {
+                        if (chatState != null) {
+                          ChatsSvc.setChatAutoSendTypingIndicators(chatState.chat, value);
+                        } else {
+                          chat.toggleAutoTypeAsync(value);
+                        }
+                      },
+                      backgroundColor: tileColor,
+                    );
+                  }),
                 if (!kIsWeb && !chat.isGroup && SettingsSvc.settings.enablePrivateAPI.value)
-                  SettingsSwitch(
+                  Obx(() {
+                    final chatState = ChatsSvc.getChatState(chat.guid);
+                    return SettingsSwitch(
                       title: "Follow Global Setting",
                       subtitle:
                           "Typing Indicators ${SettingsSvc.settings.privateSendTypingIndicators.value ? "Enabled" : "Disabled"}",
-                      initialVal: chat.autoSendTypingIndicators == null,
+                      initialVal: chatState?.autoSendTypingIndicators.value == null,
                       onChanged: (value) {
-                        if (!value) {
-                          chat.toggleAutoTypeAsync(SettingsSvc.settings.privateSendTypingIndicators.value);
+                        if (chatState != null) {
+                          ChatsSvc.setChatAutoSendTypingIndicators(
+                            chatState.chat,
+                            value ? null : SettingsSvc.settings.privateSendTypingIndicators.value,
+                          );
                         } else {
-                          chat.toggleAutoTypeAsync(null);
+                          chat.toggleAutoTypeAsync(value ? null : SettingsSvc.settings.privateSendTypingIndicators.value);
                         }
-                        setState(() {});
-                      }),
+                      },
+                    );
+                  }),
                 if (!kIsWeb && !chat.isGroup && SettingsSvc.settings.enablePrivateAPI.value) const SettingsDivider(),
                 if (!kIsWeb && !chat.isGroup && SettingsSvc.settings.enablePrivateAPI.value)
-                  SettingsSwitch(
-                    title:
-                        "${SettingsSvc.settings.privateManualMarkAsRead.value ? "Automatically " : ""}Send Read Receipts",
-                    initialVal: chat.autoSendReadReceipts ?? SettingsSvc.settings.privateMarkChatAsRead.value,
-                    onChanged: (value) {
-                      chat.toggleAutoReadAsync(value);
-                      setState(() {});
-                    },
-                    backgroundColor: tileColor,
-                  ),
+                  Obx(() {
+                    final chatState = ChatsSvc.getChatState(chat.guid);
+                    return SettingsSwitch(
+                      title:
+                          "${SettingsSvc.settings.privateManualMarkAsRead.value ? "Automatically " : ""}Send Read Receipts",
+                      initialVal: chatState?.autoSendReadReceipts.value ?? SettingsSvc.settings.privateMarkChatAsRead.value,
+                      onChanged: (value) {
+                        if (chatState != null) {
+                          ChatsSvc.setChatAutoSendReadReceipts(chatState.chat, value);
+                        } else {
+                          chat.toggleAutoReadAsync(value);
+                        }
+                      },
+                      backgroundColor: tileColor,
+                    );
+                  }),
                 if (!kIsWeb && !chat.isGroup && SettingsSvc.settings.enablePrivateAPI.value)
-                  SettingsSwitch(
-                    title: "Follow Global Setting",
-                    subtitle:
-                        "${SettingsSvc.settings.privateManualMarkAsRead.value ? "Automatic " : ""}Read Receipts ${SettingsSvc.settings.privateMarkChatAsRead.value ? "Enabled" : "Disabled"}",
-                    initialVal: chat.autoSendReadReceipts == null,
-                    onChanged: (value) {
-                      if (!value) {
-                        chat.toggleAutoReadAsync(SettingsSvc.settings.privateMarkChatAsRead.value);
-                      } else {
-                        chat.toggleAutoReadAsync(null);
-                      }
-                      setState(() {});
-                    },
-                  ),
+                  Obx(() {
+                    final chatState = ChatsSvc.getChatState(chat.guid);
+                    return SettingsSwitch(
+                      title: "Follow Global Setting",
+                      subtitle:
+                          "${SettingsSvc.settings.privateManualMarkAsRead.value ? "Automatic " : ""}Read Receipts ${SettingsSvc.settings.privateMarkChatAsRead.value ? "Enabled" : "Disabled"}",
+                      initialVal: chatState?.autoSendReadReceipts.value == null,
+                      onChanged: (value) {
+                        if (chatState != null) {
+                          ChatsSvc.setChatAutoSendReadReceipts(
+                            chatState.chat,
+                            value ? null : SettingsSvc.settings.privateMarkChatAsRead.value,
+                          );
+                        } else {
+                          chat.toggleAutoReadAsync(value ? null : SettingsSvc.settings.privateMarkChatAsRead.value);
+                        }
+                      },
+                    );
+                  }),
                 if ((!kIsWeb && !chat.isGroup && SettingsSvc.settings.enablePrivateAPI.value) || chat.isGroup)
                   const SettingsDivider(),
                 if (chat.isGroup)
-                  SettingsSwitch(
-                    title: "Lock Chat Name",
-                    subtitle: "Keep the current chat name on this device, even if someone else in the chat changes it",
-                    initialVal: chat.lockChatName,
-                    onChanged: (value) {
-                      chat.lockChatName = value;
-                      chat.saveAsync(updateLockChatName: true);
-                      setState(() {});
-                    },
-                  ),
+                  Obx(() {
+                    final chatState = ChatsSvc.getChatState(chat.guid);
+                    return SettingsSwitch(
+                      title: "Lock Chat Name",
+                      subtitle: "Keep the current chat name on this device, even if someone else in the chat changes it",
+                      initialVal: chatState?.lockChatName.value ?? chat.lockChatName,
+                      onChanged: (value) {
+                        if (chatState != null) {
+                          ChatsSvc.setChatLockName(chatState.chat, value);
+                        } else {
+                          chat.lockChatName = value;
+                          chat.saveAsync(updateLockChatName: true);
+                        }
+                      },
+                    );
+                  }),
                 if (chat.isGroup)
-                  SettingsSwitch(
-                    title: "Lock Chat Icon",
-                    subtitle: "Keep the current chat icon on this device, even if someone else in the chat changes it",
-                    initialVal: chat.lockChatIcon,
-                    onChanged: (value) {
-                      chat.lockChatIcon = value;
-                      chat.saveAsync(updateLockChatIcon: true);
-                      setState(() {});
-                    },
-                  ),
+                  Obx(() {
+                    final chatState = ChatsSvc.getChatState(chat.guid);
+                    return SettingsSwitch(
+                      title: "Lock Chat Icon",
+                      subtitle: "Keep the current chat icon on this device, even if someone else in the chat changes it",
+                      initialVal: chatState?.lockChatIcon.value ?? chat.lockChatIcon,
+                      onChanged: (value) {
+                        if (chatState != null) {
+                          ChatsSvc.setChatLockIcon(chatState.chat, value);
+                        } else {
+                          chat.lockChatIcon = value;
+                          chat.saveAsync(updateLockChatIcon: true);
+                        }
+                      },
+                    );
+                  }),
                 if (chat.isGroup) const SettingsDivider(),
                 if (!kIsWeb)
-                  SettingsSwitch(
-                    title: "Pin Conversation",
-                    initialVal: chat.isPinned!,
-                    onChanged: (value) {
-                      final chatState = ChatsSvc.getChatState(chat.guid);
-                      if (chatState != null) {
-                        ChatsSvc.setChatPinned(chatState.chat, !chat.isPinned!);
-                      } else {
-                        ChatsSvc.toggleChatPin(chat, !chat.isPinned!);
-                      }
-                      setState(() {});
-                    },
-                    backgroundColor: tileColor,
-                  ),
+                  Obx(() {
+                    final chatState = ChatsSvc.getChatState(chat.guid);
+                    return SettingsSwitch(
+                      title: "Pin Conversation",
+                      initialVal: chatState?.isPinned.value ?? chat.isPinned!,
+                      onChanged: (value) {
+                        if (chatState != null) {
+                          ChatsSvc.setChatPinned(chatState.chat, !chatState.isPinned.value);
+                        } else {
+                          ChatsSvc.toggleChatPin(chat, !chat.isPinned!);
+                        }
+                      },
+                      backgroundColor: tileColor,
+                    );
+                  }),
                 if (!kIsWeb)
-                  SettingsSwitch(
-                    title: "Mute Conversation",
-                    initialVal: chat.muteType == "mute",
-                    onChanged: (value) {
-                      final chatState = ChatsSvc.getChatState(chat.guid);
-                      if (chatState != null) {
-                        ChatsSvc.setChatMuted(chatState.chat, value);
-                      } else {
-                        chat.toggleMuteAsync(value);
-                      }
-                      setState(() {});
-                    },
-                    backgroundColor: tileColor,
-                  ),
+                  Obx(() {
+                    final chatState = ChatsSvc.getChatState(chat.guid);
+                    return SettingsSwitch(
+                      title: "Mute Conversation",
+                      initialVal: (chatState?.muteType.value ?? chat.muteType) == "mute",
+                      onChanged: (value) {
+                        if (chatState != null) {
+                          ChatsSvc.setChatMuted(chatState.chat, value);
+                        } else {
+                          chat.toggleMuteAsync(value);
+                        }
+                      },
+                      backgroundColor: tileColor,
+                    );
+                  }),
                 if (!kIsWeb)
-                  SettingsSwitch(
-                    title: "Archive Conversation",
-                    initialVal: chat.isArchived!,
-                    onChanged: (value) {
-                      final chatState = ChatsSvc.getChatState(chat.guid);
-                      if (chatState != null) {
-                        ChatsSvc.setChatArchived(chatState.chat, value);
-                      } else {
-                        ChatsSvc.toggleChatArchive(chat, value);
-                      }
-                      setState(() {});
-                    },
-                    backgroundColor: tileColor,
-                  ),
+                  Obx(() {
+                    final chatState = ChatsSvc.getChatState(chat.guid);
+                    return SettingsSwitch(
+                      title: "Archive Conversation",
+                      initialVal: chatState?.isArchived.value ?? chat.isArchived!,
+                      onChanged: (value) {
+                        if (chatState != null) {
+                          ChatsSvc.setChatArchived(chatState.chat, value);
+                        } else {
+                          ChatsSvc.toggleChatArchive(chat, value);
+                        }
+                      },
+                      backgroundColor: tileColor,
+                    );
+                  }),
                 if (!kIsWeb)
                   SettingsTile(
                     title: "Clear Transcript",
