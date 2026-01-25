@@ -201,14 +201,14 @@ class ActionHandler extends GetxService {
           "[ActionHandler] Adding temp reaction to UI immediately: temp=${m.guid}, parent=${m.associatedMessageGuid}, type=$r",
           tag: "MessageReactivity");
 
-      // Update parent message's controller with temp reaction
-      final parentMwc = MessagesSvc(c.guid).getControllerIfExists(m.associatedMessageGuid!);
-      if (parentMwc != null) {
-        parentMwc.updateAssociatedMessage(m, updateHolder: true);
-        Logger.debug("[ActionHandler] Added temp reaction to parent controller ${m.associatedMessageGuid}",
+      // Update parent message's MessageState with temp reaction
+      final parentState = MessagesSvc(c.guid).getMessageStateIfExists(m.associatedMessageGuid!);
+      if (parentState != null) {
+        parentState.addAssociatedMessageInternal(m);
+        Logger.debug("[ActionHandler] Added temp reaction to parent MessageState ${m.associatedMessageGuid}",
             tag: "MessageReactivity");
       } else {
-        Logger.warn("[ActionHandler] Parent controller not found for temp reaction, will update when controller loads",
+        Logger.warn("[ActionHandler] Parent MessageState not found for temp reaction, will update when state is created",
             tag: "MessageReactivity");
       }
     }
@@ -276,16 +276,16 @@ class ActionHandler extends GetxService {
                 "[ActionHandler] Triggering UI update for parent ${newMessage.associatedMessageGuid} after reaction replaced",
                 tag: "MessageReactivity");
 
-            // Update the parent message's controller with the real reaction
-            final parentMwc = MessagesSvc(c.guid).getControllerIfExists(newMessage.associatedMessageGuid!);
-            if (parentMwc != null) {
-              parentMwc.updateAssociatedMessage(newMessage, updateHolder: true, tempGuid: m.guid);
+            // Update the parent message's MessageState with the real reaction
+            final parentState = MessagesSvc(c.guid).getMessageStateIfExists(newMessage.associatedMessageGuid!);
+            if (parentState != null) {
+              parentState.updateAssociatedMessageInternal(newMessage, tempGuid: m.guid);
               Logger.debug(
-                  "[ActionHandler] Updated parent controller for ${newMessage.associatedMessageGuid} with real reaction ${newMessage.guid}",
+                  "[ActionHandler] Updated parent MessageState for ${newMessage.associatedMessageGuid} with real reaction ${newMessage.guid}",
                   tag: "MessageReactivity");
             } else {
               Logger.warn(
-                  "[ActionHandler] Parent controller not found for ${newMessage.associatedMessageGuid} when updating reaction",
+                  "[ActionHandler] Parent MessageState not found for ${newMessage.associatedMessageGuid} when updating reaction",
                   tag: "MessageReactivity");
             }
           }

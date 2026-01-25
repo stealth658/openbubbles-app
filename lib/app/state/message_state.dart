@@ -163,10 +163,13 @@ class MessageState {
 
   /// Add or update a single associated message (reaction/edit)
   /// Handles both new additions and updates to existing reactions
-  void addAssociatedMessageInternal(Message reaction) {
+  /// Optional tempGuid parameter to replace temp reactions with real ones
+  void addAssociatedMessageInternal(Message reaction, {String? tempGuid}) {
     // Try to find existing reaction by ID or GUID
-    final index = associatedMessages.indexWhere((e) =>
-        (e.id == reaction.id && e.id != null) || (e.guid == reaction.guid && !reaction.guid!.startsWith('temp')));
+    int index = associatedMessages.indexWhere((e) =>
+        (e.id == reaction.id && e.id != null) || 
+        (e.guid == reaction.guid && !reaction.guid!.startsWith('temp')) ||
+        (tempGuid != null && e.guid == tempGuid));
 
     if (index >= 0) {
       // Update existing reaction
@@ -190,6 +193,11 @@ class MessageState {
     // Update underlying message and hasReactions flag
     message.associatedMessages = associatedMessages.toList();
     hasReactions.value = associatedMessages.isNotEmpty;
+  }
+
+  /// Alias for addAssociatedMessageInternal to match controller naming
+  void updateAssociatedMessageInternal(Message reaction, {String? tempGuid}) {
+    addAssociatedMessageInternal(reaction, tempGuid: tempGuid);
   }
 
   /// Remove an associated message (reaction/edit)

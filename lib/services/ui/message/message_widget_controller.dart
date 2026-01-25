@@ -5,7 +5,6 @@ import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/intera
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/text/text_bubble.dart';
 import 'package:bluebubbles/app/state/message_state.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
-import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:collection/collection.dart';
@@ -243,40 +242,5 @@ class MessageWidgetController extends StatefulController {
     // Handle any other changes (error state, etc.)
     message = Message.merge(newItem, message);
     MessagesSvc(chat).updateMessage(message);
-  }
-
-  void updateThreadOriginator(Message newItem) {
-    // Thread updates are handled by MessageState - no action needed here
-  }
-
-  void updateAssociatedMessage(Message newItem, {bool updateHolder = true, String? tempGuid}) {
-    // First try to find by ID (for normal updates)
-    int index = message.associatedMessages
-        .indexWhere((e) => (e.id == newItem.id && e.id != null) || (tempGuid != null && e.guid == tempGuid));
-
-    // If not found by ID or temp GUID, check if this is replacing a temp reaction
-    // Temp reactions have GUID starting with "temp-" or "error-" and no database ID
-    if (index < 0) {
-      index = message.associatedMessages.indexWhere((e) =>
-          (e.guid?.startsWith("temp-") == true || e.guid?.startsWith("error-") == true) &&
-          e.associatedMessageType == newItem.associatedMessageType &&
-          (e.associatedMessagePart ?? 0) == (newItem.associatedMessagePart ?? 0));
-    }
-
-    if (index >= 0) {
-      message.associatedMessages[index] = newItem;
-      Logger.debug("[MWC] Updated existing reaction for ${message.guid}: ${newItem.associatedMessageType}",
-          tag: "MessageReactivity");
-    } else {
-      message.associatedMessages.add(newItem);
-      Logger.debug("[MWC] Added new reaction to ${message.guid}: ${newItem.associatedMessageType}",
-          tag: "MessageReactivity");
-    }
-    // Updates are handled by MessageState - no flag toggle needed
-  }
-
-  void removeAssociatedMessage(Message toRemove) {
-    message.associatedMessages.removeWhere((e) => e.id == toRemove.id);
-    // Updates are handled by MessageState - no flag toggle needed
   }
 }

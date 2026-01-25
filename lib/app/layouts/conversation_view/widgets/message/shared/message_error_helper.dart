@@ -81,7 +81,12 @@ Future<void> retryReaction({
   // Remove the original message and notification
   await MessagesSvc(chat.guid).deleteMessage(reaction);
   await NotificationsSvc.clearFailedToSend(chat.id!);
-  MessagesSvc(chat.guid).getControllerIfExists(reaction.associatedMessageGuid!)?.removeAssociatedMessage(reaction);
+  
+  // Remove from parent MessageState
+  final parentState = MessagesSvc(chat.guid).getMessageStateIfExists(reaction.associatedMessageGuid!);
+  if (parentState != null) {
+    parentState.removeAssociatedMessageInternal(reaction);
+  }
 
   // Re-send
   outq.queue(OutgoingItem(
@@ -108,8 +113,13 @@ Future<void> removeReaction({
 }) async {
   // Delete the message from DB and service
   await MessagesSvc(chat.guid).deleteMessage(reaction);
-  // Remove the message from parent controller
-  MessagesSvc(chat.guid).getControllerIfExists(reaction.associatedMessageGuid!)?.removeAssociatedMessage(reaction);
+  
+  // Remove from parent MessageState
+  final parentState = MessagesSvc(chat.guid).getMessageStateIfExists(reaction.associatedMessageGuid!);
+  if (parentState != null) {
+    parentState.removeAssociatedMessageInternal(reaction);
+  }
+  
   await NotificationsSvc.clearFailedToSend(chat.id!);
   // Get the "new" latest info
   List<Message> latest = await Chat.getMessagesAsync(chat, limit: 1);

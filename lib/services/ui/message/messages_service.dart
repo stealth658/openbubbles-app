@@ -261,29 +261,8 @@ class MessagesService extends GetxController {
               tag: "MessageState");
         }
 
-        // Get or create the controller - this ensures it exists
-        final mwcInstance = getControllerIfExists(message.associatedMessageGuid!);
-        if (mwcInstance != null) {
-          // Controller exists, update it
-          mwcInstance.updateAssociatedMessage(message);
-          Logger.debug("Updated reaction ${message.guid} on parent ${message.associatedMessageGuid}",
-              tag: "MessageReactivity");
-        } else {
-          // Controller doesn't exist yet, queue for retry
-          Logger.warn("Parent controller not ready for reaction ${message.guid}, will retry", tag: "MessageReactivity");
-          Future.delayed(const Duration(milliseconds: 100), () {
-            final retryMwc = getControllerIfExists(message.associatedMessageGuid!);
-            if (retryMwc != null) {
-              retryMwc.updateAssociatedMessage(message);
-              Logger.debug(
-                  "Retry successful: Updated reaction ${message.guid} on parent ${message.associatedMessageGuid}",
-                  tag: "MessageReactivity");
-            } else {
-              Logger.error("Retry failed: Parent controller still not found for reaction ${message.guid}",
-                  tag: "MessageReactivity");
-            }
-          });
-        }
+        // Notify UI of update (no longer need to call controller methods)
+        triggerMessageUpdate(message.associatedMessageGuid!);
       } else {
         Logger.warn("Parent message not found for reaction ${message.guid} (parent: ${message.associatedMessageGuid})",
             tag: "MessageReactivity");
@@ -300,16 +279,9 @@ class MessagesService extends GetxController {
         Logger.debug("Incremented thread reply count for ${message.threadOriginatorGuid} to ${currentCount + 1}",
             tag: "MessageState");
       }
-
-      final mwcInstance = getControllerIfExists(message.threadOriginatorGuid!);
-      if (mwcInstance != null) {
-        mwcInstance.updateThreadOriginator(message);
-      } else {
-        // Queue retry for thread originator
-        Future.delayed(const Duration(milliseconds: 100), () {
-          getControllerIfExists(message.threadOriginatorGuid!)?.updateThreadOriginator(message);
-        });
-      }
+      
+      // Notify UI of update
+      triggerMessageUpdate(message.threadOriginatorGuid!);
     }
 
     // Only call newFunc for non-reactions (regular messages)
@@ -457,23 +429,11 @@ class MessagesService extends GetxController {
           for (final message in _messages) {
             if (message.associatedMessages.isNotEmpty) {
               Logger.debug(
-                  "[loadChunk] Message ${message.guid} has ${message.associatedMessages.length} reactions, triggering update",
+                  "[loadChunk] Message ${message.guid} has ${message.associatedMessages.length} reactions",
                   tag: "MessageReactivity");
-
-              // Get the controller if it exists and update it
-              final mwcInstance = getControllerIfExists(message.guid!);
-              if (mwcInstance != null) {
-                // Update the controller with the new associated messages
-                for (final reaction in message.associatedMessages) {
-                  mwcInstance.updateAssociatedMessage(reaction, updateHolder: true);
-                }
-                Logger.debug("[loadChunk] Updated controller for ${message.guid} with reactions",
-                    tag: "MessageReactivity");
-              } else {
-                Logger.warn(
-                    "[loadChunk] No controller found for ${message.guid} with ${message.associatedMessages.length} reactions",
-                    tag: "MessageReactivity");
-              }
+              
+              // MessageState already has the reactions loaded from the database
+              // No need to update controller - reactions are accessed via messageState.associatedMessages
             }
           }
         },
