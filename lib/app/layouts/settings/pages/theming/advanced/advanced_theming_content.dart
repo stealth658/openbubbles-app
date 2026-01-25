@@ -234,59 +234,59 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
                 isThreeLine: true,
               ),
               Obx(() => AnimatedSizeAndFade.showHide(
-                show: editable.value,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      color: tileColor,
-                      child: Padding(
-                        padding: const EdgeInsets.only(left: 15.0),
-                        child: SettingsDivider(color: context.theme.colorScheme.surfaceVariant),
-                      ),
+                    show: editable.value,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          color: tileColor,
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 15.0),
+                            child: SettingsDivider(color: context.theme.colorScheme.surfaceVariant),
+                          ),
+                        ),
+                        SettingsTile(
+                          title: "Generate From Image",
+                          subtitle: "Overwrite this theme by generating a color palette from an image",
+                          backgroundColor: tileColor,
+                          onTap: () async {
+                            final res = await FilePicker.platform.pickFiles(
+                                withData: true, type: FileType.custom, allowedExtensions: ['png', 'jpg', 'jpeg']);
+                            if (res == null || res.files.isEmpty || res.files.first.bytes == null) return;
+                            final image = MemoryImage(res.files.first.bytes!);
+                            final swatch = await ColorScheme.fromImageProvider(
+                                provider: image, brightness: widget.isDarkMode ? Brightness.dark : Brightness.light);
+                            oldData.value = currentTheme.data;
+                            currentTheme.data = currentTheme.data.copyWith(colorScheme: swatch);
+                            currentTheme.save();
+                            if (widget.isDarkMode) {
+                              await ThemeSvc.changeTheme(context, dark: currentTheme);
+                            } else {
+                              await ThemeSvc.changeTheme(context, light: currentTheme);
+                            }
+                          },
+                          trailing: oldData.value == null
+                              ? null
+                              : TextButton(
+                                  style: TextButton.styleFrom(
+                                    backgroundColor: context.theme.colorScheme.secondary,
+                                  ),
+                                  onPressed: () async {
+                                    currentTheme.data = oldData.value!;
+                                    oldData.value = null;
+                                    currentTheme.save();
+                                    if (widget.isDarkMode) {
+                                      await ThemeSvc.changeTheme(context, dark: currentTheme);
+                                    } else {
+                                      await ThemeSvc.changeTheme(context, light: currentTheme);
+                                    }
+                                  },
+                                  child: Text("UNDO", style: TextStyle(color: context.theme.colorScheme.onSecondary)),
+                                ),
+                        ),
+                      ],
                     ),
-                    SettingsTile(
-                      title: "Generate From Image",
-                      subtitle: "Overwrite this theme by generating a color palette from an image",
-                      backgroundColor: tileColor,
-                      onTap: () async {
-                        final res = await FilePicker.platform.pickFiles(
-                            withData: true, type: FileType.custom, allowedExtensions: ['png', 'jpg', 'jpeg']);
-                        if (res == null || res.files.isEmpty || res.files.first.bytes == null) return;
-                        final image = MemoryImage(res.files.first.bytes!);
-                        final swatch = await ColorScheme.fromImageProvider(
-                            provider: image, brightness: widget.isDarkMode ? Brightness.dark : Brightness.light);
-                        oldData.value = currentTheme.data;
-                        currentTheme.data = currentTheme.data.copyWith(colorScheme: swatch);
-                        currentTheme.save();
-                        if (widget.isDarkMode) {
-                          await ThemeSvc.changeTheme(context, dark: currentTheme);
-                        } else {
-                          await ThemeSvc.changeTheme(context, light: currentTheme);
-                        }
-                      },
-                      trailing: oldData.value == null
-                          ? null
-                          : TextButton(
-                              style: TextButton.styleFrom(
-                                backgroundColor: context.theme.colorScheme.secondary,
-                              ),
-                              onPressed: () async {
-                                currentTheme.data = oldData.value!;
-                                oldData.value = null;
-                                currentTheme.save();
-                                if (widget.isDarkMode) {
-                                  await ThemeSvc.changeTheme(context, dark: currentTheme);
-                                } else {
-                                  await ThemeSvc.changeTheme(context, light: currentTheme);
-                                }
-                              },
-                              child: Text("UNDO", style: TextStyle(color: context.theme.colorScheme.onSecondary)),
-                            ),
-                    ),
-                  ],
-                ),
-              )),
+                  )),
               const SettingsSubtitle(
                 subtitle:
                     "Tap to edit the base color\nLong press to edit the color for elements displayed on top of the base color\nDouble tap to learn how the colors are used",
@@ -330,16 +330,16 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
             delegate: SliverChildBuilderDelegate(
               (context, index) {
                 return Obx(() => AdvancedThemingTile(
-                  currentTheme: currentTheme,
-                  tuple: Tuple2(
-                      currentTheme.colors(widget.isDarkMode).entries.toList()[index < length - 1
-                          ? index * 2
-                          : currentTheme.colors(widget.isDarkMode).entries.length - (length - index)],
-                      index < length - 1
-                          ? currentTheme.colors(widget.isDarkMode).entries.toList()[index * 2 + 1]
-                          : null),
-                  editable: editable.value,
-                ));
+                      currentTheme: currentTheme,
+                      tuple: Tuple2(
+                          currentTheme.colors(widget.isDarkMode).entries.toList()[index < length - 1
+                              ? index * 2
+                              : currentTheme.colors(widget.isDarkMode).entries.length - (length - index)],
+                          index < length - 1
+                              ? currentTheme.colors(widget.isDarkMode).entries.toList()[index * 2 + 1]
+                              : null),
+                      editable: editable.value,
+                    ));
               },
               childCount: length,
             ),
@@ -392,70 +392,70 @@ class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent
               (context, index) {
                 if (index == 0) {
                   return Obx(() => SettingsSlider(
-                    leading: const Text("master"),
-                    startingVal: master.value,
-                    leadingMinWidth: context.theme.textTheme.bodyMedium!.fontSize! * 6,
-                    update: (double val) {
-                      master.value = val;
-                      final map = currentTheme.toMap();
-                      final keys = currentTheme.textSizes.keys.toList();
-                      for (String k in keys) {
-                        map["data"]["textTheme"][k]['fontSize'] = ThemeStruct.defaultTextSizes[k]! * val;
-                      }
-                      currentTheme.data = ThemeStruct.fromMap(map).data;
-                    },
-                    onChangeEnd: (double val) async {
-                      master.value = val;
-                      final map = currentTheme.toMap();
-                      final keys = currentTheme.textSizes.keys.toList();
-                      for (String k in keys) {
-                        map["data"]["textTheme"][k]['fontSize'] = ThemeStruct.defaultTextSizes[k]! * val;
-                      }
-                      currentTheme.data = ThemeStruct.fromMap(map).data;
-                      currentTheme.save();
-                      if (currentTheme.name == PrefsSvc.i.getString("selected-dark")) {
-                        await ThemeSvc.changeTheme(context, dark: currentTheme);
-                      } else if (currentTheme.name == PrefsSvc.i.getString("selected-light")) {
-                        await ThemeSvc.changeTheme(context, light: currentTheme);
-                      }
-                    },
-                    backgroundColor: tileColor,
-                    min: 0.5,
-                    max: 3,
-                    divisions: 30,
-                    formatValue: ((double val) => val.toStringAsFixed(2)),
-                  ));
+                        leading: const Text("master"),
+                        startingVal: master.value,
+                        leadingMinWidth: context.theme.textTheme.bodyMedium!.fontSize! * 6,
+                        update: (double val) {
+                          master.value = val;
+                          final map = currentTheme.toMap();
+                          final keys = currentTheme.textSizes.keys.toList();
+                          for (String k in keys) {
+                            map["data"]["textTheme"][k]['fontSize'] = ThemeStruct.defaultTextSizes[k]! * val;
+                          }
+                          currentTheme.data = ThemeStruct.fromMap(map).data;
+                        },
+                        onChangeEnd: (double val) async {
+                          master.value = val;
+                          final map = currentTheme.toMap();
+                          final keys = currentTheme.textSizes.keys.toList();
+                          for (String k in keys) {
+                            map["data"]["textTheme"][k]['fontSize'] = ThemeStruct.defaultTextSizes[k]! * val;
+                          }
+                          currentTheme.data = ThemeStruct.fromMap(map).data;
+                          currentTheme.save();
+                          if (currentTheme.name == PrefsSvc.i.getString("selected-dark")) {
+                            await ThemeSvc.changeTheme(context, dark: currentTheme);
+                          } else if (currentTheme.name == PrefsSvc.i.getString("selected-light")) {
+                            await ThemeSvc.changeTheme(context, light: currentTheme);
+                          }
+                        },
+                        backgroundColor: tileColor,
+                        min: 0.5,
+                        max: 3,
+                        divisions: 30,
+                        formatValue: ((double val) => val.toStringAsFixed(2)),
+                      ));
                 }
                 index = index - 1;
                 return Obx(() => SettingsSlider(
-                  leading: Text(currentTheme.textSizes.keys.toList()[index]),
-                  startingVal: currentTheme.textSizes.values.toList()[index] /
-                      ThemeStruct.defaultTextSizes.values.toList()[index],
-                  leadingMinWidth: context.theme.textTheme.bodyMedium!.fontSize! * 6,
-                  update: (double val) {
-                    final map = currentTheme.toMap();
-                    map["data"]["textTheme"][currentTheme.textSizes.keys.toList()[index]]['fontSize'] =
-                        ThemeStruct.defaultTextSizes.values.toList()[index] * val;
-                    currentTheme.data = ThemeStruct.fromMap(map).data;
-                  },
-                  onChangeEnd: (double val) async {
-                    final map = currentTheme.toMap();
-                    map["data"]["textTheme"][currentTheme.textSizes.keys.toList()[index]]['fontSize'] =
-                        ThemeStruct.defaultTextSizes.values.toList()[index] * val;
-                    currentTheme.data = ThemeStruct.fromMap(map).data;
-                    currentTheme.save();
-                    if (currentTheme.name == PrefsSvc.i.getString("selected-dark")) {
-                      await ThemeSvc.changeTheme(context, dark: currentTheme);
-                    } else if (currentTheme.name == PrefsSvc.i.getString("selected-light")) {
-                      await ThemeSvc.changeTheme(context, light: currentTheme);
-                    }
-                  },
-                  backgroundColor: tileColor,
-                  min: 0.5,
-                  max: 3,
-                  divisions: 30,
-                  formatValue: ((double val) => val.toStringAsFixed(2)),
-                ));
+                      leading: Text(currentTheme.textSizes.keys.toList()[index]),
+                      startingVal: currentTheme.textSizes.values.toList()[index] /
+                          ThemeStruct.defaultTextSizes.values.toList()[index],
+                      leadingMinWidth: context.theme.textTheme.bodyMedium!.fontSize! * 6,
+                      update: (double val) {
+                        final map = currentTheme.toMap();
+                        map["data"]["textTheme"][currentTheme.textSizes.keys.toList()[index]]['fontSize'] =
+                            ThemeStruct.defaultTextSizes.values.toList()[index] * val;
+                        currentTheme.data = ThemeStruct.fromMap(map).data;
+                      },
+                      onChangeEnd: (double val) async {
+                        final map = currentTheme.toMap();
+                        map["data"]["textTheme"][currentTheme.textSizes.keys.toList()[index]]['fontSize'] =
+                            ThemeStruct.defaultTextSizes.values.toList()[index] * val;
+                        currentTheme.data = ThemeStruct.fromMap(map).data;
+                        currentTheme.save();
+                        if (currentTheme.name == PrefsSvc.i.getString("selected-dark")) {
+                          await ThemeSvc.changeTheme(context, dark: currentTheme);
+                        } else if (currentTheme.name == PrefsSvc.i.getString("selected-light")) {
+                          await ThemeSvc.changeTheme(context, light: currentTheme);
+                        }
+                      },
+                      backgroundColor: tileColor,
+                      min: 0.5,
+                      max: 3,
+                      divisions: 30,
+                      formatValue: ((double val) => val.toStringAsFixed(2)),
+                    ));
               },
               childCount: currentTheme.textSizes.length + 1,
             ),

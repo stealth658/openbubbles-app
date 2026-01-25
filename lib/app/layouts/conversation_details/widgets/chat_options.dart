@@ -194,7 +194,8 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
                     final chatState = ChatsSvc.getChatState(chat.guid);
                     return SettingsSwitch(
                       title: "Send Typing Indicators",
-                      initialVal: chatState?.autoSendTypingIndicators.value ?? SettingsSvc.settings.privateSendTypingIndicators.value,
+                      initialVal: chatState?.autoSendTypingIndicators.value ??
+                          SettingsSvc.settings.privateSendTypingIndicators.value,
                       onChanged: (value) {
                         if (chatState != null) {
                           ChatsSvc.setChatAutoSendTypingIndicators(chatState.chat, value);
@@ -220,7 +221,8 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
                             value ? null : SettingsSvc.settings.privateSendTypingIndicators.value,
                           );
                         } else {
-                          chat.toggleAutoTypeAsync(value ? null : SettingsSvc.settings.privateSendTypingIndicators.value);
+                          chat.toggleAutoTypeAsync(
+                              value ? null : SettingsSvc.settings.privateSendTypingIndicators.value);
                         }
                       },
                     );
@@ -232,7 +234,8 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
                     return SettingsSwitch(
                       title:
                           "${SettingsSvc.settings.privateManualMarkAsRead.value ? "Automatically " : ""}Send Read Receipts",
-                      initialVal: chatState?.autoSendReadReceipts.value ?? SettingsSvc.settings.privateMarkChatAsRead.value,
+                      initialVal:
+                          chatState?.autoSendReadReceipts.value ?? SettingsSvc.settings.privateMarkChatAsRead.value,
                       onChanged: (value) {
                         if (chatState != null) {
                           ChatsSvc.setChatAutoSendReadReceipts(chatState.chat, value);
@@ -270,7 +273,8 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
                     final chatState = ChatsSvc.getChatState(chat.guid);
                     return SettingsSwitch(
                       title: "Lock Chat Name",
-                      subtitle: "Keep the current chat name on this device, even if someone else in the chat changes it",
+                      subtitle:
+                          "Keep the current chat name on this device, even if someone else in the chat changes it",
                       initialVal: chatState?.lockChatName.value ?? chat.lockChatName,
                       onChanged: (value) {
                         if (chatState != null) {
@@ -287,7 +291,8 @@ class _ChatOptionsState extends OptimizedState<ChatOptions> {
                     final chatState = ChatsSvc.getChatState(chat.guid);
                     return SettingsSwitch(
                       title: "Lock Chat Icon",
-                      subtitle: "Keep the current chat icon on this device, even if someone else in the chat changes it",
+                      subtitle:
+                          "Keep the current chat icon on this device, even if someone else in the chat changes it",
                       initialVal: chatState?.lockChatIcon.value ?? chat.lockChatIcon,
                       onChanged: (value) {
                         if (chatState != null) {

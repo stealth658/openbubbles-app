@@ -221,33 +221,33 @@ mixin LivePhotoMixin<T extends StatefulWidget> on State<T> {
           borderRadius: BorderRadius.circular(14),
         ),
         child: Obx(() => Stack(
-          alignment: Alignment.center,
-          children: [
-            if (isDownloadingLivePhoto.value)
-              SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  value: livePhotoProgress.value,
-                  strokeWidth: 2,
-                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-                  backgroundColor: Colors.white.withOpacity(0.3),
-                ),
-              )
-            else if (isPlayingLivePhoto.value)
-              const Icon(
-                CupertinoIcons.pause_fill,
-                color: Colors.white,
-                size: 16,
-              )
-            else
-              const Icon(
-                CupertinoIcons.smallcircle_circle,
-                color: Colors.white,
-                size: 20,
-              ),
-          ],
-        )),
+              alignment: Alignment.center,
+              children: [
+                if (isDownloadingLivePhoto.value)
+                  SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      value: livePhotoProgress.value,
+                      strokeWidth: 2,
+                      valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                      backgroundColor: Colors.white.withOpacity(0.3),
+                    ),
+                  )
+                else if (isPlayingLivePhoto.value)
+                  const Icon(
+                    CupertinoIcons.pause_fill,
+                    color: Colors.white,
+                    size: 16,
+                  )
+                else
+                  const Icon(
+                    CupertinoIcons.smallcircle_circle,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+              ],
+            )),
       ),
     );
   }

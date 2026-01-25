@@ -100,120 +100,120 @@ class _ManualEntryDialogState extends OptimizedState<ManualEntryDialog> {
   Widget build(BuildContext context) {
     return Obx(() {
       if (!connecting.value) {
-      return AlertDialog(
-        title: Text(
-          "Enter Server Details",
-          style: context.theme.textTheme.titleLarge,
-        ),
-        backgroundColor: context.theme.colorScheme.properSurface,
-        content: AutofillGroup(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Focus(
-                onKeyEvent: (node, event) {
-                  if (event is KeyDownEvent &&
-                      !HardwareKeyboard.instance.isShiftPressed &&
-                      event.logicalKey == LogicalKeyboardKey.tab) {
-                    node.nextFocus();
-                    return KeyEventResult.handled;
-                  }
-                  return KeyEventResult.ignored;
-                },
-                child: TextField(
-                  cursorColor: context.theme.colorScheme.primary,
-                  autocorrect: false,
-                  autofocus: true,
-                  controller: urlController,
-                  textInputAction: TextInputAction.next,
-                  autofillHints: [AutofillHints.username, AutofillHints.url],
-                  decoration: InputDecoration(
-                    enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: context.theme.colorScheme.outline),
-                        borderRadius: BorderRadius.circular(20)),
-                    focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: context.theme.colorScheme.primary),
-                        borderRadius: BorderRadius.circular(20)),
-                    labelText: "URL",
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              Focus(
-                onKeyEvent: (node, event) {
-                  if (event is KeyDownEvent &&
-                      HardwareKeyboard.instance.isShiftPressed &&
-                      event.logicalKey == LogicalKeyboardKey.tab) {
-                    node.previousFocus();
-                    node.previousFocus(); // This is intentional. Should probably figure out why it's needed
-                    return KeyEventResult.handled;
-                  }
-                  return KeyEventResult.ignored;
-                },
-                child: TextField(
-                  cursorColor: context.theme.colorScheme.primary,
-                  autocorrect: false,
-                  autofocus: false,
-                  controller: passwordController,
-                  textInputAction: TextInputAction.next,
-                  autofillHints: [AutofillHints.password],
-                  onSubmitted: (_) {
-                    connect(urlController.text, passwordController.text);
-                    connecting.value = true;
+        return AlertDialog(
+          title: Text(
+            "Enter Server Details",
+            style: context.theme.textTheme.titleLarge,
+          ),
+          backgroundColor: context.theme.colorScheme.properSurface,
+          content: AutofillGroup(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Focus(
+                  onKeyEvent: (node, event) {
+                    if (event is KeyDownEvent &&
+                        !HardwareKeyboard.instance.isShiftPressed &&
+                        event.logicalKey == LogicalKeyboardKey.tab) {
+                      node.nextFocus();
+                      return KeyEventResult.handled;
+                    }
+                    return KeyEventResult.ignored;
                   },
-                  decoration: InputDecoration(
-                    enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: context.theme.colorScheme.outline),
-                        borderRadius: BorderRadius.circular(20)),
-                    focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: context.theme.colorScheme.primary),
-                        borderRadius: BorderRadius.circular(20)),
-                    labelText: "Password",
+                  child: TextField(
+                    cursorColor: context.theme.colorScheme.primary,
+                    autocorrect: false,
+                    autofocus: true,
+                    controller: urlController,
+                    textInputAction: TextInputAction.next,
+                    autofillHints: [AutofillHints.username, AutofillHints.url],
+                    decoration: InputDecoration(
+                      enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: context.theme.colorScheme.outline),
+                          borderRadius: BorderRadius.circular(20)),
+                      focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: context.theme.colorScheme.primary),
+                          borderRadius: BorderRadius.circular(20)),
+                      labelText: "URL",
+                    ),
                   ),
-                  obscureText: true,
                 ),
-              ),
-            ],
+                const SizedBox(height: 10),
+                Focus(
+                  onKeyEvent: (node, event) {
+                    if (event is KeyDownEvent &&
+                        HardwareKeyboard.instance.isShiftPressed &&
+                        event.logicalKey == LogicalKeyboardKey.tab) {
+                      node.previousFocus();
+                      node.previousFocus(); // This is intentional. Should probably figure out why it's needed
+                      return KeyEventResult.handled;
+                    }
+                    return KeyEventResult.ignored;
+                  },
+                  child: TextField(
+                    cursorColor: context.theme.colorScheme.primary,
+                    autocorrect: false,
+                    autofocus: false,
+                    controller: passwordController,
+                    textInputAction: TextInputAction.next,
+                    autofillHints: [AutofillHints.password],
+                    onSubmitted: (_) {
+                      connect(urlController.text, passwordController.text);
+                      connecting.value = true;
+                    },
+                    decoration: InputDecoration(
+                      enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: context.theme.colorScheme.outline),
+                          borderRadius: BorderRadius.circular(20)),
+                      focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: context.theme.colorScheme.primary),
+                          borderRadius: BorderRadius.circular(20)),
+                      labelText: "Password",
+                    ),
+                    obscureText: true,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: widget.onClose,
-            child: Text("Cancel",
-                style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
-          ),
-          TextButton(
-            child: Text("OK",
-                style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
-            onPressed: () {
-              connect(urlController.text, passwordController.text);
-              connecting.value = true;
-            },
-          ),
-        ],
-      );
-    } else if (error.value == 'Google Services file not found.') {
-      return const FailedToScanDialog(
-          title: "Connected! However...",
-          exception:
-              'Google Services file not found! If you plan to use Firebase for notifications, please setup Firebase via the BlueBubbles Server.');
-    } else if (error.value != null) {
-      return FailedToScanDialog(
-        title: "An error occured while trying to retreive data!",
-        exception: error.value,
-      );
-    } else {
-      return ConnectingDialog(
-        onConnect: (bool result) {
-          if (result) {
-            retreiveFCMData();
-          } else {
-            error.value =
-                "Failed to connect to ${sanitizeServerAddress()}! Please check that the url is correct (including http://) and the server logs for more info.";
-          }
-        },
-      );
-    }
+          actions: [
+            TextButton(
+              onPressed: widget.onClose,
+              child: Text("Cancel",
+                  style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+            ),
+            TextButton(
+              child: Text("OK",
+                  style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+              onPressed: () {
+                connect(urlController.text, passwordController.text);
+                connecting.value = true;
+              },
+            ),
+          ],
+        );
+      } else if (error.value == 'Google Services file not found.') {
+        return const FailedToScanDialog(
+            title: "Connected! However...",
+            exception:
+                'Google Services file not found! If you plan to use Firebase for notifications, please setup Firebase via the BlueBubbles Server.');
+      } else if (error.value != null) {
+        return FailedToScanDialog(
+          title: "An error occured while trying to retreive data!",
+          exception: error.value,
+        );
+      } else {
+        return ConnectingDialog(
+          onConnect: (bool result) {
+            if (result) {
+              retreiveFCMData();
+            } else {
+              error.value =
+                  "Failed to connect to ${sanitizeServerAddress()}! Please check that the url is correct (including http://) and the server logs for more info.";
+            }
+          },
+        );
+      }
     });
   }
 }

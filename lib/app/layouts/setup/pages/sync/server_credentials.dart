@@ -53,488 +53,496 @@ class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
           ? "Enter your server URL and password to access your messages."
           : "We've created a QR code on your server that you can scan with your phone for easy setup.\nAlternatively, you can manually input your URL and password.",
       contentWrapper: (child) => Obx(() => AnimatedSize(
-        duration: const Duration(milliseconds: 200),
-        child: !showLoginButtons.value && context.isPhone ? const SizedBox.shrink() : child,
-      )),
-      customButton: Obx(() => Column(
-        children: [
-          ErrorText(parentController: controller),
-          if (token.value != null)
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text("Signed in as", style: TextStyle(color: context.theme.colorScheme.primary)),
-                const SizedBox(height: 8),
-                Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    color: context.theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (googlePicture.value != null)
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          clipBehavior: Clip.antiAlias,
-                          child: Image.network(googlePicture.value!, width: 40, fit: BoxFit.contain),
-                        ),
-                      const SizedBox(width: 10),
-                      Text(googleName.value ?? "Unknown",
-                          style: context.theme.textTheme.bodyLarge!
-                              .apply(fontSizeFactor: 1.1, color: context.theme.colorScheme.onBackground)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          if (token.value != null) const SizedBox(height: 40),
-          if (token.value != null)
-            Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: context.theme.colorScheme.primaryContainer),
-              ),
-              child: usableProjects.isNotEmpty
-                  ? SingleChildScrollView(
-                      child: SizedBox(
-                        width: double.maxFinite,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.all(10.0),
-                              child: Text(fetchingFirebase.value
-                                  ? "Loading Firebase projects"
-                                  : "Select the Firebase project to use"),
-                            ),
-                            if (!fetchingFirebase.value)
-                              ConstrainedBox(
-                                constraints: BoxConstraints(
-                                  maxHeight: context.mediaQuery.size.height * 0.4,
-                                ),
-                                child: ListView.builder(
-                                  shrinkWrap: true,
-                                  itemCount: usableProjects.length,
-                                  findChildIndexCallback: (key) =>
-                                      findChildIndexByKey(usableProjects, key, (item) => item['projectId']),
-                                  itemBuilder: (context, index) {
-                                    return Obx(() {
-                                      if (!triedConnecting[index].value) {
-                                        Future(() async {
-                                          try {
-                                            await HttpSvc.dio.get(usableProjects[index]['serverUrl']);
-                                            reachable[index].value = true;
-                                          } catch (e) {
-                                            reachable[index].value = false;
-                                          }
-                                          triedConnecting[index].value = true;
-                                        });
-                                      }
-                                      return ClipRRect(
-                                        key: ValueKey(usableProjects[index]['projectId']),
-                                        clipBehavior: Clip.antiAlias,
-                                        borderRadius: BorderRadius.circular(20),
-                                        child: ListTile(
-                                          tileColor: context.theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
-                                          enabled: triedConnecting[index].value && reachable[index].value,
-                                          title: Text.rich(TextSpan(children: [
-                                            TextSpan(text: usableProjects[index]['displayName']),
-                                            TextSpan(
-                                              text:
-                                                  " ${triedConnecting[index].value ? "${reachable[index].value ? "R" : "Unr"}eachable" : "Checking"}",
-                                              style: TextStyle(
-                                                  fontWeight:
-                                                      reachable[index].value ? FontWeight.bold : FontWeight.normal,
-                                                  color: triedConnecting[index].value
-                                                      ? reachable[index].value
-                                                          ? Colors.green
-                                                          : Colors.red
-                                                      : Colors.yellow),
-                                            ),
-                                          ])),
-                                          subtitle: Text(
-                                            "${usableProjects[index]['projectId']}\n${usableProjects[index]['serverUrl']}",
-                                          ),
-                                          onTap: () {
-                                            requestPassword(context, usableProjects[index]['serverUrl'], connect);
-                                          },
-                                          isThreeLine: true,
-                                        ),
-                                      );
-                                    });
-                                  },
-                                ),
-                              ),
-                            if (fetchingFirebase.value) const CircularProgressIndicator(),
-                            const SizedBox(height: 10),
-                            if (!fetchingFirebase.value)
-                              ElevatedButton(
-                                onPressed: () {
-                                  for (int i = 0; i < triedConnecting.length; i++) {
-                                    triedConnecting[i].value = false;
-                                  }
-                                },
-                                child: const Text("Retry Connections"),
-                              ),
-                            if (!fetchingFirebase.value) const SizedBox(height: 10),
-                          ],
-                        ),
-                      ),
-                    )
-                  : Container(
-                      alignment: Alignment.center,
-                      width: double.maxFinite,
-                      padding: const EdgeInsets.all(24),
-                      child: const Text(
-                        "No Firebase Projects found!\n\nMake sure you're signed in to the same Google account that you used on your server!",
-                        textScaler: TextScaler.linear(1.1),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-            ),
-          if (token.value != null) const SizedBox(height: 10),
-          Container(
-            height: 40,
-            padding: const EdgeInsets.all(2),
-            child: TextButton(
-              onPressed: () async {
-                await showCustomHeadersDialog(context);
-              },
-              child: Text("Enter Custom Headers",
-                  style: context.theme.textTheme.bodyLarge!.apply(color: context.theme.colorScheme.primary)),
-            ),
-          ),
-          const SizedBox(height: 10),
-          if (token.value != null)
-            Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              height: 40,
-              padding: const EdgeInsets.all(2),
-              child: ElevatedButton(
-                style: ButtonStyle(
-                  shape: WidgetStateProperty.all<RoundedRectangleBorder>(
-                    RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20.0),
-                    ),
-                  ),
-                  backgroundColor: WidgetStateProperty.all(context.theme.colorScheme.background),
-                  shadowColor: WidgetStateProperty.all(context.theme.colorScheme.background),
-                  maximumSize: WidgetStateProperty.all(buttonSize),
-                  minimumSize: WidgetStateProperty.all(buttonSize),
-                ),
-                onPressed: () async {
-                  token.value = null;
-                  googleName.value = null;
-                  googlePicture.value = null;
-                },
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text("Choose a different account",
-                        style: context.theme.textTheme.bodyLarge!
-                            .apply(fontSizeFactor: 1.1, color: context.theme.colorScheme.primary)),
-                  ],
-                ),
-              ),
-            ),
-          if (token.value != null) const SizedBox(height: 10),
-          if (googleName.value == null && showLoginButtons.value && !isSnap)
-            Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                color: HexColor('4285F4'),
-              ),
-              height: 40,
-              child: ElevatedButton(
-                style: ButtonStyle(
-                  shape: WidgetStateProperty.all<RoundedRectangleBorder>(
-                    RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20.0),
-                    ),
-                  ),
-                  backgroundColor: WidgetStateProperty.all(Colors.transparent),
-                  shadowColor: WidgetStateProperty.all(Colors.transparent),
-                  maximumSize: WidgetStateProperty.all(buttonSize),
-                  minimumSize: WidgetStateProperty.all(buttonSize),
-                ),
-                onPressed: () async {
-                  token.value = await googleOAuth(context);
-                  if (token.value != null) {
-                    final response = await HttpSvc.getGoogleInfo(token.value!);
-                    googleName.value = response.data['name'];
-                    googlePicture.value = response.data['picture'];
-                    fetchingFirebase.value = true;
-                    fetchFirebaseProjects(token.value!).then((List<Map> value) async {
-                      usableProjects.value = value;
-                      triedConnecting = List.generate(usableProjects.length, (i) => false.obs);
-                      reachable = List.generate(usableProjects.length, (i) => false.obs);
-                      fetchingFirebase.value = false;
-                    });
-                  }
-                },
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Image.asset("assets/images/google-sign-in.png", width: 30, fit: BoxFit.contain),
-                    const SizedBox(width: 10),
-                    Padding(
-                      padding: const EdgeInsets.only(right: 0.0, left: 5.0),
-                      child: Text("Sign in with Google",
-                          style: context.theme.textTheme.bodyLarge!.apply(fontSizeFactor: 1.1, color: Colors.white)),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          if (googleName.value == null && showLoginButtons.value && !isSnap) const SizedBox(height: 10),
-          if (googleName.value == null && !kIsWeb && !kIsDesktop && showLoginButtons.value)
-            Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                gradient: LinearGradient(
-                  begin: AlignmentDirectional.topStart,
-                  colors: [HexColor('2772C3'), HexColor('5CA7F8').darkenPercent(5)],
-                ),
-              ),
-              height: 40,
-              child: ElevatedButton(
-                style: ButtonStyle(
-                  shape: WidgetStateProperty.all<RoundedRectangleBorder>(
-                    RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20.0),
-                    ),
-                  ),
-                  backgroundColor: WidgetStateProperty.all(Colors.transparent),
-                  shadowColor: WidgetStateProperty.all(Colors.transparent),
-                  maximumSize: WidgetStateProperty.all(buttonSize),
-                  minimumSize: WidgetStateProperty.all(buttonSize),
-                ),
-                onPressed: scanQRCode,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(CupertinoIcons.camera, color: Colors.white, size: 20),
-                    const SizedBox(width: 10),
-                    Padding(
-                      padding: const EdgeInsets.only(right: 0.0, left: 5.0),
-                      child: Text("Scan QR Code",
-                          style: context.theme.textTheme.bodyLarge!.apply(fontSizeFactor: 1.1, color: Colors.white)),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          if (googleName.value == null && !kIsWeb && !kIsDesktop && showLoginButtons.value) const SizedBox(height: 10),
-          if (googleName.value == null)
-            Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                gradient: LinearGradient(
-                  begin: AlignmentDirectional.topStart,
-                  colors: [HexColor('2772C3'), HexColor('5CA7F8').darkenPercent(5)],
-                ),
-              ),
-              height: 40,
-              padding: const EdgeInsets.all(2),
-              child: ElevatedButton(
-                style: ButtonStyle(
-                  shape: WidgetStateProperty.all<RoundedRectangleBorder>(
-                    RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20.0),
-                    ),
-                  ),
-                  backgroundColor: WidgetStateProperty.all(context.theme.colorScheme.background),
-                  shadowColor: WidgetStateProperty.all(context.theme.colorScheme.background),
-                  maximumSize: WidgetStateProperty.all(buttonSize),
-                  minimumSize: WidgetStateProperty.all(buttonSize),
-                ),
-                onPressed: () async {
-                  showLoginButtons.value = !showLoginButtons.value;
-                },
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(CupertinoIcons.text_cursor, color: context.theme.colorScheme.onBackground, size: 20),
-                    const SizedBox(width: 10),
-                    Text("Manual entry",
-                        style: context.theme.textTheme.bodyLarge!
-                            .apply(fontSizeFactor: 1.1, color: context.theme.colorScheme.onBackground)),
-                  ],
-                ),
-              ),
-            ),
-          Obx(() => AnimatedSize(
             duration: const Duration(milliseconds: 200),
-            child: showLoginButtons.value
-                ? const SizedBox.shrink()
-                : Theme(
-                    data: context.theme.copyWith(
-                      inputDecorationTheme: InputDecorationTheme(
-                        labelStyle: TextStyle(color: context.theme.colorScheme.outline),
+            child: !showLoginButtons.value && context.isPhone ? const SizedBox.shrink() : child,
+          )),
+      customButton: Obx(() => Column(
+            children: [
+              ErrorText(parentController: controller),
+              if (token.value != null)
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text("Signed in as", style: TextStyle(color: context.theme.colorScheme.primary)),
+                    const SizedBox(height: 8),
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        color: context.theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
                       ),
-                    ),
-                    child: AutofillGroup(
-                      child: Column(
+                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          const SizedBox(height: 20),
-                          FocusScope(
-                            node: focusScopeNode,
-                            child: Column(
-                              children: [
-                                SizedBox(
-                                  width: context.width * 2 / 3,
-                                  child: TextField(
-                                    cursorColor: context.theme.colorScheme.primary,
-                                    autocorrect: false,
-                                    autofocus: true,
-                                    controller: urlController,
-                                    textInputAction: TextInputAction.next,
-                                    autofillHints: [AutofillHints.username, AutofillHints.url],
-                                    decoration: InputDecoration(
-                                      enabledBorder: OutlineInputBorder(
-                                          borderSide: BorderSide(color: context.theme.colorScheme.outline),
-                                          borderRadius: BorderRadius.circular(20)),
-                                      focusedBorder: OutlineInputBorder(
-                                          borderSide: BorderSide(color: context.theme.colorScheme.primary),
-                                          borderRadius: BorderRadius.circular(20)),
-                                      labelText: "URL",
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 20),
-                                SizedBox(
-                                  width: context.width * 2 / 3,
-                                  child: TextField(
-                                    cursorColor: context.theme.colorScheme.primary,
-                                    autocorrect: false,
-                                    autofocus: false,
-                                    controller: passwordController,
-                                    textInputAction: TextInputAction.next,
-                                    autofillHints: [AutofillHints.password],
-                                    onSubmitted: (pass) => connect(urlController.text, pass),
-                                    decoration: InputDecoration(
-                                      enabledBorder: OutlineInputBorder(
-                                          borderSide: BorderSide(color: context.theme.colorScheme.outline),
-                                          borderRadius: BorderRadius.circular(20)),
-                                      focusedBorder: OutlineInputBorder(
-                                          borderSide: BorderSide(color: context.theme.colorScheme.primary),
-                                          borderRadius: BorderRadius.circular(20)),
-                                      labelText: "Password",
-                                      contentPadding: const EdgeInsets.fromLTRB(12, 24, 40, 16),
-                                      suffixIcon: Focus(
-                                        canRequestFocus: false,
-                                        descendantsAreFocusable: false,
-                                        child: IconButton(
-                                          icon: Icon(obscureText.value ? Icons.visibility_off : Icons.visibility),
-                                          color: context.theme.colorScheme.outline,
-                                          onPressed: () {
-                                            obscureText.value = !obscureText.value;
-                                          },
-                                        ),
-                                      ),
-                                    ),
-                                    obscureText: obscureText.value,
-                                  ),
-                                ),
-                              ],
+                          if (googlePicture.value != null)
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              clipBehavior: Clip.antiAlias,
+                              child: Image.network(googlePicture.value!, width: 40, fit: BoxFit.contain),
                             ),
-                          ),
-                          const SizedBox(height: 20),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Container(
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(25),
-                                  gradient: LinearGradient(
-                                    begin: AlignmentDirectional.topStart,
-                                    colors: [HexColor('2772C3'), HexColor('5CA7F8').darkenPercent(5)],
-                                  ),
-                                ),
-                                height: 40,
-                                padding: const EdgeInsets.all(2),
-                                child: ElevatedButton(
-                                  style: ButtonStyle(
-                                    shape: WidgetStateProperty.all<RoundedRectangleBorder>(
-                                      RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(20.0),
-                                      ),
-                                    ),
-                                    backgroundColor: WidgetStateProperty.all(context.theme.colorScheme.background),
-                                    shadowColor: WidgetStateProperty.all(context.theme.colorScheme.background),
-                                    maximumSize: WidgetStateProperty.all(const Size(200, 36)),
-                                    minimumSize: WidgetStateProperty.all(const Size(30, 30)),
-                                  ),
-                                  onPressed: () async {
-                                    showLoginButtons.value = true;
-                                  },
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(Icons.close, color: context.theme.colorScheme.onBackground, size: 20),
-                                      const SizedBox(width: 10),
-                                      Text("Cancel",
-                                          style: context.theme.textTheme.bodyLarge!.apply(
-                                              fontSizeFactor: 1.1, color: context.theme.colorScheme.onBackground)),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(25),
-                                  gradient: LinearGradient(
-                                    begin: AlignmentDirectional.topStart,
-                                    colors: [HexColor('2772C3'), HexColor('5CA7F8').darkenPercent(5)],
-                                  ),
-                                ),
-                                height: 40,
-                                child: ElevatedButton(
-                                  style: ButtonStyle(
-                                    shape: WidgetStateProperty.all<RoundedRectangleBorder>(
-                                      RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(20.0),
-                                      ),
-                                    ),
-                                    backgroundColor: WidgetStateProperty.all(Colors.transparent),
-                                    shadowColor: WidgetStateProperty.all(Colors.transparent),
-                                    maximumSize: WidgetStateProperty.all(const Size(200, 36)),
-                                    minimumSize: WidgetStateProperty.all(const Size(30, 30)),
-                                  ),
-                                  onPressed: () async {
-                                    SettingsSvc.settings.customHeaders.value = {};
-                                    HttpSvc.updateHeaders();
-                                    connect(urlController.text, passwordController.text);
-                                  },
-                                  onLongPress: () async {
-                                    await showCustomHeadersDialog(context);
-                                    connect(urlController.text, passwordController.text);
-                                  },
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text("Connect",
-                                          style: context.theme.textTheme.bodyLarge!
-                                              .apply(fontSizeFactor: 1.1, color: Colors.white)),
-                                      const SizedBox(width: 10),
-                                      const Icon(Icons.arrow_forward, color: Colors.white, size: 20),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+                          const SizedBox(width: 10),
+                          Text(googleName.value ?? "Unknown",
+                              style: context.theme.textTheme.bodyLarge!
+                                  .apply(fontSizeFactor: 1.1, color: context.theme.colorScheme.onBackground)),
                         ],
                       ),
                     ),
+                  ],
+                ),
+              if (token.value != null) const SizedBox(height: 40),
+              if (token.value != null)
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: context.theme.colorScheme.primaryContainer),
                   ),
+                  child: usableProjects.isNotEmpty
+                      ? SingleChildScrollView(
+                          child: SizedBox(
+                            width: double.maxFinite,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.all(10.0),
+                                  child: Text(fetchingFirebase.value
+                                      ? "Loading Firebase projects"
+                                      : "Select the Firebase project to use"),
+                                ),
+                                if (!fetchingFirebase.value)
+                                  ConstrainedBox(
+                                    constraints: BoxConstraints(
+                                      maxHeight: context.mediaQuery.size.height * 0.4,
+                                    ),
+                                    child: ListView.builder(
+                                      shrinkWrap: true,
+                                      itemCount: usableProjects.length,
+                                      findChildIndexCallback: (key) =>
+                                          findChildIndexByKey(usableProjects, key, (item) => item['projectId']),
+                                      itemBuilder: (context, index) {
+                                        return Obx(() {
+                                          if (!triedConnecting[index].value) {
+                                            Future(() async {
+                                              try {
+                                                await HttpSvc.dio.get(usableProjects[index]['serverUrl']);
+                                                reachable[index].value = true;
+                                              } catch (e) {
+                                                reachable[index].value = false;
+                                              }
+                                              triedConnecting[index].value = true;
+                                            });
+                                          }
+                                          return ClipRRect(
+                                            key: ValueKey(usableProjects[index]['projectId']),
+                                            clipBehavior: Clip.antiAlias,
+                                            borderRadius: BorderRadius.circular(20),
+                                            child: ListTile(
+                                              tileColor:
+                                                  context.theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+                                              enabled: triedConnecting[index].value && reachable[index].value,
+                                              title: Text.rich(TextSpan(children: [
+                                                TextSpan(text: usableProjects[index]['displayName']),
+                                                TextSpan(
+                                                  text:
+                                                      " ${triedConnecting[index].value ? "${reachable[index].value ? "R" : "Unr"}eachable" : "Checking"}",
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          reachable[index].value ? FontWeight.bold : FontWeight.normal,
+                                                      color: triedConnecting[index].value
+                                                          ? reachable[index].value
+                                                              ? Colors.green
+                                                              : Colors.red
+                                                          : Colors.yellow),
+                                                ),
+                                              ])),
+                                              subtitle: Text(
+                                                "${usableProjects[index]['projectId']}\n${usableProjects[index]['serverUrl']}",
+                                              ),
+                                              onTap: () {
+                                                requestPassword(context, usableProjects[index]['serverUrl'], connect);
+                                              },
+                                              isThreeLine: true,
+                                            ),
+                                          );
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                if (fetchingFirebase.value) const CircularProgressIndicator(),
+                                const SizedBox(height: 10),
+                                if (!fetchingFirebase.value)
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      for (int i = 0; i < triedConnecting.length; i++) {
+                                        triedConnecting[i].value = false;
+                                      }
+                                    },
+                                    child: const Text("Retry Connections"),
+                                  ),
+                                if (!fetchingFirebase.value) const SizedBox(height: 10),
+                              ],
+                            ),
+                          ),
+                        )
+                      : Container(
+                          alignment: Alignment.center,
+                          width: double.maxFinite,
+                          padding: const EdgeInsets.all(24),
+                          child: const Text(
+                            "No Firebase Projects found!\n\nMake sure you're signed in to the same Google account that you used on your server!",
+                            textScaler: TextScaler.linear(1.1),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                ),
+              if (token.value != null) const SizedBox(height: 10),
+              Container(
+                height: 40,
+                padding: const EdgeInsets.all(2),
+                child: TextButton(
+                  onPressed: () async {
+                    await showCustomHeadersDialog(context);
+                  },
+                  child: Text("Enter Custom Headers",
+                      style: context.theme.textTheme.bodyLarge!.apply(color: context.theme.colorScheme.primary)),
+                ),
+              ),
+              const SizedBox(height: 10),
+              if (token.value != null)
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  height: 40,
+                  padding: const EdgeInsets.all(2),
+                  child: ElevatedButton(
+                    style: ButtonStyle(
+                      shape: WidgetStateProperty.all<RoundedRectangleBorder>(
+                        RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20.0),
+                        ),
+                      ),
+                      backgroundColor: WidgetStateProperty.all(context.theme.colorScheme.background),
+                      shadowColor: WidgetStateProperty.all(context.theme.colorScheme.background),
+                      maximumSize: WidgetStateProperty.all(buttonSize),
+                      minimumSize: WidgetStateProperty.all(buttonSize),
+                    ),
+                    onPressed: () async {
+                      token.value = null;
+                      googleName.value = null;
+                      googlePicture.value = null;
+                    },
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text("Choose a different account",
+                            style: context.theme.textTheme.bodyLarge!
+                                .apply(fontSizeFactor: 1.1, color: context.theme.colorScheme.primary)),
+                      ],
+                    ),
+                  ),
+                ),
+              if (token.value != null) const SizedBox(height: 10),
+              if (googleName.value == null && showLoginButtons.value && !isSnap)
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    color: HexColor('4285F4'),
+                  ),
+                  height: 40,
+                  child: ElevatedButton(
+                    style: ButtonStyle(
+                      shape: WidgetStateProperty.all<RoundedRectangleBorder>(
+                        RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20.0),
+                        ),
+                      ),
+                      backgroundColor: WidgetStateProperty.all(Colors.transparent),
+                      shadowColor: WidgetStateProperty.all(Colors.transparent),
+                      maximumSize: WidgetStateProperty.all(buttonSize),
+                      minimumSize: WidgetStateProperty.all(buttonSize),
+                    ),
+                    onPressed: () async {
+                      token.value = await googleOAuth(context);
+                      if (token.value != null) {
+                        final response = await HttpSvc.getGoogleInfo(token.value!);
+                        googleName.value = response.data['name'];
+                        googlePicture.value = response.data['picture'];
+                        fetchingFirebase.value = true;
+                        fetchFirebaseProjects(token.value!).then((List<Map> value) async {
+                          usableProjects.value = value;
+                          triedConnecting = List.generate(usableProjects.length, (i) => false.obs);
+                          reachable = List.generate(usableProjects.length, (i) => false.obs);
+                          fetchingFirebase.value = false;
+                        });
+                      }
+                    },
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Image.asset("assets/images/google-sign-in.png", width: 30, fit: BoxFit.contain),
+                        const SizedBox(width: 10),
+                        Padding(
+                          padding: const EdgeInsets.only(right: 0.0, left: 5.0),
+                          child: Text("Sign in with Google",
+                              style:
+                                  context.theme.textTheme.bodyLarge!.apply(fontSizeFactor: 1.1, color: Colors.white)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              if (googleName.value == null && showLoginButtons.value && !isSnap) const SizedBox(height: 10),
+              if (googleName.value == null && !kIsWeb && !kIsDesktop && showLoginButtons.value)
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    gradient: LinearGradient(
+                      begin: AlignmentDirectional.topStart,
+                      colors: [HexColor('2772C3'), HexColor('5CA7F8').darkenPercent(5)],
+                    ),
+                  ),
+                  height: 40,
+                  child: ElevatedButton(
+                    style: ButtonStyle(
+                      shape: WidgetStateProperty.all<RoundedRectangleBorder>(
+                        RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20.0),
+                        ),
+                      ),
+                      backgroundColor: WidgetStateProperty.all(Colors.transparent),
+                      shadowColor: WidgetStateProperty.all(Colors.transparent),
+                      maximumSize: WidgetStateProperty.all(buttonSize),
+                      minimumSize: WidgetStateProperty.all(buttonSize),
+                    ),
+                    onPressed: scanQRCode,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(CupertinoIcons.camera, color: Colors.white, size: 20),
+                        const SizedBox(width: 10),
+                        Padding(
+                          padding: const EdgeInsets.only(right: 0.0, left: 5.0),
+                          child: Text("Scan QR Code",
+                              style:
+                                  context.theme.textTheme.bodyLarge!.apply(fontSizeFactor: 1.1, color: Colors.white)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              if (googleName.value == null && !kIsWeb && !kIsDesktop && showLoginButtons.value)
+                const SizedBox(height: 10),
+              if (googleName.value == null)
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    gradient: LinearGradient(
+                      begin: AlignmentDirectional.topStart,
+                      colors: [HexColor('2772C3'), HexColor('5CA7F8').darkenPercent(5)],
+                    ),
+                  ),
+                  height: 40,
+                  padding: const EdgeInsets.all(2),
+                  child: ElevatedButton(
+                    style: ButtonStyle(
+                      shape: WidgetStateProperty.all<RoundedRectangleBorder>(
+                        RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20.0),
+                        ),
+                      ),
+                      backgroundColor: WidgetStateProperty.all(context.theme.colorScheme.background),
+                      shadowColor: WidgetStateProperty.all(context.theme.colorScheme.background),
+                      maximumSize: WidgetStateProperty.all(buttonSize),
+                      minimumSize: WidgetStateProperty.all(buttonSize),
+                    ),
+                    onPressed: () async {
+                      showLoginButtons.value = !showLoginButtons.value;
+                    },
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(CupertinoIcons.text_cursor, color: context.theme.colorScheme.onBackground, size: 20),
+                        const SizedBox(width: 10),
+                        Text("Manual entry",
+                            style: context.theme.textTheme.bodyLarge!
+                                .apply(fontSizeFactor: 1.1, color: context.theme.colorScheme.onBackground)),
+                      ],
+                    ),
+                  ),
+                ),
+              Obx(() => AnimatedSize(
+                    duration: const Duration(milliseconds: 200),
+                    child: showLoginButtons.value
+                        ? const SizedBox.shrink()
+                        : Theme(
+                            data: context.theme.copyWith(
+                              inputDecorationTheme: InputDecorationTheme(
+                                labelStyle: TextStyle(color: context.theme.colorScheme.outline),
+                              ),
+                            ),
+                            child: AutofillGroup(
+                              child: Column(
+                                children: [
+                                  const SizedBox(height: 20),
+                                  FocusScope(
+                                    node: focusScopeNode,
+                                    child: Column(
+                                      children: [
+                                        SizedBox(
+                                          width: context.width * 2 / 3,
+                                          child: TextField(
+                                            cursorColor: context.theme.colorScheme.primary,
+                                            autocorrect: false,
+                                            autofocus: true,
+                                            controller: urlController,
+                                            textInputAction: TextInputAction.next,
+                                            autofillHints: [AutofillHints.username, AutofillHints.url],
+                                            decoration: InputDecoration(
+                                              enabledBorder: OutlineInputBorder(
+                                                  borderSide: BorderSide(color: context.theme.colorScheme.outline),
+                                                  borderRadius: BorderRadius.circular(20)),
+                                              focusedBorder: OutlineInputBorder(
+                                                  borderSide: BorderSide(color: context.theme.colorScheme.primary),
+                                                  borderRadius: BorderRadius.circular(20)),
+                                              labelText: "URL",
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 20),
+                                        SizedBox(
+                                          width: context.width * 2 / 3,
+                                          child: TextField(
+                                            cursorColor: context.theme.colorScheme.primary,
+                                            autocorrect: false,
+                                            autofocus: false,
+                                            controller: passwordController,
+                                            textInputAction: TextInputAction.next,
+                                            autofillHints: [AutofillHints.password],
+                                            onSubmitted: (pass) => connect(urlController.text, pass),
+                                            decoration: InputDecoration(
+                                              enabledBorder: OutlineInputBorder(
+                                                  borderSide: BorderSide(color: context.theme.colorScheme.outline),
+                                                  borderRadius: BorderRadius.circular(20)),
+                                              focusedBorder: OutlineInputBorder(
+                                                  borderSide: BorderSide(color: context.theme.colorScheme.primary),
+                                                  borderRadius: BorderRadius.circular(20)),
+                                              labelText: "Password",
+                                              contentPadding: const EdgeInsets.fromLTRB(12, 24, 40, 16),
+                                              suffixIcon: Focus(
+                                                canRequestFocus: false,
+                                                descendantsAreFocusable: false,
+                                                child: IconButton(
+                                                  icon:
+                                                      Icon(obscureText.value ? Icons.visibility_off : Icons.visibility),
+                                                  color: context.theme.colorScheme.outline,
+                                                  onPressed: () {
+                                                    obscureText.value = !obscureText.value;
+                                                  },
+                                                ),
+                                              ),
+                                            ),
+                                            obscureText: obscureText.value,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 20),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(25),
+                                          gradient: LinearGradient(
+                                            begin: AlignmentDirectional.topStart,
+                                            colors: [HexColor('2772C3'), HexColor('5CA7F8').darkenPercent(5)],
+                                          ),
+                                        ),
+                                        height: 40,
+                                        padding: const EdgeInsets.all(2),
+                                        child: ElevatedButton(
+                                          style: ButtonStyle(
+                                            shape: WidgetStateProperty.all<RoundedRectangleBorder>(
+                                              RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(20.0),
+                                              ),
+                                            ),
+                                            backgroundColor:
+                                                WidgetStateProperty.all(context.theme.colorScheme.background),
+                                            shadowColor: WidgetStateProperty.all(context.theme.colorScheme.background),
+                                            maximumSize: WidgetStateProperty.all(const Size(200, 36)),
+                                            minimumSize: WidgetStateProperty.all(const Size(30, 30)),
+                                          ),
+                                          onPressed: () async {
+                                            showLoginButtons.value = true;
+                                          },
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(Icons.close,
+                                                  color: context.theme.colorScheme.onBackground, size: 20),
+                                              const SizedBox(width: 10),
+                                              Text("Cancel",
+                                                  style: context.theme.textTheme.bodyLarge!.apply(
+                                                      fontSizeFactor: 1.1,
+                                                      color: context.theme.colorScheme.onBackground)),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(25),
+                                          gradient: LinearGradient(
+                                            begin: AlignmentDirectional.topStart,
+                                            colors: [HexColor('2772C3'), HexColor('5CA7F8').darkenPercent(5)],
+                                          ),
+                                        ),
+                                        height: 40,
+                                        child: ElevatedButton(
+                                          style: ButtonStyle(
+                                            shape: WidgetStateProperty.all<RoundedRectangleBorder>(
+                                              RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(20.0),
+                                              ),
+                                            ),
+                                            backgroundColor: WidgetStateProperty.all(Colors.transparent),
+                                            shadowColor: WidgetStateProperty.all(Colors.transparent),
+                                            maximumSize: WidgetStateProperty.all(const Size(200, 36)),
+                                            minimumSize: WidgetStateProperty.all(const Size(30, 30)),
+                                          ),
+                                          onPressed: () async {
+                                            SettingsSvc.settings.customHeaders.value = {};
+                                            HttpSvc.updateHeaders();
+                                            connect(urlController.text, passwordController.text);
+                                          },
+                                          onLongPress: () async {
+                                            await showCustomHeadersDialog(context);
+                                            connect(urlController.text, passwordController.text);
+                                          },
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text("Connect",
+                                                  style: context.theme.textTheme.bodyLarge!
+                                                      .apply(fontSizeFactor: 1.1, color: Colors.white)),
+                                              const SizedBox(width: 10),
+                                              const Icon(Icons.arrow_forward, color: Colors.white, size: 20),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                  )),
+            ],
           )),
-        ],
-      )),
     );
   }
 

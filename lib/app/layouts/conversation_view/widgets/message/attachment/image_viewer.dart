@@ -248,56 +248,58 @@ class _ImageViewerState extends OptimizedState<ImageViewer> with AutomaticKeepAl
             // Live photo video overlay
             if (attachment.hasLivePhoto) buildLivePhotoOverlay(),
             // Live photo button indicator
-            if (attachment.hasLivePhoto && !isPlayingLivePhoto)
-              Positioned(
-                top: 8,
-                right: widget.isFromMe ? null : 8,
-                left: widget.isFromMe ? 8 : null,
-                child: GestureDetector(
-                  onTap: () {
-                    if (!isDownloadingLivePhoto) {
-                      handleLivePhotoTap();
-                    }
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.6),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (isDownloadingLivePhoto)
-                          const SizedBox(
-                            width: 12,
-                            height: 12,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
-                        else
-                          const Icon(
-                            Icons.album_outlined,
-                            size: 12,
-                            color: Colors.white,
+            if (attachment.hasLivePhoto)
+              Obx(() => !isPlayingLivePhoto.value
+                  ? Positioned(
+                      top: 8,
+                      right: widget.isFromMe ? null : 8,
+                      left: widget.isFromMe ? 8 : null,
+                      child: GestureDetector(
+                        onTap: () {
+                          if (!isDownloadingLivePhoto.value) {
+                            handleLivePhotoTap();
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.6),
+                            borderRadius: BorderRadius.circular(4),
                           ),
-                        const SizedBox(width: 3),
-                        const Text(
-                          'LIVE',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.5,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (isDownloadingLivePhoto.value)
+                                const SizedBox(
+                                  width: 12,
+                                  height: 12,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  ),
+                                )
+                              else
+                                const Icon(
+                                  Icons.album_outlined,
+                                  size: 12,
+                                  color: Colors.white,
+                                ),
+                              const SizedBox(width: 3),
+                              const Text(
+                                'LIVE',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
+                      ),
+                    )
+                  : const SizedBox.shrink()),
           ],
         ),
       ),

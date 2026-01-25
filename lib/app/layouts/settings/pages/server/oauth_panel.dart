@@ -106,269 +106,271 @@ class _OauthPanelState extends OptimizedState<OauthPanel> {
     Size buttonSize = Size(NavigationSvc.width(context) * 2 / 3, 36);
 
     return Obx(() => SettingsScaffold(
-      title: 'Sign-In With Google',
-      initialHeader: '',
-      iosSubtitle: null,
-      materialSubtitle: null,
-      headerColor: headerColor,
-      tileColor: tileColor,
-      stickySuffix: Container(
-        padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            // if (error != "")
-            Column(
+          title: 'Sign-In With Google',
+          initialHeader: '',
+          iosSubtitle: null,
+          materialSubtitle: null,
+          headerColor: headerColor,
+          tileColor: tileColor,
+          stickySuffix: Container(
+            padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
+            child: Column(
               mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                if (error.value.isNotEmpty)
-                  SizedBox(
-                    width: context.width * 2 / 3,
-                    child: Align(
-                      alignment: Alignment.center,
-                      child: Text(error.value,
-                          style: context.theme.textTheme.bodyLarge!
-                              .apply(
-                                fontSizeDelta: 1.5,
-                                color: context.theme.colorScheme.error,
-                              )
-                              .copyWith(height: 2)),
-                    ),
+                // if (error != "")
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (error.value.isNotEmpty)
+                      SizedBox(
+                        width: context.width * 2 / 3,
+                        child: Align(
+                          alignment: Alignment.center,
+                          child: Text(error.value,
+                              style: context.theme.textTheme.bodyLarge!
+                                  .apply(
+                                    fontSizeDelta: 1.5,
+                                    color: context.theme.colorScheme.error,
+                                  )
+                                  .copyWith(height: 2)),
+                        ),
+                      ),
+                    if (error.value.isNotEmpty) const SizedBox(height: 20),
+                  ],
+                ),
+                if (token.value != null)
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text("Signed in as", style: TextStyle(color: context.theme.colorScheme.primary)),
+                      const SizedBox(height: 8),
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          color: context.theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (googlePicture.value != null)
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(20),
+                                clipBehavior: Clip.antiAlias,
+                                child: Image.network(googlePicture.value!, width: 40, fit: BoxFit.contain),
+                              ),
+                            const SizedBox(width: 10),
+                            Text(googleName.value ?? "Unknown",
+                                style: context.theme.textTheme.bodyLarge!
+                                    .apply(fontSizeFactor: 1.1, color: context.theme.colorScheme.onBackground)),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                if (error.value.isNotEmpty) const SizedBox(height: 20),
-              ],
-            ),
-            if (token.value != null)
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text("Signed in as", style: TextStyle(color: context.theme.colorScheme.primary)),
-                  const SizedBox(height: 8),
+                if (token.value != null) const SizedBox(height: 40),
+                if (token.value != null)
                   Container(
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(20),
-                      color: context.theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+                      border: Border.all(color: context.theme.colorScheme.primaryContainer),
                     ),
-                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (googlePicture.value != null)
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
-                            clipBehavior: Clip.antiAlias,
-                            child: Image.network(googlePicture.value!, width: 40, fit: BoxFit.contain),
-                          ),
-                        const SizedBox(width: 10),
-                        Text(googleName.value ?? "Unknown",
-                            style: context.theme.textTheme.bodyLarge!
-                                .apply(fontSizeFactor: 1.1, color: context.theme.colorScheme.onBackground)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            if (token.value != null) const SizedBox(height: 40),
-            if (token.value != null)
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: context.theme.colorScheme.primaryContainer),
-                ),
-                child: usableProjects.isNotEmpty
-                    ? SingleChildScrollView(
-                        child: SizedBox(
-                          width: double.maxFinite,
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.all(10.0),
-                                child: Text(fetchingFirebase.value
-                                    ? "Loading Firebase projects"
-                                    : "Select the Firebase project to use"),
-                              ),
-                              if (!fetchingFirebase.value)
-                                ConstrainedBox(
-                                  constraints: BoxConstraints(
-                                    maxHeight: context.mediaQuery.size.height * 0.4,
+                    child: usableProjects.isNotEmpty
+                        ? SingleChildScrollView(
+                            child: SizedBox(
+                              width: double.maxFinite,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.all(10.0),
+                                    child: Text(fetchingFirebase.value
+                                        ? "Loading Firebase projects"
+                                        : "Select the Firebase project to use"),
                                   ),
-                                  child: ListView.builder(
-                                    shrinkWrap: true,
-                                    itemCount: usableProjects.length,
-                                    findChildIndexCallback: (key) =>
-                                        findChildIndexByKey(usableProjects, key, (item) => item['projectId']),
-                                    itemBuilder: (context, index) {
-                                      return Obx(() {
-                                        if (!triedConnecting[index].value) {
-                                          Future(() async {
-                                            try {
-                                              await HttpSvc.dio.get(usableProjects[index]['serverUrl']);
-                                              reachable[index].value = true;
-                                            } catch (e) {
-                                              reachable[index].value = false;
+                                  if (!fetchingFirebase.value)
+                                    ConstrainedBox(
+                                      constraints: BoxConstraints(
+                                        maxHeight: context.mediaQuery.size.height * 0.4,
+                                      ),
+                                      child: ListView.builder(
+                                        shrinkWrap: true,
+                                        itemCount: usableProjects.length,
+                                        findChildIndexCallback: (key) =>
+                                            findChildIndexByKey(usableProjects, key, (item) => item['projectId']),
+                                        itemBuilder: (context, index) {
+                                          return Obx(() {
+                                            if (!triedConnecting[index].value) {
+                                              Future(() async {
+                                                try {
+                                                  await HttpSvc.dio.get(usableProjects[index]['serverUrl']);
+                                                  reachable[index].value = true;
+                                                } catch (e) {
+                                                  reachable[index].value = false;
+                                                }
+                                                triedConnecting[index].value = true;
+                                              });
                                             }
-                                            triedConnecting[index].value = true;
-                                          });
-                                        }
-                                        return ClipRRect(
-                                          key: ValueKey(usableProjects[index]['projectId']),
-                                          clipBehavior: Clip.antiAlias,
-                                          borderRadius: BorderRadius.circular(20),
-                                          child: ListTile(
-                                            tileColor:
-                                                context.theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
-                                            enabled: triedConnecting[index].value && reachable[index].value,
-                                            title: Text.rich(TextSpan(children: [
-                                              TextSpan(text: usableProjects[index]['displayName']),
-                                              TextSpan(
-                                                text:
-                                                    " ${triedConnecting[index].value ? "${reachable[index].value ? "R" : "Unr"}eachable" : "Checking"}",
-                                                style: TextStyle(
-                                                    fontWeight:
-                                                        reachable[index].value ? FontWeight.bold : FontWeight.normal,
-                                                    color: triedConnecting[index].value
-                                                        ? reachable[index].value
-                                                            ? Colors.green
-                                                            : Colors.red
-                                                        : Colors.yellow),
+                                            return ClipRRect(
+                                              key: ValueKey(usableProjects[index]['projectId']),
+                                              clipBehavior: Clip.antiAlias,
+                                              borderRadius: BorderRadius.circular(20),
+                                              child: ListTile(
+                                                tileColor:
+                                                    context.theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+                                                enabled: triedConnecting[index].value && reachable[index].value,
+                                                title: Text.rich(TextSpan(children: [
+                                                  TextSpan(text: usableProjects[index]['displayName']),
+                                                  TextSpan(
+                                                    text:
+                                                        " ${triedConnecting[index].value ? "${reachable[index].value ? "R" : "Unr"}eachable" : "Checking"}",
+                                                    style: TextStyle(
+                                                        fontWeight: reachable[index].value
+                                                            ? FontWeight.bold
+                                                            : FontWeight.normal,
+                                                        color: triedConnecting[index].value
+                                                            ? reachable[index].value
+                                                                ? Colors.green
+                                                                : Colors.red
+                                                            : Colors.yellow),
+                                                  ),
+                                                ])),
+                                                subtitle: Text(
+                                                  "${usableProjects[index]['projectId']}\n${usableProjects[index]['serverUrl']}",
+                                                ),
+                                                onTap: () async {
+                                                  await requestPassword(
+                                                      context, usableProjects[index]['serverUrl'], connect);
+                                                  if (error.value == "") {
+                                                    Navigator.of(context).pop();
+                                                  }
+                                                },
+                                                isThreeLine: true,
                                               ),
-                                            ])),
-                                            subtitle: Text(
-                                              "${usableProjects[index]['projectId']}\n${usableProjects[index]['serverUrl']}",
-                                            ),
-                                            onTap: () async {
-                                              await requestPassword(
-                                                  context, usableProjects[index]['serverUrl'], connect);
-                                              if (error.value == "") {
-                                                Navigator.of(context).pop();
-                                              }
-                                            },
-                                            isThreeLine: true,
-                                          ),
-                                        );
-                                      });
-                                    },
-                                  ),
-                                ),
-                              if (fetchingFirebase.value) const CircularProgressIndicator(),
-                              const SizedBox(height: 10),
-                              if (!fetchingFirebase.value)
-                                ElevatedButton(
-                                  onPressed: () {
-                                    for (int i = 0; i < triedConnecting.length; i++) {
-                                      triedConnecting[i].value = false;
-                                    }
-                                  },
-                                  child: const Text("Retry Connections"),
-                                ),
-                              if (!fetchingFirebase.value) const SizedBox(height: 10),
-                            ],
+                                            );
+                                          });
+                                        },
+                                      ),
+                                    ),
+                                  if (fetchingFirebase.value) const CircularProgressIndicator(),
+                                  const SizedBox(height: 10),
+                                  if (!fetchingFirebase.value)
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        for (int i = 0; i < triedConnecting.length; i++) {
+                                          triedConnecting[i].value = false;
+                                        }
+                                      },
+                                      child: const Text("Retry Connections"),
+                                    ),
+                                  if (!fetchingFirebase.value) const SizedBox(height: 10),
+                                ],
+                              ),
+                            ),
+                          )
+                        : Container(
+                            alignment: Alignment.center,
+                            width: double.maxFinite,
+                            padding: const EdgeInsets.all(24),
+                            child: const Text(
+                              "No Firebase Projects found!\n\nMake sure you're signed in to the same Google account that you used on your server!",
+                              textScaler: TextScaler.linear(1.1),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                  ),
+                if (token.value != null) const SizedBox(height: 10),
+                if (token.value != null)
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    height: 40,
+                    padding: const EdgeInsets.all(2),
+                    child: ElevatedButton(
+                      style: ButtonStyle(
+                        shape: WidgetStateProperty.all<RoundedRectangleBorder>(
+                          RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20.0),
                           ),
                         ),
-                      )
-                    : Container(
-                        alignment: Alignment.center,
-                        width: double.maxFinite,
-                        padding: const EdgeInsets.all(24),
-                        child: const Text(
-                          "No Firebase Projects found!\n\nMake sure you're signed in to the same Google account that you used on your server!",
-                          textScaler: TextScaler.linear(1.1),
-                          textAlign: TextAlign.center,
+                        backgroundColor: WidgetStateProperty.all(context.theme.colorScheme.background),
+                        shadowColor: WidgetStateProperty.all(context.theme.colorScheme.background),
+                        maximumSize: WidgetStateProperty.all(buttonSize),
+                        minimumSize: WidgetStateProperty.all(buttonSize),
+                      ),
+                      onPressed: () async {
+                        token.value = null;
+                        googleName.value = null;
+                        googlePicture.value = null;
+                      },
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text("Choose a different account",
+                              style: context.theme.textTheme.bodyLarge!
+                                  .apply(fontSizeFactor: 1.1, color: context.theme.colorScheme.primary)),
+                        ],
+                      ),
+                    ),
+                  ),
+                if (token.value != null) const SizedBox(height: 10),
+                if (googleName.value == null && showSignInButton.value)
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      color: HexColor('4285F4'),
+                    ),
+                    height: 40,
+                    width: buttonSize.width,
+                    child: ElevatedButton(
+                      style: ButtonStyle(
+                        shape: WidgetStateProperty.all<RoundedRectangleBorder>(
+                          RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20.0),
+                          ),
                         ),
+                        backgroundColor: WidgetStateProperty.all(Colors.transparent),
+                        shadowColor: WidgetStateProperty.all(Colors.transparent),
+                        maximumSize: WidgetStateProperty.all(buttonSize),
+                        minimumSize: WidgetStateProperty.all(buttonSize),
                       ),
-              ),
-            if (token.value != null) const SizedBox(height: 10),
-            if (token.value != null)
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                height: 40,
-                padding: const EdgeInsets.all(2),
-                child: ElevatedButton(
-                  style: ButtonStyle(
-                    shape: WidgetStateProperty.all<RoundedRectangleBorder>(
-                      RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20.0),
-                      ),
-                    ),
-                    backgroundColor: WidgetStateProperty.all(context.theme.colorScheme.background),
-                    shadowColor: WidgetStateProperty.all(context.theme.colorScheme.background),
-                    maximumSize: WidgetStateProperty.all(buttonSize),
-                    minimumSize: WidgetStateProperty.all(buttonSize),
-                  ),
-                  onPressed: () async {
-                    token.value = null;
-                    googleName.value = null;
-                    googlePicture.value = null;
-                  },
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text("Choose a different account",
-                          style: context.theme.textTheme.bodyLarge!
-                              .apply(fontSizeFactor: 1.1, color: context.theme.colorScheme.primary)),
-                    ],
-                  ),
-                ),
-              ),
-            if (token.value != null) const SizedBox(height: 10),
-            if (googleName.value == null && showSignInButton.value)
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  color: HexColor('4285F4'),
-                ),
-                height: 40,
-                width: buttonSize.width,
-                child: ElevatedButton(
-                  style: ButtonStyle(
-                    shape: WidgetStateProperty.all<RoundedRectangleBorder>(
-                      RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20.0),
+                      onPressed: () async {
+                        token.value = await googleOAuth(context);
+                        if (token.value != null) {
+                          final response = await HttpSvc.getGoogleInfo(token.value!);
+                          googleName.value = response.data['name'];
+                          googlePicture.value = response.data['picture'];
+                          fetchingFirebase.value = true;
+                          fetchFirebaseProjects(token.value!).then((List<Map> value) async {
+                            usableProjects.value = value;
+                            triedConnecting.value = List.generate(usableProjects.length, (i) => false.obs);
+                            reachable.value = List.generate(usableProjects.length, (i) => false.obs);
+                            fetchingFirebase.value = false;
+                          });
+                        }
+                      },
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Image.asset("assets/images/google-sign-in.png", width: 30, fit: BoxFit.contain),
+                          const SizedBox(width: 10),
+                          Padding(
+                            padding: const EdgeInsets.only(right: 0.0, left: 5.0),
+                            child: Text("Sign in with Google",
+                                style:
+                                    context.theme.textTheme.bodyLarge!.apply(fontSizeFactor: 1.1, color: Colors.white)),
+                          ),
+                        ],
                       ),
                     ),
-                    backgroundColor: WidgetStateProperty.all(Colors.transparent),
-                    shadowColor: WidgetStateProperty.all(Colors.transparent),
-                    maximumSize: WidgetStateProperty.all(buttonSize),
-                    minimumSize: WidgetStateProperty.all(buttonSize),
                   ),
-                  onPressed: () async {
-                    token.value = await googleOAuth(context);
-                    if (token.value != null) {
-                      final response = await HttpSvc.getGoogleInfo(token.value!);
-                      googleName.value = response.data['name'];
-                      googlePicture.value = response.data['picture'];
-                      fetchingFirebase.value = true;
-                      fetchFirebaseProjects(token.value!).then((List<Map> value) async {
-                        usableProjects.value = value;
-                        triedConnecting.value = List.generate(usableProjects.length, (i) => false.obs);
-                        reachable.value = List.generate(usableProjects.length, (i) => false.obs);
-                        fetchingFirebase.value = false;
-                      });
-                    }
-                  },
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Image.asset("assets/images/google-sign-in.png", width: 30, fit: BoxFit.contain),
-                      const SizedBox(width: 10),
-                      Padding(
-                        padding: const EdgeInsets.only(right: 0.0, left: 5.0),
-                        child: Text("Sign in with Google",
-                            style: context.theme.textTheme.bodyLarge!.apply(fontSizeFactor: 1.1, color: Colors.white)),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            if (googleName.value == null && showSignInButton.value) const SizedBox(height: 10),
-          ],
-        ),
-      ),
-      bodySlivers: [],
-    ));
+                if (googleName.value == null && showSignInButton.value) const SizedBox(height: 10),
+              ],
+            ),
+          ),
+          bodySlivers: [],
+        ));
   }
 }

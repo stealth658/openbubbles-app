@@ -91,24 +91,24 @@ class _AudioPlayerState extends OptimizedState<AudioPlayer>
           Row(
             children: [
               Obx(() => IconButton(
-                onPressed: () async {
-                  if (controller == null) return;
-                  if (playerState.value == PlayerState.playing) {
-                    animController.reverse();
-                    await controller!.pausePlayer();
-                  } else {
-                    animController.forward();
-                    controller!.setFinishMode(finishMode: FinishMode.pause);
-                    await controller!.startPlayer();
-                  }
-                },
-                icon: AnimatedIcon(
-                  icon: AnimatedIcons.play_pause,
-                  progress: animController,
-                ),
-                color: context.theme.colorScheme.properOnSurface,
-                visualDensity: VisualDensity.compact,
-              )),
+                    onPressed: () async {
+                      if (controller == null) return;
+                      if (playerState.value == PlayerState.playing) {
+                        animController.reverse();
+                        await controller!.pausePlayer();
+                      } else {
+                        animController.forward();
+                        controller!.setFinishMode(finishMode: FinishMode.pause);
+                        await controller!.startPlayer();
+                      }
+                    },
+                    icon: AnimatedIcon(
+                      icon: AnimatedIcons.play_pause,
+                      progress: animController,
+                    ),
+                    color: context.theme.colorScheme.properOnSurface,
+                    visualDensity: VisualDensity.compact,
+                  )),
               Obx(() => maxDuration.value == 0
                   ? SizedBox(width: NavigationSvc.width(context) * 0.25)
                   : AudioFileWaveforms(
@@ -215,40 +215,39 @@ class _DesktopAudioPlayerState extends OptimizedState<AudioPlayer>
           mainAxisSize: MainAxisSize.min,
           children: [
             Obx(() => IconButton(
-              onPressed: () async {
-                if (controller == null) return;
-                if (isPlaying.value) {
-                  animController.reverse();
-                  await controller!.pause();
-                } else {
-                  animController.forward();
-                  await controller!.play();
-                }
-              },
-              icon: AnimatedIcon(
-                icon: AnimatedIcons.play_pause,
-                progress: animController,
-              ),
-              color: context.theme.colorScheme.properOnSurface,
-              visualDensity: VisualDensity.compact,
-            )),
+                  onPressed: () async {
+                    if (controller == null) return;
+                    if (isPlaying.value) {
+                      animController.reverse();
+                      await controller!.pause();
+                    } else {
+                      animController.forward();
+                      await controller!.play();
+                    }
+                  },
+                  icon: AnimatedIcon(
+                    icon: AnimatedIcons.play_pause,
+                    progress: animController,
+                  ),
+                  color: context.theme.colorScheme.properOnSurface,
+                  visualDensity: VisualDensity.compact,
+                )),
             if (controller != null)
               Obx(() => SizedBox(
-                height: 30,
-                child: Slider(
-                  value: position.value.inSeconds.toDouble(),
-                  onChanged: (double value) {
-                    controller!.seek(Duration(seconds: value.toInt()));
-                  },
-                  min: 0,
-                  max: duration.value.inSeconds.toDouble(),
-                ),
-              )),
+                    height: 30,
+                    child: Slider(
+                      value: position.value.inSeconds.toDouble(),
+                      onChanged: (double value) {
+                        controller!.seek(Duration(seconds: value.toInt()));
+                      },
+                      min: 0,
+                      max: duration.value.inSeconds.toDouble(),
+                    ),
+                  )),
             Obx(() => Padding(
-              padding: const EdgeInsets.only(left: 10, right: 16),
-              child: Text(
-                  "${prettyDuration(position.value)} / ${prettyDuration(duration.value)}"),
-            ))
+                  padding: const EdgeInsets.only(left: 10, right: 16),
+                  child: Text("${prettyDuration(position.value)} / ${prettyDuration(duration.value)}"),
+                ))
           ],
         ));
   }

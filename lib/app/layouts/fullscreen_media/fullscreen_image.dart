@@ -137,7 +137,7 @@ class _FullscreenImageState extends OptimizedState<FullscreenImage> with Automat
           // eventDispatcher.emit('overlay-toggle', newVal);
         },
         onLongPress: () {
-          if (attachment.hasLivePhoto && !isDownloadingLivePhoto) {
+          if (attachment.hasLivePhoto && !isDownloadingLivePhoto.value) {
             handleLivePhotoTap();
           }
         },
