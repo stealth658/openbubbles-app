@@ -1,4 +1,5 @@
 import 'package:bluebubbles/app/components/avatars/contact_avatar_group_widget.dart';
+import 'package:bluebubbles/app/components/bb_chip.dart';
 import 'package:bluebubbles/app/layouts/chat_selector_view/chat_selector_view.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/dialogs/timeframe_picker.dart';
 import 'package:bluebubbles/app/layouts/handle_selector_view/handle_selector_view.dart';
@@ -49,17 +50,17 @@ class SearchViewState extends OptimizedState<SearchView> {
   final FocusNode focusNode = FocusNode();
   final List<SearchResult> pastSearches = [];
 
-  SearchResult? currentSearch;
-  bool noResults = false;
-  bool isSearching = false;
-  String? currentSearchTerm;
-  bool local = false;
-  bool network = true;
-  Chat? selectedChat;
-  Handle? selectedHandle;
-  bool isFromMe = false;
-  bool isNotFromMe = false;
-  DateTime? sinceDate;
+  final Rx<SearchResult?> currentSearch = Rx<SearchResult?>(null);
+  final RxBool noResults = false.obs;
+  final RxBool isSearching = false.obs;
+  final Rx<String?> currentSearchTerm = Rx<String?>(null);
+  final RxBool local = false.obs;
+  final RxBool network = true.obs;
+  final Rx<Chat?> selectedChat = Rx<Chat?>(null);
+  final Rx<Handle?> selectedHandle = Rx<Handle?>(null);
+  final RxBool isFromMe = false.obs;
+  final RxBool isNotFromMe = false.obs;
+  final Rx<DateTime?> sinceDate = Rx<DateTime?>(null);
 
   Color get backgroundColor => SettingsSvc.settings.windowEffect.value == WindowEffect.disabled
       ? context.theme.colorScheme.background
@@ -71,62 +72,59 @@ class SearchViewState extends OptimizedState<SearchView> {
 
     // When the user types again after no results, reset no results
     textEditingController.addListener(() {
-      if (textEditingController.text != currentSearchTerm && noResults) {
-        noResults = false;
+      if (textEditingController.text != currentSearchTerm.value && noResults.value) {
+        noResults.value = false;
       }
     });
   }
 
   Future<void> search(String newSearch) async {
-    if (isSearching || isNullOrEmpty(newSearch) || newSearch.length < 3) return;
+    if (isSearching.value || isNullOrEmpty(newSearch) || newSearch.length < 3) return;
     focusNode.unfocus();
-    noResults = false;
-    currentSearchTerm = newSearch;
+    noResults.value = false;
+    currentSearchTerm.value = newSearch;
 
     // If we've already searched for the results and there are none, set no results and return
     if (pastSearches
-            .firstWhereOrNull((e) => e.search == newSearch && e.method == (local ? "local" : "network"))
+            .firstWhereOrNull((e) => e.search == newSearch && e.method == (local.value ? "local" : "network"))
             ?.results
             .isEmpty ??
         false) {
-      return setState(() {
-        noResults = true;
-      });
+      noResults.value = true;
+      return;
     }
 
-    setState(() {
-      isSearching = true;
-    });
+    isSearching.value = true;
 
     final search = SearchResult(
-      search: currentSearchTerm!,
-      method: local ? "local" : "network",
+      search: currentSearchTerm.value!,
+      method: local.value ? "local" : "network",
       results: [],
     );
 
-    if (local) {
+    if (local.value) {
       obx.Condition<Message> condition = Message_.text
-          .contains(currentSearchTerm!, caseSensitive: false)
+          .contains(currentSearchTerm.value!, caseSensitive: false)
           .and(Message_.associatedMessageGuid.isNull())
           .and(Message_.dateDeleted.isNull())
           .and(Message_.dateCreated.notNull());
 
-      if (isFromMe) {
+      if (isFromMe.value) {
         condition = condition.and(Message_.isFromMe.equals(true));
-      } else if (isNotFromMe) {
+      } else if (isNotFromMe.value) {
         condition = condition.and(Message_.isFromMe.equals(false));
-      } else if (selectedHandle != null) {
-        condition = condition.and(Message_.handleId.equals(selectedHandle!.originalROWID!));
+      } else if (selectedHandle.value != null) {
+        condition = condition.and(Message_.handleId.equals(selectedHandle.value!.originalROWID!));
       }
 
-      if (sinceDate != null) {
-        condition = condition.and(Message_.dateCreated.greaterOrEqual(sinceDate!.millisecondsSinceEpoch));
+      if (sinceDate.value != null) {
+        condition = condition.and(Message_.dateCreated.greaterOrEqual(sinceDate.value!.millisecondsSinceEpoch));
       }
 
       QueryBuilder<Message> qBuilder = Database.messages.query(condition);
 
-      if (selectedChat != null) {
-        qBuilder = qBuilder..link(Message_.chat, Chat_.guid.equals(selectedChat!.guid));
+      if (selectedChat.value != null) {
+        qBuilder = qBuilder..link(Message_.chat, Chat_.guid.equals(selectedChat.value!.guid));
       }
 
       final query = qBuilder.order(Message_.dateCreated, flags: Order.descending).build();
@@ -156,33 +154,33 @@ class SearchViewState extends OptimizedState<SearchView> {
         {'statement': 'message.associated_message_guid IS NULL', 'args': null}
       ];
 
-      if (selectedChat != null) {
+      if (selectedChat.value != null) {
         whereClause.add({
           'statement': 'chat.guid = :guid',
-          'args': {'guid': selectedChat!.guid}
+          'args': {'guid': selectedChat.value!.guid}
         });
       }
 
-      if (isFromMe) {
+      if (isFromMe.value) {
         whereClause.add({
           'statement': 'message.is_from_me = :isFromMe',
           'args': {'isFromMe': 1}
         });
-      } else if (isNotFromMe) {
+      } else if (isNotFromMe.value) {
         whereClause.add({
           'statement': 'message.is_from_me = :isFromMe',
           'args': {'isFromMe': 0}
         });
-      } else if (selectedHandle != null) {
+      } else if (selectedHandle.value != null) {
         whereClause.add({
           'statement': 'handle.id = :addr',
-          'args': {'addr': selectedHandle!.address}
+          'args': {'addr': selectedHandle.value!.address}
         });
       }
 
       final results = await MessagesService.getMessages(
         limit: 50,
-        after: sinceDate?.millisecondsSinceEpoch,
+        after: sinceDate.value?.millisecondsSinceEpoch,
         withChats: true,
         withHandles: true,
         withAttachments: true,
@@ -208,23 +206,22 @@ class SearchViewState extends OptimizedState<SearchView> {
     }
 
     pastSearches.add(search);
-    setState(() {
-      isSearching = false;
-      noResults = search.results.isEmpty;
-      currentSearch = search;
-    });
+    isSearching.value = false;
+    noResults.value = search.results.isEmpty;
+    currentSearch.value = search;
   }
 
   @override
   Widget build(BuildContext context) {
-    int filterCount = 0;
-    if (selectedChat != null) filterCount++;
-    if (selectedHandle != null) filterCount++;
-    if (isFromMe) filterCount++;
-    if (isNotFromMe) filterCount++;
-    if (sinceDate != null) filterCount++;
+    return Obx(() {
+      int filterCount = 0;
+      if (selectedChat.value != null) filterCount++;
+      if (selectedHandle.value != null) filterCount++;
+      if (isFromMe.value) filterCount++;
+      if (isNotFromMe.value) filterCount++;
+      if (sinceDate.value != null) filterCount++;
 
-    bool showSenderFilter = !isNotFromMe && !isFromMe && (selectedChat?.isGroup ?? true);
+      bool showSenderFilter = !isNotFromMe.value && !isFromMe.value && (selectedChat.value?.isGroup ?? true);
 
     return PopScope(
         canPop: false,
@@ -300,7 +297,7 @@ class SearchViewState extends OptimizedState<SearchView> {
                         ),
                         suffix: Padding(
                           padding: const EdgeInsets.only(right: 15),
-                          child: !isSearching
+                          child: !isSearching.value
                               ? InkWell(
                                   child: Icon(Icons.arrow_forward, color: context.theme.colorScheme.primary),
                                   onTap: () {
@@ -390,24 +387,18 @@ class SearchViewState extends OptimizedState<SearchView> {
                           selectedBorderColor: context.theme.colorScheme.primary,
                           selectedColor: context.theme.colorScheme.primary,
                           borderColor: context.theme.colorScheme.primary.withValues(alpha: 0.5),
-                          isSelected: [local, network],
+                          isSelected: [local.value, network.value],
                           onPressed: (index) {
                             if (index == 0) {
-                              setState(() {
-                                local = true;
-                                network = false;
-                              });
+                              local.value = true;
+                              network.value = false;
                             } else {
-                              setState(() {
-                                local = false;
-                                network = true;
-                              });
+                              local.value = false;
+                              network.value = true;
                             }
-                            setState(() {
-                              isSearching = false;
-                              noResults = false;
-                              currentSearch = null;
-                            });
+                            isSearching.value = false;
+                            noResults.value = false;
+                            currentSearch.value = null;
                           },
                           children: [
                             const Row(
@@ -433,13 +424,13 @@ class SearchViewState extends OptimizedState<SearchView> {
                       );
                     }),
                   Divider(color: context.theme.colorScheme.outline.withValues(alpha: 0.75)),
-                  if (!isSearching && noResults)
+                  if (!isSearching.value && noResults.value)
                     Padding(
                         padding: const EdgeInsets.only(top: 25.0),
                         child: Center(child: Text("No results found!", style: context.theme.textTheme.bodyLarge))),
                 ]),
               ),
-              if (!isSearching && currentSearch != null)
+              if (!isSearching.value && currentSearch.value != null)
                 SliverList(
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
@@ -447,15 +438,15 @@ class SearchViewState extends OptimizedState<SearchView> {
                           .copyWith(color: context.theme.colorScheme.outline, height: 1.5)
                           .apply(fontSizeFactor: SettingsSvc.settings.skin.value == Skins.Material ? 1.05 : 1.0);
 
-                      final chat = currentSearch!.results[index].item1;
-                      final message = currentSearch!.results[index].item2;
+                      final chat = currentSearch.value!.results[index].item1;
+                      final message = currentSearch.value!.results[index].item2;
 
                       // Create the textspans
                       List<InlineSpan> spans = [];
 
                       // Get the current position of the search term
-                      int termStart = message.fullText.toLowerCase().indexOf(currentSearchTerm!.toLowerCase());
-                      int termEnd = termStart + currentSearchTerm!.length;
+                      int termStart = message.fullText.toLowerCase().indexOf(currentSearchTerm.value!.toLowerCase());
+                      int termEnd = termStart + currentSearchTerm.value!.length;
 
                       if (termStart >= 0) {
                         // We only want a snippet of the text, so only get a 50x50 range
@@ -466,8 +457,8 @@ class SearchViewState extends OptimizedState<SearchView> {
                         );
 
                         // Recalculate the term position in the snippet
-                        termStart = subText.toLowerCase().indexOf(currentSearchTerm!.toLowerCase());
-                        termEnd = termStart + currentSearchTerm!.length;
+                        termStart = subText.toLowerCase().indexOf(currentSearchTerm.value!.toLowerCase());
+                        termEnd = termStart + currentSearchTerm.value!.length;
 
                         // Add the beginning string
                         spans.add(TextSpan(text: subText.substring(0, termStart).trimLeft(), style: subtitleStyle));
@@ -532,7 +523,7 @@ class SearchViewState extends OptimizedState<SearchView> {
                           ),
                           onTap: () {
                             final service = MessagesSvc(chat.guid);
-                            service.method = local ? "local" : "network";
+                            service.method = local.value ? "local" : "network";
                             service.struct.addMessages([message]);
                             NavigationSvc.pushAndRemoveUntil(
                               context,
@@ -546,7 +537,7 @@ class SearchViewState extends OptimizedState<SearchView> {
                         ),
                       );
                     },
-                    childCount: currentSearch!.results.length,
+                    childCount: currentSearch.value!.results.length,
                   ),
                 )
             ],
@@ -590,11 +581,7 @@ class SearchViewState extends OptimizedState<SearchView> {
                             spacing: 10,
                             runSpacing: 10,
                             children: [
-                              RawChip(
-                                tapEnabled: true,
-                                deleteIcon: const Icon(Icons.close, size: 16),
-                                side: BorderSide(color: context.theme.colorScheme.outline.withValues(alpha: 0.1)),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                              BBChip(
                                 avatar: CircleAvatar(
                                   backgroundColor: context.theme.colorScheme.primaryContainer,
                                   child: Icon(
@@ -603,9 +590,9 @@ class SearchViewState extends OptimizedState<SearchView> {
                                     size: 12,
                                   ),
                                 ),
-                                label: sinceDate != null
+                                label: sinceDate.value != null
                                     ? Text(
-                                        "Since ${buildFullDate(sinceDate!, includeTime: sinceDate!.isToday(), useTodayYesterday: true)}",
+                                        "Since ${buildFullDate(sinceDate.value!, includeTime: sinceDate.value!.isToday(), useTodayYesterday: true)}",
                                         style: TextStyle(
                                             fontSize: 14,
                                             fontWeight: FontWeight.normal,
@@ -616,18 +603,16 @@ class SearchViewState extends OptimizedState<SearchView> {
                                             fontSize: 14,
                                             fontWeight: FontWeight.normal,
                                             color: context.theme.colorScheme.onSurface)),
-                                onDeleted: sinceDate == null
+                                onDeleted: sinceDate.value == null
                                     ? null
                                     : () {
-                                        setState(() {
-                                          sinceDate = null;
-                                          isSearching = false;
-                                          noResults = false;
-                                          currentSearch = null;
-                                        });
+                                        sinceDate.value = null;
+                                        isSearching.value = false;
+                                        noResults.value = false;
+                                        currentSearch.value = null;
                                       },
                                 onPressed: () async {
-                                  sinceDate = await showTimeframePicker("Since When?", context,
+                                  sinceDate.value = await showTimeframePicker("Since When?", context,
                                       customTimeframes: {
                                         "1 Hour": 1,
                                         "1 Day": 24,
@@ -638,18 +623,12 @@ class SearchViewState extends OptimizedState<SearchView> {
                                       },
                                       selectionSuffix: "Ago",
                                       useTodayYesterday: true);
-                                  setState(() {
-                                    isSearching = false;
-                                    noResults = false;
-                                    currentSearch = null;
-                                  });
+                                  isSearching.value = false;
+                                  noResults.value = false;
+                                  currentSearch.value = null;
                                 },
                               ),
-                              RawChip(
-                                tapEnabled: true,
-                                deleteIcon: const Icon(Icons.close, size: 16),
-                                side: BorderSide(color: context.theme.colorScheme.outline.withValues(alpha: 0.1)),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                              BBChip(
                                 avatar: CircleAvatar(
                                   backgroundColor: context.theme.colorScheme.primaryContainer,
                                   child: Padding(
@@ -660,8 +639,8 @@ class SearchViewState extends OptimizedState<SearchView> {
                                         size: 12,
                                       )),
                                 ),
-                                label: selectedChat != null
-                                    ? Text(selectedChat!.getTitle(),
+                                label: selectedChat.value != null
+                                    ? Text(selectedChat.value!.getTitle(),
                                         style: TextStyle(
                                             fontSize: 14,
                                             fontWeight: FontWeight.normal,
@@ -672,36 +651,28 @@ class SearchViewState extends OptimizedState<SearchView> {
                                             fontSize: 14,
                                             fontWeight: FontWeight.normal,
                                             color: context.theme.colorScheme.onSurface)),
-                                onDeleted: selectedChat == null
+                                onDeleted: selectedChat.value == null
                                     ? null
                                     : () {
-                                        setState(() {
-                                          selectedChat = null;
-                                          isSearching = false;
-                                          noResults = false;
-                                          currentSearch = null;
-                                        });
+                                        selectedChat.value = null;
+                                        isSearching.value = false;
+                                        noResults.value = false;
+                                        currentSearch.value = null;
                                       },
                                 onPressed: () {
                                   // Push a route that allows the user to select a chat
                                   NavigationSvc.push(context, ChatSelectorView(
                                     onSelect: (chat) {
-                                      setState(() {
-                                        selectedChat = chat;
-                                        isSearching = false;
-                                        noResults = false;
-                                        currentSearch = null;
-                                      });
+                                      selectedChat.value = chat;
+                                      isSearching.value = false;
+                                      noResults.value = false;
+                                      currentSearch.value = null;
                                     },
                                   ));
                                 },
                               ),
                               if (showSenderFilter)
-                                RawChip(
-                                  tapEnabled: true,
-                                  deleteIcon: const Icon(Icons.close, size: 16),
-                                  side: BorderSide(color: context.theme.colorScheme.outline.withValues(alpha: 0.1)),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                BBChip(
                                   avatar: CircleAvatar(
                                     backgroundColor: context.theme.colorScheme.primaryContainer,
                                     child: Icon(
@@ -710,8 +681,8 @@ class SearchViewState extends OptimizedState<SearchView> {
                                       size: 12,
                                     ),
                                   ),
-                                  label: selectedHandle != null
-                                      ? Text(selectedHandle!.displayName,
+                                  label: selectedHandle.value != null
+                                      ? Text(selectedHandle.value!.displayName,
                                           style: TextStyle(
                                               fontSize: 14,
                                               fontWeight: FontWeight.normal,
@@ -722,75 +693,61 @@ class SearchViewState extends OptimizedState<SearchView> {
                                               fontSize: 14,
                                               fontWeight: FontWeight.normal,
                                               color: context.theme.colorScheme.onSurface)),
-                                  onDeleted: selectedHandle == null
+                                  onDeleted: selectedHandle.value == null
                                       ? null
                                       : () {
-                                          setState(() {
-                                            selectedHandle = null;
-                                            isSearching = false;
-                                            noResults = false;
-                                            currentSearch = null;
-                                          });
+                                          selectedHandle.value = null;
+                                          isSearching.value = false;
+                                          noResults.value = false;
+                                          currentSearch.value = null;
                                         },
                                   onPressed: () {
                                     // Push a route that allows the user to select a chat
                                     NavigationSvc.push(
                                         context,
                                         HandleSelectorView(
-                                          forChat: selectedChat,
+                                          forChat: selectedChat.value,
                                           onSelect: (handle) {
-                                            setState(() {
-                                              selectedHandle = handle;
-                                              isSearching = false;
-                                              noResults = false;
-                                              currentSearch = null;
-                                            });
+                                            selectedHandle.value = handle;
+                                            isSearching.value = false;
+                                            noResults.value = false;
+                                            currentSearch.value = null;
                                           },
                                         ));
                                   },
                                 ),
-                              if (selectedHandle == null && !isNotFromMe)
-                                RawChip(
-                                  tapEnabled: true,
+                              if (selectedHandle.value == null && !isNotFromMe.value)
+                                BBChip(
                                   showCheckmark: true,
-                                  selected: isFromMe,
+                                  selected: isFromMe.value,
                                   checkmarkColor: context.theme.colorScheme.primary,
-                                  side: BorderSide(color: context.theme.colorScheme.outline.withValues(alpha: 0.1)),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                                   label: Text('From You',
                                       style: TextStyle(
                                           fontSize: 14,
                                           fontWeight: FontWeight.normal,
                                           color: context.theme.colorScheme.onSurface)),
                                   onSelected: (selected) {
-                                    setState(() {
-                                      isFromMe = selected;
-                                      isSearching = false;
-                                      noResults = false;
-                                      currentSearch = null;
-                                    });
+                                    isFromMe.value = selected;
+                                    isSearching.value = false;
+                                    noResults.value = false;
+                                    currentSearch.value = null;
                                   },
                                 ),
-                              if (selectedHandle == null && !isFromMe)
-                                RawChip(
-                                  tapEnabled: true,
+                              if (selectedHandle.value == null && !isFromMe.value)
+                                BBChip(
                                   showCheckmark: true,
-                                  selected: isNotFromMe,
+                                  selected: isNotFromMe.value,
                                   checkmarkColor: context.theme.colorScheme.primary,
-                                  side: BorderSide(color: context.theme.colorScheme.outline.withValues(alpha: 0.1)),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                                   label: Text('Not From You',
                                       style: TextStyle(
                                           fontSize: 14,
                                           fontWeight: FontWeight.normal,
                                           color: context.theme.colorScheme.onSurface)),
                                   onSelected: (selected) {
-                                    setState(() {
-                                      isNotFromMe = selected;
-                                      isSearching = false;
-                                      noResults = false;
-                                      currentSearch = null;
-                                    });
+                                    isNotFromMe.value = selected;
+                                    isSearching.value = false;
+                                    noResults.value = false;
+                                    currentSearch.value = null;
                                   },
                                 ),
                             ],
@@ -800,5 +757,6 @@ class SearchViewState extends OptimizedState<SearchView> {
             ]),
           )
         ]));
+    });
   }
 }
