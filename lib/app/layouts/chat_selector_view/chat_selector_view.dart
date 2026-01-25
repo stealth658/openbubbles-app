@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:bluebubbles/app/layouts/chat_creator/widgets/chat_creator_tile.dart';
+import 'package:bluebubbles/app/wrappers/bb_annotated_region.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
@@ -71,15 +72,7 @@ class ChatSelectorViewState extends OptimizedState<ChatSelectorView> {
 
   @override
   Widget build(BuildContext context) {
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle(
-        systemNavigationBarColor: SettingsSvc.settings.immersiveMode.value
-            ? Colors.transparent
-            : context.theme.colorScheme.background, // navigation bar color
-        systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
-        statusBarColor: Colors.transparent, // status bar color
-        statusBarIconBrightness: context.theme.colorScheme.brightness.opposite,
-      ),
+    return BBAnnotatedRegion(
       child: Scaffold(
         backgroundColor: SettingsSvc.settings.windowEffect.value != WindowEffect.disabled
             ? Colors.transparent

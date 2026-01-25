@@ -5,6 +5,7 @@ import 'package:bluebubbles/app/layouts/settings/widgets/search/settings_items_l
 import 'package:bluebubbles/app/layouts/settings/widgets/search/settings_search_bar.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/search/settings_search_empty_result.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
+import 'package:bluebubbles/app/wrappers/bb_annotated_region.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/app/wrappers/tablet_mode_wrapper.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
@@ -12,7 +13,6 @@ import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart' hide Response;
 
 class SettingsPage extends StatefulWidget {
@@ -82,15 +82,7 @@ class _SettingsPageState extends OptimizedState<SettingsPage> {
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
       onTap: () => FocusScope.of(context).unfocus(),
-      child: AnnotatedRegion<SystemUiOverlayStyle>(
-        value: SystemUiOverlayStyle(
-          systemNavigationBarColor: SettingsSvc.settings.immersiveMode.value
-              ? Colors.transparent
-              : context.theme.colorScheme.background, // navigation bar color
-          systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
-          statusBarColor: Colors.transparent, // status bar color
-          statusBarIconBrightness: context.theme.colorScheme.brightness.opposite,
-        ),
+      child: BBAnnotatedRegion(
         child: Actions(
             actions: {
               GoBackIntent: GoBackAction(context),

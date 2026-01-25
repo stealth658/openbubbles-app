@@ -1,4 +1,5 @@
 import 'package:bluebubbles/helpers/helpers.dart';
+import 'package:bluebubbles/app/wrappers/bb_annotated_region.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/pages/conversation_list.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/tile/conversation_tile.dart';
 import 'package:bluebubbles/app/layouts/settings/dialogs/notification_settings_dialog.dart';
@@ -201,15 +202,7 @@ class _NotificationPanelState extends OptimizedState<NotificationPanel> with Sin
       )
     ];
 
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-        value: SystemUiOverlayStyle(
-          systemNavigationBarColor: SettingsSvc.settings.immersiveMode.value
-              ? Colors.transparent
-              : context.theme.colorScheme.background, // navigation bar color
-          systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
-          statusBarColor: Colors.transparent, // status bar color
-          statusBarIconBrightness: context.theme.colorScheme.brightness.opposite,
-        ),
+    return BBAnnotatedRegion(
         child: Obx(() => Scaffold(
               backgroundColor: material ? tileColor : headerColor,
               appBar: samsung && index.value == 0

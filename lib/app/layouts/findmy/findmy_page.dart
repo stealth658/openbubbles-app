@@ -3,6 +3,8 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
 
+import 'package:bluebubbles/app/wrappers/bb_annotated_region.dart';
+
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:bluebubbles/app/components/avatars/contact_avatar_widget.dart';
 import 'package:bluebubbles/app/layouts/findmy/findmy_location_clipper.dart';
@@ -21,7 +23,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_marker_popup/flutter_map_marker_popup.dart';
 import 'package:get/get.dart' hide Response;
@@ -952,15 +953,8 @@ class _FindMyPageState extends OptimizedState<FindMyPage> with SingleTickerProvi
       ),
     ];
 
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-        value: SystemUiOverlayStyle(
-          systemNavigationBarColor: SettingsSvc.settings.immersiveMode.value
-              ? Colors.transparent
-              : context.theme.colorScheme.background, // navigation bar color
-          systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
-          statusBarColor: Colors.transparent, // status bar color
-          statusBarIconBrightness: Brightness.dark,
-        ),
+    return BBAnnotatedRegion(
+        statusBarIconBrightness: Brightness.dark,
         child: LayoutBuilder(
           builder: (BuildContext context, BoxConstraints constraints) {
             if (context.isPhone) {

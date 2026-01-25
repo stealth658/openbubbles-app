@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:bluebubbles/app/wrappers/bb_annotated_region.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/pages/conversation_list.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/tile/conversation_tile.dart';
 import 'package:bluebubbles/app/wrappers/scrollbar_wrapper.dart';
@@ -26,15 +27,7 @@ class PinnedOrderPanel extends StatelessWidget {
       SettingsSvc.settings.windowEffect.listen((WindowEffect effect) => _backgroundColor.value =
           effect != WindowEffect.disabled ? Colors.transparent : context.theme.colorScheme.background);
     }
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle(
-        systemNavigationBarColor: SettingsSvc.settings.immersiveMode.value
-            ? Colors.transparent
-            : context.theme.colorScheme.background, // navigation bar color
-        systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
-        statusBarColor: Colors.transparent, // status bar color
-        statusBarIconBrightness: context.theme.colorScheme.brightness.opposite,
-      ),
+    return BBAnnotatedRegion(
       child: Obx(
         () => Scaffold(
           backgroundColor: _backgroundColor.value,

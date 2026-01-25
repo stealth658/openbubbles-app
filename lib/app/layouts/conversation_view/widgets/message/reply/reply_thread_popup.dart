@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/message_holder.dart';
+import 'package:bluebubbles/app/wrappers/bb_annotated_region.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/database/models.dart';
@@ -9,7 +10,6 @@ import 'package:collection/collection.dart';
 import 'package:defer_pointer/defer_pointer.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
 
@@ -69,17 +69,7 @@ void _buildThreadView(
                   onTap: () {
                     Navigator.of(context).pop();
                   },
-                  child: AnnotatedRegion<SystemUiOverlayStyle>(
-                    value: SystemUiOverlayStyle(
-                      systemNavigationBarColor: SettingsSvc.settings.immersiveMode.value
-                          ? Colors.transparent
-                          : context.theme.colorScheme.background,
-                      // navigation bar color
-                      systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
-                      statusBarColor: Colors.transparent,
-                      // status bar color
-                      statusBarIconBrightness: context.theme.colorScheme.brightness.opposite,
-                    ),
+                  child: BBAnnotatedRegion(
                     child: Scaffold(
                       backgroundColor: kIsDesktop && SettingsSvc.settings.windowEffect.value != WindowEffect.disabled
                           ? context.theme.colorScheme.properSurface.withValues(alpha: 0.9)

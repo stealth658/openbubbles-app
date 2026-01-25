@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:bluebubbles/helpers/ui/theme_helpers.dart';
+import 'package:bluebubbles/app/wrappers/bb_annotated_region.dart';
 import 'package:bluebubbles/helpers/ui/ui_helpers.dart';
 import 'package:bluebubbles/app/layouts/settings/dialogs/old_themes_dialog.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/theming/advanced/advanced_theming_content.dart';
@@ -47,15 +47,7 @@ class _AdvancedThemingPanelState extends OptimizedState<AdvancedThemingPanel> wi
 
   @override
   Widget build(BuildContext context) {
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle(
-        systemNavigationBarColor: SettingsSvc.settings.immersiveMode.value
-            ? Colors.transparent
-            : context.theme.colorScheme.background, // navigation bar color
-        systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
-        statusBarColor: Colors.transparent, // status bar color
-        statusBarIconBrightness: context.theme.colorScheme.brightness.opposite,
-      ),
+    return BBAnnotatedRegion(
       child: Scaffold(
         backgroundColor: material ? tileColor : headerColor,
         appBar: PreferredSize(

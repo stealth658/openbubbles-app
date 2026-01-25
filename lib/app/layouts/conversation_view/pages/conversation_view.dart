@@ -2,6 +2,7 @@ import 'package:bluebubbles/app/layouts/conversation_view/widgets/header/cuperti
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/header/material_header.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/messages_view_components.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/text_field/conversation_text_field.dart';
+import 'package:bluebubbles/app/wrappers/bb_annotated_region.dart';
 import 'package:bluebubbles/app/wrappers/gradient_background_wrapper.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
@@ -90,7 +91,6 @@ class ConversationViewState extends OptimizedState<ConversationView> {
     // Cache theme values to avoid repeated lookups
     final theme = context.theme;
     final colorScheme = theme.colorScheme;
-    final immersiveMode = SettingsSvc.settings.immersiveMode.value;
     final monetTheming = SettingsSvc.settings.monetTheming.value;
     final windowEffect = SettingsSvc.settings.windowEffect.value;
     final avatarScale = SettingsSvc.settings.avatarScale.value;
@@ -98,13 +98,7 @@ class ConversationViewState extends OptimizedState<ConversationView> {
     final onBubbleColor = colorScheme.onBubble(context, chat.isIMessage);
     final bubbleColorsExt = theme.extensions[BubbleColors] as BubbleColors?;
 
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle(
-        systemNavigationBarColor: immersiveMode ? Colors.transparent : colorScheme.background,
-        systemNavigationBarIconBrightness: colorScheme.brightness.opposite,
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: colorScheme.brightness.opposite,
-      ),
+    return BBAnnotatedRegion(
       child: Theme(
           data: theme.copyWith(
             // in case some components still use legacy theming

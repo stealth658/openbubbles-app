@@ -10,6 +10,7 @@ import 'package:bluebubbles/app/layouts/conversation_list/widgets/tile/conversat
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/tile/material_conversation_tile.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/tile/samsung_conversation_tile.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/pages/conversation_view.dart';
+import 'package:bluebubbles/app/wrappers/bb_annotated_region.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/app/wrappers/tablet_mode_wrapper.dart';
 import 'package:bluebubbles/database/models.dart';
@@ -185,15 +186,9 @@ class _ConversationListState extends CustomState<ConversationList, void, Convers
 
     if (controller.showArchivedChats || controller.showUnknownSenders) return child;
 
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle(
-        systemNavigationBarColor: SettingsSvc.settings.immersiveMode.value
-            ? Colors.transparent
-            : context.theme.colorScheme.background, // navigation bar color
-        systemNavigationBarIconBrightness: brightness,
-        statusBarColor: Colors.transparent, // status bar color
-        statusBarIconBrightness: brightness.opposite,
-      ),
+    return BBAnnotatedRegion(
+      systemNavigationBarIconBrightness: brightness,
+      statusBarIconBrightness: brightness.opposite,
       child: TabletModeWrapper(
         initialRatio: 0.4,
         minWidthLeft: kIsDesktop || kIsWeb ? 150 : null,

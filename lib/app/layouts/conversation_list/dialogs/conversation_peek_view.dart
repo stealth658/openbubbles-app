@@ -2,6 +2,7 @@ import 'dart:math';
 import 'dart:ui';
 
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/message_holder.dart';
+import 'package:bluebubbles/app/wrappers/bb_annotated_region.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/pages/conversation_view.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
@@ -90,15 +91,7 @@ class _ConversationPeekViewState extends OptimizedState<ConversationPeekView> wi
 
   @override
   Widget build(BuildContext context) {
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle(
-        systemNavigationBarColor: SettingsSvc.settings.immersiveMode.value
-            ? Colors.transparent
-            : context.theme.colorScheme.background, // navigation bar color
-        systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
-        statusBarColor: Colors.transparent, // status bar color
-        statusBarIconBrightness: context.theme.colorScheme.brightness.opposite,
-      ),
+    return BBAnnotatedRegion(
       child: Theme(
         data: context.theme.copyWith(
           // in case some components still use legacy theming
@@ -115,112 +108,110 @@ class _ConversationPeekViewState extends OptimizedState<ConversationPeekView> wi
           ),
         ),
         child: TitleBarWrapper(
-            child: Container(
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              GestureDetector(
-                onTap: () {
-                  Navigator.of(context).pop();
-                },
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-                  child: Container(
-                    color: context.theme.colorScheme.properSurface.darkenPercent(30).withValues(alpha: 0.2),
-                  ),
+            child: Stack(
+          fit: StackFit.expand,
+          children: [
+            GestureDetector(
+              onTap: () {
+                Navigator.of(context).pop();
+              },
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+                child: Container(
+                  color: context.theme.colorScheme.properSurface.darkenPercent(30).withValues(alpha: 0.2),
                 ),
               ),
-              Positioned(
-                left: min(widget.position.dx, context.width - min(context.width - 50, 500) - 25),
-                top: min(widget.position.dy,
-                    context.height - min(context.height / 2, context.height - itemHeight * 5) - itemHeight * 5 - 25),
-                child: TweenAnimationBuilder<double>(
-                  tween: Tween<double>(begin: 0.8, end: 1),
-                  curve: Curves.easeOutBack,
-                  duration: const Duration(milliseconds: 400),
-                  child: FadeTransition(
-                    opacity: CurvedAnimation(
-                      parent: controller,
-                      curve: const Interval(0.0, .9, curve: Curves.ease),
-                      reverseCurve: Curves.easeInCubic,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        GestureDetector(
-                          onTap: () async {
-                            cvController.close();
-                            MessagesSvc(widget.chat.guid).close();
-                            // Controllers are disposed by MessagesService.onClose()
-                            controller.dispose();
-                            disposed = true;
-                            Navigator.of(context).pop();
-                            NavigationSvc.pushAndRemoveUntil(
-                              Get.context!,
-                              ConversationView(
-                                chat: widget.chat,
-                              ),
-                              (route) => route.isFirst,
-                            );
-                          },
-                          child: DeferredPointerHandler(
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: ThemeSvc.inDarkMode(context)
-                                    ? context.theme.colorScheme.properSurface.darkenPercent(30)
-                                    : context.theme.colorScheme.background,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              width: min(context.width - 50, 500),
-                              height: min(context.height / 2, context.height - itemHeight * 5),
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: ListView.builder(
-                                  shrinkWrap: true,
-                                  reverse: true,
-                                  physics: ThemeSwitcher.getScrollPhysics(),
-                                  findChildIndexCallback: (key) =>
-                                      findChildIndexByKey(widget.messages, key, (item) => item.guid),
-                                  itemBuilder: (context, index) {
-                                    return AbsorbPointer(
-                                      absorbing: true,
-                                      child: Material(
-                                        color: Colors.transparent,
-                                        child: Padding(
-                                          padding: const EdgeInsets.only(left: 5.0, right: 5.0),
-                                          child: MessageHolder(
-                                            key: Key(widget.messages[index].guid!),
-                                            cvController: cvController,
-                                            message: widget.messages[index],
-                                            oldMessage:
-                                                index == widget.messages.length - 1 ? null : widget.messages[index + 1],
-                                            newMessage: index == 0 ? null : widget.messages[index - 1],
-                                          ),
+            ),
+            Positioned(
+              left: min(widget.position.dx, context.width - min(context.width - 50, 500) - 25),
+              top: min(widget.position.dy,
+                  context.height - min(context.height / 2, context.height - itemHeight * 5) - itemHeight * 5 - 25),
+              child: TweenAnimationBuilder<double>(
+                tween: Tween<double>(begin: 0.8, end: 1),
+                curve: Curves.easeOutBack,
+                duration: const Duration(milliseconds: 400),
+                child: FadeTransition(
+                  opacity: CurvedAnimation(
+                    parent: controller,
+                    curve: const Interval(0.0, .9, curve: Curves.ease),
+                    reverseCurve: Curves.easeInCubic,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      GestureDetector(
+                        onTap: () async {
+                          cvController.close();
+                          MessagesSvc(widget.chat.guid).close();
+                          // Controllers are disposed by MessagesService.onClose()
+                          controller.dispose();
+                          disposed = true;
+                          Navigator.of(context).pop();
+                          NavigationSvc.pushAndRemoveUntil(
+                            Get.context!,
+                            ConversationView(
+                              chat: widget.chat,
+                            ),
+                            (route) => route.isFirst,
+                          );
+                        },
+                        child: DeferredPointerHandler(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: ThemeSvc.inDarkMode(context)
+                                  ? context.theme.colorScheme.properSurface.darkenPercent(30)
+                                  : context.theme.colorScheme.background,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            width: min(context.width - 50, 500),
+                            height: min(context.height / 2, context.height - itemHeight * 5),
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: ListView.builder(
+                                shrinkWrap: true,
+                                reverse: true,
+                                physics: ThemeSwitcher.getScrollPhysics(),
+                                findChildIndexCallback: (key) =>
+                                    findChildIndexByKey(widget.messages, key, (item) => item.guid),
+                                itemBuilder: (context, index) {
+                                  return AbsorbPointer(
+                                    absorbing: true,
+                                    child: Material(
+                                      color: Colors.transparent,
+                                      child: Padding(
+                                        padding: const EdgeInsets.only(left: 5.0, right: 5.0),
+                                        child: MessageHolder(
+                                          key: Key(widget.messages[index].guid!),
+                                          cvController: cvController,
+                                          message: widget.messages[index],
+                                          oldMessage:
+                                              index == widget.messages.length - 1 ? null : widget.messages[index + 1],
+                                          newMessage: index == 0 ? null : widget.messages[index - 1],
                                         ),
                                       ),
-                                    );
-                                  },
-                                  itemCount: widget.messages.length,
-                                ),
+                                    ),
+                                  );
+                                },
+                                itemCount: widget.messages.length,
                               ),
                             ),
                           ),
                         ),
-                        const SizedBox(height: 5),
-                        buildDetailsMenu(context),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 5),
+                      buildDetailsMenu(context),
+                    ],
                   ),
-                  builder: (context, size, child) {
-                    return Transform.scale(
-                      scale: size,
-                      child: child,
-                    );
-                  },
                 ),
+                builder: (context, size, child) {
+                  return Transform.scale(
+                    scale: size,
+                    child: child,
+                  );
+                },
               ),
-            ],
-          ),
+            ),
+          ],
         )),
       ),
     );

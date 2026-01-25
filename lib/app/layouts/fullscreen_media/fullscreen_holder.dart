@@ -1,4 +1,5 @@
 import 'package:bluebubbles/app/components/circle_progress_bar.dart';
+import 'package:bluebubbles/app/wrappers/bb_annotated_region.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
@@ -73,17 +74,10 @@ class FullscreenMediaHolderState extends OptimizedState<FullscreenMediaHolder> {
   @override
   Widget build(BuildContext context) {
     return TitleBarWrapper(
-      child: AnnotatedRegion<SystemUiOverlayStyle>(
-        value: SystemUiOverlayStyle(
-          systemNavigationBarColor: SettingsSvc.settings.immersiveMode.value
-              ? Colors.transparent
-              : context.theme.colorScheme.background, // navigation bar color
-          systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
-          statusBarColor: Colors.transparent, // status bar color
-          statusBarIconBrightness: SettingsSvc.settings.skin.value != Skins.iOS
-              ? Brightness.light
-              : context.theme.colorScheme.brightness.opposite,
-        ),
+      child: BBAnnotatedRegion(
+        statusBarIconBrightness: SettingsSvc.settings.skin.value != Skins.iOS
+            ? Brightness.light
+            : context.theme.colorScheme.brightness.opposite,
         child: Actions(
           actions: {
             GoBackIntent: GoBackAction(context),

@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:bluebubbles/app/wrappers/bb_annotated_region.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/popup/details_menu_action.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
@@ -43,15 +44,7 @@ class _MessageOptionsOrderPanelState extends OptimizedState<MessageOptionsOrderP
       SettingsSvc.settings.windowEffect.listen((WindowEffect effect) => _backgroundColor.value =
           effect != WindowEffect.disabled ? Colors.transparent : context.theme.colorScheme.background);
     }
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle(
-        systemNavigationBarColor: SettingsSvc.settings.immersiveMode.value
-            ? Colors.transparent
-            : context.theme.colorScheme.background, // navigation bar color
-        systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
-        statusBarColor: Colors.transparent, // status bar color
-        statusBarIconBrightness: context.theme.colorScheme.brightness.opposite,
-      ),
+    return BBAnnotatedRegion(
       child: Obx(
         () => Scaffold(
           backgroundColor: _backgroundColor.value,

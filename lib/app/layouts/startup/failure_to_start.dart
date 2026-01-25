@@ -1,3 +1,4 @@
+import 'package:bluebubbles/app/wrappers/bb_annotated_region.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -11,13 +12,10 @@ class FailureToStart extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'BlueBubbles',
-      home: AnnotatedRegion<SystemUiOverlayStyle>(
-        value: const SystemUiOverlayStyle(
-          systemNavigationBarColor: Colors.black, // navigation bar color
-          systemNavigationBarIconBrightness: Brightness.light,
-          statusBarColor: Colors.transparent, // status bar color
-          statusBarIconBrightness: Brightness.light,
-        ),
+      home: BBAnnotatedRegion(
+        systemNavigationBarColor: Colors.black,
+        systemNavigationBarIconBrightness: Brightness.light,
+        statusBarIconBrightness: Brightness.light,
         child: Scaffold(
           backgroundColor: Colors.black,
           body: Padding(

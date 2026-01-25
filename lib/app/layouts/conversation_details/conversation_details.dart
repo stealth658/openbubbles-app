@@ -8,6 +8,7 @@ import 'package:bluebubbles/app/layouts/conversation_details/widgets/links_secti
 import 'package:bluebubbles/app/layouts/conversation_details/widgets/locations_section.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/widgets/media_grid_section.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/widgets/participants_list.dart';
+import 'package:bluebubbles/app/wrappers/bb_annotated_region.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
@@ -93,15 +94,7 @@ class _ConversationDetailsState extends OptimizedState<ConversationDetails> with
 
   @override
   Widget build(BuildContext context) {
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle(
-        systemNavigationBarColor: SettingsSvc.settings.immersiveMode.value
-            ? Colors.transparent
-            : context.theme.colorScheme.background, // navigation bar color
-        systemNavigationBarIconBrightness: context.theme.colorScheme.brightness.opposite,
-        statusBarColor: Colors.transparent, // status bar color
-        statusBarIconBrightness: context.theme.colorScheme.brightness.opposite,
-      ),
+    return BBAnnotatedRegion(
       child: Theme(
           data: context.theme.copyWith(
             // in case some components still use legacy theming
