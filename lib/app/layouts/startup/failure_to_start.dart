@@ -1,6 +1,5 @@
 import 'package:bluebubbles/app/wrappers/bb_scaffold.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 class FailureToStart extends StatelessWidget {
   const FailureToStart({super.key, this.e, this.s, this.otherTitle});

@@ -7,9 +7,6 @@ import 'package:bluebubbles/app/components/custom_text_editing_controllers.dart'
 import 'package:bluebubbles/app/layouts/conversation_view/dialogs/custom_mention_dialog.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/media_picker/text_field_attachment_picker.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/send_animation.dart';
-import 'package:bluebubbles/app/layouts/conversation_view/widgets/text_field/buttons/camera_button.dart' as camera_btn;
-import 'package:bluebubbles/app/layouts/conversation_view/widgets/text_field/buttons/emoji_picker_button.dart';
-import 'package:bluebubbles/app/layouts/conversation_view/widgets/text_field/buttons/location_button.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/text_field/conversation_text_field_local_controller.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/text_field/helpers/text_field_match_helper.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/text_field/picked_attachments_holder.dart';
@@ -20,7 +17,6 @@ import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
-import 'package:bluebubbles/utils/emoji.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/utils/share.dart';
 import 'package:chunked_stream/chunked_stream.dart';
@@ -207,7 +203,8 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
               return;
             } else if (localController.oldTextFieldSelection.value.baseOffset < selection.baseOffset) {
               // moving right
-              localController.oldTextFieldSelection.value = TextSelection.collapsed(offset: behind.length + aheadMatches.first.end);
+              localController.oldTextFieldSelection.value =
+                  TextSelection.collapsed(offset: behind.length + aheadMatches.first.end);
               controller.textController.selection = localController.oldTextFieldSelection.value;
               return;
             }
@@ -221,7 +218,8 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
             return;
           } else {
             // Closer to right
-            localController.oldTextFieldSelection.value = TextSelection.collapsed(offset: behind.length + aheadMatches.first.end);
+            localController.oldTextFieldSelection.value =
+                TextSelection.collapsed(offset: behind.length + aheadMatches.first.end);
             controller.textController.selection = localController.oldTextFieldSelection.value;
             return;
           }
@@ -1224,8 +1222,8 @@ class TextFieldComponentState extends State<TextFieldComponent> {
                 if (clipboardText == null) return;
 
                 TextSelection selection = controller!.lastFocusedTextController.selection;
-                String localController.oldText.value = controller!.lastFocusedTextController.text;
-                String newText = localController.oldText.value.replaceRange(selection.start, selection.end, clipboardText);
+                String oldText = controller!.lastFocusedTextController.text;
+                String newText = oldText.replaceRange(selection.start, selection.end, clipboardText);
                 controller!.lastFocusedTextController.value = TextEditingValue(
                   text: newText,
                   selection: TextSelection.fromPosition(
@@ -1261,8 +1259,8 @@ class TextFieldComponentState extends State<TextFieldComponent> {
             if (clipboardText == null) return;
 
             TextSelection selection = controller!.lastFocusedTextController.selection;
-            String localController.oldText.value = controller!.lastFocusedTextController.text;
-            String newText = localController.oldText.value.replaceRange(selection.start, selection.end, clipboardText);
+            String oldText = controller!.lastFocusedTextController.text;
+            String newText = oldText.replaceRange(selection.start, selection.end, clipboardText);
             controller!.lastFocusedTextController.value = TextEditingValue(
               text: newText,
               selection: TextSelection.fromPosition(
