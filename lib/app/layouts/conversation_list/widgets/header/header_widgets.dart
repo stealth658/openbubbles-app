@@ -92,11 +92,14 @@ class MaterialOverflowMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() => PopupMenuButton<int>(
+    final skin = SettingsSvc.settings.skin.value;
+    final windowEffect = SettingsSvc.settings.windowEffect.value;
+    
+    return PopupMenuButton<int>(
           color: context.theme.colorScheme.properSurface
-              .lightenOrDarken(SettingsSvc.settings.skin.value == Skins.Samsung ? 20 : 0)
-              .withValues(alpha: SettingsSvc.settings.windowEffect.value != WindowEffect.disabled ? 0.9 : 1),
-          shape: SettingsSvc.settings.skin.value != Skins.Material
+              .lightenOrDarken(skin == Skins.Samsung ? 20 : 0)
+              .withValues(alpha: windowEffect != WindowEffect.disabled ? 0.9 : 1),
+          shape: skin != Skins.Material
               ? const RoundedRectangleBorder(
                   borderRadius: BorderRadius.all(
                     Radius.circular(20.0),
@@ -215,14 +218,14 @@ class MaterialOverflowMenu extends StatelessWidget {
                 ),
             ];
           },
-          icon: SettingsSvc.settings.skin.value == Skins.Material
+          icon: skin == Skins.Material
               ? Icon(
                   Icons.more_vert,
                   color: context.theme.colorScheme.properOnSurface,
                   size: 25,
                 )
               : null,
-          child: SettingsSvc.settings.skin.value == Skins.Material
+          child: skin == Skins.Material
               ? null
               : ThemeSwitcher(
                   iOSSkin: Container(
@@ -245,7 +248,7 @@ class MaterialOverflowMenu extends StatelessWidget {
                     size: 25,
                   ),
                 ),
-        ));
+        );
   }
 }
 
@@ -261,117 +264,120 @@ class CupertinoOverflowMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() {
-      final itemTheme = PullDownMenuItemTheme(
-        textStyle: TextStyle(
-          color: context.theme.colorScheme.onSurface,
-        ),
-        subtitleStyle: TextStyle(
-          color: context.theme.colorScheme.onSurface.withValues(alpha: 0.7),
-        ),
-      );
+    final userName = SettingsSvc.settings.userName.value;
+    final iCloudAccount = SettingsSvc.settings.iCloudAccount.value;
+    final filterUnknownSenders = SettingsSvc.settings.filterUnknownSenders.value;
+    final moveChatCreatorToHeader = SettingsSvc.settings.moveChatCreatorToHeader.value;
+    
+    final itemTheme = PullDownMenuItemTheme(
+      textStyle: TextStyle(
+        color: context.theme.colorScheme.onSurface,
+      ),
+      subtitleStyle: TextStyle(
+        color: context.theme.colorScheme.onSurface.withValues(alpha: 0.7),
+      ),
+    );
 
-      return PullDownButton(
-        routeTheme:
-            PullDownMenuRouteTheme(backgroundColor: context.theme.colorScheme.properSurface.withValues(alpha: 0.9)),
-        itemBuilder: (context) => [
-          PullDownMenuHeader(
-            itemTheme: itemTheme,
-            title: SettingsSvc.settings.userName.value,
-            icon: CupertinoIcons.chevron_right,
-            leadingBuilder: (context, constraints) {
-              return Container(
-                  constraints: constraints,
-                  child: ContactAvatarWidget(
-                    size: 50,
-                    preferHighResAvatar: true,
-                    borderThickness: 0.1,
-                    editable: false,
-                    fontSize: 16,
-                    contact: Contact(
-                      id: 'you',
-                      displayName: SettingsSvc.settings.userName.value,
-                      emails: [SettingsSvc.settings.iCloudAccount.value],
-                    ),
-                  ));
-            },
-            subtitle: "Tap to open profile",
-            onTap: () => goToProfile(context),
-          ),
-          PullDownMenuDivider.large(color: context.theme.colorScheme.background.withValues(alpha: 0.5)),
-          PullDownMenuItem(
-            itemTheme: itemTheme,
-            title: 'Mark All As Read',
-            icon: CupertinoIcons.check_mark_circled,
-            onTap: ChatsSvc.markAllAsRead,
-          ),
-          PullDownMenuItem(
-            itemTheme: itemTheme,
-            title: 'Archived',
-            icon: CupertinoIcons.archivebox,
-            onTap: () => goToArchived(context),
-          ),
-          if (SettingsSvc.settings.filterUnknownSenders.value)
-            PullDownMenuItem(
-              itemTheme: itemTheme,
-              title: 'Unknown Senders',
-              icon: CupertinoIcons.person_crop_circle_badge_xmark,
-              onTap: () => goToUnknownSenders(context),
-            ),
-          if (SettingsSvc.isMinCatalinaSync)
-            PullDownMenuItem(
-              itemTheme: itemTheme,
-              title: 'Find My',
-              icon: CupertinoIcons.location,
-              onTap: () => goToFindMy(context),
-            ),
-          if (extraItems)
-            PullDownMenuItem(
-              itemTheme: itemTheme,
-              title: 'Search',
-              icon: CupertinoIcons.search,
-              onTap: () => goToSearch(context),
-            ),
-          if (extraItems && SettingsSvc.settings.moveChatCreatorToHeader.value)
-            PullDownMenuItem(
-                itemTheme: itemTheme,
-                title: 'New Chat',
-                icon: CupertinoIcons.plus,
-                onTap: () => controller?.openNewChatCreator(context)),
-          PullDownMenuItem(
-            itemTheme: itemTheme,
-            title: 'Settings',
-            icon: CupertinoIcons.gear,
-            onTap: () => goToSettings(context),
-          ),
-          if (kIsWeb)
-            PullDownMenuItem(
-              itemTheme: itemTheme,
-              title: 'Logout',
-              icon: CupertinoIcons.power,
-              onTap: () => logout(context),
-            ),
-        ],
-        buttonBuilder: (context, showMenu) => GestureDetector(
-            onTap: showMenu,
-            child: ThemeSwitcher(
-                iOSSkin: Container(
-                  width: 30,
-                  height: 30,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(40),
-                    color: context.theme.colorScheme.properSurface,
+    return PullDownButton(
+      routeTheme:
+          PullDownMenuRouteTheme(backgroundColor: context.theme.colorScheme.properSurface.withValues(alpha: 0.9)),
+      itemBuilder: (context) => [
+        PullDownMenuHeader(
+          itemTheme: itemTheme,
+          title: userName,
+          icon: CupertinoIcons.chevron_right,
+          leadingBuilder: (context, constraints) {
+            return Container(
+                constraints: constraints,
+                child: ContactAvatarWidget(
+                  size: 50,
+                  preferHighResAvatar: true,
+                  borderThickness: 0.1,
+                  editable: false,
+                  fontSize: 16,
+                  contact: Contact(
+                    id: 'you',
+                    displayName: userName,
+                    emails: [iCloudAccount],
                   ),
-                  child: Icon(
-                    Icons.more_horiz,
-                    color: context.theme.colorScheme.properOnSurface,
-                    size: 20,
-                  ),
+                ));
+          },
+          subtitle: "Tap to open profile",
+          onTap: () => goToProfile(context),
+        ),
+        PullDownMenuDivider.large(color: context.theme.colorScheme.background.withValues(alpha: 0.5)),
+        PullDownMenuItem(
+          itemTheme: itemTheme,
+          title: 'Mark All As Read',
+          icon: CupertinoIcons.check_mark_circled,
+          onTap: ChatsSvc.markAllAsRead,
+        ),
+        PullDownMenuItem(
+          itemTheme: itemTheme,
+          title: 'Archived',
+          icon: CupertinoIcons.archivebox,
+          onTap: () => goToArchived(context),
+        ),
+        if (filterUnknownSenders)
+          PullDownMenuItem(
+            itemTheme: itemTheme,
+            title: 'Unknown Senders',
+            icon: CupertinoIcons.person_crop_circle_badge_xmark,
+            onTap: () => goToUnknownSenders(context),
+          ),
+        if (SettingsSvc.isMinCatalinaSync)
+          PullDownMenuItem(
+            itemTheme: itemTheme,
+            title: 'Find My',
+            icon: CupertinoIcons.location,
+            onTap: () => goToFindMy(context),
+          ),
+        if (extraItems)
+          PullDownMenuItem(
+            itemTheme: itemTheme,
+            title: 'Search',
+            icon: CupertinoIcons.search,
+            onTap: () => goToSearch(context),
+          ),
+        if (extraItems && moveChatCreatorToHeader)
+          PullDownMenuItem(
+              itemTheme: itemTheme,
+              title: 'New Chat',
+              icon: CupertinoIcons.plus,
+              onTap: () => controller?.openNewChatCreator(context)),
+        PullDownMenuItem(
+          itemTheme: itemTheme,
+          title: 'Settings',
+          icon: CupertinoIcons.gear,
+          onTap: () => goToSettings(context),
+        ),
+        if (kIsWeb)
+          PullDownMenuItem(
+            itemTheme: itemTheme,
+            title: 'Logout',
+            icon: CupertinoIcons.power,
+            onTap: () => logout(context),
+          ),
+      ],
+      buttonBuilder: (context, showMenu) => GestureDetector(
+          onTap: showMenu,
+          child: ThemeSwitcher(
+              iOSSkin: Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(40),
+                  color: context.theme.colorScheme.properSurface,
                 ),
-                materialSkin: const SizedBox.shrink(),
-                samsungSkin: const SizedBox.shrink())),
-      );
-    });
+                child: Icon(
+                  Icons.more_horiz,
+                  color: context.theme.colorScheme.properOnSurface,
+                  size: 20,
+                ),
+              ),
+              materialSkin: const SizedBox.shrink(),
+              samsungSkin: const SizedBox.shrink())),
+    );
   }
 }
 
