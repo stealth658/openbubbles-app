@@ -10,10 +10,12 @@ class _ReactionAnimator extends StatefulWidget {
   const _ReactionAnimator({
     super.key,
     required this.stableKey,
+    required this.shouldAnimate,
     required this.child,
   });
 
   final String stableKey;
+  final bool shouldAnimate;
   final Widget child;
 
   @override
@@ -37,8 +39,13 @@ class _ReactionAnimatorState extends State<_ReactionAnimator> with SingleTickerP
       curve: Curves.easeOutBack,
     );
 
-    // Animate in once
-    _controller.forward();
+    // Animate in only if this is a new reaction
+    if (widget.shouldAnimate) {
+      _controller.forward();
+    } else {
+      // Skip animation - set to final state immediately
+      _controller.value = 1.0;
+    }
   }
 
   @override
@@ -75,6 +82,10 @@ class _ReactionHolderState extends OptimizedState<ReactionHolder> {
 
   // Cache the unique reactions to prevent unnecessary rebuilds
   late List<Message> _cachedReactions;
+  
+  // Track which reaction keys have been animated
+  // This prevents re-animation on rebuilds, but allows animation on first appearance
+  final Set<String> _seenReactionKeys = {};
 
   @override
   void initState() {
@@ -126,6 +137,13 @@ class _ReactionHolderState extends OptimizedState<ReactionHolder> {
               final sender = e.handleId ?? '0';
               final stableKey = '${e.associatedMessageGuid}-${e.associatedMessageType}-$sender';
               
+              // Check if this is a new reaction that should animate
+              final shouldAnimate = !_seenReactionKeys.contains(stableKey);
+              if (shouldAnimate) {
+                // Mark as seen for future rebuilds
+                _seenReactionKeys.add(stableKey);
+              }
+              
               return Positioned(
                 key: ValueKey(stableKey),
                 top: 0,
@@ -134,6 +152,7 @@ class _ReactionHolderState extends OptimizedState<ReactionHolder> {
                 child: _ReactionAnimator(
                   key: ValueKey(stableKey),
                   stableKey: stableKey,
+                  shouldAnimate: shouldAnimate,
                   child: DeferPointer(
                     child: ReactionWidget(
                       message: widget.message,
