@@ -42,25 +42,23 @@ class ReplyBubbleSection extends StatelessWidget {
 
     if (isIOS) {
       // iOS style - integrated with message bubble
-      return Padding(
-        padding: showAvatar || alwaysShowAvatars ? EdgeInsets.only(left: 35.0 * avatarScale) : EdgeInsets.zero,
-        child: DecoratedBox(
-          decoration: ReplyLineDecoration(
-            isFromMe: message.isFromMe!,
-            color: context.theme.colorScheme.properSurface,
-            connectUpper: false,
-            connectLower: true,
-            context: context,
-          ),
-          child: Container(
-            width: double.infinity,
-            alignment: replyTo.isFromMe! ? Alignment.centerRight : Alignment.centerLeft,
-            child: ReplyBubble(
-              parentController: controller,
-              part: part,
-              showAvatar: showReplyAvatar,
-              cvController: cvController,
-            ),
+      // Note: Padding is handled by the parent MessageHolder, not here
+      return DecoratedBox(
+        decoration: ReplyLineDecoration(
+          isFromMe: message.isFromMe!,
+          color: context.theme.colorScheme.properSurface,
+          connectUpper: false,
+          connectLower: true,
+          context: context,
+        ),
+        child: Container(
+          width: double.infinity,
+          alignment: replyTo.isFromMe! ? Alignment.centerRight : Alignment.centerLeft,
+          child: ReplyBubble(
+            parentController: controller,
+            part: part,
+            showAvatar: showReplyAvatar,
+            cvController: cvController,
           ),
         ),
       );

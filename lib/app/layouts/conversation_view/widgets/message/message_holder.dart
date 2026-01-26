@@ -107,6 +107,8 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
       } else {
         messageParts = controller.parts;
       }
+      replyOffsets = List.generate(messageParts.length, (_) => 0.0.obs);
+      keys = List.generate(messageParts.length, (_) => GlobalKey());
     } else {
       controller.cvController = widget.cvController;
       controller.oldMessage = widget.oldMessage;
