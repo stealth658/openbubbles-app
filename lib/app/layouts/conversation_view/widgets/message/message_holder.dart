@@ -292,6 +292,7 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                           child: CustomPaint(
                                             painter: _ReplyLinePainter(
                                               color: context.theme.colorScheme.properSurface,
+                                              isFromMe: message.isFromMe!,
                                             ),
                                             child: MessageSender(olderMessage: olderMessage, message: message),
                                           ),
@@ -299,12 +300,28 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                       : MessageSender(olderMessage: olderMessage, message: message),
                                 ),
                               // add a box to account for height of reactions
-                              ReactionSpacing(
-                                controller: controller,
-                                messageParts: messageParts,
-                                part: e,
-                                reactionsForPart: reactionsForPart,
-                              ),
+                              iOS && message.threadOriginatorGuid != null
+                                  ? SizedBox(
+                                      width: double.infinity,
+                                      child: CustomPaint(
+                                        painter: _ReplyLinePainter(
+                                          color: context.theme.colorScheme.properSurface,
+                                          isFromMe: message.isFromMe!,
+                                        ),
+                                        child: ReactionSpacing(
+                                          controller: controller,
+                                          messageParts: messageParts,
+                                          part: e,
+                                          reactionsForPart: reactionsForPart,
+                                        ),
+                                      ),
+                                    )
+                                  : ReactionSpacing(
+                                      controller: controller,
+                                      messageParts: messageParts,
+                                      part: e,
+                                      reactionsForPart: reactionsForPart,
+                                    ),
                               if (!iOS &&
                                   index == 0 &&
                                   !widget.isReplyThread &&
@@ -568,8 +585,9 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
 /// connecting through the message sender
 class _ReplyLinePainter extends CustomPainter {
   final Color color;
+  final bool isFromMe;
 
-  _ReplyLinePainter({required this.color});
+  _ReplyLinePainter({required this.color, required this.isFromMe});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -578,8 +596,9 @@ class _ReplyLinePainter extends CustomPainter {
       ..strokeWidth = 3
       ..style = PaintingStyle.stroke;
 
-    // Draw vertical line at the same position as the reply line (width - 35)
-    final x = size.width - 35;
+    // Draw vertical line at the same position as the reply line
+    // Position depends on message direction: left side if from me, right side if not
+    final x = isFromMe ? 35.0 : size.width - 35;
     canvas.drawLine(
       Offset(x, 0),
       Offset(x, size.height),
@@ -588,5 +607,5 @@ class _ReplyLinePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_ReplyLinePainter oldDelegate) => oldDelegate.color != color;
+  bool shouldRepaint(_ReplyLinePainter oldDelegate) => oldDelegate.color != color || oldDelegate.isFromMe != isFromMe;
 }
