@@ -167,16 +167,6 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
   Widget build(BuildContext context) {
     controller.built = true;
 
-    // Cache associated messages filtering
-    final stickers = message.associatedMessages.where((e) => e.associatedMessageType == "sticker").toList();
-
-    // Helper to get reactions - MUST be called inside Obx() to be reactive
-    List<Message> getReactions() {
-      return message.associatedMessages
-          .where((e) => ReactionTypes.toList().contains(e.associatedMessageType?.replaceAll("-", "")))
-          .toList();
-    }
-
     // Cache settings values to avoid repeated observable reads
     final alwaysShowAvatars = SettingsSvc.settings.alwaysShowAvatars.value;
     final avatarScale = SettingsSvc.settings.avatarScale.value;
@@ -204,7 +194,14 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
       return const SizedBox.shrink();
     }
     return Obx(() {
+      // Use MessageState observables for proper reactivity
       final isTempMessage = controller.messageState?.isSending.value ?? false;
+      final isFromMe = controller.messageState?.isFromMe.value ?? message.isFromMe!;
+      final associatedMessages = controller.messageState?.associatedMessages ?? message.associatedMessages;
+      
+      // Cache stickers filtering
+      final stickers = associatedMessages.where((e) => e.associatedMessageType == "sticker").toList();
+      
       return AnimatedPadding(
         duration: const Duration(milliseconds: 100),
         padding: isTempMessage
@@ -221,19 +218,19 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
           // use stack so avatar can be placed at bottom
           Row(
             children: [
-              if (!message.isFromMe! && !message.isGroupEvent)
+              if (!isFromMe && !message.isGroupEvent)
                 SelectCheckbox(message: message, controller: widget.cvController),
               Expanded(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: message.isFromMe! ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                  crossAxisAlignment: isFromMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                   children: [
                     // message column
                     ...messageParts.mapIndexed((index, e) => Padding(
                           padding: const EdgeInsets.symmetric(vertical: 2.0),
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: message.isFromMe! ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                            crossAxisAlignment: isFromMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                             children: [
                               // add previous edits if needed
                               if (e.isEdited)
@@ -306,7 +303,6 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                 controller: controller,
                                 messageParts: messageParts,
                                 part: e,
-                                getReactions: getReactions,
                                 reactionsForPart: reactionsForPart,
                               ),
                               if (!iOS &&
@@ -389,13 +385,12 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                                   messageParts: messageParts,
                                                   part: e,
                                                   cvController: widget.cvController,
-                                                  getReactions: getReactions,
                                                   reactionsForPart: reactionsForPart,
                                                 ),
                                               // otherwise show content
                                               if (!message.isGroupEvent && !e.isUnsent)
                                                 Column(
-                                                  crossAxisAlignment: message.isFromMe!
+                                                  crossAxisAlignment: isFromMe
                                                       ? CrossAxisAlignment.end
                                                       : CrossAxisAlignment.start,
                                                   children: [
@@ -412,7 +407,7 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                                         padding: const EdgeInsets.only(bottom: 2.0),
                                                         child: ClipPath(
                                                           clipper: TailClipper(
-                                                            isFromMe: message.isFromMe!,
+                                                            isFromMe: isFromMe,
                                                             showTail: false,
                                                             connectLower: iOS
                                                                 ? false
@@ -514,7 +509,6 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                                           messageParts: messageParts,
                                                           part: e,
                                                           chatGuid: chat.guid,
-                                                          getReactions: getReactions,
                                                           reactionsForPart: reactionsForPart,
                                                         ),
                                                       ],
@@ -556,7 +550,7 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                   ],
                 ),
               ),
-              if (message.isFromMe! && !message.isGroupEvent)
+              if (isFromMe && !message.isGroupEvent)
                 SelectCheckbox(message: message, controller: widget.cvController),
               ErrorIndicatorObserver(controller: controller, message: message, chat: chat, service: service),
               // slide to view timestamp

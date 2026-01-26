@@ -90,8 +90,10 @@ class _TextBubbleState extends CustomState<TextBubble, void, MessageWidgetContro
     return Obx(() {
       // Observe selection state and temp message state
       final selected = !iOS && (controller.cvController?.selected.any((m) => m.guid == message.guid) ?? false);
-      // Use isSending observable instead of checking guid directly for proper reactivity
+      // Use MessageState observables for proper reactivity
       final isTempMessage = controller.messageState?.isSending.value ?? false;
+      final isFromMe = controller.messageState?.isFromMe.value ?? message.isFromMe!;
+      
       return Container(
         constraints: BoxConstraints(
           maxWidth: message.isBigEmoji
@@ -100,14 +102,14 @@ class _TextBubbleState extends CustomState<TextBubble, void, MessageWidgetContro
           minHeight: 40,
         ),
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15).add(EdgeInsets.only(
-            left: message.isFromMe! || message.isBigEmoji ? 0 : 10,
-            right: message.isFromMe! && !message.isBigEmoji ? 10 : 0)),
-        color: message.isFromMe! && !message.isBigEmoji
+            left: isFromMe || message.isBigEmoji ? 0 : 10,
+            right: isFromMe && !message.isBigEmoji ? 10 : 0)),
+        color: isFromMe && !message.isBigEmoji
             ? (selected
                 ? context.theme.colorScheme.tertiaryContainer
                 : context.theme.colorScheme.primary.darkenAmount(isTempMessage ? 0.2 : 0))
             : null,
-        decoration: message.isFromMe! || message.isBigEmoji
+        decoration: isFromMe || message.isBigEmoji
             ? null
             : BoxDecoration(
                 gradient: LinearGradient(
@@ -124,7 +126,7 @@ class _TextBubbleState extends CustomState<TextBubble, void, MessageWidgetContro
               message,
               colorOverride: selected
                   ? context.theme.colorScheme.onTertiaryContainer
-                  : SettingsSvc.settings.colorfulBubbles.value && !message.isFromMe!
+                  : SettingsSvc.settings.colorfulBubbles.value && !isFromMe
                       ? getBubbleColors(selected).first.oppositeLightenOrDarken(75)
                       : null,
               hideBodyText: widget.subjectOnly,
@@ -135,7 +137,7 @@ class _TextBubbleState extends CustomState<TextBubble, void, MessageWidgetContro
               message,
               colorOverride: selected
                   ? context.theme.colorScheme.onTertiaryContainer
-                  : SettingsSvc.settings.colorfulBubbles.value && !message.isFromMe!
+                  : SettingsSvc.settings.colorfulBubbles.value && !isFromMe
                       ? getBubbleColors(selected).first.oppositeLightenOrDarken(75)
                       : null,
               hideBodyText: widget.subjectOnly,

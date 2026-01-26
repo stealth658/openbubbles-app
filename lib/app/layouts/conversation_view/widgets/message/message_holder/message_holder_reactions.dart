@@ -1,6 +1,7 @@
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/attachment/sticker_holder.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/reaction/reaction_holder.dart';
 import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/helpers/ui/reaction_helpers.dart';
 import 'package:bluebubbles/services/ui/chat/conversation_view_controller.dart';
 import 'package:bluebubbles/services/ui/message/message_widget_controller.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
@@ -17,8 +18,6 @@ class ReactionObserver extends StatelessWidget {
     required this.messageParts,
     required this.part,
     required this.chatGuid,
-    required this.isFromMe,
-    required this.getReactions,
     required this.reactionsForPart,
   });
 
@@ -27,31 +26,33 @@ class ReactionObserver extends StatelessWidget {
   final List<MessagePart> messageParts;
   final MessagePart part;
   final String chatGuid;
-  final bool isFromMe;
-  final List<Message> Function() getReactions;
   final Iterable<Message> Function(int, List<Message>) reactionsForPart;
 
   @override
   Widget build(BuildContext context) {
-    return Positioned(
-      top: -14,
-      left: isFromMe ? -20 : null,
-      right: isFromMe ? null : -20,
-      child: Obx(() {
-        // Observe MessageState associatedMessages directly instead of boolean toggle
-        controller.messageState?.associatedMessages.length;
-        // Recalculate reactions inside Obx for reactivity
-        final reactions = getReactions();
-        final reactionList = messageParts.length == 1 ? reactions : reactionsForPart(part.part, reactions).toList();
-        Logger.debug(
-            "[MessageHolder] Rebuilding ReactionHolder for ${message.guid} (isFromMe: $isFromMe) with ${reactionList.length} reactions",
-            tag: "MessageReactivity");
-        return ReactionHolder(
+    return Obx(() {
+      // Directly observe MessageState for all reactive data
+      final isFromMe = controller.messageState?.isFromMe.value ?? message.isFromMe!;
+      final associatedMessages = controller.messageState?.associatedMessages ?? message.associatedMessages;
+      final reactions = associatedMessages
+          .where((e) => ReactionTypes.toList().contains(e.associatedMessageType?.replaceAll("-", "")))
+          .toList();
+      final reactionList = messageParts.length == 1 ? reactions : reactionsForPart(part.part, reactions).toList();
+      
+      Logger.debug(
+          "[MessageHolder] Rebuilding ReactionHolder for ${message.guid} (isFromMe: $isFromMe) with ${reactionList.length} reactions",
+          tag: "MessageReactivity");
+      
+      return Positioned(
+        top: -14,
+        left: isFromMe ? -20 : null,
+        right: isFromMe ? null : -20,
+        child: ReactionHolder(
           reactions: reactionList,
           message: message,
-        );
-      }),
-    );
+        ),
+      );
+    });
   }
 }
 
@@ -92,22 +93,23 @@ class ReactionSpacing extends StatelessWidget {
     required this.controller,
     required this.messageParts,
     required this.part,
-    required this.getReactions,
     required this.reactionsForPart,
   });
 
   final MessageWidgetController controller;
   final List<MessagePart> messageParts;
   final MessagePart part;
-  final List<Message> Function() getReactions;
   final Iterable<Message> Function(int, List<Message>) reactionsForPart;
 
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      // Observe MessageState associatedMessages for reaction changes
-      controller.messageState?.associatedMessages.length;
-      final reactions = getReactions();
+      // Directly observe MessageState associatedMessages for reactivity
+      final associatedMessages = controller.messageState?.associatedMessages ?? [];
+      final reactions = associatedMessages
+          .where((e) => ReactionTypes.toList().contains(e.associatedMessageType?.replaceAll("-", "")))
+          .cast<Message>()
+          .toList();
       if ((messageParts.length == 1 && reactions.isNotEmpty) || reactionsForPart(part.part, reactions).isNotEmpty) {
         return const SizedBox(height: 12.5);
       }

@@ -17,12 +17,14 @@ class MessageTimestamp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
+      // Use MessageState observable for reactivity
+      final dateCreated = controller.messageState?.dateCreated.value ?? message.dateCreated;
       final oneLine = SettingsSvc.settings.skin.value == Skins.Samsung
           ? true
-          : buildDate(message.dateCreated) == buildTime(message.dateCreated);
+          : buildDate(dateCreated) == buildTime(dateCreated);
       final time = oneLine
-          ? "   ${buildTime(message.dateCreated)}"
-          : "   ${buildDate(message.dateCreated)}\n   ${buildTime(message.dateCreated).toLowerCase()}";
+          ? "   ${buildTime(dateCreated)}"
+          : "   ${buildDate(dateCreated)}\n   ${buildTime(dateCreated).toLowerCase()}";
       return AnimatedContainer(
         duration: Duration(milliseconds: cvController.timestampOffset.value == 0 ? 150 : 0),
         width: SettingsSvc.settings.skin.value == Skins.Samsung

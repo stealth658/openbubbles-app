@@ -14,7 +14,6 @@ class MessageReactions extends StatelessWidget {
     required this.messageParts,
     required this.part,
     required this.chatGuid,
-    required this.getReactions,
     required this.reactionsForPart,
   });
 
@@ -23,7 +22,6 @@ class MessageReactions extends StatelessWidget {
   final List<MessagePart> messageParts;
   final MessagePart part;
   final String chatGuid;
-  final List<Message> Function() getReactions;
   final Iterable<Message> Function(int, List<Message>) reactionsForPart;
 
   @override
@@ -34,8 +32,6 @@ class MessageReactions extends StatelessWidget {
       messageParts: messageParts,
       part: part,
       chatGuid: chatGuid,
-      isFromMe: message.isFromMe!,
-      getReactions: getReactions,
       reactionsForPart: reactionsForPart,
     );
   }

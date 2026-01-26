@@ -471,18 +471,27 @@ class MessagesService extends GetxController {
         offset: offset,
         limit: limit,
         onSupplementalDataLoaded: () {
-          // Phase 2 complete - reactions have been loaded
-          Logger.info("[loadChunk] Supplemental data loaded, triggering UI updates for ${_messages.length} messages",
+          // Phase 2 complete - reactions have been loaded into message.associatedMessages
+          Logger.info("[loadChunk] Supplemental data loaded, syncing MessageStates for ${_messages.length} messages",
               tag: "MessageReactivity");
 
-          // Trigger UI updates for each message that has reactions
-          for (final message in _messages) {
-            if (message.associatedMessages.isNotEmpty) {
-              Logger.debug("[loadChunk] Message ${message.guid} has ${message.associatedMessages.length} reactions",
-                  tag: "MessageReactivity");
+          // Ensure MessageStates exist first (in case they weren't created yet)
+          _ensureMessageStates(_messages);
 
-              // MessageState already has the reactions loaded from the database
-              // No need to update controller - reactions are accessed via messageState.associatedMessages
+          // Sync associatedMessages into MessageState observables
+          for (final message in _messages) {
+            if (message.guid != null && message.associatedMessages.isNotEmpty) {
+              final messageState = messageStates[message.guid];
+              if (messageState != null) {
+                // Clear and repopulate the observable list to trigger reactivity
+                messageState.associatedMessages.clear();
+                messageState.associatedMessages.addAll(message.associatedMessages);
+                messageState.hasReactions.value = message.associatedMessages.isNotEmpty;
+                
+                Logger.debug(
+                  "[loadChunk] Synced ${message.associatedMessages.length} reactions into MessageState for ${message.guid}",
+                  tag: "MessageReactivity");
+              }
             }
           }
         },
