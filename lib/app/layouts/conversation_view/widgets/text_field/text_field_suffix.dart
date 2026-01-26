@@ -162,9 +162,10 @@ class _RecordingButton extends StatelessWidget {
       return const SizedBox(height: 32, width: 32);
     }
 
-    final isIOS = SettingsSvc.settings.skin.value == Skins.iOS;
+    return Obx(() {
+      final isIOS = SettingsSvc.settings.skin.value == Skins.iOS;
 
-    return TextButton(
+      return TextButton(
       style: TextButton.styleFrom(
         backgroundColor: !isIOS || (isIOS && !isChatCreator && !showRecording)
             ? null
@@ -308,5 +309,6 @@ class _RecordingButton extends StatelessWidget {
         }
       },
     );
+    });
   }
 }

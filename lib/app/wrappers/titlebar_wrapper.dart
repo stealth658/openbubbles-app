@@ -17,12 +17,12 @@ class TitleBarWrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (!kIsDesktop) {
-      return Stack(
+      return Obx(() => Stack(
         children: <Widget>[
           child,
           if (SettingsSvc.settings.showConnectionIndicator.value) const ConnectionIndicator(),
         ],
-      );
+      ));
     }
 
     return Obx(

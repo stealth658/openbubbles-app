@@ -64,7 +64,7 @@ class _ChatCreatorTileState extends OptimizedState<ChatCreatorTile> {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
+    return Obx(() => ListTile(
         mouseCursor: MouseCursor.defer,
         enableFeedback: true,
         dense: SettingsSvc.settings.denseChatTiles.value,
@@ -99,6 +99,6 @@ class _ChatCreatorTileState extends OptimizedState<ChatCreatorTile> {
         trailing: widget.chat == null || !widget.showTrailing
             ? null
             : Icon(!material ? CupertinoIcons.forward : Icons.arrow_forward,
-                color: context.theme.colorScheme.bubble(context, widget.chat!.isIMessage)));
+                color: context.theme.colorScheme.bubble(context, widget.chat!.isIMessage))));
   }
 }

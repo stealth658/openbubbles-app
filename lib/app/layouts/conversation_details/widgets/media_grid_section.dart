@@ -80,7 +80,7 @@ class _MediaGridSectionState extends OptimizedState<MediaGridSection> {
             ),
           )
         else
-          SliverPadding(
+          Obx(() => SliverPadding(
             padding: EdgeInsets.only(
               left: SettingsSvc.settings.skin.value == Skins.iOS ? 20 : 10,
               right: SettingsSvc.settings.skin.value == Skins.iOS ? 20 : 10,
@@ -153,7 +153,7 @@ class _MediaGridSectionState extends OptimizedState<MediaGridSection> {
                 childCount: widget.media.length,
               ),
             ),
-          ),
+          )),
       ],
     );
   }

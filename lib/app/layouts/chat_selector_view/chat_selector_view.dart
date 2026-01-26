@@ -148,12 +148,8 @@ class ChatSelectorViewState extends OptimizedState<ChatSelectorView> {
                                   );
                                 }
                                 final chat = filteredChats[index];
-                                final hideInfo = SettingsSvc.settings.redactedMode.value &&
-                                    SettingsSvc.settings.hideContactInfo.value;
-                                String _title = chat.properTitle;
-                                if (hideInfo) {
-                                  _title = chat.isGroup ? chat.fakeName : chat.handles[0].fakeName;
-                                }
+                                final chatState = ChatsSvc.getChatState(chat.guid);
+                                final _title = chatState?.title.value ?? chat.getTitle();
                                 return Material(
                                   color: Colors.transparent,
                                   child: InkWell(
@@ -164,11 +160,7 @@ class ChatSelectorViewState extends OptimizedState<ChatSelectorView> {
                                     child: ChatCreatorTile(
                                       key: ValueKey(chat.guid),
                                       title: _title,
-                                      subtitle: hideInfo
-                                          ? ""
-                                          : !chat.isGroup
-                                              ? (chat.handles.first.formattedAddress ?? chat.handles.first.address)
-                                              : chat.getChatCreatorSubtitle(),
+                                      subtitle: chatState?.subtitle.value ?? chat.getChatCreatorSubtitle(),
                                       chat: chat,
                                       showTrailing: false,
                                     ),

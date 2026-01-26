@@ -63,7 +63,7 @@ class DocumentsSection extends StatelessWidget {
             ),
           )
         else
-          SliverPadding(
+          Obx(() => SliverPadding(
             padding: EdgeInsets.only(
               left: SettingsSvc.settings.skin.value == Skins.iOS ? 20 : 10,
               right: SettingsSvc.settings.skin.value == Skins.iOS ? 20 : 10,
@@ -86,7 +86,7 @@ class DocumentsSection extends StatelessWidget {
                 childCount: docs.length,
               ),
             ),
-          ),
+          )),
       ],
     );
   }

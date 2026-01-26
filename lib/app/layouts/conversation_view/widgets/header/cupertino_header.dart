@@ -7,7 +7,6 @@ import 'package:bluebubbles/app/components/avatars/contact_avatar_group_widget.d
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
@@ -271,12 +270,6 @@ class _ChatIconAndTitle extends CustomStateful<ConversationViewController> {
 }
 
 class _ChatIconAndTitleState extends CustomState<_ChatIconAndTitle, void, ConversationViewController> {
-  String title = "Unknown";
-  late final StreamSubscription sub;
-  String? cachedDisplayName = "";
-  List<Handle> cachedParticipants = [];
-  late String cachedGuid;
-
   @override
   void initState() {
     super.initState();
@@ -284,116 +277,63 @@ class _ChatIconAndTitleState extends CustomState<_ChatIconAndTitle, void, Conver
     // keep controller in memory since the widget is part of a list
     // (it will be disposed when scrolled out of view)
     forceDelete = false;
-    cachedDisplayName = controller.chat.displayName;
-    cachedParticipants = controller.chat.handles;
-    title = controller.chat.getTitle();
-    cachedGuid = controller.chat.guid;
-
-    // run query after render has completed
-    if (!kIsWeb) {
-      updateObx(() {
-        final titleQuery = Database.chats.query(Chat_.guid.equals(controller.chat.guid)).watch();
-        sub = titleQuery.listen((Query<Chat> query) async {
-          final chat = await runAsync(() {
-            final cquery = Database.chats.query(Chat_.guid.equals(cachedGuid)).build();
-            return cquery.findFirst();
-          });
-
-          // If we don't find a chat, return
-          if (chat == null) return;
-
-          // check if we really need to update this widget
-          if (chat.displayName != cachedDisplayName || chat.handles.length != cachedParticipants.length) {
-            final newTitle = chat.getTitle();
-            if (newTitle != title) {
-              setState(() {
-                title = newTitle;
-              });
-            }
-          }
-          cachedDisplayName = chat.displayName;
-          cachedParticipants = chat.handles;
-        });
-      });
-    } else {
-      sub = WebListeners.chatUpdate.listen((chat) {
-        if (chat.guid == controller.chat.guid) {
-          // check if we really need to update this widget
-          if (chat.displayName != cachedDisplayName || chat.handles.length != cachedParticipants.length) {
-            final newTitle = chat.getTitle();
-            if (newTitle != title) {
-              setState(() {
-                title = newTitle;
-              });
-            }
-          }
-          cachedDisplayName = chat.displayName;
-          cachedParticipants = chat.handles;
-        }
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    sub.cancel();
-    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final hideInfo = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
-    String _title = title;
-    if (hideInfo) {
-      _title = controller.chat.isGroup ? controller.chat.fakeName : controller.chat.handles[0].fakeName;
-    }
-    final children = [
-      IgnorePointer(
-        ignoring: true,
-        child: ContactAvatarGroupWidget(
-          chat: controller.chat,
-          size: 54,
-        ),
-      ),
-      const SizedBox(height: 5, width: 5),
-      Row(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.center, children: [
-        ConstrainedBox(
-          constraints: BoxConstraints(
-            maxWidth: NavigationSvc.width(context) / 2.5,
+    return Obx(() {
+      // Get title from ChatState - it handles all title logic including redacted mode
+      final chatState = ChatsSvc.getChatState(controller.chat.guid);
+      final _title = chatState?.title.value ?? controller.chat.getTitle();
+      
+      final children = [
+        IgnorePointer(
+          ignoring: true,
+          child: ContactAvatarGroupWidget(
+            chat: controller.chat,
+            size: 54,
           ),
-          child: RichText(
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            text: TextSpan(
-              style: context.theme.textTheme.bodyMedium,
-              children: MessageHelper.buildEmojiText(
-                _title,
-                context.theme.textTheme.bodyMedium!,
+        ),
+        const SizedBox(height: 5, width: 5),
+        Row(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.center, children: [
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: NavigationSvc.width(context) / 2.5,
+            ),
+            child: RichText(
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              text: TextSpan(
+                style: context.theme.textTheme.bodyMedium,
+                children: MessageHelper.buildEmojiText(
+                  _title,
+                  context.theme.textTheme.bodyMedium!,
+                ),
               ),
             ),
           ),
-        ),
-        Icon(
-          CupertinoIcons.chevron_right,
-          size: context.theme.textTheme.bodyMedium!.fontSize!,
-          color: context.theme.colorScheme.outline,
-        ),
-      ]),
-    ];
+          Icon(
+            CupertinoIcons.chevron_right,
+            size: context.theme.textTheme.bodyMedium!.fontSize!,
+            color: context.theme.colorScheme.outline,
+          ),
+        ]),
+      ];
 
-    if (context.orientation == Orientation.landscape && Platform.isAndroid) {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: children,
-      );
-    } else {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: children,
-      );
-    }
+      if (context.orientation == Orientation.landscape && Platform.isAndroid) {
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: children,
+        );
+      } else {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: children,
+        );
+      }
+    });
   }
 }

@@ -143,11 +143,7 @@ class _ChatInfoState extends OptimizedState<ChatInfo> {
 
   @override
   Widget build(BuildContext context) {
-    final hideInfo = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
-    String _title = chat.properTitle;
-    if (hideInfo) {
-      _title = chat.isGroup ? chat.fakeName : chat.handles[0].fakeName;
-    }
+    final chatState = ChatsSvc.getChatState(chat.guid);
 
     bool canCall = !kIsWeb &&
         !kIsDesktop &&
@@ -219,7 +215,7 @@ class _ChatInfoState extends OptimizedState<ChatInfo> {
                     color: context.theme.colorScheme.onBackground,
                   ),
                   children: MessageHelper.buildEmojiText(
-                    _title,
+                    chatState?.title.value ?? chat.getTitle(),
                     context.theme.textTheme.headlineMedium!.copyWith(
                       fontWeight: FontWeight.bold,
                       color: context.theme.colorScheme.onBackground,
@@ -258,7 +254,7 @@ class _ChatInfoState extends OptimizedState<ChatInfo> {
                   text: TextSpan(
                     style: context.theme.textTheme.bodyLarge,
                     children: MessageHelper.buildEmojiText(
-                      _title,
+                      chatState?.title.value ?? chat.getTitle(),
                       context.theme.textTheme.bodyLarge!,
                     ),
                   ),

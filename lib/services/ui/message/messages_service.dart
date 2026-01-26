@@ -50,6 +50,10 @@ class MessagesService extends GetxController {
   /// Managed locally per conversation for better lifecycle control
   final Map<String, MessageWidgetController> _controllers = {};
 
+  /// Listeners for redacted mode settings to update all MessageStates
+  StreamSubscription? _redactedModeListener;
+  StreamSubscription? _hideMessageContentListener;
+
   /// Granular reactivity map to track individual message updates
   /// Key: message guid, Value: timestamp of last update
   final RxMap<String, int> messageUpdateTrigger = <String, int>{}.obs;
@@ -198,12 +202,44 @@ class MessagesService extends GetxController {
       }
     }
     _init = true;
+    _setupRedactedModeListeners();
+  }
+
+  /// Set up global listeners for redacted mode settings that update all message states
+  void _setupRedactedModeListeners() {
+    // Cancel existing listeners if any
+    _redactedModeListener?.cancel();
+    _hideMessageContentListener?.cancel();
+
+    // Listen to redacted mode master toggle - when enabled, redact all messages; when disabled, unredact all
+    _redactedModeListener = SettingsSvc.settings.redactedMode.listen((enabled) {
+      for (final messageState in messageStates.values) {
+        if (enabled) {
+          messageState.redactFields();
+        } else {
+          messageState.unredactFields();
+        }
+      }
+    });
+
+    // Listen to hideMessageContent toggle - only affects message text/subject
+    _hideMessageContentListener = SettingsSvc.settings.hideMessageContent.listen((enabled) {
+      for (final messageState in messageStates.values) {
+        if (enabled) {
+          messageState.redactMessageContent();
+        } else {
+          messageState.unredactMessageContent();
+        }
+      }
+    });
   }
 
   @override
   void onClose() {
     if (_init) {
       countSub.cancel();
+      _redactedModeListener?.cancel();
+      _hideMessageContentListener?.cancel();
     }
     _init = false;
     disposeAllControllers(); // Clean up all controllers

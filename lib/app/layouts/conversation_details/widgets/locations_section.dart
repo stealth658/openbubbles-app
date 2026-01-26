@@ -65,7 +65,7 @@ class LocationsSection extends StatelessWidget {
             ),
           )
         else
-          SliverPadding(
+          Obx(() => SliverPadding(
             padding: EdgeInsets.only(
               left: SettingsSvc.settings.skin.value == Skins.iOS ? 20 : 10,
               right: SettingsSvc.settings.skin.value == Skins.iOS ? 20 : 10,
@@ -117,7 +117,7 @@ class LocationsSection extends StatelessWidget {
                 itemCount: locations.length,
               ),
             ),
-          ),
+          )),
       ],
     );
   }

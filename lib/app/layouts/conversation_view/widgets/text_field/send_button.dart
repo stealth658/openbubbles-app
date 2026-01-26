@@ -121,10 +121,11 @@ class _SendButtonIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isIOS = SettingsSvc.settings.skin.value == Skins.iOS;
-    final isAnimating = animationValue != 0;
+    return Obx(() {
+      final isIOS = SettingsSvc.settings.skin.value == Skins.iOS;
+      final isAnimating = animationValue != 0;
 
-    return Container(
+      return Container(
       constraints: const BoxConstraints(minHeight: 32, minWidth: 32),
       decoration: BoxDecoration(
         shape: isIOS ? BoxShape.circle : BoxShape.rectangle,
@@ -147,5 +148,6 @@ class _SendButtonIcon extends StatelessWidget {
         size: isIOS || isAnimating ? 20 : 28,
       ),
     );
+    });
   }
 }

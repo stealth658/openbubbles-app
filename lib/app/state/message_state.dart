@@ -1,4 +1,6 @@
 import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/services/services.dart';
+import 'package:faker/faker.dart';
 import 'package:get/get.dart';
 
 /// State wrapper for Message that provides granular reactivity for UI components.
@@ -362,4 +364,39 @@ class MessageState {
 
   /// Convenience getter: Count of reactions on this message
   int get reactionCount => associatedMessages.length;
+
+  // ========== Redaction Methods ==========
+  // These are called when redacted mode settings change
+
+  /// Redact message content (text and subject)
+  void redactMessageContent() {
+    if (!SettingsSvc.settings.redactedMode.value) return;
+    if (!SettingsSvc.settings.hideMessageContent.value) return;
+
+    // Generate fake text with similar word count
+    final originalText = message.text ?? '';
+    final wordCount = originalText.split(' ').length;
+    final fakeContent = faker.lorem.words(wordCount).join(' ');
+    
+    updateTextInternal(fakeContent);
+    updateSubjectInternal(null); // Clear subject when redacted
+  }
+
+  /// Restore message content to original values
+  void unredactMessageContent() {
+    updateTextInternal(message.text);
+    updateSubjectInternal(message.subject);
+  }
+
+  /// Apply all redactions based on current settings (used on initialization)
+  void redactFields() {
+    if (!SettingsSvc.settings.redactedMode.value) return;
+    
+    redactMessageContent();
+  }
+
+  /// Remove all redactions (used when redacted mode is disabled)
+  void unredactFields() {
+    unredactMessageContent();
+  }
 }

@@ -2,6 +2,7 @@ import 'package:bluebubbles/helpers/ui/theme_helpers.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 
 /// BlueBubbles base page wrapper that handles system UI overlay styling
 ///
@@ -46,11 +47,12 @@ class BBAnnotatedRegion extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final immersiveMode = SettingsSvc.settings.immersiveMode.value;
-    final colorScheme = Theme.of(context).colorScheme;
-    final brightness = colorScheme.brightness;
+    return Obx(() {
+      final immersiveMode = SettingsSvc.settings.immersiveMode.value;
+      final colorScheme = Theme.of(context).colorScheme;
+      final brightness = colorScheme.brightness;
 
-    return AnnotatedRegion<SystemUiOverlayStyle>(
+      return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
         systemNavigationBarColor:
             systemNavigationBarColor ?? (immersiveMode ? Colors.transparent : colorScheme.background),
@@ -60,5 +62,6 @@ class BBAnnotatedRegion extends StatelessWidget {
       ),
       child: child,
     );
+    });
   }
 }

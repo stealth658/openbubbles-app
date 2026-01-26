@@ -46,6 +46,12 @@ class ChatsService {
   /// instead of sorting entire list O(n log n) on every access
   final List<Chat> _sortedChats = [];
 
+  /// Listeners for redacted mode settings to update all ChatStates
+  StreamSubscription? _redactedModeListener;
+  StreamSubscription? _hideContactInfoListener;
+  StreamSubscription? _generateFakeContactNamesListener;
+  StreamSubscription? _generateFakeAvatarsListener;
+
   // ========== Helper Getters (replacing direct chats access) ==========
 
   /// Get all chats as a list (non-reactive), sorted by pin index and latest message date
@@ -246,6 +252,9 @@ class ChatsService {
     // Initialize watchers AFTER loading all chats to avoid duplicates
     initDbWatchers();
 
+    // Set up global listeners for redacted mode settings
+    _setupRedactedModeListeners();
+
     if (kIsDesktop && Platform.isWindows) {
       /* ----- IMESSAGE:// HANDLER ----- */
       final _appLinks = AppLinks();
@@ -285,6 +294,59 @@ class ChatsService {
     });
   }
 
+  /// Set up global listeners for redacted mode settings that update all chat states
+  void _setupRedactedModeListeners() {
+    // Cancel existing listeners if any
+    _redactedModeListener?.cancel();
+    _hideContactInfoListener?.cancel();
+    _generateFakeContactNamesListener?.cancel();
+    _generateFakeAvatarsListener?.cancel();
+
+    // Listen to redacted mode master toggle - when enabled, redact all chats; when disabled, unredact all
+    _redactedModeListener = SettingsSvc.settings.redactedMode.listen((enabled) {
+      for (final chatState in chatStates.values) {
+        if (enabled) {
+          chatState.redactFields();
+        } else {
+          chatState.unredactFields();
+        }
+      }
+    });
+
+    // Listen to hideContactInfo toggle - only affects contact info fields
+    _hideContactInfoListener = SettingsSvc.settings.hideContactInfo.listen((enabled) {
+      for (final chatState in chatStates.values) {
+        if (enabled) {
+          chatState.redactContactInfo();
+        } else {
+          chatState.unredactContactInfo();
+        }
+      }
+    });
+
+    // Listen to generateFakeContactNames toggle - only affects contact info fields
+    _generateFakeContactNamesListener = SettingsSvc.settings.generateFakeContactNames.listen((enabled) {
+      for (final chatState in chatStates.values) {
+        if (enabled) {
+          chatState.redactContactInfo();
+        } else {
+          chatState.unredactContactInfo();
+        }
+      }
+    });
+
+    // Listen to generateFakeAvatars toggle - only affects avatar field
+    _generateFakeAvatarsListener = SettingsSvc.settings.generateFakeAvatars.listen((enabled) {
+      for (final chatState in chatStates.values) {
+        if (enabled) {
+          chatState.redactAvatars();
+        } else {
+          chatState.unredactAvatars();
+        }
+      }
+    });
+  }
+
   /// Recalculate the global unread count based on all chat states
   void _recalculateUnreadCount() {
     final count = chatStates.values.where((state) => state.hasUnreadMessage.value).length;
@@ -295,6 +357,10 @@ class ChatsService {
 
   void close() {
     countSub?.cancel();
+    _redactedModeListener?.cancel();
+    _hideContactInfoListener?.cancel();
+    _generateFakeContactNamesListener?.cancel();
+    _generateFakeAvatarsListener?.cancel();
   }
 
   /// Get sorted chats (pin index first, then by latest message date)

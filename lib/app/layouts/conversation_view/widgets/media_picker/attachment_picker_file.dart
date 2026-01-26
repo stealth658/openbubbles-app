@@ -94,9 +94,8 @@ class _AttachmentPickerFileState extends OptimizedState<AttachmentPickerFile> {
 
   @override
   Widget build(BuildContext context) {
-    final hideAttachments = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideAttachments.value;
-
     return Obx(() {
+      final hideAttachments = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideAttachments.value;
       bool containsThis = widget.controller.pickedAttachments.firstWhereOrNull((e) => e.path == filePath) != null;
 
       return AnimatedContainer(

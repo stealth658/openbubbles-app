@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:math';
 
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/typing/typing_indicator.dart';
@@ -10,7 +9,6 @@ import 'package:bluebubbles/app/layouts/conversation_list/widgets/tile/pinned_ti
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/reaction/reaction.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/app/components/avatars/contact_avatar_group_widget.dart';
-import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
@@ -271,11 +269,6 @@ class ChatTitle extends CustomStateful<ConversationTileController> {
 }
 
 class _ChatTitleState extends CustomState<ChatTitle, void, ConversationTileController> {
-  String title = "Unknown";
-  late final StreamSubscription sub;
-  String? cachedDisplayName = "";
-  List<Handle> cachedParticipants = [];
-
   @override
   void initState() {
     super.initState();
@@ -283,56 +276,6 @@ class _ChatTitleState extends CustomState<ChatTitle, void, ConversationTileContr
     // keep controller in memory since the widget is part of a list
     // (it will be disposed when scrolled out of view)
     forceDelete = false;
-    cachedDisplayName = controller.chat.displayName;
-    cachedParticipants = controller.chat.handles;
-    title = controller.chat.getTitle();
-    // run query after render has completed
-    if (!kIsWeb) {
-      updateObx(() {
-        final titleQuery = Database.chats.query(Chat_.guid.equals(controller.chat.guid)).watch();
-        sub = titleQuery.listen((Query<Chat> query) async {
-          final chat = controller.chat.id == null
-              ? null
-              : await runAsync(() {
-                  return Database.chats.get(controller.chat.id!);
-                });
-          if (chat == null) return;
-          // check if we really need to update this widget
-          if (chat.displayName != cachedDisplayName || chat.handles.length != cachedParticipants.length) {
-            final newTitle = chat.getTitle();
-            if (newTitle != title) {
-              setState(() {
-                title = newTitle;
-              });
-            }
-          }
-          cachedDisplayName = chat.displayName;
-          cachedParticipants = chat.handles;
-        });
-      });
-    } else {
-      sub = WebListeners.chatUpdate.listen((chat) {
-        if (chat.guid == controller.chat.guid) {
-          // check if we really need to update this widget
-          if (chat.displayName != cachedDisplayName || chat.handles.length != cachedParticipants.length) {
-            final newTitle = chat.getTitle();
-            if (newTitle != title) {
-              setState(() {
-                title = newTitle;
-              });
-            }
-          }
-          cachedDisplayName = chat.displayName;
-          cachedParticipants = chat.handles;
-        }
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    sub.cancel();
-    super.dispose();
   }
 
   @override
@@ -342,7 +285,6 @@ class _ChatTitleState extends CustomState<ChatTitle, void, ConversationTileContr
         vertical: widget.width * 0.075,
       ),
       child: Obx(() {
-        final hideInfo = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
         final isPinned = controller.chatState?.isPinned.value ?? controller.chat.isPinned ?? false;
         final style = context.theme.textTheme.bodyMedium!.apply(
           color: controller.shouldHighlight.value
@@ -350,10 +292,10 @@ class _ChatTitleState extends CustomState<ChatTitle, void, ConversationTileContr
               : context.theme.colorScheme.outline,
           fontSizeFactor: isPinned ? 0.95 : 1,
         );
-        String _title = title;
-        if (hideInfo) {
-          _title = controller.chat.isGroup ? controller.chat.fakeName : controller.chat.handles[0].fakeName;
-        }
+        
+        // Get title from ChatState - it handles all title logic including redacted mode
+        final chatState = ChatsSvc.getChatState(controller.chat.guid);
+        final _title = chatState?.title.value ?? controller.chat.getTitle();
 
         return SizedBox(
           height: style.height! * style.fontSize! * 2,

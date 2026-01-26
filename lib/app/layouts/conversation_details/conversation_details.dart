@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:bluebubbles/app/layouts/conversation_details/widgets/attachments_loader.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/widgets/chat_info.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/widgets/chat_options.dart';
@@ -12,11 +10,9 @@ import 'package:bluebubbles/app/wrappers/bb_annotated_region.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
-import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -34,7 +30,6 @@ class _ConversationDetailsState extends OptimizedState<ConversationDetails> with
   List<Attachment> docs = <Attachment>[];
   List<Attachment> locations = <Attachment>[];
   late Chat chat = widget.chat;
-  late StreamSubscription sub;
   final RxList<String> selected = <String>[].obs;
   bool isLoadingAttachments = true;
 
@@ -43,35 +38,10 @@ class _ConversationDetailsState extends OptimizedState<ConversationDetails> with
     super.initState();
 
     ChatsSvc.setActiveToDead();
-
-    if (!kIsWeb) {
-      final chatQuery = Database.chats.query(Chat_.guid.equals(chat.guid)).watch();
-      sub = chatQuery.listen((Query<Chat> query) async {
-        final _chat = await runAsync(() {
-          return Database.chats.get(chat.id!);
-        });
-        if (_chat != null) {
-          final update = _chat.getTitle() != chat.title || _chat.handles.length != chat.handles.length;
-          chat = _chat.merge(chat);
-          if (update) {
-            setState(() {});
-          }
-        }
-      });
-    } else {
-      sub = WebListeners.chatUpdate.listen((_chat) {
-        final update = _chat.getTitle() != chat.title || _chat.handles.length != chat.handles.length;
-        chat = _chat.merge(chat);
-        if (update) {
-          setState(() {});
-        }
-      });
-    }
   }
 
   @override
   void dispose() {
-    sub.cancel();
     if (ChatsSvc.activeChat != null) {
       ChatsSvc.setActiveToAlive();
       cvc(ChatsSvc.activeChat!.chat).lastFocusedNode.requestFocus();

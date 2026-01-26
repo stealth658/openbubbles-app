@@ -48,12 +48,11 @@ class ChatListSection extends StatelessWidget {
               );
             }
             final chat = filteredChats[index];
-            final hideInfo = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
-            String title = chat.properTitle;
-            if (hideInfo) {
-              title = chat.isGroup ? chat.fakeName : chat.handles[0].fakeName;
-            }
-            return Material(
+
+            return Obx(() {
+              final chatState = ChatsSvc.getChatState(chat.guid);
+              final title = chatState?.title.value ?? chat.getTitle();
+              return Material(
               color: Colors.transparent,
               child: InkWell(
                 onTap: () {
@@ -69,15 +68,12 @@ class ChatListSection extends StatelessWidget {
                 child: ChatCreatorTile(
                   key: ValueKey(chat.guid),
                   title: title,
-                  subtitle: hideInfo
-                      ? ""
-                      : !chat.isGroup && chat.handles.isNotEmpty
-                          ? (chat.handles.first.formattedAddress ?? chat.handles.first.address)
-                          : chat.getChatCreatorSubtitle(),
+                  subtitle: chatState?.subtitle.value ?? chat.getChatCreatorSubtitle(),
                   chat: chat,
                 ),
               ),
-            );
+              );
+            });
           },
               childCount:
                   filteredChats.length.clamp(ChatsSvc.loadedAllChats.isCompleted ? 0 : 1, double.infinity).toInt()),
@@ -88,8 +84,10 @@ class ChatListSection extends StatelessWidget {
               final contact = filteredContacts[index];
               contact.phones = getUniqueNumbers(contact.phones);
               contact.emails = getUniqueEmails(contact.emails);
-              final hideInfo = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
-              return Column(
+
+              return Obx(() {
+                final hideInfo = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
+                return Column(
                 key: ValueKey(contact.id),
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -123,7 +121,8 @@ class ChatListSection extends StatelessWidget {
                         ),
                       )),
                 ],
-              );
+                );
+              });
             },
             childCount: filteredContacts.length,
           ),

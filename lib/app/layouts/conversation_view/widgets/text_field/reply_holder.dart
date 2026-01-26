@@ -69,35 +69,37 @@ class _ReplyContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isIOS = SettingsSvc.settings.skin.value == Skins.iOS;
+    return Obx(() {
+      final isIOS = SettingsSvc.settings.skin.value == Skins.iOS;
 
-    return Container(
-      color: context.theme.colorScheme.properSurface,
-      padding: EdgeInsets.only(left: !isIOS ? 20.0 : 0, right: isIOS ? 8.0 : 0),
-      child: Row(
-        children: [
-          if (isIOS)
-            _CloseButton(
-              icon: CupertinoIcons.xmark_circle_fill,
-              onPressed: onClearWithFocus,
+      return Container(
+        color: context.theme.colorScheme.properSurface,
+        padding: EdgeInsets.only(left: !isIOS ? 20.0 : 0, right: isIOS ? 8.0 : 0),
+        child: Row(
+          children: [
+            if (isIOS)
+              _CloseButton(
+                icon: CupertinoIcons.xmark_circle_fill,
+                onPressed: onClearWithFocus,
+              ),
+            Expanded(
+              child: _ReplyText(
+                message: message,
+                reply: reply,
+                date: date,
+                isIOS: isIOS,
+              ),
             ),
-          Expanded(
-            child: _ReplyText(
-              message: message,
-              reply: reply,
-              date: date,
-              isIOS: isIOS,
-            ),
-          ),
-          if (!isIOS)
-            _CloseButton(
-              icon: Icons.close,
-              iconSize: 25,
-              onPressed: onClear,
-            ),
-        ],
-      ),
-    );
+            if (!isIOS)
+              _CloseButton(
+                icon: Icons.close,
+                iconSize: 25,
+                onPressed: onClear,
+              ),
+          ],
+        ),
+      );
+    });
   }
 }
 

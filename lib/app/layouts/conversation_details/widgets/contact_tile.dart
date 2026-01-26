@@ -44,10 +44,10 @@ class ContactTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool redactedMode = SettingsSvc.settings.redactedMode.value;
-    final bool hideInfo = redactedMode && SettingsSvc.settings.hideContactInfo.value;
-    final bool isEmail = handle.address.isEmail;
-    final child = InkWell(
+    return Obx(() {
+      final bool hideInfo = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
+      final bool isEmail = handle.address.isEmail;
+      final child = InkWell(
       onLongPress: () {
         Clipboard.setData(ClipboardData(text: handle.address));
         if (!Platform.isAndroid || (FilesystemSvc.androidInfo?.version.sdkInt ?? 0) < 33) {
@@ -209,5 +209,6 @@ class ContactTile extends StatelessWidget {
             child: child,
           )
         : child;
+    });
   }
 }

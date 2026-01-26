@@ -111,8 +111,9 @@ class _IOSAndSamsungFAB extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isIOS = SettingsSvc.settings.skin.value == Skins.iOS;
-    return Obx(() => Column(
+    return Obx(() {
+      final isIOS = SettingsSvc.settings.skin.value == Skins.iOS;
+      return Column(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
             // Camera FAB (iOS only)
@@ -131,7 +132,8 @@ class _IOSAndSamsungFAB extends StatelessWidget {
               showLongPress: isIOS || !SettingsSvc.settings.cameraFAB.value || kIsWeb || kIsDesktop,
             ),
           ],
-        ));
+        );
+    });
   }
 }
 

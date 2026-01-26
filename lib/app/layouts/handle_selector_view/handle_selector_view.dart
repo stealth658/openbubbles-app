@@ -182,14 +182,16 @@ class HandleSelectorViewState extends OptimizedState<HandleSelectorView> {
                                   );
                                 }
                                 final handle = filteredHandles[index];
-                                final hideInfo = SettingsSvc.settings.redactedMode.value &&
-                                    SettingsSvc.settings.hideContactInfo.value;
-                                String _title = handle.displayName;
-                                if (hideInfo) {
-                                  _title = handle.fakeName;
-                                }
 
-                                return Material(
+                                return Obx(() {
+                                  final hideInfo = SettingsSvc.settings.redactedMode.value &&
+                                      SettingsSvc.settings.hideContactInfo.value;
+                                  String _title = handle.displayName;
+                                  if (hideInfo) {
+                                    _title = handle.fakeName;
+                                  }
+
+                                  return Material(
                                   color: Colors.transparent,
                                   child: InkWell(
                                       onTap: () {
@@ -230,7 +232,8 @@ class HandleSelectorViewState extends OptimizedState<HandleSelectorView> {
                                               editable: false,
                                             ),
                                           ))),
-                                );
+                                  );
+                                });
                               },
                                   childCount: filteredHandles.length
                                       .clamp(loadedAllHandles.isCompleted ? 0 : 1, double.infinity)

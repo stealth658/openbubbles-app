@@ -1,5 +1,6 @@
 import 'package:bluebubbles/app/components/avatars/contact_avatar_group_widget.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/header/shared/chat_title_controller.dart';
+import 'package:bluebubbles/app/state/chat_state.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -153,16 +154,16 @@ class _ChatTitleAndAvatarState extends State<ChatTitleAndAvatar> {
 
   @override
   Widget build(BuildContext context) {
-    final hideInfo = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
+    final chatState = ChatsSvc.getChatState(widget.chat.guid);
 
     if (widget.layout == HeaderLayout.cupertino) {
-      return _buildCupertinoLayout(hideInfo);
+      return _buildCupertinoLayout(chatState);
     } else {
-      return _buildMaterialLayout(hideInfo);
+      return _buildMaterialLayout(chatState);
     }
   }
 
-  Widget _buildCupertinoLayout(bool hideInfo) {
+  Widget _buildCupertinoLayout(ChatState? chatState) {
     final children = [
       IgnorePointer(
         ignoring: true,
@@ -181,10 +182,7 @@ class _ChatTitleAndAvatarState extends State<ChatTitleAndAvatar> {
               maxWidth: widget.maxTitleWidth ?? NavigationSvc.width(context) / 2.5,
             ),
             child: Obx(() {
-              String displayTitle = title.value;
-              if (hideInfo) {
-                displayTitle = widget.chat.isGroup ? widget.chat.fakeName : widget.chat.handles[0].fakeName;
-              }
+              String displayTitle = chatState?.title.value ?? title.value;
 
               return RichText(
                 maxLines: 1,
@@ -225,7 +223,7 @@ class _ChatTitleAndAvatarState extends State<ChatTitleAndAvatar> {
     }
   }
 
-  Widget _buildMaterialLayout(bool hideInfo) {
+  Widget _buildMaterialLayout(ChatState? chatState) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -244,12 +242,10 @@ class _ChatTitleAndAvatarState extends State<ChatTitleAndAvatar> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Obx(() {
-                String displayTitle = title.value;
+                String displayTitle = chatState?.title.value ?? title.value;
 
                 if (widget.controller.inSelectMode.value) {
                   displayTitle = "${widget.controller.selected.length} selected";
-                } else if (hideInfo) {
-                  displayTitle = widget.chat.isGroup ? widget.chat.fakeName : widget.chat.handles[0].fakeName;
                 }
 
                 return Text(
@@ -264,7 +260,8 @@ class _ChatTitleAndAvatarState extends State<ChatTitleAndAvatar> {
               }),
               if (widget.showSubtitle &&
                   (widget.chat.isGroup || (!title.value.isPhoneNumber && !title.value.isEmail)) &&
-                  !hideInfo)
+                  chatState != null &&
+                  (chatState.subtitle.value?.isNotEmpty ?? false))
                 Text(
                   widget.chat.isGroup ? "${widget.chat.handles.length} recipients" : widget.chat.handles[0].address,
                   style: context.theme.textTheme.labelLarge!.apply(

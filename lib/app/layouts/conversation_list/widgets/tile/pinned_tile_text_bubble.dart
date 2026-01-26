@@ -129,8 +129,11 @@ class PinnedTileTextBubbleState extends CustomState<PinnedTileTextBubble, void, 
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final hideInfo = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideMessageContent.value;
-      String _subtitle = hideInfo ? fakeText : subtitle;
+      // Get the MessageState if available, otherwise fallback to manual subtitle
+      final messageState = lastMessage != null 
+          ? MessagesSvc(controller.chat.guid).getMessageStateIfExists(lastMessage!.guid!)
+          : null;
+      String _subtitle = messageState?.text.value ?? subtitle;
 
       final unread = ChatsSvc.getChatState(controller.chat.guid)?.hasUnreadMessage.value ?? false;
       if (!unread || lastMessage?.associatedMessageGuid != null || lastMessage!.isFromMe! || isNullOrEmpty(_subtitle)) {

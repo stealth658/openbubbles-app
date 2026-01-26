@@ -36,11 +36,12 @@ class _GradientBackgroundState extends CustomState<GradientBackground, void, Con
 
   @override
   Widget build(BuildContext context) {
-    if (!adjustBackground.value) {
-      return widget.child;
-    }
-    return MirrorAnimationBuilder<Movie>(
-      tween: ThemeSvc.gradientTween.value,
+    return Obx(() {
+      if (!adjustBackground.value) {
+        return widget.child;
+      }
+      return MirrorAnimationBuilder<Movie>(
+        tween: ThemeSvc.gradientTween.value,
       curve: Curves.fastOutSlowIn,
       duration: const Duration(seconds: 3),
       builder: (context, anim, child) {
@@ -58,5 +59,6 @@ class _GradientBackgroundState extends CustomState<GradientBackground, void, Con
       },
       child: widget.child,
     );
+    });
   }
 }

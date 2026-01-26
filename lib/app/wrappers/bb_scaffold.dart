@@ -2,6 +2,7 @@ import 'package:bluebubbles/app/wrappers/bb_annotated_region.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_acrylic/window_effect.dart';
+import 'package:get/get.dart';
 
 /// BlueBubbles standardized Scaffold wrapper
 ///
@@ -101,12 +102,13 @@ class BBScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveBackgroundColor = backgroundColor ??
-        (SettingsSvc.settings.windowEffect.value != WindowEffect.disabled
-            ? Colors.transparent
-            : Theme.of(context).colorScheme.background);
+    return Obx(() {
+      final effectiveBackgroundColor = backgroundColor ??
+          (SettingsSvc.settings.windowEffect.value != WindowEffect.disabled
+              ? Colors.transparent
+              : Theme.of(context).colorScheme.background);
 
-    return BBAnnotatedRegion(
+      return BBAnnotatedRegion(
       statusBarIconBrightness: statusBarIconBrightness,
       systemNavigationBarIconBrightness: systemNavigationBarIconBrightness,
       systemNavigationBarColor: systemNavigationBarColor,
@@ -125,7 +127,9 @@ class BBScaffold extends StatelessWidget {
         extendBody: extendBody,
         resizeToAvoidBottomInset: resizeToAvoidBottomInset,
         persistentFooterButtons: persistentFooterButtons,
+        persistentFooterAlignment: persistentFooterAlignment ?? AlignmentDirectional.centerEnd,
       ),
     );
+    });
   }
 }

@@ -34,13 +34,6 @@ class Chat {
   bool? isPinned;
   bool? hasUnreadMessage;
   String? title;
-  String get properTitle {
-    if (SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value) {
-      return getTitle();
-    }
-    title ??= getTitle();
-    return title!;
-  }
 
   String? displayName;
   bool? autoSendReadReceipts;
@@ -98,7 +91,7 @@ class Chat {
   @Transient()
   String get fakeName {
     if (_fakeName != null) return _fakeName!;
-    _fakeName = faker.lorem.words(properTitle.split(' ').length).join(" ").capitalize;
+    _fakeName = faker.lorem.words(getTitle().split(' ').length).join(" ").capitalize;
     return _fakeName!;
   }
 

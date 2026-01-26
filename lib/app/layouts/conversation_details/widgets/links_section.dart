@@ -117,7 +117,7 @@ class _LinksSectionState extends OptimizedState<LinksSection> {
             ),
           )
         else
-          SliverPadding(
+          Obx(() => SliverPadding(
             padding: EdgeInsets.only(
               left: SettingsSvc.settings.skin.value == Skins.iOS ? 20 : 10,
               right: SettingsSvc.settings.skin.value == Skins.iOS ? 20 : 10,
@@ -161,7 +161,7 @@ class _LinksSectionState extends OptimizedState<LinksSection> {
                 itemCount: links.length,
               ),
             ),
-          ),
+          )),
       ],
     );
   }

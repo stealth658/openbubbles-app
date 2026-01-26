@@ -56,13 +56,6 @@ class Chat {
   bool? isPinned;
   bool? hasUnreadMessage;
   String? title;
-  String get properTitle {
-    if (SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value) {
-      return getTitle();
-    }
-    title ??= getTitle();
-    return title!;
-  }
 
   String? displayName;
   List<Handle> participants = [];

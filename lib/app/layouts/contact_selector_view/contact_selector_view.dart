@@ -144,21 +144,23 @@ class ContactSelectorViewState extends OptimizedState<ContactSelectorView> {
                                   );
                                 }
                                 final contact = filteredContacts[index];
-                                final hideInfo = SettingsSvc.settings.redactedMode.value &&
-                                    SettingsSvc.settings.hideContactInfo.value;
-                                String _title = contact.displayName;
-                                if (hideInfo) {
-                                  _title = "Contact";
-                                }
 
-                                return Material(
-                                  color: Colors.transparent,
-                                  child: InkWell(
-                                    onTap: () {
-                                      widget.onSelect(contact);
-                                      Navigator.of(context, rootNavigator: true).pop();
-                                    },
-                                    child: ListTile(
+                                return Obx(() {
+                                  final hideInfo = SettingsSvc.settings.redactedMode.value &&
+                                      SettingsSvc.settings.hideContactInfo.value;
+                                  String _title = contact.displayName;
+                                  if (hideInfo) {
+                                    _title = "Contact";
+                                  }
+
+                                  return Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      onTap: () {
+                                        widget.onSelect(contact);
+                                        Navigator.of(context, rootNavigator: true).pop();
+                                      },
+                                      child: ListTile(
                                         mouseCursor: MouseCursor.defer,
                                         enableFeedback: true,
                                         dense: SettingsSvc.settings.denseChatTiles.value,
@@ -180,8 +182,9 @@ class ContactSelectorViewState extends OptimizedState<ContactSelectorView> {
                                             editable: false,
                                           ),
                                         )),
-                                  ),
-                                );
+                                    ),
+                                  );
+                                });
                               }, childCount: filteredContacts.length.clamp(1, double.infinity).toInt()),
                             )
                           ],

@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:bluebubbles/app/layouts/conversation_details/conversation_details.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/header/header_widgets.dart';
 import 'package:bluebubbles/app/components/avatars/contact_avatar_group_widget.dart';
@@ -7,10 +5,7 @@ import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/reply/
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/database/database.dart';
-import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' hide BackButton;
 import 'package:flutter/services.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
@@ -266,11 +261,6 @@ class _ChatIconAndTitle extends CustomStateful<ConversationViewController> {
 }
 
 class _ChatIconAndTitleState extends CustomState<_ChatIconAndTitle, void, ConversationViewController> {
-  String title = "Unknown";
-  late final StreamSubscription sub;
-  String? cachedDisplayName = "";
-  List<Handle> cachedParticipants = [];
-
   @override
   void initState() {
     super.initState();
@@ -278,58 +268,12 @@ class _ChatIconAndTitleState extends CustomState<_ChatIconAndTitle, void, Conver
     // keep controller in memory since the widget is part of a list
     // (it will be disposed when scrolled out of view)
     forceDelete = false;
-    cachedDisplayName = controller.chat.displayName;
-    cachedParticipants = controller.chat.handles;
-    title = controller.chat.getTitle();
-    // run query after render has completed
-    if (!kIsWeb) {
-      updateObx(() {
-        final titleQuery = Database.chats.query(Chat_.guid.equals(controller.chat.guid)).watch();
-        sub = titleQuery.listen((Query<Chat> query) async {
-          final chat = await runAsync(() {
-            return Database.chats.get(controller.chat.id!)!;
-          });
-          // check if we really need to update this widget
-          if (chat.displayName != cachedDisplayName || chat.handles.length != cachedParticipants.length) {
-            final newTitle = chat.getTitle();
-            if (newTitle != title) {
-              setState(() {
-                title = newTitle;
-              });
-            }
-          }
-          cachedDisplayName = chat.displayName;
-          cachedParticipants = chat.handles;
-        });
-      });
-    } else {
-      sub = WebListeners.chatUpdate.listen((chat) {
-        if (chat.guid == controller.chat.guid) {
-          // check if we really need to update this widget
-          if (chat.displayName != cachedDisplayName || chat.handles.length != cachedParticipants.length) {
-            final newTitle = chat.getTitle();
-            if (newTitle != title) {
-              setState(() {
-                title = newTitle;
-              });
-            }
-          }
-          cachedDisplayName = chat.displayName;
-          cachedParticipants = chat.handles;
-        }
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    sub.cancel();
-    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final hideInfo = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
+    final chatState = ChatsSvc.getChatState(controller.chat.guid);
+    
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -348,12 +292,10 @@ class _ChatIconAndTitleState extends CustomState<_ChatIconAndTitle, void, Conver
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Obx(() {
-                String _title = title;
-                if (controller.inSelectMode.value) {
-                  _title = "${controller.selected.length} selected";
-                } else if (hideInfo) {
-                  _title = controller.chat.isGroup ? controller.chat.fakeName : controller.chat.handles[0].fakeName;
-                }
+                // Get title from ChatState - it handles all title logic including redacted mode
+                final _title = controller.inSelectMode.value
+                    ? "${controller.selected.length} selected"
+                    : chatState?.title.value ?? controller.chat.getTitle();
                 return Text(
                   _title,
                   style: context.theme.textTheme.titleLarge!
@@ -362,7 +304,7 @@ class _ChatIconAndTitleState extends CustomState<_ChatIconAndTitle, void, Conver
                   overflow: TextOverflow.fade,
                 );
               }),
-              if (samsung && (controller.chat.isGroup || (!title.isPhoneNumber && !title.isEmail)) && !hideInfo)
+              if (samsung && (controller.chat.isGroup || (!controller.chat.getTitle().isPhoneNumber && !controller.chat.getTitle().isEmail)))
                 Text(
                   controller.chat.isGroup
                       ? "${controller.chat.handles.length} recipients"

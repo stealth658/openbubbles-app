@@ -16,13 +16,14 @@ class MessageTimestamp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final oneLine = SettingsSvc.settings.skin.value == Skins.Samsung
-        ? true
-        : buildDate(message.dateCreated) == buildTime(message.dateCreated);
-    final time = oneLine
-        ? "   ${buildTime(message.dateCreated)}"
-        : "   ${buildDate(message.dateCreated)}\n   ${buildTime(message.dateCreated).toLowerCase()}";
-    return Obx(() => AnimatedContainer(
+    return Obx(() {
+      final oneLine = SettingsSvc.settings.skin.value == Skins.Samsung
+          ? true
+          : buildDate(message.dateCreated) == buildTime(message.dateCreated);
+      final time = oneLine
+          ? "   ${buildTime(message.dateCreated)}"
+          : "   ${buildDate(message.dateCreated)}\n   ${buildTime(message.dateCreated).toLowerCase()}";
+      return AnimatedContainer(
           duration: Duration(milliseconds: cvController.timestampOffset.value == 0 ? 150 : 0),
           width: SettingsSvc.settings.skin.value == Skins.Samsung
               ? null
@@ -38,6 +39,7 @@ class MessageTimestamp extends StatelessWidget {
               maxLines: oneLine ? 1 : 2,
             ),
           ),
-        ));
+        );
+    });
   }
 }

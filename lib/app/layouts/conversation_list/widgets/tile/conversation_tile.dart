@@ -183,11 +183,6 @@ class ChatTitle extends CustomStateful<ConversationTileController> {
 }
 
 class _ChatTitleState extends CustomState<ChatTitle, void, ConversationTileController> {
-  final title = "Unknown".obs;
-  StreamSubscription? sub;
-  String? cachedDisplayName = "";
-  List<Handle> cachedParticipants = [];
-
   @override
   void initState() {
     super.initState();
@@ -195,85 +190,14 @@ class _ChatTitleState extends CustomState<ChatTitle, void, ConversationTileContr
     // keep controller in memory since the widget is part of a list
     // (it will be disposed when scrolled out of view)
     forceDelete = false;
-    cachedDisplayName = controller.chat.displayName;
-    cachedParticipants = controller.chat.handles;
-    title.value = controller.chat.getTitle();
-    // run query after render has completed
-    if (!kIsWeb) {
-      updateObx(() {
-        final titleQuery = Database.chats.query(Chat_.guid.equals(controller.chat.guid)).watch();
-        sub = titleQuery.listen((Query<Chat> query) async {
-          final chat = controller.chat.id == null
-              ? null
-              : await runAsync(() {
-                  return Database.chats.get(controller.chat.id!);
-                });
-          if (chat == null) return;
-          // check if we really need to update this widget
-          if (chat.displayName != cachedDisplayName || chat.handles.length != cachedParticipants.length) {
-            final newTitle = chat.getTitle();
-            if (newTitle != title.value) {
-              title.value = newTitle;
-            }
-          }
-          cachedDisplayName = chat.displayName;
-          cachedParticipants = chat.handles;
-        });
-      });
-      // listen for contacts update (if tile is active, we can update it)
-      EventDispatcherSvc.stream.listen((event) {
-        if (event.item1 != 'update-contacts') return;
-        if (event.item2.isNotEmpty) {
-          bool changed = false;
-          for (Handle h in controller.chat.handles) {
-            if (event.item2.first.contains(h.contactRelation.targetId)) {
-              changed = true;
-              h.contactRelation.target = Database.contacts.get(h.contactRelation.targetId);
-            }
-            if (event.item2.last.contains(h.id)) {
-              changed = true;
-              h = Database.handles.get(h.id!)!;
-            }
-          }
-          if (changed) {
-            final newTitle = controller.chat.getTitle();
-            if (newTitle != title.value) {
-              title.value = newTitle;
-            }
-          }
-        }
-      });
-    } else {
-      sub = WebListeners.chatUpdate.listen((chat) {
-        if (chat.guid == controller.chat.guid) {
-          // check if we really need to update this widget
-          if (chat.displayName != cachedDisplayName || chat.handles.length != cachedParticipants.length) {
-            final newTitle = chat.getTitle();
-            if (newTitle != title.value) {
-              title.value = newTitle;
-            }
-          }
-          cachedDisplayName = chat.displayName;
-          cachedParticipants = chat.handles;
-        }
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    if (!kIsWeb) sub?.cancel();
-    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final hideInfo = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
-      String _title = title.value;
-      if (hideInfo) {
-        _title = controller.chat.isGroup ? controller.chat.fakeName : controller.chat.handles[0].fakeName;
-      }
+      // Get title from ChatState - it handles all title logic including redacted mode
+      final chatState = ChatsSvc.getChatState(controller.chat.guid);
+      final _title = chatState?.title.value ?? controller.chat.getTitle();
 
       return RichText(
         text: TextSpan(
@@ -402,10 +326,13 @@ class _ChatSubtitleState extends CustomState<ChatSubtitle, void, ConversationTil
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final hideContent = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideMessageContent.value;
+      // Get the MessageState if available for reactive subtitle
+      final messageState = cachedLatestMessageGuid != null
+          ? MessagesSvc(controller.chat.guid).getMessageStateIfExists(cachedLatestMessageGuid!)
+          : null;
       final hideContacts = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
-      String _subtitle = hideContent
-          ? fakeText.value
+      String _subtitle = messageState != null
+          ? MessageHelper.getNotificationText(Message(text: messageState.text.value, subject: messageState.subject.value))
           : hideContacts && !kIsWeb
               ? MessageHelper.getNotificationText(Message.findOne(guid: cachedLatestMessageGuid!)!)
               : subtitle.value;

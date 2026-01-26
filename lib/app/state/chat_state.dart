@@ -20,6 +20,7 @@ class ChatState {
   final RxnString displayName;
   final RxnString customAvatarPath;
   final RxnString title;
+  final RxnString subtitle;
   final Rxn<Message> latestMessage;
   final RxnString textFieldText;
   final RxList<String> textFieldAttachments;
@@ -43,6 +44,7 @@ class ChatState {
         displayName = RxnString(chat.displayName),
         customAvatarPath = RxnString(chat.customAvatarPath),
         title = RxnString(chat.title),
+        subtitle = RxnString(chat.isGroup ? chat.getChatCreatorSubtitle() : (chat.handles.isNotEmpty ? (chat.handles.first.formattedAddress ?? chat.handles.first.address) : null)),
         latestMessage = Rxn<Message>(chat.latestMessage),
         textFieldText = RxnString(chat.textFieldText),
         textFieldAttachments = chat.textFieldAttachments.obs,
@@ -52,7 +54,12 @@ class ChatState {
         lockChatIcon = chat.lockChatIcon.obs,
         lastReadMessageGuid = RxnString(chat.lastReadMessageGuid),
         isActive = false.obs,
-        isAlive = false.obs;
+        isAlive = false.obs {
+    // Apply redaction if redacted mode is enabled on initialization
+    if (SettingsSvc.settings.redactedMode.value) {
+      redactFields();
+    }
+  }
 
   // ========== Internal State Update Methods ==========
   // These are called by ChatsService after DB operations complete
@@ -130,6 +137,12 @@ class ChatState {
   void updateTitleInternal(String? value) {
     if (title.value != value) {
       title.value = value;
+    }
+  }
+
+  void updateSubtitleInternal(String? value) {
+    if (subtitle.value != value) {
+      subtitle.value = value;
     }
   }
 
@@ -228,5 +241,59 @@ class ChatState {
     if (isAlive.value != value) {
       isAlive.value = value;
     }
+  }
+
+  // ========== Redaction Methods ==========
+  // These are called when redacted mode is toggled on/off
+
+  /// Redact contact information (title, displayName, subtitle)
+  void redactContactInfo() {
+    if (!SettingsSvc.settings.redactedMode.value) return;
+    if (!SettingsSvc.settings.hideContactInfo.value && !SettingsSvc.settings.generateFakeContactNames.value) return;
+
+    // Apply fake name as title and displayName, clear subtitle
+    final fakeName = chat.isGroup ? chat.fakeName : (chat.handles.isNotEmpty ? chat.handles[0].fakeName : 'Unknown');
+    updateTitleInternal(fakeName);
+    updateDisplayNameInternal(fakeName);
+    updateSubtitleInternal('');
+  }
+
+  /// Restore contact information to original values
+  void unredactContactInfo() {
+    updateTitleInternal(chat.title);
+    updateDisplayNameInternal(chat.displayName);
+    // TODO: cache this value if needed to avoid over-processing
+    final computedSubtitle = chat.isGroup 
+        ? chat.getChatCreatorSubtitle() 
+        : (chat.handles.isNotEmpty ? (chat.handles.first.formattedAddress ?? chat.handles.first.address) : null);
+    updateSubtitleInternal(computedSubtitle);
+  }
+
+  /// Redact/hide avatars by clearing custom avatar path
+  void redactAvatars() {
+    if (!SettingsSvc.settings.redactedMode.value) return;
+    if (!SettingsSvc.settings.generateFakeAvatars.value) return;
+
+    // Clear the custom avatar path so fake avatars are generated
+    updateCustomAvatarPathInternal(null);
+  }
+
+  /// Restore avatars to original values
+  void unredactAvatars() {
+    updateCustomAvatarPathInternal(chat.customAvatarPath);
+  }
+
+  /// Apply all redactions based on current settings (used on initialization)
+  void redactFields() {
+    if (!SettingsSvc.settings.redactedMode.value) return;
+    
+    redactContactInfo();
+    redactAvatars();
+  }
+
+  /// Remove all redactions (used when redacted mode is disabled)
+  void unredactFields() {
+    unredactContactInfo();
+    unredactAvatars();
   }
 }
