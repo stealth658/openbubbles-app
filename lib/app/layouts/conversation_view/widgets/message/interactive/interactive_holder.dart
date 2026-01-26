@@ -100,7 +100,7 @@ class _InteractiveHolderState extends CustomState<InteractiveHolder, void, Messa
                         child: SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideAttachments.value
                             ? const Padding(padding: EdgeInsets.all(15), child: Text("Interactive Message"))
                             : Obx(() {
-                                final isTempMessage = controller.messageState?.guid.value?.startsWith("temp") ?? false;
+                                final isTempMessage = controller.messageState?.isSending.value ?? false;
                                 return Opacity(
                                     opacity: isTempMessage ? 0.5 : 1,
                                     child: Builder(builder: (context) {

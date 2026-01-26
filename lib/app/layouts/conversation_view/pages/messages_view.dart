@@ -308,8 +308,6 @@ class MessagesViewState extends OptimizedState<MessagesView> {
 
     // Use insertItem to animate the list sliding up to make space (all messages)
     const duration = Duration(milliseconds: 1250);
-    Logger.test('Inserting message at index $insertIndex with duration ${duration.inMilliseconds}ms');
-    Logger.test('Current State Version: ${_listKey.currentState}');
     _listKey.currentState?.insertItem(
       insertIndex,
       duration: duration,
@@ -602,7 +600,7 @@ class MessagesViewState extends OptimizedState<MessagesView> {
                                     // Animate sent messages with size + slide + fade (only if outgoing from this device)
                                     final isFromMe = message.isFromMe ?? false;
                                     if (isFromMe &&
-                                        message.isOutgoing &&
+                                        message.isSending &&
                                         message.guid != null &&
                                         _animatingMessageGuids.contains(message.guid)) {
                                       return SizeTransition(

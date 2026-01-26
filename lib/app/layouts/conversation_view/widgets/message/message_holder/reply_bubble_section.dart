@@ -48,7 +48,7 @@ class ReplyBubbleSection extends StatelessWidget {
           isFromMe: message.isFromMe!,
           color: context.theme.colorScheme.properSurface,
           connectUpper: false,
-          connectLower: true,
+          connectLower: false,
           context: context,
         ),
         child: Container(

@@ -82,8 +82,8 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
       SettingsSvc.isMinBigSurSync &&
       chat.isIMessage &&
       !widget.isReplyThread &&
-      !(controller.messageState?.guid.value?.startsWith("temp") ?? message.guid!.startsWith("temp")) &&
-      !(controller.messageState?.guid.value?.startsWith("error") ?? message.guid!.startsWith("error"));
+      !(controller.messageState?.isSending.value ?? false) &&
+      !(controller.messageState?.hasError.value ?? false);
 
   bool get showAvatar => chat.isGroup;
 
@@ -203,16 +203,18 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
     if (message.itemType == 5 && message.subject != null) {
       return const SizedBox.shrink();
     }
-    return AnimatedPadding(
-      duration: const Duration(milliseconds: 100),
-      padding: message.guid!.contains("temp")
-          ? EdgeInsets.zero
-          : EdgeInsets.only(
+    return Obx(() {
+      final isTempMessage = controller.messageState?.isSending.value ?? false;
+      return AnimatedPadding(
+        duration: const Duration(milliseconds: 100),
+        padding: isTempMessage
+            ? EdgeInsets.zero
+            : EdgeInsets.only(
               top: olderMessage != null && !message.sameSender(olderMessage!) ? 5.0 : 0,
               bottom: newerMessage != null && !message.sameSender(newerMessage!) ? 5.0 : 0,
             ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
         children: [
           // large timestamp between messages
           TimestampSeparator(olderMessage: olderMessage, message: message),
@@ -287,7 +289,17 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
                                   padding: showAvatar || alwaysShowAvatars
                                       ? EdgeInsets.only(left: 35.0 * avatarScale)
                                       : EdgeInsets.zero,
-                                  child: MessageSender(olderMessage: olderMessage, message: message),
+                                  child: iOS && message.threadOriginatorGuid != null
+                                      ? SizedBox(
+                                          width: double.infinity,
+                                          child: CustomPaint(
+                                            painter: _ReplyLinePainter(
+                                              color: context.theme.colorScheme.properSurface,
+                                            ),
+                                            child: MessageSender(olderMessage: olderMessage, message: message),
+                                          ),
+                                        )
+                                      : MessageSender(olderMessage: olderMessage, message: message),
                                 ),
                               // add a box to account for height of reactions
                               ReactionSpacing(
@@ -554,5 +566,33 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
         ],
       ),
     );
+    });
   }
+}
+
+/// Custom painter to draw a simple vertical line for the reply thread
+/// connecting through the message sender
+class _ReplyLinePainter extends CustomPainter {
+  final Color color;
+
+  _ReplyLinePainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 3
+      ..style = PaintingStyle.stroke;
+
+    // Draw vertical line at the same position as the reply line (width - 35)
+    final x = size.width - 35;
+    canvas.drawLine(
+      Offset(x, 0),
+      Offset(x, size.height),
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_ReplyLinePainter oldDelegate) => oldDelegate.color != color;
 }

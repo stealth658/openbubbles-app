@@ -90,7 +90,8 @@ class _TextBubbleState extends CustomState<TextBubble, void, MessageWidgetContro
     return Obx(() {
       // Observe selection state and temp message state
       final selected = !iOS && (controller.cvController?.selected.any((m) => m.guid == message.guid) ?? false);
-      final isTempMessage = controller.messageState?.guid.value?.startsWith("temp") ?? false;
+      // Use isSending observable instead of checking guid directly for proper reactivity
+      final isTempMessage = controller.messageState?.isSending.value ?? false;
       return Container(
         constraints: BoxConstraints(
           maxWidth: message.isBigEmoji

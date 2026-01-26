@@ -283,21 +283,25 @@ class _EditModeTextField extends StatelessWidget {
   final MessagePart part;
   final Function(String) onComplete;
 
+  MessageWidgetController get controller => MessagesSvc(chat.guid).getOrCreateController(message);
+
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: Container(
-        decoration: BoxDecoration(
-          color: !message.isBigEmoji
-              ? context.theme.colorScheme.primary.darkenAmount(message.guid?.startsWith("temp") == true ? 0.2 : 0)
-              : context.theme.colorScheme.background,
-        ),
-        constraints: BoxConstraints(
-          maxWidth: NavigationSvc.width(context) * MessageWidgetController.maxBubbleSizeFactor - 40,
-          minHeight: 40,
-        ),
-        padding: const EdgeInsets.only(right: 10).add(const EdgeInsets.all(5)),
+    return Obx(() {
+      final isTempMessage = controller.messageState?.isSending.value ?? false;
+      return Material(
+        color: Colors.transparent,
+        child: Container(
+          decoration: BoxDecoration(
+            color: !message.isBigEmoji
+                ? context.theme.colorScheme.primary.darkenAmount(isTempMessage ? 0.2 : 0)
+                : context.theme.colorScheme.background,
+          ),
+          constraints: BoxConstraints(
+            maxWidth: NavigationSvc.width(context) * MessageWidgetController.maxBubbleSizeFactor - 40,
+            minHeight: 40,
+          ),
+          padding: const EdgeInsets.only(right: 10).add(const EdgeInsets.all(5)),
         child: Focus(
           focusNode: FocusNode(),
           onKeyEvent: (_, ev) {
@@ -436,7 +440,8 @@ class _EditModeTextField extends StatelessWidget {
             },
           ),
         ),
-      ),
-    );
+      ), // Container closes
+    ); // Material closes
+    }); // Obx closes
   }
 }

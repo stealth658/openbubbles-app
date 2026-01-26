@@ -148,8 +148,7 @@ class _MessagePopupHolderState extends OptimizedState<MessagePopupHolder> {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final isTempMessage =
-          widget.controller.messageState?.guid.value?.startsWith('temp') ?? message.guid!.startsWith('temp');
+      final isTempMessage = widget.controller.messageState?.isSending.value ?? false;
       return GestureDetector(
         key: globalKey,
         onDoubleTap: widget.isEditing

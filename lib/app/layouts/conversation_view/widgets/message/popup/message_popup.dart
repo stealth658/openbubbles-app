@@ -101,8 +101,9 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
   Message get message => widget.controller.message;
 
   bool get isSent {
-    final guid = widget.controller.messageState?.guid.value ?? message.guid;
-    return guid != null && !guid.startsWith('temp') && !guid.startsWith('error');
+    final isSending = widget.controller.messageState?.isSending.value ?? false;
+    final hasError = widget.controller.messageState?.hasError.value ?? false;
+    return !isSending && !hasError;
   }
 
   bool get showDownload =>
@@ -990,7 +991,7 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
         ),
       if (SettingsSvc.isMinVenturaSync &&
           message.isFromMe! &&
-          !(widget.controller.messageState?.guid.value?.startsWith("temp") ?? message.guid!.startsWith("temp")) &&
+          !(widget.controller.messageState?.isSending.value ?? false) &&
           SettingsSvc.serverDetailsSync().item4 >= 148)
         DetailsMenuActionWidget(
           onTap: unsend,
@@ -998,7 +999,7 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
         ),
       if (SettingsSvc.isMinVenturaSync &&
           message.isFromMe! &&
-          !(widget.controller.messageState?.guid.value?.startsWith("temp") ?? message.guid!.startsWith("temp")) &&
+          !(widget.controller.messageState?.isSending.value ?? false) &&
           SettingsSvc.serverDetailsSync().item4 >= 148 &&
           (part.text?.isNotEmpty ?? false))
         DetailsMenuActionWidget(

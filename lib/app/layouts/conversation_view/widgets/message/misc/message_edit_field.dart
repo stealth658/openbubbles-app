@@ -27,6 +27,8 @@ class MessageEditField extends StatelessWidget {
   final ConversationViewController cvController;
   final void Function(String text, int part) onComplete;
 
+  MessageWidgetController get controller => MessagesSvc(cvController.chat.guid).getOrCreateController(message);
+
   void _cancelEdit() {
     cvController.editing.removeWhere((e2) => e2.item1.guid == message.guid! && e2.item2.part == part);
     if (cvController.editing.isEmpty) {
@@ -68,19 +70,21 @@ class MessageEditField extends StatelessWidget {
   Widget build(BuildContext context) {
     final iOS = SettingsSvc.settings.skin.value == Skins.iOS;
 
-    return Material(
-      color: Colors.transparent,
-      child: Container(
-        decoration: BoxDecoration(
-          color: !message.isBigEmoji
-              ? context.theme.colorScheme.primary.darkenAmount(message.guid!.startsWith("temp") ? 0.2 : 0)
-              : context.theme.colorScheme.background,
-        ),
-        constraints: BoxConstraints(
-          maxWidth: NavigationSvc.width(context) * 0.75 - 40,
-          minHeight: 40,
-        ),
-        padding: const EdgeInsets.only(right: 10).add(const EdgeInsets.all(5)),
+    return Obx(() {
+      final isTempMessage = controller.messageState?.isSending.value ?? false;
+      return Material(
+        color: Colors.transparent,
+        child: Container(
+          decoration: BoxDecoration(
+            color: !message.isBigEmoji
+                ? context.theme.colorScheme.primary.darkenAmount(isTempMessage ? 0.2 : 0)
+                : context.theme.colorScheme.background,
+          ),
+          constraints: BoxConstraints(
+            maxWidth: NavigationSvc.width(context) * 0.75 - 40,
+            minHeight: 40,
+          ),
+          padding: const EdgeInsets.only(right: 10).add(const EdgeInsets.all(5)),
         child: Focus(
           focusNode: FocusNode(),
           onKeyEvent: (_, ev) => _handleKeyEvent(ev),
@@ -155,8 +159,8 @@ class MessageEditField extends StatelessWidget {
               onComplete(value, part);
             },
           ),
-        ),
-      ),
-    );
+        ), // Container closes
+      )); // Material closes
+    }); // Obx closes
   }
 }

@@ -48,9 +48,9 @@ class ErrorIndicatorObserver extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(() {
       // Observe MessageState error field directly instead of boolean toggle
-      controller.messageState?.error.value;
+      final hasError = controller.messageState?.hasError.value ?? (message.error > 0);
 
-      if (message.error > 0 || message.guid!.startsWith("error-")) {
+      if (hasError) {
         final errorCode = message.error;
         final errorText = ErrorHelper.getErrorText(errorCode, message.guid);
 

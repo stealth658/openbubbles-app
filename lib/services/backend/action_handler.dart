@@ -134,15 +134,15 @@ class ActionHandler extends GetxService {
             tag: "MessageStatus");
       }
 
-      // Delete the temp message if it exists
+      // Delete the temp message if it exists and update the controller
       if (existingGuid != replacement.guid) {
         Logger.debug("Deleting temp message with GUID $existingGuid...", tag: "MessageStatus");
         final existingTempMessage = Message.findOne(guid: existingGuid);
         if (existingTempMessage != null) {
           Message.delete(existingTempMessage.guid!);
-          if (existing != null) {
-            MessagesSvc(chat.guid).removeMessage(existing);
-          }
+          // Update the controller to use the new GUID instead of removing it
+          // This keeps the UI reactive and prevents the "Instance already removed" error
+          MessagesSvc(chat.guid).updateMessage(replacement, oldGuid: existingGuid);
         }
       }
     } else {
@@ -512,9 +512,15 @@ class ActionHandler extends GetxService {
       completeSendProgressIfExists(tempGuid);
     }
 
-    // sanity check
+    // sanity check - try tempGuid first, then fallback to m.guid
     if (checkExisting) {
-      final existing = Message.findOne(guid: tempGuid ?? m.guid);
+      Message? existing;
+      if (tempGuid != null) {
+        existing = Message.findOne(guid: tempGuid);
+      }
+      if (existing == null) {
+        existing = Message.findOne(guid: m.guid);
+      }
       if (existing != null) {
         return await handleUpdatedMessage(c, m, tempGuid, checkExisting: false);
       }
@@ -590,9 +596,15 @@ class ActionHandler extends GetxService {
       completeSendProgressIfExists(tempGuid);
     }
 
-    // sanity check
+    // sanity check - try tempGuid first, then fallback to m.guid
     if (checkExisting) {
-      final existing = Message.findOne(guid: tempGuid ?? m.guid);
+      Message? existing;
+      if (tempGuid != null) {
+        existing = Message.findOne(guid: tempGuid);
+      }
+      if (existing == null) {
+        existing = Message.findOne(guid: m.guid);
+      }
       if (existing == null) {
         return await handleNewMessage(c, m, tempGuid, checkExisting: false);
       }

@@ -69,9 +69,10 @@ class _AttachmentHolderState extends CustomState<AttachmentHolder, void, Message
     }
 
     // If we can download it, do so
+    final isSending = controller.messageState?.isSending.value ?? false;
     if (content.value is Attachment &&
         message.error == 0 &&
-        !message.guid!.contains("temp") &&
+        !isSending &&
         await AttachmentsSvc.canAutoDownload()) {
       if (mounted) {
         content.value = AttachmentDownloader.startDownload(content.value, onComplete: onComplete);
@@ -116,7 +117,8 @@ class _AttachmentHolderState extends CustomState<AttachmentHolder, void, Message
             onTap: currentContent is PlatformFile
                 ? null
                 : () async {
-                    if (currentContent is Attachment && message.error == 0 && !message.guid!.contains("temp")) {
+                    final isSending = controller.messageState?.isSending.value ?? false;
+                    if (currentContent is Attachment && message.error == 0 && !isSending) {
                       content.value = AttachmentDownloader.startDownload(currentContent, onComplete: onComplete);
                       // Listen to the controller's file observable for immediate updates
                       if (content.value is AttachmentDownloadController) {
@@ -172,7 +174,7 @@ class _AttachmentHolderState extends CustomState<AttachmentHolder, void, Message
                       heightFactor: 1,
                       widthFactor: 1,
                       child: Obx(() => Opacity(
-                          opacity: (controller.messageState?.guid.value?.startsWith("temp") ?? false) ? 0.5 : 1,
+                          opacity: (controller.messageState?.isSending.value ?? false) ? 0.5 : 1,
                           child: Builder(builder: (context) {
                             // Re-access currentContent in inner builder
                             final innerContent = content.value;
@@ -313,24 +315,30 @@ class _AttachmentHolderState extends CustomState<AttachmentHolder, void, Message
                                       height: 40,
                                       width: 40,
                                       child: Center(
-                                          child: Obx(() => Icon(
-                                              message.error > 0 || message.guid!.startsWith("error-")
-                                                  ? (iOS ? CupertinoIcons.exclamationmark_circle : Icons.error_outline)
-                                                  : (iOS
-                                                      ? CupertinoIcons.cloud_download
-                                                      : Icons.cloud_download_outlined),
-                                              size: 30))),
+                                          child: Obx(() {
+                                            final hasError = controller.messageState?.hasError.value ?? (message.error > 0);
+                                            return Icon(
+                                                hasError
+                                                    ? (iOS ? CupertinoIcons.exclamationmark_circle : Icons.error_outline)
+                                                    : (iOS
+                                                        ? CupertinoIcons.cloud_download
+                                                        : Icons.cloud_download_outlined),
+                                                size: 30);
+                                          })),
                                     ),
                                   const SizedBox(height: 5),
-                                  Obx(() => Text(
-                                        message.error > 0 || message.guid!.startsWith("error-")
-                                            ? "Send Failed!"
-                                            : (_content.mimeType ?? ""),
-                                        style: context.theme.textTheme.bodyLarge!
-                                            .copyWith(color: context.theme.colorScheme.properOnSurface),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      )),
+                                  Obx(() {
+                                    final hasError = controller.messageState?.hasError.value ?? (message.error > 0);
+                                    return Text(
+                                          hasError
+                                              ? "Send Failed!"
+                                              : (_content.mimeType ?? ""),
+                                          style: context.theme.textTheme.bodyLarge!
+                                              .copyWith(color: context.theme.colorScheme.properOnSurface),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        );
+                                  }),
                                   const SizedBox(height: 10),
                                   Text(
                                     _content.getFriendlySize(),

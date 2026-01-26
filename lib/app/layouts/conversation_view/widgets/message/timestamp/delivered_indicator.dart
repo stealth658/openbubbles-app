@@ -25,7 +25,7 @@ class _DeliveredIndicatorState extends CustomState<DeliveredIndicator, void, Mes
 
   bool get shouldShow {
     if (controller.audioWasKept.value != null) return true;
-    final isTempMessage = controller.messageState?.guid.value?.contains("temp") ?? message.guid!.contains("temp");
+    final isTempMessage = controller.messageState?.isSending.value ?? message.guid!.contains("temp");
     if (widget.forceShow || isTempMessage) return true;
     if ((!message.isFromMe! && iOS) || (controller.parts.lastOrNull?.isUnsent ?? false)) return false;
     final messages = MessagesSvc(controller.cvController?.chat.guid ?? ChatsSvc.activeChat!.chat.guid)
@@ -81,7 +81,7 @@ class _DeliveredIndicatorState extends CustomState<DeliveredIndicator, void, Mes
               : null);
     } else if (message.isDelivered) {
       return buildTwoPiece("Delivered", null);
-    } else if ((controller.messageState?.guid.value?.contains("temp") ?? message.guid!.contains("temp")) &&
+    } else if ((controller.messageState?.isSending.value ?? message.guid!.contains("temp")) &&
         !(controller.cvController?.chat ?? ChatsSvc.activeChat!.chat).isGroup &&
         !iOS) {
       return buildTwoPiece("Sending...", "");

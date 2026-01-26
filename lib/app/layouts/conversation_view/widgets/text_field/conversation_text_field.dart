@@ -1322,15 +1322,19 @@ class TextFieldComponentState extends State<TextFieldComponent> {
           SettingsSvc.isMinVenturaSync &&
           SettingsSvc.serverDetailsSync().item4 >= 148) {
         final message = MessagesSvc(chat!.guid).mostRecentSent;
-        if (message != null && !message.guid!.startsWith("temp")) {
-          final parts = MessagesSvc(chat!.guid).getOrCreateController(message).parts;
-          final part = parts.filter((p) => p.text?.isNotEmpty ?? false).lastOrNull;
-          if (part != null) {
-            final FocusNode? node = kIsDesktop || kIsWeb ? FocusNode() : null;
-            controller!.editing
+        if (message != null) {
+          final messageController = MessagesSvc(chat!.guid).getOrCreateController(message);
+          final isSending = messageController.messageState?.isSending.value ?? false;
+          if (!isSending) {
+            final parts = messageController.parts;
+            final part = parts.filter((p) => p.text?.isNotEmpty ?? false).lastOrNull;
+            if (part != null) {
+              final FocusNode? node = kIsDesktop || kIsWeb ? FocusNode() : null;
+              controller!.editing
                 .add(Tuple3(message, part, SpellCheckTextEditingController(text: part.text!, focusNode: node)));
-            node?.requestFocus();
-            return KeyEventResult.handled;
+              node?.requestFocus();
+              return KeyEventResult.handled;
+            }
           }
         }
       }

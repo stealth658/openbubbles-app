@@ -122,7 +122,7 @@ class Message {
   // It's outgoing from this device is the guid starts with "temp" and isFromMe is true.
   // A temp GUID is only assigned to outgoing messages before they are sent to the server.
   @Transient()
-  bool get isOutgoing => isFromMe == true && guid != null && guid!.startsWith("temp");
+  bool get isSending => isFromMe == true && guid != null && guid!.startsWith("temp");
 
   Message({
     this.id,

@@ -326,16 +326,31 @@ class MessagesService extends GetxController {
   }
 
   void updateMessage(Message updated, {String? oldGuid}) {
-    final toUpdate = struct.getMessage(oldGuid ?? updated.guid!);
+    // Try to find the message - check oldGuid first, then fallback to updated.guid
+    // This handles race conditions where the GUID was already replaced
+    Message? toUpdate;
+    if (oldGuid != null) {
+      toUpdate = struct.getMessage(oldGuid);
+    }
+    if (toUpdate == null) {
+      toUpdate = struct.getMessage(updated.guid!);
+    }
     if (toUpdate == null) return;
+    
     updated = updated.mergeWith(toUpdate);
     struct.removeMessage(oldGuid ?? updated.guid!);
     struct.removeAttachments(toUpdate.attachments.map((e) => e!.guid!));
     struct.addMessages([updated]);
 
-    // Update MessageState
-    final guidToLookup = oldGuid ?? updated.guid!;
-    final messageState = messageStates[guidToLookup];
+    // Update MessageState - try oldGuid first, then fallback to updated.guid
+    MessageState? messageState;
+    if (oldGuid != null) {
+      messageState = messageStates[oldGuid];
+    }
+    if (messageState == null) {
+      messageState = messageStates[updated.guid!];
+    }
+    
     if (messageState != null) {
       messageState.updateFromMessage(updated);
       Logger.debug("Updated MessageState for message ${updated.guid}", tag: "MessageState");

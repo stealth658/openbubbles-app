@@ -56,6 +56,12 @@ class ReactionWidgetState extends OptimizedState<ReactionWidget> {
   bool get messageIsFromMe => widget.message?.isFromMe ?? true;
   String get reactionType => reaction.associatedMessageType!;
 
+  MessageWidgetController? get reactionController {
+    final chatGuid = widget.message?.chat.target?.guid ?? ChatsSvc.activeChat?.chat.guid;
+    if (chatGuid == null || reaction.guid == null) return null;
+    return MessagesSvc(chatGuid).getControllerIfExists(reaction.guid!);
+  }
+
   static const double iosSize = 35;
 
   @override
@@ -164,37 +170,41 @@ class ReactionWidgetState extends OptimizedState<ReactionWidget> {
           ),
           ClipPath(
               clipper: ReactionClipper(isFromMe: messageIsFromMe),
-              child: Container(
-                  width: iosSize,
-                  height: iosSize,
-                  color: reactionIsFromMe
-                      ? context.theme.colorScheme.primary.darkenAmount(reaction.guid!.startsWith("temp") ? 0.2 : 0)
-                      : context.theme.colorScheme.properSurface,
-                  alignment: messageIsFromMe ? Alignment.topRight : Alignment.topLeft,
-                  child: SizedBox(
-                    width: iosSize * 0.8,
-                    height: iosSize * 0.8,
-                    child: Center(
-                        child: Padding(
-                      padding:
-                          const EdgeInsets.all(6.5).add(EdgeInsets.only(right: reactionType == "emphasize" ? 1 : 0)),
-                      child: SvgPicture.asset(
-                        'assets/reactions/$reactionType-black.svg',
-                        colorFilter: ColorFilter.mode(
-                            reactionType == "love"
-                                ? Colors.pink
-                                : (reactionIsFromMe
-                                    ? context.theme.colorScheme.onPrimary
-                                    : context.theme.colorScheme.properOnSurface),
-                            BlendMode.srcIn),
-                      ),
-                    )),
-                  ))),
+              child: Obx(() {
+                final isSending = reactionController?.messageState?.isSending.value ?? false;
+                return Container(
+                    width: iosSize,
+                    height: iosSize,
+                    color: reactionIsFromMe
+                        ? context.theme.colorScheme.primary.darkenAmount(isSending ? 0.2 : 0)
+                        : context.theme.colorScheme.properSurface,
+                    alignment: messageIsFromMe ? Alignment.topRight : Alignment.topLeft,
+                    child: SizedBox(
+                      width: iosSize * 0.8,
+                      height: iosSize * 0.8,
+                      child: Center(
+                          child: Padding(
+                        padding:
+                            const EdgeInsets.all(6.5).add(EdgeInsets.only(right: reactionType == "emphasize" ? 1 : 0)),
+                        child: SvgPicture.asset(
+                          'assets/reactions/$reactionType-black.svg',
+                          colorFilter: ColorFilter.mode(
+                              reactionType == "love"
+                                  ? Colors.pink
+                                  : (reactionIsFromMe
+                                      ? context.theme.colorScheme.onPrimary
+                                      : context.theme.colorScheme.properOnSurface),
+                              BlendMode.srcIn),
+                        ),
+                      )),
+                    ));
+              })),
           Positioned(
             left: !messageIsFromMe ? 0 : -75,
             right: messageIsFromMe ? 0 : -75,
             child: Obx(() {
-              if (reaction.error > 0 || reaction.guid!.startsWith("error-")) {
+              final hasError = reactionController?.messageState?.hasError.value ?? false;
+              if (reaction.error > 0 || hasError) {
                 final errorCode = reaction.error;
                 final errorText = ErrorHelper.getErrorText(errorCode, reaction.guid);
 
