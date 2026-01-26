@@ -377,7 +377,7 @@ class MessageState {
     final originalText = message.text ?? '';
     final wordCount = originalText.split(' ').length;
     final fakeContent = faker.lorem.words(wordCount).join(' ');
-    
+
     updateTextInternal(fakeContent);
     updateSubjectInternal(null); // Clear subject when redacted
   }
@@ -391,7 +391,7 @@ class MessageState {
   /// Apply all redactions based on current settings (used on initialization)
   void redactFields() {
     if (!SettingsSvc.settings.redactedMode.value) return;
-    
+
     redactMessageContent();
   }
 

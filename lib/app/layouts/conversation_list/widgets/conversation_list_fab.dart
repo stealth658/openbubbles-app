@@ -114,25 +114,25 @@ class _IOSAndSamsungFAB extends StatelessWidget {
     return Obx(() {
       final isIOS = SettingsSvc.settings.skin.value == Skins.iOS;
       return Column(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            // Camera FAB (iOS only)
-            if (SettingsSvc.settings.cameraFAB.value && isIOS && !kIsWeb && !kIsDesktop)
-              _CameraFAB(
-                controller: controller,
-                context: context,
-                isIOS: isIOS,
-              ),
-            if (SettingsSvc.settings.cameraFAB.value && isIOS && !kIsWeb && !kIsDesktop) const SizedBox(height: 10),
-            // Main compose FAB
-            _ComposeFAB(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          // Camera FAB (iOS only)
+          if (SettingsSvc.settings.cameraFAB.value && isIOS && !kIsWeb && !kIsDesktop)
+            _CameraFAB(
               controller: controller,
               context: context,
               isIOS: isIOS,
-              showLongPress: isIOS || !SettingsSvc.settings.cameraFAB.value || kIsWeb || kIsDesktop,
             ),
-          ],
-        );
+          if (SettingsSvc.settings.cameraFAB.value && isIOS && !kIsWeb && !kIsDesktop) const SizedBox(height: 10),
+          // Main compose FAB
+          _ComposeFAB(
+            controller: controller,
+            context: context,
+            isIOS: isIOS,
+            showLongPress: isIOS || !SettingsSvc.settings.cameraFAB.value || kIsWeb || kIsDesktop,
+          ),
+        ],
+      );
     });
   }
 }

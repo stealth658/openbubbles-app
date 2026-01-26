@@ -44,7 +44,9 @@ class ChatState {
         displayName = RxnString(chat.displayName),
         customAvatarPath = RxnString(chat.customAvatarPath),
         title = RxnString(chat.title),
-        subtitle = RxnString(chat.isGroup ? chat.getChatCreatorSubtitle() : (chat.handles.isNotEmpty ? (chat.handles.first.formattedAddress ?? chat.handles.first.address) : null)),
+        subtitle = RxnString(chat.isGroup
+            ? chat.getChatCreatorSubtitle()
+            : (chat.handles.isNotEmpty ? (chat.handles.first.formattedAddress ?? chat.handles.first.address) : null)),
         latestMessage = Rxn<Message>(chat.latestMessage),
         textFieldText = RxnString(chat.textFieldText),
         textFieldAttachments = chat.textFieldAttachments.obs,
@@ -263,8 +265,8 @@ class ChatState {
     updateTitleInternal(chat.title);
     updateDisplayNameInternal(chat.displayName);
     // TODO: cache this value if needed to avoid over-processing
-    final computedSubtitle = chat.isGroup 
-        ? chat.getChatCreatorSubtitle() 
+    final computedSubtitle = chat.isGroup
+        ? chat.getChatCreatorSubtitle()
         : (chat.handles.isNotEmpty ? (chat.handles.first.formattedAddress ?? chat.handles.first.address) : null);
     updateSubtitleInternal(computedSubtitle);
   }
@@ -286,7 +288,7 @@ class ChatState {
   /// Apply all redactions based on current settings (used on initialization)
   void redactFields() {
     if (!SettingsSvc.settings.redactedMode.value) return;
-    
+
     redactContactInfo();
     redactAvatars();
   }

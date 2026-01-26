@@ -42,23 +42,23 @@ class _GradientBackgroundState extends CustomState<GradientBackground, void, Con
       }
       return MirrorAnimationBuilder<Movie>(
         tween: ThemeSvc.gradientTween.value,
-      curve: Curves.fastOutSlowIn,
-      duration: const Duration(seconds: 3),
-      builder: (context, anim, child) {
-        return Container(
-          decoration: BoxDecoration(
-              gradient: LinearGradient(begin: Alignment.topRight, end: Alignment.bottomLeft, stops: [
-            anim.get("color1"),
-            anim.get("color2")
-          ], colors: [
-            context.theme.colorScheme.bubble(context, controller.chat.isIMessage).withValues(alpha: 0.5),
-            context.theme.colorScheme.background,
-          ])),
-          child: child,
-        );
-      },
-      child: widget.child,
-    );
+        curve: Curves.fastOutSlowIn,
+        duration: const Duration(seconds: 3),
+        builder: (context, anim, child) {
+          return Container(
+            decoration: BoxDecoration(
+                gradient: LinearGradient(begin: Alignment.topRight, end: Alignment.bottomLeft, stops: [
+              anim.get("color1"),
+              anim.get("color2")
+            ], colors: [
+              context.theme.colorScheme.bubble(context, controller.chat.isIMessage).withValues(alpha: 0.5),
+              context.theme.colorScheme.background,
+            ])),
+            child: child,
+          );
+        },
+        child: widget.child,
+      );
     });
   }
 }

@@ -66,58 +66,58 @@ class LocationsSection extends StatelessWidget {
           )
         else
           Obx(() => SliverPadding(
-            padding: EdgeInsets.only(
-              left: SettingsSvc.settings.skin.value == Skins.iOS ? 20 : 10,
-              right: SettingsSvc.settings.skin.value == Skins.iOS ? 20 : 10,
-              top: 10,
-              bottom: 10,
-            ),
-            sliver: SliverToBoxAdapter(
-              child: MasonryGridView.count(
-                crossAxisCount: max(2, NavigationSvc.width(context) ~/ 200),
-                mainAxisSpacing: 10,
-                crossAxisSpacing: 10,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemBuilder: (context, index) {
-                  if (AttachmentsSvc.getContent(locations[index]) is! PlatformFile) {
-                    return const Text("Failed to load location!");
-                  }
-                  return Material(
-                    color: context.theme.colorScheme.properSurface,
-                    borderRadius: BorderRadius.circular(20),
-                    clipBehavior: Clip.antiAlias,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(20),
-                      onTap: () async {
-                        final attachment = locations[index];
-                        if (attachment.mimeType?.contains("location") ?? false) {
-                          // Launch the location in maps
-                          final location = attachment.transferName;
-                          if (location != null) {
-                            final uri = Uri.parse("https://maps.google.com/?q=$location");
-                            await launchUrl(uri, mode: LaunchMode.externalApplication);
-                          }
-                        }
-                      },
-                      child: Center(
-                        child: UrlPreview(
-                          data: UrlPreviewData(
-                            title:
-                                "Location from ${DateFormat.yMd().format(locations[index].message.target!.dateCreated!)}",
-                            siteName: "Tap to open",
+                padding: EdgeInsets.only(
+                  left: SettingsSvc.settings.skin.value == Skins.iOS ? 20 : 10,
+                  right: SettingsSvc.settings.skin.value == Skins.iOS ? 20 : 10,
+                  top: 10,
+                  bottom: 10,
+                ),
+                sliver: SliverToBoxAdapter(
+                  child: MasonryGridView.count(
+                    crossAxisCount: max(2, NavigationSvc.width(context) ~/ 200),
+                    mainAxisSpacing: 10,
+                    crossAxisSpacing: 10,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemBuilder: (context, index) {
+                      if (AttachmentsSvc.getContent(locations[index]) is! PlatformFile) {
+                        return const Text("Failed to load location!");
+                      }
+                      return Material(
+                        color: context.theme.colorScheme.properSurface,
+                        borderRadius: BorderRadius.circular(20),
+                        clipBehavior: Clip.antiAlias,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(20),
+                          onTap: () async {
+                            final attachment = locations[index];
+                            if (attachment.mimeType?.contains("location") ?? false) {
+                              // Launch the location in maps
+                              final location = attachment.transferName;
+                              if (location != null) {
+                                final uri = Uri.parse("https://maps.google.com/?q=$location");
+                                await launchUrl(uri, mode: LaunchMode.externalApplication);
+                              }
+                            }
+                          },
+                          child: Center(
+                            child: UrlPreview(
+                              data: UrlPreviewData(
+                                title:
+                                    "Location from ${DateFormat.yMd().format(locations[index].message.target!.dateCreated!)}",
+                                siteName: "Tap to open",
+                              ),
+                              message: locations[index].message.target!,
+                              file: AttachmentsSvc.getContent(locations[index]),
+                            ),
                           ),
-                          message: locations[index].message.target!,
-                          file: AttachmentsSvc.getContent(locations[index]),
                         ),
-                      ),
-                    ),
-                  );
-                },
-                itemCount: locations.length,
-              ),
-            ),
-          )),
+                      );
+                    },
+                    itemCount: locations.length,
+                  ),
+                ),
+              )),
       ],
     );
   }

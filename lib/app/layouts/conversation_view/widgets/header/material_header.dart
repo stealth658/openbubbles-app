@@ -273,7 +273,7 @@ class _ChatIconAndTitleState extends CustomState<_ChatIconAndTitle, void, Conver
   @override
   Widget build(BuildContext context) {
     final chatState = ChatsSvc.getChatState(controller.chat.guid);
-    
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -304,7 +304,9 @@ class _ChatIconAndTitleState extends CustomState<_ChatIconAndTitle, void, Conver
                   overflow: TextOverflow.fade,
                 );
               }),
-              if (samsung && (controller.chat.isGroup || (!controller.chat.getTitle().isPhoneNumber && !controller.chat.getTitle().isEmail)))
+              if (samsung &&
+                  (controller.chat.isGroup ||
+                      (!controller.chat.getTitle().isPhoneNumber && !controller.chat.getTitle().isEmail)))
                 Text(
                   controller.chat.isGroup
                       ? "${controller.chat.handles.length} recipients"

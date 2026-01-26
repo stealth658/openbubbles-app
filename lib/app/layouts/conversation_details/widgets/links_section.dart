@@ -118,50 +118,50 @@ class _LinksSectionState extends OptimizedState<LinksSection> {
           )
         else
           Obx(() => SliverPadding(
-            padding: EdgeInsets.only(
-              left: SettingsSvc.settings.skin.value == Skins.iOS ? 20 : 10,
-              right: SettingsSvc.settings.skin.value == Skins.iOS ? 20 : 10,
-              top: 10,
-              bottom: 10,
-            ),
-            sliver: SliverToBoxAdapter(
-              child: MasonryGridView.count(
-                crossAxisCount: max(2, NavigationSvc.width(context) ~/ 200),
-                mainAxisSpacing: 10,
-                crossAxisSpacing: 10,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemBuilder: (context, index) {
-                  if (links[index].payloadData?.urlData?.firstOrNull == null) {
-                    return const Text("Failed to load link!");
-                  }
-                  return Material(
-                    color: context.theme.colorScheme.properSurface,
-                    borderRadius: BorderRadius.circular(20),
-                    clipBehavior: Clip.antiAlias,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(20),
-                      onTap: () async {
-                        final data = links[index].payloadData!.urlData!.first;
-                        if ((data.url ?? data.originalUrl) == null) return;
-                        await launchUrl(
-                          Uri.parse((data.url ?? data.originalUrl)!),
-                          mode: LaunchMode.externalApplication,
-                        );
-                      },
-                      child: Center(
-                        child: UrlPreview(
-                          data: links[index].payloadData!.urlData!.first,
-                          message: links[index],
+                padding: EdgeInsets.only(
+                  left: SettingsSvc.settings.skin.value == Skins.iOS ? 20 : 10,
+                  right: SettingsSvc.settings.skin.value == Skins.iOS ? 20 : 10,
+                  top: 10,
+                  bottom: 10,
+                ),
+                sliver: SliverToBoxAdapter(
+                  child: MasonryGridView.count(
+                    crossAxisCount: max(2, NavigationSvc.width(context) ~/ 200),
+                    mainAxisSpacing: 10,
+                    crossAxisSpacing: 10,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemBuilder: (context, index) {
+                      if (links[index].payloadData?.urlData?.firstOrNull == null) {
+                        return const Text("Failed to load link!");
+                      }
+                      return Material(
+                        color: context.theme.colorScheme.properSurface,
+                        borderRadius: BorderRadius.circular(20),
+                        clipBehavior: Clip.antiAlias,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(20),
+                          onTap: () async {
+                            final data = links[index].payloadData!.urlData!.first;
+                            if ((data.url ?? data.originalUrl) == null) return;
+                            await launchUrl(
+                              Uri.parse((data.url ?? data.originalUrl)!),
+                              mode: LaunchMode.externalApplication,
+                            );
+                          },
+                          child: Center(
+                            child: UrlPreview(
+                              data: links[index].payloadData!.urlData!.first,
+                              message: links[index],
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                  );
-                },
-                itemCount: links.length,
-              ),
-            ),
-          )),
+                      );
+                    },
+                    itemCount: links.length,
+                  ),
+                ),
+              )),
       ],
     );
   }

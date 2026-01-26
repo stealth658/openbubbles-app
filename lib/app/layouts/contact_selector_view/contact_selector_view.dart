@@ -161,27 +161,27 @@ class ContactSelectorViewState extends OptimizedState<ContactSelectorView> {
                                         Navigator.of(context, rootNavigator: true).pop();
                                       },
                                       child: ListTile(
-                                        mouseCursor: MouseCursor.defer,
-                                        enableFeedback: true,
-                                        dense: SettingsSvc.settings.denseChatTiles.value,
-                                        minVerticalPadding: 10,
-                                        horizontalTitleGap: 10,
-                                        title: RichText(
-                                          text: TextSpan(
-                                            children: MessageHelper.buildEmojiText(
-                                              _title,
-                                              context.theme.textTheme.bodyLarge!,
+                                          mouseCursor: MouseCursor.defer,
+                                          enableFeedback: true,
+                                          dense: SettingsSvc.settings.denseChatTiles.value,
+                                          minVerticalPadding: 10,
+                                          horizontalTitleGap: 10,
+                                          title: RichText(
+                                            text: TextSpan(
+                                              children: MessageHelper.buildEmojiText(
+                                                _title,
+                                                context.theme.textTheme.bodyLarge!,
+                                              ),
                                             ),
+                                            overflow: TextOverflow.ellipsis,
                                           ),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        leading: Padding(
-                                          padding: const EdgeInsets.only(right: 5.0),
-                                          child: ContactAvatarWidget(
-                                            contactV2: contact,
-                                            editable: false,
-                                          ),
-                                        )),
+                                          leading: Padding(
+                                            padding: const EdgeInsets.only(right: 5.0),
+                                            child: ContactAvatarWidget(
+                                              contactV2: contact,
+                                              editable: false,
+                                            ),
+                                          )),
                                     ),
                                   );
                                 });

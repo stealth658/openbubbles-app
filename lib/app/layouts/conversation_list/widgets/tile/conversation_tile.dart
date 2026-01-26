@@ -332,7 +332,8 @@ class _ChatSubtitleState extends CustomState<ChatSubtitle, void, ConversationTil
           : null;
       final hideContacts = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
       String _subtitle = messageState != null
-          ? MessageHelper.getNotificationText(Message(text: messageState.text.value, subject: messageState.subject.value))
+          ? MessageHelper.getNotificationText(
+              Message(text: messageState.text.value, subject: messageState.subject.value))
           : hideContacts && !kIsWeb
               ? MessageHelper.getNotificationText(Message.findOne(guid: cachedLatestMessageGuid!)!)
               : subtitle.value;

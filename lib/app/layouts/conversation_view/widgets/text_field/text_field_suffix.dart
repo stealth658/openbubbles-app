@@ -166,149 +166,149 @@ class _RecordingButton extends StatelessWidget {
       final isIOS = SettingsSvc.settings.skin.value == Skins.iOS;
 
       return TextButton(
-      style: TextButton.styleFrom(
-        backgroundColor: !isIOS || (isIOS && !isChatCreator && !showRecording)
-            ? null
+        style: TextButton.styleFrom(
+          backgroundColor: !isIOS || (isIOS && !isChatCreator && !showRecording)
+              ? null
+              : !isChatCreator && !showRecording
+                  ? context.theme.colorScheme.outline
+                  : context.theme.colorScheme.primary.withValues(alpha: 0.4),
+          shape: const CircleBorder(),
+          padding: const EdgeInsets.all(0),
+          maximumSize: isDesktop ? const Size(40, 40) : const Size(32, 32),
+          minimumSize: isDesktop ? const Size(40, 40) : const Size(32, 32),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+        child: isLinuxArm64
+            ? const SizedBox(height: 40)
             : !isChatCreator && !showRecording
-                ? context.theme.colorScheme.outline
-                : context.theme.colorScheme.primary.withValues(alpha: 0.4),
-        shape: const CircleBorder(),
-        padding: const EdgeInsets.all(0),
-        maximumSize: isDesktop ? const Size(40, 40) : const Size(32, 32),
-        minimumSize: isDesktop ? const Size(40, 40) : const Size(32, 32),
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      ),
-      child: isLinuxArm64
-          ? const SizedBox(height: 40)
-          : !isChatCreator && !showRecording
-              ? CupertinoIconWrapper(
-                  icon: Icon(
-                    isIOS ? CupertinoIcons.waveform : Icons.mic_none,
-                    color: isIOS ? context.theme.colorScheme.outline : context.theme.colorScheme.properOnSurface,
-                    size: isIOS ? 24 : 20,
+                ? CupertinoIconWrapper(
+                    icon: Icon(
+                      isIOS ? CupertinoIcons.waveform : Icons.mic_none,
+                      color: isIOS ? context.theme.colorScheme.outline : context.theme.colorScheme.properOnSurface,
+                      size: isIOS ? 24 : 20,
+                    ),
+                  )
+                : CupertinoIconWrapper(
+                    icon: Icon(
+                      isIOS ? CupertinoIcons.stop_fill : Icons.stop_circle,
+                      color: isIOS ? context.theme.colorScheme.primary : context.theme.colorScheme.properOnSurface,
+                      size: 15,
+                    ),
                   ),
-                )
-              : CupertinoIconWrapper(
-                  icon: Icon(
-                    isIOS ? CupertinoIcons.stop_fill : Icons.stop_circle,
-                    color: isIOS ? context.theme.colorScheme.primary : context.theme.colorScheme.properOnSurface,
-                    size: 15,
-                  ),
-                ),
-      onPressed: () async {
-        if (controller == null) return;
-        controller!.showRecording.toggle();
+        onPressed: () async {
+          if (controller == null) return;
+          controller!.showRecording.toggle();
 
-        if (controller!.showRecording.value) {
-          // Start recording
-          if (isDesktop) {
-            File temp = File(join(
-              FilesystemSvc.appDocDir.path,
-              "temp",
-              "recorder",
-              "${controller!.chat.guid.characters.where((c) => c.isAlphabetOnly || c.isNumericOnly).join()}.m4a",
-            ));
-            temp.createSync(recursive: true);
-            audioRecorder.start(const RecordConfig(bitRate: 320000), path: temp.path);
-            return;
-          }
-          await recorderController!.record(
-            sampleRate: 44100,
-            bitRate: 320000,
-          );
-        } else {
-          // Stop recording and show dialog
-          late final String? path;
-          late final PlatformFile file;
-
-          if (isDesktop) {
-            path = await audioRecorder.stop();
-            if (path == null) return;
-            final _file = File(path);
-            file = PlatformFile(
-              name: basename(_file.path),
-              path: _file.path,
-              bytes: await _file.readAsBytes(),
-              size: await _file.length(),
+          if (controller!.showRecording.value) {
+            // Start recording
+            if (isDesktop) {
+              File temp = File(join(
+                FilesystemSvc.appDocDir.path,
+                "temp",
+                "recorder",
+                "${controller!.chat.guid.characters.where((c) => c.isAlphabetOnly || c.isNumericOnly).join()}.m4a",
+              ));
+              temp.createSync(recursive: true);
+              audioRecorder.start(const RecordConfig(bitRate: 320000), path: temp.path);
+              return;
+            }
+            await recorderController!.record(
+              sampleRate: 44100,
+              bitRate: 320000,
             );
           } else {
-            path = await recorderController!.stop();
-            if (path == null) return;
-            final _file = File(path);
-            file = PlatformFile(
-              name: basename(_file.path),
-              path: _file.path,
-              bytes: await _file.readAsBytes(),
-              size: await _file.length(),
+            // Stop recording and show dialog
+            late final String? path;
+            late final PlatformFile file;
+
+            if (isDesktop) {
+              path = await audioRecorder.stop();
+              if (path == null) return;
+              final _file = File(path);
+              file = PlatformFile(
+                name: basename(_file.path),
+                path: _file.path,
+                bytes: await _file.readAsBytes(),
+                size: await _file.length(),
+              );
+            } else {
+              path = await recorderController!.stop();
+              if (path == null) return;
+              final _file = File(path);
+              file = PlatformFile(
+                name: basename(_file.path),
+                path: _file.path,
+                bytes: await _file.readAsBytes(),
+                size: await _file.length(),
+              );
+            }
+
+            await showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  backgroundColor: context.theme.colorScheme.properSurface,
+                  title: Text("Send it?", style: context.theme.textTheme.titleLarge),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        "Review your audio snippet before sending it",
+                        style: context.theme.textTheme.bodyLarge,
+                      ),
+                      Container(height: 10.0),
+                      ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: context.width * 0.6),
+                        child: AudioPlayer(
+                          key: Key("AudioMessage-$path"),
+                          file: file,
+                          attachment: null,
+                        ),
+                      )
+                    ],
+                  ),
+                  actions: <Widget>[
+                    TextButton(
+                      child: Text(
+                        "Discard",
+                        style: context.theme.textTheme.bodyLarge!.copyWith(
+                          color: Get.context!.theme.colorScheme.primary,
+                        ),
+                      ),
+                      onPressed: () {
+                        onDeleteRecording(file.path!);
+                        Navigator.of(context, rootNavigator: true).pop();
+                      },
+                    ),
+                    TextButton(
+                      child: Text(
+                        "Send",
+                        style: context.theme.textTheme.bodyLarge!.copyWith(
+                          color: Get.context!.theme.colorScheme.primary,
+                        ),
+                      ),
+                      onPressed: () async {
+                        await controller!.send(
+                          [file],
+                          "",
+                          "",
+                          null,
+                          null,
+                          null,
+                          true,
+                        );
+                        onDeleteRecording(file.path!);
+                        Navigator.of(context, rootNavigator: true).pop();
+                      },
+                    ),
+                  ],
+                );
+              },
             );
           }
-
-          await showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (BuildContext context) {
-              return AlertDialog(
-                backgroundColor: context.theme.colorScheme.properSurface,
-                title: Text("Send it?", style: context.theme.textTheme.titleLarge),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      "Review your audio snippet before sending it",
-                      style: context.theme.textTheme.bodyLarge,
-                    ),
-                    Container(height: 10.0),
-                    ConstrainedBox(
-                      constraints: BoxConstraints(maxWidth: context.width * 0.6),
-                      child: AudioPlayer(
-                        key: Key("AudioMessage-$path"),
-                        file: file,
-                        attachment: null,
-                      ),
-                    )
-                  ],
-                ),
-                actions: <Widget>[
-                  TextButton(
-                    child: Text(
-                      "Discard",
-                      style: context.theme.textTheme.bodyLarge!.copyWith(
-                        color: Get.context!.theme.colorScheme.primary,
-                      ),
-                    ),
-                    onPressed: () {
-                      onDeleteRecording(file.path!);
-                      Navigator.of(context, rootNavigator: true).pop();
-                    },
-                  ),
-                  TextButton(
-                    child: Text(
-                      "Send",
-                      style: context.theme.textTheme.bodyLarge!.copyWith(
-                        color: Get.context!.theme.colorScheme.primary,
-                      ),
-                    ),
-                    onPressed: () async {
-                      await controller!.send(
-                        [file],
-                        "",
-                        "",
-                        null,
-                        null,
-                        null,
-                        true,
-                      );
-                      onDeleteRecording(file.path!);
-                      Navigator.of(context, rootNavigator: true).pop();
-                    },
-                  ),
-                ],
-              );
-            },
-          );
-        }
-      },
-    );
+        },
+      );
     });
   }
 }

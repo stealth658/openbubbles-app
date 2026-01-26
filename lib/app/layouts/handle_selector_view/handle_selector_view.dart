@@ -192,46 +192,46 @@ class HandleSelectorViewState extends OptimizedState<HandleSelectorView> {
                                   }
 
                                   return Material(
-                                  color: Colors.transparent,
-                                  child: InkWell(
-                                      onTap: () {
-                                        widget.onSelect(handle);
-                                        Navigator.of(context, rootNavigator: true).pop();
-                                      },
-                                      child: ListTile(
-                                          mouseCursor: MouseCursor.defer,
-                                          enableFeedback: true,
-                                          dense: SettingsSvc.settings.denseChatTiles.value,
-                                          minVerticalPadding: 10,
-                                          horizontalTitleGap: 10,
-                                          title: RichText(
-                                            text: TextSpan(
-                                              children: MessageHelper.buildEmojiText(
-                                                _title,
-                                                context.theme.textTheme.bodyLarge!,
-                                              ),
-                                            ),
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          subtitle: handle.address.isPhoneNumber
-                                              ? Text(
-                                                  formatPhoneNumber(cleansePhoneNumber(handle.address)),
-                                                  style: context.theme.textTheme.bodySmall!
-                                                      .copyWith(color: context.theme.colorScheme.outline),
-                                                )
-                                              : Text(
-                                                  handle.address,
-                                                  style: context.theme.textTheme.bodySmall!
-                                                      .copyWith(color: context.theme.colorScheme.outline),
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                        onTap: () {
+                                          widget.onSelect(handle);
+                                          Navigator.of(context, rootNavigator: true).pop();
+                                        },
+                                        child: ListTile(
+                                            mouseCursor: MouseCursor.defer,
+                                            enableFeedback: true,
+                                            dense: SettingsSvc.settings.denseChatTiles.value,
+                                            minVerticalPadding: 10,
+                                            horizontalTitleGap: 10,
+                                            title: RichText(
+                                              text: TextSpan(
+                                                children: MessageHelper.buildEmojiText(
+                                                  _title,
+                                                  context.theme.textTheme.bodyLarge!,
                                                 ),
-                                          leading: Padding(
-                                            padding: const EdgeInsets.only(right: 5.0),
-                                            child: ContactAvatarWidget(
-                                              handle: handle,
-                                              contact: handle.contact,
-                                              editable: false,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
                                             ),
-                                          ))),
+                                            subtitle: handle.address.isPhoneNumber
+                                                ? Text(
+                                                    formatPhoneNumber(cleansePhoneNumber(handle.address)),
+                                                    style: context.theme.textTheme.bodySmall!
+                                                        .copyWith(color: context.theme.colorScheme.outline),
+                                                  )
+                                                : Text(
+                                                    handle.address,
+                                                    style: context.theme.textTheme.bodySmall!
+                                                        .copyWith(color: context.theme.colorScheme.outline),
+                                                  ),
+                                            leading: Padding(
+                                              padding: const EdgeInsets.only(right: 5.0),
+                                              child: ContactAvatarWidget(
+                                                handle: handle,
+                                                contact: handle.contact,
+                                                editable: false,
+                                              ),
+                                            ))),
                                   );
                                 });
                               },

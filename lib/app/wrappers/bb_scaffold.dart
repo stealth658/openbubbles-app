@@ -109,27 +109,27 @@ class BBScaffold extends StatelessWidget {
               : Theme.of(context).colorScheme.background);
 
       return BBAnnotatedRegion(
-      statusBarIconBrightness: statusBarIconBrightness,
-      systemNavigationBarIconBrightness: systemNavigationBarIconBrightness,
-      systemNavigationBarColor: systemNavigationBarColor,
-      statusBarColor: statusBarColor,
-      child: Scaffold(
-        backgroundColor: effectiveBackgroundColor,
-        appBar: appBar,
-        body: body,
-        floatingActionButton: floatingActionButton,
-        floatingActionButtonLocation: floatingActionButtonLocation,
-        bottomNavigationBar: bottomNavigationBar,
-        drawer: drawer,
-        endDrawer: endDrawer,
-        bottomSheet: bottomSheet,
-        extendBodyBehindAppBar: extendBodyBehindAppBar,
-        extendBody: extendBody,
-        resizeToAvoidBottomInset: resizeToAvoidBottomInset,
-        persistentFooterButtons: persistentFooterButtons,
-        persistentFooterAlignment: persistentFooterAlignment ?? AlignmentDirectional.centerEnd,
-      ),
-    );
+        statusBarIconBrightness: statusBarIconBrightness,
+        systemNavigationBarIconBrightness: systemNavigationBarIconBrightness,
+        systemNavigationBarColor: systemNavigationBarColor,
+        statusBarColor: statusBarColor,
+        child: Scaffold(
+          backgroundColor: effectiveBackgroundColor,
+          appBar: appBar,
+          body: body,
+          floatingActionButton: floatingActionButton,
+          floatingActionButtonLocation: floatingActionButtonLocation,
+          bottomNavigationBar: bottomNavigationBar,
+          drawer: drawer,
+          endDrawer: endDrawer,
+          bottomSheet: bottomSheet,
+          extendBodyBehindAppBar: extendBodyBehindAppBar,
+          extendBody: extendBody,
+          resizeToAvoidBottomInset: resizeToAvoidBottomInset,
+          persistentFooterButtons: persistentFooterButtons,
+          persistentFooterAlignment: persistentFooterAlignment ?? AlignmentDirectional.centerEnd,
+        ),
+      );
     });
   }
 }

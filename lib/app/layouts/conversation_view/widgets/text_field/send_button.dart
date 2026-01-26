@@ -126,28 +126,28 @@ class _SendButtonIcon extends StatelessWidget {
       final isAnimating = animationValue != 0;
 
       return Container(
-      constraints: const BoxConstraints(minHeight: 32, minWidth: 32),
-      decoration: BoxDecoration(
-        shape: isIOS ? BoxShape.circle : BoxShape.rectangle,
-        borderRadius: isIOS ? null : BorderRadius.circular(10),
-        gradient: isIOS || isAnimating
-            ? LinearGradient(
-                begin: Alignment.bottomCenter,
-                end: Alignment.topCenter,
-                colors: [baseColor, baseColor, errorColor, errorColor],
-                stops: [0.0, 1 - animationValue, 1 - animationValue, 1.0],
-              )
-            : null,
-      ),
-      alignment: Alignment.center,
-      child: Icon(
-        animationValue == 0
-            ? (isIOS ? CupertinoIcons.arrow_up : Icons.send_outlined)
-            : (isIOS ? CupertinoIcons.xmark : Icons.close),
-        color: animationValue == 0 ? (isIOS ? iosOnPrimary : materialSecondary) : onError,
-        size: isIOS || isAnimating ? 20 : 28,
-      ),
-    );
+        constraints: const BoxConstraints(minHeight: 32, minWidth: 32),
+        decoration: BoxDecoration(
+          shape: isIOS ? BoxShape.circle : BoxShape.rectangle,
+          borderRadius: isIOS ? null : BorderRadius.circular(10),
+          gradient: isIOS || isAnimating
+              ? LinearGradient(
+                  begin: Alignment.bottomCenter,
+                  end: Alignment.topCenter,
+                  colors: [baseColor, baseColor, errorColor, errorColor],
+                  stops: [0.0, 1 - animationValue, 1 - animationValue, 1.0],
+                )
+              : null,
+        ),
+        alignment: Alignment.center,
+        child: Icon(
+          animationValue == 0
+              ? (isIOS ? CupertinoIcons.arrow_up : Icons.send_outlined)
+              : (isIOS ? CupertinoIcons.xmark : Icons.close),
+          color: animationValue == 0 ? (isIOS ? iosOnPrimary : materialSecondary) : onError,
+          size: isIOS || isAnimating ? 20 : 28,
+        ),
+      );
     });
   }
 }

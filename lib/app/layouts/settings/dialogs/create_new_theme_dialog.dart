@@ -54,10 +54,10 @@ class CreateNewThemeDialog extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Obx(() => Icon(
-                  SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.info : Icons.info_outline,
-                  size: 20,
-                  color: context.theme.colorScheme.primary,
-                )),
+                      SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.info : Icons.info_outline,
+                      size: 20,
+                      color: context.theme.colorScheme.primary,
+                    )),
                 const SizedBox(width: 20),
                 Expanded(
                     child: Text(

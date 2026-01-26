@@ -184,12 +184,12 @@ class _AttachmentPickerState extends OptimizedState<AttachmentPicker> {
           return Obx(() {
             final isIOS = SettingsSvc.settings.skin.value == Skins.iOS;
             return _ActionButton(
-            icon: index == 0
-                ? (isIOS ? CupertinoIcons.camera : Icons.photo_camera_outlined)
-                : (isIOS ? CupertinoIcons.videocam : Icons.videocam_outlined),
-            label: index == 0 ? "Photo" : "Video",
-            onPressed: () => openFullCamera(type: index == 0 ? "camera" : "video"),
-          );
+              icon: index == 0
+                  ? (isIOS ? CupertinoIcons.camera : Icons.photo_camera_outlined)
+                  : (isIOS ? CupertinoIcons.videocam : Icons.videocam_outlined),
+              label: index == 0 ? "Photo" : "Video",
+              onPressed: () => openFullCamera(type: index == 0 ? "camera" : "video"),
+            );
           });
         },
         childCount: 2,

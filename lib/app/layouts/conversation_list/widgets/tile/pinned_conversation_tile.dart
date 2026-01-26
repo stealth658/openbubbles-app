@@ -292,7 +292,7 @@ class _ChatTitleState extends CustomState<ChatTitle, void, ConversationTileContr
               : context.theme.colorScheme.outline,
           fontSizeFactor: isPinned ? 0.95 : 1,
         );
-        
+
         // Get title from ChatState - it handles all title logic including redacted mode
         final chatState = ChatsSvc.getChatState(controller.chat.guid);
         final _title = chatState?.title.value ?? controller.chat.getTitle();

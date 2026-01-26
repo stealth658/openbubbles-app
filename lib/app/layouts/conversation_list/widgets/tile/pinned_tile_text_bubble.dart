@@ -130,9 +130,8 @@ class PinnedTileTextBubbleState extends CustomState<PinnedTileTextBubble, void, 
   Widget build(BuildContext context) {
     return Obx(() {
       // Get the MessageState if available, otherwise fallback to manual subtitle
-      final messageState = lastMessage != null 
-          ? MessagesSvc(controller.chat.guid).getMessageStateIfExists(lastMessage!.guid!)
-          : null;
+      final messageState =
+          lastMessage != null ? MessagesSvc(controller.chat.guid).getMessageStateIfExists(lastMessage!.guid!) : null;
       String _subtitle = messageState?.text.value ?? subtitle;
 
       final unread = ChatsSvc.getChatState(controller.chat.guid)?.hasUnreadMessage.value ?? false;

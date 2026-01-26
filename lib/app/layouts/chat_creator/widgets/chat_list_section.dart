@@ -53,25 +53,25 @@ class ChatListSection extends StatelessWidget {
               final chatState = ChatsSvc.getChatState(chat.guid);
               final title = chatState?.title.value ?? chat.getTitle();
               return Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () {
-                  onChatTap(chat.handles
-                      .where((e) => selectedContacts.firstWhereOrNull((c) => c.address == e.address) == null)
-                      .map((e) => SelectedContact(
-                            displayName: e.displayName,
-                            address: e.address,
-                            isIMessage: chat.isIMessage,
-                          ))
-                      .toList());
-                },
-                child: ChatCreatorTile(
-                  key: ValueKey(chat.guid),
-                  title: title,
-                  subtitle: chatState?.subtitle.value ?? chat.getChatCreatorSubtitle(),
-                  chat: chat,
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {
+                    onChatTap(chat.handles
+                        .where((e) => selectedContacts.firstWhereOrNull((c) => c.address == e.address) == null)
+                        .map((e) => SelectedContact(
+                              displayName: e.displayName,
+                              address: e.address,
+                              isIMessage: chat.isIMessage,
+                            ))
+                        .toList());
+                  },
+                  child: ChatCreatorTile(
+                    key: ValueKey(chat.guid),
+                    title: title,
+                    subtitle: chatState?.subtitle.value ?? chat.getChatCreatorSubtitle(),
+                    chat: chat,
+                  ),
                 ),
-              ),
               );
             });
           },
@@ -88,39 +88,39 @@ class ChatListSection extends StatelessWidget {
               return Obx(() {
                 final hideInfo = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
                 return Column(
-                key: ValueKey(contact.id),
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ...contact.phones.map((e) => Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: () {
-                            if (selectedContacts.firstWhereOrNull((c) => c.address == e) != null) return;
-                            onContactTap(SelectedContact(displayName: contact.displayName, address: e));
-                          },
-                          child: ChatCreatorTile(
-                            title: hideInfo ? "Contact" : contact.displayName,
-                            subtitle: hideInfo ? "" : e,
-                            contact: contact,
-                            format: true,
+                  key: ValueKey(contact.id),
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ...contact.phones.map((e) => Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () {
+                              if (selectedContacts.firstWhereOrNull((c) => c.address == e) != null) return;
+                              onContactTap(SelectedContact(displayName: contact.displayName, address: e));
+                            },
+                            child: ChatCreatorTile(
+                              title: hideInfo ? "Contact" : contact.displayName,
+                              subtitle: hideInfo ? "" : e,
+                              contact: contact,
+                              format: true,
+                            ),
                           ),
-                        ),
-                      )),
-                  ...contact.emails.map((e) => Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: () {
-                            if (selectedContacts.firstWhereOrNull((c) => c.address == e) != null) return;
-                            onContactTap(SelectedContact(displayName: contact.displayName, address: e));
-                          },
-                          child: ChatCreatorTile(
-                            title: hideInfo ? "Contact" : contact.displayName,
-                            subtitle: hideInfo ? "" : e,
-                            contact: contact,
+                        )),
+                    ...contact.emails.map((e) => Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () {
+                              if (selectedContacts.firstWhereOrNull((c) => c.address == e) != null) return;
+                              onContactTap(SelectedContact(displayName: contact.displayName, address: e));
+                            },
+                            child: ChatCreatorTile(
+                              title: hideInfo ? "Contact" : contact.displayName,
+                              subtitle: hideInfo ? "" : e,
+                              contact: contact,
+                            ),
                           ),
-                        ),
-                      )),
-                ],
+                        )),
+                  ],
                 );
               });
             },

@@ -81,79 +81,79 @@ class _MediaGridSectionState extends OptimizedState<MediaGridSection> {
           )
         else
           Obx(() => SliverPadding(
-            padding: EdgeInsets.only(
-              left: SettingsSvc.settings.skin.value == Skins.iOS ? 20 : 10,
-              right: SettingsSvc.settings.skin.value == Skins.iOS ? 20 : 10,
-              top: 10,
-              bottom: 10,
-            ),
-            sliver: SliverGrid(
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: max(2, NavigationSvc.width(context) ~/ 200),
-                mainAxisSpacing: 10,
-                crossAxisSpacing: 10,
-              ),
-              delegate: SliverChildBuilderDelegate(
-                (context, int index) {
-                  return Obx(() => AnimatedContainer(
-                        duration: const Duration(milliseconds: 250),
-                        margin: EdgeInsets.all(
-                          widget.selected.contains(widget.media[index].guid) ? 10 : 0,
-                        ),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        clipBehavior: Clip.antiAlias,
-                        child: GestureDetector(
-                          onTap: widget.selected.isNotEmpty
-                              ? () {
-                                  if (widget.selected.contains(widget.media[index].guid)) {
-                                    widget.selected.remove(widget.media[index].guid!);
-                                  } else {
-                                    widget.selected.add(widget.media[index].guid!);
-                                  }
-                                }
-                              : null,
-                          onLongPress: () {
-                            if (widget.selected.contains(widget.media[index].guid)) {
-                              widget.selected.remove(widget.media[index].guid!);
-                            } else {
-                              widget.selected.add(widget.media[index].guid!);
-                            }
-                          },
-                          child: AbsorbPointer(
-                            absorbing: widget.selected.isNotEmpty,
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                MediaGalleryCard(
-                                  attachment: widget.media[index],
-                                ),
-                                if (widget.selected.contains(widget.media[index].guid))
-                                  Container(
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: context.theme.colorScheme.primary,
-                                    ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(5.0),
-                                      child: Icon(
-                                        iOS ? CupertinoIcons.check_mark : Icons.check,
-                                        color: context.theme.colorScheme.onPrimary,
-                                        size: 18,
-                                      ),
-                                    ),
-                                  ),
-                              ],
+                padding: EdgeInsets.only(
+                  left: SettingsSvc.settings.skin.value == Skins.iOS ? 20 : 10,
+                  right: SettingsSvc.settings.skin.value == Skins.iOS ? 20 : 10,
+                  top: 10,
+                  bottom: 10,
+                ),
+                sliver: SliverGrid(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: max(2, NavigationSvc.width(context) ~/ 200),
+                    mainAxisSpacing: 10,
+                    crossAxisSpacing: 10,
+                  ),
+                  delegate: SliverChildBuilderDelegate(
+                    (context, int index) {
+                      return Obx(() => AnimatedContainer(
+                            duration: const Duration(milliseconds: 250),
+                            margin: EdgeInsets.all(
+                              widget.selected.contains(widget.media[index].guid) ? 10 : 0,
                             ),
-                          ),
-                        ),
-                      ));
-                },
-                childCount: widget.media.length,
-              ),
-            ),
-          )),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: GestureDetector(
+                              onTap: widget.selected.isNotEmpty
+                                  ? () {
+                                      if (widget.selected.contains(widget.media[index].guid)) {
+                                        widget.selected.remove(widget.media[index].guid!);
+                                      } else {
+                                        widget.selected.add(widget.media[index].guid!);
+                                      }
+                                    }
+                                  : null,
+                              onLongPress: () {
+                                if (widget.selected.contains(widget.media[index].guid)) {
+                                  widget.selected.remove(widget.media[index].guid!);
+                                } else {
+                                  widget.selected.add(widget.media[index].guid!);
+                                }
+                              },
+                              child: AbsorbPointer(
+                                absorbing: widget.selected.isNotEmpty,
+                                child: Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    MediaGalleryCard(
+                                      attachment: widget.media[index],
+                                    ),
+                                    if (widget.selected.contains(widget.media[index].guid))
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: context.theme.colorScheme.primary,
+                                        ),
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(5.0),
+                                          child: Icon(
+                                            iOS ? CupertinoIcons.check_mark : Icons.check,
+                                            color: context.theme.colorScheme.onPrimary,
+                                            size: 18,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ));
+                    },
+                    childCount: widget.media.length,
+                  ),
+                ),
+              )),
       ],
     );
   }

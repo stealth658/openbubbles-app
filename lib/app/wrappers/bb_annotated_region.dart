@@ -53,15 +53,15 @@ class BBAnnotatedRegion extends StatelessWidget {
       final brightness = colorScheme.brightness;
 
       return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle(
-        systemNavigationBarColor:
-            systemNavigationBarColor ?? (immersiveMode ? Colors.transparent : colorScheme.background),
-        systemNavigationBarIconBrightness: systemNavigationBarIconBrightness ?? brightness.opposite,
-        statusBarColor: statusBarColor ?? Colors.transparent,
-        statusBarIconBrightness: statusBarIconBrightness ?? brightness.opposite,
-      ),
-      child: child,
-    );
+        value: SystemUiOverlayStyle(
+          systemNavigationBarColor:
+              systemNavigationBarColor ?? (immersiveMode ? Colors.transparent : colorScheme.background),
+          systemNavigationBarIconBrightness: systemNavigationBarIconBrightness ?? brightness.opposite,
+          statusBarColor: statusBarColor ?? Colors.transparent,
+          statusBarIconBrightness: statusBarIconBrightness ?? brightness.opposite,
+        ),
+        child: child,
+      );
     });
   }
 }

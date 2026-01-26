@@ -64,29 +64,29 @@ class DocumentsSection extends StatelessWidget {
           )
         else
           Obx(() => SliverPadding(
-            padding: EdgeInsets.only(
-              left: SettingsSvc.settings.skin.value == Skins.iOS ? 20 : 10,
-              right: SettingsSvc.settings.skin.value == Skins.iOS ? 20 : 10,
-              top: 10,
-              bottom: 10,
-            ),
-            sliver: SliverGrid(
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: max(2, NavigationSvc.width(context) ~/ 200),
-                mainAxisSpacing: 10,
-                crossAxisSpacing: 10,
-                childAspectRatio: 1.75,
-              ),
-              delegate: SliverChildBuilderDelegate(
-                (context, int index) {
-                  return MediaGalleryCard(
-                    attachment: docs[index],
-                  );
-                },
-                childCount: docs.length,
-              ),
-            ),
-          )),
+                padding: EdgeInsets.only(
+                  left: SettingsSvc.settings.skin.value == Skins.iOS ? 20 : 10,
+                  right: SettingsSvc.settings.skin.value == Skins.iOS ? 20 : 10,
+                  top: 10,
+                  bottom: 10,
+                ),
+                sliver: SliverGrid(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: max(2, NavigationSvc.width(context) ~/ 200),
+                    mainAxisSpacing: 10,
+                    crossAxisSpacing: 10,
+                    childAspectRatio: 1.75,
+                  ),
+                  delegate: SliverChildBuilderDelegate(
+                    (context, int index) {
+                      return MediaGalleryCard(
+                        attachment: docs[index],
+                      );
+                    },
+                    childCount: docs.length,
+                  ),
+                ),
+              )),
       ],
     );
   }

@@ -54,7 +54,8 @@ class _ReplyBubbleState extends CustomState<ReplyBubble, void, MessageWidgetCont
     if (!iOS) {
       // Use MessageState if available for reactive text content
       final messageText = controller.messageState?.text.value ?? message.text;
-      String text = MessageHelper.getNotificationText(Message(text: messageText, subject: controller.messageState?.subject.value ?? message.subject));
+      String text = MessageHelper.getNotificationText(
+          Message(text: messageText, subject: controller.messageState?.subject.value ?? message.subject));
       return MouseRegion(
         cursor: SystemMouseCursors.click,
         child: ConstrainedBox(

@@ -285,7 +285,7 @@ class _ChatIconAndTitleState extends CustomState<_ChatIconAndTitle, void, Conver
       // Get title from ChatState - it handles all title logic including redacted mode
       final chatState = ChatsSvc.getChatState(controller.chat.guid);
       final _title = chatState?.title.value ?? controller.chat.getTitle();
-      
+
       final children = [
         IgnorePointer(
           ignoring: true,
