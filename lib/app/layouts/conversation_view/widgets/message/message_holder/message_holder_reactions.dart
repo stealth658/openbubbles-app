@@ -38,11 +38,11 @@ class ReactionObserver extends StatelessWidget {
           .where((e) => ReactionTypes.toList().contains(e.associatedMessageType?.replaceAll("-", "")))
           .toList();
       final reactionList = messageParts.length == 1 ? reactions : reactionsForPart(part.part, reactions).toList();
-      
+    
       Logger.debug(
           "[MessageHolder] Rebuilding ReactionHolder for ${message.guid} (isFromMe: $isFromMe) with ${reactionList.length} reactions",
           tag: "MessageReactivity");
-      
+    
       return Positioned(
         top: -14,
         left: isFromMe ? -20 : null,

@@ -5,6 +5,57 @@ import 'package:bluebubbles/database/models.dart';
 import 'package:defer_pointer/defer_pointer.dart';
 import 'package:flutter/material.dart';
 
+/// Stateful widget that animates a reaction pop-in only once
+class _ReactionAnimator extends StatefulWidget {
+  const _ReactionAnimator({
+    super.key,
+    required this.stableKey,
+    required this.child,
+  });
+
+  final String stableKey;
+  final Widget child;
+
+  @override
+  State<_ReactionAnimator> createState() => _ReactionAnimatorState();
+}
+
+class _ReactionAnimatorState extends State<_ReactionAnimator> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 200),
+      vsync: this,
+    );
+    
+    _scaleAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOutBack,
+    );
+
+    // Animate in once
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ScaleTransition(
+      scale: _scaleAnimation,
+      child: widget.child,
+    );
+  }
+}
+
 class ReactionHolder extends StatefulWidget {
   const ReactionHolder({
     super.key,
@@ -70,16 +121,25 @@ class _ReactionHolderState extends OptimizedState<ReactionHolder> {
             .map((entry) {
               final i = entry.key;
               final e = entry.value;
+              // Use a stable key based on parent + reaction type + sender
+              // This prevents re-animation when temp GUID -> real GUID replacement happens
+              final sender = e.handleId ?? '0';
+              final stableKey = '${e.associatedMessageGuid}-${e.associatedMessageType}-$sender';
+              
               return Positioned(
-                key: ValueKey(e.guid),
+                key: ValueKey(stableKey),
                 top: 0,
                 left: !widget.message.isFromMe! ? null : -i * 2.0,
                 right: widget.message.isFromMe! ? null : -i * 2.0,
-                child: DeferPointer(
-                  child: ReactionWidget(
-                    message: widget.message,
-                    reaction: e,
-                    reactions: _cachedReactions,
+                child: _ReactionAnimator(
+                  key: ValueKey(stableKey),
+                  stableKey: stableKey,
+                  child: DeferPointer(
+                    child: ReactionWidget(
+                      message: widget.message,
+                      reaction: e,
+                      reactions: _cachedReactions,
+                    ),
                   ),
                 ),
               );
