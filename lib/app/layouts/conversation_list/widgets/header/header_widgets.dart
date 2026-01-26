@@ -94,161 +94,153 @@ class MaterialOverflowMenu extends StatelessWidget {
   Widget build(BuildContext context) {
     final skin = SettingsSvc.settings.skin.value;
     final windowEffect = SettingsSvc.settings.windowEffect.value;
-    
+
     return PopupMenuButton<int>(
-          color: context.theme.colorScheme.properSurface
-              .lightenOrDarken(skin == Skins.Samsung ? 20 : 0)
-              .withValues(alpha: windowEffect != WindowEffect.disabled ? 0.9 : 1),
-          shape: skin != Skins.Material
-              ? const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.all(
-                    Radius.circular(20.0),
-                  ),
-                )
-              : null,
-          onSelected: (int value) async {
-            if (value == 0) {
-              ChatsSvc.markAllAsRead();
-            } else if (value == 1) {
-              goToArchived(context);
-            } else if (value == 2) {
-              await goToSettings(context);
-            } else if (value == 3) {
-              goToUnknownSenders(context);
-            } else if (value == 4) {
-              logout(context);
-            } else if (value == 5) {
-              await goToFindMy(context);
-            } else if (value == 6) {
-              await goToSearch(context);
-            } else if (value == 7) {
-              controller?.openNewChatCreator(context);
-            } else if (value == 8) {
-              // Test Messages Isolate
-              final messages = await MessageInterface.getMessages();
-              if (context.mounted) {
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Message Isolate Test'),
-                    content: Text(messages.length > 0
-                        ? 'Successfully fetched messages from isolate!\nCount: ${messages.length}'
-                        : 'No messages found or error occurred'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: const Text('OK'),
-                      ),
-                    ],
-                  ),
-                );
-              }
-            }
-          },
-          itemBuilder: (context) {
-            return <PopupMenuItem<int>>[
-              PopupMenuItem(
-                value: 0,
-                child: Text(
-                  'Mark All As Read',
-                  style: context.textTheme.bodyLarge!.apply(color: context.theme.colorScheme.properOnSurface),
-                ),
+      color: context.theme.colorScheme.properSurface
+          .lightenOrDarken(skin == Skins.Samsung ? 20 : 0)
+          .withValues(alpha: windowEffect != WindowEffect.disabled ? 0.9 : 1),
+      shape: skin != Skins.Material
+          ? const RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(
+                Radius.circular(20.0),
               ),
-              PopupMenuItem(
-                value: 1,
-                child: Text(
-                  'Archived',
-                  style: context.textTheme.bodyLarge!.apply(color: context.theme.colorScheme.properOnSurface),
-                ),
+            )
+          : null,
+      onSelected: (int value) async {
+        if (value == 0) {
+          ChatsSvc.markAllAsRead();
+        } else if (value == 1) {
+          goToArchived(context);
+        } else if (value == 2) {
+          await goToSettings(context);
+        } else if (value == 3) {
+          goToUnknownSenders(context);
+        } else if (value == 4) {
+          logout(context);
+        } else if (value == 5) {
+          await goToFindMy(context);
+        } else if (value == 6) {
+          await goToSearch(context);
+        } else if (value == 7) {
+          controller?.openNewChatCreator(context);
+        } else if (value == 8) {
+          // Test Messages Isolate
+          final messages = await MessageInterface.getMessages();
+          if (context.mounted) {
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Message Isolate Test'),
+                content: Text(messages.length > 0
+                    ? 'Successfully fetched messages from isolate!\nCount: ${messages.length}'
+                    : 'No messages found or error occurred'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('OK'),
+                  ),
+                ],
               ),
-              if (SettingsSvc.settings.filterUnknownSenders.value)
-                PopupMenuItem(
-                  value: 3,
-                  child: Text(
-                    'Unknown Senders',
-                    style: context.textTheme.bodyLarge!.apply(color: context.theme.colorScheme.properOnSurface),
-                  ),
-                ),
-              if (SettingsSvc.isMinCatalinaSync)
-                PopupMenuItem(
-                  value: 5,
-                  child: Text(
-                    'FindMy',
-                    style: context.textTheme.bodyLarge!.apply(color: context.theme.colorScheme.properOnSurface),
-                  ),
-                ),
-              PopupMenuItem(
-                value: 2,
-                child: Text(
-                  'Settings',
-                  style: context.textTheme.bodyLarge!.apply(color: context.theme.colorScheme.properOnSurface),
-                ),
+            );
+          }
+        }
+      },
+      itemBuilder: (context) {
+        return <PopupMenuItem<int>>[
+          PopupMenuItem(
+            value: 0,
+            child: Text(
+              'Mark All As Read',
+              style: context.textTheme.bodyLarge!.apply(color: context.theme.colorScheme.properOnSurface),
+            ),
+          ),
+          PopupMenuItem(
+            value: 1,
+            child: Text(
+              'Archived',
+              style: context.textTheme.bodyLarge!.apply(color: context.theme.colorScheme.properOnSurface),
+            ),
+          ),
+          if (SettingsSvc.settings.filterUnknownSenders.value)
+            PopupMenuItem(
+              value: 3,
+              child: Text(
+                'Unknown Senders',
+                style: context.textTheme.bodyLarge!.apply(color: context.theme.colorScheme.properOnSurface),
               ),
-              if (kIsWeb)
-                PopupMenuItem(
-                  value: 4,
-                  child: Text(
-                    'Logout',
-                    style: context.textTheme.bodyLarge!.apply(color: context.theme.colorScheme.properOnSurface),
-                  ),
+            ),
+          if (SettingsSvc.isMinCatalinaSync)
+            PopupMenuItem(
+              value: 5,
+              child: Text(
+                'FindMy',
+                style: context.textTheme.bodyLarge!.apply(color: context.theme.colorScheme.properOnSurface),
+              ),
+            ),
+          PopupMenuItem(
+            value: 2,
+            child: Text(
+              'Settings',
+              style: context.textTheme.bodyLarge!.apply(color: context.theme.colorScheme.properOnSurface),
+            ),
+          ),
+          if (kIsWeb)
+            PopupMenuItem(
+              value: 4,
+              child: Text(
+                'Logout',
+                style: context.textTheme.bodyLarge!.apply(color: context.theme.colorScheme.properOnSurface),
+              ),
+            ),
+          if (extraItems)
+            PopupMenuItem(
+              value: 6,
+              child: Text(
+                'Search',
+                style: context.textTheme.bodyLarge!.apply(color: context.theme.colorScheme.properOnSurface),
+              ),
+            ),
+          if (extraItems && SettingsSvc.settings.moveChatCreatorToHeader.value)
+            PopupMenuItem(
+              value: 7,
+              child: Text(
+                'New Chat',
+                style: context.textTheme.bodyLarge!.apply(color: context.theme.colorScheme.properOnSurface),
+              ),
+            ),
+        ];
+      },
+      icon: skin == Skins.Material
+          ? Icon(
+              Icons.more_vert,
+              color: context.theme.colorScheme.properOnSurface,
+              size: 25,
+            )
+          : null,
+      child: skin == Skins.Material
+          ? null
+          : ThemeSwitcher(
+              iOSSkin: Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(40),
+                  color: context.theme.colorScheme.properSurface,
                 ),
-              if (extraItems)
-                PopupMenuItem(
-                  value: 6,
-                  child: Text(
-                    'Search',
-                    style: context.textTheme.bodyLarge!.apply(color: context.theme.colorScheme.properOnSurface),
-                  ),
-                ),
-              if (extraItems && SettingsSvc.settings.moveChatCreatorToHeader.value)
-                PopupMenuItem(
-                  value: 7,
-                  child: Text(
-                    'New Chat',
-                    style: context.textTheme.bodyLarge!.apply(color: context.theme.colorScheme.properOnSurface),
-                  ),
-                ),
-              if (kDebugMode)
-                PopupMenuItem(
-                  value: 8,
-                  child: Text(
-                    'Test Message Isolate',
-                    style: context.textTheme.bodyLarge!.apply(color: context.theme.colorScheme.properOnSurface),
-                  ),
-                ),
-            ];
-          },
-          icon: skin == Skins.Material
-              ? Icon(
-                  Icons.more_vert,
+                child: Icon(
+                  Icons.more_horiz,
                   color: context.theme.colorScheme.properOnSurface,
-                  size: 25,
-                )
-              : null,
-          child: skin == Skins.Material
-              ? null
-              : ThemeSwitcher(
-                  iOSSkin: Container(
-                    width: 30,
-                    height: 30,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(40),
-                      color: context.theme.colorScheme.properSurface,
-                    ),
-                    child: Icon(
-                      Icons.more_horiz,
-                      color: context.theme.colorScheme.properOnSurface,
-                      size: 20,
-                    ),
-                  ),
-                  materialSkin: const SizedBox.shrink(),
-                  samsungSkin: Icon(
-                    Icons.more_vert,
-                    color: context.theme.colorScheme.properOnSurface,
-                    size: 25,
-                  ),
+                  size: 20,
                 ),
-        );
+              ),
+              materialSkin: const SizedBox.shrink(),
+              samsungSkin: Icon(
+                Icons.more_vert,
+                color: context.theme.colorScheme.properOnSurface,
+                size: 25,
+              ),
+            ),
+    );
   }
 }
 
@@ -268,7 +260,7 @@ class CupertinoOverflowMenu extends StatelessWidget {
     final iCloudAccount = SettingsSvc.settings.iCloudAccount.value;
     final filterUnknownSenders = SettingsSvc.settings.filterUnknownSenders.value;
     final moveChatCreatorToHeader = SettingsSvc.settings.moveChatCreatorToHeader.value;
-    
+
     final itemTheme = PullDownMenuItemTheme(
       textStyle: TextStyle(
         color: context.theme.colorScheme.onSurface,

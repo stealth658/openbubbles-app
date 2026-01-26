@@ -45,18 +45,13 @@ class ReplyBubbleSection extends StatelessWidget {
       return Padding(
         padding: showAvatar || alwaysShowAvatars ? EdgeInsets.only(left: 35.0 * avatarScale) : EdgeInsets.zero,
         child: DecoratedBox(
-          decoration: SettingsSvc.settings.skin.value == Skins.iOS
-              ? BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.fromBorderSide(BorderSide(color: context.theme.colorScheme.outline, width: 2)),
-                )
-              : ReplyLineDecoration(
-                  isFromMe: message.isFromMe!,
-                  color: context.theme.colorScheme.properSurface,
-                  connectUpper: false,
-                  connectLower: true,
-                  context: context,
-                ),
+          decoration: ReplyLineDecoration(
+            isFromMe: message.isFromMe!,
+            color: context.theme.colorScheme.properSurface,
+            connectUpper: false,
+            connectLower: true,
+            context: context,
+          ),
           child: Container(
             width: double.infinity,
             alignment: replyTo.isFromMe! ? Alignment.centerRight : Alignment.centerLeft,
