@@ -812,16 +812,26 @@ class Chat {
     }
 
     // If b is pinned & ordered, but a isn't either pinned or ordered, return accordingly
-    if (b!.isPinned! && b.pinIndex != null && (!a.isPinned! || a.pinIndex == null)) return 1;
+    if (b!.isPinned! && b.pinIndex != null && (!a.isPinned! || a.pinIndex == null)) {
+      return 1;
+    }
     // If a is pinned & ordered, but b isn't either pinned or ordered, return accordingly
-    if (a.isPinned! && a.pinIndex != null && (!b.isPinned! || b.pinIndex == null)) return -1;
+    if (a.isPinned! && a.pinIndex != null && (!b.isPinned! || b.pinIndex == null)) {
+      return -1;
+    }
 
     // Compare when one is pinned and the other isn't
-    if (!a.isPinned! && b.isPinned!) return 1;
-    if (a.isPinned! && !b.isPinned!) return -1;
+    if (!a.isPinned! && b.isPinned!) {
+      return 1;
+    }
+    if (a.isPinned! && !b.isPinned!) {
+      return -1;
+    }
 
-    // Compare the last message dates
-    return -(a.latestMessage.dateCreated)!.compareTo(b.latestMessage.dateCreated!);
+    // Compare the last message dates (negate to sort newest first)
+    final aDate = a.latestMessage.dateCreated!;
+    final bDate = b.latestMessage.dateCreated!;
+    return -aDate.compareTo(bDate);
   }
 
   static Future<void> getIcon(Chat c, {bool force = false}) async {

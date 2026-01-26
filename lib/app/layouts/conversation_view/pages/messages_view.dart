@@ -603,17 +603,20 @@ class MessagesViewState extends OptimizedState<MessagesView> {
                                         message.isSending &&
                                         message.guid != null &&
                                         _animatingMessageGuids.contains(message.guid)) {
-                                      return SizeTransition(
-                                        sizeFactor: animation.drive(
-                                          CurveTween(curve: Curves.easeOut),
+                                      return SlideTransition(
+                                        position: animation.drive(
+                                          Tween<Offset>(
+                                            begin: const Offset(0.0, 1.0),
+                                            end: Offset.zero,
+                                          ).chain(CurveTween(curve: Curves.easeOut)),
                                         ),
-                                        child: SlideTransition(
-                                          position: animation.drive(
-                                            Tween<Offset>(
-                                              begin: const Offset(0.0, 0.3),
-                                              end: Offset.zero,
-                                            ).chain(CurveTween(curve: Curves.easeOut)),
+                                        child: SizeTransition(
+                                          sizeFactor: animation.drive(
+                                            Tween<double>(begin: 0.3, end: 1.0).chain(
+                                              CurveTween(curve: Curves.easeOut),
+                                            ),
                                           ),
+                                          axisAlignment: -1.0,
                                           child: FadeTransition(
                                             opacity: animation.drive(
                                               Tween<double>(begin: 0.0, end: 1.0).chain(
@@ -634,17 +637,20 @@ class MessagesViewState extends OptimizedState<MessagesView> {
 
                                     // Animate other messages with size + slide only (received or from other devices)
                                     if (message.guid != null && _animatingMessageGuids.contains(message.guid)) {
-                                      return SizeTransition(
-                                        sizeFactor: animation.drive(
-                                          CurveTween(curve: Curves.easeOut),
+                                      return SlideTransition(
+                                        position: animation.drive(
+                                          Tween<Offset>(
+                                            begin: const Offset(0.0, 1.0),
+                                            end: Offset.zero,
+                                          ).chain(CurveTween(curve: Curves.easeOut)),
                                         ),
-                                        child: SlideTransition(
-                                          position: animation.drive(
-                                            Tween<Offset>(
-                                              begin: const Offset(0.0, 0.3),
-                                              end: Offset.zero,
-                                            ).chain(CurveTween(curve: Curves.easeOut)),
+                                        child: SizeTransition(
+                                          sizeFactor: animation.drive(
+                                            Tween<double>(begin: 0.3, end: 1.0).chain(
+                                              CurveTween(curve: Curves.easeOut),
+                                            ),
                                           ),
+                                          axisAlignment: -1.0,
                                           child: messageWidget,
                                         ),
                                       );

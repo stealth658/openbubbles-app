@@ -542,8 +542,8 @@ class Chat {
     if (!a.isPinned! && b.isPinned!) return 1;
     if (a.isPinned! && !b.isPinned!) return -1;
 
-    // Compare the last message dates
-    return -(a.latestMessage.dateCreated)!.compareTo(b.latestMessage.dateCreated!);
+    // Compare the last message dates (negate to sort newest first)
+    return -(a.latestMessage.dateCreated!.compareTo(b.latestMessage.dateCreated!));
   }
 
   static Future<void> getIcon(Chat c, {bool force = false}) async {}

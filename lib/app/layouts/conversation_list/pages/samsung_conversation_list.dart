@@ -88,6 +88,8 @@ class _SamsungConversationListState extends OptimizedState<SamsungConversationLi
               child: Obx(() {
                 // Force reactivity by accessing observable values first
                 final loaded = ChatsSvc.loadedFirstChatBatch.value;
+                // Observe chat list version to trigger rebuild when order changes
+                final _ = ChatsSvc.chatListVersion.value;
                 final _chats = ChatsSvc.getFilteredChats(
                   showArchived: controller.showArchivedChats,
                   showUnknown: controller.showUnknownSenders,

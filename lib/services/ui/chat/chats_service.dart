@@ -46,6 +46,13 @@ class ChatsService {
   /// instead of sorting entire list O(n log n) on every access
   final List<Chat> _sortedChats = [];
 
+  /// Reactive counter that increments when chat list order changes
+  /// Used to trigger UI rebuilds when chats are repositioned
+  final RxInt chatListVersion = 0.obs;
+
+  /// Timer for debouncing chatListVersion updates to prevent rapid UI rebuilds
+  Timer? _listVersionUpdateTimer;
+
   /// Listeners for redacted mode settings to update all ChatStates
   StreamSubscription? _redactedModeListener;
   StreamSubscription? _hideContactInfoListener;
@@ -181,14 +188,14 @@ class ChatsService {
             // refresh the latest message
             chat.dbLatestMessage;
           }
-          await addChat(chat);
+          await addChat(chat, immediate: true);
         }
         currentCount = newCount;
       });
     } else {
       countSub = WebListeners.newChat.listen((chat) async {
         if (!SettingsSvc.settings.finishedSetup.value) return;
-        await addChat(chat);
+        await addChat(chat, immediate: true);
       });
     }
   }
@@ -355,8 +362,25 @@ class ChatsService {
     }
   }
 
+  /// Schedule a debounced update to chatListVersion to prevent rapid UI rebuilds
+  /// Debounces updates by 150ms - if multiple updates occur in rapid succession,
+  /// only the last one will trigger a UI rebuild
+  /// If [immediate] is true, bypasses debouncing and updates immediately (for new messages)
+  void _scheduleListVersionUpdate({bool immediate = false}) {
+    if (immediate) {
+      _listVersionUpdateTimer?.cancel();
+      chatListVersion.value++;
+    } else {
+      _listVersionUpdateTimer?.cancel();
+      _listVersionUpdateTimer = Timer(const Duration(milliseconds: 250), () {
+        chatListVersion.value++;
+      });
+    }
+  }
+
   void close() {
     countSub?.cancel();
+    _listVersionUpdateTimer?.cancel();
     _redactedModeListener?.cancel();
     _hideContactInfoListener?.cancel();
     _generateFakeContactNamesListener?.cancel();
@@ -377,7 +401,8 @@ class ChatsService {
 
     while (left < right) {
       final mid = (left + right) ~/ 2;
-      final comparison = Chat.sort(chat, _sortedChats[mid]);
+      final midChat = _sortedChats[mid];
+      final comparison = Chat.sort(chat, midChat);
 
       if (comparison < 0) {
         right = mid;
@@ -396,9 +421,11 @@ class ChatsService {
   }
 
   /// Reposition a chat in the sorted list (used when chat is updated)
-  void _repositionChat(Chat chat) {
+  /// If [immediate] is true, UI updates immediately; otherwise debounced (default: true for new messages)
+  void _repositionChat(Chat chat, {bool immediate = true}) {
     // Find current position
     final currentIndex = _sortedChats.indexWhere((c) => c.guid == chat.guid);
+    
     if (currentIndex == -1) {
       // Chat not found, just insert it
       _insertChatSorted(chat);
@@ -412,14 +439,17 @@ class ChatsService {
     // Only reposition if the index actually changed
     if (newIndex != currentIndex) {
       _sortedChats.insert(newIndex, chat);
+      // Schedule UI rebuild (immediate for new messages, debounced for batch loads)
+      _scheduleListVersionUpdate(immediate: immediate);
     } else {
       // Put it back in the same position
       _sortedChats.insert(currentIndex, chat);
     }
   }
 
-  bool updateChat(Chat updated, {bool override = false}) {
+  bool updateChat(Chat updated, {bool override = false, bool immediate = true}) {
     if (headless) return false;
+    
     final state = chatStates[updated.guid];
     if (state != null) {
       final currentLatestMessage = state.latestMessage.value;
@@ -436,7 +466,7 @@ class ChatsService {
       }
 
       if (sortOrderChanged || override) {
-        _repositionChat(state.chat);
+        _repositionChat(state.chat, immediate: immediate);
       }
 
       return true;
@@ -451,12 +481,12 @@ class ChatsService {
     }
   }
 
-  Future<void> addChat(Chat toAdd) async {
+  Future<void> addChat(Chat toAdd, {bool immediate = false}) async {
     if (headless) return;
     // Check if chat already exists
     if (chatStates.containsKey(toAdd.guid)) {
-      // Update existing chat instead
-      updateChat(toAdd, override: true);
+      // Update existing chat instead (debounced during init, immediate for new chats)
+      updateChat(toAdd, override: true, immediate: immediate);
       return;
     }
 
@@ -531,6 +561,9 @@ class ChatsService {
       if (state != null) {
         state.pinIndex.value = null;
       }
+      
+      // Trigger reposition to re-sort the chat
+      _repositionChat(element, immediate: true);
     }
   }
 
