@@ -197,20 +197,10 @@ class ActionHandler extends GetxService {
 
     // For reactions, add to UI immediately before sending to server
     if (r != null && m.associatedMessageGuid != null) {
-      Logger.debug(
-          "[ActionHandler] Adding temp reaction to UI immediately: temp=${m.guid}, parent=${m.associatedMessageGuid}, type=$r",
-          tag: "MessageReactivity");
-
       // Update parent message's MessageState with temp reaction
       final parentState = MessagesSvc(c.guid).getMessageStateIfExists(m.associatedMessageGuid!);
       if (parentState != null) {
         parentState.addAssociatedMessageInternal(m);
-        Logger.debug("[ActionHandler] Added temp reaction to parent MessageState ${m.associatedMessageGuid}",
-            tag: "MessageReactivity");
-      } else {
-        Logger.warn(
-            "[ActionHandler] Parent MessageState not found for temp reaction, will update when state is created",
-            tag: "MessageReactivity");
       }
     }
 

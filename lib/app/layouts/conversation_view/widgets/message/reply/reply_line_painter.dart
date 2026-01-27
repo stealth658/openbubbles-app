@@ -66,7 +66,8 @@ class ReplyLinePainter extends BoxPainter {
             _offset.dy + size.height / 2);
       } else {
         path.moveTo(_offset.dx, _offset.dy);
-        path.lineTo(_offset.dx, _offset.dy + (size.height / 2 - radius).clamp(0, double.infinity));
+        // The -2 here prevents a small gap from appearing when both upper and lower lines are drawn on back to back replies
+        path.lineTo(_offset.dx, _offset.dy - 2 + (size.height / 2 - radius).clamp(0, double.infinity));
         final x = _offset.dx + radius;
         path.arcToPoint(Offset(x, _offset.dy + size.height / 2), clockwise: false, radius: Radius.circular(radius));
         path.lineTo(
@@ -91,7 +92,8 @@ class ReplyLinePainter extends BoxPainter {
             _offset.dy + size.height / 2);
       } else {
         path.moveTo(_offset.dx, _offset.dy + size.height);
-        path.lineTo(_offset.dx, _offset.dy + size.height - (size.height / 2 - radius).clamp(0, double.infinity));
+        // The +2 here prevents a small gap from appearing when both upper and lower lines are drawn on back to back replies
+        path.lineTo(_offset.dx, _offset.dy + 2 + size.height - (size.height / 2 - radius).clamp(0, double.infinity));
         final x = _offset.dx + radius;
         path.arcToPoint(Offset(x, _offset.dy + size.height / 2), clockwise: true, radius: Radius.circular(radius));
         path.lineTo(
