@@ -307,7 +307,8 @@ class MessagesViewState extends OptimizedState<MessagesView> {
     }
 
     // Use insertItem to animate the list sliding up to make space (all messages)
-    const duration = Duration(milliseconds: 1250);
+    // I've found the sweet spot to be between 400 and 450ms
+    const duration = Duration(milliseconds: 400);
     _listKey.currentState?.insertItem(
       insertIndex,
       duration: duration,
