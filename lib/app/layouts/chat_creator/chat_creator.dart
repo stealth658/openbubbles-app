@@ -73,6 +73,7 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
   ConversationViewController? oldController;
   Timer? _debounce;
   Completer<void>? createCompleter;
+  MessagesService? messagesService;
 
   bool canCreateGroupChats = SettingsSvc.canCreateGroupChatSync();
 
@@ -126,27 +127,34 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
       });
     });
 
-    updateObx(() async {
+    // Load contacts and chats asynchronously
+    () async {
       if (widget.initialAttachments.isEmpty && !kIsWeb) {
         final contactMaps = await ContactV2Interface.getAddressBook();
         contacts = await Future.wait(contactMaps.map((e) => Contact.fromFastContact(e)));
         if (mounted) {
-          filteredContacts.value = List<Contact>.from(contacts);
+          updateObx(() {
+            filteredContacts.value = List<Contact>.from(contacts);
+          });
         }
       }
       if (ChatsSvc.loadedAllChats.isCompleted) {
         existingChats = ChatsSvc.allChats;
-        filteredChats.value = List<Chat>.from(existingChats.where((e) => e.isIMessage));
+        updateObx(() {
+          filteredChats.value = List<Chat>.from(existingChats.where((e) => e.isIMessage));
+        });
       } else {
         ChatsSvc.loadedAllChats.future.then((_) {
           existingChats = ChatsSvc.allChats;
-          filteredChats.value = List<Chat>.from(existingChats.where((e) => e.isIMessage));
+          updateObx(() {
+            filteredChats.value = List<Chat>.from(existingChats.where((e) => e.isIMessage));
+          });
         });
       }
       if (widget.initialSelected.isNotEmpty) {
         findExistingChat();
       }
-    });
+    }();
 
     if (widget.initialSelected.isNotEmpty) messageNode.requestFocus();
   }
@@ -234,6 +242,13 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
         await ChatsSvc.setActiveChat(existingChat, clearNotifications: false);
         ChatsSvc.activeChat!.controller = cvc(existingChat);
 
+        // Get or create the MessagesService for this chat
+        // Only create a new one if we don't already have one for this chat
+        // DON'T initialize it here - let MessagesView initialize it with proper handlers
+        if (messagesService == null || messagesService!.tag != existingChat.guid) {
+          messagesService = MessagesSvc(existingChat.guid);
+        }
+
         if (widget.initialAttachments.isNotEmpty) {
           ChatsSvc.activeChat!.controller!.pickedAttachments.value = widget.initialAttachments;
         } else if (fakeController.value != null && fakeController.value!.pickedAttachments.isNotEmpty) {
@@ -253,6 +268,7 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
       } else {
         await ChatsSvc.setAllInactive();
         fakeController.value = null;
+        messagesService = null;
       }
     }
     if (checkDeleted && existingChat?.dateDeleted != null) {
@@ -471,12 +487,15 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
                       ),
                     ),
                     child: Obx(() {
+                      // Access the lists to ensure Obx tracks changes
+                      final chats = filteredChats.toList();
+                      final contacts = filteredContacts.toList();
                       return AnimatedSwitcher(
                         duration: const Duration(milliseconds: 150),
                         child: fakeController.value == null
                             ? ChatListSection(
-                                filteredChats: filteredChats,
-                                filteredContacts: filteredContacts,
+                                filteredChats: chats,
+                                filteredContacts: contacts,
                                 selectedContacts: selectedContacts,
                                 onChatTap: addSelectedList,
                                 onContactTap: addSelected,
@@ -484,6 +503,7 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
                             : Container(
                                 color: Colors.transparent,
                                 child: MessagesView(
+                                  customService: messagesService,
                                   controller: fakeController.value!,
                                 ),
                               ),
@@ -572,7 +592,12 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
 
                               NavigationSvc.pushAndRemoveUntil(
                                 Get.context!,
-                                ConversationView(chat: chat, fromChatCreator: true, onInit: sendInitialMessage),
+                                ConversationView(
+                                  chat: chat,
+                                  customService: messagesService,
+                                  fromChatCreator: true,
+                                  onInit: sendInitialMessage,
+                                ),
                                 (route) => route.isFirst,
                                 // don't force close the active chat in tablet mode
                                 closeActiveChat: false,
@@ -580,7 +605,11 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
                                 customRoute: PageRouteBuilder(
                                   pageBuilder: (_, __, ___) => TitleBarWrapper(
                                       child: ConversationView(
-                                          chat: chat, fromChatCreator: true, onInit: sendInitialMessage)),
+                                        chat: chat,
+                                        customService: messagesService,
+                                        fromChatCreator: true,
+                                        onInit: sendInitialMessage,
+                                      )),
                                   transitionDuration: Duration.zero,
                                 ),
                               );

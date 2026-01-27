@@ -40,7 +40,7 @@ class MessagesView extends StatefulWidget {
 }
 
 class MessagesViewState extends OptimizedState<MessagesView> with MessagesServiceMixin {
-  bool initialized = false;
+  bool handlersInitialized = false;
   bool fetching = false;
   late bool noMoreMessages = widget.customService != null;
   List<Message> _messages = <Message>[];
@@ -77,6 +77,28 @@ class MessagesViewState extends OptimizedState<MessagesView> with MessagesServic
   void initState() {
     super.initState();
 
+    // If a customService is provided that already has messages in its struct,
+    // initialize synchronously to prevent GetX errors from accessing MessageStates before they exist
+    // This happens when reusing a service from chat_creator that already loaded messages
+    if (widget.customService != null && widget.customService!.struct.messages.isNotEmpty) {
+      initializeMessagesService(
+        chat,
+        widget.customService!.struct.messages,
+        controller,
+        customService: widget.customService,
+        onNewMessage: handleNewMessage,
+        onUpdatedMessage: handleUpdatedMessage,
+        onDeletedMessage: handleDeletedMessage,
+        onJumpToMessage: jumpToMessage,
+      );
+      _messages = List<Message>.from(widget.customService!.struct.messages);
+      _messages.sort(Message.sort);
+      handlersInitialized = true;
+      
+      // Trigger a rebuild to display the messages
+      setState(() {});
+    }
+
     EventDispatcherSvc.stream.listen((e) async {
       if (e.item1 == "refresh-messagebloc" && e.item2 == chat.guid) {
         // Clear state items
@@ -107,32 +129,49 @@ class MessagesViewState extends OptimizedState<MessagesView> with MessagesServic
         getFocusState();
       }
       
-      // Initialize messages service with loading
-      final searchMessage = isMessagesServiceInitialized ? messageService.struct.messages.firstOrNull : null;
-      _messages = await initializeMessagesServiceWithLoading(
-        chat,
-        controller,
-        customService: widget.customService,
-        searchMessage: searchMessage,
-        onNewMessage: handleNewMessage,
-        onUpdatedMessage: handleUpdatedMessage,
-        onDeletedMessage: handleDeletedMessage,
-        onJumpToMessage: jumpToMessage,
-      );
-      
-      // Recreate the list key to force SliverAnimatedList to rebuild with correct item count
-      _listKey = GlobalKey<SliverAnimatedListState>();
-      setState(() {});
-      
-      // scroll to message if needed
-      if (searchMessage != null) {
-        final index = _messages.indexWhere((element) => element.guid == searchMessage.guid);
-        await scrollController.scrollToIndex(index, preferPosition: AutoScrollPosition.middle);
-        scrollController.highlight(index, highlightDuration: const Duration(milliseconds: 500));
-      } else if (!(_messages.firstOrNull?.isFromMe ?? true)) {
+      // Only load if not already initialized from customService
+      if (!handlersInitialized) {
+        // Get or create the service
+        final service = widget.customService ?? MessagesSvc(chat.guid);
+        
+        // Initialize with handlers
+        service.init(
+          chat,
+          handleNewMessage,
+          handleUpdatedMessage,
+          handleDeletedMessage,
+          jumpToMessage,
+        );
+        
+        // Load messages if needed (check service flag to avoid redundant loads)
+        if (!service.messagesLoaded) {
+          await service.loadChunk(0, controller);
+        }
+        
+        _messages = service.struct.messages;
+        _messages.sort(Message.sort);
+        
+        // Initialize the mixin's service reference and create controllers
+        initializeMessagesService(
+          chat,
+          _messages,
+          controller,
+          customService: service,
+          onNewMessage: handleNewMessage,
+          onUpdatedMessage: handleUpdatedMessage,
+          onDeletedMessage: handleDeletedMessage,
+          onJumpToMessage: jumpToMessage,
+        );
+        
+        // Recreate the list key to force SliverAnimatedList to rebuild with correct item count
+        _listKey = GlobalKey<SliverAnimatedListState>();
+        handlersInitialized = true;
+        setState(() {});
+      }
+
+      if (!(_messages.firstOrNull?.isFromMe ?? true)) {
         updateReplies();
       }
-      initialized = true;
       if (SettingsSvc.settings.scrollToLastUnread.value && chat.lastReadMessageGuid != null) {
         Future.delayed(const Duration(milliseconds: 100), () {
           if (messageService.getControllerIfExists(chat.lastReadMessageGuid!)?.built ?? false) return;
@@ -153,7 +192,8 @@ class MessagesViewState extends OptimizedState<MessagesView> with MessagesServic
     if (!kIsWeb && !kIsDesktop) smartReply.close();
     chat.lastReadMessageGuid = _messages.first.guid;
     chat.saveAsync(updateLastReadMessageGuid: true);
-    disposeMessagesService(force: widget.customService != null);
+    // Don't force-delete customService (it may be reused), only force-delete regular singleton
+    disposeMessagesService(force: widget.customService == null);
     // Controllers are now disposed by MessagesService.onClose()
     _setStateDebouncer?.cancel();
     _listVersion.dispose();
@@ -281,7 +321,9 @@ class MessagesViewState extends OptimizedState<MessagesView> with MessagesServic
 
   void handleNewMessage(Message message) async {
     // Check if widget is still mounted before processing
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
 
     Logger.debug("handleNewMessage: Received new message ${message.guid}, current count: ${_messages.length}");
 
@@ -545,7 +587,7 @@ class MessagesViewState extends OptimizedState<MessagesView> with MessagesServic
                               chat: chat,
                             ),
                           ),
-                          if (_messages.isEmpty && widget.customService != null)
+                          if (_messages.isEmpty)
                             const SliverToBoxAdapter(
                               child: Loader(text: "Loading surrounding message context..."),
                             ),
@@ -558,7 +600,7 @@ class MessagesViewState extends OptimizedState<MessagesView> with MessagesServic
                                   try {
                                     // paginate
                                     if (index >= _messages.length) {
-                                      if (!noMoreMessages && initialized && index == _messages.length) {
+                                      if (!noMoreMessages && handlersInitialized && index == _messages.length) {
                                         if (!fetching) {
                                           _loadMoreMessages();
                                         }

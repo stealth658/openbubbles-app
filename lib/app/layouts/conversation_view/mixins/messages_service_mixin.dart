@@ -6,15 +6,12 @@ import 'package:flutter/material.dart';
 /// Mixin for initializing and managing MessagesService with proper message controllers and states.
 /// This ensures MessageHolder widgets have access to MessageState observables for reactivity.
 /// 
-/// Supports two initialization modes:
-/// 1. Pre-loaded messages (peek view, dialogs): Use initializeMessagesService()
-/// 2. Lazy loading (conversation view): Use initializeMessagesServiceWithLoading()
-/// 
 /// Usage:
 /// 1. Apply this mixin to your State class
-/// 2. Call one of the initialize methods in initState
-/// 3. Call disposeMessagesService() in dispose
-/// 4. Access via the messageService getter
+/// 2. Call initializeMessagesService() in initState with your messages
+/// 3. For async loading scenarios, manually orchestrate loading and then call initializeMessagesService()
+/// 4. Call disposeMessagesService() in dispose
+/// 5. Access via the messageService getter
 mixin MessagesServiceMixin<T extends StatefulWidget> on State<T> {
   MessagesService? _messageService;
   
@@ -52,14 +49,24 @@ mixin MessagesServiceMixin<T extends StatefulWidget> on State<T> {
     // Use custom service or get/create singleton
     _messageService = customService ?? MessagesSvc(chat.guid);
     
-    // Initialize with handlers (use no-ops if not provided)
-    _messageService!.init(
-      chat,
-      onNewMessage ?? (_) {},
-      onUpdatedMessage ?? (_, {String? oldGuid}) {},
-      onDeletedMessage ?? (_) {},
-      onJumpToMessage ?? (_) {},
-    );
+    // Only initialize handlers if this is NOT a customService
+    // CustomService is already initialized by the caller, don't reinitialize
+    // to avoid triggering Get.reload() which deletes and recreates the service
+    if (customService == null) {
+      _messageService!.init(
+        chat,
+        onNewMessage ?? (_) {},
+        onUpdatedMessage ?? (_, {String? oldGuid}) {},
+        onDeletedMessage ?? (_) {},
+        onJumpToMessage ?? (_) {},
+      );
+    } else {
+      // For customService, just update the handlers without reinitializing
+      _messageService!.updateFunc = onUpdatedMessage ?? (_, {String? oldGuid}) {};
+      _messageService!.removeFunc = onDeletedMessage ?? (_) {};
+      _messageService!.newFunc = onNewMessage ?? (_) {};
+      _messageService!.jumpToMessage = onJumpToMessage ?? (_) {};
+    }
     
     // Add messages to struct (required for MessageState creation)
     final messagesToAdd = messages.where((m) => m.guid != null && _messageService!.struct.getMessage(m.guid!) == null).toList();
@@ -76,71 +83,6 @@ mixin MessagesServiceMixin<T extends StatefulWidget> on State<T> {
     
     // Create controllers and link them
     _createControllers(messages, cvController);
-  }
-  
-  /// Initialize the messages service with lazy loading support.
-  /// Use this for conversation views where messages are loaded incrementally.
-  /// 
-  /// Parameters:
-  /// - chat: The chat for this messages service
-  /// - cvController: The conversation view controller to link to each message controller
-  /// - customService: Optional custom MessagesService instance (for testing or special cases)
-  /// - loadInitialChunk: Whether to load the first chunk of messages (defaults to true)
-  /// - searchMessage: Optional message to load around (for search results)
-  /// - onNewMessage: Handler for new messages (required for conversation views)
-  /// - onUpdatedMessage: Handler for updated messages (required for conversation views)
-  /// - onDeletedMessage: Handler for deleted messages (required for conversation views)
-  /// - onJumpToMessage: Handler for jump to message requests (required for conversation views)
-  /// 
-  /// Returns: List of loaded messages (empty if loadInitialChunk is false)
-  Future<List<Message>> initializeMessagesServiceWithLoading(
-    Chat chat,
-    ConversationViewController cvController, {
-    MessagesService? customService,
-    bool loadInitialChunk = true,
-    Message? searchMessage,
-    required void Function(Message) onNewMessage,
-    required void Function(Message, {String? oldGuid}) onUpdatedMessage,
-    required void Function(Message) onDeletedMessage,
-    required void Function(String) onJumpToMessage,
-  }) async {
-    // Use custom service or get/create singleton
-    _messageService = customService ?? MessagesSvc(chat.guid);
-    
-    // Initialize with handlers
-    _messageService!.init(chat, onNewMessage, onUpdatedMessage, onDeletedMessage, onJumpToMessage);
-    
-    List<Message> messages = [];
-    
-    if (loadInitialChunk) {
-      // Handle search-based loading
-      if (_messageService!.method != null && searchMessage != null) {
-        await _messageService!.loadSearchChunk(
-          searchMessage,
-          _messageService!.method == "local" ? SearchMethod.local : SearchMethod.network,
-        );
-      } 
-      // Handle normal chunk loading
-      else if (_messageService!.struct.isEmpty) {
-        await _messageService!.loadChunk(0, cvController);
-      }
-      
-      // Get loaded messages from struct
-      messages = _messageService!.struct.messages;
-      messages.sort(Message.sort);
-      
-      // Ensure MessageStates exist for all loaded messages
-      for (final message in messages) {
-        if (message.guid != null) {
-          _messageService!.getOrCreateMessageState(message.guid!);
-        }
-      }
-      
-      // Create controllers for loaded messages
-      _createControllers(messages, cvController);
-    }
-    
-    return messages;
   }
   
   /// Helper method to create and link controllers for a list of messages

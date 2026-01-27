@@ -38,6 +38,7 @@ class MessagesService extends GetxController {
   int currentCount = 0;
   bool isFetching = false;
   bool _init = false;
+  bool messagesLoaded = false;
   String? method;
 
   /// Map of message states for granular reactivity
@@ -257,6 +258,7 @@ class MessagesService extends GetxController {
   }
 
   void reload() {
+    messagesLoaded = false;
     Get.put<String>(tag, tag: 'lastReloadedChat');
     Get.reload<MessagesService>(tag: tag);
   }
@@ -551,6 +553,7 @@ class MessagesService extends GetxController {
     }
 
     isFetching = false;
+    messagesLoaded = true;
     return _messages.isNotEmpty;
   }
 
