@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'dart:ui';
 
+import 'package:bluebubbles/app/layouts/conversation_view/mixins/messages_service_mixin.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/message_holder.dart';
 import 'package:bluebubbles/app/wrappers/bb_annotated_region.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
@@ -47,7 +48,8 @@ class ConversationPeekView extends StatefulWidget {
   State<StatefulWidget> createState() => _ConversationPeekViewState();
 }
 
-class _ConversationPeekViewState extends OptimizedState<ConversationPeekView> with SingleTickerProviderStateMixin {
+class _ConversationPeekViewState extends OptimizedState<ConversationPeekView> 
+    with SingleTickerProviderStateMixin, MessagesServiceMixin {
   late final AnimationController controller;
   late final ConversationViewController cvController = cvc(widget.chat);
   final double itemHeight = kIsDesktop || kIsWeb ? 56 : 48;
@@ -58,6 +60,14 @@ class _ConversationPeekViewState extends OptimizedState<ConversationPeekView> wi
     super.initState();
     ChatsSvc.setActiveChatSync(widget.chat, clearNotifications: false);
     ChatsSvc.activeChat!.controller = cvController;
+    
+    // Initialize messages service with message states for proper reactivity
+    initializeMessagesService(
+      widget.chat,
+      widget.messages,
+      cvController,
+    );
+    
     controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 150),
@@ -82,8 +92,7 @@ class _ConversationPeekViewState extends OptimizedState<ConversationPeekView> wi
   void dispose() {
     if (!disposed) {
       cvController.close();
-      MessagesSvc(widget.chat.guid).close();
-      // Controllers are now disposed by MessagesService.onClose()
+      disposeMessagesService();
       controller.dispose();
     }
     super.dispose();

@@ -70,7 +70,7 @@ class MessagesService extends GetxController {
   /// Get or create a MessageState for a specific message GUID
   /// Creates the state if it doesn't exist
   /// Throws if message doesn't exist in struct
-  MessageState getMessageState(String guid) {
+  MessageState getOrCreateMessageState(String guid) {
     if (!messageStates.containsKey(guid)) {
       final message = struct.getMessage(guid);
       if (message == null) {
@@ -422,7 +422,7 @@ class MessagesService extends GetxController {
     message.save(chat: chat);
 
     // Update struct and MessageState
-    final messageState = getMessageState(message.guid!);
+    final messageState = getOrCreateMessageState(message.guid!);
     messageState.updateErrorInternal(0);
     messageState.updateDateCreatedInternal(message.dateCreated);
     messageState.updateDateDeliveredInternal(null);
@@ -436,7 +436,7 @@ class MessagesService extends GetxController {
 
     // Clean up old MessageState and create new one
     messageStates.remove(guidToDelete);
-    getMessageState(message.guid!);
+    getOrCreateMessageState(message.guid!);
   }
 
   /// Delete a message from DB, struct, and MessageState

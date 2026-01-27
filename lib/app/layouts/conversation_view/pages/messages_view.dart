@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:audio_waveforms/audio_waveforms.dart';
+import 'package:bluebubbles/app/layouts/conversation_view/mixins/messages_service_mixin.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/message_holder.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/messages_view_components.dart';
 import 'package:bluebubbles/database/database.dart';
@@ -38,7 +39,7 @@ class MessagesView extends StatefulWidget {
   MessagesViewState createState() => MessagesViewState();
 }
 
-class MessagesViewState extends OptimizedState<MessagesView> {
+class MessagesViewState extends OptimizedState<MessagesView> with MessagesServiceMixin {
   bool initialized = false;
   bool fetching = false;
   late bool noMoreMessages = widget.customService != null;
@@ -58,9 +59,6 @@ class MessagesViewState extends OptimizedState<MessagesView> {
 
   RxList<Widget> smartReplies = <Widget>[].obs;
   RxMap<String, Widget> internalSmartReplies = <String, Widget>{}.obs;
-
-  late final messageService = widget.customService ?? MessagesSvc(chat.guid)
-    ..init(chat, handleNewMessage, handleUpdatedMessage, handleDeletedMessage, jumpToMessage);
   final smartReply = GoogleMlKit.nlp.smartReply();
   final RxBool dragging = false.obs;
   final RxInt numFiles = 0.obs;
@@ -85,8 +83,14 @@ class MessagesViewState extends OptimizedState<MessagesView> {
         noMoreMessages = false;
         _messages = [];
         // Reload the state after refreshing
-        messageService.reload();
-        messageService.init(chat, handleNewMessage, handleUpdatedMessage, handleDeletedMessage, jumpToMessage);
+        await reloadMessagesService(
+          chat,
+          controller,
+          onNewMessage: handleNewMessage,
+          onUpdatedMessage: handleUpdatedMessage,
+          onDeletedMessage: handleDeletedMessage,
+          onJumpToMessage: jumpToMessage,
+        );
         setState(() {});
       } else if (e.item1 == "add-custom-smartreply") {
         if (e.item2 != null && internalSmartReplies['attach-recent'] == null) {
@@ -102,26 +106,24 @@ class MessagesViewState extends OptimizedState<MessagesView> {
       if (chat.isIMessage && !chat.isGroup) {
         getFocusState();
       }
-      final searchMessage = (messageService.method == null) ? null : messageService.struct.messages.firstOrNull;
-      if (messageService.method != null) {
-        await messageService.loadSearchChunk(messageService.struct.messages.first,
-            messageService.method == "local" ? SearchMethod.local : SearchMethod.network);
-      } else if (messageService.struct.isEmpty) {
-        final stopwatch = Stopwatch()..start();
-        await messageService.loadChunk(0, controller);
-        stopwatch.stop();
-        Logger.info("Initial chunk loaded in ${stopwatch.elapsedMilliseconds}ms");
-      }
-      _messages = messageService.struct.messages;
-      _messages.sort(Message.sort);
-      // Initialize message widget controllers
-      for (var m in _messages) {
-        final c = messageService.getOrCreateController(m);
-        c.cvController = controller;
-      }
+      
+      // Initialize messages service with loading
+      final searchMessage = isMessagesServiceInitialized ? messageService.struct.messages.firstOrNull : null;
+      _messages = await initializeMessagesServiceWithLoading(
+        chat,
+        controller,
+        customService: widget.customService,
+        searchMessage: searchMessage,
+        onNewMessage: handleNewMessage,
+        onUpdatedMessage: handleUpdatedMessage,
+        onDeletedMessage: handleDeletedMessage,
+        onJumpToMessage: jumpToMessage,
+      );
+      
       // Recreate the list key to force SliverAnimatedList to rebuild with correct item count
       _listKey = GlobalKey<SliverAnimatedListState>();
       setState(() {});
+      
       // scroll to message if needed
       if (searchMessage != null) {
         final index = _messages.indexWhere((element) => element.guid == searchMessage.guid);
@@ -151,7 +153,7 @@ class MessagesViewState extends OptimizedState<MessagesView> {
     if (!kIsWeb && !kIsDesktop) smartReply.close();
     chat.lastReadMessageGuid = _messages.first.guid;
     chat.saveAsync(updateLastReadMessageGuid: true);
-    messageService.close(force: widget.customService != null);
+    disposeMessagesService(force: widget.customService != null);
     // Controllers are now disposed by MessagesService.onClose()
     _setStateDebouncer?.cancel();
     _listVersion.dispose();
@@ -187,7 +189,7 @@ class MessagesViewState extends OptimizedState<MessagesView> {
         .build();
     final ids = await query.findIdsAsync();
     final pos = ids.indexOf(message!.id!);
-    await loadNextChunk(limit: pos + 10);
+    await _loadMoreMessages(limit: pos + 10);
     index = _messages.indexWhere((element) => element.guid == guid);
     if (index != -1) {
       await scrollController.scrollToIndex(index, preferPosition: AutoScrollPosition.middle);
@@ -231,18 +233,17 @@ class MessagesViewState extends OptimizedState<MessagesView> {
     }
   }
 
-  Future<void> loadNextChunk({int limit = 25}) async {
+  Future<void> _loadMoreMessages({int limit = 25}) async {
     if (noMoreMessages || fetching) {
-      Logger.debug("loadNextChunk: Skipping - noMoreMessages=$noMoreMessages, fetching=$fetching");
+      Logger.debug("_loadMoreMessages: Skipping - noMoreMessages=$noMoreMessages, fetching=$fetching");
       return;
     }
     fetching = true;
     final previousLength = _messages.length;
-    Logger.debug("loadNextChunk: Starting - current messages: $previousLength");
+    Logger.debug("_loadMoreMessages: Starting - current messages: $previousLength");
 
-    // Start loading the next chunk of messages
-    noMoreMessages =
-        !(await messageService.loadChunk(_messages.length, controller, limit: limit).catchError((e, stack) {
+    // Start loading the next chunk of messages using mixin method
+    noMoreMessages = !(await loadNextChunk(controller, _messages, limit: limit).catchError((e, stack) {
       Logger.error("Failed to fetch message chunk!", error: e, trace: stack);
       fetching = false;
       return true;
@@ -265,8 +266,7 @@ class MessagesViewState extends OptimizedState<MessagesView> {
 
     // Initialize message widget controllers for new messages
     for (final newMsg in newMessages) {
-      final c = messageService.getOrCreateController(newMsg);
-      c.cvController = controller;
+      createControllerForMessage(newMsg, controller);
     }
 
     // Update the list without animation (bulk load)
@@ -298,8 +298,7 @@ class MessagesViewState extends OptimizedState<MessagesView> {
     final insertIndex = _messages.indexOf(message);
 
     // Initialize message widget controller
-    final c = messageService.getOrCreateController(message);
-    c.cvController = controller;
+    createControllerForMessage(message, controller);
 
     // Mark this message for animation (all new messages)
     if (message.guid != null) {
@@ -561,7 +560,7 @@ class MessagesViewState extends OptimizedState<MessagesView> {
                                     if (index >= _messages.length) {
                                       if (!noMoreMessages && initialized && index == _messages.length) {
                                         if (!fetching) {
-                                          loadNextChunk();
+                                          _loadMoreMessages();
                                         }
                                         return const Loader();
                                       }
