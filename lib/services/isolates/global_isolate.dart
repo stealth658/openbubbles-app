@@ -6,6 +6,7 @@ import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/helpers/backend/startup_tasks.dart';
 import 'package:bluebubbles/services/isolates/isolate_actions.dart';
 import 'package:bluebubbles/services/isolates/isolate_event.dart';
+import 'package:uuid/uuid.dart';
 
 /// A base isolate manager for handling background tasks
 /// This class can be extended to create specialized isolates with different entry points
@@ -242,7 +243,7 @@ class GlobalIsolate {
   Future<T> send<T>(IsolateRequestType type, {dynamic input, Duration? customTimeout}) async {
     await _ensureStarted();
 
-    final requestId = DateTime.now().microsecondsSinceEpoch.toString();
+    final requestId = Uuid().v4();
     final completer = Completer<T>();
 
     // Set up timeout if not disabled (zero duration means no timeout)
