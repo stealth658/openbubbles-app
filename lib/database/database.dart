@@ -157,9 +157,10 @@ class Database {
         final instanceFile = File(join(FilesystemSvc.appDocDir.path, '.instance'));
         instanceFile.openSync(mode: FileMode.write).closeSync();
         exit(0);
+      } else if (Platform.isWindows && e.toString().contains("another store is still open using the same path")) {
+        Logger.debug("Retrying to attach to an existing ObjectBox store");
+        store = Store.attach(getObjectBoxModel(), objectBoxDirectory.path);
       }
-
-      Logger.error("Failed to initialize desktop database!", error: e, trace: s);
     }
   }
 
