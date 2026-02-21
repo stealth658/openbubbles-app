@@ -162,7 +162,7 @@ class StartupTasks {
     debugPrint("Initializing isolate services...");
 
     BinaryMessenger? messenger;
-    if (Platform.isAndroid && rootIsolateToken != null) {
+    if (rootIsolateToken != null) {
       debugPrint("Initializing Background Isolate Binary Messenger");
       BackgroundIsolateBinaryMessenger.ensureInitialized(rootIsolateToken);
       messenger = BackgroundIsolateBinaryMessenger.instance;
@@ -245,7 +245,7 @@ class StartupTasks {
   static Future<void> initSyncIsolateServices(RootIsolateToken? rootIsolateToken) async {
     debugPrint("Initializing sync isolate services...");
 
-    if (Platform.isAndroid && rootIsolateToken != null) {
+    if (rootIsolateToken != null) {
       debugPrint("Initializing Background Isolate Binary Messenger");
       BackgroundIsolateBinaryMessenger.ensureInitialized(rootIsolateToken);
     }
