@@ -524,46 +524,6 @@ List<Widget> buildSettingItemList({
         )
       ],
     ),
-
-    // Desktop Settings Tile (only for desktop)
-    if (kIsDesktop)
-      SearchableSettingItem(
-        title: "Desktop Settings", // Title to search
-        searchTags: [
-          "Launch on Startup",
-          "Launch on Startup Minimized",
-          "Use Custom TitleBar",
-          "Minimize to Tray",
-          "Close to Tray",
-          "Desktop Notifications",
-          "Notification Sound Volume",
-          "Actions",
-          "Show Reply Field"
-        ],
-        onTap: () {
-          ns.pushAndRemoveSettingsUntil(
-            context,
-            const DesktopPanel(),
-            (Route route) => route.isFirst,
-          );
-        },
-        child: SettingsTile(
-          backgroundColor: tileColor,
-          title: "Desktop Settings",
-          onTap: () {
-            ns.pushAndRemoveSettingsUntil(
-              context,
-              const DesktopPanel(),
-              (Route route) => route.isFirst,
-            );
-          },
-          leading: const SettingsLeadingIcon(
-            iosIcon: CupertinoIcons.desktopcomputer,
-            materialIcon: Icons.desktop_windows,
-          ),
-          trailing: const NextButton(),
-        ),
-      ),
     SearchableSettingItem(
       title: "Advanced", // Title to search
       child: SettingsHeader(
