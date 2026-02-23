@@ -1,12 +1,15 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
+import 'package:bluebubbles/services/network/http_service.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:crypto/crypto.dart';
 import 'package:fast_contacts/fast_contacts.dart' hide Contact, StructuredName;
+import 'package:fast_contacts/fast_contacts.dart'  as fc show Contact;
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 
@@ -83,42 +86,75 @@ class ContactV2Actions {
     final affectedHandleIds = <int>[];
 
     try {
-      // Step 1: Fetch contacts using FastContacts
-      Logger.info('[ContactV2] Starting contact fetch...');
-      final rawContacts = await FastContacts.getAllContacts(
-        fields: List<ContactField>.from(ContactField.values)
-          ..removeWhere((e) => [
-                ContactField.company,
-                ContactField.department,
-                ContactField.jobDescription,
-                ContactField.emailLabels,
-                ContactField.phoneLabels
-              ].contains(e)),
-      );
-
-      Logger.info('[ContactV2] Fetched ${rawContacts.length} contacts from device');
-
-      // Step 1.5: Pre-fetch and save all contact avatars (async operations must be done BEFORE transaction)
+      List<fc.Contact> fastContacts = [];
+      List<Contact> networkContacts = [];
       final avatarPaths = <String, String?>{};
-      for (final rawContact in rawContacts) {
-        try {
-          Uint8List? avatarData = await FastContacts.getContactImage(
-            rawContact.id,
-            size: ContactImageSize.fullSize,
-          );
 
-          if (avatarData == null || avatarData.isEmpty) {
-            avatarData = await FastContacts.getContactImage(
+      if (kIsDesktop) {
+        // Step 1: Fetch contacts from server
+        Logger.info('[ContactV2] Starting contact fetch from server...');
+        final response = await HttpSvc.contacts(withAvatars: true);
+
+        if (response.statusCode == 200 && !isNullOrEmpty(response.data['data'])) {
+          for (Map<String, dynamic> map in response.data['data']) {
+            final displayName = getDisplayName(map['displayName'], map['firstName'], map['lastName']);
+            final emails = (map['emails'] as List<dynamic>? ?? []).map((e) => e['address'].toString()).toList();
+            final phones = (map['phoneNumbers'] as List<dynamic>? ?? []).map((e) => e['address'].toString()).toList();
+
+            networkContacts.add(Contact(
+              id: (map['id'] ?? (phones.isNotEmpty ? phones : emails)).toString(),
+              displayName: displayName,
+              emails: emails,
+              phones: phones,
+              avatar: !isNullOrEmpty(map['avatar']) ? base64Decode(map['avatar'].toString()) : null,
+            ));
+          }
+          Logger.info('[ContactV2] Fetched ${networkContacts.length} contacts from server');
+        } else {
+          Logger.info('[ContactV2] No server contacts found!');
+        }
+
+        for (Contact c in networkContacts) {
+          if (c.avatar != null && c.avatar!.isNotEmpty) {
+            avatarPaths[c.id] = await _saveContactAvatar(c.id, c.avatar!);
+          }
+        }
+      } else {
+        // Step 1: Fetch contacts using FastContacts
+        Logger.info('[ContactV2] Starting contact fetch from device (FastContacts)...');
+        fastContacts = await FastContacts.getAllContacts(
+          fields: List<ContactField>.from(ContactField.values)
+            ..removeWhere((e) => [
+              ContactField.company,
+              ContactField.department,
+              ContactField.jobDescription,
+              ContactField.emailLabels,
+              ContactField.phoneLabels
+            ].contains(e)),
+        );
+        Logger.info('[ContactV2] Fetched ${fastContacts.length} contacts from device');
+
+        // Step 1.5: Pre-fetch and save all contact avatars (async operations must be done BEFORE transaction)
+        for (final rawContact in fastContacts) {
+          try {
+            Uint8List? avatarData = await FastContacts.getContactImage(
               rawContact.id,
-              size: ContactImageSize.thumbnail,
+              size: ContactImageSize.fullSize,
             );
-          }
 
-          if (avatarData != null && avatarData.isNotEmpty) {
-            avatarPaths[rawContact.id] = await _saveContactAvatar(rawContact.id, avatarData);
+            if (avatarData == null || avatarData.isEmpty) {
+              avatarData = await FastContacts.getContactImage(
+                rawContact.id,
+                size: ContactImageSize.thumbnail,
+              );
+            }
+
+            if (avatarData != null && avatarData.isNotEmpty) {
+              avatarPaths[rawContact.id] = await _saveContactAvatar(rawContact.id, avatarData);
+            }
+          } catch (e) {
+            // Avatar fetch failed, continue without it
           }
-        } catch (e) {
-          // Avatar fetch failed, continue without it
         }
       }
 
@@ -163,33 +199,62 @@ class ContactV2Actions {
         Logger.info(
             '[ContactV2] Built lookup maps: ${emailHandleMap.length} email keys, ${phoneHandleMap.length} phone variant keys');
 
-        for (final rawContact in rawContacts) {
+        for (final rawContact in [...fastContacts, ...networkContacts]) {
           // Normalize addresses
           final normalizedAddresses = <String>{};
 
-          // Add normalized phone numbers
-          for (final phone in rawContact.phones) {
-            final normalized = ContactV2.normalizePhoneNumber(phone.number);
-            if (normalized.isNotEmpty) {
-              normalizedAddresses.add(normalized);
+          // Different data objects for desktop/mobile
+          if (rawContact is fc.Contact) {
+            // Add normalized phone numbers
+            for (final phone in rawContact.phones) {
+              final normalized = ContactV2.normalizePhoneNumber(phone.number);
+              if (normalized.isNotEmpty) {
+                normalizedAddresses.add(normalized);
+              }
             }
-          }
 
-          // Add normalized emails
-          for (final email in rawContact.emails) {
-            final normalized = ContactV2.normalizeEmail(email.address);
-            if (normalized.isNotEmpty) {
-              normalizedAddresses.add(normalized);
+            // Add normalized emails
+            for (final email in rawContact.emails) {
+              final normalized = ContactV2.normalizeEmail(email.address);
+              if (normalized.isNotEmpty) {
+                normalizedAddresses.add(normalized);
+              }
+            }
+          } else if (rawContact is Contact) {
+            // Add normalized phone numbers
+            for (final phone in rawContact.phones) {
+              final normalized = ContactV2.normalizePhoneNumber(phone);
+              if (normalized.isNotEmpty) {
+                normalizedAddresses.add(normalized);
+              }
+            }
+
+            // Add normalized emails
+            for (final email in rawContact.emails) {
+              final normalized = ContactV2.normalizeEmail(email);
+              if (normalized.isNotEmpty) {
+                normalizedAddresses.add(normalized);
+              }
             }
           }
 
           if (normalizedAddresses.isEmpty) continue;
 
+          String contactId = "";
+          String displayName = "";
+          if (rawContact is fc.Contact) {
+            contactId = rawContact.id;
+            displayName = rawContact.displayName;
+          } else if (rawContact is Contact) {
+            contactId = rawContact.id;
+            displayName = rawContact.displayName;
+          }
+
           // Get pre-fetched avatar path
-          final avatarPath = avatarPaths[rawContact.id];
+          final avatarPath = avatarPaths[contactId];
 
           // Check if contact already exists
-          final existingQuery = contactsBox.query(ContactV2_.nativeContactId.equals(rawContact.id)).build();
+          final existingQuery = contactsBox.query(ContactV2_.nativeContactId.equals(contactId)).build();
           final existingContact = existingQuery.findFirst();
           existingQuery.close();
 
@@ -199,8 +264,8 @@ class ContactV2Actions {
           if (existingContact != null) {
             // Update existing contact
             contact = existingContact;
-            final nameChanged = contact.displayName != rawContact.displayName;
-            contact.displayName = rawContact.displayName;
+            final nameChanged = contact.displayName != displayName;
+            contact.displayName = displayName;
             contact.addresses = normalizedAddresses.toList();
             contact.avatarPath = avatarPath;
 
@@ -214,8 +279,8 @@ class ContactV2Actions {
           } else {
             // Create new contact
             contact = ContactV2(
-              displayName: rawContact.displayName,
-              nativeContactId: rawContact.id,
+              displayName: displayName,
+              nativeContactId: contactId,
               avatarPath: avatarPath,
               addresses: normalizedAddresses.toList(),
             );
