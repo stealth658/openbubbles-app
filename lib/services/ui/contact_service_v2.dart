@@ -264,36 +264,6 @@ class ContactServiceV2 {
     }
   }
 
-  /// Fetch network contacts for web/desktop
-  /// This fetches contacts from the server instead of the device
-  Future<List<ContactV2>> fetchNetworkContacts({Function(String)? logger}) async {
-    if (!kIsWeb && !kIsDesktop) {
-      Logger.warn('[ContactServiceV2] fetchNetworkContacts is only for web/desktop');
-      return [];
-    }
-
-    try {
-      logger?.call("Fetching contacts from server...");
-      final contactMaps = await ContactV2Interface.fetchNetworkContacts();
-      logger?.call("Fetched ${contactMaps.length} contacts");
-
-      final contacts = contactMaps.map((m) => ContactV2.fromMap(m)).toList();
-
-      // Notify about all handles that might have been updated
-      final allHandleIds = contacts.expand((c) => c.handles).where((h) => h.id != null).map((h) => h.id!).toList();
-
-      if (allHandleIds.isNotEmpty) {
-        notifyHandlesUpdated(allHandleIds);
-      }
-
-      return contacts;
-    } catch (e, stack) {
-      Logger.error('[ContactServiceV2] Error fetching network contacts', error: e, trace: stack);
-      logger?.call("Error fetching contacts: $e");
-      return [];
-    }
-  }
-
   /// Get avatar data for a contact by ID
   /// Returns the avatar as Uint8List if available
   Future<Uint8List?> getContactAvatar(String nativeContactId) async {

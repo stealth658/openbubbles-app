@@ -482,14 +482,6 @@ class ContactV2Actions {
     });
   }
 
-  /// Fetch network contacts for web/desktop (from server)
-  static Future<List<Map<String, dynamic>>> fetchNetworkContacts(dynamic data) async {
-    // This will be implemented when web/desktop support is added
-    // For now, return empty list
-    Logger.warn('[ContactV2] fetchNetworkContacts not yet implemented for web/desktop');
-    return [];
-  }
-
   /// Get avatar data for a contact by native contact ID
   static Future<Uint8List?> getContactAvatar(dynamic data) async {
     final dataMap = data as Map<dynamic, dynamic>;

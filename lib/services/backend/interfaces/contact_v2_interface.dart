@@ -106,16 +106,6 @@ class ContactV2Interface {
     );
   }
 
-  /// Fetch network contacts for web/desktop (from server)
-  static Future<List<Map<String, dynamic>>> fetchNetworkContacts() async {
-    if (isIsolate) {
-      return await ContactV2Actions.fetchNetworkContacts(<String, dynamic>{});
-    } else {
-      return await GetIt.I<GlobalIsolate>()
-          .send<List<Map<String, dynamic>>>(IsolateRequestType.fetchNetworkContacts, input: <String, dynamic>{});
-    }
-  }
-
   /// Get avatar data for a contact
   static Future<Uint8List?> getContactAvatar({
     required String nativeContactId,
