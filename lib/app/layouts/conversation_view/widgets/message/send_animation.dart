@@ -83,12 +83,15 @@ class _SendAnimationState extends CustomState<SendAnimation,
         attachments: [
           Attachment(
             isOutgoing: true,
-            mimeType: mime(file.path),
+            mimeType: mime(file.path) ?? mime(file.name),
             uti: "public.jpg",
             transferName: file.name,
             totalBytes: file.size,
-            // Store the original source path in metadata so prepAttachment can copy it
+            // Store the original source path in metadata so prepAttachment can copy it.
+            // For bytes-only files (clipboard/GIF keyboard), store bytes in the transient field
+            // so prepAttachment can write them to disk.
             metadata: file.path != null ? {'source_path': file.path} : null,
+            bytes: file.path == null ? file.bytes : null,
           ),
         ],
         isFromMe: true,

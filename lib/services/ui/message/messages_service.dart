@@ -334,9 +334,7 @@ class MessagesService extends GetxController {
     if (oldGuid != null) {
       toUpdate = struct.getMessage(oldGuid);
     }
-    if (toUpdate == null) {
-      toUpdate = struct.getMessage(updated.guid!);
-    }
+    toUpdate ??= struct.getMessage(updated.guid!);
     if (toUpdate == null) return;
     
     updated = updated.mergeWith(toUpdate);
@@ -349,9 +347,7 @@ class MessagesService extends GetxController {
     if (oldGuid != null) {
       messageState = messageStates[oldGuid];
     }
-    if (messageState == null) {
-      messageState = messageStates[updated.guid!];
-    }
+    messageState ??= messageStates[updated.guid!];
     
     if (messageState != null) {
       messageState.updateFromMessage(updated);

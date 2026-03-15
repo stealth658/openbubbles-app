@@ -19,11 +19,17 @@ class ReactionWidget extends StatefulWidget {
     required this.message,
     required this.reaction,
     this.reactions,
+    this.chatGuid,
   });
 
   final Message? message;
   final Message reaction;
   final List<Message>? reactions;
+
+  /// Explicit chat GUID used when [message] is null (e.g. pinned tile context).
+  /// Allows [ReactionWidgetState] to resolve MessageState from the correct
+  /// MessagesService rather than falling back to [ChatsSvc.activeChat].
+  final String? chatGuid;
 
   @override
   ReactionWidgetState createState() => ReactionWidgetState();
@@ -35,8 +41,11 @@ class ReactionWidgetState extends OptimizedState<ReactionWidget> {
   // Observe the reaction from parent message's associatedMessages list
   // This is already an RxList in MessageState, so changes propagate automatically
   Message get reaction {
-    // First check if parent has MessageState with associatedMessages
-    final chatGuid = widget.message?.chat.target?.guid ?? ChatsSvc.activeChat?.chat.guid;
+    // Resolution order:
+    //  1. widget.chatGuid – explicitly provided (e.g. from a pinned tile)
+    //  2. parent message's chat relation – used in conversation view
+    //  3. ChatsSvc.activeChat – last-resort fallback
+    final chatGuid = widget.chatGuid ?? widget.message?.chat.target?.guid ?? ChatsSvc.activeChat?.chat.guid;
     final parentController =
         chatGuid != null ? MessagesSvc(chatGuid).getControllerIfExists(widget.message?.guid ?? '') : null;
     if (parentController?.messageState != null) {
@@ -52,12 +61,17 @@ class ReactionWidgetState extends OptimizedState<ReactionWidget> {
     return widget.reaction;
   }
 
-  bool get reactionIsFromMe => reaction.isFromMe!;
+  /// Guard against isFromMe being null on partially-hydrated messages.
+  bool get reactionIsFromMe => reaction.isFromMe ?? false;
   bool get messageIsFromMe => widget.message?.isFromMe ?? true;
-  String get reactionType => reaction.associatedMessageType!;
+
+  /// Guard against associatedMessageType being null.
+  /// An empty string produces no SVG match, which is handled in build().
+  String get reactionType => reaction.associatedMessageType ?? '';
 
   MessageWidgetController? get reactionController {
-    final chatGuid = widget.message?.chat.target?.guid ?? ChatsSvc.activeChat?.chat.guid;
+    // Use same resolution order as reaction getter
+    final chatGuid = widget.chatGuid ?? widget.message?.chat.target?.guid ?? ChatsSvc.activeChat?.chat.guid;
     if (chatGuid == null || reaction.guid == null) return null;
     return MessagesSvc(chatGuid).getControllerIfExists(reaction.guid!);
   }
@@ -66,11 +80,23 @@ class ReactionWidgetState extends OptimizedState<ReactionWidget> {
 
   @override
   Widget build(BuildContext context) {
-    // Wrap in Obx to observe changes to the reaction from parent's associatedMessages RxList
+    // When there is no parent message (e.g. pinned-tile context), there is no
+    // MessageState or MessageWidgetController to observe.  Wrapping in Obx with
+    // no observables causes GetX to emit "improper use" and suppresses the render.
+    // Use a plain Builder for this case so we just render the reaction statically.
+    if (widget.message == null) {
+      return _buildStatic(context, widget.reaction);
+    }
+
+    // Full conversation-view path: wrap in Obx so we reactively follow any
+    // changes to the parent's associatedMessages RxList (e.g. temp→real GUID).
     return Obx(() {
-      // Access the reaction getter which reads from MessageState.associatedMessages
-      // This triggers rebuild when the reaction changes (temp->real GUID, error state, etc.)
-      final _ = reaction; // Force observation of the getter
+      // Reading `reaction` subscribes to MessageState.associatedMessages so the
+      // widget rebuilds when the reaction changes (temp→real GUID, error state…).
+      final _ = reaction;
+
+      // Guard: if the reaction type is unknown we cannot render the SVG asset safely.
+      if (reactionType.isEmpty) return const SizedBox.shrink();
 
       if (SettingsSvc.settings.skin.value != Skins.iOS) {
         return Container(
@@ -248,5 +274,96 @@ class ReactionWidgetState extends OptimizedState<ReactionWidget> {
         ],
       );
     }); // Close outer Obx
+  }
+
+  /// Static (non-reactive) render used when there is no parent [message]
+  /// (e.g. pinned-tile context).  Reads straight from [reaction] without
+  /// subscribing to any RxList so GetX never fires the "improper use" warning.
+  Widget _buildStatic(BuildContext context, Message reaction) {
+    final rType = reaction.associatedMessageType ?? '';
+    final isFromMe = reaction.isFromMe ?? false;
+
+    if (rType.isEmpty) return const SizedBox.shrink();
+
+    if (SettingsSvc.settings.skin.value != Skins.iOS) {
+      return Container(
+        width: 30,
+        height: 30,
+        decoration: BoxDecoration(
+          color: isFromMe ? context.theme.colorScheme.primary : context.theme.colorScheme.properSurface,
+          border: Border.all(color: context.theme.colorScheme.background),
+          shape: BoxShape.circle,
+        ),
+        child: Center(
+          child: Builder(builder: (ctx) {
+            final text = Text(
+              ReactionTypes.reactionToEmoji[rType] ?? "X",
+              style: const TextStyle(fontSize: 15, fontFamily: 'Apple Color Emoji'),
+              textAlign: TextAlign.center,
+            );
+            if (rType == "dislike") {
+              return Transform(
+                transform: Matrix4.identity()..rotateY(pi),
+                alignment: FractionalOffset.center,
+                child: text,
+              );
+            }
+            return text;
+          }),
+        ),
+      );
+    }
+
+    // iOS skin — the pinned tile only shows reactions received (isFromMe==false).
+    // Use isFromMe to orient the clipper correctly.
+    return Stack(
+      alignment: isFromMe ? Alignment.centerRight : Alignment.centerLeft,
+      fit: StackFit.passthrough,
+      clipBehavior: Clip.none,
+      children: [
+        Positioned(
+          top: -1,
+          left: isFromMe ? 0 : -1,
+          right: !isFromMe ? 0 : -1,
+          child: ClipPath(
+            clipper: ReactionBorderClipper(isFromMe: isFromMe),
+            child: Container(
+              width: iosSize + 2,
+              height: iosSize + 2,
+              color: context.theme.colorScheme.background,
+            ),
+          ),
+        ),
+        ClipPath(
+          clipper: ReactionClipper(isFromMe: isFromMe),
+          child: Container(
+            width: iosSize,
+            height: iosSize,
+            color: isFromMe ? context.theme.colorScheme.primary : context.theme.colorScheme.properSurface,
+            alignment: isFromMe ? Alignment.topRight : Alignment.topLeft,
+            child: SizedBox(
+              width: iosSize * 0.8,
+              height: iosSize * 0.8,
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(6.5).add(EdgeInsets.only(right: rType == "emphasize" ? 1 : 0)),
+                  child: SvgPicture.asset(
+                    'assets/reactions/$rType-black.svg',
+                    colorFilter: ColorFilter.mode(
+                      rType == "love"
+                          ? Colors.pink
+                          : (isFromMe
+                              ? context.theme.colorScheme.onPrimary
+                              : context.theme.colorScheme.properOnSurface),
+                      BlendMode.srcIn,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }

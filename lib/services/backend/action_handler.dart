@@ -158,10 +158,12 @@ class ActionHandler extends GetxService {
 
   Future<void> matchAttachmentWithExisting(Chat chat, String existingGuid, Attachment replacement,
       {Attachment? existing}) async {
+    Logger.test("matchAttachmentWithExisting: existingGuid=$existingGuid, replacement.guid=${replacement.guid}", tag: "AttachmentStatus");
     // First, try to find a matching message with the replacement's GUID.
     // We check this first because if an event came in for that GUID, we should be able to ignore
     // the API response.
     final existingReplacementMessage = await Attachment.findOneAsync(replacement.guid!);
+    Logger.test("matchAttachmentWithExisting: existingReplacement (${replacement.guid}) found=${existingReplacementMessage != null}", tag: "AttachmentStatus");
     if (existingReplacementMessage != null) {
       Logger.debug("Replacing existing attachment with GUID ${replacement.guid}...", tag: "AttachmentStatus");
       await Attachment.replaceAttachmentAsync(replacement.guid, replacement);
@@ -175,6 +177,9 @@ class ActionHandler extends GetxService {
         }
       }
     } else {
+      // Temp attachment not yet replaced by a socket event — look it up directly
+      final existingTemp = await Attachment.findOneAsync(existingGuid);
+      Logger.test("matchAttachmentWithExisting: existingTemp ($existingGuid) found=${existingTemp != null}", tag: "AttachmentStatus");
       try {
         Logger.debug("Replacing original attachment with GUID $existingGuid with ${replacement.guid}...",
             tag: "AttachmentStatus");
@@ -370,23 +375,34 @@ class ActionHandler extends GetxService {
     if (!kIsWeb) {
       // Get source path from metadata
       final sourcePath = attachment.metadata?['source_path'] as String?;
-      if (sourcePath == null) {
-        throw Exception("Attachment has no source_path in metadata");
+      Logger.debug("prepAttachment: sourcePath=$sourcePath, hasBytes=${attachment.bytes != null}", tag: "Attachment");
+      if (sourcePath == null && attachment.bytes == null) {
+        throw Exception("Attachment has no source_path in metadata or bytes");
       }
 
       // Use attachment.path getter for destination
       final destinationPath = attachment.path;
       final destinationFile = await File(destinationPath).create(recursive: true);
 
-      // Copy file from source to destination (avoid loading into memory)
-      if (attachment.mimeType == "image/gif") {
-        // GIFs need processing, so we load bytes only for this case
-        final bytes = await File(sourcePath).readAsBytes();
-        final optimizedBytes = await fixSpeedyGifs(bytes);
-        await destinationFile.writeAsBytes(optimizedBytes);
+      if (sourcePath != null) {
+        // Copy file from source to destination (avoid loading into memory)
+        if (attachment.mimeType == "image/gif") {
+          // GIFs need processing, so we load bytes only for this case
+          final bytes = await File(sourcePath).readAsBytes();
+          final optimizedBytes = await fixSpeedyGifs(bytes);
+          await destinationFile.writeAsBytes(optimizedBytes);
+        } else {
+          // For all other files, just copy without loading into memory
+          await File(sourcePath).copy(destinationPath);
+        }
       } else {
-        // For all other files, just copy without loading into memory
-        await File(sourcePath).copy(destinationPath);
+        // Bytes-only attachment (clipboard paste / GIF keyboard) — write directly to disk
+        Uint8List bytesToWrite = attachment.bytes!;
+        if (attachment.mimeType == "image/gif") {
+          bytesToWrite = await fixSpeedyGifs(bytesToWrite);
+        }
+        await destinationFile.writeAsBytes(bytesToWrite);
+        attachment.bytes = null; // free memory now that the file is on disk
       }
 
       // Load image properties for outgoing attachments to ensure proper display in UI
@@ -401,7 +417,11 @@ class ActionHandler extends GetxService {
       // Mark attachment as downloaded since it's now on disk
       attachment.isDownloaded = true;
     }
+    Logger.test("prepAttachment: calling addMessage with attachment.guid=${attachment.guid}, m.attachments.length=${m.attachments.length}", tag: "Attachment");
     await c.addMessage(m);
+    // Verify attachment was saved to DB
+    final savedAttachment = await Attachment.findOneAsync(attachment.guid!);
+    Logger.test("prepAttachment: after addMessage, attachment ${attachment.guid} found in DB = ${savedAttachment != null}", tag: "Attachment");
   }
 
   Future<void> sendAttachment(Chat c, Message m, bool isAudioMessage) async {
@@ -701,23 +721,25 @@ class ActionHandler extends GetxService {
             }
           }
 
-          IncomingItem item = IncomingItem.fromMap(QueueType.newMessage, payload.data);
-          if (useQueue) {
-            inq.queue(item);
-          } else {
-            await MessageHandlerSvc.handleNewMessage(item.chat, item.message, item.tempGuid);
-          }
+          await IncomingMsgHandler.handle(IncomingPayload(
+            type: MessageEventType.newMessage,
+            source: MessageSource.socket,
+            chat: Chat.fromMap(payload.data['chats'].first.cast<String, Object>()),
+            message: message,
+            tempGuid: payload.data['tempGuid'],
+          ), front: !useQueue);
         }
         return;
       case "updated-message":
         if (!isNullOrEmpty(data)) {
           final payload = ServerPayload.fromJson(data);
-          IncomingItem item = IncomingItem.fromMap(QueueType.updatedMessage, payload.data);
-          if (useQueue) {
-            inq.queue(item);
-          } else {
-            await MessageHandlerSvc.handleUpdatedMessage(item.chat, item.message, item.tempGuid);
-          }
+          await IncomingMsgHandler.handle(IncomingPayload(
+            type: MessageEventType.updatedMessage,
+            source: MessageSource.socket,
+            chat: Chat.fromMap(payload.data['chats'].first.cast<String, Object>()),
+            message: Message.fromMap(payload.data),
+            tempGuid: payload.data['tempGuid'],
+          ), front: !useQueue);
         }
         return;
       case "group-name-change":
@@ -725,8 +747,7 @@ class ActionHandler extends GetxService {
       case "participant-added":
       case "participant-left":
         try {
-          final item = IncomingItem.fromMap(QueueType.updatedMessage, data);
-          MessageHandlerSvc.handleNewOrUpdatedChat(item.chat);
+          MessageHandlerSvc.handleNewOrUpdatedChat(Chat.fromMap(data['chats'].first.cast<String, Object>()));
         } catch (_) {}
         return;
       case "chat-read-status-changed":

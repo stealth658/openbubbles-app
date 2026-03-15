@@ -129,13 +129,21 @@ class PinnedTileTextBubbleState extends CustomState<PinnedTileTextBubble, void, 
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      // Get the MessageState if available, otherwise fallback to manual subtitle
+      // Only look up MessageState if a service is already registered for this chat.
+      // Avoid creating a new uninitialized MessagesService inside the reactive build.
+      final existingService = Get.isRegistered<MessagesService>(tag: controller.chat.guid)
+          ? Get.find<MessagesService>(tag: controller.chat.guid)
+          : null;
       final messageState =
-          lastMessage != null ? MessagesSvc(controller.chat.guid).getMessageStateIfExists(lastMessage!.guid!) : null;
+          existingService != null && lastMessage?.guid != null
+              ? existingService.getMessageStateIfExists(lastMessage!.guid!)
+              : null;
       String _subtitle = messageState?.text.value ?? subtitle;
 
       final unread = ChatsSvc.getChatState(controller.chat.guid)?.hasUnreadMessage.value ?? false;
-      if (!unread || lastMessage?.associatedMessageGuid != null || lastMessage!.isFromMe! || isNullOrEmpty(_subtitle)) {
+      // Null-safe isFromMe: treat null as false (unknown sender → show the bubble)
+      final isFromMe = lastMessage?.isFromMe == true;
+      if (!unread || lastMessage?.associatedMessageGuid != null || isFromMe || isNullOrEmpty(_subtitle)) {
         return const SizedBox.shrink();
       }
 

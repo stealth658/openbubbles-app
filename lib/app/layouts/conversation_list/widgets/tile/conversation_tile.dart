@@ -326,17 +326,13 @@ class _ChatSubtitleState extends CustomState<ChatSubtitle, void, ConversationTil
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      // Get the MessageState if available for reactive subtitle
-      final messageState = cachedLatestMessageGuid != null
-          ? MessagesSvc(controller.chat.guid).getMessageStateIfExists(cachedLatestMessageGuid!)
-          : null;
       final hideContacts = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
-      String _subtitle = messageState != null
-          ? MessageHelper.getNotificationText(
-              Message(text: messageState.text.value, subject: messageState.subject.value))
-          : hideContacts && !kIsWeb
-              ? MessageHelper.getNotificationText(Message.findOne(guid: cachedLatestMessageGuid!)!)
-              : subtitle.value;
+      // subtitle.value is kept up-to-date by the ObjectBox query watcher (including text edits via dateEdited).
+      // Do NOT reconstruct Message from MessageState here: MessageState only holds text/subject, so
+      // attachment-only messages would get a skeletal Message with hasAttachments=false and return "Empty message".
+      String _subtitle = hideContacts && !kIsWeb
+          ? MessageHelper.getNotificationText(Message.findOne(guid: cachedLatestMessageGuid!)!)
+          : subtitle.value;
 
       return RichText(
         text: TextSpan(

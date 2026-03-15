@@ -13,8 +13,11 @@ Each resource has an interface and a concrete action file → `interfaces/CLAUDE
 - `handle_sync_manager.dart` — contact handle sync
 
 ## Message Queues (`queue/`) → `queue/CLAUDE.md`
-- `incoming_queue.dart` — processes inbound server messages
 - `outgoing_queue.dart` — buffers outbound messages for reliability
+
+## Incoming Message Handler
+- `incoming_message_handler.dart` — `IncomingMessageHandler` / `IncomingMsgHandler` GetIt getter
+- Owns the inbound message pipeline: FIFO queue, configurable concurrency, per-GUID serialization, deduplication, chat hydration, DB write, notification dispatch, and UI reactivity
 
 ## Other Key Files
 - `settings/` — `SettingsService` + `SharedPreferencesService` → `settings/CLAUDE.md`

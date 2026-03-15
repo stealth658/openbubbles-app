@@ -141,7 +141,21 @@ class Attachment {
     Directory directory = Directory(pathName);
 
     if (directory.existsSync()) {
-      await directory.rename("$appDocPath/attachments/${newAttachment.guid}");
+      final newDirPath = "$appDocPath/attachments/${newAttachment.guid}";
+      await directory.rename(newDirPath);
+
+      // After the directory rename the file inside still has its old name (the temp transferName).
+      // If the server assigned a different transferName, rename the file to match so that
+      // attachment.path resolves correctly and the file won't be re-downloaded.
+      if (newAttachment.transferName != null) {
+        final expectedPath = newAttachment.path; // uses new guid + new transferName
+        if (!File(expectedPath).existsSync()) {
+          final files = Directory(newDirPath).listSync().whereType<File>().toList();
+          if (files.isNotEmpty) {
+            await files.first.rename(expectedPath);
+          }
+        }
+      }
     }
 
     // Update newAttachment with values from result
@@ -149,6 +163,9 @@ class Attachment {
     newAttachment.width = updatedAttachment.width;
     newAttachment.height = updatedAttachment.height;
     newAttachment.metadata = updatedAttachment.metadata;
+    // Preserve isDownloaded from the DB record — the action layer does not overwrite it,
+    // so if prepAttachment set it to true the value survives the GUID swap.
+    newAttachment.isDownloaded = updatedAttachment.isDownloaded;
 
     return newAttachment;
   }

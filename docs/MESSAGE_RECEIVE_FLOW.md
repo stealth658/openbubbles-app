@@ -12,8 +12,8 @@ For the outgoing half (user sends a message), see `docs/MESSAGE_SEND_FLOW.md`.
 Server WebSocket event: "new-message" / "updated-message"
   → SocketService
   → MessageHandlerSvc.handleEvent()  (action_handler.dart)
-  → IncomingQueue  (serial FIFO)
-  → MessageHandlerSvc.handleNewMessage() or handleUpdatedMessage()
+  → IncomingMessageHandler  (FIFO queue, configurable concurrency)
+  → IncomingMessageHandler._processNewMessage() or _processUpdatedMessage()
   → chat.addMessage() → ChatInterface → GlobalIsolate → ChatActions (ObjectBox write)
   → hydrate ID → Message object
   → ChatsSvc.updateChat()       → ChatState.*Internal()     → Obx() rebuild
@@ -40,11 +40,9 @@ No parsing or routing logic lives here — raw JSON is passed directly to `Messa
 
 ### Step 2 — Event Dispatch (`action_handler.dart`)
 
-`MessageHandlerSvc` is a GetIt singleton alias for `ActionHandler`. All incoming event routing lives here.
+`MessageHandlerSvc` is a GetX singleton alias for `ActionHandler`. All incoming socket event routing lives here.
 
-**`handleEvent(eventName, data, source)`** parses the raw payload into a typed `ServerPayload`, extracts the `Chat` and `Message`, and creates an `IncomingItem`. It then routes to the queue:
-- **Normal path:** `inq.queue(item)` — ensures serial ordering
-- **Fast path** (used by some Firebase/push codepaths): calls `handleNewMessage()` / `handleUpdatedMessage()` directly without queuing
+**`handleEvent(eventName, data, source)`** parses the raw payload into a typed `ServerPayload`, extracts the `Chat` and `Message`, then hands off to `IncomingMsgHandler.handle()` with an `IncomingPayload` that carries the parsed data and the `MessageSource` (socket or method channel).
 
 For `"new-message"` events on messages sent by this device, the handler checks whether a `tempGuid` field is present in the payload. If it is, the server is echoing back a message we sent — see `docs/MESSAGE_SEND_FLOW.md` for how the tempGuid → realGuid swap is resolved.
 
@@ -52,39 +50,65 @@ For `"new-message"` events on messages sent by this device, the handler checks w
 
 ---
 
-### Step 3 — IncomingQueue (`incoming_queue.dart`)
+### Step 3 — IncomingMessageHandler (`incoming_message_handler.dart`)
 
-`IncomingQueue` is a serial FIFO queue (backed by the abstract `Queue` base class in `queue_impl.dart`). It processes one `QueueItem` at a time — the next item only starts after the previous one fully completes. This prevents race conditions on `Chat.latestMessage` and the unread badge when two messages arrive nearly simultaneously.
+`IncomingMessageHandler` (accessed via the `IncomingMsgHandler` GetIt getter) owns all inbound message queuing and dispatch. It is a GetIt singleton registered at startup.
 
-Routing by `QueueType`:
-- `QueueType.newMessage` → `MessageHandlerSvc.handleNewMessage(chat, message, tempGuid)`
-- `QueueType.updatedMessage` → `MessageHandlerSvc.handleUpdatedMessage(chat, message, tempGuid)`
+Internally it maintains a `Queue<_QueueEntry>` and processes entries up to `maxConcurrency` at a time. Same-GUID payloads are additionally serialized via an `_inflightByGuid` map so that two transports racing each other (socket + FCM) can never interleave DB writes for the same message.
 
-**Key file:** `lib/services/backend/queue/incoming_queue.dart`
+Calling `handle(payload, {front})` enqueues the payload. Passing `front: true` jumps ahead of waiting items — used for user-initiated actions (e.g. the outgoing-message echo) where an immediate response is expected.
+
+Routing by `MessageEventType`:
+- `MessageEventType.newMessage` → `_processNewMessage(payload)`
+- `MessageEventType.updatedMessage` → `_processUpdatedMessage(payload)`
+
+**Key file:** `lib/services/backend/incoming_message_handler.dart`
 
 ---
 
-### Step 4 — Handle New Message (`action_handler.dart`)
+### Step 4 — Handle New Message (`incoming_message_handler.dart`)
 
-**`handleNewMessage(Chat, Message, tempGuid?)`:**
+**`_processNewMessage(IncomingPayload)`:**
 
-1. **Deduplication** — checks `handledNewMessages` (a rolling list of the last 100 GUIDs). If the GUID was already processed (e.g. delivered by both socket and Firebase), the method returns early.
+1. **Deduplication** — checks `_processedGuids` (a rolling set). If the GUID was already processed (e.g. delivered by both socket and Firebase), returns early.
 
-2. **Ensure Chat exists** — looks up the chat in ObjectBox by GUID. If not found, bulk-syncs it via `ChatInterface.bulkSyncChats()`. This ensures the message has a valid parent chat before insertion.
+2. **Existing record check** — if the message already exists in the DB (HTTP response saved it before the socket event, or duplicate delivery), redirects to `_processUpdatedMessage()` for a clean field refresh or GUID swap.
 
-3. **Save message to DB** — calls `chat.addMessage(message)`. This is the DB write entry point (see Step 5).
+3. **Chat hydration** — calls `_hydrateChat()` to ensure the chat has valid participants and a DB ID before insertion.
 
-4. **Post-save** — plays notification sound, creates a local notification via `NotificationsService` if appropriate, and clears the notification badge for messages from this device.
+4. **Save message to DB** — calls `chat.addMessage(message)`. This is the DB write entry point (see Step 5).
 
-5. **Update chat list** — calls `ChatsSvc.updateChat(chat, override: true)` to push the new `latestMessage` and unread state into `ChatState` (see Step 7).
+5. **Mark as processed** — adds the GUID to `_processedGuids` before any async I/O so a duplicate delivery that races in while playing sound or sending a notification is skipped.
 
-**`handleUpdatedMessage(Chat, Message, tempGuid?)`:**
+6. **Complete send-progress tracker** — if `tempGuid` is set, notifies `MessageHandlerSvc.completeSendProgressIfExists()`.
 
-1. **Resolve temp → real GUID** — if `tempGuid` is set, this is a sent-message confirmation. Calls `matchMessageWithExisting(chat, tempGuid, realMessage)` to swap the record (see `docs/MESSAGE_SEND_FLOW.md` Step 7).
+7. **Audible receive feedback** — plays a receive sound for messages not from this device.
 
-2. **Update attachments** — for each attachment on the updated message, `matchAttachmentWithExisting()` resolves the attachment GUID.
+8. **Push / in-app notification** — calls `NotificationsSvc.tryCreateNewMessageNotification()`.
 
-3. **Update message state** — calls `MessagesSvc(chat.guid).updateMessage(message, oldGuid: tempGuid)` to push changes into `MessageState` (see Step 8).
+9. **Drive UI reactivity** — calls `_dispatchNewMessage()` which fires `EventDispatcherSvc.emit('new-message', ...)` and, if this is a tempGuid echo, calls `MessagesSvc.updateMessage()` to swap the temp bubble in-place.
+
+10. **Refresh chat-list ordering** — calls `ChatsSvc.updateChat(chat, override: true)` (see Step 7).
+
+11. **Flush out-of-order updates** — calls `_flushPendingUpdate()` to replay any `updated-message` that arrived before this `new-message`.
+
+**`_processUpdatedMessage(IncomingPayload)`:**
+
+1. **Complete send-progress tracker** — if `tempGuid` is set.
+
+2. **Locate existing DB record** — tries `tempGuid` first (outgoing echo), then the real GUID.
+
+3. **Out-of-order buffering** — if no DB record exists yet, parks the payload via `_parkPendingUpdate()` and waits. `_flushPendingUpdate()` replays it once the `new-message` is processed.
+
+4. **Chat hydration** — calls `_hydrateChat()`.
+
+5. **Persist GUID swap / field update** — calls `_replaceMessage()` which goes through `MessageInterface.replaceMessage()` (see `docs/MESSAGE_SEND_FLOW.md`).
+
+6. **Persist attachment GUID swaps** — calls `_replaceAttachments()`.
+
+7. **Drive UI reactivity** — calls `_dispatchUpdatedMessage()` → `MessagesSvc.updateMessage()` + `EventDispatcherSvc.emit('updated-message', ...)`.
+
+8. **Refresh chat-list ordering** — calls `ChatsSvc.updateChat(chat, override: true)`.
 
 ---
 
@@ -168,8 +192,8 @@ Because each field is its own observable, `Obx()` rebuilds only the widget that 
 | Step | File | Key Method |
 |------|------|-----------|
 | Socket | `lib/services/network/socket_service.dart` | `socket.on("new-message", ...)` |
-| Event dispatch | `lib/services/backend/action_handler.dart` | `handleEvent()`, `handleNewMessage()`, `handleUpdatedMessage()` |
-| Queue | `lib/services/backend/queue/incoming_queue.dart` | `handleQueueItem()` |
+| Event dispatch | `lib/services/backend/action_handler.dart` | `handleEvent()` |
+| Queue & dispatch | `lib/services/backend/incoming_message_handler.dart` | `handle()`, `_processNewMessage()`, `_processUpdatedMessage()` |
 | Chat DB entry | `lib/database/io/chat.dart` | `addMessage()` |
 | Interface (chat) | `lib/services/backend/interfaces/chat_interface.dart` | `addMessageToChat()` |
 | Interface (message) | `lib/services/backend/interfaces/message_interface.dart` | `replaceMessage()` |

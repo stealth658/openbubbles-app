@@ -1,26 +1,13 @@
 # services/backend/queue/ — Message Queues
 
-For the complete inbound flow (socket → queue → DB → state → UI), see `docs/MESSAGE_RECEIVE_FLOW.md`.
+For the complete inbound flow (socket → handler → DB → state → UI), see `docs/MESSAGE_RECEIVE_FLOW.md`.
 For the complete outbound flow (send button → tempGuid → HTTP + socket race → real GUID swap), see `docs/MESSAGE_SEND_FLOW.md`.
 
 ## Files
 | File | Purpose |
 |------|---------|
 | `queue_impl.dart` | Abstract `Queue` base class — serial processing, error handling, cancellation |
-| `incoming_queue.dart` | `IncomingQueue` — processes messages arriving from the server |
 | `outgoing_queue.dart` | `OutgoingQueue` — buffers messages being sent by the user |
-
-## IncomingQueue
-Handles server-pushed events sequentially. Accessed via the `inq` top-level getter.
-
-Routes `QueueType` to `MessageHandlerSvc`:
-- `QueueType.newMessage` → `MessageHandlerSvc.handleNewMessage()`
-- `QueueType.updatedMessage` → `MessageHandlerSvc.handleUpdatedMessage()`
-
-**Usage:**
-```dart
-inq.queue(IncomingItem(type: QueueType.newMessage, chat: chat, message: message));
-```
 
 ## OutgoingQueue
 Buffers outbound sends so they process serially and surface send progress. Accessed via the `outq` top-level getter.
@@ -48,5 +35,7 @@ outq.queue(OutgoingItem(
 
 ## QueueItem Types
 Defined in `lib/database/global/queue_items.dart`:
-- `IncomingItem` — `chat`, `message`, `tempGuid`
 - `OutgoingItem` — `chat`, `message`, `selected` (reply target), `reaction`, `customArgs`
+
+## Inbound Message Handling
+Incoming messages from the server are **not** processed through this queue. They go through `IncomingMessageHandler` (`lib/services/backend/incoming_message_handler.dart`), which owns its own FIFO queue with configurable concurrency and per-GUID serialization.

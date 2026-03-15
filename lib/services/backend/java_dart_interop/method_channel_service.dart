@@ -96,12 +96,13 @@ class MethodChannelService {
           Map<String, dynamic>? data = arguments;
           if (!isNullOrEmpty(data)) {
             final payload = ServerPayload.fromJson(data!);
-            final item = IncomingItem.fromMap(QueueType.newMessage, payload.data);
-            if (!headless && LifecycleSvc.isAlive && SettingsSvc.settings.endpointUnifiedPush.value == "") {
-              await inq.queue(item);
-            } else {
-              await MessageHandlerSvc.handleNewMessage(item.chat, item.message, item.tempGuid);
-            }
+            await IncomingMsgHandler.handle(IncomingPayload(
+              type: MessageEventType.newMessage,
+              source: MessageSource.methodChannel,
+              chat: Chat.fromMap(payload.data['chats'].first.cast<String, Object>()),
+              message: Message.fromMap(payload.data),
+              tempGuid: payload.data['tempGuid'],
+            ));
           }
         } catch (e, s) {
           debugPrint("Error processing new message: $e");
@@ -141,12 +142,13 @@ class MethodChannelService {
               }
             }
 
-            final item = IncomingItem.fromMap(QueueType.updatedMessage, payload.data);
-            if (!headless && LifecycleSvc.isAlive) {
-              await inq.queue(item);
-            } else {
-              await MessageHandlerSvc.handleUpdatedMessage(item.chat, item.message, item.tempGuid);
-            }
+            await IncomingMsgHandler.handle(IncomingPayload(
+              type: MessageEventType.updatedMessage,
+              source: MessageSource.methodChannel,
+              chat: Chat.fromMap(payload.data['chats'].first.cast<String, Object>()),
+              message: Message.fromMap(payload.data),
+              tempGuid: payload.data['tempGuid'],
+            ));
           }
         } catch (e, s) {
           return Future.error(e, s);
@@ -170,8 +172,7 @@ class MethodChannelService {
           Map<String, dynamic>? data = arguments;
           if (!isNullOrEmpty(data)) {
             final payload = ServerPayload.fromJson(data!);
-            final item = IncomingItem.fromMap(QueueType.updatedMessage, payload.data);
-            await MessageHandlerSvc.handleNewOrUpdatedChat(item.chat);
+            await MessageHandlerSvc.handleNewOrUpdatedChat(Chat.fromMap(payload.data['chats'].first.cast<String, Object>()));
           }
         } catch (e, s) {
           return Future.error(e, s);
