@@ -154,7 +154,12 @@ class _MessageHolderState extends CustomState<MessageHolder, void, MessageWidget
       final response = await HttpSvc.edit(message.guid!, newEdit, "Edited to: “$newEdit”", partIndex: part);
       if (response.statusCode == 200) {
         final updatedMessage = Message.fromMap(response.data['data']);
-        MessageHandlerSvc.handleUpdatedMessage(chat, updatedMessage, null);
+        IncomingMsgHandler.handle(IncomingPayload(
+          type: MessageEventType.updatedMessage,
+          source: MessageSource.apiResponse,
+          chat: chat,
+          message: updatedMessage,
+        ));
       }
       if (!dismissed) {
         Navigator.of(context, rootNavigator: true).pop();

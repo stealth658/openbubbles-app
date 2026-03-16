@@ -110,7 +110,8 @@ Inside components and state classes, `Rx*` observables (`RxBool`, `RxString`, `R
 
 **Incoming message from server:**
 ```
-IncomingQueue → ChatActions (DB write, returns IDs)
+IncomingMessageHandler (internal FIFO queue, configurable concurrency)
+  → ChatActions (DB write, returns IDs)
   → ChatInterface (hydrates)
   → ChatsService / MessagesService
   → ChatState.updateXxxInternal() / MessageState.updateXxxInternal()

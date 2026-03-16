@@ -518,7 +518,7 @@ class NotificationsService {
           handleId: 0,
         );
         _message.generateTempGuid();
-        outq.queue(
+        OutgoingMsgHandler.queue(
           OutgoingItem(
             type: QueueType.sendMessage,
             chat: chat,
@@ -544,7 +544,7 @@ class NotificationsService {
 
       _message.generateTempGuid();
 
-      outq.queue(
+      OutgoingMsgHandler.queue(
         OutgoingItem(
           type: QueueType.sendMessage,
           chat: chat,

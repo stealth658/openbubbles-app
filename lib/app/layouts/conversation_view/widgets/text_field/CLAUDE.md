@@ -20,6 +20,6 @@ All composer state lives in `ConversationViewController` (`lib/services/ui/chat/
 
 ## Key Interactions
 - Attachments added here → tracked by `AttachmentsService`
-- Send → `OutgoingQueue` via `ActionHandler`
+- Send → `OutgoingMsgHandler` (`OutgoingMessageHandler`)
 - Reply selection rendered by `widgets/message/reply/`
 - Mention autocomplete → `custom_text_editing_controllers.dart` in `lib/app/components/`

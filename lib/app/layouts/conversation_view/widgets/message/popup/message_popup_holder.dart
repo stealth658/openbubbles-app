@@ -136,7 +136,7 @@ class _MessagePopupHolderState extends OptimizedState<MessagePopupHolder> {
     Logger.debug("[sendTapback] Creating temp reaction: type=$reaction, parent=${message.guid}",
         tag: "MessageReactivity");
 
-    outq.queue(OutgoingItem(
+    OutgoingMsgHandler.queue(OutgoingItem(
       type: QueueType.sendMessage,
       chat: message.getChat() ?? ChatsSvc.activeChat!.chat,
       message: tempMessage,

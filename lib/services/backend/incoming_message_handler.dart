@@ -331,9 +331,7 @@ class IncomingMessageHandler {
     if (saved.guid != null) _markProcessed(saved.guid!);
 
     // 6. Complete any pending outgoing send-progress tracker.
-    //    TODO: migrate send-progress tracking into this class when ActionHandler
-    //    is fully replaced.  For now, delegate to the existing service.
-    if (tempGuid != null) MessageHandlerSvc.completeSendProgressIfExists(tempGuid);
+    if (tempGuid != null) OutgoingMsgHandler.completeSendProgressIfExists(tempGuid);
 
     // 7. Audible receive feedback.
     //    The original ActionHandler gates sound on its shouldNotifyForNewMessageGuid dedup flag.
@@ -362,7 +360,7 @@ class IncomingMessageHandler {
     final tempGuid = payload.tempGuid;
 
     // 1. Complete any pending send-progress tracker first.
-    if (tempGuid != null) MessageHandlerSvc.completeSendProgressIfExists(tempGuid);
+    if (tempGuid != null) OutgoingMsgHandler.completeSendProgressIfExists(tempGuid);
 
     // 2. Locate the existing DB record.
     //    Try tempGuid first (outgoing echo), then fall back to the real GUID
@@ -460,15 +458,12 @@ class IncomingMessageHandler {
       }
 
       // Clean up the stale temp record when the real one is now present.
+      // MessagesService is notified once by _dispatchUpdatedMessage after all
+      // DB work completes — no intermediate call needed here.
       if (existingGuid != replacement.guid) {
         final stale = Message.findOne(guid: existingGuid);
         if (stale != null) {
           Message.delete(stale.guid!);
-          // Notify MessagesService of the GUID transition so the temp bubble is
-          // replaced in the UI without a flash of disappearance.
-          if (Get.isRegistered<MessagesService>(tag: chat.guid)) {
-            MessagesSvc(chat.guid).updateMessage(replacement, oldGuid: existingGuid);
-          }
         }
       }
     } else {
@@ -547,11 +542,9 @@ class IncomingMessageHandler {
           // Normal path: rename the temp attachment to the real GUID.
           await Attachment.replaceAttachmentAsync(attachmentExistingGuid, newAttachment);
         }
-
-        // Nudge MessagesService so the bubble reflects the real attachment GUID.
-        if (Get.isRegistered<MessagesService>(tag: chat.guid)) {
-          MessagesSvc(chat.guid).updateMessage(replacement);
-        }
+        // MessagesService is notified once by _dispatchUpdatedMessage after all
+        // attachments are processed — calling it per-attachment would cause N
+        // unnecessary intermediate redraws.
       } catch (ex, st) {
         Logger.warn(
           'Failed to replace attachment $attachmentExistingGuid → ${newAttachment.guid}',
@@ -681,7 +674,11 @@ class IncomingMessageHandler {
     pending.expiryTimer?.cancel();
     Logger.debug('Flushing buffered update for $messageGuid', tag: _tag);
 
-    unawaited(_processUpdatedMessage(pending.payload).catchError((e, st) {
+    // Route through the normal queue (front: true so it's next up) rather than
+    // calling _processUpdatedMessage directly.  This ensures the flushed update
+    // chains onto the per-GUID _inflightByGuid future, preventing a race with
+    // any same-GUID event already waiting in the queue behind the new-message.
+    unawaited(handle(pending.payload, front: true).catchError((e, st) {
       Logger.warn(
         'Failed to flush buffered update for $messageGuid',
         error: e,
@@ -724,12 +721,20 @@ class IncomingMessageHandler {
       await player.open(Media(SettingsSvc.settings.receiveSoundPath.value!));
     } else if (!kIsWeb) {
       final controller = PlayerController();
-      await controller
-          .preparePlayer(
-            path: SettingsSvc.settings.receiveSoundPath.value!,
-            volume: SettingsSvc.settings.soundVolume.value / 100,
-          )
-          .then((_) => controller.startPlayer());
+      await controller.preparePlayer(
+        path: SettingsSvc.settings.receiveSoundPath.value!,
+        volume: SettingsSvc.settings.soundVolume.value / 100,
+      );
+      await controller.startPlayer();
+      // Dispose the controller once playback finishes to avoid leaking native
+      // audio resources.  Uses onCompletion (Stream<void>) rather than
+      // onPlayerStateChanged so we don't need to reference PlayerState, which
+      // is defined in both audio_waveforms and media_kit.
+      unawaited(
+        controller.onCompletion.first
+            .whenComplete(controller.dispose)
+            .catchError((Object _) {}),
+      );
     }
   }
 }

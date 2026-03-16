@@ -80,7 +80,7 @@ Routing by `MessageEventType`:
 
 5. **Mark as processed** — adds the GUID to `_processedGuids` before any async I/O so a duplicate delivery that races in while playing sound or sending a notification is skipped.
 
-6. **Complete send-progress tracker** — if `tempGuid` is set, notifies `MessageHandlerSvc.completeSendProgressIfExists()`.
+6. **Complete send-progress tracker** — if `tempGuid` is set, calls `OutgoingMsgHandler.completeSendProgressIfExists(tempGuid)`.
 
 7. **Audible receive feedback** — plays a receive sound for messages not from this device.
 

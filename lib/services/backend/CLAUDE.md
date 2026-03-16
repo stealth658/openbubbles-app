@@ -12,8 +12,9 @@ Each resource has an interface and a concrete action file → `interfaces/CLAUDE
 - `incremental_sync_manager.dart` — delta updates
 - `handle_sync_manager.dart` — contact handle sync
 
-## Message Queues (`queue/`) → `queue/CLAUDE.md`
-- `outgoing_queue.dart` — buffers outbound messages for reliability
+## Outgoing Message Handler
+- `outgoing_message_handler.dart` — `OutgoingMessageHandler` / `OutgoingMsgHandler` GetIt getter
+- Owns the complete outbound send pipeline: serial queue, `prepMessage` / `prepAttachment`, HTTP + socket race via `_sendWithRace()`, send-progress trackers, GUID swap (`_matchMessageWithExisting()`), and error marking
 
 ## Incoming Message Handler
 - `incoming_message_handler.dart` — `IncomingMessageHandler` / `IncomingMsgHandler` GetIt getter

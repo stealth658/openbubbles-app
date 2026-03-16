@@ -25,5 +25,5 @@
 - FaceTime incoming call with accept/decline actions
 
 ## Triggering Notifications
-Called from `IncomingQueue` when a new message arrives, and from `ScheduledMessage` reminders.
-Don't call directly from UI code — route through the queue/service layer.
+Called from `IncomingMessageHandler` when a new message arrives, and from `ScheduledMessage` reminders.
+Don't call directly from UI code — route through the handler/service layer.

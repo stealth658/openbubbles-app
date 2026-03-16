@@ -229,7 +229,7 @@ class Share {
       handleId: 0,
     );
 
-    outq.queue(OutgoingItem(
+    OutgoingMsgHandler.queue(OutgoingItem(
       type: QueueType.sendAttachment,
       chat: chat,
       message: message,

@@ -89,7 +89,7 @@ Future<void> retryReaction({
   }
 
   // Re-send
-  outq.queue(OutgoingItem(
+  OutgoingMsgHandler.queue(OutgoingItem(
     type: QueueType.sendMessage,
     chat: chat,
     message: Message(
@@ -155,13 +155,13 @@ Future<void> retryMessage({
 
   // Queue for sending (message already in UI, just updated)
   if (message.attachments.isNotEmpty) {
-    outq.queue(OutgoingItem(
+    OutgoingMsgHandler.queue(OutgoingItem(
       type: QueueType.sendAttachment,
       chat: chat,
       message: message,
     ));
   } else {
-    outq.queue(OutgoingItem(
+    OutgoingMsgHandler.queue(OutgoingItem(
       type: QueueType.sendMessage,
       chat: chat,
       message: message,

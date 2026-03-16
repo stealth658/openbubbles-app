@@ -102,7 +102,7 @@ class _SendAnimationState extends CustomState<SendAnimation,
       );
       message.generateTempGuid();
       message.attachments.first!.guid = message.guid;
-      await outq.queue(OutgoingItem(
+      await OutgoingMsgHandler.queue(OutgoingItem(
           type: QueueType.sendAttachment,
           chat: controller.chat,
           message: message,
@@ -172,7 +172,7 @@ class _SendAnimationState extends CustomState<SendAnimation,
         ],
       );
       _message.generateTempGuid();
-      outq.queue(OutgoingItem(
+      OutgoingMsgHandler.queue(OutgoingItem(
         type: (_message.attributedBody.isNotEmpty) ? QueueType.sendMultipart : QueueType.sendMessage,
         chat: controller.chat,
         message: _message,

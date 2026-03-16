@@ -338,7 +338,7 @@ class GoBackAction extends Action<GoBackIntent> {
 }
 
 void _sendReactionHelper(Chat c, Message selected, String t) {
-  outq.queue(OutgoingItem(
+  OutgoingMsgHandler.queue(OutgoingItem(
     type: QueueType.sendMessage,
     chat: c,
     message: Message(

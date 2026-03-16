@@ -236,7 +236,7 @@ class MethodChannelService {
           return Future.value(false);
         } else {
           final Completer<void> completer = Completer();
-          outq.queue(OutgoingItem(
+          OutgoingMsgHandler.queue(OutgoingItem(
               type: QueueType.sendMessage,
               completer: completer,
               chat: chat,

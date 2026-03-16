@@ -4,7 +4,7 @@ export 'backend/java_dart_interop/intents_service.dart';
 export 'backend/java_dart_interop/method_channel_service.dart';
 export 'backend/lifecycle/lifecycle_service.dart';
 export 'backend/notifications/notifications_service.dart';
-export 'backend/queue/outgoing_queue.dart';
+export 'backend/outgoing_message_handler.dart';
 export 'backend/settings/settings_service.dart';
 export 'backend/settings/shared_preferences_service.dart';
 export 'backend/setup/setup_service.dart';

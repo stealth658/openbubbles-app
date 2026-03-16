@@ -39,7 +39,7 @@ class AttachmentWithProgress {
 class AttachmentsService extends GetxService {
   dynamic getContent(Attachment attachment, {String? path, bool? autoDownload, Function(PlatformFile)? onComplete}) {
     if (attachment.guid?.startsWith("temp") ?? false) {
-      final sendProgress = MessageHandlerSvc.attachmentProgress.firstWhereOrNull((e) => e.item1 == attachment.guid);
+      final sendProgress = OutgoingMsgHandler.attachmentProgress.firstWhereOrNull((e) => e.item1 == attachment.guid);
       if (sendProgress != null) {
         // Check if we can also get the file to display behind the progress
         if (!kIsWeb) {

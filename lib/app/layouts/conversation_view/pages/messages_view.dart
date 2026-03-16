@@ -42,7 +42,7 @@ class MessagesView extends StatefulWidget {
 class MessagesViewState extends OptimizedState<MessagesView> with MessagesServiceMixin {
   bool handlersInitialized = false;
   bool fetching = false;
-  late bool noMoreMessages = widget.customService != null;
+  bool noMoreMessages = false;
   List<Message> _messages = <Message>[];
 
   // GlobalKey for SliverAnimatedList
@@ -445,7 +445,7 @@ class MessagesViewState extends OptimizedState<MessagesView> with MessagesServic
           borderRadius: BorderRadius.circular(19),
           onTap: onTap ??
               () {
-                outq.queue(OutgoingItem(
+                OutgoingMsgHandler.queue(OutgoingItem(
                   type: QueueType.sendMessage,
                   chat: controller.chat,
                   message: Message(

@@ -230,7 +230,7 @@ class _AttachmentHolderState extends CustomState<AttachmentHolder, void, Message
                                                     ),
                                                     onPressed: progress.item2.value < 1
                                                         ? () {
-                                                            MessageHandlerSvc.latestCancelToken
+                                                            OutgoingMsgHandler.latestCancelToken
                                                                 ?.cancel("User cancelled send.");
                                                           }
                                                         : null,
@@ -290,7 +290,7 @@ class _AttachmentHolderState extends CustomState<AttachmentHolder, void, Message
                                           ),
                                           onPressed: _content.item2.value < 1
                                               ? () {
-                                                  MessageHandlerSvc.latestCancelToken?.cancel("User cancelled send.");
+                                                  OutgoingMsgHandler.latestCancelToken?.cancel("User cancelled send.");
                                                 }
                                               : null,
                                           child: _content.item2.value < 1

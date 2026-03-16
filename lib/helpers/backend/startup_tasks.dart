@@ -160,6 +160,12 @@ class StartupTasks {
       dispose: (svc) => svc.dispose(),
     );
 
+    Logger.info("Registering OutgoingMessageHandler...");
+    GetIt.I.registerSingleton<OutgoingMessageHandler>(
+      OutgoingMessageHandler(),
+      dispose: (svc) => svc.dispose(),
+    );
+
     Logger.info("Startup services initialization complete! Starting incremental sync...");
     SyncSvc.startIncrementalSync();
   }

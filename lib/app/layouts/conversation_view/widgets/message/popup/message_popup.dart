@@ -817,7 +817,12 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
     final response = await HttpSvc.unsend(message.guid!, partIndex: part.part);
     if (response.statusCode == 200) {
       final updatedMessage = Message.fromMap(response.data['data']);
-      MessageHandlerSvc.handleUpdatedMessage(chat, updatedMessage, null);
+      IncomingMsgHandler.handle(IncomingPayload(
+        type: MessageEventType.updatedMessage,
+        source: MessageSource.apiResponse,
+        chat: chat,
+        message: updatedMessage,
+      ));
     }
   }
 
