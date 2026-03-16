@@ -951,14 +951,17 @@ class TextFieldComponentState extends State<TextFieldComponent> {
                 child: AnimatedSize(
                   duration: const Duration(milliseconds: 400),
                   alignment: Alignment.bottomCenter,
-                  curve: Curves.easeOutBack,
+                  // easeOutBack overshoots its target size, which works fine in the full
+                  // conversation view but causes a brief layout overflow in chat creator
+                  // where the available vertical space is tighter (keyboard is open).
+                  curve: isChatCreator ? Curves.easeOut : Curves.easeOutBack,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       if (!isChatCreator) ReplyHolder(controller: controller!),
-                      if (initialAttachments.isNotEmpty || !isChatCreator)
+                      if (initialAttachments.isNotEmpty || !isChatCreator || widget.controller != null)
                         PickedAttachmentsHolder(
-                          controller: controller,
+                          controller: widget.controller,
                           textController: txtController,
                           initialAttachments: initialAttachments,
                         ),
@@ -1191,7 +1194,7 @@ class TextFieldComponentState extends State<TextFieldComponent> {
 
     // Save the data to a location and add it to the file picker
     if (content.hasData) {
-      controller?.pickedAttachments.add(PlatformFile(
+      widget.controller?.pickedAttachments.add(PlatformFile(
         name: filename,
         size: content.data!.length,
         bytes: content.data,
