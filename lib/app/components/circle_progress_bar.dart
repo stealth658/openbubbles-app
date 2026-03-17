@@ -9,6 +9,7 @@ class CircleProgressBar extends StatefulWidget {
   final Color backgroundColor;
   final Color foregroundColor;
   final double value;
+  final double? strokeWidth;
 
   const CircleProgressBar({
     super.key,
@@ -16,6 +17,7 @@ class CircleProgressBar extends StatefulWidget {
     required this.backgroundColor,
     required this.foregroundColor,
     required this.value,
+    this.strokeWidth,
   });
 
   @override
@@ -123,7 +125,7 @@ class CircleProgressBarState extends OptimizedState<CircleProgressBar> with Sing
 
           return CustomPaint(
             foregroundPainter: CircleProgressBarPainter(
-              strokeWidth: 4,
+              strokeWidth: widget.strokeWidth ?? 4,
               backgroundColor: backgroundColor,
               foregroundColor: foregroundColor,
               percentage: valueTween!.evaluate(curve),

@@ -28,26 +28,37 @@ class _DeliveredIndicatorState extends CustomState<DeliveredIndicator, void, Mes
     final isTempMessage = controller.messageState?.isSending.value ?? message.guid!.contains("temp");
     if (widget.forceShow || isTempMessage) return true;
     if ((!message.isFromMe! && iOS) || (controller.parts.lastOrNull?.isUnsent ?? false)) return false;
-    final messages = MessagesSvc(controller.cvController?.chat.guid ?? ChatsSvc.activeChat!.chat.guid)
-        .struct
-        .messages
-        .where((e) => (!iOS ? !e.isFromMe! : false) || (e.isFromMe! && (e.dateDelivered != null || e.dateRead != null)))
-        .toList()
-      ..sort(Message.sort);
-    final index = messages.indexWhere((e) => e.guid == message.guid);
-    if (index == 0) return true;
-    if (index == 1 && message.isFromMe!) {
-      final newer = messages.first;
-      if (message.dateRead != null) {
-        return newer.dateRead == null;
-      }
-      if (message.dateDelivered != null) {
-        return newer.dateDelivered == null;
-      }
+
+    // Prefer reactive messageState values to avoid stale reads on delivery/read receipts.
+    final dateRead = controller.messageState?.dateRead.value ?? message.dateRead;
+    final dateDelivered = controller.messageState?.dateDelivered.value ?? message.dateDelivered;
+
+    final chatGuid = controller.cvController?.chat.guid ?? ChatsSvc.activeChat!.chat.guid;
+    final allMessages = MessagesSvc(chatGuid).struct.messages;
+
+    // Non-iOS: show "Received" only on the most recent incoming message.
+    if (!message.isFromMe!) {
+      final lastIncoming = allMessages.where((e) => !e.isFromMe!).toList()..sort(Message.sort);
+      return lastIncoming.firstOrNull?.guid == message.guid;
     }
-    if (index > 1 && message.isFromMe!) {
-      return messages.firstWhereOrNull((e) => e.dateRead != null)?.guid == message.guid;
+
+    // Show "Read" on the most recently read outgoing message.
+    // This takes priority over "Delivered" even when a newer message is only delivered.
+    if (dateRead != null) {
+      final lastRead = allMessages
+          .where((e) => e.isFromMe! && e.dateRead != null)
+          .toList()..sort(Message.sort);
+      return lastRead.firstOrNull?.guid == message.guid;
     }
+
+    // Show "Delivered" only on the newest outgoing message that has any receipt.
+    if (dateDelivered != null) {
+      final lastDelivered = allMessages
+          .where((e) => e.isFromMe! && (e.dateDelivered != null || e.dateRead != null))
+          .toList()..sort(Message.sort);
+      return lastDelivered.firstOrNull?.guid == message.guid;
+    }
+
     return false;
   }
 
@@ -67,17 +78,24 @@ class _DeliveredIndicatorState extends CustomState<DeliveredIndicator, void, Mes
   }
 
   List<InlineSpan> getText() {
+    // Prefer reactive messageState values so the Obx subscription keeps getText
+    // up-to-date without requiring controller.message to be replaced on receipt.
+    final dateRead = controller.messageState?.dateRead.value ?? message.dateRead;
+    final dateDelivered = controller.messageState?.dateDelivered.value ?? message.dateDelivered;
+    final wasDeliveredQuietly = controller.messageState?.wasDeliveredQuietly.value ?? message.wasDeliveredQuietly;
+    final didNotifyRecipient = controller.messageState?.didNotifyRecipient.value ?? message.didNotifyRecipient;
+
     if (controller.audioWasKept.value != null) {
       return buildTwoPiece("Kept", buildDate(controller.audioWasKept.value!));
     } else if (!(message.isFromMe ?? false)) {
       return buildTwoPiece("Received", buildDate(message.dateCreated));
-    } else if (message.dateRead != null) {
-      return buildTwoPiece("Read", buildDate(message.dateRead));
-    } else if (message.dateDelivered != null) {
+    } else if (dateRead != null) {
+      return buildTwoPiece("Read", buildDate(dateRead));
+    } else if (dateDelivered != null) {
       return buildTwoPiece(
-          "Delivered${message.wasDeliveredQuietly && !message.didNotifyRecipient ? " Quietly" : ""}",
+          "Delivered${wasDeliveredQuietly && !didNotifyRecipient ? " Quietly" : ""}",
           SettingsSvc.settings.showDeliveryTimestamps.value || !iOS || widget.forceShow
-              ? buildDate(message.dateDelivered)
+              ? buildDate(dateDelivered)
               : null);
     } else if (message.isDelivered) {
       return buildTwoPiece("Delivered", null);

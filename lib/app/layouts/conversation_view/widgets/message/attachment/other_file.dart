@@ -19,6 +19,72 @@ import 'package:universal_html/html.dart' as html;
 import 'package:universal_io/io.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+/// The visual content of a generic (non-media) file attachment: an icon on the
+/// left and the filename + type•size label on the right.  Contains no tap or
+/// interactive behaviour so it can be reused inside both [OtherFile] (which
+/// wraps it in an [InkWell]) and the upload-progress overlay (which sits on
+/// top of it).
+class OtherFileRow extends StatelessWidget {
+  const OtherFileRow({
+    super.key,
+    required this.attachment,
+    this.file,
+  });
+
+  final Attachment attachment;
+
+  /// The resolved local file.  May be `null` during upload before the file has
+  /// been cached; falls back to [Attachment.transferName] and
+  /// [Attachment.getFriendlySize] in that case.
+  final PlatformFile? file;
+
+  @override
+  Widget build(BuildContext context) {
+    final name = file?.name ?? attachment.transferName ?? "";
+    final typeLabel =
+        (mime(name)?.split("/").lastOrNull ?? mime(name) ?? "file").toUpperCase();
+    final sizeLabel =
+        file != null ? file!.size.toDouble().getFriendlySize() : attachment.getFriendlySize();
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 15),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Icon(
+            getAttachmentIcon(attachment.mimeType ?? ""),
+            color: context.theme.colorScheme.properOnSurface,
+            size: 35,
+          ),
+          const SizedBox(width: 10),
+          Flexible(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: context.theme.textTheme.bodyMedium!.apply(fontWeightDelta: 2),
+                ),
+                const SizedBox(height: 2.5),
+                Text(
+                  "$typeLabel \u2022 $sizeLabel",
+                  style: context.theme.textTheme.labelMedium!
+                      .copyWith(fontWeight: FontWeight.normal, color: context.theme.colorScheme.outline),
+                  overflow: TextOverflow.clip,
+                  maxLines: 1,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class OtherFile extends StatelessWidget {
   const OtherFile({
     super.key,
@@ -81,43 +147,7 @@ class OtherFile extends StatelessWidget {
           }
         }
       },
-      child: Padding(
-        padding: const EdgeInsets.all(15.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Icon(
-              getAttachmentIcon(attachment.mimeType ?? ""),
-              color: context.theme.colorScheme.properOnSurface,
-              size: 35,
-            ),
-            const SizedBox(width: 10),
-            Flexible(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    file.name,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: context.theme.textTheme.bodyMedium!.apply(fontWeightDelta: 2),
-                  ),
-                  const SizedBox(height: 2.5),
-                  Text(
-                    "${(mime(file.name)?.split("/").lastOrNull ?? mime(file.name) ?? "file").toUpperCase()} • ${file.size.toDouble().getFriendlySize()}",
-                    style: context.theme.textTheme.labelMedium!
-                        .copyWith(fontWeight: FontWeight.normal, color: context.theme.colorScheme.outline),
-                    overflow: TextOverflow.clip,
-                    maxLines: 1,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+      child: OtherFileRow(attachment: attachment, file: file),
     );
   }
 }

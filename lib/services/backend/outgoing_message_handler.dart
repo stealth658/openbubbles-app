@@ -119,6 +119,10 @@ class OutgoingMessageHandler {
   /// [OutgoingItem.completer] resolves — i.e. when the HTTP response arrives
   /// or an error is surfaced.
   Future<void> queue(OutgoingItem item) async {
+    Logger.debug(
+      '[queue] Enqueueing type=${item.type.name} chat=${item.chat.guid} guid=${item.message.guid}',
+      tag: _tag,
+    );
     // Prepare items (writes temp messages / copies attachment files to disk).
     // prepMessage may return multiple Message objects when it splits a URL
     // message into two parts (pre-Big Sur macOS compatibility).
@@ -127,7 +131,9 @@ class OutgoingMessageHandler {
     if (returned is List<Message>) {
       // prepMessage already saved each message to the DB; create a queue
       // entry for each one with the message that was actually saved.
+      Logger.debug('[queue] prepMessage returned ${(returned as List).length} message(s)', tag: _tag);
       for (final m in returned) {
+        Logger.debug('[queue] enqueueing message guid=${m.guid}', tag: _tag);
         _queue.add(_OutgoingEntry(OutgoingItem(
           type: item.type,
           chat: item.chat,
@@ -140,6 +146,7 @@ class OutgoingMessageHandler {
       }
     } else {
       // Attachment: prepAttachment already saved it; keep the original item.
+      Logger.debug('[queue] attachment item enqueued guid=${item.message.guid}', tag: _tag);
       _queue.add(_OutgoingEntry(item));
     }
 
@@ -149,10 +156,15 @@ class OutgoingMessageHandler {
   Future<void> _processNext() async {
     if (_isProcessing) return;
     _isProcessing = true;
+    Logger.debug('[_processNext] Starting queue processing (${_queue.length} item(s) queued)', tag: _tag);
 
     while (_queue.isNotEmpty) {
       final entry = _queue.removeFirst();
       final item = entry.item;
+      Logger.debug(
+        '[_processNext] Processing item type=${item.type.name} guid=${item.message.guid} chat=${item.chat.guid}',
+        tag: _tag,
+      );
 
       try {
         await _handleSend(() => _dispatchItem(item), item.chat).catchError((err) async {
@@ -179,6 +191,7 @@ class OutgoingMessageHandler {
       }
     }
 
+    Logger.debug('[_processNext] Queue drained', tag: _tag);
     _isProcessing = false;
   }
 
@@ -409,6 +422,13 @@ class OutgoingMessageHandler {
       'prepAttachment: attachment ${attachment.guid} in DB = ${savedAttachment != null}',
       tag: _tag,
     );
+
+    // Register upload-in-progress state so the UI can react immediately.
+    // Must come after addMessage so the message is in the DB.
+    if (Get.isRegistered<MessagesService>(tag: c.guid)) {
+      MessagesSvc(c.guid).notifyAttachmentUploadStarted(m, attachment);
+      Logger.debug('prepAttachment: AttachmentState set to uploading for ${attachment.guid}', tag: _tag);
+    }
   }
 
   // ── Send methods ─────────────────────────────────────────────────────────
@@ -420,6 +440,11 @@ class OutgoingMessageHandler {
   Future<void> sendMessage(Chat c, Message m, Message? selected, String? r) {
     ChatsSvc.updateChat(c);
     final tempGuid = m.guid!;
+    Logger.debug(
+      '[sendMessage] START tempGuid=$tempGuid chat=${c.guid} '
+      'isReaction=${r != null} selectedGuid=${selected?.guid}',
+      tag: _tag,
+    );
 
     // Add temp reaction to UI immediately for instant feedback.
     if (r != null && m.associatedMessageGuid != null) {
@@ -494,6 +519,7 @@ class OutgoingMessageHandler {
   /// Sends a multipart (mention / mixed-content) message.
   Future<void> sendMultipart(Chat c, Message m, Message? selected, String? r) {
     final tempGuid = m.guid!;
+    Logger.debug('[sendMultipart] START tempGuid=$tempGuid chat=${c.guid}', tag: _tag);
     final parts = m.attributedBody.first.runs
         .map((e) => {
               'text': m.attributedBody.first.string.substring(e.range.first, e.range.first + e.range.last),
@@ -534,6 +560,12 @@ class OutgoingMessageHandler {
     // Save both GUIDs before any mutation — attachment.guid == m.guid by design
     // (set in send_animation.dart: attachment.guid = message.guid).
     final tempGuid = m.guid!;
+    Logger.debug(
+      '[sendAttachment] START tempGuid=$tempGuid chat=${c.guid} '
+      'attachmentGuid=${attachment.guid} mimeType=${attachment.mimeType} '
+      'isAudio=$isAudioMessage',
+      tag: _tag,
+    );
 
     Uint8List? bytes;
     if (!kIsWeb) {
@@ -564,7 +596,14 @@ class OutgoingMessageHandler {
           path: kIsWeb ? null : attachment.path,
           size: attachment.totalBytes ?? 0,
         ),
-        onSendProgress: (count, total) => progress.item2.value = count / bytes!.length,
+        onSendProgress: (count, total) {
+          final uploadFraction = count / bytes!.length;
+          progress.item2.value = uploadFraction;
+          // Mirror upload progress into AttachmentState for reactive UI.
+          if (Get.isRegistered<MessagesService>(tag: c.guid)) {
+            MessagesSvc(c.guid).notifyAttachmentUploadProgress(tempGuid, attachment.guid!, uploadFraction);
+          }
+        },
         method: (SettingsSvc.settings.enablePrivateAPI.value && SettingsSvc.settings.privateAPIAttachmentSend.value) ||
                 (m.subject?.isNotEmpty ?? false) ||
                 m.threadOriginatorGuid != null ||
@@ -584,6 +623,16 @@ class OutgoingMessageHandler {
           if (a == null) continue;
           try {
             await _matchAttachmentWithExisting(c, tempGuid, a);
+            // Complete the attachment state.  We pass both the temp and real
+            // message GUIDs because the socket event may have already moved
+            // the MessageState to the real key before the HTTP response arrived.
+            // The state key is intentionally left at the temp attachment GUID
+            // so the Obx can still find it; _syncAttachmentStates promotes it
+            // to the real key when updateMessage delivers the updated struct.
+            if (Get.isRegistered<MessagesService>(tag: c.guid)) {
+              MessagesSvc(c.guid).notifyAttachmentSendComplete(
+                tempGuid, newMessage.guid!, tempGuid, a);
+            }
             MessagesSvc(c.guid).updateMessage(newMessage);
           } catch (e, st) {
             Logger.warn('Failed to replace attachment ${a.guid}', error: e, trace: st, tag: _tag);
@@ -600,6 +649,10 @@ class OutgoingMessageHandler {
           await NotificationsSvc.createFailedToSend(c);
         }
         await Message.replaceMessage(tempGuid, m);
+        // Mark attachment as errored so the UI shows a retry option.
+        if (Get.isRegistered<MessagesService>(tag: c.guid)) {
+          MessagesSvc(c.guid).notifyAttachmentTransferError(tempGuid, attachment.guid!);
+        }
         // Use the saved tempGuid — m.guid is now the error GUID after handleSendError.
         attachmentProgress.removeWhere((e) => e.item1 == tempGuid);
       },
@@ -624,40 +677,77 @@ class OutgoingMessageHandler {
     String existingGuid,
     Message replacement,
   ) async {
+    Logger.debug(
+      '[_matchMessageWithExisting] START existingGuid=$existingGuid → replacementGuid=${replacement.guid} chat=${chat.guid}',
+      tag: _tag,
+    );
+
     final alreadyPresent = Message.findOne(guid: replacement.guid);
+    Logger.debug(
+      '[_matchMessageWithExisting] alreadyPresent check for ${replacement.guid} → found=${alreadyPresent != null} (id=${alreadyPresent?.id})',
+      tag: _tag,
+    );
 
     if (alreadyPresent != null) {
       // Socket event won the race — real GUID is already in the DB.
-      if (replacement.isNewerThan(alreadyPresent)) {
+      final isNewer = replacement.isNewerThan(alreadyPresent);
+      Logger.debug(
+        '[_matchMessageWithExisting] parallel-delivery: isNewerThan=$isNewer',
+        tag: _tag,
+      );
+      if (isNewer) {
+        Logger.debug('[_matchMessageWithExisting] overwriting with newer replacement ${replacement.guid}', tag: _tag);
         await Message.replaceMessage(replacement.guid, replacement);
       }
 
       // Clean up the stale temp record if it's distinct from the real one.
       if (existingGuid != replacement.guid) {
         final stale = Message.findOne(guid: existingGuid);
+        Logger.debug(
+          '[_matchMessageWithExisting] stale cleanup: existingGuid=$existingGuid staleFound=${stale != null}',
+          tag: _tag,
+        );
         if (stale != null) {
+          Logger.debug('[_matchMessageWithExisting] deleting stale record $existingGuid', tag: _tag);
           Message.delete(stale.guid!);
           if (Get.isRegistered<MessagesService>(tag: chat.guid)) {
+            Logger.debug(
+              '[_matchMessageWithExisting] calling updateMessage oldGuid=$existingGuid → ${replacement.guid}',
+              tag: _tag,
+            );
             MessagesSvc(chat.guid).updateMessage(replacement, oldGuid: existingGuid);
           }
         }
+      } else {
+        Logger.debug('[_matchMessageWithExisting] existingGuid == replacementGuid — no stale cleanup needed', tag: _tag);
       }
     } else {
       // Normal path: rename the temp record to the real GUID.
+      Logger.debug(
+        '[_matchMessageWithExisting] normal path: replaceMessage $existingGuid → ${replacement.guid}',
+        tag: _tag,
+      );
       try {
         await Message.replaceMessage(existingGuid, replacement);
+        Logger.debug('[_matchMessageWithExisting] replaceMessage succeeded: $existingGuid → ${replacement.guid}', tag: _tag);
         if (Get.isRegistered<MessagesService>(tag: chat.guid)) {
+          Logger.debug(
+            '[_matchMessageWithExisting] calling updateMessage oldGuid=$existingGuid → ${replacement.guid}',
+            tag: _tag,
+          );
           MessagesSvc(chat.guid).updateMessage(replacement, oldGuid: existingGuid);
         }
       } catch (ex, st) {
         Logger.warn(
-          'Unable to find & replace message with GUID $existingGuid',
+          '[_matchMessageWithExisting] FAILED: Unable to find & replace message with GUID $existingGuid',
           error: ex,
           trace: st,
           tag: _tag,
         );
       }
     }
+
+    Logger.debug('[_matchMessageWithExisting] END existingGuid=$existingGuid → ${replacement.guid}', tag: _tag);
   }
 
   /// Swaps a temp attachment GUID for the real one after the server confirms
@@ -667,21 +757,70 @@ class OutgoingMessageHandler {
     String existingGuid,
     Attachment replacement,
   ) async {
+    Logger.debug(
+      '[_matchAttachmentWithExisting] START existingGuid=$existingGuid → replacementGuid=${replacement.guid} chat=${chat.guid}',
+      tag: _tag,
+    );
+
     final alreadyPresent = await Attachment.findOneAsync(replacement.guid!);
+    Logger.debug(
+      '[_matchAttachmentWithExisting] alreadyPresent check for ${replacement.guid} → found=${alreadyPresent != null}',
+      tag: _tag,
+    );
     if (alreadyPresent != null) {
+      Logger.debug('[_matchAttachmentWithExisting] parallel-delivery: updating ${replacement.guid} in place', tag: _tag);
       await Attachment.replaceAttachmentAsync(replacement.guid, replacement);
       if (existingGuid != replacement.guid) {
         final stale = await Attachment.findOneAsync(existingGuid);
+        Logger.debug(
+          '[_matchAttachmentWithExisting] stale cleanup: $existingGuid staleFound=${stale != null}',
+          tag: _tag,
+        );
         if (stale != null) {
+          Logger.debug('[_matchAttachmentWithExisting] deleting stale attachment $existingGuid', tag: _tag);
           await Attachment.deleteAsync(stale.guid!);
         }
+      } else {
+        Logger.debug('[_matchAttachmentWithExisting] existingGuid == replacementGuid — no stale cleanup needed', tag: _tag);
       }
     } else {
+      Logger.debug(
+        '[_matchAttachmentWithExisting] normal path: replaceAttachmentAsync $existingGuid → ${replacement.guid}',
+        tag: _tag,
+      );
       try {
         await Attachment.replaceAttachmentAsync(existingGuid, replacement);
+        Logger.debug(
+          '[_matchAttachmentWithExisting] replaceAttachmentAsync succeeded: $existingGuid → ${replacement.guid}',
+          tag: _tag,
+        );
       } catch (ex) {
         Logger.warn(
-          'Unable to find & replace attachment with GUID $existingGuid',
+          '[_matchAttachmentWithExisting] FAILED: Unable to find & replace attachment with GUID $existingGuid',
+          error: ex,
+          tag: _tag,
+        );
+      }
+    }
+
+    Logger.debug('[_matchAttachmentWithExisting] END existingGuid=$existingGuid → ${replacement.guid}', tag: _tag);
+
+    // Move the file directory from the temp-GUID path to the real-GUID path so that
+    // getContent finds the local file immediately without triggering a server download.
+    if (!kIsWeb && existingGuid != replacement.guid && existingGuid.startsWith('temp')) {
+      try {
+        final oldDir = Directory('${Attachment.baseDirectory}/$existingGuid');
+        final newDir = Directory(replacement.directory);
+        if (oldDir.existsSync() && !newDir.existsSync()) {
+          oldDir.renameSync(newDir.path);
+          Logger.debug(
+            '[_matchAttachmentWithExisting] moved attachment dir $existingGuid → ${replacement.guid}',
+            tag: _tag,
+          );
+        }
+      } catch (ex) {
+        Logger.warn(
+          '[_matchAttachmentWithExisting] failed to move attachment dir $existingGuid → ${replacement.guid}',
           error: ex,
           tag: _tag,
         );

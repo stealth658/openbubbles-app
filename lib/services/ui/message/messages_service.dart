@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:io';
 
+import 'package:bluebubbles/app/state/attachment_state.dart';
 import 'package:bluebubbles/app/state/message_state.dart';
 import 'package:bluebubbles/helpers/types/helpers/message_helper.dart';
 import 'package:bluebubbles/helpers/types/constants.dart';
@@ -13,6 +15,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart' hide Response;
 import 'package:rxdart/rxdart.dart';
+import 'package:tuple/tuple.dart';
 
 // ignore: non_constant_identifier_names
 MessagesService MessagesSvc(String chatGuid) => Get.isRegistered<MessagesService>(tag: chatGuid)
@@ -118,6 +121,372 @@ class MessagesService extends GetxController {
   }
 
   // ========== End MessageState Management ==========
+
+  // ========== AttachmentState Management ==========
+
+  /// Returns the [AttachmentState] for [attachmentGuid] within the message
+  /// identified by [messageGuid], or `null` if either state does not exist.
+  AttachmentState? getAttachmentState(String messageGuid, String attachmentGuid) {
+    return messageStates[messageGuid]?.getAttachmentState(attachmentGuid);
+  }
+
+  /// Notifies that an attachment upload is starting (called from
+  /// [OutgoingMessageHandler.prepAttachment] before the HTTP call is made).
+  ///
+  /// Ensures the message and attachment are registered in the state maps and
+  /// transitions the attachment to [AttachmentTransferState.uploading].
+  void notifyAttachmentUploadStarted(Message message, Attachment attachment) {
+    if (message.guid == null || attachment.guid == null) return;
+
+    // Ensure the message is in the struct (the ObjectBox watch debounce may
+    // not have fired yet at this point).
+    if (struct.getMessage(message.guid!) == null) {
+      struct.addMessages([message]);
+    }
+
+    // Create MessageState if it doesn't exist yet.
+    if (!messageStates.containsKey(message.guid!)) {
+      messageStates[message.guid!] = MessageState(message);
+      Logger.debug("Created MessageState for outgoing message ${message.guid}", tag: "AttachmentState");
+    }
+
+    final messageState = messageStates[message.guid!]!;
+    final attachmentState = messageState.getOrCreateAttachmentState(attachment.guid!, attachment: attachment);
+    attachmentState.updateTransferStateInternal(AttachmentTransferState.uploading);
+
+    // Populate uploadPreviewFile so the UI can show the image behind the
+    // progress overlay while the upload is in flight.  The file was already
+    // copied to attachment.path by prepAttachment.
+    if (!kIsWeb && attachment.transferName != null) {
+      final path = attachment.path;
+      if (path.isNotEmpty && File(path).existsSync()) {
+        attachmentState.updateUploadPreviewFileInternal(PlatformFile(
+          name: attachment.transferName!,
+          path: path,
+          size: attachment.totalBytes ?? 0,
+        ));
+      }
+    }
+
+    Logger.debug(
+      "AttachmentState[${attachment.guid}] → uploading (msg ${message.guid})",
+      tag: "AttachmentState",
+    );
+  }
+
+  /// Updates the upload progress for an attachment in flight.
+  /// [progress] is a value in [0.0, 1.0].
+  void notifyAttachmentUploadProgress(String messageGuid, String attachmentGuid, double progress) {
+    messageStates[messageGuid]?.getAttachmentState(attachmentGuid)?.updateUploadProgressInternal(progress);
+  }
+
+  /// Notifies that an attachment download has started.
+  ///
+  /// Transitions the attachment state to [AttachmentTransferState.downloading]
+  /// and wires [ctrl.progress] into [AttachmentState.downloadProgress] so the
+  /// UI receives live progress updates reactively.
+  void notifyAttachmentDownloadStarted(String messageGuid, String attachmentGuid, AttachmentDownloadController ctrl) {
+    final messageState = messageStates[messageGuid];
+    if (messageState == null) return;
+
+    AttachmentState attachmentState;
+    try {
+      attachmentState = messageState.getOrCreateAttachmentState(
+        attachmentGuid,
+        attachment: ctrl.attachment,
+      );
+    } catch (_) {
+      // Message may not have the attachment object yet; create a bare state.
+      attachmentState = AttachmentState(ctrl.attachment);
+      messageState.attachmentStates[attachmentGuid] = attachmentState;
+    }
+
+    attachmentState.updateTransferStateInternal(AttachmentTransferState.downloading);
+    attachmentState.updateActiveDownloadInternal(ctrl);
+    attachmentState.syncDownloadInternal(ctrl, (PlatformFile file) {
+      _onAttachmentDownloadComplete(messageGuid, attachmentGuid, file);
+    });
+
+    Logger.debug(
+      "AttachmentState[$attachmentGuid] → downloading (msg $messageGuid)",
+      tag: "AttachmentState",
+    );
+  }
+
+  /// Marks an attachment as fully downloaded and transitions its state to
+  /// [AttachmentTransferState.complete].
+  void notifyAttachmentDownloadComplete(String messageGuid, String attachmentGuid) {
+    final state = messageStates[messageGuid]?.getAttachmentState(attachmentGuid);
+    if (state == null) return;
+
+    state.updateIsDownloadedInternal(true);
+    state.updateActiveDownloadInternal(null);
+    state.updateTransferStateInternal(AttachmentTransferState.complete);
+
+    Logger.debug(
+      "AttachmentState[$attachmentGuid] → complete (msg $messageGuid)",
+      tag: "AttachmentState",
+    );
+  }
+
+  /// Transitions an attachment to [AttachmentTransferState.error].
+  void notifyAttachmentTransferError(String messageGuid, String attachmentGuid) {
+    messageStates[messageGuid]
+        ?.getAttachmentState(attachmentGuid)
+        ?.updateTransferStateInternal(AttachmentTransferState.error);
+
+    Logger.debug(
+      "AttachmentState[$attachmentGuid] → error (msg $messageGuid)",
+      tag: "AttachmentState",
+    );
+  }
+
+  /// Re-keys an [AttachmentState] from [oldAttachmentGuid] to
+  /// [newAttachmentGuid] within the message identified by [messageGuid].
+  ///
+  /// Called after an attachment GUID swap (temp → real) so that the state
+  /// object survives the transition.  The [AttachmentState.guid] observable is
+  /// also updated so reactive listeners receive the new value.
+  void renameAttachmentState(String messageGuid, String oldAttachmentGuid, String newAttachmentGuid) {
+    if (oldAttachmentGuid == newAttachmentGuid) return;
+
+    final messageState = messageStates[messageGuid];
+    if (messageState == null) return;
+
+    final oldState = messageState.attachmentStates.remove(oldAttachmentGuid);
+    if (oldState != null) {
+      oldState.updateGuidInternal(newAttachmentGuid);
+      messageState.attachmentStates[newAttachmentGuid] = oldState;
+      Logger.debug(
+        "Renamed AttachmentState $oldAttachmentGuid → $newAttachmentGuid (msg $messageGuid)",
+        tag: "AttachmentState",
+      );
+    }
+  }
+
+  // ========== End AttachmentState Management ==========
+
+  // ========== Attachment Send Completion ==========
+
+  /// Called after the server confirms an outgoing attachment upload, or when
+  /// the incoming handler replaces a temp attachment with the real one.
+  ///
+  /// Finds the attachment state at [tempAttachmentGuid] — the ORIGINAL key
+  /// the state was stored under — and updates it in-place WITHOUT renaming
+  /// the map key.  This is intentional: the widget's [_attachmentState] getter
+  /// looks up by [part.attachments.first.guid] (always the temp GUID) so it
+  /// must be able to find the state even after the Obx re-runs.  The deferred
+  /// key rename from temp → real happens lazily in [_syncAttachmentStates]
+  /// once [updateMessage] delivers the updated message struct.
+  ///
+  /// [tempMessageGuid] and [realMessageGuid] are used to locate the
+  /// [MessageState]: the temp GUID is tried first (HTTP beats socket); the
+  /// real GUID is the fallback for when the socket arrived first and the
+  /// MessageState was already moved.
+  void notifyAttachmentSendComplete(
+    String tempMessageGuid,
+    String realMessageGuid,
+    String tempAttachmentGuid,
+    Attachment resolvedAttachment,
+  ) {
+    final realAttGuid = resolvedAttachment.guid!;
+
+    // Locate the MessageState — try temp key first, fall back to real.
+    MessageState? messageState = messageStates[tempMessageGuid];
+    if (messageState == null && realMessageGuid != tempMessageGuid) {
+      messageState = messageStates[realMessageGuid];
+    }
+    if (messageState == null) {
+      Logger.warn(
+        'notifyAttachmentSendComplete: no MessageState for tempMsg=$tempMessageGuid / realMsg=$realMessageGuid',
+        tag: 'AttachmentState',
+      );
+      return;
+    }
+
+    // Register the temp→real mapping so _syncAttachmentStates can promote the
+    // correct state key deterministically (critical for multi-attachment messages).
+    if (tempAttachmentGuid != realAttGuid) {
+      messageState.registerGuidPromotion(tempAttachmentGuid, realAttGuid);
+    }
+
+    // Look up state by temp GUID.  If it was already promoted (rare race),
+    // fall back to the real key.
+    AttachmentState? state = messageState.attachmentStates[tempAttachmentGuid];
+    if (state == null && tempAttachmentGuid != realAttGuid) {
+      state = messageState.attachmentStates[realAttGuid];
+    }
+    if (state == null) {
+      state = AttachmentState(resolvedAttachment);
+      messageState.attachmentStates[tempAttachmentGuid] = state;
+    }
+
+    // Sync all metadata (guid, transferName, dimensions, …) so that
+    // state.attachment.path uses the real transferName and guid.
+    state.updateFromAttachment(resolvedAttachment);
+
+    // Populate resolvedFile if we don't have it yet.
+    if (!kIsWeb && state.resolvedFile.value == null && resolvedAttachment.transferName != null) {
+      final filePath = resolvedAttachment.path;
+      if (File(filePath).existsSync()) {
+        state.updateResolvedFileInternal(PlatformFile(
+          name: resolvedAttachment.transferName!,
+          path: filePath,
+          size: resolvedAttachment.totalBytes ?? 0,
+        ));
+      } else {
+        Logger.warn(
+          'notifyAttachmentSendComplete: file not found at $filePath '
+          'dirContents=${_listDir(resolvedAttachment.directory)}',
+          tag: 'AttachmentState',
+        );
+      }
+    }
+
+    // Force-complete the state.  updateFromAttachment's isDownloaded guard
+    // may skip the transition when isDownloaded was already true (set in
+    // prepAttachment), so we do it explicitly here.
+    state.updateIsDownloadedInternal(true);
+    state.updateActiveDownloadInternal(null);
+    if (state.transferState.value != AttachmentTransferState.complete) {
+      state.updateTransferStateInternal(AttachmentTransferState.complete);
+    }
+
+    Logger.debug(
+      'AttachmentState[$tempAttachmentGuid] → complete '
+      '(will promote to $realAttGuid on next _syncAttachmentStates)',
+      tag: 'AttachmentState',
+    );
+  }
+
+  /// Helper: safely lists file names in [dirPath] for debug logging.
+  static String _listDir(String dirPath) {
+    try {
+      final dir = Directory(dirPath);
+      if (!dir.existsSync()) return '<dir missing>';
+      final names = dir.listSync().map((e) => e.path.split('/').last).join(', ');
+      return names.isEmpty ? '<empty dir>' : names;
+    } catch (_) {
+      return '<error listing dir>';
+    }
+  }
+
+  // ========== End Attachment Send Completion ==========
+
+  /// Called by [MessagesService] when a download controller confirms the file.
+  /// Updates [AttachmentState.resolvedFile] and clears [activeDownload] before
+  /// delegating to [notifyAttachmentDownloadComplete].
+  void _onAttachmentDownloadComplete(String messageGuid, String attachmentGuid, PlatformFile file) {
+    final attState = messageStates[messageGuid]?.getAttachmentState(attachmentGuid);
+    if (attState == null) return;
+    attState.updateResolvedFileInternal(file);
+    attState.updateActiveDownloadInternal(null);
+    notifyAttachmentDownloadComplete(messageGuid, attachmentGuid);
+  }
+
+  /// Loads the renderable content for [attachment] and updates its
+  /// [AttachmentState] accordingly.  Replaces the per-widget `updateContent`
+  /// logic so all download orchestration lives in the service layer.
+  ///
+  /// Safe to call on every widget build — early-returns when the content is
+  /// already resolved or a transfer is already in progress.
+  Future<void> loadAttachmentContent(String messageGuid, Attachment attachment) async {
+    if (attachment.guid == null) return;
+
+    final msgState = messageStates[messageGuid];
+    if (msgState == null) return;
+
+    final attState = msgState.getOrCreateAttachmentState(attachment.guid!, attachment: attachment);
+
+    // Don't interfere with active or already-resolved transfers.
+    final ts = attState.transferState.value;
+    if (ts == AttachmentTransferState.uploading) return;
+    if (ts == AttachmentTransferState.downloading || ts == AttachmentTransferState.queued) return;
+    if (ts == AttachmentTransferState.complete &&
+        attState.resolvedFile.value != null &&
+        attState.guid.value == attachment.guid) return;
+
+    final content = AttachmentsSvc.getContent(attachment, onComplete: (PlatformFile file) {
+      _onAttachmentDownloadComplete(messageGuid, attachment.guid!, file);
+    });
+
+    if (content is PlatformFile) {
+      attState.updateResolvedFileInternal(content);
+      attState.updateIsDownloadedInternal(true);
+      if (attState.transferState.value != AttachmentTransferState.complete) {
+        attState.updateTransferStateInternal(AttachmentTransferState.complete);
+      }
+      return;
+    }
+
+    if (content is AttachmentDownloadController) {
+      attState.updateActiveDownloadInternal(content);
+      notifyAttachmentDownloadStarted(messageGuid, attachment.guid!, content);
+      return;
+    }
+
+    if (content is AttachmentWithProgress) {
+      attState.updateUploadPreviewFileInternal(content.file);
+      if (attState.transferState.value != AttachmentTransferState.uploading) {
+        attState.updateTransferStateInternal(AttachmentTransferState.uploading);
+      }
+      return;
+    }
+
+    if (content is Tuple2<String, RxDouble>) {
+      // Upload in progress without an accessible preview file.
+      if (attState.transferState.value != AttachmentTransferState.uploading) {
+        attState.updateTransferStateInternal(AttachmentTransferState.uploading);
+      }
+      return;
+    }
+
+    if (content is Attachment) {
+      if (attachment.guid?.startsWith('temp') ?? false) return;
+      final messageError = struct.getMessage(messageGuid)?.error ?? 0;
+      if (messageError != 0) return;
+
+      if (await AttachmentsSvc.canAutoDownload()) {
+        _startAttachmentDownload(messageGuid, content);
+      }
+    }
+  }
+
+  /// Starts a download for [attachment] and wires it into [AttachmentState].
+  void _startAttachmentDownload(String messageGuid, Attachment attachment) {
+    final msgGuid = messageGuid;
+    final attGuid = attachment.guid!;
+    final ctrl = AttachmentDownloader.startDownload(attachment, onComplete: (PlatformFile file) {
+      _onAttachmentDownloadComplete(msgGuid, attGuid, file);
+    });
+
+    final msgState = messageStates[messageGuid];
+    if (msgState == null) return;
+
+    final attState = msgState.getOrCreateAttachmentState(attGuid, attachment: attachment);
+    attState.updateActiveDownloadInternal(ctrl);
+    notifyAttachmentDownloadStarted(messageGuid, attGuid, ctrl);
+  }
+
+  /// Manually triggers a download for [attachment] (e.g., user tapped
+  /// a not-loaded attachment).  The [messageGuid] must match the owning
+  /// message's GUID.
+  void startAttachmentDownload(String messageGuid, Attachment attachment) {
+    _startAttachmentDownload(messageGuid, attachment);
+  }
+
+  /// Deletes the stale [AttachmentDownloadController] and restarts the
+  /// download.  Called when the user taps a failed (error-state) attachment.
+  void retryAttachmentDownload(String messageGuid, Attachment attachment) {
+    if (attachment.guid != null) {
+      Get.delete<AttachmentDownloadController>(tag: attachment.guid);
+    }
+    // Clear stale active-download reference before restarting.
+    messageStates[messageGuid]?.getAttachmentState(attachment.guid!)?.updateActiveDownloadInternal(null);
+    _startAttachmentDownload(messageGuid, attachment);
+  }
+
+  // ========== End Attachment Download Orchestration ==========
 
   // ========== MessageWidgetController Management ==========
 
@@ -244,6 +613,10 @@ class MessagesService extends GetxController {
     }
     _init = false;
     disposeAllControllers(); // Clean up all controllers
+    // Dispose all attachment state workers before clearing the map
+    for (final messageState in messageStates.values) {
+      messageState.dispose();
+    }
     messageStates.clear(); // Clean up message states
     super.onClose();
   }
@@ -277,10 +650,17 @@ class MessagesService extends GetxController {
     // Add to struct first to ensure it's available for lookups
     struct.addMessages([message]);
 
-    // Create MessageState for this message
+    // Create or update MessageState for this message.
+    // If it already exists (e.g. created by prepAttachment before the ObjectBox
+    // watch fired), update the metadata rather than overwriting transfer states.
     if (message.guid != null) {
-      messageStates[message.guid!] = MessageState(message);
-      Logger.debug("Created MessageState for new message ${message.guid}", tag: "MessageState");
+      if (!messageStates.containsKey(message.guid!)) {
+        messageStates[message.guid!] = MessageState(message);
+        Logger.debug("Created MessageState for new message ${message.guid}", tag: "MessageState");
+      } else {
+        messageStates[message.guid!]!.updateFromMessage(message);
+        Logger.debug("Updated existing MessageState for message ${message.guid}", tag: "MessageState");
+      }
     }
 
     // Handle reactions with improved reactivity
@@ -360,6 +740,16 @@ class MessagesService extends GetxController {
           messageStates[updated.guid!] = messageState;
           Logger.debug("Moved MessageState from $oldGuid to ${updated.guid}", tag: "MessageState");
         }
+
+        // Notify the existing controller so it updates controller.message and
+        // triggers a MessageHolder rebuild with the new MessagePart objects.
+        // We use notifyGuidSwap instead of updateMessage to avoid re-entering
+        // this method (updateMessage → ctrl.updateMessage → MessagesService.updateMessage).
+        final ctrl = _controllers.remove(oldGuid);
+        if (ctrl != null && updated.guid != null) {
+          _controllers[updated.guid!] = ctrl;
+          ctrl.notifyGuidSwap(updated);
+        }
       }
     } else if (updated.guid != null) {
       // State doesn't exist, create it
@@ -378,8 +768,8 @@ class MessagesService extends GetxController {
     struct.removeAttachments(toRemove.attachments.map((e) => e!.guid!));
     messageUpdateTrigger.remove(toRemove.guid!);
 
-    // Remove MessageState
-    messageStates.remove(toRemove.guid!);
+    // Dispose attachment states and remove MessageState
+    messageStates.remove(toRemove.guid!)?.dispose();
     Logger.debug("Removed MessageState for message ${toRemove.guid}", tag: "MessageState");
 
     removeFunc.call(toRemove);

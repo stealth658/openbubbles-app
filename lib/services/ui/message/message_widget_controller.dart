@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/attachment/attachment_holder.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/interactive/interactive_holder.dart';
+import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/message_holder.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/text/text_bubble.dart';
 import 'package:bluebubbles/app/state/message_state.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
@@ -187,6 +188,21 @@ class MessageWidgetController extends StatefulController {
       }
     });
     return list;
+  }
+
+  /// Called by [MessagesService] during a temp → real GUID swap AFTER the
+  /// service has already updated [MessageState] and the [_controllers] map.
+  /// Updates the controller's [message] reference, rebuilds parts, and triggers
+  /// a [MessageHolder] setState — without calling back into [MessagesService]
+  /// (which would cause re-entrancy).
+  void notifyGuidSwap(Message updated) {
+    message = Message.merge(updated, message);
+    _partsCached = false;
+    buildMessageParts(force: true);
+    // MessageHolder.updateWidget refreshes messageParts from controller.parts
+    // and calls setState, which picks up the new part objects (with real GUIDs)
+    // so AttachmentHolder is rebuilt with the correct part.
+    updateWidgets<MessageHolder>(null);
   }
 
   void updateMessage(Message newItem) {

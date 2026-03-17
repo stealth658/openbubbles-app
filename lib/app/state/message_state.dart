@@ -1,3 +1,4 @@
+import 'package:bluebubbles/app/state/attachment_state.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:faker/faker.dart';
@@ -15,6 +16,21 @@ import 'package:get/get.dart';
 class MessageState {
   /// Reference to the underlying message object
   final Message message;
+
+  /// Reactive state objects for each attachment on this message.
+  /// Keyed by attachment GUID.  Created eagerly in the constructor for any
+  /// attachments already present on [message], and populated incrementally as
+  /// new attachments are added or GUIDs are swapped.
+  ///
+  /// Access via [getAttachmentState] / [getOrCreateAttachmentState]; do not
+  /// modify the map directly from UI code.
+  final Map<String, AttachmentState> attachmentStates = {};
+
+  /// Pending temp → real attachment GUID promotions registered by
+  /// [MessagesService.notifyAttachmentSendComplete].  Used by
+  /// [_syncAttachmentStates] to promote the correct state key when the real
+  /// GUID arrives.  Entries are consumed (removed) after promotion.
+  final Map<String, String> _pendingGuidPromotions = {};
 
   /// Observable fields for granular UI updates
   final RxnString guid;
@@ -70,7 +86,103 @@ class MessageState {
         hasError = (message.error > 0).obs,
         isSending = (message.guid?.startsWith('temp') ?? false).obs,
         isSent = (!(message.guid?.startsWith('temp') ?? false)).obs,
-        isReaction = (message.associatedMessageGuid != null).obs;
+        isReaction = (message.associatedMessageGuid != null).obs {
+    // Create AttachmentState for every attachment already on the message.
+    for (final attachment in message.attachments) {
+      if (attachment?.guid != null) {
+        attachmentStates[attachment!.guid!] = AttachmentState(attachment);
+      }
+    }
+  }
+
+  /// Returns the [AttachmentState] for [attachmentGuid], or `null` if none
+  /// has been registered yet.
+  AttachmentState? getAttachmentState(String attachmentGuid) => attachmentStates[attachmentGuid];
+
+  /// Records that the attachment state currently stored under [tempGuid]
+  /// should be promoted to [realGuid] on the next [_syncAttachmentStates] call.
+  /// Called by [MessagesService.notifyAttachmentSendComplete] so the promotion
+  /// is deterministic even when the message has multiple attachments.
+  void registerGuidPromotion(String tempGuid, String realGuid) {
+    _pendingGuidPromotions[tempGuid] = realGuid;
+  }
+
+  /// Returns the [AttachmentState] for [attachmentGuid], creating one backed
+  /// by [attachment] if it does not already exist.
+  ///
+  /// If [attachment] is omitted and the state does not exist, one is created
+  /// by looking [attachmentGuid] up in [message.attachments].  Throws if the
+  /// attachment cannot be resolved.
+  AttachmentState getOrCreateAttachmentState(String attachmentGuid, {Attachment? attachment}) {
+    if (!attachmentStates.containsKey(attachmentGuid)) {
+      final resolved = attachment ??
+          message.attachments.firstWhereOrNull((a) => a?.guid == attachmentGuid);
+      if (resolved == null) {
+        throw StateError(
+          'Cannot create AttachmentState for $attachmentGuid: '
+          'attachment not found in message ${message.guid}',
+        );
+      }
+      attachmentStates[attachmentGuid] = AttachmentState(resolved);
+    }
+    return attachmentStates[attachmentGuid]!;
+  }
+
+  /// Synchronises [attachmentStates] with [updatedAttachments].
+  ///
+  /// * Existing states (same GUID) are updated via [AttachmentState.updateFromAttachment]
+  ///   without resetting active transfer states.
+  /// * New GUIDs cause new [AttachmentState] objects to be created.
+  /// * Stale temp/error-prefixed states whose GUID is no longer present are
+  ///   disposed and removed.
+  void _syncAttachmentStates(List<Attachment?> updatedAttachments) {
+    for (final attachment in updatedAttachments) {
+      if (attachment?.guid == null) continue;
+      final guid = attachment!.guid!;
+
+      if (attachmentStates.containsKey(guid)) {
+        // Update metadata without touching the active transfer state.
+        attachmentStates[guid]!.updateFromAttachment(attachment);
+      } else {
+        // The real GUID is not yet in the map.  Look for a pending promotion
+        // registered by notifyAttachmentSendComplete — this gives us a
+        // deterministic temp→real GUID mapping even for multi-attachment
+        // messages (no ambiguous heuristic).
+        String? tempKey;
+        for (final entry in _pendingGuidPromotions.entries) {
+          if (entry.value == guid) { tempKey = entry.key; break; }
+        }
+        if (tempKey != null && attachmentStates.containsKey(tempKey)) {
+          _pendingGuidPromotions.remove(tempKey);
+          final promoted = attachmentStates.remove(tempKey)!;
+          promoted.updateFromAttachment(attachment);
+          promoted.updateGuidInternal(guid);
+          attachmentStates[guid] = promoted;
+        } else {
+          attachmentStates[guid] = AttachmentState(attachment);
+        }
+      }
+    }
+
+    // Evict stale temp/error states that are no longer referenced.
+    attachmentStates.removeWhere((key, state) {
+      if (!(key.startsWith('temp') || key.startsWith('error'))) return false;
+      final stillPresent = updatedAttachments.any((a) => a?.guid == key);
+      if (!stillPresent) state.dispose();
+      return !stillPresent;
+    });
+  }
+
+  /// Disposes all [AttachmentState] workers.  Called by [MessagesService]
+  /// when the owning message is evicted.
+  void dispose() {
+    for (final state in attachmentStates.values) {
+      state.dispose();
+    }
+    attachmentStates.clear();
+  }
+
+  // ========== End AttachmentState Management ==========
 
   // ========== Internal State Update Methods ==========
   // These are called by MessagesService after DB operations complete
@@ -346,8 +458,12 @@ class MessageState {
     message.hasApplePayloadData = updatedMessage.hasApplePayloadData;
     message.isBookmarked = updatedMessage.isBookmarked;
 
-    // Note: attachments and handle relationships are managed separately
-    // They are not updated here to avoid circular dependencies
+    // Update the in-memory attachment list so UI widgets see the new GUIDs
+    // (e.g. after a temp→real GUID swap via _replaceAttachments).
+    if (updatedMessage.attachments.isNotEmpty) {
+      message.attachments = updatedMessage.attachments;
+      _syncAttachmentStates(updatedMessage.attachments);
+    }
   }
 
   /// Convenience getter: Is this message in an error state?

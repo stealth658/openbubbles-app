@@ -1,0 +1,147 @@
+import 'package:animations/animations.dart';
+import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/attachment/audio_player.dart';
+import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/attachment/contact_card.dart';
+import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/attachment/image_viewer.dart';
+import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/attachment/other_file.dart';
+import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/attachment/video_player.dart';
+import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/interactive/url_preview.dart';
+import 'package:bluebubbles/app/layouts/fullscreen_media/fullscreen_holder.dart';
+import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/helpers/helpers.dart';
+import 'package:bluebubbles/services/services.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:intl/intl.dart';
+
+/// Fully resolved attachment: dispatches to the appropriate viewer widget.
+/// No reactive state is needed here — the file is static once this is shown.
+class ResolvedFileContent extends StatelessWidget {
+  const ResolvedFileContent({
+    super.key,
+    required this.file,
+    required this.attachment,
+    required this.message,
+    required this.audioTranscript,
+    required this.showTail,
+    required this.isiOS,
+    required this.cvController,
+  });
+
+  final PlatformFile file;
+  final Attachment attachment;
+  final Message message;
+  final String? audioTranscript;
+  final bool showTail;
+  final bool isiOS;
+  final ConversationViewController? cvController;
+
+  EdgeInsets get _tailPadding => EdgeInsets.only(
+        left: message.isFromMe! ? 0 : 10,
+        right: message.isFromMe! ? 10 : 0,
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    if (attachment.mimeStart == "image" && !SettingsSvc.settings.highPerfMode.value) {
+      return OpenContainer(
+        tappable: false,
+        openColor: Colors.black,
+        closedColor: context.theme.colorScheme.properSurface,
+        closedShape: isiOS
+            ? RoundedRectangleBorder(
+                borderRadius: BorderRadius.only(
+                  topLeft: const Radius.circular(20.0),
+                  topRight: const Radius.circular(20.0),
+                  bottomLeft: message.isFromMe! ? const Radius.circular(20.0) : Radius.zero,
+                  bottomRight: !message.isFromMe! ? const Radius.circular(20.0) : Radius.zero,
+                ),
+              )
+            : const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(5.0))),
+        useRootNavigator: false,
+        openBuilder: (context, _) => FullscreenMediaHolder(
+          currentChat: ChatsSvc.activeChat?.chat,
+          attachment: attachment,
+          showInteractions: true,
+        ),
+        closedBuilder: (context, openContainer) => GestureDetector(
+          onTap: () {
+            final ctrl = cvController ?? cvc(ChatsSvc.activeChat!.chat);
+            ctrl.focusNode.unfocus();
+            ctrl.subjectFocusNode.unfocus();
+            openContainer();
+          },
+          child: Container(
+            color: context.theme.colorScheme.properSurface,
+            child: ImageViewer(
+              file: file,
+              attachment: attachment,
+              isFromMe: message.isFromMe!,
+              controller: cvController,
+            ),
+          ),
+        ),
+      );
+    }
+
+    if ((attachment.mimeStart == "video" || attachment.mimeType == "audio/mp4") &&
+        !SettingsSvc.settings.highPerfMode.value &&
+        !isSnap) {
+      return VideoPlayer(
+        attachment: attachment,
+        file: file,
+        controller: cvController,
+        isFromMe: message.isFromMe!,
+      );
+    }
+
+    if (attachment.mimeStart == "audio") {
+      return Padding(
+        padding: showTail ? _tailPadding : EdgeInsets.zero,
+        child: AudioPlayer(
+          transcript: audioTranscript,
+          attachment: attachment,
+          file: file,
+          controller: cvController,
+        ),
+      );
+    }
+
+    if (attachment.mimeType == "text/x-vlocation" || attachment.uti == 'public.vlocation') {
+      return Padding(
+        padding: showTail ? _tailPadding : EdgeInsets.zero,
+        child: UrlPreview(
+          data: UrlPreviewData(
+            title: "Location from ${DateFormat.yMd().format(message.dateCreated!)}",
+            siteName: "Tap to open",
+          ),
+          message: message,
+          file: file,
+        ),
+      );
+    }
+
+    if (attachment.mimeType?.contains("vcard") ?? false) {
+      return Padding(
+        padding: showTail ? _tailPadding : EdgeInsets.zero,
+        child: ContactCard(attachment: attachment, file: file),
+      );
+    }
+
+    if (attachment.mimeType == null) {
+      return Padding(
+        padding: showTail ? _tailPadding : EdgeInsets.zero,
+        child: SizedBox(
+          height: 80,
+          width: 80,
+          child: Icon(isiOS ? CupertinoIcons.exclamationmark_circle : Icons.error_outline, size: 30),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: showTail ? _tailPadding : EdgeInsets.zero,
+      child: OtherFile(attachment: attachment, file: file),
+    );
+  }
+}

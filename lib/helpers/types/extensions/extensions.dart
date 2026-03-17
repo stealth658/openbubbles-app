@@ -95,7 +95,7 @@ extension FriendlySize on double {
       postfix = "GB";
     }
 
-    return "${size.toStringAsFixed(decimals)}${withSuffix ? "  $postfix" : ""}";
+    return "${size.toStringAsFixed(decimals)}${withSuffix ? " $postfix" : ""}";
   }
 }
 

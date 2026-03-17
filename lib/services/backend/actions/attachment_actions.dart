@@ -129,7 +129,11 @@ class AttachmentActions {
       existing.bytes = newAttachment.bytes;
       existing.webUrl = newAttachment.webUrl;
       existing.hasLivePhoto = newAttachment.hasLivePhoto;
-      existing.saveAsync(null);
+      // Use synchronous put within the transaction to preserve the message relationship.
+      // saveAsync(null) would run outside this transaction and would fail to find the
+      // attachment by the new guid (since DB still has the old guid), stripping the
+      // message.targetId link and causing the conversation tile subtitle to show blank.
+      Database.attachments.put(existing);
 
       // grab values from existing
       newAttachment.id = existing.id;
