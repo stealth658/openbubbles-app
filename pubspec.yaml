@@ -190,6 +190,7 @@ dependencies:
   flutter_map: any
   flutter_native_splash: any
   rxdart: any
+  uuid: any
 dependency_overrides:
   flutter_map: # Windows trackpad bug
     git:
