@@ -79,6 +79,5 @@ class AttachmentStateScope extends InheritedWidget {
   // ---------------------------------------------------------------------------
 
   @override
-  bool updateShouldNotify(AttachmentStateScope oldWidget) =>
-      attachmentState != oldWidget.attachmentState;
+  bool updateShouldNotify(AttachmentStateScope oldWidget) => attachmentState != oldWidget.attachmentState;
 }

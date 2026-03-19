@@ -434,7 +434,7 @@ class ChatsService {
   void _repositionChat(Chat chat, {bool immediate = true}) {
     // Find current position
     final currentIndex = _sortedChats.indexWhere((c) => c.guid == chat.guid);
-    
+
     if (currentIndex == -1) {
       // Chat not found, just insert it
       _insertChatSorted(chat);
@@ -458,7 +458,7 @@ class ChatsService {
 
   bool updateChat(Chat updated, {bool override = false, bool immediate = true}) {
     if (headless) return false;
-    
+
     final state = chatStates[updated.guid];
     if (state != null) {
       final currentLatestMessage = state.latestMessage.value;
@@ -570,7 +570,7 @@ class ChatsService {
       if (state != null) {
         state.pinIndex.value = null;
       }
-      
+
       // Trigger reposition to re-sort the chat
       _repositionChat(element, immediate: true);
     }

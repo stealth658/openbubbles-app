@@ -172,7 +172,8 @@ class MethodChannelService {
           Map<String, dynamic>? data = arguments;
           if (!isNullOrEmpty(data)) {
             final payload = ServerPayload.fromJson(data!);
-            await MessageHandlerSvc.handleNewOrUpdatedChat(Chat.fromMap(payload.data['chats'].first.cast<String, Object>()));
+            await MessageHandlerSvc.handleNewOrUpdatedChat(
+                Chat.fromMap(payload.data['chats'].first.cast<String, Object>()));
           }
         } catch (e, s) {
           return Future.error(e, s);

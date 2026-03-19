@@ -84,6 +84,5 @@ class MessageStateScope extends InheritedWidget {
   // ---------------------------------------------------------------------------
 
   @override
-  bool updateShouldNotify(MessageStateScope oldWidget) =>
-      messageState != oldWidget.messageState;
+  bool updateShouldNotify(MessageStateScope oldWidget) => messageState != oldWidget.messageState;
 }

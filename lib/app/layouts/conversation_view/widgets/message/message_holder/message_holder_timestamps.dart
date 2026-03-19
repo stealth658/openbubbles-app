@@ -98,8 +98,8 @@ class EditHistoryObserver extends StatelessWidget {
                   )
                 : Container(
                     height: 0,
-                    constraints: BoxConstraints(
-                        maxWidth: NavigationSvc.width(context) * MessageState.maxBubbleSizeFactor - 30)),
+                    constraints:
+                        BoxConstraints(maxWidth: NavigationSvc.width(context) * MessageState.maxBubbleSizeFactor - 30)),
           )),
     );
   }

@@ -243,7 +243,7 @@ class GlobalIsolate {
   Future<T> send<T>(IsolateRequestType type, {dynamic input, Duration? customTimeout}) async {
     await _ensureStarted();
 
-    final requestId = Uuid().v4();
+    final requestId = const Uuid().v4();
     final completer = Completer<T>();
 
     // Set up timeout if not disabled (zero duration means no timeout)

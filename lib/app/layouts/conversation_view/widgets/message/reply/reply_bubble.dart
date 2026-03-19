@@ -59,8 +59,7 @@ class _ReplyBubbleState extends State<ReplyBubble> with ThemeHelpers {
     if (!iOS) {
       // Use MessageState if available for reactive text content
       final messageText = controller.text.value;
-      String text = MessageHelper.getNotificationText(
-          Message(text: messageText, subject: controller.subject.value));
+      String text = MessageHelper.getNotificationText(Message(text: messageText, subject: controller.subject.value));
       return MouseRegion(
         cursor: SystemMouseCursors.click,
         child: ConstrainedBox(
@@ -70,12 +69,7 @@ class _ReplyBubbleState extends State<ReplyBubble> with ThemeHelpers {
           ),
           child: GestureDetector(
             onTap: () {
-              showReplyThread(
-                  context,
-                  message,
-                  part,
-                  MessagesSvc(chatGuid),
-                  widget.cvController);
+              showReplyThread(context, message, part, MessagesSvc(chatGuid), widget.cvController);
             },
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
@@ -115,12 +109,7 @@ class _ReplyBubbleState extends State<ReplyBubble> with ThemeHelpers {
               cursor: SystemMouseCursors.click,
               child: GestureDetector(
                 onTap: () {
-                  showReplyThread(
-                      context,
-                      message,
-                      part,
-                      MessagesSvc(chatGuid),
-                      widget.cvController);
+                  showReplyThread(context, message, part, MessagesSvc(chatGuid), widget.cvController);
                 },
                 behavior: HitTestBehavior.opaque,
                 child: IgnorePointer(
@@ -145,8 +134,7 @@ class _ReplyBubbleState extends State<ReplyBubble> with ThemeHelpers {
                         child: controller.parts.length <= widget.part
                             ? Container(
                                 constraints: BoxConstraints(
-                                  maxWidth:
-                                      NavigationSvc.width(context) * MessageState.maxBubbleSizeFactor - 30,
+                                  maxWidth: NavigationSvc.width(context) * MessageState.maxBubbleSizeFactor - 30,
                                   minHeight: 30,
                                 ),
                                 child: CustomPaint(
@@ -180,9 +168,8 @@ class _ReplyBubbleState extends State<ReplyBubble> with ThemeHelpers {
                                 : part.attachments.isEmpty
                                     ? Container(
                                         constraints: BoxConstraints(
-                                          maxWidth: NavigationSvc.width(context) *
-                                                  MessageState.maxBubbleSizeFactor -
-                                              30,
+                                          maxWidth:
+                                              NavigationSvc.width(context) * MessageState.maxBubbleSizeFactor - 30,
                                           minHeight: 30,
                                         ),
                                         child: CustomPaint(

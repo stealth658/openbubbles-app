@@ -602,11 +602,11 @@ class ChatCreatorState extends State<ChatCreator> with ThemeHelpers {
                                 customRoute: PageRouteBuilder(
                                   pageBuilder: (_, __, ___) => TitleBarWrapper(
                                       child: ConversationView(
-                                        chat: chat,
-                                        customService: messagesService,
-                                        fromChatCreator: true,
-                                        onInit: sendInitialMessage,
-                                      )),
+                                    chat: chat,
+                                    customService: messagesService,
+                                    fromChatCreator: true,
+                                    onInit: sendInitialMessage,
+                                  )),
                                   transitionDuration: Duration.zero,
                                 ),
                               );

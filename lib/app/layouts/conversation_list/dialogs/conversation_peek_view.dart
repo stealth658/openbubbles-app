@@ -48,7 +48,8 @@ class ConversationPeekView extends StatefulWidget {
   State<StatefulWidget> createState() => _ConversationPeekViewState();
 }
 
-class _ConversationPeekViewState extends State<ConversationPeekView> with SingleTickerProviderStateMixin, MessagesServiceMixin, ThemeHelpers {
+class _ConversationPeekViewState extends State<ConversationPeekView>
+    with SingleTickerProviderStateMixin, MessagesServiceMixin, ThemeHelpers {
   late final AnimationController controller;
   late final ConversationViewController cvController = cvc(widget.chat);
   final double itemHeight = kIsDesktop || kIsWeb ? 56 : 48;
@@ -59,14 +60,14 @@ class _ConversationPeekViewState extends State<ConversationPeekView> with Single
     super.initState();
     ChatsSvc.setActiveChatSync(widget.chat, clearNotifications: false);
     ChatsSvc.activeChat!.controller = cvController;
-    
+
     // Initialize messages service with message states for proper reactivity
     initializeMessagesService(
       widget.chat,
       widget.messages,
       cvController,
     );
-    
+
     controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 150),
@@ -163,52 +164,52 @@ class _ConversationPeekViewState extends State<ConversationPeekView> with Single
                             (route) => route.isFirst,
                           );
                         },
-                          child: ChatStateScope(
-                            chatState: ChatsSvc.getOrCreateChatState(widget.chat),
-                            child: DeferredPointerHandler(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: ThemeSvc.inDarkMode(context)
-                                  ? context.theme.colorScheme.properSurface.darkenPercent(30)
-                                  : context.theme.colorScheme.background,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            width: min(context.width - 50, 500),
-                            height: min(context.height / 2, context.height - itemHeight * 5),
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: ListView.builder(
-                                shrinkWrap: true,
-                                reverse: true,
-                                physics: ThemeSwitcher.getScrollPhysics(),
-                                findChildIndexCallback: (key) =>
-                                    findChildIndexByKey(widget.messages, key, (item) => item.guid),
-                                itemBuilder: (context, index) {
-                                  return AbsorbPointer(
-                                    absorbing: true,
-                                    child: Material(
-                                      color: Colors.transparent,
-                                      child: Padding(
-                                        padding: const EdgeInsets.only(left: 5.0, right: 5.0),
-                                        child: MessageHolder(
-                                          key: Key(widget.messages[index].guid!),
-                                          cvController: cvController,
-                                          message: widget.messages[index],
-                                          oldMessage:
-                                              index == widget.messages.length - 1 ? null : widget.messages[index + 1],
-                                          newMessage: index == 0 ? null : widget.messages[index - 1],
+                        child: ChatStateScope(
+                          chatState: ChatsSvc.getOrCreateChatState(widget.chat),
+                          child: DeferredPointerHandler(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: ThemeSvc.inDarkMode(context)
+                                    ? context.theme.colorScheme.properSurface.darkenPercent(30)
+                                    : context.theme.colorScheme.background,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              width: min(context.width - 50, 500),
+                              height: min(context.height / 2, context.height - itemHeight * 5),
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: ListView.builder(
+                                  shrinkWrap: true,
+                                  reverse: true,
+                                  physics: ThemeSwitcher.getScrollPhysics(),
+                                  findChildIndexCallback: (key) =>
+                                      findChildIndexByKey(widget.messages, key, (item) => item.guid),
+                                  itemBuilder: (context, index) {
+                                    return AbsorbPointer(
+                                      absorbing: true,
+                                      child: Material(
+                                        color: Colors.transparent,
+                                        child: Padding(
+                                          padding: const EdgeInsets.only(left: 5.0, right: 5.0),
+                                          child: MessageHolder(
+                                            key: Key(widget.messages[index].guid!),
+                                            cvController: cvController,
+                                            message: widget.messages[index],
+                                            oldMessage:
+                                                index == widget.messages.length - 1 ? null : widget.messages[index + 1],
+                                            newMessage: index == 0 ? null : widget.messages[index - 1],
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                  );
-                                },
-                                itemCount: widget.messages.length,
+                                    );
+                                  },
+                                  itemCount: widget.messages.length,
+                                ),
                               ),
                             ),
                           ),
                         ),
                       ),
-                    ),
                       const SizedBox(height: 5),
                       buildDetailsMenu(context),
                     ],

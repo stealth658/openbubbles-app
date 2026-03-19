@@ -155,11 +155,11 @@ class CupertinoHeader extends StatelessWidget implements PreferredSizeWidget {
                   ),
                 ),
               ),
-              Positioned(
+              const Positioned(
                 bottom: 0,
                 left: 0,
                 right: 0,
-                child: const HeaderProgressIndicator(),
+                child: HeaderProgressIndicator(),
               ),
             ],
           )),

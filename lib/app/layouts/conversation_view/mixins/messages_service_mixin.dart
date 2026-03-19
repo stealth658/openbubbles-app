@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 
 /// Mixin for initializing and managing MessagesService with proper message controllers and states.
 /// This ensures MessageHolder widgets have access to MessageState observables for reactivity.
-/// 
+///
 /// Usage:
 /// 1. Apply this mixin to your State class
 /// 2. Call initializeMessagesService() in initState with your messages
@@ -15,19 +15,19 @@ import 'package:flutter/material.dart';
 /// 5. Access via the messageService getter
 mixin MessagesServiceMixin<T extends StatefulWidget> on State<T> {
   MessagesService? _messageService;
-  
+
   /// Get the messages service instance
   MessagesService get messageService {
     assert(_messageService != null, 'MessagesService not initialized. Call initialize method first.');
     return _messageService!;
   }
-  
+
   /// Check if the service has been initialized
   bool get isMessagesServiceInitialized => _messageService != null;
-  
+
   /// Initialize the messages service with a pre-loaded list of messages.
   /// Use this for simple cases like peek views or dialogs where messages are already loaded.
-  /// 
+  ///
   /// Parameters:
   /// - chat: The chat for this messages service
   /// - messages: Initial list of messages to add to struct and create controllers for
@@ -49,7 +49,7 @@ mixin MessagesServiceMixin<T extends StatefulWidget> on State<T> {
   }) {
     // Use custom service or get/create singleton
     _messageService = customService ?? MessagesSvc(chat.guid);
-    
+
     // Only initialize handlers if this is NOT a customService
     // CustomService is already initialized by the caller, don't reinitialize
     // to avoid triggering Get.reload() which deletes and recreates the service
@@ -70,24 +70,25 @@ mixin MessagesServiceMixin<T extends StatefulWidget> on State<T> {
       _messageService!.newFunc = onNewMessage ?? (_) {};
       _messageService!.jumpToMessage = onJumpToMessage ?? (_) {};
     }
-    
+
     // Add messages to struct (required for MessageState creation)
-    final messagesToAdd = messages.where((m) => m.guid != null && _messageService!.struct.getMessage(m.guid!) == null).toList();
+    final messagesToAdd =
+        messages.where((m) => m.guid != null && _messageService!.struct.getMessage(m.guid!) == null).toList();
     if (messagesToAdd.isNotEmpty) {
       _messageService!.struct.addMessages(messagesToAdd);
     }
-    
+
     // Ensure MessageStates exist for all messages (created on-demand via getMessageState)
     for (final message in messages) {
       if (message.guid != null) {
         _messageService!.getOrCreateMessageState(message.guid!);
       }
     }
-    
+
     // Create controllers and link them
     _createControllers(messages, cvController);
   }
-  
+
   /// Helper method to create and link controllers for a list of messages
   void _createControllers(List<Message> messages, ConversationViewController cvController) {
     for (final message in messages) {
@@ -97,7 +98,7 @@ mixin MessagesServiceMixin<T extends StatefulWidget> on State<T> {
       }
     }
   }
-  
+
   /// Load the next chunk of messages (for pagination)
   /// Returns true if more messages are available, false if no more messages
   Future<bool> loadNextChunk(
@@ -106,23 +107,23 @@ mixin MessagesServiceMixin<T extends StatefulWidget> on State<T> {
     int limit = 25,
   }) async {
     assert(_messageService != null, 'MessagesService not initialized');
-    
+
     // Load the next chunk using the service
     final hasMore = await _messageService!.loadChunk(
       currentMessages.length,
       cvController,
       limit: limit,
     );
-    
+
     return hasMore;
   }
-  
+
   /// Load a search chunk around a specific message
   Future<void> loadSearchChunk(Message message, SearchMethod method) async {
     assert(_messageService != null, 'MessagesService not initialized');
     await _messageService!.loadSearchChunk(message, method);
   }
-  
+
   /// Reload the entire messages service (clears and reinitializes)
   Future<void> reloadMessagesService(
     Chat chat,
@@ -133,11 +134,11 @@ mixin MessagesServiceMixin<T extends StatefulWidget> on State<T> {
     required void Function(String) onJumpToMessage,
   }) async {
     assert(_messageService != null, 'MessagesService not initialized');
-    
+
     _messageService!.reload();
     _messageService!.init(chat, onNewMessage, onUpdatedMessage, onDeletedMessage, onJumpToMessage);
   }
-  
+
   /// Create and link a controller for a new message
   /// Use this when handling new messages that aren't in the existing list
   /// Returns the created controller
@@ -146,12 +147,12 @@ mixin MessagesServiceMixin<T extends StatefulWidget> on State<T> {
     ConversationViewController cvController,
   ) {
     assert(_messageService != null, 'MessagesService not initialized');
-    
+
     final controller = _messageService!.getOrCreateState(message);
     controller.cvController = cvController;
     return controller;
   }
-  
+
   /// Create and link controllers for multiple new messages
   /// Use this when handling bulk message additions
   void createControllersForMessages(
@@ -161,7 +162,7 @@ mixin MessagesServiceMixin<T extends StatefulWidget> on State<T> {
     assert(_messageService != null, 'MessagesService not initialized');
     _createControllers(messages, cvController);
   }
-  
+
   /// Dispose the messages service and clean up resources
   void disposeMessagesService({bool force = false}) {
     _messageService?.close(force: force);

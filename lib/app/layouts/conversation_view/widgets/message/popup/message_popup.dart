@@ -740,9 +740,9 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
   void forward() async {
     popDetails();
     List<PlatformFile> attachments = [];
-    final _attachments = message.attachments
-        .where((e) => AttachmentsSvc.getContent(e!, autoDownload: false) is PlatformFile)
-        .map((e) => AttachmentsSvc.getContent(e!, autoDownload: false) as PlatformFile);
+    final _attachments = message.dbAttachments
+        .where((e) => AttachmentsSvc.getContent(e, autoDownload: false) is PlatformFile)
+        .map((e) => AttachmentsSvc.getContent(e, autoDownload: false) as PlatformFile);
     for (PlatformFile a in _attachments) {
       Uint8List? bytes = a.bytes;
       bytes ??= await File(a.path!).readAsBytes();

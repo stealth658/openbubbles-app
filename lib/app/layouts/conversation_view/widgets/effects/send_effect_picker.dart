@@ -380,94 +380,94 @@ void sendEffectAction(
                                     ),
                                     child: Builder(builder: (context) {
                                       return Align(
-                                        alignment: Alignment.centerRight,
-                                        child: Padding(
-                                          key: key,
-                                          padding: const EdgeInsets.only(right: 5.0),
-                                          child: MessageStateScope(
-                                            messageState: previewState,
-                                            child: BubbleEffects(
-                                              globalKey: key,
-                                              part: 0,
-                                              showTail: true,
-                                              child: ClipPath(
-                                              clipper: TailClipper(
-                                                isFromMe: true,
+                                          alignment: Alignment.centerRight,
+                                          child: Padding(
+                                            key: key,
+                                            padding: const EdgeInsets.only(right: 5.0),
+                                            child: MessageStateScope(
+                                              messageState: previewState,
+                                              child: BubbleEffects(
+                                                globalKey: key,
+                                                part: 0,
                                                 showTail: true,
-                                                connectLower: false,
-                                                connectUpper: false,
-                                              ),
-                                              child: Container(
-                                                constraints: BoxConstraints(
-                                                  maxWidth: NavigationSvc.width(context) *
-                                                          MessageState.maxBubbleSizeFactor -
-                                                      40,
-                                                  minHeight: 40,
-                                                ),
-                                                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15)
-                                                    .add(const EdgeInsets.only(right: 10)),
-                                                color: context.theme.colorScheme.primary,
-                                                child: CustomAnimationBuilder<Movie>(
-                                                  control: animController,
-                                                  tween: MovieTween()
-                                                    ..scene(
-                                                            begin: Duration.zero,
-                                                            duration: const Duration(milliseconds: 1),
-                                                            curve: Curves.easeInOut)
-                                                        .tween("size", 1.0.tweenTo(1.0))
-                                                    ..scene(
-                                                            begin: const Duration(milliseconds: 1),
-                                                            duration: const Duration(milliseconds: 500),
-                                                            curve: Curves.easeInOut)
-                                                        .tween("size", 0.0.tweenTo(0.5))
-                                                    ..scene(
-                                                            begin: const Duration(milliseconds: 1000),
-                                                            duration: const Duration(milliseconds: 800),
-                                                            curve: Curves.easeInOut)
-                                                        .tween("size", 0.5.tweenTo(1.0)),
-                                                  duration: const Duration(milliseconds: 1800),
-                                                  animationStatusListener: (status) {
-                                                    if (status == AnimationStatus.completed) {
-                                                      setState(() {
-                                                        animController = Control.stop;
-                                                      });
-                                                    }
-                                                  },
-                                                  builder: (context, anim, child) {
-                                                    final value1 = anim.get("size");
-                                                    return Transform.scale(
-                                                      scale: value1,
-                                                      alignment: Alignment.center,
-                                                      child: RichText(
-                                                        text: TextSpan(
-                                                          children: buildMessageSpans(
-                                                            context,
-                                                            MessagePart(
-                                                                part: 0,
-                                                                text: message.text,
-                                                                mentions: message.attributedBody.isEmpty
-                                                                    ? []
-                                                                    : message.attributedBody.first.runs
-                                                                        .where((element) => element.hasMention)
-                                                                        .map((e) => Mention(
-                                                                                mentionedAddress: "",
-                                                                                range: [
-                                                                                  e.range.first,
-                                                                                  e.range.first + e.range.last
-                                                                                ]))
-                                                                        .toList()),
-                                                            message,
+                                                child: ClipPath(
+                                                  clipper: TailClipper(
+                                                    isFromMe: true,
+                                                    showTail: true,
+                                                    connectLower: false,
+                                                    connectUpper: false,
+                                                  ),
+                                                  child: Container(
+                                                    constraints: BoxConstraints(
+                                                      maxWidth: NavigationSvc.width(context) *
+                                                              MessageState.maxBubbleSizeFactor -
+                                                          40,
+                                                      minHeight: 40,
+                                                    ),
+                                                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15)
+                                                        .add(const EdgeInsets.only(right: 10)),
+                                                    color: context.theme.colorScheme.primary,
+                                                    child: CustomAnimationBuilder<Movie>(
+                                                      control: animController,
+                                                      tween: MovieTween()
+                                                        ..scene(
+                                                                begin: Duration.zero,
+                                                                duration: const Duration(milliseconds: 1),
+                                                                curve: Curves.easeInOut)
+                                                            .tween("size", 1.0.tweenTo(1.0))
+                                                        ..scene(
+                                                                begin: const Duration(milliseconds: 1),
+                                                                duration: const Duration(milliseconds: 500),
+                                                                curve: Curves.easeInOut)
+                                                            .tween("size", 0.0.tweenTo(0.5))
+                                                        ..scene(
+                                                                begin: const Duration(milliseconds: 1000),
+                                                                duration: const Duration(milliseconds: 800),
+                                                                curve: Curves.easeInOut)
+                                                            .tween("size", 0.5.tweenTo(1.0)),
+                                                      duration: const Duration(milliseconds: 1800),
+                                                      animationStatusListener: (status) {
+                                                        if (status == AnimationStatus.completed) {
+                                                          setState(() {
+                                                            animController = Control.stop;
+                                                          });
+                                                        }
+                                                      },
+                                                      builder: (context, anim, child) {
+                                                        final value1 = anim.get("size");
+                                                        return Transform.scale(
+                                                          scale: value1,
+                                                          alignment: Alignment.center,
+                                                          child: RichText(
+                                                            text: TextSpan(
+                                                              children: buildMessageSpans(
+                                                                context,
+                                                                MessagePart(
+                                                                    part: 0,
+                                                                    text: message.text,
+                                                                    mentions: message.attributedBody.isEmpty
+                                                                        ? []
+                                                                        : message.attributedBody.first.runs
+                                                                            .where((element) => element.hasMention)
+                                                                            .map((e) => Mention(
+                                                                                    mentionedAddress: "",
+                                                                                    range: [
+                                                                                      e.range.first,
+                                                                                      e.range.first + e.range.last
+                                                                                    ]))
+                                                                            .toList()),
+                                                                message,
+                                                              ),
+                                                            ),
                                                           ),
-                                                        ),
-                                                      ),
-                                                    );
-                                                  },
+                                                        );
+                                                      },
+                                                    ),
+                                                  ),
                                                 ),
                                               ),
                                             ),
-                                          ),
-                                        ),
-                                      ));
+                                          ));
                                     }),
                                   ),
                                 const Spacer(),

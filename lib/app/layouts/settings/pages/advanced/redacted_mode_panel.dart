@@ -143,8 +143,8 @@ class _RedactedModePanelState extends State<RedactedModePanel> with ThemeHelpers
                                               ? 0
                                               : 1,
                                           child: ImageViewer(
-                                            file: AttachmentsSvc.getContent(message.attachments.first!),
-                                            attachment: message.attachments.first!,
+                                            file: AttachmentsSvc.getContent(message.dbAttachments.first),
+                                            attachment: message.dbAttachments.first,
                                             isFromMe: false,
                                           ),
                                         ),
@@ -161,9 +161,7 @@ class _RedactedModePanelState extends State<RedactedModePanel> with ThemeHelpers
                                     ),
                                     child: Container(
                                       constraints: BoxConstraints(
-                                        maxWidth:
-                                            NavigationSvc.width(context) * MessageState.maxBubbleSizeFactor -
-                                                40,
+                                        maxWidth: NavigationSvc.width(context) * MessageState.maxBubbleSizeFactor - 40,
                                         minHeight: 40,
                                       ),
                                       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15)

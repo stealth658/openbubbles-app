@@ -48,8 +48,7 @@ class DownloadProgressContent extends StatelessWidget {
             const SizedBox(height: 10),
             Text(
               "${(attachment.totalBytes! * min(progressValue, 1.0)).toDouble().getFriendlySize(withSuffix: false)} / ${attachment.getFriendlySize()}",
-              style: context.theme.textTheme.bodyLarge!
-                  .copyWith(color: context.theme.colorScheme.properOnSurface),
+              style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.properOnSurface),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
@@ -62,8 +61,7 @@ class DownloadProgressContent extends StatelessWidget {
                     : null,
                 child: progressValue < 1
                     ? Text("Cancel",
-                        style: context.theme.textTheme.bodyLarge!
-                            .copyWith(color: context.theme.colorScheme.primary))
+                        style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary))
                     : Text("Waiting for iMessage...",
                         style: context.theme.textTheme.bodyLarge!, textAlign: TextAlign.center),
               ),

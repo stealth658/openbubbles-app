@@ -119,115 +119,116 @@ class _BubbleEffectsState extends State<BubbleEffects> {
   @override
   Widget build(BuildContext context) {
     final message = MessageStateScope.of(context).message;
-    final effectStr = effectMap.entries.firstWhereOrNull((e) => e.value == message.expressiveSendStyleId)?.key ?? "unknown";
+    final effectStr =
+        effectMap.entries.firstWhereOrNull((e) => e.value == message.expressiveSendStyleId)?.key ?? "unknown";
     final effect = stringToMessageEffect[effectStr] ?? MessageEffect.none;
     if (message.expressiveSendStyleId == null) return widget.child;
     if (effect == MessageEffect.invisibleInk) {
       return Obx(() => GestureDetector(
-        onHorizontalDragUpdate: rxControl.value == Control.stop
-            ? null
-            : (DragUpdateDetails details) {
-                if (effect != MessageEffect.invisibleInk) return;
-                if ((details.primaryDelta ?? 0).abs() > 1) {
-                  message.setPlayedDate();
-                  rxControl.value = Control.stop;
-                }
-              },
-        child: AbsorbPointer(
-          absorbing: rxControl.value != Control.stop,
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              widget.child,
-              if (rxControl.value != Control.stop)
-                ClipPath(
-                  clipper: TailClipper(
-                    isFromMe: message.isFromMe!,
-                    showTail: widget.showTail,
-                    connectLower: false,
-                    connectUpper: false,
-                  ),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                    child: Particles(
-                      key: UniqueKey(),
-                      height: size.height,
-                      width: size.width,
-                      particles: List.generate(
-                          size.height * size.width ~/ 25,
-                          (index) => Particle(
-                                color: Colors.white.withAlpha(150),
-                                size: Random().nextDouble() * (size.height / 75).clamp(0.5, 1),
-                                velocity: Offset(Random().nextDouble() * 10, Random().nextDouble() * 10),
-                              )),
+            onHorizontalDragUpdate: rxControl.value == Control.stop
+                ? null
+                : (DragUpdateDetails details) {
+                    if (effect != MessageEffect.invisibleInk) return;
+                    if ((details.primaryDelta ?? 0).abs() > 1) {
+                      message.setPlayedDate();
+                      rxControl.value = Control.stop;
+                    }
+                  },
+            child: AbsorbPointer(
+              absorbing: rxControl.value != Control.stop,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  widget.child,
+                  if (rxControl.value != Control.stop)
+                    ClipPath(
+                      clipper: TailClipper(
+                        isFromMe: message.isFromMe!,
+                        showTail: widget.showTail,
+                        connectLower: false,
+                        connectUpper: false,
+                      ),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                        child: Particles(
+                          key: UniqueKey(),
+                          height: size.height,
+                          width: size.width,
+                          particles: List.generate(
+                              size.height * size.width ~/ 25,
+                              (index) => Particle(
+                                    color: Colors.white.withAlpha(150),
+                                    size: Random().nextDouble() * (size.height / 75).clamp(0.5, 1),
+                                    velocity: Offset(Random().nextDouble() * 10, Random().nextDouble() * 10),
+                                  )),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ));
+                ],
+              ),
+            ),
+          ));
     }
     getTween(message, effect);
     return Obx(() => CustomAnimationBuilder<Movie>(
-      control: rxControl.value,
-      tween: tween,
-      duration: Duration(
-          milliseconds: effect == MessageEffect.loud
-              ? 900
-              : effect == MessageEffect.slam
-                  ? 500
-                  : 1800),
-      animationStatusListener: (status) {
-        if (status == AnimationStatus.completed) {
-          rxControl.value = Control.stop;
-        }
-      },
-      builder: (context, anim, child) {
-        double value1 = 1;
-        double value2 = 0;
-        if (effect == MessageEffect.gentle) {
-          value1 = anim.get("size");
-        } else if (effect == MessageEffect.loud || effect == MessageEffect.slam) {
-          value1 = anim.get("size");
-          value2 = anim.get("rotation");
-        }
-        if (effect == MessageEffect.gentle) {
-          return Padding(
-            padding: EdgeInsets.only(top: size.height * (value1.clamp(1, 1.2) - 1)),
-            child: Transform.scale(
-                scale: rxControl.value == Control.stop ? 1 : value1,
-                alignment: message.isFromMe! ? Alignment.bottomRight : Alignment.bottomLeft,
-                child: child),
-          );
-        }
-        if (effect == MessageEffect.loud) {
-          return SizedBox(
-            width: value1 == 1 ? null : size.width * value1,
-            height: value1 == 1 ? null : size.height * value1,
-            child: FittedBox(
-              alignment: Alignment.bottomLeft,
-              child: Transform.rotate(
-                angle: sin(value2 * pi * 4) * pi / 24,
-                alignment: Alignment.bottomCenter,
-                child: child,
-              ),
-            ),
-          );
-        }
-        if (effect == MessageEffect.slam) {
-          return SizedBox(
-            width: value1 == 1 ? null : size.width * value1,
-            height: value1 == 1 ? null : size.height * value1,
-            child: FittedBox(
-              alignment: message.isFromMe! ? Alignment.centerRight : Alignment.centerLeft,
-              child: Transform.rotate(angle: value2, alignment: Alignment.bottomCenter, child: child),
-            ),
-          );
-        }
-        return child!;
-      },
-      child: widget.child,
-    ));
+          control: rxControl.value,
+          tween: tween,
+          duration: Duration(
+              milliseconds: effect == MessageEffect.loud
+                  ? 900
+                  : effect == MessageEffect.slam
+                      ? 500
+                      : 1800),
+          animationStatusListener: (status) {
+            if (status == AnimationStatus.completed) {
+              rxControl.value = Control.stop;
+            }
+          },
+          builder: (context, anim, child) {
+            double value1 = 1;
+            double value2 = 0;
+            if (effect == MessageEffect.gentle) {
+              value1 = anim.get("size");
+            } else if (effect == MessageEffect.loud || effect == MessageEffect.slam) {
+              value1 = anim.get("size");
+              value2 = anim.get("rotation");
+            }
+            if (effect == MessageEffect.gentle) {
+              return Padding(
+                padding: EdgeInsets.only(top: size.height * (value1.clamp(1, 1.2) - 1)),
+                child: Transform.scale(
+                    scale: rxControl.value == Control.stop ? 1 : value1,
+                    alignment: message.isFromMe! ? Alignment.bottomRight : Alignment.bottomLeft,
+                    child: child),
+              );
+            }
+            if (effect == MessageEffect.loud) {
+              return SizedBox(
+                width: value1 == 1 ? null : size.width * value1,
+                height: value1 == 1 ? null : size.height * value1,
+                child: FittedBox(
+                  alignment: Alignment.bottomLeft,
+                  child: Transform.rotate(
+                    angle: sin(value2 * pi * 4) * pi / 24,
+                    alignment: Alignment.bottomCenter,
+                    child: child,
+                  ),
+                ),
+              );
+            }
+            if (effect == MessageEffect.slam) {
+              return SizedBox(
+                width: value1 == 1 ? null : size.width * value1,
+                height: value1 == 1 ? null : size.height * value1,
+                child: FittedBox(
+                  alignment: message.isFromMe! ? Alignment.centerRight : Alignment.centerLeft,
+                  child: Transform.rotate(angle: value2, alignment: Alignment.bottomCenter, child: child),
+                ),
+              );
+            }
+            return child!;
+          },
+          child: widget.child,
+        ));
   }
 }

@@ -27,8 +27,7 @@ class InteractiveHolder extends StatefulWidget {
   State<StatefulWidget> createState() => _InteractiveHolderState();
 }
 
-class _InteractiveHolderState extends State<InteractiveHolder>
-    with AutomaticKeepAliveClientMixin, ThemeHelpers {
+class _InteractiveHolderState extends State<InteractiveHolder> with AutomaticKeepAliveClientMixin, ThemeHelpers {
   late MessageState _ms;
   MessageState get controller => _ms;
 
@@ -114,7 +113,7 @@ class _InteractiveHolderState extends State<InteractiveHolder>
                                             if (SettingsSvc.settings.enablePrivateAPI.value &&
                                                 SettingsSvc.isMinBigSurSync &&
                                                 SettingsSvc.serverDetailsSync().item4 >= 226) {
-                                              return EmbeddedMedia();
+                                              return const EmbeddedMedia();
                                             } else {
                                               return const UnsupportedInteractive(
                                                 payloadData: null,
@@ -127,11 +126,10 @@ class _InteractiveHolderState extends State<InteractiveHolder>
                                         }
                                       } else if (payloadData?.type == PayloadType.url || message.isLegacyUrlPreview) {
                                         if (payloadData == null) {
-                                          return const LegacyUrlPreview(
-                                        );
-                                      }
-                                      return UrlPreview(
-                                        data: payloadData!.urlData!.first,
+                                          return const LegacyUrlPreview();
+                                        }
+                                        return UrlPreview(
+                                          data: payloadData!.urlData!.first,
                                         );
                                       } else {
                                         final data = payloadData!.appData!.first;
@@ -148,16 +146,13 @@ class _InteractiveHolderState extends State<InteractiveHolder>
                                           case "GamePigeon":
                                             return GamePigeon(
                                               data: data,
-
                                             );
                                           case "Apple Pay":
                                             return ApplePay(
                                               data: data,
-
                                             );
                                           default:
                                             return UnsupportedInteractive(
-
                                               payloadData: data,
                                             );
                                         }

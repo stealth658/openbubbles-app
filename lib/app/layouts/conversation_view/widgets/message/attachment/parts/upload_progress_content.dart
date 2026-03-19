@@ -77,9 +77,7 @@ class UploadProgressContent extends StatelessWidget {
             child: Obx(() {
               final isSending = (attachmentState.uploadProgress.value ?? 0.0) < 1.0;
               return GestureDetector(
-                onTap: isSending
-                    ? () => OutgoingMsgHandler.latestCancelToken?.cancel("User cancelled send.")
-                    : null,
+                onTap: isSending ? () => OutgoingMsgHandler.latestCancelToken?.cancel("User cancelled send.") : null,
                 child: Container(
                   width: 22,
                   height: 22,

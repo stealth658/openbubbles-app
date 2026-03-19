@@ -134,9 +134,9 @@ class MessageState extends StatefulController {
         isSent = (!(message.guid?.startsWith('temp') ?? false)).obs,
         isReaction = (message.associatedMessageGuid != null).obs {
     // Create AttachmentState for every attachment already on the message.
-    for (final attachment in message.attachments) {
-      if (attachment?.guid != null) {
-        attachmentStates[attachment!.guid!] = AttachmentState(attachment);
+    for (final attachment in message.dbAttachments) {
+      if (attachment.guid != null) {
+        attachmentStates[attachment.guid!] = AttachmentState(attachment);
       }
     }
   }
@@ -181,12 +181,11 @@ class MessageState extends StatefulController {
   /// by [attachment] if it does not already exist.
   ///
   /// If [attachment] is omitted and the state does not exist, one is created
-  /// by looking [attachmentGuid] up in [message.attachments].  Throws if the
+  /// by looking [attachmentGuid] up in [message.dbAttachments].  Throws if the
   /// attachment cannot be resolved.
   AttachmentState getOrCreateAttachmentState(String attachmentGuid, {Attachment? attachment}) {
     if (!attachmentStates.containsKey(attachmentGuid)) {
-      final resolved = attachment ??
-          message.attachments.firstWhereOrNull((a) => a?.guid == attachmentGuid);
+      final resolved = attachment ?? message.dbAttachments.firstWhereOrNull((a) => a.guid == attachmentGuid);
       if (resolved == null) {
         throw StateError(
           'Cannot create AttachmentState for $attachmentGuid: '
@@ -220,7 +219,10 @@ class MessageState extends StatefulController {
         // messages (no ambiguous heuristic).
         String? tempKey;
         for (final entry in _pendingGuidPromotions.entries) {
-          if (entry.value == guid) { tempKey = entry.key; break; }
+          if (entry.value == guid) {
+            tempKey = entry.key;
+            break;
+          }
         }
         if (tempKey != null && attachmentStates.containsKey(tempKey)) {
           _pendingGuidPromotions.remove(tempKey);
@@ -531,9 +533,9 @@ class MessageState extends StatefulController {
 
     // Update the in-memory attachment list so UI widgets see the new GUIDs
     // (e.g. after a temp→real GUID swap via _replaceAttachments).
-    if (updatedMessage.attachments.isNotEmpty) {
-      message.attachments = updatedMessage.attachments;
-      _syncAttachmentStates(updatedMessage.attachments);
+    if (updatedMessage.dbAttachments.isNotEmpty) {
+      message.attachments = updatedMessage.dbAttachments;
+      _syncAttachmentStates(updatedMessage.dbAttachments);
     }
   }
 
@@ -630,8 +632,8 @@ class MessageState extends StatefulController {
           !message.isLegacyUrlPreview &&
           !message.isInteractive &&
           !message.isGroupEvent) {
-        newParts.addAll(message.attachments.mapIndexed((index, e) => MessagePart(
-              attachments: [e!],
+        newParts.addAll(message.dbAttachments.mapIndexed((index, e) => MessagePart(
+              attachments: [e],
               part: index,
             )));
       } else if (message.isInteractive) {
@@ -675,7 +677,7 @@ class MessageState extends StatefulController {
         Attachment? foundAttachment;
         if (e.isAttachment && (cvController?.chat != null || ChatsSvc.activeChat != null)) {
           final attachmentGuid = e.attributes!.attachmentGuid!;
-          foundAttachment = message.attachments.firstWhereOrNull((a) => a?.guid == attachmentGuid);
+          foundAttachment = message.dbAttachments.firstWhereOrNull((a) => a.guid == attachmentGuid);
           if (foundAttachment == null) {
             foundAttachment = MessagesSvc(cvController?.chat.guid ?? ChatsSvc.activeChat!.chat.guid)
                 .struct

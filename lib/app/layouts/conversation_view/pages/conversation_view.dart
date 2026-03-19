@@ -106,107 +106,107 @@ class ConversationViewState extends State<ConversationView> with ThemeHelpers<Co
             data: theme.copyWith(
               // in case some components still use legacy theming
               primaryColor: bubbleColor,
-            colorScheme: colorScheme.copyWith(
-              primary: bubbleColor,
-              onPrimary: onBubbleColor,
-              surface: monetTheming == Monet.full ? null : bubbleColorsExt?.receivedBubbleColor,
-              onSurface: monetTheming == Monet.full ? null : bubbleColorsExt?.onReceivedBubbleColor,
+              colorScheme: colorScheme.copyWith(
+                primary: bubbleColor,
+                onPrimary: onBubbleColor,
+                surface: monetTheming == Monet.full ? null : bubbleColorsExt?.receivedBubbleColor,
+                onSurface: monetTheming == Monet.full ? null : bubbleColorsExt?.onReceivedBubbleColor,
+              ),
             ),
-          ),
-          child: PopScope(
-            canPop: false,
-            onPopInvoked: (didPop) async {
-              if (didPop) return;
-              if (controller.inSelectMode.value) {
-                controller.inSelectMode.value = false;
-                controller.selected.clear();
-                return;
-              }
-              if (controller.showAttachmentPicker) {
-                controller.showAttachmentPicker = false;
-                controller.updateWidgets<ConversationTextField>(null);
-                return;
-              }
-              if (LifecycleSvc.isBubble) {
-                SystemNavigator.pop();
-              }
-              controller.close();
-              if (LifecycleSvc.isBubble) return;
-              return Navigator.of(context).pop();
-            },
-            child: SafeArea(
-              top: false,
-              bottom: false,
-              child: Scaffold(
-                backgroundColor: windowEffect != WindowEffect.disabled ? Colors.transparent : colorScheme.background,
-                extendBodyBehindAppBar: true,
-                appBar: PreferredSize(
-                    preferredSize: Size(
-                        NavigationSvc.width(context),
-                        (kIsDesktop ? (!iOS ? 25 : 5) : 0) +
-                            90 * (iOS ? avatarScale : 0) +
-                            (!iOS ? kToolbarHeight : 0)),
-                    child: iOS
-                        ? CupertinoHeader(controller: controller)
-                        : MaterialHeader(controller: controller) as PreferredSizeWidget),
-                body: Actions(
-                  actions: _actionsMap,
-                  child: GradientBackground(
-                    controller: controller,
-                    child: SizedBox(
-                      height: context.height,
-                      child: Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          const Positioned.fill(child: ScreenEffectsWidget()),
-                          Column(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              Expanded(
-                                child: Stack(
-                                  children: [
-                                    MessagesView(
-                                      key: Key(chat.guid),
-                                      customService: widget.customService,
-                                      controller: controller,
-                                    ),
-                                    ScrollDownButton(controller: controller)
-                                  ],
-                                ),
-                              ),
-                              Stack(children: [
-                                Align(
-                                  alignment: Alignment.bottomCenter,
-                                  child: GestureDetector(
-                                    onPanUpdate: (details) {
-                                      if (!mounted) return;
-                                      if (SettingsSvc.settings.swipeToCloseKeyboard.value &&
-                                          details.delta.dy > 0 &&
-                                          controller.keyboardOpen) {
-                                        controller.focusNode.unfocus();
-                                        controller.subjectFocusNode.unfocus();
-                                      } else if (SettingsSvc.settings.swipeToOpenKeyboard.value &&
-                                          details.delta.dy < 0 &&
-                                          !controller.keyboardOpen) {
-                                        controller.focusNode.requestFocus();
-                                      }
-                                    },
-                                    child: ConversationTextField(
-                                      parentController: controller,
-                                    ),
+            child: PopScope(
+              canPop: false,
+              onPopInvoked: (didPop) async {
+                if (didPop) return;
+                if (controller.inSelectMode.value) {
+                  controller.inSelectMode.value = false;
+                  controller.selected.clear();
+                  return;
+                }
+                if (controller.showAttachmentPicker) {
+                  controller.showAttachmentPicker = false;
+                  controller.updateWidgets<ConversationTextField>(null);
+                  return;
+                }
+                if (LifecycleSvc.isBubble) {
+                  SystemNavigator.pop();
+                }
+                controller.close();
+                if (LifecycleSvc.isBubble) return;
+                return Navigator.of(context).pop();
+              },
+              child: SafeArea(
+                top: false,
+                bottom: false,
+                child: Scaffold(
+                  backgroundColor: windowEffect != WindowEffect.disabled ? Colors.transparent : colorScheme.background,
+                  extendBodyBehindAppBar: true,
+                  appBar: PreferredSize(
+                      preferredSize: Size(
+                          NavigationSvc.width(context),
+                          (kIsDesktop ? (!iOS ? 25 : 5) : 0) +
+                              90 * (iOS ? avatarScale : 0) +
+                              (!iOS ? kToolbarHeight : 0)),
+                      child: iOS
+                          ? CupertinoHeader(controller: controller)
+                          : MaterialHeader(controller: controller) as PreferredSizeWidget),
+                  body: Actions(
+                    actions: _actionsMap,
+                    child: GradientBackground(
+                      controller: controller,
+                      child: SizedBox(
+                        height: context.height,
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            const Positioned.fill(child: ScreenEffectsWidget()),
+                            Column(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                Expanded(
+                                  child: Stack(
+                                    children: [
+                                      MessagesView(
+                                        key: Key(chat.guid),
+                                        customService: widget.customService,
+                                        controller: controller,
+                                      ),
+                                      ScrollDownButton(controller: controller)
+                                    ],
                                   ),
-                                )
-                              ]),
-                            ],
-                          ),
-                        ],
+                                ),
+                                Stack(children: [
+                                  Align(
+                                    alignment: Alignment.bottomCenter,
+                                    child: GestureDetector(
+                                      onPanUpdate: (details) {
+                                        if (!mounted) return;
+                                        if (SettingsSvc.settings.swipeToCloseKeyboard.value &&
+                                            details.delta.dy > 0 &&
+                                            controller.keyboardOpen) {
+                                          controller.focusNode.unfocus();
+                                          controller.subjectFocusNode.unfocus();
+                                        } else if (SettingsSvc.settings.swipeToOpenKeyboard.value &&
+                                            details.delta.dy < 0 &&
+                                            !controller.keyboardOpen) {
+                                          controller.focusNode.requestFocus();
+                                        }
+                                      },
+                                      child: ConversationTextField(
+                                        parentController: controller,
+                                      ),
+                                    ),
+                                  )
+                                ]),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
-          )),
+            )),
       ),
     );
   }

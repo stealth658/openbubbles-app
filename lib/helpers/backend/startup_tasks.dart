@@ -422,6 +422,12 @@ class StartupTasks {
     GetIt.I.registerSingleton<HttpService>(HttpService());
     HttpSvc.init();
 
+    Logger.info("Registering IncomingMessageHandler...");
+    GetIt.I.registerSingleton<IncomingMessageHandler>(
+      IncomingMessageHandler(),
+      dispose: (svc) => svc.dispose(),
+    );
+
     Logger.info("Background isolate services initialization complete");
   }
 

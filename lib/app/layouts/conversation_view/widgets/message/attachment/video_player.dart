@@ -214,7 +214,7 @@ class _VideoPlayerState extends State<VideoPlayer> with AutomaticKeepAliveClient
     } else {
       // Load thumbnail for non-desktop platforms while controller initializes
       if (!kIsDesktop && !kIsWeb) {
-          getThumbnail();
+        getThumbnail();
       }
       // Initialize new controller
       initializeController();
@@ -520,7 +520,7 @@ class FullscreenButton extends StatelessWidget {
               await Navigator.of(Get.context!).push(
                 ThemeSwitcher.buildPageRoute(
                   builder: (context) => FullscreenMediaHolder(
-                        currentChat: currentChat,
+                      currentChat: currentChat,
                       attachment: attachment,
                       showInteractions: true,
                       videoController: videoController,

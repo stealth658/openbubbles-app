@@ -42,11 +42,8 @@ class _AttachmentHolderState extends State<AttachmentHolder> with ThemeHelpers {
   Message? get newerMessage => controller.newMessage;
 
   Attachment get attachment =>
-      message.attachments.firstWhereOrNull((e) => e?.id == part.attachments.first.id) ??
-      MessagesSvc(_chatGuid)
-          .struct
-          .attachments
-          .firstWhereOrNull((e) => e.id == part.attachments.first.id) ??
+      message.dbAttachments.firstWhereOrNull((e) => e.id == part.attachments.first.id) ??
+      MessagesSvc(_chatGuid).struct.attachments.firstWhereOrNull((e) => e.id == part.attachments.first.id) ??
       part.attachments.first;
 
   String? get audioTranscript => getAudioTranscriptsFromAttributedBody(message.attributedBody)[part.part];
@@ -82,8 +79,7 @@ class _AttachmentHolderState extends State<AttachmentHolder> with ThemeHelpers {
   }
 
   /// Resolves the [MessagesService] for the chat that owns this message.
-  MessagesService get _msvc =>
-      MessagesSvc(_chatGuid);
+  MessagesService get _msvc => MessagesSvc(_chatGuid);
 
   @override
   void initState() {
@@ -300,5 +296,3 @@ class _AttachmentHolderState extends State<AttachmentHolder> with ThemeHelpers {
     );
   }
 }
-
-

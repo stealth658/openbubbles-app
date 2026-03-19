@@ -3,6 +3,7 @@ import 'dart:collection';
 
 import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/env.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/backend/interfaces/chat_interface.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -256,10 +257,10 @@ class IncomingMessageHandler {
     next
         .then((_) => entry.completer.complete(), onError: (e, s) => entry.completer.completeError(e, s))
         .whenComplete(() {
-          _activeSlots--;
-          activeConcurrency.value = _activeSlots;
-          _drain();
-        });
+      _activeSlots--;
+      activeConcurrency.value = _activeSlots;
+      _drain();
+    });
   }
 
   Future<void> _dispatchPayload(IncomingPayload payload) async {
@@ -295,8 +296,8 @@ class IncomingMessageHandler {
     // Fail any payloads still waiting in the queue so their futures don't hang.
     while (_incomingQueue.isNotEmpty) {
       _incomingQueue.removeFirst().completer.completeError(
-        StateError('IncomingMessageHandler disposed before payload was processed'),
-      );
+            StateError('IncomingMessageHandler disposed before payload was processed'),
+          );
     }
   }
 
@@ -366,12 +367,14 @@ class IncomingMessageHandler {
     // 8. Push / in-app notification.
     NotificationsSvc.tryCreateNewMessageNotification(saved, c);
 
-    // 9. Drive UI reactivity.
-    _dispatchNewMessage(c, saved, tempGuid: tempGuid);
+    // 9. Drive UI reactivity, if not in a background isolate.
+    if (!isIsolate) {
+      _dispatchNewMessage(c, saved, tempGuid: tempGuid);
 
-    // 10. Refresh chat-list ordering.
-    c.dbLatestMessage;
-    ChatsSvc.updateChat(c, override: true);
+      // 10. Refresh chat-list ordering.
+      c.dbLatestMessage;
+      ChatsSvc.updateChat(c, override: true);
+    }
 
     // 11. Flush any out-of-order updated-message that arrived before us.
     if (saved.guid != null) _flushPendingUpdate(saved.guid!, c);
@@ -434,11 +437,13 @@ class IncomingMessageHandler {
     // 6. Persist attachment GUID swaps (e.g. temp attachment → real GUID).
     await _replaceAttachments(c, existingGuid, existing, m);
 
-    // 7. Drive UI reactivity.
-    _dispatchUpdatedMessage(c, m, oldGuid: tempGuid);
+    // 7. Drive UI reactivity, if not in a background isolate.
+    if (!isIsolate) {
+      _dispatchUpdatedMessage(c, m, oldGuid: tempGuid);
 
-    // 8. Refresh chat-list ordering.
-    ChatsSvc.updateChat(c, override: true);
+      // 8. Refresh chat-list ordering.
+      ChatsSvc.updateChat(c, override: true);
+    }
   }
 
   // ── Chat hydration ──────────────────────────────────────────────────────
@@ -512,7 +517,8 @@ class IncomingMessageHandler {
         tag: _tag,
       );
       if (isNewer) {
-        Logger.debug('[_replaceMessage] overwriting alreadyPresent with newer replacement ${replacement.guid}', tag: _tag);
+        Logger.debug('[_replaceMessage] overwriting alreadyPresent with newer replacement ${replacement.guid}',
+            tag: _tag);
         await Message.replaceMessage(replacement.guid, replacement);
       }
 
@@ -580,7 +586,7 @@ class IncomingMessageHandler {
   ) async {
     Logger.debug(
       '[_replaceAttachments] START existingGuid=$existingGuid '
-      'attachmentCount=${replacement.attachments.length} '
+      'attachmentCount=${replacement.dbAttachments.length} '
       'existingDbAttachmentCount=${existing.dbAttachments.length}',
       tag: _tag,
     );
@@ -634,7 +640,8 @@ class IncomingMessageHandler {
               tag: _tag,
             );
             if (staleTemp != null) {
-              Logger.debug('[_replaceAttachments] index=$i deleting stale attachment $attachmentExistingGuid', tag: _tag);
+              Logger.debug('[_replaceAttachments] index=$i deleting stale attachment $attachmentExistingGuid',
+                  tag: _tag);
               await Attachment.deleteAsync(staleTemp.guid!);
             }
           } else {
@@ -659,8 +666,8 @@ class IncomingMessageHandler {
             // (always the temp GUID) so it must remain discoverable while its Obx
             // is live.  _syncAttachmentStates promotes the key to the real GUID
             // once updateMessage updates the message struct.
-            MessagesSvc(chat.guid).notifyAttachmentSendComplete(
-              existingGuid, replacement.guid!, attachmentExistingGuid, newAttachment);
+            MessagesSvc(chat.guid)
+                .notifyAttachmentSendComplete(existingGuid, replacement.guid!, attachmentExistingGuid, newAttachment);
           }
         }
         // MessagesService is notified once by _dispatchUpdatedMessage after all
@@ -812,19 +819,36 @@ class IncomingMessageHandler {
       final oldest = _pendingUpdates.remove(oldestGuid)!;
       oldest.expiryTimer?.cancel();
       Logger.warn(
-        'Pending-update buffer full ($_maxPendingUpdates) — evicting oldest entry $oldestGuid',
+        'Pending-update buffer full ($_maxPendingUpdates) — evicting oldest entry $oldestGuid, processing anyway',
         tag: _tag,
       );
+      unawaited(handle(oldest.payload, front: true).catchError((e, st) {
+        Logger.warn(
+          'Failed to process evicted buffered update for $oldestGuid',
+          error: e,
+          trace: st,
+          tag: _tag,
+        );
+      }));
     }
 
     final pending = _PendingUpdate(payload: payload);
     pending.expiryTimer = Timer(_pendingUpdateTimeout, () {
-      if (_pendingUpdates.remove(guid) != null) {
+      final expired = _pendingUpdates.remove(guid);
+      if (expired != null) {
         Logger.warn(
           'Buffered update for $guid expired after ${_pendingUpdateTimeout.inSeconds}s '
-          'without a matching new-message',
+          'without a matching new-message — processing anyway',
           tag: _tag,
         );
+        unawaited(handle(expired.payload, front: true).catchError((e, st) {
+          Logger.warn(
+            'Failed to process expired buffered update for $guid',
+            error: e,
+            trace: st,
+            tag: _tag,
+          );
+        }));
       }
     });
     _pendingUpdates[guid] = pending;
@@ -898,9 +922,7 @@ class IncomingMessageHandler {
       // onPlayerStateChanged so we don't need to reference PlayerState, which
       // is defined in both audio_waveforms and media_kit.
       unawaited(
-        controller.onCompletion.first
-            .whenComplete(controller.dispose)
-            .catchError((Object _) {}),
+        controller.onCompletion.first.whenComplete(controller.dispose).catchError((Object _) {}),
       );
     }
   }

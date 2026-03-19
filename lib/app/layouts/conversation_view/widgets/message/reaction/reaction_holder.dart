@@ -33,7 +33,7 @@ class _ReactionAnimatorState extends State<_ReactionAnimator> with SingleTickerP
       duration: const Duration(milliseconds: 200),
       vsync: this,
     );
-    
+
     _scaleAnimation = CurvedAnimation(
       parent: _controller,
       curve: Curves.easeOutBack,
@@ -80,7 +80,7 @@ class _ReactionHolderState extends State<ReactionHolder> {
 
   // Cache the unique reactions to prevent unnecessary rebuilds
   late List<Message> _cachedReactions;
-  
+
   // Track which reaction keys have been animated
   // This prevents re-animation on rebuilds, but allows animation on first appearance
   final Set<String> _seenReactionKeys = {};
@@ -135,14 +135,14 @@ class _ReactionHolderState extends State<ReactionHolder> {
               // This prevents re-animation when temp GUID -> real GUID replacement happens
               final sender = e.isFromMe! ? 0 : e.handleId ?? 0;
               final stableKey = '${e.associatedMessageGuid}-${e.associatedMessageType}-$sender';
-              
+
               // Check if this is a new reaction that should animate
               final shouldAnimate = !_seenReactionKeys.contains(stableKey);
               if (shouldAnimate) {
                 // Mark as seen for future rebuilds
                 _seenReactionKeys.add(stableKey);
               }
-              
+
               return Positioned(
                 key: ValueKey(stableKey),
                 top: 0,

@@ -21,9 +21,8 @@ class MessageTimestamp extends StatelessWidget {
     return Obx(() {
       // Use MessageState observable for reactivity
       final dateCreated = controller.dateCreated.value;
-      final oneLine = SettingsSvc.settings.skin.value == Skins.Samsung
-          ? true
-          : buildDate(dateCreated) == buildTime(dateCreated);
+      final oneLine =
+          SettingsSvc.settings.skin.value == Skins.Samsung ? true : buildDate(dateCreated) == buildTime(dateCreated);
       final time = oneLine
           ? "   ${buildTime(dateCreated)}"
           : "   ${buildDate(dateCreated)}\n   ${buildTime(dateCreated).toLowerCase()}";

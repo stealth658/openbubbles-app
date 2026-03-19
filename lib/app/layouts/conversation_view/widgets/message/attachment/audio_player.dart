@@ -144,7 +144,8 @@ class _AudioPlayerState extends State<AudioPlayer> with AutomaticKeepAliveClient
   bool get wantKeepAlive => true;
 }
 
-class _DesktopAudioPlayerState extends State<AudioPlayer> with AutomaticKeepAliveClientMixin, SingleTickerProviderStateMixin {
+class _DesktopAudioPlayerState extends State<AudioPlayer>
+    with AutomaticKeepAliveClientMixin, SingleTickerProviderStateMixin {
   Attachment? get attachment => widget.attachment;
 
   PlatformFile get file => widget.file;

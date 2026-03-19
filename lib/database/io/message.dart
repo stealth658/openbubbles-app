@@ -65,6 +65,9 @@ class Message {
   // 2. 'dbAttachments' - ObjectBox ToMany relationship for persistent DB links
   //    Only modify when saving/updating messages in DB transactions
   //    Do NOT clear/modify when just querying - the relationship already exists
+  // Transient because we don't want it to be stored in the DB. The attachments are linked via
+  // the dbAttachments ToMany relationship, and this list is just for easier access, when needed (use sparingly).
+  @Transient()
   List<Attachment?> attachments = [];
 
   List<Message> associatedMessages = [];
@@ -742,8 +745,9 @@ class Message {
   }
 
   bool connectToLower(Message newerMessage) {
-    final thisPartCount =
-        chat.target?.guid != null ? MessagesSvc(chat.target!.guid).getMessageStateIfExists(guid!)?.parts.length ?? 1 : 1;
+    final thisPartCount = chat.target?.guid != null
+        ? MessagesSvc(chat.target!.guid).getMessageStateIfExists(guid!)?.parts.length ?? 1
+        : 1;
     if (newerMessage.isFromMe != isFromMe) return false;
     if (newerMessage.normalizedThreadPart != thisPartCount - 1) return false;
     if (threadOriginatorGuid != null) {

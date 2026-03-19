@@ -110,7 +110,7 @@ class _TextBubbleState extends State<TextBubble> with ThemeHelpers {
       // Use MessageState observables for proper reactivity
       final isTempMessage = controller.isSending.value;
       final isFromMe = controller.isFromMe.value;
-      
+
       return Container(
         constraints: BoxConstraints(
           maxWidth: message.isBigEmoji
@@ -119,8 +119,7 @@ class _TextBubbleState extends State<TextBubble> with ThemeHelpers {
           minHeight: 40,
         ),
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15).add(EdgeInsets.only(
-            left: isFromMe || message.isBigEmoji ? 0 : 10,
-            right: isFromMe && !message.isBigEmoji ? 10 : 0)),
+            left: isFromMe || message.isBigEmoji ? 0 : 10, right: isFromMe && !message.isBigEmoji ? 10 : 0)),
         color: isFromMe && !message.isBigEmoji
             ? (selected
                 ? context.theme.colorScheme.tertiaryContainer
@@ -163,24 +162,24 @@ class _TextBubbleState extends State<TextBubble> with ThemeHelpers {
               if (snapshot.data != null) {
                 if (effect == MessageEffect.gentle) {
                   return Obx(() => CustomAnimationBuilder<Movie>(
-                    control: rxAnim.value,
-                    tween: tween,
-                    duration: const Duration(milliseconds: 1800),
-                    animationStatusListener: (status) {
-                      if (status == AnimationStatus.completed) {
-                        rxAnim.value = Control.stop;
-                      }
-                    },
-                    builder: (context, anim, child) {
-                      final value1 = anim.get("size");
-                      return Transform.scale(scale: value1, alignment: Alignment.center, child: child);
-                    },
-                    child: RichText(
-                      text: TextSpan(
-                        children: snapshot.data!,
-                      ),
-                    ),
-                  ));
+                        control: rxAnim.value,
+                        tween: tween,
+                        duration: const Duration(milliseconds: 1800),
+                        animationStatusListener: (status) {
+                          if (status == AnimationStatus.completed) {
+                            rxAnim.value = Control.stop;
+                          }
+                        },
+                        builder: (context, anim, child) {
+                          final value1 = anim.get("size");
+                          return Transform.scale(scale: value1, alignment: Alignment.center, child: child);
+                        },
+                        child: RichText(
+                          text: TextSpan(
+                            children: snapshot.data!,
+                          ),
+                        ),
+                      ));
                 }
                 return Center(
                   widthFactor: 1,

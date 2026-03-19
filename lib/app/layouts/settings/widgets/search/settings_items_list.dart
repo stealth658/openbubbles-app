@@ -255,7 +255,6 @@ List<Widget> buildSettingItemList({
         text: "Application Settings",
       ),
     ),
-
     SettingsSection(
       backgroundColor: tileColor,
       searchableSettingsItems: [
@@ -532,7 +531,6 @@ List<Widget> buildSettingItemList({
         text: "Advanced",
       ),
     ),
-
     SettingsSection(
       backgroundColor: tileColor,
       searchableSettingsItems: [
@@ -686,12 +684,10 @@ List<Widget> buildSettingItemList({
         ),
       ],
     ),
-
     SearchableSettingItem(
       title: "Backup and restore",
       child: SettingsHeader(iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Backup and Restore"),
     ),
-
     SettingsSection(
       backgroundColor: tileColor,
       searchableSettingsItems: [

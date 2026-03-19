@@ -154,7 +154,8 @@ class AttachmentState {
       guid.value = value;
       attachment.guid = value;
       // Refresh derived isSending: still uploading but no longer a temp GUID
-      isSending.value = (value?.startsWith('temp') ?? false) && transferState.value == AttachmentTransferState.uploading;
+      isSending.value =
+          (value?.startsWith('temp') ?? false) && transferState.value == AttachmentTransferState.uploading;
       hasError.value = (value?.startsWith('error') ?? false);
     }
   }

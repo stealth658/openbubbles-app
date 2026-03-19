@@ -170,10 +170,7 @@ class OutgoingMessageHandler {
         await _handleSend(() => _dispatchItem(item), item.chat).catchError((err) async {
           if (SettingsSvc.settings.cancelQueuedMessages.value) {
             // Cancel all subsequent messages for the same chat.
-            final toCancel = _queue
-                .where((e) => e.item.chat.guid == item.chat.guid)
-                .map((e) => e.item)
-                .toList();
+            final toCancel = _queue.where((e) => e.item.chat.guid == item.chat.guid).map((e) => e.item).toList();
             for (final pending in toCancel) {
               _queue.removeWhere((e) => e.item == pending);
               final m = pending.message;
@@ -630,8 +627,7 @@ class OutgoingMessageHandler {
             // so the Obx can still find it; _syncAttachmentStates promotes it
             // to the real key when updateMessage delivers the updated struct.
             if (Get.isRegistered<MessagesService>(tag: c.guid)) {
-              MessagesSvc(c.guid).notifyAttachmentSendComplete(
-                tempGuid, newMessage.guid!, tempGuid, a);
+              MessagesSvc(c.guid).notifyAttachmentSendComplete(tempGuid, newMessage.guid!, tempGuid, a);
             }
             MessagesSvc(c.guid).updateMessage(newMessage);
           } catch (e, st) {
@@ -719,7 +715,8 @@ class OutgoingMessageHandler {
           }
         }
       } else {
-        Logger.debug('[_matchMessageWithExisting] existingGuid == replacementGuid — no stale cleanup needed', tag: _tag);
+        Logger.debug('[_matchMessageWithExisting] existingGuid == replacementGuid — no stale cleanup needed',
+            tag: _tag);
       }
     } else {
       // Normal path: rename the temp record to the real GUID.
@@ -729,7 +726,8 @@ class OutgoingMessageHandler {
       );
       try {
         await Message.replaceMessage(existingGuid, replacement);
-        Logger.debug('[_matchMessageWithExisting] replaceMessage succeeded: $existingGuid → ${replacement.guid}', tag: _tag);
+        Logger.debug('[_matchMessageWithExisting] replaceMessage succeeded: $existingGuid → ${replacement.guid}',
+            tag: _tag);
         if (Get.isRegistered<MessagesService>(tag: chat.guid)) {
           Logger.debug(
             '[_matchMessageWithExisting] calling updateMessage oldGuid=$existingGuid → ${replacement.guid}',
@@ -768,7 +766,8 @@ class OutgoingMessageHandler {
       tag: _tag,
     );
     if (alreadyPresent != null) {
-      Logger.debug('[_matchAttachmentWithExisting] parallel-delivery: updating ${replacement.guid} in place', tag: _tag);
+      Logger.debug('[_matchAttachmentWithExisting] parallel-delivery: updating ${replacement.guid} in place',
+          tag: _tag);
       await Attachment.replaceAttachmentAsync(replacement.guid, replacement);
       if (existingGuid != replacement.guid) {
         final stale = await Attachment.findOneAsync(existingGuid);
@@ -781,7 +780,8 @@ class OutgoingMessageHandler {
           await Attachment.deleteAsync(stale.guid!);
         }
       } else {
-        Logger.debug('[_matchAttachmentWithExisting] existingGuid == replacementGuid — no stale cleanup needed', tag: _tag);
+        Logger.debug('[_matchAttachmentWithExisting] existingGuid == replacementGuid — no stale cleanup needed',
+            tag: _tag);
       }
     } else {
       Logger.debug(

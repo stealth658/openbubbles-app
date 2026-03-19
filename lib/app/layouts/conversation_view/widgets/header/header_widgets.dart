@@ -94,9 +94,9 @@ class ManualMarkState extends State<ManualMark> with ThemeHelpers {
                 String text = "";
                 widget.controller.selected.sort((a, b) => Message.sort(a, b, descending: false));
                 for (Message m in widget.controller.selected) {
-                  final _attachments = m.attachments
-                      .where((e) => AttachmentsSvc.getContent(e!, autoDownload: false) is PlatformFile)
-                      .map((e) => AttachmentsSvc.getContent(e!, autoDownload: false) as PlatformFile);
+                  final _attachments = m.dbAttachments
+                      .where((e) => AttachmentsSvc.getContent(e, autoDownload: false) is PlatformFile)
+                      .map((e) => AttachmentsSvc.getContent(e, autoDownload: false) as PlatformFile);
                   for (PlatformFile a in _attachments) {
                     Uint8List? bytes = a.bytes;
                     bytes ??= await File(a.path!).readAsBytes();
@@ -188,14 +188,14 @@ class HeaderProgressIndicator extends StatelessWidget {
             end: chat.sendProgress.value,
           ),
           builder: (context, value, _) => AnimatedOpacity(
-                opacity: value == 1 ? 0 : 1,
-                duration: const Duration(milliseconds: 250),
-                child: LinearProgressIndicator(
-                  value: value,
-                  backgroundColor: Colors.transparent,
-                  minHeight: 3,
-                ),
-              ),
+            opacity: value == 1 ? 0 : 1,
+            duration: const Duration(milliseconds: 250),
+            child: LinearProgressIndicator(
+              value: value,
+              backgroundColor: Colors.transparent,
+              minHeight: 3,
+            ),
+          ),
         ));
   }
 }

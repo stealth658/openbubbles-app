@@ -96,25 +96,29 @@ class ActionHandler extends GetxService {
             }
           }
 
-          await IncomingMsgHandler.handle(IncomingPayload(
-            type: MessageEventType.newMessage,
-            source: MessageSource.socket,
-            chat: Chat.fromMap(payload.data['chats'].first.cast<String, Object>()),
-            message: message,
-            tempGuid: payload.data['tempGuid'],
-          ), front: !useQueue);
+          await IncomingMsgHandler.handle(
+              IncomingPayload(
+                type: MessageEventType.newMessage,
+                source: MessageSource.socket,
+                chat: Chat.fromMap(payload.data['chats'].first.cast<String, Object>()),
+                message: message,
+                tempGuid: payload.data['tempGuid'],
+              ),
+              front: !useQueue);
         }
         return;
       case "updated-message":
         if (!isNullOrEmpty(data)) {
           final payload = ServerPayload.fromJson(data);
-          await IncomingMsgHandler.handle(IncomingPayload(
-            type: MessageEventType.updatedMessage,
-            source: MessageSource.socket,
-            chat: Chat.fromMap(payload.data['chats'].first.cast<String, Object>()),
-            message: Message.fromMap(payload.data),
-            tempGuid: payload.data['tempGuid'],
-          ), front: !useQueue);
+          await IncomingMsgHandler.handle(
+              IncomingPayload(
+                type: MessageEventType.updatedMessage,
+                source: MessageSource.socket,
+                chat: Chat.fromMap(payload.data['chats'].first.cast<String, Object>()),
+                message: Message.fromMap(payload.data),
+                tempGuid: payload.data['tempGuid'],
+              ),
+              front: !useQueue);
         }
         return;
       case "group-name-change":

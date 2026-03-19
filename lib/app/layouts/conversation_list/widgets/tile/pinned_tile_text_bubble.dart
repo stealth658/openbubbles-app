@@ -134,10 +134,9 @@ class PinnedTileTextBubbleState extends CustomState<PinnedTileTextBubble, void, 
       final existingService = Get.isRegistered<MessagesService>(tag: controller.chat.guid)
           ? Get.find<MessagesService>(tag: controller.chat.guid)
           : null;
-      final messageState =
-          existingService != null && lastMessage?.guid != null
-              ? existingService.getMessageStateIfExists(lastMessage!.guid!)
-              : null;
+      final messageState = existingService != null && lastMessage?.guid != null
+          ? existingService.getMessageStateIfExists(lastMessage!.guid!)
+          : null;
       String _subtitle = messageState?.text.value ?? subtitle;
 
       final unread = ChatsSvc.getChatState(controller.chat.guid)?.hasUnreadMessage.value ?? false;

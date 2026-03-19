@@ -88,6 +88,5 @@ class ChatStateScope extends InheritedWidget {
   // ---------------------------------------------------------------------------
 
   @override
-  bool updateShouldNotify(ChatStateScope oldWidget) =>
-      chatState != oldWidget.chatState;
+  bool updateShouldNotify(ChatStateScope oldWidget) => chatState != oldWidget.chatState;
 }

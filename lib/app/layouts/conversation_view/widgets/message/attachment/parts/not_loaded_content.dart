@@ -29,16 +29,14 @@ class NotLoadedContent extends StatelessWidget {
           const SizedBox(height: 5),
           Text(
             attachment.mimeType ?? "",
-            style: context.theme.textTheme.bodyLarge!
-                .copyWith(color: context.theme.colorScheme.properOnSurface),
+            style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.properOnSurface),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 10),
           Text(
             attachment.getFriendlySize(),
-            style: context.theme.textTheme.bodyMedium!
-                .copyWith(color: context.theme.colorScheme.properOnSurface),
+            style: context.theme.textTheme.bodyMedium!.copyWith(color: context.theme.colorScheme.properOnSurface),
             maxLines: 1,
           ),
         ],
@@ -65,16 +63,14 @@ class NotLoadedContent extends StatelessWidget {
           const SizedBox(height: 5),
           Text(
             hasError ? "Send Failed!" : (attachmentState.mimeType.value ?? ""),
-            style: context.theme.textTheme.bodyLarge!
-                .copyWith(color: context.theme.colorScheme.properOnSurface),
+            style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.properOnSurface),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 10),
           Text(
             attachment.getFriendlySize(),
-            style: context.theme.textTheme.bodyMedium!
-                .copyWith(color: context.theme.colorScheme.properOnSurface),
+            style: context.theme.textTheme.bodyMedium!.copyWith(color: context.theme.colorScheme.properOnSurface),
             maxLines: 1,
           ),
         ],

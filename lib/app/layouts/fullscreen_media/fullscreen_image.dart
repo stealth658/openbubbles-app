@@ -37,7 +37,8 @@ class FullscreenImage extends StatefulWidget {
   State<FullscreenImage> createState() => _FullscreenImageState();
 }
 
-class _FullscreenImageState extends State<FullscreenImage> with AutomaticKeepAliveClientMixin, LivePhotoMixin, ThemeHelpers {
+class _FullscreenImageState extends State<FullscreenImage>
+    with AutomaticKeepAliveClientMixin, LivePhotoMixin, ThemeHelpers {
   final PhotoViewController controller = PhotoViewController();
   bool showOverlay = true;
   bool hasError = false;

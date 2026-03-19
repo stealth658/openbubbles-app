@@ -148,14 +148,14 @@ Future<void> retryMessage({
   controller.update();
 
   // Reload attachment bytes if needed
-  for (Attachment? a in message.attachments) {
+  for (Attachment? a in message.dbAttachments) {
     if (a == null) continue;
     await Attachment.deleteAsync(a.guid!);
     a.bytes = await File(a.path).readAsBytes();
   }
 
   // Queue for sending (message already in UI, just updated)
-  if (message.attachments.isNotEmpty) {
+  if (message.dbAttachments.isNotEmpty) {
     OutgoingMsgHandler.queue(OutgoingItem(
       type: QueueType.sendAttachment,
       chat: chat,

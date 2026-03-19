@@ -93,7 +93,7 @@ class MessagesViewState extends State<MessagesView> with MessagesServiceMixin, T
       _messages = List<Message>.from(widget.customService!.struct.messages);
       _messages.sort(Message.sort);
       handlersInitialized = true;
-      
+
       // Trigger a rebuild to display the messages
       setState(() {});
     }
@@ -127,12 +127,12 @@ class MessagesViewState extends State<MessagesView> with MessagesServiceMixin, T
       if (chat.isIMessage && !chat.isGroup) {
         getFocusState();
       }
-      
+
       // Only load if not already initialized from customService
       if (!handlersInitialized) {
         // Get or create the service
         final service = widget.customService ?? MessagesSvc(chat.guid);
-        
+
         // Initialize with handlers
         service.init(
           chat,
@@ -141,15 +141,15 @@ class MessagesViewState extends State<MessagesView> with MessagesServiceMixin, T
           handleDeletedMessage,
           jumpToMessage,
         );
-        
+
         // Load messages if needed (check service flag to avoid redundant loads)
         if (!service.messagesLoaded) {
           await service.loadChunk(0, controller);
         }
-        
+
         _messages = service.struct.messages;
         _messages.sort(Message.sort);
-        
+
         // Initialize the mixin's service reference and create controllers
         initializeMessagesService(
           chat,
@@ -161,7 +161,7 @@ class MessagesViewState extends State<MessagesView> with MessagesServiceMixin, T
           onDeletedMessage: handleDeletedMessage,
           onJumpToMessage: jumpToMessage,
         );
-        
+
         // Recreate the list key to force SliverAnimatedList to rebuild with correct item count
         _listKey = GlobalKey<SliverAnimatedListState>();
         handlersInitialized = true;

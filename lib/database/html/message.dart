@@ -464,8 +464,9 @@ class Message {
   }
 
   bool connectToLower(Message newerMessage) {
-    final thisPartCount =
-        chat.target?.guid != null ? MessagesSvc(chat.target!.guid).getMessageStateIfExists(guid!)?.parts.length ?? 1 : 1;
+    final thisPartCount = chat.target?.guid != null
+        ? MessagesSvc(chat.target!.guid).getMessageStateIfExists(guid!)?.parts.length ?? 1
+        : 1;
     if (newerMessage.isFromMe != isFromMe) return false;
     if (newerMessage.normalizedThreadPart != thisPartCount - 1) return false;
     if (threadOriginatorGuid != null) {

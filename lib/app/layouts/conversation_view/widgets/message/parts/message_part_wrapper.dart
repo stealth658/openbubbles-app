@@ -302,146 +302,150 @@ class _EditModeTextField extends StatelessWidget {
             minHeight: 40,
           ),
           padding: const EdgeInsets.only(right: 10).add(const EdgeInsets.all(5)),
-        child: Focus(
-          focusNode: FocusNode(),
-          onKeyEvent: (_, ev) {
-            if (ev is! KeyDownEvent) {
+          child: Focus(
+            focusNode: FocusNode(),
+            onKeyEvent: (_, ev) {
+              if (ev is! KeyDownEvent) {
+                if (ev.logicalKey == LogicalKeyboardKey.tab) {
+                  return KeyEventResult.skipRemainingHandlers;
+                }
+                return KeyEventResult.ignored;
+              }
+              if (ev.logicalKey == LogicalKeyboardKey.enter && !HardwareKeyboard.instance.isShiftPressed) {
+                onComplete(editStuff.item3.text);
+                return KeyEventResult.handled;
+              }
+              if (ev.logicalKey == LogicalKeyboardKey.escape) {
+                cvController.editing.removeWhere((e2) => e2.item1.guid == message.guid! && e2.item2.part == part.part);
+                if (cvController.editing.isEmpty) {
+                  cvController.lastFocusedNode.requestFocus();
+                } else {
+                  cvController.editing.last.item3.focusNode?.requestFocus();
+                }
+                return KeyEventResult.handled;
+              }
               if (ev.logicalKey == LogicalKeyboardKey.tab) {
                 return KeyEventResult.skipRemainingHandlers;
               }
               return KeyEventResult.ignored;
-            }
-            if (ev.logicalKey == LogicalKeyboardKey.enter && !HardwareKeyboard.instance.isShiftPressed) {
-              onComplete(editStuff.item3.text);
-              return KeyEventResult.handled;
-            }
-            if (ev.logicalKey == LogicalKeyboardKey.escape) {
-              cvController.editing.removeWhere((e2) => e2.item1.guid == message.guid! && e2.item2.part == part.part);
-              if (cvController.editing.isEmpty) {
-                cvController.lastFocusedNode.requestFocus();
-              } else {
-                cvController.editing.last.item3.focusNode?.requestFocus();
-              }
-              return KeyEventResult.handled;
-            }
-            if (ev.logicalKey == LogicalKeyboardKey.tab) {
-              return KeyEventResult.skipRemainingHandlers;
-            }
-            return KeyEventResult.ignored;
-          },
-          child: TextField(
-            textCapitalization: TextCapitalization.sentences,
-            autocorrect: true,
-            controller: editStuff.item3,
-            scrollPhysics: const CustomBouncingScrollPhysics(),
-            style: context.theme.extension<BubbleText>()!.bubbleText.apply(
-                  fontSizeFactor: message.isBigEmoji ? 3 : 1,
+            },
+            child: TextField(
+              textCapitalization: TextCapitalization.sentences,
+              autocorrect: true,
+              controller: editStuff.item3,
+              scrollPhysics: const CustomBouncingScrollPhysics(),
+              style: context.theme.extension<BubbleText>()!.bubbleText.apply(
+                    fontSizeFactor: message.isBigEmoji ? 3 : 1,
+                  ),
+              keyboardType: TextInputType.multiline,
+              maxLines: 14,
+              minLines: 1,
+              autofocus: !(kIsDesktop || kIsWeb),
+              enableIMEPersonalizedLearning: !SettingsSvc.settings.incognitoKeyboard.value,
+              textInputAction: SettingsSvc.settings.sendWithReturn.value && !kIsWeb && !kIsDesktop
+                  ? TextInputAction.send
+                  : TextInputAction.newline,
+              cursorColor: context.theme.extension<BubbleText>()!.bubbleText.color,
+              cursorHeight:
+                  context.theme.extension<BubbleText>()!.bubbleText.fontSize! * 1.25 * (message.isBigEmoji ? 3 : 1),
+              decoration: InputDecoration(
+                contentPadding: EdgeInsets.all(SettingsSvc.settings.skin.value == Skins.iOS ? 10 : 12.5),
+                isDense: true,
+                isCollapsed: true,
+                hintText: "Edited Message",
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: context.theme.colorScheme.outline, width: 1.5),
+                  borderRadius: BorderRadius.circular(20),
                 ),
-            keyboardType: TextInputType.multiline,
-            maxLines: 14,
-            minLines: 1,
-            autofocus: !(kIsDesktop || kIsWeb),
-            enableIMEPersonalizedLearning: !SettingsSvc.settings.incognitoKeyboard.value,
-            textInputAction: SettingsSvc.settings.sendWithReturn.value && !kIsWeb && !kIsDesktop
-                ? TextInputAction.send
-                : TextInputAction.newline,
-            cursorColor: context.theme.extension<BubbleText>()!.bubbleText.color,
-            cursorHeight:
-                context.theme.extension<BubbleText>()!.bubbleText.fontSize! * 1.25 * (message.isBigEmoji ? 3 : 1),
-            decoration: InputDecoration(
-              contentPadding: EdgeInsets.all(SettingsSvc.settings.skin.value == Skins.iOS ? 10 : 12.5),
-              isDense: true,
-              isCollapsed: true,
-              hintText: "Edited Message",
-              enabledBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: context.theme.colorScheme.outline, width: 1.5),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              border: OutlineInputBorder(
-                borderSide: BorderSide(color: context.theme.colorScheme.outline, width: 1.5),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: context.theme.colorScheme.outline, width: 1.5),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              fillColor: Colors.transparent,
-              hintStyle:
-                  context.theme.extension<BubbleText>()!.bubbleText.copyWith(color: context.theme.colorScheme.outline),
-              prefixIconConstraints: const BoxConstraints(minHeight: 0, minWidth: 40),
-              prefixIcon: IconButton(
-                constraints: const BoxConstraints(maxWidth: 27),
-                padding: const EdgeInsets.only(left: 5),
-                visualDensity: VisualDensity.compact,
-                icon: Icon(
-                  CupertinoIcons.xmark_circle_fill,
-                  color: context.theme.colorScheme.outline,
-                  size: 22,
+                border: OutlineInputBorder(
+                  borderSide: BorderSide(color: context.theme.colorScheme.outline, width: 1.5),
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                onPressed: () {
-                  cvController.editing
-                      .removeWhere((e2) => e2.item1.guid == message.guid! && e2.item2.part == part.part);
-                  cvController.lastFocusedNode.requestFocus();
-                },
-                iconSize: 22,
-                style: const ButtonStyle(
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: context.theme.colorScheme.outline, width: 1.5),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                fillColor: Colors.transparent,
+                hintStyle: context.theme
+                    .extension<BubbleText>()!
+                    .bubbleText
+                    .copyWith(color: context.theme.colorScheme.outline),
+                prefixIconConstraints: const BoxConstraints(minHeight: 0, minWidth: 40),
+                prefixIcon: IconButton(
+                  constraints: const BoxConstraints(maxWidth: 27),
+                  padding: const EdgeInsets.only(left: 5),
                   visualDensity: VisualDensity.compact,
+                  icon: Icon(
+                    CupertinoIcons.xmark_circle_fill,
+                    color: context.theme.colorScheme.outline,
+                    size: 22,
+                  ),
+                  onPressed: () {
+                    cvController.editing
+                        .removeWhere((e2) => e2.item1.guid == message.guid! && e2.item2.part == part.part);
+                    cvController.lastFocusedNode.requestFocus();
+                  },
+                  iconSize: 22,
+                  style: const ButtonStyle(
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ),
+                suffixIconConstraints: const BoxConstraints(minHeight: 0, minWidth: 40),
+                suffixIcon: ValueListenableBuilder(
+                  valueListenable: editStuff.item3,
+                  builder: (context, value, _) {
+                    return Padding(
+                      padding: const EdgeInsets.all(3.0),
+                      child: TextButton(
+                        style: TextButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          shape: const CircleBorder(),
+                          padding: const EdgeInsets.all(0),
+                          maximumSize: const Size(27, 27),
+                          minimumSize: const Size(27, 27),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 150),
+                          constraints: const BoxConstraints(minHeight: 27, minWidth: 27),
+                          decoration: BoxDecoration(
+                            shape: SettingsSvc.settings.skin.value == Skins.iOS ? BoxShape.circle : BoxShape.rectangle,
+                            color: SettingsSvc.settings.skin.value != Skins.iOS
+                                ? null
+                                : editStuff.item3.text.isNotEmpty
+                                    ? Colors.white
+                                    : context.theme.colorScheme.outline,
+                          ),
+                          alignment: Alignment.center,
+                          child: Icon(
+                            SettingsSvc.settings.skin.value == Skins.iOS
+                                ? CupertinoIcons.arrow_up
+                                : Icons.send_outlined,
+                            color: SettingsSvc.settings.skin.value != Skins.iOS
+                                ? context.theme.extension<BubbleText>()!.bubbleText.color
+                                : context.theme.colorScheme.bubble(context, chat.isIMessage),
+                            size: SettingsSvc.settings.skin.value == Skins.iOS ? 18 : 26,
+                          ),
+                        ),
+                        onPressed: () {
+                          onComplete(editStuff.item3.text);
+                        },
+                      ),
+                    );
+                  },
                 ),
               ),
-              suffixIconConstraints: const BoxConstraints(minHeight: 0, minWidth: 40),
-              suffixIcon: ValueListenableBuilder(
-                valueListenable: editStuff.item3,
-                builder: (context, value, _) {
-                  return Padding(
-                    padding: const EdgeInsets.all(3.0),
-                    child: TextButton(
-                      style: TextButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        shape: const CircleBorder(),
-                        padding: const EdgeInsets.all(0),
-                        maximumSize: const Size(27, 27),
-                        minimumSize: const Size(27, 27),
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 150),
-                        constraints: const BoxConstraints(minHeight: 27, minWidth: 27),
-                        decoration: BoxDecoration(
-                          shape: SettingsSvc.settings.skin.value == Skins.iOS ? BoxShape.circle : BoxShape.rectangle,
-                          color: SettingsSvc.settings.skin.value != Skins.iOS
-                              ? null
-                              : editStuff.item3.text.isNotEmpty
-                                  ? Colors.white
-                                  : context.theme.colorScheme.outline,
-                        ),
-                        alignment: Alignment.center,
-                        child: Icon(
-                          SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.arrow_up : Icons.send_outlined,
-                          color: SettingsSvc.settings.skin.value != Skins.iOS
-                              ? context.theme.extension<BubbleText>()!.bubbleText.color
-                              : context.theme.colorScheme.bubble(context, chat.isIMessage),
-                          size: SettingsSvc.settings.skin.value == Skins.iOS ? 18 : 26,
-                        ),
-                      ),
-                      onPressed: () {
-                        onComplete(editStuff.item3.text);
-                      },
-                    ),
-                  );
-                },
-              ),
+              onTap: () {
+                HapticFeedback.selectionClick();
+              },
+              onSubmitted: (String value) {
+                onComplete(value);
+              },
             ),
-            onTap: () {
-              HapticFeedback.selectionClick();
-            },
-            onSubmitted: (String value) {
-              onComplete(value);
-            },
           ),
-        ),
-      ), // Container closes
-    ); // Material closes
+        ), // Container closes
+      ); // Material closes
     }); // Obx closes
   }
 }

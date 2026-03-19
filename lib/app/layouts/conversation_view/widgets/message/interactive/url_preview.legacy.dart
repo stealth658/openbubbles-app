@@ -25,7 +25,10 @@ class _LegacyUrlPreviewState extends State<LegacyUrlPreview> with AutomaticKeepA
 
   Future<void> _loadMetadata(Message message) async {
     if (MetadataHelper.mapIsNotEmpty(message.metadata)) {
-      if (mounted) setState(() { metadata = Metadata.fromJson(message.metadata!); });
+      if (mounted)
+        setState(() {
+          metadata = Metadata.fromJson(message.metadata!);
+        });
       return;
     }
     try {
@@ -33,7 +36,10 @@ class _LegacyUrlPreviewState extends State<LegacyUrlPreview> with AutomaticKeepA
       if (MetadataHelper.isNotEmpty(fetched)) {
         message.updateMetadata(fetched);
       }
-      if (mounted) setState(() { metadata = fetched; });
+      if (mounted)
+        setState(() {
+          metadata = fetched;
+        });
     } catch (ex, stack) {
       Logger.error("Failed to fetch metadata!", error: ex, trace: stack);
     }

@@ -498,17 +498,17 @@ class _ChatOptionsState extends State<ChatOptions> with ThemeHelpers {
                             m.dateDelivered != null ? "Delivered: ${buildFullDate(m.dateDelivered!)}, " : "";
                         final sentStr = "Sent: ${buildFullDate(m.dateCreated!)}";
                         if (m.hasAttachments) {
-                          final attachments = m.attachments.where(
-                              (e) => e?.guid != null && ["image/png", "image/jpg", "image/jpeg"].contains(e!.mimeType));
+                          final attachments = m.dbAttachments.where(
+                              (e) => e.guid != null && ["image/png", "image/jpg", "image/jpeg"].contains(e.mimeType));
                           final files = attachments
-                              .map((e) => AttachmentsSvc.getContent(e!, autoDownload: false))
+                              .map((e) => AttachmentsSvc.getContent(e, autoDownload: false))
                               .whereType<PlatformFile>();
                           if (files.isNotEmpty) {
                             for (PlatformFile f in files) {
-                              final a = attachments.firstWhere((e) => e!.transferName == f.name);
+                              final a = attachments.firstWhere((e) => e.transferName == f.name);
                               timestamps.add(readStr + deliveredStr + sentStr);
                               content.add(pw.MemoryImage(await File(f.path!).readAsBytes()));
-                              final aspectRatio = (a!.width ?? 150.0) / (a.height ?? 150.0);
+                              final aspectRatio = (a.width ?? 150.0) / (a.height ?? 150.0);
                               dimensions.add(Size(400, aspectRatio * 400));
                             }
                           }

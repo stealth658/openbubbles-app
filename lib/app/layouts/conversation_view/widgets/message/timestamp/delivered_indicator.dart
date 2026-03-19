@@ -59,9 +59,7 @@ class _DeliveredIndicatorState extends State<DeliveredIndicator> with ThemeHelpe
     // Show "Read" on the most recently read outgoing message.
     // This takes priority over "Delivered" even when a newer message is only delivered.
     if (dateRead != null) {
-      final lastRead = allMessages
-          .where((e) => e.isFromMe! && e.dateRead != null)
-          .toList()..sort(Message.sort);
+      final lastRead = allMessages.where((e) => e.isFromMe! && e.dateRead != null).toList()..sort(Message.sort);
       return lastRead.firstOrNull?.guid == message.guid;
     }
 
@@ -69,7 +67,8 @@ class _DeliveredIndicatorState extends State<DeliveredIndicator> with ThemeHelpe
     if (dateDelivered != null) {
       final lastDelivered = allMessages
           .where((e) => e.isFromMe! && (e.dateDelivered != null || e.dateRead != null))
-          .toList()..sort(Message.sort);
+          .toList()
+        ..sort(Message.sort);
       return lastDelivered.firstOrNull?.guid == message.guid;
     }
 
@@ -112,9 +111,7 @@ class _DeliveredIndicatorState extends State<DeliveredIndicator> with ThemeHelpe
               : null);
     } else if (message.isDelivered) {
       return buildTwoPiece("Delivered", null);
-    } else if (controller.isSending.value &&
-        !(controller.cvController?.chat.isGroup ?? _isGroup) &&
-        !iOS) {
+    } else if (controller.isSending.value && !(controller.cvController?.chat.isGroup ?? _isGroup) && !iOS) {
       return buildTwoPiece("Sending...", "");
     } else if (widget.forceShow) {
       return buildTwoPiece("Sent", buildDate(message.dateCreated));

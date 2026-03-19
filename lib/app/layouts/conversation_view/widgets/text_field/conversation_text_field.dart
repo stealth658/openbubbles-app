@@ -1334,7 +1334,7 @@ class TextFieldComponentState extends State<TextFieldComponent> {
             if (part != null) {
               final FocusNode? node = kIsDesktop || kIsWeb ? FocusNode() : null;
               controller!.editing
-                .add(Tuple3(message, part, SpellCheckTextEditingController(text: part.text!, focusNode: node)));
+                  .add(Tuple3(message, part, SpellCheckTextEditingController(text: part.text!, focusNode: node)));
               node?.requestFocus();
               return KeyEventResult.handled;
             }

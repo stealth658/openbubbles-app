@@ -60,8 +60,7 @@ class DownloadingContent extends StatelessWidget {
                       : isQueued
                           ? "Queued"
                           : (downloadController.attachment.mimeType ?? ""),
-              style: context.theme.textTheme.bodyLarge!
-                  .copyWith(color: context.theme.colorScheme.properOnSurface),
+              style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.properOnSurface),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,

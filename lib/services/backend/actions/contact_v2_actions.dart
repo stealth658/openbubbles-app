@@ -9,7 +9,7 @@ import 'package:bluebubbles/services/network/http_service.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:crypto/crypto.dart';
 import 'package:fast_contacts/fast_contacts.dart' hide Contact, StructuredName;
-import 'package:fast_contacts/fast_contacts.dart'  as fc show Contact;
+import 'package:fast_contacts/fast_contacts.dart' as fc show Contact;
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 
@@ -125,12 +125,12 @@ class ContactV2Actions {
         fastContacts = await FastContacts.getAllContacts(
           fields: List<ContactField>.from(ContactField.values)
             ..removeWhere((e) => [
-              ContactField.company,
-              ContactField.department,
-              ContactField.jobDescription,
-              ContactField.emailLabels,
-              ContactField.phoneLabels
-            ].contains(e)),
+                  ContactField.company,
+                  ContactField.department,
+                  ContactField.jobDescription,
+                  ContactField.emailLabels,
+                  ContactField.phoneLabels
+                ].contains(e)),
         );
         Logger.info('[ContactV2] Fetched ${fastContacts.length} contacts from device');
 

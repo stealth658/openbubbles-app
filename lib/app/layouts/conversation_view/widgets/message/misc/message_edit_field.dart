@@ -27,8 +27,7 @@ class MessageEditField extends StatelessWidget {
   final ConversationViewController cvController;
   final void Function(String text, int part) onComplete;
 
-  MessageState _getController(Message message) =>
-      MessagesSvc(cvController.chat.guid).getOrCreateState(message);
+  MessageState _getController(Message message) => MessagesSvc(cvController.chat.guid).getOrCreateState(message);
 
   void _cancelEdit(Message message) {
     cvController.editing.removeWhere((e2) => e2.item1.guid == message.guid! && e2.item2.part == part);
@@ -76,94 +75,94 @@ class MessageEditField extends StatelessWidget {
     return Obx(() {
       final isTempMessage = controller.isSending.value;
       return Material(
-        color: Colors.transparent,
-        child: Container(
-          decoration: BoxDecoration(
-            color: !message.isBigEmoji
-                ? context.theme.colorScheme.primary.darkenAmount(isTempMessage ? 0.2 : 0)
-                : context.theme.colorScheme.background,
-          ),
-          constraints: BoxConstraints(
-            maxWidth: NavigationSvc.width(context) * 0.75 - 40,
-            minHeight: 40,
-          ),
-          padding: const EdgeInsets.only(right: 10).add(const EdgeInsets.all(5)),
-        child: Focus(
-          focusNode: FocusNode(),
-          onKeyEvent: (_, ev) => _handleKeyEvent(ev, message),
-          child: TextField(
-            textCapitalization: TextCapitalization.sentences,
-            autocorrect: true,
-            controller: editController,
-            focusNode: editController.focusNode,
-            scrollPhysics: const CustomBouncingScrollPhysics(),
-            style: context.theme.extension<BubbleText>()!.bubbleText.apply(
-                  fontSizeFactor: message.isBigEmoji ? 3 : 1,
-                ),
-            keyboardType: TextInputType.multiline,
-            maxLines: 14,
-            minLines: 1,
-            autofocus: !(kIsDesktop || kIsWeb),
-            enableIMEPersonalizedLearning: !SettingsSvc.settings.incognitoKeyboard.value,
-            textInputAction: SettingsSvc.settings.sendWithReturn.value && !kIsWeb && !kIsDesktop
-                ? TextInputAction.send
-                : TextInputAction.newline,
-            cursorColor: context.theme.extension<BubbleText>()!.bubbleText.color,
-            cursorHeight:
-                context.theme.extension<BubbleText>()!.bubbleText.fontSize! * 1.25 * (message.isBigEmoji ? 3 : 1),
-            decoration: InputDecoration(
-              contentPadding: EdgeInsets.all(iOS ? 10 : 12.5),
-              isDense: true,
-              isCollapsed: true,
-              hintText: "Edited Message",
-              enabledBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: context.theme.colorScheme.outline, width: 1.5),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              border: OutlineInputBorder(
-                borderSide: BorderSide(color: context.theme.colorScheme.outline, width: 1.5),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: context.theme.colorScheme.inversePrimary, width: 1.5),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              fillColor: Colors.transparent,
-              hintStyle: context.theme.extension<BubbleText>()!.bubbleText.copyWith(
-                    color: context.theme.colorScheme.inversePrimary,
-                  ),
-              prefixIconConstraints: const BoxConstraints(minHeight: 0, minWidth: 40),
-              prefixIcon: IconButton(
-                constraints: const BoxConstraints(maxWidth: 27),
-                padding: const EdgeInsets.only(left: 5),
-                visualDensity: VisualDensity.compact,
-                icon: Icon(
-                  CupertinoIcons.xmark_circle_fill,
-                  color: context.theme.colorScheme.inversePrimary,
-                  size: 20,
-                ),
-                onPressed: () => _cancelEdit(message),
-              ),
-              suffixIconConstraints: const BoxConstraints(minHeight: 0, minWidth: 40),
-              suffixIcon: IconButton(
-                constraints: const BoxConstraints(maxWidth: 27),
-                padding: const EdgeInsets.only(right: 5),
-                visualDensity: VisualDensity.compact,
-                icon: Icon(
-                  iOS ? CupertinoIcons.checkmark_alt_circle_fill : Icons.check_circle,
-                  color: context.theme.colorScheme.inversePrimary,
-                  size: 20,
-                ),
-                onPressed: () => onComplete(editController.text, part),
-              ),
+          color: Colors.transparent,
+          child: Container(
+            decoration: BoxDecoration(
+              color: !message.isBigEmoji
+                  ? context.theme.colorScheme.primary.darkenAmount(isTempMessage ? 0.2 : 0)
+                  : context.theme.colorScheme.background,
             ),
-            onSubmitted: (value) {
-              if (!SettingsSvc.settings.sendWithReturn.value || kIsWeb || kIsDesktop) return;
-              onComplete(value, part);
-            },
-          ),
-        ), // Container closes
-      )); // Material closes
+            constraints: BoxConstraints(
+              maxWidth: NavigationSvc.width(context) * 0.75 - 40,
+              minHeight: 40,
+            ),
+            padding: const EdgeInsets.only(right: 10).add(const EdgeInsets.all(5)),
+            child: Focus(
+              focusNode: FocusNode(),
+              onKeyEvent: (_, ev) => _handleKeyEvent(ev, message),
+              child: TextField(
+                textCapitalization: TextCapitalization.sentences,
+                autocorrect: true,
+                controller: editController,
+                focusNode: editController.focusNode,
+                scrollPhysics: const CustomBouncingScrollPhysics(),
+                style: context.theme.extension<BubbleText>()!.bubbleText.apply(
+                      fontSizeFactor: message.isBigEmoji ? 3 : 1,
+                    ),
+                keyboardType: TextInputType.multiline,
+                maxLines: 14,
+                minLines: 1,
+                autofocus: !(kIsDesktop || kIsWeb),
+                enableIMEPersonalizedLearning: !SettingsSvc.settings.incognitoKeyboard.value,
+                textInputAction: SettingsSvc.settings.sendWithReturn.value && !kIsWeb && !kIsDesktop
+                    ? TextInputAction.send
+                    : TextInputAction.newline,
+                cursorColor: context.theme.extension<BubbleText>()!.bubbleText.color,
+                cursorHeight:
+                    context.theme.extension<BubbleText>()!.bubbleText.fontSize! * 1.25 * (message.isBigEmoji ? 3 : 1),
+                decoration: InputDecoration(
+                  contentPadding: EdgeInsets.all(iOS ? 10 : 12.5),
+                  isDense: true,
+                  isCollapsed: true,
+                  hintText: "Edited Message",
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: context.theme.colorScheme.outline, width: 1.5),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  border: OutlineInputBorder(
+                    borderSide: BorderSide(color: context.theme.colorScheme.outline, width: 1.5),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: context.theme.colorScheme.inversePrimary, width: 1.5),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  fillColor: Colors.transparent,
+                  hintStyle: context.theme.extension<BubbleText>()!.bubbleText.copyWith(
+                        color: context.theme.colorScheme.inversePrimary,
+                      ),
+                  prefixIconConstraints: const BoxConstraints(minHeight: 0, minWidth: 40),
+                  prefixIcon: IconButton(
+                    constraints: const BoxConstraints(maxWidth: 27),
+                    padding: const EdgeInsets.only(left: 5),
+                    visualDensity: VisualDensity.compact,
+                    icon: Icon(
+                      CupertinoIcons.xmark_circle_fill,
+                      color: context.theme.colorScheme.inversePrimary,
+                      size: 20,
+                    ),
+                    onPressed: () => _cancelEdit(message),
+                  ),
+                  suffixIconConstraints: const BoxConstraints(minHeight: 0, minWidth: 40),
+                  suffixIcon: IconButton(
+                    constraints: const BoxConstraints(maxWidth: 27),
+                    padding: const EdgeInsets.only(right: 5),
+                    visualDensity: VisualDensity.compact,
+                    icon: Icon(
+                      iOS ? CupertinoIcons.checkmark_alt_circle_fill : Icons.check_circle,
+                      color: context.theme.colorScheme.inversePrimary,
+                      size: 20,
+                    ),
+                    onPressed: () => onComplete(editController.text, part),
+                  ),
+                ),
+                onSubmitted: (value) {
+                  if (!SettingsSvc.settings.sendWithReturn.value || kIsWeb || kIsDesktop) return;
+                  onComplete(value, part);
+                },
+              ),
+            ), // Container closes
+          )); // Material closes
     }); // Obx closes
   }
 }

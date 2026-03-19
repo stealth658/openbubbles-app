@@ -63,10 +63,16 @@ class HandleSelectorViewState extends State<HandleSelectorView> with ThemeHelper
     });
 
     if (loadedAllHandles.isCompleted) {
-      if (mounted) setState(() { filteredHandles = List<Handle>.from(handles); });
+      if (mounted)
+        setState(() {
+          filteredHandles = List<Handle>.from(handles);
+        });
     } else {
       loadedAllHandles.future.then((_) {
-        if (mounted) setState(() { filteredHandles = List<Handle>.from(handles); });
+        if (mounted)
+          setState(() {
+            filteredHandles = List<Handle>.from(handles);
+          });
       });
     }
 

@@ -129,6 +129,74 @@ class MessagesService extends GetxController {
         state.onInit();
         messageStates[message.guid!] = state;
       }
+      // Re-apply uploading state for any attachment that is still actively
+      // being sent.  When MessagesService is torn down (user navigates away)
+      // and then re-created (user re-enters), AttachmentState is constructed
+      // fresh from the persisted data.  Because prepAttachment sets
+      // isDownloaded=true before the upload completes, the constructor
+      // defaults those attachments to transferState=complete/isSending=false,
+      // hiding the in-progress send overlay.  This call corrects that.
+      _restoreInFlightAttachmentStates(message);
+    }
+  }
+
+  /// For each temp-GUID attachment on [message] that is actively tracked in
+  /// [OutgoingMsgHandler.attachmentProgress], transitions the [AttachmentState]
+  /// to [AttachmentTransferState.uploading] and populates
+  /// [AttachmentState.uploadPreviewFile] from the local file — so re-entering
+  /// a chat mid-upload immediately shows the correct progress UI instead of
+  /// a brief [NotLoadedContent] flash.
+  ///
+  /// Only called for messages whose GUID starts with `temp`; non-temp messages
+  /// and stale orphaned temp records (upload progress not in tracker) are
+  /// left unchanged so existing behaviour is undisturbed.
+  void _restoreInFlightAttachmentStates(Message message) {
+    if (kIsWeb) return;
+    final msgGuid = message.guid;
+    if (msgGuid == null) return;
+
+    Logger.test('Restoring in-flight attachment states for message $msgGuid', tag: 'AttachmentState');
+    Logger.test('  -> message has ${message.dbAttachments.length} attachments', tag: 'AttachmentState');
+
+    for (final attachment in message.dbAttachments) {
+      if (attachment.guid == null || !(attachment.guid!.startsWith('temp'))) continue;
+      // Only restore if the upload is actively tracked in the singleton handler.
+      // This intentionally skips stale temp records from crashed/killed sessions.
+      final inFlight = OutgoingMsgHandler.attachmentProgress.firstWhereOrNull((e) => e.item1 == attachment.guid);
+
+      Logger.test(
+          '  -> attachment ${attachment.guid} is ${inFlight == null ? 'not ' : ''}actively tracked in OutgoingMsgHandler',
+          tag: 'AttachmentState');
+      if (inFlight == null) continue;
+
+      final msgState = messageStates[msgGuid];
+      Logger.test('  -> found MessageState for message $msgGuid: ${msgState != null}', tag: 'AttachmentState');
+      if (msgState == null) continue;
+
+      Logger.test('  -> restoring state for attachment ${attachment.guid} (msg $msgGuid)', tag: 'AttachmentState');
+      final attState = msgState.getOrCreateAttachmentState(attachment.guid!, attachment: attachment);
+
+      if (attState.transferState.value != AttachmentTransferState.uploading) {
+        attState.updateTransferStateInternal(AttachmentTransferState.uploading);
+      }
+
+      // Populate the preview file so UploadProgressContent can render the
+      // image behind the progress overlay immediately on re-entry.
+      if (attState.uploadPreviewFile.value == null && attachment.transferName != null) {
+        final pathName = attachment.path;
+        if (File(pathName).existsSync()) {
+          attState.updateUploadPreviewFileInternal(PlatformFile(
+            name: attachment.transferName!,
+            path: pathName,
+            size: attachment.totalBytes ?? 0,
+          ));
+        }
+      }
+
+      Logger.debug(
+        'Restored in-flight upload state for attachment ${attachment.guid} (msg $msgGuid)',
+        tag: 'AttachmentState',
+      );
     }
   }
 
@@ -418,7 +486,9 @@ class MessagesService extends GetxController {
     if (ts == AttachmentTransferState.downloading || ts == AttachmentTransferState.queued) return;
     if (ts == AttachmentTransferState.complete &&
         attState.resolvedFile.value != null &&
-        attState.guid.value == attachment.guid) return;
+        attState.guid.value == attachment.guid) {
+      return;
+    }
 
     final content = AttachmentsSvc.getContent(attachment, onComplete: (PlatformFile file) {
       _onAttachmentDownloadComplete(messageGuid, attachment.guid!, file);
@@ -688,7 +758,7 @@ class MessagesService extends GetxController {
     }
     toUpdate ??= struct.getMessage(updated.guid!);
     if (toUpdate == null) return;
-    
+
     updated = updated.mergeWith(toUpdate);
     struct.removeMessage(oldGuid ?? updated.guid!);
     struct.removeAttachments(toUpdate.attachments.map((e) => e!.guid!));
@@ -700,7 +770,7 @@ class MessagesService extends GetxController {
       messageState = messageStates[oldGuid];
     }
     messageState ??= messageStates[updated.guid!];
-    
+
     if (messageState != null) {
       messageState.updateFromMessage(updated);
       Logger.debug("Updated MessageState for message ${updated.guid}", tag: "MessageState");
@@ -843,10 +913,10 @@ class MessagesService extends GetxController {
                 messageState.associatedMessages.clear();
                 messageState.associatedMessages.addAll(message.associatedMessages);
                 messageState.hasReactions.value = message.associatedMessages.isNotEmpty;
-                
+
                 Logger.debug(
-                  "[loadChunk] Synced ${message.associatedMessages.length} reactions into MessageState for ${message.guid}",
-                  tag: "MessageReactivity");
+                    "[loadChunk] Synced ${message.associatedMessages.length} reactions into MessageState for ${message.guid}",
+                    tag: "MessageReactivity");
               }
             }
           }

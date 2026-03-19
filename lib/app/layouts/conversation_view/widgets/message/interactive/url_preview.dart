@@ -83,8 +83,8 @@ class _UrlPreviewState extends State<UrlPreview> with AutomaticKeepAliveClientMi
       } else if (data.imageMetadata?.url == null && data.iconMetadata?.url == null) {
         final message = context.findAncestorWidgetOfExactType<MessageStateScope>()?.messageState.message;
         if (message == null) return;
-        final attachment = message.attachments
-            .firstWhereOrNull((e) => e?.transferName?.contains("pluginPayloadAttachment") ?? false);
+        final attachment =
+            message.dbAttachments.firstWhereOrNull((e) => e.transferName?.contains("pluginPayloadAttachment") ?? false);
         if (attachment != null) {
           content = AttachmentsSvc.getContent(attachment, autoDownload: true, onComplete: (file) {
             if (mounted) {

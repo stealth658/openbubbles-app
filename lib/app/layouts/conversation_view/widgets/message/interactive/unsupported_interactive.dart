@@ -20,7 +20,8 @@ class UnsupportedInteractive extends StatefulWidget {
   State<UnsupportedInteractive> createState() => _UnsupportedInteractiveState();
 }
 
-class _UnsupportedInteractiveState extends State<UnsupportedInteractive> with AutomaticKeepAliveClientMixin, ThemeHelpers {
+class _UnsupportedInteractiveState extends State<UnsupportedInteractive>
+    with AutomaticKeepAliveClientMixin, ThemeHelpers {
   iMessageAppData? get data => widget.payloadData;
   dynamic get file => File(content.path!);
 
@@ -60,10 +61,13 @@ class _UnsupportedInteractiveState extends State<UnsupportedInteractive> with Au
     if (content == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        final attachment = MessageStateScope.messageOf(context).attachments.firstOrNull;
+        final attachment = MessageStateScope.messageOf(context).dbAttachments.firstOrNull;
         if (attachment != null) {
           content = AttachmentsSvc.getContent(attachment, autoDownload: true, onComplete: (file) {
-            if (mounted) setState(() { content = file; });
+            if (mounted)
+              setState(() {
+                content = file;
+              });
           });
           if (content != null && mounted) setState(() {});
         }

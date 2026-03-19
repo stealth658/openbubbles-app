@@ -42,10 +42,8 @@ class OtherFileRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final name = file?.name ?? attachment.transferName ?? "";
-    final typeLabel =
-        (mime(name)?.split("/").lastOrNull ?? mime(name) ?? "file").toUpperCase();
-    final sizeLabel =
-        file != null ? file!.size.toDouble().getFriendlySize() : attachment.getFriendlySize();
+    final typeLabel = (mime(name)?.split("/").lastOrNull ?? mime(name) ?? "file").toUpperCase();
+    final sizeLabel = file != null ? file!.size.toDouble().getFriendlySize() : attachment.getFriendlySize();
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 15),
       child: Row(
