@@ -14,9 +14,7 @@ class CustomAvatarColorPanelController extends StatefulController {
   @override
   void onReady() {
     super.onReady();
-    updateObx(() {
-      getCustomHandles();
-    });
+    getCustomHandles();
   }
 
   Future<void> getCustomHandles({force = false}) async {

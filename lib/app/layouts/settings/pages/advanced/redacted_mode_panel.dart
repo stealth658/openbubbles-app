@@ -6,9 +6,9 @@ import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/attach
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/misc/message_sender.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/misc/tail_clipper.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/app/state/message_state.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -20,7 +20,7 @@ class RedactedModePanel extends StatefulWidget {
   State<StatefulWidget> createState() => _RedactedModePanelState();
 }
 
-class _RedactedModePanelState extends OptimizedState<RedactedModePanel> {
+class _RedactedModePanelState extends State<RedactedModePanel> with ThemeHelpers {
   final message = Message(
     guid: "redacted-mode-demo",
     dateDelivered: DateTime.now().toLocal(),
@@ -113,9 +113,9 @@ class _RedactedModePanelState extends OptimizedState<RedactedModePanel> {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Padding(
-                                    padding: const EdgeInsets.only(left: 5.0),
-                                    child: MessageSender(olderMessage: null, message: message),
+                                  const Padding(
+                                    padding: EdgeInsets.only(left: 5.0),
+                                    child: MessageSender(olderMessage: null),
                                   ),
                                   ClipPath(
                                     clipper: TailClipper(
@@ -162,7 +162,7 @@ class _RedactedModePanelState extends OptimizedState<RedactedModePanel> {
                                     child: Container(
                                       constraints: BoxConstraints(
                                         maxWidth:
-                                            NavigationSvc.width(context) * MessageWidgetController.maxBubbleSizeFactor -
+                                            NavigationSvc.width(context) * MessageState.maxBubbleSizeFactor -
                                                 40,
                                         minHeight: 40,
                                       ),

@@ -5,8 +5,6 @@ import 'dart:ui';
 import 'package:bluebubbles/app/components/custom_text_editing_controllers.dart';
 import 'package:bluebubbles/app/layouts/chat_creator/chat_creator.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/dialogs/timeframe_picker.dart';
-import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/attachment/attachment_holder.dart';
-import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/interactive/embedded_media.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/popup/details_menu_action.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/popup/reaction_picker_clipper.dart';
 import 'package:bluebubbles/app/components/avatars/contact_avatar_widget.dart';
@@ -18,7 +16,8 @@ import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/pages/conversation_view.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/reply/reply_thread_popup.dart';
 import 'package:bluebubbles/app/wrappers/titlebar_wrapper.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
+import 'package:bluebubbles/app/state/message_state.dart';
+import 'package:bluebubbles/app/state/message_state_scope.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/utils/share.dart';
@@ -45,7 +44,7 @@ class MessagePopup extends StatefulWidget {
   final Size size;
   final Widget child;
   final MessagePart part;
-  final MessageWidgetController controller;
+  final MessageState controller;
   final ConversationViewController cvController;
   final Tuple3<bool, bool, bool> serverDetails;
   final Function([String? type, int? part]) sendTapback;
@@ -68,7 +67,7 @@ class MessagePopup extends StatefulWidget {
   State<StatefulWidget> createState() => _MessagePopupState();
 }
 
-class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerProviderStateMixin {
+class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderStateMixin, ThemeHelpers {
   late final AnimationController controller = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 150),
@@ -101,8 +100,8 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
   Message get message => widget.controller.message;
 
   bool get isSent {
-    final isSending = widget.controller.messageState?.isSending.value ?? false;
-    final hasError = widget.controller.messageState?.hasError.value ?? false;
+    final isSending = widget.controller.isSending.value;
+    final hasError = widget.controller.hasError.value;
     return !isSending && !hasError;
   }
 
@@ -136,7 +135,7 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
       numberToShow = 5;
     }
 
-    updateObx(() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       currentlySelectedReaction = null;
       reactions = getUniqueReactionMessages(message.associatedMessages
           .where((e) =>
@@ -250,7 +249,11 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
                           curve: Curves.easeOutBack,
                           duration: const Duration(milliseconds: 500),
                           child: ConstrainedBox(
-                              constraints: BoxConstraints(maxWidth: widget.size.width), child: widget.child),
+                              constraints: BoxConstraints(maxWidth: widget.size.width),
+                              child: MessageStateScope(
+                                messageState: widget.controller,
+                                child: widget.child,
+                              )),
                           builder: (context, size, child) {
                             return Transform.scale(
                               scale: size.clamp(1, double.infinity),
@@ -715,7 +718,7 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
   void showThread() {
     popDetails();
     if (message.threadOriginatorGuid != null) {
-      final mwc = service.getControllerIfExists(message.threadOriginatorGuid!);
+      final mwc = service.getMessageStateIfExists(message.threadOriginatorGuid!);
       if (mwc == null) return showSnackbar("Error", "Failed to find thread!");
       showReplyThread(context, mwc.message, mwc.parts[message.normalizedThreadPart], service, cvController);
     } else {
@@ -765,7 +768,7 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
   void redownload() {
     if (isEmbeddedMedia) {
       popDetails();
-      service.getControllerIfExists(message.guid!)?.updateWidgets<EmbeddedMedia>(null);
+      service.getMessageStateIfExists(message.guid!)?.embeddedMediaRefreshKey.value++;
     } else {
       // Image caching is now handled by Flutter's image cache automatically
       for (Attachment? element in part.attachments) {
@@ -774,7 +777,7 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
         }
       }
       popDetails();
-      service.getControllerIfExists(message.guid!)?.updateWidgets<AttachmentHolder>(null);
+      service.getMessageStateIfExists(message.guid!)?.attachmentRefreshKey.value++;
     }
   }
 
@@ -996,7 +999,7 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
         ),
       if (SettingsSvc.isMinVenturaSync &&
           message.isFromMe! &&
-          !(widget.controller.messageState?.isSending.value ?? false) &&
+          !widget.controller.isSending.value &&
           SettingsSvc.serverDetailsSync().item4 >= 148)
         DetailsMenuActionWidget(
           onTap: unsend,
@@ -1004,7 +1007,7 @@ class _MessagePopupState extends OptimizedState<MessagePopup> with SingleTickerP
         ),
       if (SettingsSvc.isMinVenturaSync &&
           message.isFromMe! &&
-          !(widget.controller.messageState?.isSending.value ?? false) &&
+          !widget.controller.isSending.value &&
           SettingsSvc.serverDetailsSync().item4 >= 148 &&
           (part.text?.isNotEmpty ?? false))
         DetailsMenuActionWidget(

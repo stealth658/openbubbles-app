@@ -6,7 +6,6 @@ import 'package:bluebubbles/services/backend/sync/chat_sync_manager.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/utils/share.dart';
 import 'package:disable_battery_optimization/disable_battery_optimization.dart';
@@ -24,7 +23,7 @@ class TroubleshootPanel extends StatefulWidget {
   State<StatefulWidget> createState() => _TroubleshootPanelState();
 }
 
-class _TroubleshootPanelState extends OptimizedState<TroubleshootPanel> {
+class _TroubleshootPanelState extends State<TroubleshootPanel> with ThemeHelpers {
   final RxnBool resyncingHandles = RxnBool();
   final RxnBool resyncingChats = RxnBool();
   final RxInt logFileCount = 1.obs;

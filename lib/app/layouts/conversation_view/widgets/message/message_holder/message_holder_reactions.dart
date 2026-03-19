@@ -1,10 +1,9 @@
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/attachment/sticker_holder.dart';
+import 'package:bluebubbles/app/state/message_state_scope.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/reaction/reaction_holder.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/helpers/ui/reaction_helpers.dart';
 import 'package:bluebubbles/services/ui/chat/conversation_view_controller.dart';
-import 'package:bluebubbles/services/ui/message/message_widget_controller.dart';
-import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -13,16 +12,12 @@ import 'package:get/get.dart';
 class ReactionObserver extends StatelessWidget {
   const ReactionObserver({
     super.key,
-    required this.controller,
-    required this.message,
     required this.messageParts,
     required this.part,
     required this.chatGuid,
     required this.reactionsForPart,
   });
 
-  final MessageWidgetController controller;
-  final Message message;
   final List<MessagePart> messageParts;
   final MessagePart part;
   final String chatGuid;
@@ -30,26 +25,21 @@ class ReactionObserver extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final state = MessageStateScope.of(context);
     return Obx(() {
       // Directly observe MessageState for all reactive data
-      final isFromMe = controller.messageState?.isFromMe.value ?? message.isFromMe!;
-      final associatedMessages = controller.messageState?.associatedMessages ?? message.associatedMessages;
+      final isFromMe = state.isFromMe.value;
+      final associatedMessages = state.associatedMessages;
       final reactions = associatedMessages
           .where((e) => ReactionTypes.toList().contains(e.associatedMessageType?.replaceAll("-", "")))
           .toList();
       final reactionList = messageParts.length == 1 ? reactions : reactionsForPart(part.part, reactions).toList();
-    
-      Logger.debug(
-          "[MessageHolder] Rebuilding ReactionHolder for ${message.guid} (isFromMe: $isFromMe) with ${reactionList.length} reactions",
-          tag: "MessageReactivity");
-    
       return Positioned(
         top: -14,
         left: isFromMe ? -20 : null,
         right: isFromMe ? null : -20,
         child: ReactionHolder(
           reactions: reactionList,
-          message: message,
         ),
       );
     });
@@ -90,13 +80,11 @@ class StickerObserver extends StatelessWidget {
 class ReactionSpacing extends StatelessWidget {
   const ReactionSpacing({
     super.key,
-    required this.controller,
     required this.messageParts,
     required this.part,
     required this.reactionsForPart,
   });
 
-  final MessageWidgetController controller;
   final List<MessagePart> messageParts;
   final MessagePart part;
   final Iterable<Message> Function(int, List<Message>) reactionsForPart;
@@ -104,8 +92,9 @@ class ReactionSpacing extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
+      final state = MessageStateScope.of(context);
       // Directly observe MessageState associatedMessages for reactivity
-      final associatedMessages = controller.messageState?.associatedMessages ?? [];
+      final associatedMessages = state.associatedMessages;
       final reactions = associatedMessages
           .where((e) => ReactionTypes.toList().contains(e.associatedMessageType?.replaceAll("-", "")))
           .cast<Message>()

@@ -1,4 +1,3 @@
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -17,7 +16,7 @@ class ChatSyncDialog extends StatefulWidget {
   State<ChatSyncDialog> createState() => _ChatSyncDialogState();
 }
 
-class _ChatSyncDialogState extends OptimizedState<ChatSyncDialog> {
+class _ChatSyncDialogState extends State<ChatSyncDialog> {
   String? errorCode;
   bool finished = false;
   String? message;

@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:bluebubbles/app/layouts/conversation_details/conversation_details.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/header/header_widgets.dart';
 import 'package:bluebubbles/app/components/avatars/contact_avatar_group_widget.dart';
+import 'package:bluebubbles/app/state/chat_state_scope.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
@@ -158,26 +159,7 @@ class CupertinoHeader extends StatelessWidget implements PreferredSizeWidget {
                 bottom: 0,
                 left: 0,
                 right: 0,
-                child: Obx(() => TweenAnimationBuilder<double>(
-                    duration: controller.chat.sendProgress.value == 0
-                        ? Duration.zero
-                        : controller.chat.sendProgress.value == 1
-                            ? const Duration(milliseconds: 250)
-                            : const Duration(seconds: 10),
-                    curve: controller.chat.sendProgress.value == 1 ? Curves.easeInOut : Curves.easeOutExpo,
-                    tween: Tween<double>(
-                      begin: 0,
-                      end: controller.chat.sendProgress.value,
-                    ),
-                    builder: (context, value, _) => AnimatedOpacity(
-                          opacity: value == 1 ? 0 : 1,
-                          duration: const Duration(milliseconds: 250),
-                          child: LinearProgressIndicator(
-                            value: value,
-                            backgroundColor: Colors.transparent,
-                            minHeight: 3,
-                          ),
-                        ))),
+                child: const HeaderProgressIndicator(),
               ),
             ],
           )),
@@ -199,7 +181,7 @@ class _UnreadIcon extends StatefulWidget {
   State<StatefulWidget> createState() => _UnreadIconState();
 }
 
-class _UnreadIconState extends OptimizedState<_UnreadIcon> {
+class _UnreadIconState extends State<_UnreadIcon> {
   late final StreamSubscription<Query<Chat>> sub;
   bool hasStream = false;
 
@@ -282,15 +264,15 @@ class _ChatIconAndTitleState extends CustomState<_ChatIconAndTitle, void, Conver
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      // Get title from ChatState - it handles all title logic including redacted mode
-      final chatState = ChatsSvc.getChatState(controller.chat.guid);
-      final _title = chatState?.title.value ?? controller.chat.getTitle();
+      // Get chat state from scope - handles title logic including redacted mode
+      final chatState = ChatStateScope.of(context);
+      final _title = chatState.title.value ?? controller.chat.getTitle();
 
       final children = [
         IgnorePointer(
           ignoring: true,
           child: ContactAvatarGroupWidget(
-            chat: controller.chat,
+            chat: chatState.chat,
             size: 54,
           ),
         ),

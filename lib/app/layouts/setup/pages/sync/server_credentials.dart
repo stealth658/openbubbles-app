@@ -27,7 +27,7 @@ class ServerCredentials extends StatefulWidget {
   State<ServerCredentials> createState() => _ServerCredentialsState();
 }
 
-class _ServerCredentialsState extends OptimizedState<ServerCredentials> {
+class _ServerCredentialsState extends State<ServerCredentials> with ThemeHelpers {
   final TextEditingController urlController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final controller = Get.find<SetupViewController>();

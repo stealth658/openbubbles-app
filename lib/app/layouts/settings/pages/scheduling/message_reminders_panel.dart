@@ -1,7 +1,6 @@
 import 'package:bluebubbles/app/layouts/conversation_details/dialogs/timeframe_picker.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -15,7 +14,7 @@ class MessageRemindersPanel extends StatefulWidget {
   State<MessageRemindersPanel> createState() => _MessageRemindersPanelState();
 }
 
-class _MessageRemindersPanelState extends OptimizedState<MessageRemindersPanel> {
+class _MessageRemindersPanelState extends State<MessageRemindersPanel> with ThemeHelpers {
   List<PendingNotificationRequest> scheduled = [];
   bool? fetching = true;
 

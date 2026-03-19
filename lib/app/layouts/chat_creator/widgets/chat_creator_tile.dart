@@ -1,6 +1,5 @@
 import 'package:bluebubbles/app/components/avatars/contact_avatar_group_widget.dart';
 import 'package:bluebubbles/app/components/avatars/contact_avatar_widget.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -28,10 +27,10 @@ class ChatCreatorTile extends StatefulWidget {
   final bool showTrailing;
 
   @override
-  OptimizedState createState() => _ChatCreatorTileState();
+  State<StatefulWidget> createState() => _ChatCreatorTileState();
 }
 
-class _ChatCreatorTileState extends OptimizedState<ChatCreatorTile> {
+class _ChatCreatorTileState extends State<ChatCreatorTile> with ThemeHelpers {
   String? _formattedPhone;
   bool _isFormatting = false;
 

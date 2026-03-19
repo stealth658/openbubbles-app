@@ -17,7 +17,6 @@ import 'package:bluebubbles/app/layouts/startup/failure_to_start.dart';
 import 'package:bluebubbles/app/layouts/setup/setup_view.dart';
 import 'package:bluebubbles/app/layouts/startup/splash_screen.dart';
 import 'package:bluebubbles/app/wrappers/titlebar_wrapper.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:collection/collection.dart';
@@ -430,7 +429,7 @@ class Home extends StatefulWidget {
   State<Home> createState() => _HomeState();
 }
 
-class _HomeState extends OptimizedState<Home> with WidgetsBindingObserver, TrayListener {
+class _HomeState extends State<Home> with WidgetsBindingObserver, TrayListener {
   final ReceivePort port = ReceivePort();
   bool serverCompatible = true;
   bool fullyLoaded = false;

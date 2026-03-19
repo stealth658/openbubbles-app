@@ -2,7 +2,6 @@ import 'package:bluebubbles/helpers/backend/settings_helpers.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/setup/dialogs/connecting_dialog.dart';
 import 'package:bluebubbles/app/layouts/setup/dialogs/failed_to_scan_dialog.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:dio/dio.dart';
@@ -20,7 +19,7 @@ class ManualEntryDialog extends StatefulWidget {
   State<ManualEntryDialog> createState() => _ManualEntryDialogState();
 }
 
-class _ManualEntryDialogState extends OptimizedState<ManualEntryDialog> {
+class _ManualEntryDialogState extends State<ManualEntryDialog> {
   final connecting = false.obs;
   final TextEditingController urlController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();

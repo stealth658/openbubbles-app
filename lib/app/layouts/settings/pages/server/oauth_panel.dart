@@ -1,5 +1,4 @@
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/backend/settings_helpers.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -15,7 +14,7 @@ class OauthPanel extends StatefulWidget {
   State<OauthPanel> createState() => _OauthPanelState();
 }
 
-class _OauthPanelState extends OptimizedState<OauthPanel> {
+class _OauthPanelState extends State<OauthPanel> with ThemeHelpers {
   _OauthPanelState();
 
   final error = "".obs;

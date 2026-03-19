@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:audio_waveforms/audio_waveforms.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 // it does actually export (Web only)
 // ignore: undefined_hidden_name
@@ -26,11 +25,10 @@ class AudioPlayer extends StatefulWidget {
   final ConversationViewController? controller;
 
   @override
-  OptimizedState createState() => kIsDesktop ? _DesktopAudioPlayerState() : _AudioPlayerState();
+  State<StatefulWidget> createState() => kIsDesktop ? _DesktopAudioPlayerState() : _AudioPlayerState();
 }
 
-class _AudioPlayerState extends OptimizedState<AudioPlayer>
-    with AutomaticKeepAliveClientMixin, SingleTickerProviderStateMixin {
+class _AudioPlayerState extends State<AudioPlayer> with AutomaticKeepAliveClientMixin, SingleTickerProviderStateMixin {
   Attachment? get attachment => widget.attachment;
 
   PlatformFile get file => widget.file;
@@ -47,9 +45,7 @@ class _AudioPlayerState extends OptimizedState<AudioPlayer>
   void initState() {
     super.initState();
     if (attachment != null) controller = cvController?.audioPlayers[attachment!.guid];
-    updateObx(() {
-      initBytes();
-    });
+    initBytes();
   }
 
   @override
@@ -148,8 +144,7 @@ class _AudioPlayerState extends OptimizedState<AudioPlayer>
   bool get wantKeepAlive => true;
 }
 
-class _DesktopAudioPlayerState extends OptimizedState<AudioPlayer>
-    with AutomaticKeepAliveClientMixin, SingleTickerProviderStateMixin {
+class _DesktopAudioPlayerState extends State<AudioPlayer> with AutomaticKeepAliveClientMixin, SingleTickerProviderStateMixin {
   Attachment? get attachment => widget.attachment;
 
   PlatformFile get file => widget.file;
@@ -167,9 +162,7 @@ class _DesktopAudioPlayerState extends OptimizedState<AudioPlayer>
   void initState() {
     super.initState();
     if (attachment != null) controller = cvController?.audioPlayersDesktop[attachment!.guid];
-    updateObx(() {
-      initBytes();
-    });
+    initBytes();
   }
 
   @override

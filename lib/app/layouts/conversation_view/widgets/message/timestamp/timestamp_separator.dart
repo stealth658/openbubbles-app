@@ -1,3 +1,4 @@
+import 'package:bluebubbles/app/state/message_state_scope.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -9,17 +10,15 @@ class TimestampSeparator extends StatelessWidget {
   const TimestampSeparator({
     super.key,
     required this.olderMessage,
-    required this.message,
   });
   final Message? olderMessage;
-  final Message message;
 
   bool withinTimeThreshold(Message first, Message? second) {
     if (second == null) return false;
     return second.dateCreated!.difference(first.dateCreated!).inMinutes.abs() > 30;
   }
 
-  Tuple2<String?, String>? buildTimeStamp() {
+  Tuple2<String?, String>? buildTimeStamp(Message message) {
     if (SettingsSvc.settings.skin.value == Skins.Samsung &&
         message.dateCreated?.day != olderMessage?.dateCreated?.day) {
       return Tuple2(null, buildSeparatorDateSamsung(message.dateCreated!));
@@ -37,7 +36,8 @@ class TimestampSeparator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final timestamp = buildTimeStamp();
+    final message = MessageStateScope.messageOf(context);
+    final timestamp = buildTimeStamp(message);
 
     return timestamp != null
         ? Padding(

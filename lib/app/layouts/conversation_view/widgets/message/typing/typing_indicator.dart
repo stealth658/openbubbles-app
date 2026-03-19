@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/typing/typing_clipper.dart';
 import 'package:bluebubbles/app/components/avatars/contact_avatar_widget.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
+import 'package:bluebubbles/app/state/chat_state_scope.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/material.dart';
@@ -24,13 +24,13 @@ class TypingIndicator extends StatefulWidget {
   State<TypingIndicator> createState() => _TypingIndicatorState();
 }
 
-class _TypingIndicatorState extends OptimizedState<TypingIndicator> {
+class _TypingIndicatorState extends State<TypingIndicator> with ThemeHelpers {
   @override
   Widget build(BuildContext context) {
     return AnimatedSize(
       duration: const Duration(milliseconds: 200),
       child: (widget.controller?.showTypingIndicator.value ?? widget.visible)!
-          ? (iOS || ChatsSvc.activeChat == null
+          ? (iOS || ChatStateScope.maybeChatOf(context) == null
               ? ClipPath(
                   clipper: const TypingClipper(),
                   child: Container(
@@ -62,7 +62,7 @@ class _TypingIndicatorState extends OptimizedState<TypingIndicator> {
                     Padding(
                       padding: const EdgeInsets.only(left: 10, right: 10),
                       child: ContactAvatarWidget(
-                        handle: ChatsSvc.activeChat!.chat.handles.first,
+                        handle: ChatStateScope.chatOf(context).handles.first,
                         size: 25,
                         fontSize: context.theme.textTheme.bodyMedium!.fontSize!,
                         borderThickness: 0.1,
@@ -86,7 +86,7 @@ class AnimatedDot extends StatefulWidget {
   State<AnimatedDot> createState() => _AnimatedDotState();
 }
 
-class _AnimatedDotState extends OptimizedState<AnimatedDot> with SingleTickerProviderStateMixin {
+class _AnimatedDotState extends State<AnimatedDot> with SingleTickerProviderStateMixin, ThemeHelpers {
   late final AnimationController _controller;
   late final Animation animation;
 

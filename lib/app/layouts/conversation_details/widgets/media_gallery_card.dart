@@ -7,7 +7,6 @@ import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/fullscreen_media/fullscreen_holder.dart';
 import 'package:bluebubbles/app/components/circle_progress_bar.dart';
 import 'package:bluebubbles/app/components/avatars/contact_avatar_widget.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
@@ -26,7 +25,7 @@ class MediaGalleryCard extends StatefulWidget {
   State<MediaGalleryCard> createState() => _MediaGalleryCardState();
 }
 
-class _MediaGalleryCardState extends OptimizedState<MediaGalleryCard> with AutomaticKeepAliveClientMixin {
+class _MediaGalleryCardState extends State<MediaGalleryCard> with AutomaticKeepAliveClientMixin, ThemeHelpers {
   Uint8List? videoPreview;
   Duration? duration;
   late dynamic content;

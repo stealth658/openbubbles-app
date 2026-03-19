@@ -1,3 +1,5 @@
+import 'package:bluebubbles/app/state/message_state.dart';
+import 'package:bluebubbles/app/state/message_state_scope.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/interactive/apple_pay.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/interactive/embedded_media.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/interactive/game_pigeon.dart';
@@ -6,7 +8,6 @@ import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/intera
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/interactive/url_preview.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/interactive/url_preview.legacy.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/misc/tail_clipper.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart' hide PayloadType;
 import 'package:bluebubbles/services/services.dart';
@@ -14,29 +15,31 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class InteractiveHolder extends CustomStateful<MessageWidgetController> {
+class InteractiveHolder extends StatefulWidget {
   const InteractiveHolder({
     super.key,
-    required super.parentController,
     required this.message,
   });
 
   final MessagePart message;
 
   @override
-  CustomState createState() => _InteractiveHolderState();
+  State<StatefulWidget> createState() => _InteractiveHolderState();
 }
 
-class _InteractiveHolderState extends CustomState<InteractiveHolder, void, MessageWidgetController>
-    with AutomaticKeepAliveClientMixin {
+class _InteractiveHolderState extends State<InteractiveHolder>
+    with AutomaticKeepAliveClientMixin, ThemeHelpers {
+  late MessageState _ms;
+  MessageState get controller => _ms;
+
   MessagePart get part => widget.message;
   Message get message => controller.message;
   PayloadData? get payloadData => message.payloadData;
 
   @override
   void initState() {
-    forceDelete = false;
     super.initState();
+    _ms = MessageStateScope.readStateOnce(context);
   }
 
   @override
@@ -100,7 +103,7 @@ class _InteractiveHolderState extends CustomState<InteractiveHolder, void, Messa
                         child: SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideAttachments.value
                             ? const Padding(padding: EdgeInsets.all(15), child: Text("Interactive Message"))
                             : Obx(() {
-                                final isTempMessage = controller.messageState?.isSending.value ?? false;
+                                final isTempMessage = controller.isSending.value;
                                 return Opacity(
                                     opacity: isTempMessage ? 0.5 : 1,
                                     child: Builder(builder: (context) {
@@ -111,31 +114,24 @@ class _InteractiveHolderState extends CustomState<InteractiveHolder, void, Messa
                                             if (SettingsSvc.settings.enablePrivateAPI.value &&
                                                 SettingsSvc.isMinBigSurSync &&
                                                 SettingsSvc.serverDetailsSync().item4 >= 226) {
-                                              return EmbeddedMedia(
-                                                message: message,
-                                                parentController: controller,
-                                              );
+                                              return EmbeddedMedia();
                                             } else {
-                                              return UnsupportedInteractive(
-                                                message: message,
+                                              return const UnsupportedInteractive(
                                                 payloadData: null,
                                               );
                                             }
                                           default:
-                                            return UnsupportedInteractive(
-                                              message: message,
+                                            return const UnsupportedInteractive(
                                               payloadData: null,
                                             );
                                         }
                                       } else if (payloadData?.type == PayloadType.url || message.isLegacyUrlPreview) {
                                         if (payloadData == null) {
-                                          return LegacyUrlPreview(
-                                            message: message,
-                                          );
-                                        }
-                                        return UrlPreview(
-                                          data: payloadData!.urlData!.first,
-                                          message: message,
+                                          return const LegacyUrlPreview(
+                                        );
+                                      }
+                                      return UrlPreview(
+                                        data: payloadData!.urlData!.first,
                                         );
                                       } else {
                                         final data = payloadData!.appData!.first;
@@ -148,21 +144,20 @@ class _InteractiveHolderState extends CustomState<InteractiveHolder, void, Messa
                                           case "Google Maps":
                                             return SupportedInteractive(
                                               data: data,
-                                              message: message,
                                             );
                                           case "GamePigeon":
                                             return GamePigeon(
                                               data: data,
-                                              message: message,
+
                                             );
                                           case "Apple Pay":
                                             return ApplePay(
                                               data: data,
-                                              message: message,
+
                                             );
                                           default:
                                             return UnsupportedInteractive(
-                                              message: message,
+
                                               payloadData: data,
                                             );
                                         }

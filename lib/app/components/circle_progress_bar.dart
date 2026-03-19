@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:flutter/widgets.dart';
 
 /// Draws a circular animated progress bar.
@@ -26,7 +25,7 @@ class CircleProgressBar extends StatefulWidget {
   }
 }
 
-class CircleProgressBarState extends OptimizedState<CircleProgressBar> with SingleTickerProviderStateMixin {
+class CircleProgressBarState extends State<CircleProgressBar> with SingleTickerProviderStateMixin {
   // Used in tweens where a backgroundColor isn't given.
   static const TRANSPARENT = Color(0x00000000);
   late AnimationController _controller;

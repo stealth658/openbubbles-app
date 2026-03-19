@@ -1,6 +1,5 @@
 import 'package:bluebubbles/app/components/circle_progress_bar.dart';
 import 'package:bluebubbles/app/wrappers/bb_annotated_region.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/fullscreen_media/fullscreen_image.dart';
@@ -35,7 +34,7 @@ class FullscreenMediaHolder extends StatefulWidget {
   FullscreenMediaHolderState createState() => FullscreenMediaHolderState();
 }
 
-class FullscreenMediaHolderState extends OptimizedState<FullscreenMediaHolder> {
+class FullscreenMediaHolderState extends State<FullscreenMediaHolder> with ThemeHelpers {
   final focusNode = FocusNode();
   late final PageController controller;
   late final messageService = widget.currentChat == null ? null : MessagesSvc(widget.currentChat!.guid);

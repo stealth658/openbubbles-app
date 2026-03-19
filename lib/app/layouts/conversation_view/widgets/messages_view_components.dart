@@ -1,5 +1,6 @@
 import 'package:bluebubbles/app/components/avatars/contact_avatar_widget.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/typing/typing_indicator.dart';
+import 'package:bluebubbles/app/state/chat_state_scope.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -15,14 +16,13 @@ class TypingIndicatorRow extends StatelessWidget {
   const TypingIndicatorRow({
     super.key,
     required this.controller,
-    required this.chat,
   });
 
   final ConversationViewController controller;
-  final Chat chat;
 
   @override
   Widget build(BuildContext context) {
+    final chat = ChatStateScope.chatOf(context);
     return Obx(() => Row(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
@@ -53,16 +53,15 @@ class NotificationsSilencedBanner extends StatelessWidget {
   const NotificationsSilencedBanner({
     super.key,
     required this.controller,
-    required this.chat,
     required this.latestMessage,
   });
 
   final ConversationViewController controller;
-  final Chat chat;
   final Message? latestMessage;
 
   @override
   Widget build(BuildContext context) {
+    final chat = ChatStateScope.chatOf(context);
     const moonIcon = CupertinoIcons.moon_fill;
 
     return AnimatedSize(

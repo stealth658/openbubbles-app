@@ -151,7 +151,7 @@ class Database {
 
       Logger.info("Opening ObjectBox store from path: ${objectBoxDirectory.path}");
       store = await openStore(directory: objectBoxDirectory.path);
-    } catch (e, s) {
+    } catch (e) {
       if (Platform.isLinux) {
         Logger.debug("Another instance is probably running. Sending foreground signal");
         final instanceFile = File(join(FilesystemSvc.appDocDir.path, '.instance'));

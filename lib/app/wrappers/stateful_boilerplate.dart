@@ -1,35 +1,26 @@
-import 'dart:async';
-
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:get/get.dart';
 
-/// [GetxController] with support for optimized state management
+/// [GetxController] with support for widget update callbacks
 class StatefulController extends GetxController {
   final Map<Object, List<Function>> updateWidgetFunctions = {};
-  late final void Function(VoidCallback) updateObx;
 
   void updateWidgets<T>(Object? arg) {
     updateWidgetFunctions[T]?.forEach((e) => e.call(arg));
   }
 }
 
-/// [StatefulWidget] with support for optimized state management and a built-in
-/// [GetxController]
+/// [StatefulWidget] with a built-in [GetxController]
 abstract class CustomStateful<T extends StatefulController> extends StatefulWidget {
   const CustomStateful({super.key, required this.parentController});
 
   final T parentController;
 }
 
-/// [State] with support for optimized state management using a custom
-/// [GetxController]
+/// [State] with controller lifecycle management and a built-in [GetxController]
 abstract class CustomState<T extends CustomStateful, R, S extends StatefulController> extends State<T>
     with ThemeHelpers {
-  // completer to check if the page animation is complete
-  final animCompleted = Completer<void>();
-
   @protected
 
   /// Convenience getter for the [GetxController]
@@ -51,36 +42,8 @@ abstract class CustomState<T extends CustomStateful, R, S extends StatefulContro
   @mustCallSuper
   void initState() {
     super.initState();
-
-    // set functions in the custom [GetxController]
-    // this if clause allows us to only set the late final variable
-    // when we are sure the controller is a fresh one
-    if (widget.parentController.updateWidgetFunctions.isEmpty) {
-      widget.parentController.updateObx = updateObx;
-    }
     widget.parentController.updateWidgetFunctions[T] ??= [];
     widget.parentController.updateWidgetFunctions[T]!.add(updateWidget);
-
-    // complete the completer when we know the page animation has finished
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      if (!mounted) return;
-      if (ModalRoute.of(context)?.animation != null) {
-        if (ModalRoute.of(context)?.animation?.status != AnimationStatus.completed) {
-          late final AnimationStatusListener listener;
-          listener = (AnimationStatus status) {
-            if (status == AnimationStatus.completed) {
-              animCompleted.complete();
-              ModalRoute.of(context)?.animation?.removeStatusListener(listener);
-            }
-          };
-          ModalRoute.of(context)?.animation?.addStatusListener(listener);
-        } else {
-          animCompleted.complete();
-        }
-      } else {
-        animCompleted.complete();
-      }
-    });
   }
 
   @override
@@ -106,112 +69,5 @@ abstract class CustomState<T extends CustomStateful, R, S extends StatefulContro
   /// ```
   void updateWidget(R newVal) {
     setState(() {});
-  }
-
-  @override
-
-  /// Optimized [setState] function
-  void setState(VoidCallback fn) {
-    _optimizedUpdate(() {
-      super.setState(fn);
-    });
-  }
-
-  /// Optimized method to perform an update for any [Rx] variable
-  void updateObx(VoidCallback fn) {
-    _optimizedUpdate(fn);
-  }
-
-  /// Internal function that runs the optimized widget updating code
-  void _optimizedUpdate(VoidCallback fn) {
-    if (!mounted) return;
-
-    void checkFrame() {
-      // if there's a current frame,
-      if (SchedulerBinding.instance.schedulerPhase != SchedulerPhase.idle) {
-        // wait for the end of that frame.
-        SchedulerBinding.instance.endOfFrame.then((_) {
-          if (mounted) fn.call();
-        });
-      } else {
-        if (mounted) fn.call();
-      }
-    }
-
-    // make sure the page animation is completed before trying to update the state
-    if (animCompleted.isCompleted) {
-      checkFrame();
-    } else {
-      animCompleted.future.then((_) {
-        checkFrame();
-      });
-    }
-  }
-}
-
-/// Used for cases where we don't need a specific [GetxController], the main
-/// benefit of this class is to provide an optimized [setState] function to
-/// minimize lag and jank.
-abstract class OptimizedState<T extends StatefulWidget> extends State<T> with ThemeHelpers {
-  final animCompleted = Completer<void>();
-
-  @override
-  @mustCallSuper
-  void initState() {
-    super.initState();
-
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      if (mounted && ModalRoute.of(context)?.animation != null) {
-        if (ModalRoute.of(context)?.animation?.status != AnimationStatus.completed) {
-          late final AnimationStatusListener listener;
-          listener = (AnimationStatus status) {
-            if (status == AnimationStatus.completed) {
-              animCompleted.complete();
-              ModalRoute.of(context)?.animation?.removeStatusListener(listener);
-            }
-          };
-          ModalRoute.of(context)?.animation?.addStatusListener(listener);
-        } else {
-          animCompleted.complete();
-        }
-      } else {
-        animCompleted.complete();
-      }
-    });
-  }
-
-  @override
-  void setState(VoidCallback fn) {
-    _optimizedUpdate(() {
-      super.setState(fn);
-    });
-  }
-
-  void updateObx(VoidCallback fn) {
-    _optimizedUpdate(fn);
-  }
-
-  void _optimizedUpdate(VoidCallback fn) {
-    if (!mounted) return;
-
-    void checkFrame() {
-      // if there's a current frame,
-      if (SchedulerBinding.instance.schedulerPhase != SchedulerPhase.idle) {
-        // wait for the end of that frame.
-        SchedulerBinding.instance.endOfFrame.then((_) {
-          if (mounted) fn.call();
-        });
-      } else {
-        if (mounted) fn.call();
-      }
-    }
-
-    if (animCompleted.isCompleted) {
-      checkFrame();
-    } else {
-      animCompleted.future.then((_) {
-        checkFrame();
-      });
-    }
   }
 }

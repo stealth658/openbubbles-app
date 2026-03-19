@@ -5,7 +5,6 @@ import 'package:bluebubbles/app/layouts/conversation_list/widgets/conversation_l
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/footer/samsung_footer.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/header/samsung_header.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/tile/list_item.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/app/wrappers/scrollbar_wrapper.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -24,7 +23,7 @@ class SamsungConversationList extends StatefulWidget {
   State<SamsungConversationList> createState() => _SamsungConversationListState();
 }
 
-class _SamsungConversationListState extends OptimizedState<SamsungConversationList> {
+class _SamsungConversationListState extends State<SamsungConversationList> with ThemeHelpers {
   bool get showArchived => widget.parentController.showArchivedChats;
   bool get showUnknown => widget.parentController.showUnknownSenders;
   Color get backgroundColor =>

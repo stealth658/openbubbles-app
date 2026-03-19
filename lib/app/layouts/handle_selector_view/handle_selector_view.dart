@@ -4,7 +4,6 @@ import 'package:bluebubbles/app/components/avatars/contact_avatar_widget.dart';
 import 'package:bluebubbles/app/wrappers/bb_scaffold.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -29,7 +28,7 @@ class HandleSelectorView extends StatefulWidget {
   HandleSelectorViewState createState() => HandleSelectorViewState();
 }
 
-class HandleSelectorViewState extends OptimizedState<HandleSelectorView> {
+class HandleSelectorViewState extends State<HandleSelectorView> with ThemeHelpers {
   final TextEditingController searchController = TextEditingController();
   final FocusNode searchNode = FocusNode();
   final ScrollController addressScrollController = ScrollController();
@@ -63,19 +62,13 @@ class HandleSelectorViewState extends OptimizedState<HandleSelectorView> {
       });
     });
 
-    updateObx(() {
-      if (loadedAllHandles.isCompleted) {
-        setState(() {
-          filteredHandles = List<Handle>.from(handles);
-        });
-      } else {
-        loadedAllHandles.future.then((_) {
-          setState(() {
-            filteredHandles = List<Handle>.from(handles);
-          });
-        });
-      }
-    });
+    if (loadedAllHandles.isCompleted) {
+      if (mounted) setState(() { filteredHandles = List<Handle>.from(handles); });
+    } else {
+      loadedAllHandles.future.then((_) {
+        if (mounted) setState(() { filteredHandles = List<Handle>.from(handles); });
+      });
+    }
 
     loadHandles();
   }

@@ -2,7 +2,6 @@ import 'package:bluebubbles/helpers/types/classes/language_codes.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -20,7 +19,7 @@ class MiscPanel extends StatefulWidget {
   State<StatefulWidget> createState() => _MiscPanelState();
 }
 
-class _MiscPanelState extends OptimizedState<MiscPanel> {
+class _MiscPanelState extends State<MiscPanel> with ThemeHelpers {
   @override
   Widget build(BuildContext context) {
     return SettingsScaffold(

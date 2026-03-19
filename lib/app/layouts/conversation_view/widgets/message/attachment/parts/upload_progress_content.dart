@@ -2,46 +2,38 @@ import 'package:bluebubbles/app/components/circle_progress_bar.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/attachment/image_viewer.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/attachment/other_file.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/attachment/video_player.dart';
-import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/app/state/attachment_state_scope.dart';
+import 'package:bluebubbles/app/state/message_state_scope.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/services.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 /// Outgoing attachment: shows a preview (if available) at reduced opacity
-/// with an upload progress overlay.  [previewFile] is optional — when `null`
-/// a generic icon is shown instead.  The Obx only rebuilds the overlay on
+/// with an upload progress overlay.  The Obx only rebuilds the overlay on
 /// progress ticks.
 class UploadProgressContent extends StatelessWidget {
   const UploadProgressContent({
     super.key,
-    required this.previewFile,
-    required this.progress,
-    required this.attachment,
-    required this.message,
     required this.isiOS,
     required this.cvController,
   });
 
-  /// The local file used for the image/video preview behind the progress
-  /// overlay.  May be `null` when the file is not yet accessible (e.g., a
-  /// cloud-picked file that hasn't been cached locally).
-  final PlatformFile? previewFile;
-  final RxnDouble progress;
-  final Attachment attachment;
-  final Message message;
   final bool isiOS;
   final ConversationViewController? cvController;
 
   Widget _buildPreview(BuildContext context) {
+    final attachmentState = AttachmentStateScope.of(context);
+    final attachment = attachmentState.attachment;
+    final previewFile = attachmentState.uploadPreviewFile.value;
+    final isFromMe = MessageStateScope.of(context).isFromMe.value;
     if (previewFile != null && attachment.mimeStart == "image" && !SettingsSvc.settings.highPerfMode.value) {
       return Container(
         color: context.theme.colorScheme.properSurface,
         child: ImageViewer(
-          file: previewFile!,
+          file: previewFile,
           attachment: attachment,
-          isFromMe: message.isFromMe!,
+          isFromMe: isFromMe,
           controller: cvController,
         ),
       );
@@ -52,9 +44,9 @@ class UploadProgressContent extends StatelessWidget {
         !isSnap) {
       return VideoPlayer(
         attachment: attachment,
-        file: previewFile!,
+        file: previewFile,
         controller: cvController,
-        isFromMe: message.isFromMe!,
+        isFromMe: isFromMe,
       );
     }
     return Container(
@@ -65,6 +57,9 @@ class UploadProgressContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final attachmentState = AttachmentStateScope.of(context);
+    final previewFile = attachmentState.uploadPreviewFile.value;
+    final messageError = MessageStateScope.of(context).error.value;
     return Stack(
       children: [
         Opacity(opacity: previewFile != null ? 0.8 : 1.0, child: _buildPreview(context)),
@@ -75,12 +70,12 @@ class UploadProgressContent extends StatelessWidget {
           ),
         ),
         // Top-left: circular cancel / waiting chip — styled like the Live photo tag.
-        if (message.error == 0)
+        if (messageError == 0)
           Positioned(
             top: 8,
             left: 8,
             child: Obx(() {
-              final isSending = (progress.value ?? 0.0) < 1.0;
+              final isSending = (attachmentState.uploadProgress.value ?? 0.0) < 1.0;
               return GestureDetector(
                 onTap: isSending
                     ? () => OutgoingMsgHandler.latestCancelToken?.cancel("User cancelled send.")
@@ -121,7 +116,7 @@ class UploadProgressContent extends StatelessWidget {
                   width: 14,
                   height: 14,
                   child: CircleProgressBar(
-                    value: progress.value ?? 0.0,
+                    value: attachmentState.uploadProgress.value ?? 0.0,
                     backgroundColor: Colors.white.withValues(alpha: 0.35),
                     foregroundColor: Theme.of(context).colorScheme.primary,
                     strokeWidth: 2.0,

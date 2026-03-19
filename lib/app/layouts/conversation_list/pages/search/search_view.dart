@@ -6,7 +6,6 @@ import 'package:bluebubbles/app/layouts/handle_selector_view/handle_selector_vie
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/pages/conversation_view.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -44,7 +43,7 @@ class SearchView extends StatefulWidget {
   SearchViewState createState() => SearchViewState();
 }
 
-class SearchViewState extends OptimizedState<SearchView> {
+class SearchViewState extends State<SearchView> with ThemeHelpers {
   final TextEditingController textEditingController = TextEditingController();
   final SlidingUpPanelController panelController = SlidingUpPanelController();
   final FocusNode focusNode = FocusNode();

@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:bluebubbles/app/state/message_state.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -132,7 +133,7 @@ Future<void> retryMessage({
   required Message message,
   required Chat chat,
   required MessagesService service,
-  required MessageWidgetController controller,
+  required MessageState controller,
 }) async {
   // Save old GUID for cleanup
   final oldGuid = message.guid!;

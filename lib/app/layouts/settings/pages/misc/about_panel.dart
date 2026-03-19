@@ -5,7 +5,6 @@ import 'package:bluebubbles/app/layouts/settings/widgets/content/next_button.dar
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -24,7 +23,7 @@ class AboutPanel extends StatefulWidget {
   State<StatefulWidget> createState() => _AboutPanelState();
 }
 
-class _AboutPanelState extends OptimizedState<AboutPanel> {
+class _AboutPanelState extends State<AboutPanel> with ThemeHelpers {
   @override
   Widget build(BuildContext context) {
     return SettingsScaffold(

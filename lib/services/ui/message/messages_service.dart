@@ -49,11 +49,6 @@ class MessagesService extends GetxController {
   /// Provides O(1) lookups and granular observable fields
   final Map<String, MessageState> messageStates = {};
 
-  /// Map of message widget controllers
-  /// Key is message GUID, value is MessageWidgetController
-  /// Managed locally per conversation for better lifecycle control
-  final Map<String, MessageWidgetController> _controllers = {};
-
   /// Listeners for redacted mode settings to update all MessageStates
   StreamSubscription? _redactedModeListener;
   StreamSubscription? _hideMessageContentListener;
@@ -80,7 +75,22 @@ class MessagesService extends GetxController {
       if (message == null) {
         throw Exception('Cannot create MessageState: Message $guid not found in struct');
       }
-      messageStates[guid] = MessageState(message);
+      final state = MessageState(message);
+      state.onInit();
+      messageStates[guid] = state;
+      Logger.debug("Created MessageState for message $guid", tag: "MessageState");
+    }
+    return messageStates[guid]!;
+  }
+
+  /// Get or create a [MessageState] for [message], initialising it if new.
+  /// This is the widget-facing entry point (replaces getOrCreateController).
+  MessageState getOrCreateState(Message message) {
+    final guid = message.guid!;
+    if (!messageStates.containsKey(guid)) {
+      final state = MessageState(message);
+      state.onInit();
+      messageStates[guid] = state;
       Logger.debug("Created MessageState for message $guid", tag: "MessageState");
     }
     return messageStates[guid]!;
@@ -115,7 +125,9 @@ class MessagesService extends GetxController {
   void _ensureMessageStates(List<Message> messages) {
     for (final message in messages) {
       if (message.guid != null && !messageStates.containsKey(message.guid)) {
-        messageStates[message.guid!] = MessageState(message);
+        final state = MessageState(message);
+        state.onInit();
+        messageStates[message.guid!] = state;
       }
     }
   }
@@ -146,7 +158,9 @@ class MessagesService extends GetxController {
 
     // Create MessageState if it doesn't exist yet.
     if (!messageStates.containsKey(message.guid!)) {
-      messageStates[message.guid!] = MessageState(message);
+      final state = MessageState(message);
+      state.onInit();
+      messageStates[message.guid!] = state;
       Logger.debug("Created MessageState for outgoing message ${message.guid}", tag: "AttachmentState");
     }
 
@@ -488,49 +502,6 @@ class MessagesService extends GetxController {
 
   // ========== End Attachment Download Orchestration ==========
 
-  // ========== MessageWidgetController Management ==========
-
-  /// Get or create a MessageWidgetController for a specific message
-  /// Controllers are scoped to this MessagesService instance (one per conversation)
-  MessageWidgetController getOrCreateController(Message message) {
-    final guid = message.guid!;
-    if (!_controllers.containsKey(guid)) {
-      final controller = MessageWidgetController(message);
-      controller.onInit(); // Initialize the controller
-      controller.onReady(); // Ensure full GetX lifecycle initialization
-      _controllers[guid] = controller;
-      Logger.debug("Created MessageWidgetController for message $guid", tag: "MWC");
-    }
-    return _controllers[guid]!;
-  }
-
-  /// Get an existing controller if it exists, null otherwise
-  MessageWidgetController? getControllerIfExists(String guid) {
-    return _controllers[guid];
-  }
-
-  /// Dispose a specific controller by GUID
-  void disposeController(String guid) {
-    final controller = _controllers.remove(guid);
-    if (controller != null) {
-      controller.onClose(); // Properly clean up GetX lifecycle
-      controller.dispose();
-      Logger.debug("Disposed MessageWidgetController for message $guid", tag: "MWC");
-    }
-  }
-
-  /// Dispose all controllers (called when conversation is closed)
-  void disposeAllControllers() {
-    for (final controller in _controllers.values) {
-      controller.onClose(); // Properly clean up GetX lifecycle
-      controller.dispose();
-    }
-    _controllers.clear();
-    Logger.debug("Disposed all ${_controllers.length} MessageWidgetControllers", tag: "MWC");
-  }
-
-  // ========== End MessageWidgetController Management ==========
-
   void init(Chat c, Function(Message) onNewMessage, Function(Message, {String? oldGuid}) onUpdatedMessage,
       Function(Message) onDeletedMessage, Function(String) jumpToMessageFunc) {
     chat = c;
@@ -612,12 +583,11 @@ class MessagesService extends GetxController {
       _hideMessageContentListener?.cancel();
     }
     _init = false;
-    disposeAllControllers(); // Clean up all controllers
-    // Dispose all attachment state workers before clearing the map
+    // Dispose all message states (attachment workers + web subscription)
     for (final messageState in messageStates.values) {
-      messageState.dispose();
+      messageState.onClose();
     }
-    messageStates.clear(); // Clean up message states
+    messageStates.clear();
     super.onClose();
   }
 
@@ -655,7 +625,9 @@ class MessagesService extends GetxController {
     // watch fired), update the metadata rather than overwriting transfer states.
     if (message.guid != null) {
       if (!messageStates.containsKey(message.guid!)) {
-        messageStates[message.guid!] = MessageState(message);
+        final state = MessageState(message);
+        state.onInit();
+        messageStates[message.guid!] = state;
         Logger.debug("Created MessageState for new message ${message.guid}", tag: "MessageState");
       } else {
         messageStates[message.guid!]!.updateFromMessage(message);
@@ -741,19 +713,15 @@ class MessagesService extends GetxController {
           Logger.debug("Moved MessageState from $oldGuid to ${updated.guid}", tag: "MessageState");
         }
 
-        // Notify the existing controller so it updates controller.message and
-        // triggers a MessageHolder rebuild with the new MessagePart objects.
-        // We use notifyGuidSwap instead of updateMessage to avoid re-entering
-        // this method (updateMessage → ctrl.updateMessage → MessagesService.updateMessage).
-        final ctrl = _controllers.remove(oldGuid);
-        if (ctrl != null && updated.guid != null) {
-          _controllers[updated.guid!] = ctrl;
-          ctrl.notifyGuidSwap(updated);
-        }
+        // Notify the state to merge the new message reference and rebuild parts.
+        // notifyGuidSwap avoids re-entering this method.
+        messageState.notifyGuidSwap(updated);
       }
     } else if (updated.guid != null) {
       // State doesn't exist, create it
-      messageStates[updated.guid!] = MessageState(updated);
+      final state = MessageState(updated);
+      state.onInit();
+      messageStates[updated.guid!] = state;
       Logger.debug("Created MessageState for updated message ${updated.guid}", tag: "MessageState");
     }
 
@@ -769,7 +737,7 @@ class MessagesService extends GetxController {
     messageUpdateTrigger.remove(toRemove.guid!);
 
     // Dispose attachment states and remove MessageState
-    messageStates.remove(toRemove.guid!)?.dispose();
+    messageStates.remove(toRemove.guid!)?.onClose();
     Logger.debug("Removed MessageState for message ${toRemove.guid}", tag: "MessageState");
 
     removeFunc.call(toRemove);
@@ -921,8 +889,8 @@ class MessagesService extends GetxController {
       // if not, fetch local and add to data
       final threadOriginator = Message.findOne(guid: guid);
       if (threadOriginator != null) {
-        // create the controller so it can be rendered in a reply bubble
-        final c = getOrCreateController(threadOriginator);
+        // create the state so it can be rendered in a reply bubble
+        final c = getOrCreateState(threadOriginator);
         c.cvController = controller;
         struct.addThreadOriginator(threadOriginator);
       }
@@ -933,7 +901,7 @@ class MessagesService extends GetxController {
     for (Message m in struct.messages.where((e) => e.itemType == 5 && e.subject != null)) {
       final otherMessage = struct.getMessage(m.subject!);
       if (otherMessage != null) {
-        final otherMwc = getControllerIfExists(m.subject!) ?? getOrCreateController(otherMessage);
+        final otherMwc = getMessageStateIfExists(m.subject!) ?? getOrCreateState(otherMessage);
         otherMwc.audioWasKept.value = m.dateCreated;
       }
     }

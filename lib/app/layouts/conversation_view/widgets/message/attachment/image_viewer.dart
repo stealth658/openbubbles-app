@@ -2,7 +2,6 @@ import 'dart:math';
 import 'dart:io';
 
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/attachment/live_photo_mixin.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -27,10 +26,10 @@ class ImageViewer extends StatefulWidget {
   final ConversationViewController? controller;
 
   @override
-  OptimizedState createState() => _ImageViewerState();
+  State<StatefulWidget> createState() => _ImageViewerState();
 }
 
-class _ImageViewerState extends OptimizedState<ImageViewer> with AutomaticKeepAliveClientMixin, LivePhotoMixin {
+class _ImageViewerState extends State<ImageViewer> with AutomaticKeepAliveClientMixin, LivePhotoMixin, ThemeHelpers {
   Attachment get attachment => widget.attachment;
   PlatformFile get file => widget.file;
   ConversationViewController? get controller => widget.controller;

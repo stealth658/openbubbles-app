@@ -1,23 +1,21 @@
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
+import 'package:bluebubbles/app/state/message_state_scope.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class ApplePay extends StatefulWidget {
   final iMessageAppData data;
-  final Message message;
 
   const ApplePay({
     super.key,
     required this.data,
-    required this.message,
   });
 
   @override
-  OptimizedState createState() => _ApplePayState();
+  State<StatefulWidget> createState() => _ApplePayState();
 }
 
-class _ApplePayState extends OptimizedState<ApplePay> with AutomaticKeepAliveClientMixin {
+class _ApplePayState extends State<ApplePay> with AutomaticKeepAliveClientMixin {
   iMessageAppData get data => widget.data;
 
   @override
@@ -26,6 +24,7 @@ class _ApplePayState extends OptimizedState<ApplePay> with AutomaticKeepAliveCli
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final message = MessageStateScope.messageOf(context);
     const icon = Icons.apple;
     final str = data.userInfo?.subcaption;
     return Stack(
@@ -33,7 +32,7 @@ class _ApplePayState extends OptimizedState<ApplePay> with AutomaticKeepAliveCli
       children: [
         Positioned(
           top: 5,
-          left: widget.message.isFromMe! ? 5 : 10,
+          left: message.isFromMe! ? 5 : 10,
           child: Row(
             children: [
               Text(

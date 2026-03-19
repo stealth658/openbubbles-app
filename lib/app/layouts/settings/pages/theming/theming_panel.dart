@@ -29,11 +29,11 @@ class ThemingPanelController extends StatefulController {
   void onReady() async {
     super.onReady();
     if (!kIsWeb && !kIsDesktop) {
-      updateObx(() async {
+      () async {
         modes.value = await FlutterDisplayMode.supported;
         refreshRates.value = modes.map((e) => e.refreshRate.round()).toSet().toList();
         currentMode.value = (await SettingsSvc.settings.getDisplayMode()).refreshRate.round();
-      });
+      }();
     }
   }
 }

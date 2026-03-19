@@ -3,7 +3,6 @@ import 'package:bluebubbles/app/layouts/settings/pages/message_view/message_opti
 import 'package:bluebubbles/app/layouts/settings/widgets/content/next_button.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/database/models.dart' hide PlatformFile;
 import 'package:bluebubbles/services/services.dart';
 import 'package:file_picker/file_picker.dart';
@@ -21,7 +20,7 @@ class ConversationPanel extends StatefulWidget {
   State<StatefulWidget> createState() => _ConversationPanelState();
 }
 
-class _ConversationPanelState extends OptimizedState<ConversationPanel> {
+class _ConversationPanelState extends State<ConversationPanel> with ThemeHelpers {
   final RxnBool gettingIcons = RxnBool(null);
   final RxBool playingSendSound = false.obs;
   final RxBool playingReceiveSound = false.obs;

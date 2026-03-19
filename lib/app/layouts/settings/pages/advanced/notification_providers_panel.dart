@@ -4,8 +4,7 @@ import 'package:bluebubbles/app/layouts/settings/pages/advanced/firebase_panel.d
 import 'package:bluebubbles/app/layouts/settings/pages/advanced/unified_push.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/content/next_button.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
-import 'package:bluebubbles/helpers/types/constants.dart';
+import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -18,7 +17,7 @@ class NotificationProvidersPanel extends StatefulWidget {
   State<StatefulWidget> createState() => _NotificationProvidersState();
 }
 
-class _NotificationProvidersState extends OptimizedState<NotificationProvidersPanel> {
+class _NotificationProvidersState extends State<NotificationProvidersPanel> with ThemeHelpers {
   @override
   Widget build(BuildContext context) {
     return SettingsScaffold(

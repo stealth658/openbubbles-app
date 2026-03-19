@@ -1,3 +1,4 @@
+import 'package:bluebubbles/app/state/message_state_scope.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/shared/message_error_helper.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/timestamp/delivered_indicator.dart';
 import 'package:bluebubbles/database/models.dart';
@@ -12,17 +13,14 @@ import 'package:get/get.dart';
 class DeliveredIndicatorObserver extends StatelessWidget {
   const DeliveredIndicatorObserver({
     super.key,
-    required this.controller,
     required this.tapped,
   });
 
-  final MessageWidgetController controller;
   final RxBool tapped;
 
   @override
   Widget build(BuildContext context) {
     return Obx(() => DeliveredIndicator(
-          parentController: controller,
           forceShow: tapped.value,
         ));
   }
@@ -33,22 +31,20 @@ class DeliveredIndicatorObserver extends StatelessWidget {
 class ErrorIndicatorObserver extends StatelessWidget {
   const ErrorIndicatorObserver({
     super.key,
-    required this.controller,
-    required this.message,
     required this.chat,
     required this.service,
   });
 
-  final MessageWidgetController controller;
-  final Message message;
   final Chat chat;
   final MessagesService service;
 
   @override
   Widget build(BuildContext context) {
     return Obx(() {
+      final ms = MessageStateScope.of(context);
+      final message = ms.message;
       // Observe MessageState error field directly instead of boolean toggle
-      final hasError = controller.messageState?.hasError.value ?? (message.error > 0);
+      final hasError = ms.hasError.value;
 
       if (hasError) {
         final errorCode = message.error;
@@ -70,7 +66,7 @@ class ErrorIndicatorObserver extends StatelessWidget {
                   message: message,
                   chat: chat,
                   service: service,
-                  controller: controller,
+                  controller: ms,
                 ),
                 onRemove: () async {
                   // Delete the message from DB and remove from service

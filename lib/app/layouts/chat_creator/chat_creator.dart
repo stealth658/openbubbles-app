@@ -6,12 +6,12 @@ import 'package:bluebubbles/app/layouts/chat_creator/widgets/message_type_toggle
 import 'package:bluebubbles/app/layouts/chat_creator/widgets/selected_contact_chip.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/pages/conversation_view.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/text_field/conversation_text_field.dart';
+import 'package:bluebubbles/app/state/chat_state_scope.dart';
 import 'package:bluebubbles/app/wrappers/bb_scaffold.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/app/wrappers/titlebar_wrapper.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/pages/messages_view.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/backend/interfaces/contact_v2_interface.dart';
@@ -53,7 +53,7 @@ class ChatCreator extends StatefulWidget {
   ChatCreatorState createState() => ChatCreatorState();
 }
 
-class ChatCreatorState extends OptimizedState<ChatCreator> {
+class ChatCreatorState extends State<ChatCreator> with ThemeHelpers {
   final TextEditingController addressController = TextEditingController();
   final messageNode = FocusNode();
   late final MentionTextEditingController textController =
@@ -133,22 +133,16 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
         final contactMaps = await ContactV2Interface.getAddressBook();
         contacts = await Future.wait(contactMaps.map((e) => Contact.fromFastContact(e)));
         if (mounted) {
-          updateObx(() {
-            filteredContacts.value = List<Contact>.from(contacts);
-          });
+          filteredContacts.value = List<Contact>.from(contacts);
         }
       }
       if (ChatsSvc.loadedAllChats.isCompleted) {
         existingChats = ChatsSvc.allChats;
-        updateObx(() {
-          filteredChats.value = List<Chat>.from(existingChats.where((e) => e.isIMessage));
-        });
+        filteredChats.value = List<Chat>.from(existingChats.where((e) => e.isIMessage));
       } else {
         ChatsSvc.loadedAllChats.future.then((_) {
           existingChats = ChatsSvc.allChats;
-          updateObx(() {
-            filteredChats.value = List<Chat>.from(existingChats.where((e) => e.isIMessage));
-          });
+          filteredChats.value = List<Chat>.from(existingChats.where((e) => e.isIMessage));
         });
       }
       if (widget.initialSelected.isNotEmpty) {
@@ -500,11 +494,14 @@ class ChatCreatorState extends OptimizedState<ChatCreator> {
                                 onChatTap: addSelectedList,
                                 onContactTap: addSelected,
                               )
-                            : Container(
-                                color: Colors.transparent,
-                                child: MessagesView(
-                                  customService: messagesService,
-                                  controller: fakeController.value!,
+                            : ChatStateScope(
+                                chatState: ChatsSvc.getOrCreateChatState(fakeController.value!.chat),
+                                child: Container(
+                                  color: Colors.transparent,
+                                  child: MessagesView(
+                                    customService: messagesService,
+                                    controller: fakeController.value!,
+                                  ),
                                 ),
                               ),
                       );

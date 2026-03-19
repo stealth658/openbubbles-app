@@ -2,7 +2,7 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:bluebubbles/app/layouts/chat_creator/chat_creator.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
+import 'package:bluebubbles/app/state/chat_state_scope.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -20,7 +20,7 @@ class ManualMark extends StatefulWidget {
   State<StatefulWidget> createState() => ManualMarkState();
 }
 
-class ManualMarkState extends OptimizedState<ManualMark> {
+class ManualMarkState extends State<ManualMark> with ThemeHelpers {
   bool marked = false;
   bool marking = false;
 
@@ -162,5 +162,40 @@ class ConnectionIndicator extends StatelessWidget {
             ),
           )),
     );
+  }
+}
+
+/// A send-progress [LinearProgressIndicator] shared by both header skins.
+///
+/// Reads [Chat.sendProgress] from [ChatStateScope] so it never needs a
+/// [Chat] constructor parameter.  Place it in a [Positioned] at the bottom
+/// of the header stack.
+class HeaderProgressIndicator extends StatelessWidget {
+  const HeaderProgressIndicator({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final chat = ChatStateScope.chatOf(context);
+    return Obx(() => TweenAnimationBuilder<double>(
+          duration: chat.sendProgress.value == 0
+              ? Duration.zero
+              : chat.sendProgress.value == 1
+                  ? const Duration(milliseconds: 250)
+                  : const Duration(seconds: 10),
+          curve: chat.sendProgress.value == 1 ? Curves.easeInOut : Curves.easeOutExpo,
+          tween: Tween<double>(
+            begin: 0,
+            end: chat.sendProgress.value,
+          ),
+          builder: (context, value, _) => AnimatedOpacity(
+                opacity: value == 1 ? 0 : 1,
+                duration: const Duration(milliseconds: 250),
+                child: LinearProgressIndicator(
+                  value: value,
+                  backgroundColor: Colors.transparent,
+                  minHeight: 3,
+                ),
+              ),
+        ));
   }
 }

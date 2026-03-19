@@ -2,9 +2,9 @@ import 'package:bluebubbles/app/layouts/conversation_view/widgets/header/cuperti
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/header/material_header.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/messages_view_components.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/text_field/conversation_text_field.dart';
+import 'package:bluebubbles/app/state/chat_state_scope.dart';
 import 'package:bluebubbles/app/wrappers/bb_annotated_region.dart';
 import 'package:bluebubbles/app/wrappers/gradient_background_wrapper.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/pages/messages_view.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/effects/screen_effects_widget.dart';
@@ -34,7 +34,7 @@ class ConversationView extends StatefulWidget {
   ConversationViewState createState() => ConversationViewState();
 }
 
-class ConversationViewState extends OptimizedState<ConversationView> {
+class ConversationViewState extends State<ConversationView> with ThemeHelpers<ConversationView> {
   late final ConversationViewController controller = cvc(chat, tag: widget.customService?.tag);
 
   // Cache actions map to avoid rebuilding on every frame
@@ -64,18 +64,18 @@ class ConversationViewState extends OptimizedState<ConversationView> {
 
   void _buildActionsMap() {
     _actionsMap = {
-      OpenChatDetailsIntent: OpenChatDetailsAction(context, widget.chat),
+      OpenChatDetailsIntent: OpenChatDetailsAction(context, widget.chat.guid),
     };
 
     if (SettingsSvc.settings.enablePrivateAPI.value) {
       _actionsMap.addAll({
-        ReplyRecentIntent: ReplyRecentAction(widget.chat),
-        HeartRecentIntent: HeartRecentAction(widget.chat),
-        LikeRecentIntent: LikeRecentAction(widget.chat),
-        DislikeRecentIntent: DislikeRecentAction(widget.chat),
-        LaughRecentIntent: LaughRecentAction(widget.chat),
-        EmphasizeRecentIntent: EmphasizeRecentAction(widget.chat),
-        QuestionRecentIntent: QuestionRecentAction(widget.chat),
+        ReplyRecentIntent: ReplyRecentAction(widget.chat.guid),
+        HeartRecentIntent: HeartRecentAction(widget.chat.guid),
+        LikeRecentIntent: LikeRecentAction(widget.chat.guid),
+        DislikeRecentIntent: DislikeRecentAction(widget.chat.guid),
+        LaughRecentIntent: LaughRecentAction(widget.chat.guid),
+        EmphasizeRecentIntent: EmphasizeRecentAction(widget.chat.guid),
+        QuestionRecentIntent: QuestionRecentAction(widget.chat.guid),
       });
     }
   }
@@ -98,11 +98,14 @@ class ConversationViewState extends OptimizedState<ConversationView> {
     final onBubbleColor = colorScheme.onBubble(context, chat.isIMessage);
     final bubbleColorsExt = theme.extensions[BubbleColors] as BubbleColors?;
 
-    return BBAnnotatedRegion(
-      child: Theme(
-          data: theme.copyWith(
-            // in case some components still use legacy theming
-            primaryColor: bubbleColor,
+    final chatState = ChatsSvc.getOrCreateChatState(chat);
+    return ChatStateScope(
+      chatState: chatState,
+      child: BBAnnotatedRegion(
+        child: Theme(
+            data: theme.copyWith(
+              // in case some components still use legacy theming
+              primaryColor: bubbleColor,
             colorScheme: colorScheme.copyWith(
               primary: bubbleColor,
               onPrimary: onBubbleColor,
@@ -204,6 +207,7 @@ class ConversationViewState extends OptimizedState<ConversationView> {
               ),
             ),
           )),
+      ),
     );
   }
 }

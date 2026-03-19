@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/attachment/live_photo_mixin.dart';
 import 'package:bluebubbles/app/layouts/fullscreen_media/dialogs/metadata_dialog.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/utils/share.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
@@ -38,7 +37,7 @@ class FullscreenImage extends StatefulWidget {
   State<FullscreenImage> createState() => _FullscreenImageState();
 }
 
-class _FullscreenImageState extends OptimizedState<FullscreenImage> with AutomaticKeepAliveClientMixin, LivePhotoMixin {
+class _FullscreenImageState extends State<FullscreenImage> with AutomaticKeepAliveClientMixin, LivePhotoMixin, ThemeHelpers {
   final PhotoViewController controller = PhotoViewController();
   bool showOverlay = true;
   bool hasError = false;
@@ -57,9 +56,7 @@ class _FullscreenImageState extends OptimizedState<FullscreenImage> with Automat
   void initState() {
     super.initState();
     _setFullscreen(true);
-    updateObx(() {
-      initBytes();
-    });
+    initBytes();
   }
 
   void _setFullscreen(bool fullscreen) {

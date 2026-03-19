@@ -1,4 +1,3 @@
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -17,7 +16,7 @@ class AdvancedThemingTile extends StatefulWidget {
   State<AdvancedThemingTile> createState() => _AdvancedThemingTileState();
 }
 
-class _AdvancedThemingTileState extends OptimizedState<AdvancedThemingTile> {
+class _AdvancedThemingTileState extends State<AdvancedThemingTile> {
   @override
   Widget build(BuildContext context) {
     final textColor = widget.tuple.item2?.value ?? Colors.black;

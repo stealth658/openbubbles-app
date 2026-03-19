@@ -9,7 +9,6 @@ import 'package:bluebubbles/app/layouts/conversation_list/pages/conversation_lis
 import 'package:bluebubbles/app/layouts/setup/dialogs/failed_to_scan_dialog.dart';
 import 'package:bluebubbles/app/layouts/setup/pages/page_template.dart';
 import 'package:bluebubbles/app/layouts/setup/setup_view.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
@@ -25,7 +24,7 @@ class SyncProgress extends StatefulWidget {
   State<SyncProgress> createState() => _SyncProgressState();
 }
 
-class _SyncProgressState extends OptimizedState<SyncProgress> {
+class _SyncProgressState extends State<SyncProgress> {
   final confettiController = ConfettiController(duration: const Duration(milliseconds: 500));
   final Control animationController = Control.mirror;
   final controller = Get.find<SetupViewController>();

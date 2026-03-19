@@ -4,7 +4,6 @@ import 'package:bluebubbles/app/layouts/chat_creator/widgets/chat_creator_tile.d
 import 'package:bluebubbles/app/wrappers/bb_scaffold.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/material.dart';
@@ -25,7 +24,7 @@ class ChatSelectorView extends StatefulWidget {
   ChatSelectorViewState createState() => ChatSelectorViewState();
 }
 
-class ChatSelectorViewState extends OptimizedState<ChatSelectorView> {
+class ChatSelectorViewState extends State<ChatSelectorView> with ThemeHelpers {
   final TextEditingController searchController = TextEditingController();
   final FocusNode searchNode = FocusNode();
   final ScrollController addressScrollController = ScrollController();
@@ -54,19 +53,13 @@ class ChatSelectorViewState extends OptimizedState<ChatSelectorView> {
       });
     });
 
-    updateObx(() {
-      if (ChatsSvc.loadedAllChats.isCompleted) {
-        setState(() {
-          filteredChats = ChatsSvc.allChats;
-        });
-      } else {
-        ChatsSvc.loadedAllChats.future.then((_) {
-          setState(() {
-            filteredChats = ChatsSvc.allChats;
-          });
-        });
-      }
-    });
+    if (ChatsSvc.loadedAllChats.isCompleted) {
+      if (mounted) setState(() { filteredChats = ChatsSvc.allChats; });
+    } else {
+      ChatsSvc.loadedAllChats.future.then((_) {
+        if (mounted) setState(() { filteredChats = ChatsSvc.allChats; });
+      });
+    }
   }
 
   @override

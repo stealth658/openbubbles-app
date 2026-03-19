@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:bluebubbles/app/layouts/fullscreen_media/dialogs/metadata_dialog.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -34,10 +33,10 @@ class FullscreenVideo extends StatefulWidget {
   final RxBool? mute;
 
   @override
-  OptimizedState createState() => _FullscreenVideoState();
+  State<StatefulWidget> createState() => _FullscreenVideoState();
 }
 
-class _FullscreenVideoState extends OptimizedState<FullscreenVideo> with AutomaticKeepAliveClientMixin {
+class _FullscreenVideoState extends State<FullscreenVideo> with AutomaticKeepAliveClientMixin, ThemeHelpers {
   Timer? hideOverlayTimer;
 
   late VideoController videoController;

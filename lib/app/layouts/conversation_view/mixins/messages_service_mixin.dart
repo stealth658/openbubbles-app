@@ -1,3 +1,4 @@
+import 'package:bluebubbles/app/state/message_state.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/helpers/types/constants.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -61,7 +62,9 @@ mixin MessagesServiceMixin<T extends StatefulWidget> on State<T> {
         onJumpToMessage ?? (_) {},
       );
     } else {
-      // For customService, just update the handlers without reinitializing
+      // For customService, just update the handlers without reinitializing,
+      // but always ensure chat is set (may not be if caller skipped init).
+      _messageService!.chat = chat;
       _messageService!.updateFunc = onUpdatedMessage ?? (_, {String? oldGuid}) {};
       _messageService!.removeFunc = onDeletedMessage ?? (_) {};
       _messageService!.newFunc = onNewMessage ?? (_) {};
@@ -89,7 +92,7 @@ mixin MessagesServiceMixin<T extends StatefulWidget> on State<T> {
   void _createControllers(List<Message> messages, ConversationViewController cvController) {
     for (final message in messages) {
       if (message.guid != null) {
-        final controller = _messageService!.getOrCreateController(message);
+        final controller = _messageService!.getOrCreateState(message);
         controller.cvController = cvController;
       }
     }
@@ -138,13 +141,13 @@ mixin MessagesServiceMixin<T extends StatefulWidget> on State<T> {
   /// Create and link a controller for a new message
   /// Use this when handling new messages that aren't in the existing list
   /// Returns the created controller
-  MessageWidgetController createControllerForMessage(
+  MessageState createControllerForMessage(
     Message message,
     ConversationViewController cvController,
   ) {
     assert(_messageService != null, 'MessagesService not initialized');
     
-    final controller = _messageService!.getOrCreateController(message);
+    final controller = _messageService!.getOrCreateState(message);
     controller.cvController = cvController;
     return controller;
   }

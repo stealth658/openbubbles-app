@@ -4,7 +4,6 @@ import 'package:bluebubbles/app/layouts/conversation_view/widgets/effects/send_e
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/attachment/audio_player.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/text_field/send_button.dart';
 import 'package:bluebubbles/app/wrappers/cupertino_icon_wrapper.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -37,10 +36,10 @@ class TextFieldSuffix extends StatefulWidget {
   final bool isChatCreator;
 
   @override
-  OptimizedState createState() => _TextFieldSuffixState();
+  State<StatefulWidget> createState() => _TextFieldSuffixState();
 }
 
-class _TextFieldSuffixState extends OptimizedState<TextFieldSuffix> {
+class _TextFieldSuffixState extends State<TextFieldSuffix> with ThemeHelpers {
   final AudioRecorder audioRecorder = AudioRecorder();
 
   // Cache these values at init to avoid repeated platform checks

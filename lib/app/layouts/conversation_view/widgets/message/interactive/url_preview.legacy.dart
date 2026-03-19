@@ -1,7 +1,7 @@
 import 'dart:ui';
 
+import 'package:bluebubbles/app/state/message_state_scope.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/reply/reply_bubble.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
@@ -11,41 +11,32 @@ import 'package:metadata_fetch/metadata_fetch.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class LegacyUrlPreview extends StatefulWidget {
-  final Message message;
-
   const LegacyUrlPreview({
     super.key,
-    required this.message,
   });
 
   @override
-  OptimizedState createState() => _LegacyUrlPreviewState();
+  State<StatefulWidget> createState() => _LegacyUrlPreviewState();
 }
 
-class _LegacyUrlPreviewState extends OptimizedState<LegacyUrlPreview> with AutomaticKeepAliveClientMixin {
-  Message get message => widget.message;
+class _LegacyUrlPreviewState extends State<LegacyUrlPreview> with AutomaticKeepAliveClientMixin {
+  Metadata? metadata;
+  Future<void>? _init;
 
-  late Metadata? metadata =
-      MetadataHelper.mapIsNotEmpty(message.metadata) ? Metadata.fromJson(message.metadata!) : null;
-
-  @override
-  void initState() {
-    super.initState();
-    updateObx(() async {
-      if (metadata == null) {
-        try {
-          metadata = await MetadataHelper.fetchMetadata(message);
-        } catch (ex, stack) {
-          Logger.error("Failed to fetch metadata!", error: ex, trace: stack);
-          return;
-        }
-        // If the data isn't empty, save/update it in the DB
-        if (MetadataHelper.isNotEmpty(metadata)) {
-          message.updateMetadata(metadata);
-        }
-        setState(() {});
+  Future<void> _loadMetadata(Message message) async {
+    if (MetadataHelper.mapIsNotEmpty(message.metadata)) {
+      if (mounted) setState(() { metadata = Metadata.fromJson(message.metadata!); });
+      return;
+    }
+    try {
+      final fetched = await MetadataHelper.fetchMetadata(message);
+      if (MetadataHelper.isNotEmpty(fetched)) {
+        message.updateMetadata(fetched);
       }
-    });
+      if (mounted) setState(() { metadata = fetched; });
+    } catch (ex, stack) {
+      Logger.error("Failed to fetch metadata!", error: ex, trace: stack);
+    }
   }
 
   @override
@@ -54,6 +45,8 @@ class _LegacyUrlPreviewState extends OptimizedState<LegacyUrlPreview> with Autom
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final message = MessageStateScope.messageOf(context);
+    _init ??= _loadMetadata(message);
     final siteText = Uri.tryParse(metadata?.url ?? message.text ?? "")?.host;
     return InkWell(
       onTap: () async {

@@ -1,6 +1,6 @@
-import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/app/state/attachment_state_scope.dart';
+import 'package:bluebubbles/app/state/message_state_scope.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -10,21 +10,18 @@ import 'package:get/get.dart';
 class NotLoadedContent extends StatelessWidget {
   const NotLoadedContent({
     super.key,
-    required this.attachment,
-    required this.message,
-    required this.controller,
     required this.hideAttachments,
     required this.isiOS,
   });
 
-  final Attachment attachment;
-  final Message message;
-  final MessageWidgetController controller;
   final bool hideAttachments;
   final bool isiOS;
 
   @override
   Widget build(BuildContext context) {
+    final attachmentState = AttachmentStateScope.of(context);
+    final attachment = attachmentState.attachment;
+
     if (hideAttachments) {
       return Column(
         mainAxisSize: MainAxisSize.min,
@@ -49,7 +46,7 @@ class NotLoadedContent extends StatelessWidget {
     }
 
     return Obx(() {
-      final hasError = controller.messageState?.hasError.value ?? (message.error > 0);
+      final hasError = MessageStateScope.of(context).hasError.value;
       return Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -67,7 +64,7 @@ class NotLoadedContent extends StatelessWidget {
           ),
           const SizedBox(height: 5),
           Text(
-            hasError ? "Send Failed!" : (attachment.mimeType ?? ""),
+            hasError ? "Send Failed!" : (attachmentState.mimeType.value ?? ""),
             style: context.theme.textTheme.bodyLarge!
                 .copyWith(color: context.theme.colorScheme.properOnSurface),
             maxLines: 2,

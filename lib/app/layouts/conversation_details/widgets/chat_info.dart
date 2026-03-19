@@ -5,7 +5,6 @@ import 'package:bluebubbles/app/layouts/settings/pages/theming/avatar/avatar_cro
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/components/avatars/contact_avatar_group_widget.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:defer_pointer/defer_pointer.dart';
@@ -21,10 +20,10 @@ class ChatInfo extends StatefulWidget {
   final Chat chat;
 
   @override
-  OptimizedState createState() => _ChatInfoState();
+  State<StatefulWidget> createState() => _ChatInfoState();
 }
 
-class _ChatInfoState extends OptimizedState<ChatInfo> {
+class _ChatInfoState extends State<ChatInfo> with ThemeHelpers {
   Chat get chat => widget.chat;
 
   Future<bool?> showMethodDialog(String title) async {

@@ -1,5 +1,4 @@
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
@@ -36,7 +35,7 @@ class ContactAvatarWidget extends StatefulWidget {
   State<ContactAvatarWidget> createState() => _ContactAvatarWidgetState();
 }
 
-class _ContactAvatarWidgetState extends OptimizedState<ContactAvatarWidget> {
+class _ContactAvatarWidgetState extends State<ContactAvatarWidget> with ThemeHelpers {
   Contact? get contact => widget.contact ?? widget.handle?.contact;
   ContactV2? get contactV2 => widget.contactV2 ?? widget.handle?.contactsV2.firstOrNull;
   late final String keyPrefix = widget.handle?.address ?? randomString(8);

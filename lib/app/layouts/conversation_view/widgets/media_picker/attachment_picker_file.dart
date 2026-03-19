@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -29,7 +28,7 @@ class AttachmentPickerFile extends StatefulWidget {
   State<AttachmentPickerFile> createState() => _AttachmentPickerFileState();
 }
 
-class _AttachmentPickerFileState extends OptimizedState<AttachmentPickerFile> {
+class _AttachmentPickerFileState extends State<AttachmentPickerFile> with ThemeHelpers {
   String? filePath;
   Uint8List? thumbnailBytes; // Only for videos and special formats
   bool isLoading = true;

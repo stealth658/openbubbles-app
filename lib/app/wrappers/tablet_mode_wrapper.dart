@@ -1,7 +1,6 @@
 import 'dart:math';
 
 import 'package:bluebubbles/helpers/ui/theme_helpers.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/app/wrappers/titlebar_wrapper.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/material.dart';
@@ -36,7 +35,7 @@ class TabletModeWrapper extends StatefulWidget {
   State<TabletModeWrapper> createState() => _TabletModeWrapperState();
 }
 
-class _TabletModeWrapperState extends OptimizedState<TabletModeWrapper> {
+class _TabletModeWrapperState extends State<TabletModeWrapper> with ThemeHelpers {
   //from 0-1
   late final RxDouble _ratio;
   double? _maxWidth;

@@ -1,6 +1,6 @@
+import 'package:bluebubbles/app/state/message_state_scope.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/misc/slide_to_reply.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/reply/reply_bubble.dart';
-import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/ui/chat/conversation_view_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -13,7 +13,6 @@ class SwipeToReplyWrapper extends StatefulWidget {
   const SwipeToReplyWrapper({
     super.key,
     required this.enabled,
-    required this.message,
     required this.partIndex,
     required this.replyOffset,
     required this.cvController,
@@ -21,7 +20,6 @@ class SwipeToReplyWrapper extends StatefulWidget {
   });
 
   final bool enabled;
-  final Message message;
   final int partIndex;
   final RxDouble replyOffset;
   final ConversationViewController cvController;
@@ -49,6 +47,7 @@ class _SwipeToReplyWrapperState extends State<SwipeToReplyWrapper> {
       return widget.child;
     }
 
+    final message = MessageStateScope.messageOf(context);
     return GestureDetector(
       behavior: HitTestBehavior.deferToChild,
       onHorizontalDragUpdate: (details) {
@@ -57,7 +56,7 @@ class _SwipeToReplyWrapperState extends State<SwipeToReplyWrapper> {
         widget.replyOffset.value += details.delta.dx * 0.5;
 
         // Clamp based on message direction
-        if (widget.message.isFromMe!) {
+        if (message.isFromMe!) {
           widget.replyOffset.value = widget.replyOffset.value.clamp(-double.infinity, 0);
         } else {
           widget.replyOffset.value = widget.replyOffset.value.clamp(0, double.infinity);
@@ -70,7 +69,7 @@ class _SwipeToReplyWrapperState extends State<SwipeToReplyWrapper> {
 
         // Trigger reply if threshold reached
         if (widget.replyOffset.value.abs() >= SlideToReply.replyThreshold) {
-          widget.cvController.replyToMessage = Tuple2(widget.message, widget.partIndex);
+          widget.cvController.replyToMessage = Tuple2(message, widget.partIndex);
         }
 
         widget.replyOffset.value = 0;

@@ -5,7 +5,6 @@ import 'package:bluebubbles/app/components/custom_text_editing_controllers.dart'
 import 'package:bluebubbles/app/layouts/conversation_view/dialogs/custom_mention_dialog.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/text_field/picked_attachment.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -25,10 +24,10 @@ class PickedAttachmentsHolder extends StatefulWidget {
   final List<PlatformFile> initialAttachments;
 
   @override
-  OptimizedState createState() => _PickedAttachmentsHolderState();
+  State<StatefulWidget> createState() => _PickedAttachmentsHolderState();
 }
 
-class _PickedAttachmentsHolderState extends OptimizedState<PickedAttachmentsHolder> {
+class _PickedAttachmentsHolderState extends State<PickedAttachmentsHolder> with ThemeHelpers {
   // Cache platform check to avoid repeated lookups
   late final bool _isIOS = SettingsSvc.settings.skin.value == Skins.iOS;
 

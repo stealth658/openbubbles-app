@@ -1,6 +1,5 @@
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
@@ -14,7 +13,7 @@ class AttachmentPanel extends StatefulWidget {
   State<StatefulWidget> createState() => _AttachmentPanelState();
 }
 
-class _AttachmentPanelState extends OptimizedState<AttachmentPanel> {
+class _AttachmentPanelState extends State<AttachmentPanel> with ThemeHelpers {
   @override
   Widget build(BuildContext context) {
     return SettingsScaffold(

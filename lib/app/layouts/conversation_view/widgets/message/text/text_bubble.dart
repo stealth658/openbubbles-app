@@ -1,4 +1,5 @@
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
+import 'package:bluebubbles/app/state/message_state.dart';
+import 'package:bluebubbles/app/state/message_state_scope.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -8,10 +9,9 @@ import 'package:get/get.dart';
 import 'package:simple_animations/simple_animations.dart';
 import 'package:supercharged/supercharged.dart';
 
-class TextBubble extends CustomStateful<MessageWidgetController> {
+class TextBubble extends StatefulWidget {
   const TextBubble({
     super.key,
-    required super.parentController,
     required this.message,
     this.subjectOnly = false,
   });
@@ -20,10 +20,13 @@ class TextBubble extends CustomStateful<MessageWidgetController> {
   final bool subjectOnly;
 
   @override
-  CustomState createState() => _TextBubbleState();
+  State<StatefulWidget> createState() => _TextBubbleState();
 }
 
-class _TextBubbleState extends CustomState<TextBubble, void, MessageWidgetController> {
+class _TextBubbleState extends State<TextBubble> with ThemeHelpers {
+  late MessageState _ms;
+  MessageState get controller => _ms;
+
   MessagePart get part => widget.message;
   Message get message => controller.message;
   String get effectStr =>
@@ -31,11 +34,13 @@ class _TextBubbleState extends CustomState<TextBubble, void, MessageWidgetContro
   MessageEffect get effect => stringToMessageEffect[effectStr] ?? MessageEffect.none;
 
   late MovieTween tween;
-  Control anim = Control.stop;
+  final rxAnim = Rx<Control>(Control.stop);
+  Worker? _effectWorker;
 
   @override
   void initState() {
-    forceDelete = false;
+    super.initState();
+    _ms = MessageStateScope.readStateOnce(context);
     if (effect == MessageEffect.gentle) {
       tween = MovieTween()
         ..scene(begin: Duration.zero, duration: const Duration(milliseconds: 1), curve: Curves.easeInOut)
@@ -55,16 +60,28 @@ class _TextBubbleState extends CustomState<TextBubble, void, MessageWidgetContro
         ..scene(begin: Duration.zero, duration: const Duration(milliseconds: 500), curve: Curves.easeInOut)
             .tween("size", 1.0.tweenTo(1.0));
     }
-    EventDispatcherSvc.stream.listen((event) async {
-      if (event.item1 == 'play-bubble-effect' &&
-          event.item2 == '${part.part}/${message.guid}' &&
-          effect == MessageEffect.gentle) {
-        setState(() {
-          anim = Control.playFromStart;
+    super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_effectWorker == null && effect == MessageEffect.gentle) {
+      final ms = MessageStateScope.maybeOf(context);
+      if (ms != null) {
+        _effectWorker = ever(ms.playEffectPart, (int? partIdx) {
+          if (partIdx == part.part && mounted) {
+            rxAnim.value = Control.playFromStart;
+          }
         });
       }
-    });
-    super.initState();
+    }
+  }
+
+  @override
+  void dispose() {
+    _effectWorker?.dispose();
+    super.dispose();
   }
 
   List<Color> getBubbleColors(bool selected) {
@@ -91,14 +108,14 @@ class _TextBubbleState extends CustomState<TextBubble, void, MessageWidgetContro
       // Observe selection state and temp message state
       final selected = !iOS && (controller.cvController?.selected.any((m) => m.guid == message.guid) ?? false);
       // Use MessageState observables for proper reactivity
-      final isTempMessage = controller.messageState?.isSending.value ?? false;
-      final isFromMe = controller.messageState?.isFromMe.value ?? message.isFromMe!;
+      final isTempMessage = controller.isSending.value;
+      final isFromMe = controller.isFromMe.value;
       
       return Container(
         constraints: BoxConstraints(
           maxWidth: message.isBigEmoji
               ? NavigationSvc.width(context)
-              : NavigationSvc.width(context) * MessageWidgetController.maxBubbleSizeFactor - 40,
+              : NavigationSvc.width(context) * MessageState.maxBubbleSizeFactor - 40,
           minHeight: 40,
         ),
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15).add(EdgeInsets.only(
@@ -145,15 +162,13 @@ class _TextBubbleState extends CustomState<TextBubble, void, MessageWidgetContro
             builder: (context, snapshot) {
               if (snapshot.data != null) {
                 if (effect == MessageEffect.gentle) {
-                  return CustomAnimationBuilder<Movie>(
-                    control: anim,
+                  return Obx(() => CustomAnimationBuilder<Movie>(
+                    control: rxAnim.value,
                     tween: tween,
                     duration: const Duration(milliseconds: 1800),
                     animationStatusListener: (status) {
                       if (status == AnimationStatus.completed) {
-                        setState(() {
-                          anim = Control.stop;
-                        });
+                        rxAnim.value = Control.stop;
                       }
                     },
                     builder: (context, anim, child) {
@@ -165,7 +180,7 @@ class _TextBubbleState extends CustomState<TextBubble, void, MessageWidgetContro
                         children: snapshot.data!,
                       ),
                     ),
-                  );
+                  ));
                 }
                 return Center(
                   widthFactor: 1,

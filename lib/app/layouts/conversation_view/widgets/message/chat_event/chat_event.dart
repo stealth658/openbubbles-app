@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:bluebubbles/app/state/message_state_scope.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -11,14 +12,13 @@ class ChatEvent extends StatelessWidget {
   const ChatEvent({
     super.key,
     required this.part,
-    required this.message,
   });
 
   final MessagePart part;
-  final Message message;
 
   @override
   Widget build(BuildContext context) {
+    final message = MessageStateScope.messageOf(context);
     return Expanded(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),

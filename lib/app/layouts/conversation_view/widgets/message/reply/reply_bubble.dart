@@ -2,18 +2,19 @@ import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/attach
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/interactive/interactive_holder.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/misc/tail_clipper.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/reply/reply_thread_popup.dart';
+import 'package:bluebubbles/app/state/chat_state_scope.dart';
 import 'package:bluebubbles/app/components/avatars/contact_avatar_widget.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
+import 'package:bluebubbles/app/state/message_state.dart';
+import 'package:bluebubbles/app/state/message_state_scope.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-class ReplyBubble extends CustomStateful<MessageWidgetController> {
+class ReplyBubble extends StatefulWidget {
   const ReplyBubble({
     super.key,
-    required super.parentController,
     required this.part,
     required this.showAvatar,
     required this.cvController,
@@ -24,17 +25,20 @@ class ReplyBubble extends CustomStateful<MessageWidgetController> {
   final ConversationViewController cvController;
 
   @override
-  CustomState createState() => _ReplyBubbleState();
+  State<StatefulWidget> createState() => _ReplyBubbleState();
 }
 
-class _ReplyBubbleState extends CustomState<ReplyBubble, void, MessageWidgetController> {
+class _ReplyBubbleState extends State<ReplyBubble> with ThemeHelpers {
+  late MessageState _ms;
+  MessageState get controller => _ms;
+
   MessagePart get part => controller.parts[widget.part];
   Message get message => controller.message;
 
   @override
   void initState() {
-    forceDelete = false;
     super.initState();
+    _ms = MessageStateScope.readStateOnce(context);
   }
 
   Color getBubbleColor() {
@@ -51,16 +55,17 @@ class _ReplyBubbleState extends CustomState<ReplyBubble, void, MessageWidgetCont
 
   @override
   Widget build(BuildContext context) {
+    final chatGuid = controller.cvController?.chat.guid ?? ChatStateScope.chatOf(context).guid;
     if (!iOS) {
       // Use MessageState if available for reactive text content
-      final messageText = controller.messageState?.text.value ?? message.text;
+      final messageText = controller.text.value;
       String text = MessageHelper.getNotificationText(
-          Message(text: messageText, subject: controller.messageState?.subject.value ?? message.subject));
+          Message(text: messageText, subject: controller.subject.value));
       return MouseRegion(
         cursor: SystemMouseCursors.click,
         child: ConstrainedBox(
           constraints: BoxConstraints(
-            maxWidth: NavigationSvc.width(context) * MessageWidgetController.maxBubbleSizeFactor - 30,
+            maxWidth: NavigationSvc.width(context) * MessageState.maxBubbleSizeFactor - 30,
             minHeight: 30,
           ),
           child: GestureDetector(
@@ -69,7 +74,7 @@ class _ReplyBubbleState extends CustomState<ReplyBubble, void, MessageWidgetCont
                   context,
                   message,
                   part,
-                  MessagesSvc(controller.cvController?.chat.guid ?? ChatsSvc.activeChat!.chat.guid),
+                  MessagesSvc(chatGuid),
                   widget.cvController);
             },
             child: Padding(
@@ -114,7 +119,7 @@ class _ReplyBubbleState extends CustomState<ReplyBubble, void, MessageWidgetCont
                       context,
                       message,
                       part,
-                      MessagesSvc(controller.cvController?.chat.guid ?? ChatsSvc.activeChat!.chat.guid),
+                      MessagesSvc(chatGuid),
                       widget.cvController);
                 },
                 behavior: HitTestBehavior.opaque,
@@ -141,7 +146,7 @@ class _ReplyBubbleState extends CustomState<ReplyBubble, void, MessageWidgetCont
                             ? Container(
                                 constraints: BoxConstraints(
                                   maxWidth:
-                                      NavigationSvc.width(context) * MessageWidgetController.maxBubbleSizeFactor - 30,
+                                      NavigationSvc.width(context) * MessageState.maxBubbleSizeFactor - 30,
                                   minHeight: 30,
                                 ),
                                 child: CustomPaint(
@@ -168,7 +173,6 @@ class _ReplyBubbleState extends CustomState<ReplyBubble, void, MessageWidgetCont
                                     constraints: const BoxConstraints(maxHeight: 100),
                                     child: ReplyScope(
                                       child: InteractiveHolder(
-                                        parentController: controller,
                                         message: part,
                                       ),
                                     ),
@@ -177,7 +181,7 @@ class _ReplyBubbleState extends CustomState<ReplyBubble, void, MessageWidgetCont
                                     ? Container(
                                         constraints: BoxConstraints(
                                           maxWidth: NavigationSvc.width(context) *
-                                                  MessageWidgetController.maxBubbleSizeFactor -
+                                                  MessageState.maxBubbleSizeFactor -
                                               30,
                                           minHeight: 30,
                                         ),
@@ -230,7 +234,6 @@ class _ReplyBubbleState extends CustomState<ReplyBubble, void, MessageWidgetCont
                                         constraints: const BoxConstraints(maxHeight: 100),
                                         child: ReplyScope(
                                           child: AttachmentHolder(
-                                            parentController: controller,
                                             message: part,
                                           ),
                                         ),

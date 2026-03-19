@@ -1,6 +1,5 @@
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/wrappers/bb_scaffold.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
@@ -11,7 +10,7 @@ class QRCodeScanner extends StatefulWidget {
   State<QRCodeScanner> createState() => _QRCodeScannerState();
 }
 
-class _QRCodeScannerState extends OptimizedState<QRCodeScanner> {
+class _QRCodeScannerState extends State<QRCodeScanner> {
   final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
   bool scanned = false;
 

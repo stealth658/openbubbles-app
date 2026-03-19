@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:ui';
 
+import 'package:bluebubbles/app/state/message_state_scope.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/reply/reply_bubble.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -18,21 +18,19 @@ import 'package:url_launcher/url_launcher.dart';
 
 class UrlPreview extends StatefulWidget {
   final UrlPreviewData data;
-  final Message message;
   final PlatformFile? file;
 
   const UrlPreview({
     super.key,
     required this.data,
-    required this.message,
     this.file,
   });
 
   @override
-  OptimizedState createState() => _UrlPreviewState();
+  State<StatefulWidget> createState() => _UrlPreviewState();
 }
 
-class _UrlPreviewState extends OptimizedState<UrlPreview> with AutomaticKeepAliveClientMixin {
+class _UrlPreviewState extends State<UrlPreview> with AutomaticKeepAliveClientMixin {
   UrlPreviewData get data => widget.data;
   UrlPreviewData? dataOverride;
   File? get file => content is PlatformFile && content?.path != null ? File(content!.path!) : null;
@@ -45,7 +43,7 @@ class _UrlPreviewState extends OptimizedState<UrlPreview> with AutomaticKeepAliv
   @override
   void initState() {
     super.initState();
-    updateObx(() async {
+    () async {
       // refers to a location widget
       if (widget.file != null) {
         String? _location;
@@ -83,7 +81,9 @@ class _UrlPreviewState extends OptimizedState<UrlPreview> with AutomaticKeepAliv
           });
         }
       } else if (data.imageMetadata?.url == null && data.iconMetadata?.url == null) {
-        final attachment = widget.message.attachments
+        final message = context.findAncestorWidgetOfExactType<MessageStateScope>()?.messageState.message;
+        if (message == null) return;
+        final attachment = message.attachments
             .firstWhereOrNull((e) => e?.transferName?.contains("pluginPayloadAttachment") ?? false);
         if (attachment != null) {
           content = AttachmentsSvc.getContent(attachment, autoDownload: true, onComplete: (file) {
@@ -111,12 +111,13 @@ class _UrlPreviewState extends OptimizedState<UrlPreview> with AutomaticKeepAliv
           });
         }
       }
-    });
+    }();
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final message = MessageStateScope.maybeMessageOf(context);
     final effectiveImageMetadata = localImageMetadata ?? data.imageMetadata;
     final siteText = widget.file != null
         ? (dataOverride?.siteName ?? "")
@@ -279,7 +280,7 @@ class _UrlPreviewState extends OptimizedState<UrlPreview> with AutomaticKeepAliv
                           ? _data.title!
                           : !isNullOrEmpty(siteText)
                               ? siteText!
-                              : widget.message.text!,
+                              : message?.text ?? '',
                       style: context.theme.textTheme.bodyMedium!.apply(fontWeightDelta: 2),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,

@@ -1,5 +1,7 @@
 import 'package:bluebubbles/app/components/custom/custom_bouncing_scroll_physics.dart';
 import 'package:bluebubbles/app/components/custom_text_editing_controllers.dart';
+import 'package:bluebubbles/app/state/message_state.dart';
+import 'package:bluebubbles/app/state/message_state_scope.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -14,22 +16,21 @@ import 'package:get/get.dart';
 class MessageEditField extends StatelessWidget {
   const MessageEditField({
     super.key,
-    required this.message,
     required this.part,
     required this.editController,
     required this.cvController,
     required this.onComplete,
   });
 
-  final Message message;
   final int part;
   final SpellCheckTextEditingController editController;
   final ConversationViewController cvController;
   final void Function(String text, int part) onComplete;
 
-  MessageWidgetController get controller => MessagesSvc(cvController.chat.guid).getOrCreateController(message);
+  MessageState _getController(Message message) =>
+      MessagesSvc(cvController.chat.guid).getOrCreateState(message);
 
-  void _cancelEdit() {
+  void _cancelEdit(Message message) {
     cvController.editing.removeWhere((e2) => e2.item1.guid == message.guid! && e2.item2.part == part);
     if (cvController.editing.isEmpty) {
       cvController.lastFocusedNode.requestFocus();
@@ -38,7 +39,7 @@ class MessageEditField extends StatelessWidget {
     }
   }
 
-  KeyEventResult _handleKeyEvent(KeyEvent ev) {
+  KeyEventResult _handleKeyEvent(KeyEvent ev, Message message) {
     if (ev is! KeyDownEvent) {
       if (ev.logicalKey == LogicalKeyboardKey.tab) {
         return KeyEventResult.skipRemainingHandlers;
@@ -54,7 +55,7 @@ class MessageEditField extends StatelessWidget {
 
     // Escape = cancel
     if (ev.logicalKey == LogicalKeyboardKey.escape) {
-      _cancelEdit();
+      _cancelEdit(message);
       return KeyEventResult.handled;
     }
 
@@ -68,10 +69,12 @@ class MessageEditField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final message = MessageStateScope.messageOf(context);
+    final controller = _getController(message);
     final iOS = SettingsSvc.settings.skin.value == Skins.iOS;
 
     return Obx(() {
-      final isTempMessage = controller.messageState?.isSending.value ?? false;
+      final isTempMessage = controller.isSending.value;
       return Material(
         color: Colors.transparent,
         child: Container(
@@ -87,7 +90,7 @@ class MessageEditField extends StatelessWidget {
           padding: const EdgeInsets.only(right: 10).add(const EdgeInsets.all(5)),
         child: Focus(
           focusNode: FocusNode(),
-          onKeyEvent: (_, ev) => _handleKeyEvent(ev),
+          onKeyEvent: (_, ev) => _handleKeyEvent(ev, message),
           child: TextField(
             textCapitalization: TextCapitalization.sentences,
             autocorrect: true,
@@ -139,7 +142,7 @@ class MessageEditField extends StatelessWidget {
                   color: context.theme.colorScheme.inversePrimary,
                   size: 20,
                 ),
-                onPressed: _cancelEdit,
+                onPressed: () => _cancelEdit(message),
               ),
               suffixIconConstraints: const BoxConstraints(minHeight: 0, minWidth: 40),
               suffixIcon: IconButton(

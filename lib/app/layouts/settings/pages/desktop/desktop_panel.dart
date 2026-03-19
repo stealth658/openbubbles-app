@@ -4,7 +4,6 @@ import 'dart:math';
 import 'package:animated_size_and_fade/animated_size_and_fade.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/app/components/avatars/contact_avatar_widget.dart';
 import 'package:bluebubbles/database/models.dart' hide PlatformFile;
 import 'package:bluebubbles/services/services.dart';
@@ -24,7 +23,7 @@ class DesktopPanel extends StatefulWidget {
   State<StatefulWidget> createState() => _DesktopPanelState();
 }
 
-class _DesktopPanelState extends OptimizedState<DesktopPanel> {
+class _DesktopPanelState extends State<DesktopPanel> with ThemeHelpers {
   final RxList<bool> showButtons = RxList<bool>.filled(ReactionTypes.toList().length + 1, false);
   final RxBool playingNotificationSound = false.obs;
   final Player notificationPlayer = Player();

@@ -1,5 +1,7 @@
 import 'dart:math';
 
+import 'package:bluebubbles/app/state/message_state.dart';
+
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -9,7 +11,7 @@ import 'package:get/get.dart';
 class MessageTimestamp extends StatelessWidget {
   const MessageTimestamp({super.key, required this.controller, required this.cvController});
 
-  final MessageWidgetController controller;
+  final MessageState controller;
   final ConversationViewController cvController;
 
   Message get message => controller.message;
@@ -18,7 +20,7 @@ class MessageTimestamp extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(() {
       // Use MessageState observable for reactivity
-      final dateCreated = controller.messageState?.dateCreated.value ?? message.dateCreated;
+      final dateCreated = controller.dateCreated.value;
       final oneLine = SettingsSvc.settings.skin.value == Skins.Samsung
           ? true
           : buildDate(dateCreated) == buildTime(dateCreated);

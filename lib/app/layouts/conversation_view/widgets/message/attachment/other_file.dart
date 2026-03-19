@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:bluebubbles/app/state/chat_state_scope.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/app/layouts/fullscreen_media/fullscreen_holder.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
@@ -96,13 +97,14 @@ class OtherFile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final currentChat = ChatStateScope.maybeChatOf(context);
     return InkWell(
       onTap: () async {
         if (attachment.mimeStart == "image" || (attachment.mimeStart == "video" && !isSnap)) {
           Navigator.of(Get.context!).push(
             ThemeSwitcher.buildPageRoute(
               builder: (context) => FullscreenMediaHolder(
-                currentChat: ChatsSvc.activeChat?.chat,
+                currentChat: currentChat,
                 attachment: attachment,
                 showInteractions: true,
               ),

@@ -9,6 +9,7 @@ import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/popup/
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/reaction/reaction_holder.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/reply/reply_bubble.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/text/text_bubble.dart';
+import 'package:bluebubbles/app/state/message_state.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -38,7 +39,7 @@ class MessagePartWrapper extends StatelessWidget {
   });
 
   final MessagePart part;
-  final MessageWidgetController controller;
+  final MessageState controller;
   final ConversationViewController cvController;
   final Message message;
   final Message? newerMessage;
@@ -107,7 +108,6 @@ class MessagePartWrapper extends StatelessWidget {
       children: [
         // actual message content
         BubbleEffects(
-          message: message,
           part: part.part,
           globalKey: globalKey,
           showTail: message.showTail(newerMessage) && part.part == controller.parts.length - 1,
@@ -174,7 +174,6 @@ class MessagePartWrapper extends StatelessWidget {
             left: -20,
             child: ReactionHolder(
               reactions: reactions,
-              message: message,
             ),
           ),
         if (!message.isFromMe!)
@@ -183,7 +182,6 @@ class MessagePartWrapper extends StatelessWidget {
             right: -20,
             child: ReactionHolder(
               reactions: reactions,
-              message: message,
             ),
           ),
       ],
@@ -205,7 +203,7 @@ class _MessageContentBubble extends StatelessWidget {
   });
 
   final MessagePart part;
-  final MessageWidgetController controller;
+  final MessageState controller;
   final ConversationViewController cvController;
   final Message message;
   final Message? newerMessage;
@@ -230,17 +228,14 @@ class _MessageContentBubble extends StatelessWidget {
         children: [
           message.hasApplePayloadData || message.isLegacyUrlPreview || message.isInteractive
               ? InteractiveHolder(
-                  parentController: controller,
                   message: part,
                 )
               : part.attachments.isEmpty && (part.text != null || part.subject != null)
                   ? TextBubble(
-                      parentController: controller,
                       message: part,
                     )
                   : part.attachments.isNotEmpty
                       ? AttachmentHolder(
-                          parentController: controller,
                           message: part,
                         )
                       : const SizedBox.shrink(),
@@ -288,12 +283,12 @@ class _EditModeTextField extends StatelessWidget {
   final MessagePart part;
   final Function(String) onComplete;
 
-  MessageWidgetController get controller => MessagesSvc(chat.guid).getOrCreateController(message);
+  MessageState get controller => MessagesSvc(chat.guid).getOrCreateState(message);
 
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final isTempMessage = controller.messageState?.isSending.value ?? false;
+      final isTempMessage = controller.isSending.value;
       return Material(
         color: Colors.transparent,
         child: Container(
@@ -303,7 +298,7 @@ class _EditModeTextField extends StatelessWidget {
                 : context.theme.colorScheme.background,
           ),
           constraints: BoxConstraints(
-            maxWidth: NavigationSvc.width(context) * MessageWidgetController.maxBubbleSizeFactor - 40,
+            maxWidth: NavigationSvc.width(context) * MessageState.maxBubbleSizeFactor - 40,
             minHeight: 40,
           ),
           padding: const EdgeInsets.only(right: 10).add(const EdgeInsets.all(5)),

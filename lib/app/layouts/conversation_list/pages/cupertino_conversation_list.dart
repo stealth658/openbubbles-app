@@ -6,7 +6,6 @@ import 'package:bluebubbles/app/layouts/conversation_list/widgets/tile/conversat
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/tile/pinned_conversation_tile.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/conversation_list_fab.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/header/cupertino_header.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/app/wrappers/scrollbar_wrapper.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/foundation.dart';
@@ -25,7 +24,7 @@ class CupertinoConversationList extends StatefulWidget {
   State<StatefulWidget> createState() => CupertinoConversationListState();
 }
 
-class CupertinoConversationListState extends OptimizedState<CupertinoConversationList> {
+class CupertinoConversationListState extends State<CupertinoConversationList> with ThemeHelpers {
   bool get showArchived => widget.parentController.showArchivedChats;
 
   bool get showUnknown => widget.parentController.showUnknownSenders;

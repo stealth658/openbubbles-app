@@ -11,7 +11,6 @@ import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/wrappers/scrollbar_wrapper.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:collection/collection.dart';
@@ -39,7 +38,7 @@ class MessagesView extends StatefulWidget {
   MessagesViewState createState() => MessagesViewState();
 }
 
-class MessagesViewState extends OptimizedState<MessagesView> with MessagesServiceMixin {
+class MessagesViewState extends State<MessagesView> with MessagesServiceMixin, ThemeHelpers {
   bool handlersInitialized = false;
   bool fetching = false;
   bool noMoreMessages = false;
@@ -124,7 +123,7 @@ class MessagesViewState extends OptimizedState<MessagesView> with MessagesServic
       }
     });
 
-    updateObx(() async {
+    () async {
       if (chat.isIMessage && !chat.isGroup) {
         getFocusState();
       }
@@ -174,7 +173,7 @@ class MessagesViewState extends OptimizedState<MessagesView> with MessagesServic
       }
       if (SettingsSvc.settings.scrollToLastUnread.value && chat.lastReadMessageGuid != null) {
         Future.delayed(const Duration(milliseconds: 100), () {
-          if (messageService.getControllerIfExists(chat.lastReadMessageGuid!)?.built ?? false) return;
+          if (messageService.getMessageStateIfExists(chat.lastReadMessageGuid!)?.built ?? false) return;
           internalSmartReplies['scroll-last-read'] = _buildReply("Jump to oldest unread", onTap: () async {
             if (jumpingToOldestUnread.value) return;
             jumpingToOldestUnread.value = true;
@@ -184,7 +183,7 @@ class MessagesViewState extends OptimizedState<MessagesView> with MessagesServic
           });
         });
       }
-    });
+    }();
   }
 
   @override
@@ -577,14 +576,12 @@ class MessagesViewState extends OptimizedState<MessagesView> with MessagesServic
                             SliverToBoxAdapter(
                               child: NotificationsSilencedBanner(
                                 controller: controller,
-                                chat: chat,
                                 latestMessage: _messages.firstOrNull,
                               ),
                             ),
                           SliverToBoxAdapter(
                             child: TypingIndicatorRow(
                               controller: controller,
-                              chat: chat,
                             ),
                           ),
                           if (_messages.isEmpty)

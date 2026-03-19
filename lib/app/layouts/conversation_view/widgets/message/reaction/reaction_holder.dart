@@ -1,5 +1,5 @@
+import 'package:bluebubbles/app/state/message_state_scope.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/reaction/reaction.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:defer_pointer/defer_pointer.dart';
@@ -67,17 +67,15 @@ class ReactionHolder extends StatefulWidget {
   const ReactionHolder({
     super.key,
     required this.reactions,
-    required this.message,
   });
 
   final Iterable<Message> reactions;
-  final Message message;
 
   @override
   State<ReactionHolder> createState() => _ReactionHolderState();
 }
 
-class _ReactionHolderState extends OptimizedState<ReactionHolder> {
+class _ReactionHolderState extends State<ReactionHolder> {
   Iterable<Message> get reactions => getUniqueReactionMessages(widget.reactions.toList());
 
   // Cache the unique reactions to prevent unnecessary rebuilds
@@ -121,6 +119,7 @@ class _ReactionHolderState extends OptimizedState<ReactionHolder> {
       return const SizedBox.shrink();
     }
 
+    final isFromMe = MessageStateScope.of(context).isFromMe.value;
     return SizedBox(
       height: 35,
       width: 35,
@@ -147,15 +146,14 @@ class _ReactionHolderState extends OptimizedState<ReactionHolder> {
               return Positioned(
                 key: ValueKey(stableKey),
                 top: 0,
-                left: !widget.message.isFromMe! ? null : -i * 2.0,
-                right: widget.message.isFromMe! ? null : -i * 2.0,
+                left: !isFromMe ? null : -i * 2.0,
+                right: isFromMe ? null : -i * 2.0,
                 child: _ReactionAnimator(
                   key: ValueKey(stableKey),
                   stableKey: stableKey,
                   shouldAnimate: shouldAnimate,
                   child: DeferPointer(
                     child: ReactionWidget(
-                      message: widget.message,
                       reaction: e,
                       reactions: _cachedReactions,
                     ),

@@ -4,7 +4,6 @@ import 'package:bluebubbles/app/layouts/conversation_list/pages/conversation_lis
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/tile/conversation_tile.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/theming/avatar/avatar_crop.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -17,7 +16,7 @@ class CustomAvatarPanel extends StatefulWidget {
   State<StatefulWidget> createState() => _CustomAvatarPanelState();
 }
 
-class _CustomAvatarPanelState extends OptimizedState<CustomAvatarPanel> {
+class _CustomAvatarPanelState extends State<CustomAvatarPanel> with ThemeHelpers {
   @override
   Widget build(BuildContext context) {
     return SettingsScaffold(

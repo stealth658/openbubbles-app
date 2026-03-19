@@ -9,7 +9,6 @@ import 'package:bluebubbles/app/layouts/conversation_details/widgets/participant
 import 'package:bluebubbles/app/wrappers/bb_annotated_region.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
@@ -25,7 +24,7 @@ class ConversationDetails extends StatefulWidget {
   State<ConversationDetails> createState() => _ConversationDetailsState();
 }
 
-class _ConversationDetailsState extends OptimizedState<ConversationDetails> with WidgetsBindingObserver {
+class _ConversationDetailsState extends State<ConversationDetails> with WidgetsBindingObserver, ThemeHelpers {
   List<Attachment> media = <Attachment>[];
   List<Attachment> docs = <Attachment>[];
   List<Attachment> locations = <Attachment>[];

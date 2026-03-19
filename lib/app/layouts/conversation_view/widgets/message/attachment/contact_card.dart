@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:bluebubbles/app/components/avatars/contact_avatar_widget.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -27,15 +26,13 @@ class ContactCard extends StatefulWidget {
   State<ContactCard> createState() => _ContactCardState();
 }
 
-class _ContactCardState extends OptimizedState<ContactCard> with AutomaticKeepAliveClientMixin {
+class _ContactCardState extends State<ContactCard> with AutomaticKeepAliveClientMixin, ThemeHelpers {
   Contact? contact;
 
   @override
   void initState() {
     super.initState();
-    updateObx(() {
-      init();
-    });
+    init();
   }
 
   void init() async {

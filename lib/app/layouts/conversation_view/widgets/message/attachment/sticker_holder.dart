@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/foundation.dart';
@@ -16,7 +15,7 @@ class StickerHolder extends StatefulWidget {
   State<StickerHolder> createState() => _StickerHolderState();
 }
 
-class _StickerHolderState extends OptimizedState<StickerHolder> with AutomaticKeepAliveClientMixin {
+class _StickerHolderState extends State<StickerHolder> with AutomaticKeepAliveClientMixin {
   Iterable<Message> get messages => widget.stickerMessages;
   ConversationViewController get controller => widget.controller;
 
@@ -25,9 +24,7 @@ class _StickerHolderState extends OptimizedState<StickerHolder> with AutomaticKe
   @override
   void initState() {
     super.initState();
-    updateObx(() {
-      loadStickers();
-    });
+    loadStickers();
   }
 
   Future<void> loadStickers() async {

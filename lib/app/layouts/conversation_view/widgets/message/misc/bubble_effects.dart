@@ -1,13 +1,13 @@
 import 'dart:math';
 import 'dart:ui';
 
+import 'package:bluebubbles/app/state/message_state_scope.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/misc/tail_clipper.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
-import 'package:bluebubbles/services/services.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:particles_flutter/particles_engine.dart';
 import 'package:particles_flutter/component/particle/particle.dart';
 import 'package:simple_animations/simple_animations.dart';
@@ -17,49 +17,49 @@ class BubbleEffects extends StatefulWidget {
   const BubbleEffects({
     super.key,
     required this.child,
-    required this.message,
     required this.part,
     required this.globalKey,
     required this.showTail,
   });
 
   final Widget child;
-  final Message message;
   final int part;
   final GlobalKey? globalKey;
   final bool showTail;
 
   @override
-  OptimizedState createState() => _BubbleEffectsState();
+  State<StatefulWidget> createState() => _BubbleEffectsState();
 }
 
-class _BubbleEffectsState extends OptimizedState<BubbleEffects> {
-  Message get message => widget.message;
-  String get effectStr =>
-      effectMap.entries.firstWhereOrNull((e) => e.value == message.expressiveSendStyleId)?.key ?? "unknown";
-  MessageEffect get effect => stringToMessageEffect[effectStr] ?? MessageEffect.none;
-
+class _BubbleEffectsState extends State<BubbleEffects> {
   late MovieTween tween;
-  Control controller = Control.stop;
+  final rxControl = Rx<Control>(Control.stop);
   Size size = Size.zero;
+  Worker? _effectWorker;
 
   @override
-  void initState() {
-    getTween();
-
-    EventDispatcherSvc.stream.listen((event) async {
-      if (event.item1 == 'play-bubble-effect' && event.item2 == '${widget.part}/${widget.message.guid}') {
-        size = widget.globalKey?.currentContext?.size ?? Size.zero;
-        setState(() {
-          controller = Control.playFromStart;
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_effectWorker == null) {
+      final ms = MessageStateScope.maybeOf(context);
+      if (ms != null) {
+        _effectWorker = ever(ms.playEffectPart, (int? part) {
+          if (part == widget.part) {
+            size = widget.globalKey?.currentContext?.size ?? Size.zero;
+            rxControl.value = Control.playFromStart;
+          }
         });
       }
-    });
-
-    super.initState();
+    }
   }
 
-  void getTween() {
+  @override
+  void dispose() {
+    _effectWorker?.dispose();
+    super.dispose();
+  }
+
+  void getTween(Message message, MessageEffect effect) {
     if (effect == MessageEffect.gentle) {
       tween = MovieTween()
         ..scene(begin: Duration.zero, duration: const Duration(milliseconds: 1), curve: Curves.easeInOut)
@@ -118,27 +118,28 @@ class _BubbleEffectsState extends OptimizedState<BubbleEffects> {
 
   @override
   Widget build(BuildContext context) {
+    final message = MessageStateScope.of(context).message;
+    final effectStr = effectMap.entries.firstWhereOrNull((e) => e.value == message.expressiveSendStyleId)?.key ?? "unknown";
+    final effect = stringToMessageEffect[effectStr] ?? MessageEffect.none;
     if (message.expressiveSendStyleId == null) return widget.child;
     if (effect == MessageEffect.invisibleInk) {
-      return GestureDetector(
-        onHorizontalDragUpdate: controller == Control.stop
+      return Obx(() => GestureDetector(
+        onHorizontalDragUpdate: rxControl.value == Control.stop
             ? null
             : (DragUpdateDetails details) {
                 if (effect != MessageEffect.invisibleInk) return;
                 if ((details.primaryDelta ?? 0).abs() > 1) {
                   message.setPlayedDate();
-                  setState(() {
-                    controller = Control.stop;
-                  });
+                  rxControl.value = Control.stop;
                 }
               },
         child: AbsorbPointer(
-          absorbing: controller != Control.stop,
+          absorbing: rxControl.value != Control.stop,
           child: Stack(
             clipBehavior: Clip.none,
             children: [
               widget.child,
-              if (controller != Control.stop)
+              if (rxControl.value != Control.stop)
                 ClipPath(
                   clipper: TailClipper(
                     isFromMe: message.isFromMe!,
@@ -165,11 +166,11 @@ class _BubbleEffectsState extends OptimizedState<BubbleEffects> {
             ],
           ),
         ),
-      );
+      ));
     }
-    getTween();
-    return CustomAnimationBuilder<Movie>(
-      control: controller,
+    getTween(message, effect);
+    return Obx(() => CustomAnimationBuilder<Movie>(
+      control: rxControl.value,
       tween: tween,
       duration: Duration(
           milliseconds: effect == MessageEffect.loud
@@ -179,9 +180,7 @@ class _BubbleEffectsState extends OptimizedState<BubbleEffects> {
                   : 1800),
       animationStatusListener: (status) {
         if (status == AnimationStatus.completed) {
-          setState(() {
-            controller = Control.stop;
-          });
+          rxControl.value = Control.stop;
         }
       },
       builder: (context, anim, child) {
@@ -197,7 +196,7 @@ class _BubbleEffectsState extends OptimizedState<BubbleEffects> {
           return Padding(
             padding: EdgeInsets.only(top: size.height * (value1.clamp(1, 1.2) - 1)),
             child: Transform.scale(
-                scale: controller == Control.stop ? 1 : value1,
+                scale: rxControl.value == Control.stop ? 1 : value1,
                 alignment: message.isFromMe! ? Alignment.bottomRight : Alignment.bottomLeft,
                 child: child),
           );
@@ -229,6 +228,6 @@ class _BubbleEffectsState extends OptimizedState<BubbleEffects> {
         return child!;
       },
       child: widget.child,
-    );
+    ));
   }
 }

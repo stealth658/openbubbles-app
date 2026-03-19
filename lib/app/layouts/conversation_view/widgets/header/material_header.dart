@@ -2,6 +2,7 @@ import 'package:bluebubbles/app/layouts/conversation_details/conversation_detail
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/header/header_widgets.dart';
 import 'package:bluebubbles/app/components/avatars/contact_avatar_group_widget.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/reply/reply_thread_popup.dart';
+import 'package:bluebubbles/app/state/chat_state_scope.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
@@ -221,30 +222,11 @@ class MaterialHeader extends StatelessWidget implements PreferredSizeWidget {
               )
             ],
           )),
-      Positioned(
+      const Positioned(
         bottom: 0,
         left: 0,
         right: 0,
-        child: Obx(() => TweenAnimationBuilder<double>(
-            duration: controller.chat.sendProgress.value == 0
-                ? Duration.zero
-                : controller.chat.sendProgress.value == 1
-                    ? const Duration(milliseconds: 250)
-                    : const Duration(seconds: 10),
-            curve: controller.chat.sendProgress.value == 1 ? Curves.easeInOut : Curves.easeOutExpo,
-            tween: Tween<double>(
-              begin: 0,
-              end: controller.chat.sendProgress.value,
-            ),
-            builder: (context, value, _) => AnimatedOpacity(
-                  opacity: value == 1 ? 0 : 1,
-                  duration: const Duration(milliseconds: 250),
-                  child: LinearProgressIndicator(
-                    value: value,
-                    backgroundColor: Colors.transparent,
-                    minHeight: 3,
-                  ),
-                ))),
+        child: HeaderProgressIndicator(),
       ),
     ]);
   }
@@ -272,7 +254,7 @@ class _ChatIconAndTitleState extends CustomState<_ChatIconAndTitle, void, Conver
 
   @override
   Widget build(BuildContext context) {
-    final chatState = ChatsSvc.getChatState(controller.chat.guid);
+    final chatState = ChatStateScope.of(context);
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -282,7 +264,7 @@ class _ChatIconAndTitleState extends CustomState<_ChatIconAndTitle, void, Conver
           child: IgnorePointer(
             ignoring: true,
             child: ContactAvatarGroupWidget(
-              chat: controller.chat,
+              chat: chatState.chat,
               size: !controller.chat.isGroup ? 35 : 40,
             ),
           ),
@@ -295,7 +277,7 @@ class _ChatIconAndTitleState extends CustomState<_ChatIconAndTitle, void, Conver
                 // Get title from ChatState - it handles all title logic including redacted mode
                 final _title = controller.inSelectMode.value
                     ? "${controller.selected.length} selected"
-                    : chatState?.title.value ?? controller.chat.getTitle();
+                    : chatState.title.value ?? controller.chat.getTitle();
                 return Text(
                   _title,
                   style: context.theme.textTheme.titleLarge!

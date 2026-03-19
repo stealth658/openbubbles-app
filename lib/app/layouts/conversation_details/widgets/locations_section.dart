@@ -107,7 +107,6 @@ class LocationsSection extends StatelessWidget {
                                     "Location from ${DateFormat.yMd().format(locations[index].message.target!.dateCreated!)}",
                                 siteName: "Tap to open",
                               ),
-                              message: locations[index].message.target!,
                               file: AttachmentsSvc.getContent(locations[index]),
                             ),
                           ),

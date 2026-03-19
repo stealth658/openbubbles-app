@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
@@ -29,7 +28,7 @@ class BackupRestorePanel extends StatefulWidget {
   State<BackupRestorePanel> createState() => _BackupRestorePanelState();
 }
 
-class _BackupRestorePanelState extends OptimizedState<BackupRestorePanel> {
+class _BackupRestorePanelState extends State<BackupRestorePanel> with ThemeHelpers {
   final settings = <Map<String, dynamic>>[].obs;
   final themes = <Map<String, dynamic>>[].obs;
   final fetching = Rx<bool?>(true);

@@ -1,4 +1,6 @@
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
+import 'package:bluebubbles/app/state/message_state.dart';
+import 'package:bluebubbles/app/state/message_state_scope.dart';
+import 'package:bluebubbles/app/state/chat_state_scope.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -6,34 +8,46 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-class DeliveredIndicator extends CustomStateful<MessageWidgetController> {
+class DeliveredIndicator extends StatefulWidget {
   const DeliveredIndicator({
     super.key,
-    required super.parentController,
     required this.forceShow,
   });
 
   final bool forceShow;
 
   @override
-  CustomState createState() => _DeliveredIndicatorState();
+  State<StatefulWidget> createState() => _DeliveredIndicatorState();
 }
 
-class _DeliveredIndicatorState extends CustomState<DeliveredIndicator, void, MessageWidgetController> {
+class _DeliveredIndicatorState extends State<DeliveredIndicator> with ThemeHelpers {
+  late MessageState _ms;
+  MessageState get controller => _ms;
+  late final String _chatGuid;
+  late final bool _isGroup;
   Message get message => controller.message;
-  bool get showAvatar => (controller.cvController?.chat ?? ChatsSvc.activeChat!.chat).isGroup;
+  bool get showAvatar => _isGroup;
+
+  @override
+  void initState() {
+    super.initState();
+    _ms = MessageStateScope.readStateOnce(context);
+    final fallbackChat = ChatStateScope.maybeReadChatOnce(context);
+    _chatGuid = controller.cvController?.chat.guid ?? fallbackChat?.guid ?? '';
+    _isGroup = controller.cvController?.chat.isGroup ?? fallbackChat?.isGroup ?? false;
+  }
 
   bool get shouldShow {
     if (controller.audioWasKept.value != null) return true;
-    final isTempMessage = controller.messageState?.isSending.value ?? message.guid!.contains("temp");
+    final isTempMessage = controller.isSending.value;
     if (widget.forceShow || isTempMessage) return true;
     if ((!message.isFromMe! && iOS) || (controller.parts.lastOrNull?.isUnsent ?? false)) return false;
 
     // Prefer reactive messageState values to avoid stale reads on delivery/read receipts.
-    final dateRead = controller.messageState?.dateRead.value ?? message.dateRead;
-    final dateDelivered = controller.messageState?.dateDelivered.value ?? message.dateDelivered;
+    final dateRead = controller.dateRead.value;
+    final dateDelivered = controller.dateDelivered.value;
 
-    final chatGuid = controller.cvController?.chat.guid ?? ChatsSvc.activeChat!.chat.guid;
+    final chatGuid = _chatGuid;
     final allMessages = MessagesSvc(chatGuid).struct.messages;
 
     // Non-iOS: show "Received" only on the most recent incoming message.
@@ -78,12 +92,11 @@ class _DeliveredIndicatorState extends CustomState<DeliveredIndicator, void, Mes
   }
 
   List<InlineSpan> getText() {
-    // Prefer reactive messageState values so the Obx subscription keeps getText
-    // up-to-date without requiring controller.message to be replaced on receipt.
-    final dateRead = controller.messageState?.dateRead.value ?? message.dateRead;
-    final dateDelivered = controller.messageState?.dateDelivered.value ?? message.dateDelivered;
-    final wasDeliveredQuietly = controller.messageState?.wasDeliveredQuietly.value ?? message.wasDeliveredQuietly;
-    final didNotifyRecipient = controller.messageState?.didNotifyRecipient.value ?? message.didNotifyRecipient;
+    // Use reactive MessageState fields for Obx subscription
+    final dateRead = controller.dateRead.value ?? message.dateRead;
+    final dateDelivered = controller.dateDelivered.value ?? message.dateDelivered;
+    final wasDeliveredQuietly = controller.wasDeliveredQuietly.value;
+    final didNotifyRecipient = controller.didNotifyRecipient.value;
 
     if (controller.audioWasKept.value != null) {
       return buildTwoPiece("Kept", buildDate(controller.audioWasKept.value!));
@@ -99,8 +112,8 @@ class _DeliveredIndicatorState extends CustomState<DeliveredIndicator, void, Mes
               : null);
     } else if (message.isDelivered) {
       return buildTwoPiece("Delivered", null);
-    } else if ((controller.messageState?.isSending.value ?? message.guid!.contains("temp")) &&
-        !(controller.cvController?.chat ?? ChatsSvc.activeChat!.chat).isGroup &&
+    } else if (controller.isSending.value &&
+        !(controller.cvController?.chat.isGroup ?? _isGroup) &&
         !iOS) {
       return buildTwoPiece("Sending...", "");
     } else if (widget.forceShow) {
@@ -117,11 +130,10 @@ class _DeliveredIndicatorState extends CustomState<DeliveredIndicator, void, Mes
       alignment: Alignment.bottomCenter,
       duration: const Duration(milliseconds: 250),
       child: Obx(() {
-        // Observe granular MessageState fields instead of boolean toggles
-        // This provides direct observation of actual data changes
-        controller.messageState?.guid.value;
-        controller.messageState?.dateDelivered.value;
-        controller.messageState?.dateRead.value;
+        // Observe granular MessageState fields directly
+        controller.guid.value;
+        controller.dateDelivered.value;
+        controller.dateRead.value;
         return shouldShow && getText().isNotEmpty
             ? Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 15).add(

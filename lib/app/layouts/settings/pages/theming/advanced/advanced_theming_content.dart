@@ -5,7 +5,6 @@ import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/settings/dialogs/create_new_theme_dialog.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/content/advanced_theming_tile.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/app/wrappers/scrollbar_wrapper.dart';
 import 'package:bluebubbles/database/models.dart';
@@ -27,7 +26,7 @@ class AdvancedThemingContent extends StatefulWidget {
   State<AdvancedThemingContent> createState() => _AdvancedThemingContentState();
 }
 
-class _AdvancedThemingContentState extends OptimizedState<AdvancedThemingContent> {
+class _AdvancedThemingContentState extends State<AdvancedThemingContent> with ThemeHelpers {
   late ThemeStruct currentTheme;
   List<ThemeStruct> allThemes = [];
   final RxBool editable = false.obs;

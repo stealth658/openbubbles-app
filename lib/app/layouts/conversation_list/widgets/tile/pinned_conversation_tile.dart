@@ -417,7 +417,6 @@ class _ReactionIconState extends CustomState<ReactionIcon, void, ConversationTil
               right: -sqrt(widget.width / 2) + widget.width * 0.025,
               child: ReactionWidget(
                 reaction: latestMsg,
-                message: null,
                 // Pass the chat GUID explicitly so ReactionWidget can locate the
                 // correct MessagesService instead of falling back to activeChat.
                 chatGuid: controller.chat.guid,

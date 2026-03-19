@@ -1,42 +1,54 @@
+import 'package:bluebubbles/app/state/message_state.dart';
 import 'package:bluebubbles/app/components/circle_progress_bar.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/attachment/other_file.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/attachment/video_player.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
+import 'package:bluebubbles/app/state/message_state_scope.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:path/path.dart';
+import 'package:path/path.dart' as p;
 import 'package:tuple/tuple.dart';
 import 'package:universal_io/io.dart';
 
-class EmbeddedMedia extends CustomStateful<MessageWidgetController> {
+class EmbeddedMedia extends StatefulWidget {
   const EmbeddedMedia({
     super.key,
-    required this.message,
-    required super.parentController,
   });
-
-  final Message message;
 
   @override
   State<EmbeddedMedia> createState() => _EmbeddedMediaState();
 }
 
-class _EmbeddedMediaState extends CustomState<EmbeddedMedia, void, MessageWidgetController>
-    with AutomaticKeepAliveClientMixin {
-  Message get message => widget.message;
+class _EmbeddedMediaState extends State<EmbeddedMedia> with AutomaticKeepAliveClientMixin, ThemeHelpers {
+  late MessageState _ms;
+  MessageState get controller => _ms;
+  Worker? _refreshWorker;
+  Message get message => controller.message;
 
   dynamic content;
 
   @override
   void initState() {
     super.initState();
-    updateObx(() async {
-      getContent();
+    _ms = MessageStateScope.readStateOnce(context);
+    _refreshWorker = ever(_ms.embeddedMediaRefreshKey, (_) {
+      if (File(message.interactiveMediaPath!).existsSync()) {
+        File(message.interactiveMediaPath!).deleteSync();
+        content = null;
+        setState(() {});
+        getContent();
+      }
     });
+    getContent();
+  }
+
+  @override
+  void dispose() {
+    _refreshWorker?.dispose();
+    super.dispose();
   }
 
   void getContent() async {
@@ -44,7 +56,7 @@ class _EmbeddedMediaState extends CustomState<EmbeddedMedia, void, MessageWidget
     if (await File(path).exists()) {
       final bytes = await File(path).readAsBytes();
       content = PlatformFile(
-        name: basename(path),
+        name: p.basename(path),
         path: path,
         size: bytes.length,
         bytes: bytes,
@@ -61,7 +73,7 @@ class _EmbeddedMediaState extends CustomState<EmbeddedMedia, void, MessageWidget
         await File(path).create(recursive: true);
         await File(path).writeAsBytes(response.data);
         content = PlatformFile(
-          name: basename(path),
+          name: p.basename(path),
           path: path,
           size: response.data.length,
           bytes: response.data,
@@ -84,16 +96,6 @@ class _EmbeddedMediaState extends CustomState<EmbeddedMedia, void, MessageWidget
       name = temp;
     }
     return name ?? "Unknown";
-  }
-
-  @override
-  void updateWidget(void _) {
-    if (File(message.interactiveMediaPath!).existsSync()) {
-      File(message.interactiveMediaPath!).deleteSync();
-      content = null;
-      super.updateWidget(_);
-      getContent();
-    }
   }
 
   @override

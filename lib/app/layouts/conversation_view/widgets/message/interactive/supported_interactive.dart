@@ -1,4 +1,4 @@
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
+import 'package:bluebubbles/app/state/message_state_scope.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -9,19 +9,17 @@ import 'package:universal_io/io.dart';
 
 class SupportedInteractive extends StatefulWidget {
   final iMessageAppData data;
-  final Message message;
 
   const SupportedInteractive({
     super.key,
     required this.data,
-    required this.message,
   });
 
   @override
-  OptimizedState createState() => _SupportedInteractiveState();
+  State<StatefulWidget> createState() => _SupportedInteractiveState();
 }
 
-class _SupportedInteractiveState extends OptimizedState<SupportedInteractive> with AutomaticKeepAliveClientMixin {
+class _SupportedInteractiveState extends State<SupportedInteractive> with AutomaticKeepAliveClientMixin {
   iMessageAppData get data => widget.data;
   dynamic get file => File(content.path!);
   dynamic content;
@@ -30,26 +28,20 @@ class _SupportedInteractiveState extends OptimizedState<SupportedInteractive> wi
   bool get wantKeepAlive => true;
 
   @override
-  void initState() {
-    super.initState();
-    updateObx(() async {
-      final attachment = widget.message.attachments.firstOrNull;
-      if (attachment != null) {
-        content = AttachmentsSvc.getContent(attachment, autoDownload: true, onComplete: (file) {
-          setState(() {
-            content = file;
-          });
-        });
-        if (content is PlatformFile) {
-          setState(() {});
-        }
-      }
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
     super.build(context);
+    if (content == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final attachment = MessageStateScope.messageOf(context).attachments.firstOrNull;
+        if (attachment != null) {
+          content = AttachmentsSvc.getContent(attachment, autoDownload: true, onComplete: (file) {
+            if (mounted) setState(() { content = file; });
+          });
+          if (content != null && mounted) setState(() {});
+        }
+      });
+    }
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,

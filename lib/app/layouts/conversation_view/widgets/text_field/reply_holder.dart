@@ -1,6 +1,6 @@
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
-import 'package:bluebubbles/helpers/helpers.dart';
+import 'package:bluebubbles/app/state/chat_state_scope.dart';
 import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -13,10 +13,10 @@ class ReplyHolder extends StatefulWidget {
   final ConversationViewController controller;
 
   @override
-  OptimizedState createState() => _ReplyHolderState();
+  State<StatefulWidget> createState() => _ReplyHolderState();
 }
 
-class _ReplyHolderState extends OptimizedState<ReplyHolder> {
+class _ReplyHolderState extends State<ReplyHolder> with ThemeHelpers {
   void _clearReply() {
     widget.controller.replyToMessage = null;
     widget.controller.scheduledDate.value = null;
@@ -27,10 +27,10 @@ class _ReplyHolderState extends OptimizedState<ReplyHolder> {
     return Obx(() {
       final message = widget.controller.replyToMessage?.item1;
       final part = widget.controller.replyToMessage?.item2 ?? 0;
-      final chatGuid = message?.chat.target?.guid ?? ChatsSvc.activeChat?.chat.guid;
+      final chatGuid = message?.chat.target?.guid ?? ChatStateScope.maybeChatOf(context)?.guid;
       final reply = message?.guid == null || chatGuid == null
           ? message
-          : (MessagesSvc(chatGuid).getControllerIfExists(message!.guid!)?.parts[part] ?? message);
+          : (MessagesSvc(chatGuid).getMessageStateIfExists(message!.guid!)?.parts[part] ?? message);
       final date = widget.controller.scheduledDate.value;
 
       if (reply == null && date == null) {

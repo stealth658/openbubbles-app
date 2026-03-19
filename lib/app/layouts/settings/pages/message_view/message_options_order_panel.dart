@@ -2,7 +2,6 @@ import 'dart:ui';
 
 import 'package:bluebubbles/app/wrappers/bb_annotated_region.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/popup/details_menu_action.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/backend/settings/settings_service.dart';
 import 'package:bluebubbles/services/ui/navigator/navigator_service.dart';
@@ -19,7 +18,7 @@ class MessageOptionsOrderPanel extends StatefulWidget {
   State<StatefulWidget> createState() => _MessageOptionsOrderPanelState();
 }
 
-class _MessageOptionsOrderPanelState extends OptimizedState<MessageOptionsOrderPanel> {
+class _MessageOptionsOrderPanelState extends State<MessageOptionsOrderPanel> with ThemeHelpers {
   final RxList<DetailsMenuAction> actionList = RxList();
 
   @override

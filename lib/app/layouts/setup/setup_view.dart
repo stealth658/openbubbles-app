@@ -51,7 +51,7 @@ class SetupView extends StatefulWidget {
   State<SetupView> createState() => _SetupViewState();
 }
 
-class _SetupViewState extends OptimizedState<SetupView> {
+class _SetupViewState extends State<SetupView> {
   final controller = Get.put(SetupViewController(), permanent: true);
 
   @override

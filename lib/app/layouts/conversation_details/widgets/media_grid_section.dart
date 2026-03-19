@@ -1,7 +1,6 @@
 import 'dart:math';
 
 import 'package:bluebubbles/app/layouts/conversation_details/widgets/media_gallery_card.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -27,7 +26,7 @@ class MediaGridSection extends StatefulWidget {
   State<MediaGridSection> createState() => _MediaGridSectionState();
 }
 
-class _MediaGridSectionState extends OptimizedState<MediaGridSection> {
+class _MediaGridSectionState extends State<MediaGridSection> with ThemeHelpers {
   @override
   void didUpdateWidget(MediaGridSection oldWidget) {
     super.didUpdateWidget(oldWidget);

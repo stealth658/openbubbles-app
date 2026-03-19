@@ -5,7 +5,6 @@ import 'package:bluebubbles/app/layouts/settings/pages/theming/avatar/avatar_cro
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:collection/collection.dart';
@@ -21,7 +20,7 @@ class ProfilePanel extends StatefulWidget {
   State<ProfilePanel> createState() => _ProfilePanelState();
 }
 
-class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindingObserver {
+class _ProfilePanelState extends State<ProfilePanel> with WidgetsBindingObserver, ThemeHelpers {
   final RxDouble opacity = 1.0.obs;
   final RxMap<String, dynamic> accountInfo = RxMap({});
   final RxMap<String, dynamic> accountContact = RxMap({});

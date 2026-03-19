@@ -1,4 +1,3 @@
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -18,7 +17,7 @@ class AttachmentsLoader extends StatefulWidget {
   State<AttachmentsLoader> createState() => _AttachmentsLoaderState();
 }
 
-class _AttachmentsLoaderState extends OptimizedState<AttachmentsLoader> {
+class _AttachmentsLoaderState extends State<AttachmentsLoader> {
   bool isLoading = true;
 
   @override

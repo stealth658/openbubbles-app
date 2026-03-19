@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:bluebubbles/app/components/circle_progress_bar.dart';
+import 'package:bluebubbles/app/state/message_state_scope.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -8,22 +9,19 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 /// Attachment transfer actively in progress: shows a circular progress bar.
-/// Applies to both incoming downloads and outgoing uploads without a local
-/// preview file.  The [Obx] rebuilds only this widget on each progress tick.
 class DownloadProgressContent extends StatelessWidget {
   const DownloadProgressContent({
     super.key,
     required this.progress,
     required this.attachment,
-    required this.message,
   });
 
   final RxnDouble progress;
   final Attachment attachment;
-  final Message message;
 
   @override
   Widget build(BuildContext context) {
+    final ms = MessageStateScope.of(context);
     return Obx(() {
       final progressValue = progress.value ?? 0.0;
       return Padding(
@@ -31,7 +29,7 @@ class DownloadProgressContent extends StatelessWidget {
           left: 10.0,
           top: 10.0,
           right: 10.0,
-          bottom: progressValue < 1 && message.error == 0 ? 0 : 10.0,
+          bottom: progressValue < 1 && ms.error.value == 0 ? 0 : 10.0,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -56,7 +54,7 @@ class DownloadProgressContent extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
             ),
-            if (message.error == 0)
+            if (ms.error.value == 0)
               TextButton(
                 style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
                 onPressed: progressValue < 1

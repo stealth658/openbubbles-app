@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:bluebubbles/app/state/message_state.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/material.dart';
 
@@ -62,7 +63,7 @@ class ReplyLinePainter extends BoxPainter {
         path.lineTo(_offset.dx + size.width - 35, _offset.dy + (size.height / 2 - radius).clamp(0, double.infinity));
         final x = _offset.dx + size.width - 35 - radius;
         path.arcToPoint(Offset(x, _offset.dy + size.height / 2), clockwise: true, radius: Radius.circular(radius));
-        path.lineTo(min(x, _offset.dx + NavigationSvc.width(context) * MessageWidgetController.maxBubbleSizeFactor - 35),
+        path.lineTo(min(x, _offset.dx + NavigationSvc.width(context) * MessageState.maxBubbleSizeFactor - 35),
             _offset.dy + size.height / 2);
       } else {
         path.moveTo(_offset.dx, _offset.dy);
@@ -75,7 +76,7 @@ class ReplyLinePainter extends BoxPainter {
                 x,
                 _offset.dx +
                     size.width -
-                    NavigationSvc.width(context) * MessageWidgetController.maxBubbleSizeFactor -
+                    NavigationSvc.width(context) * MessageState.maxBubbleSizeFactor -
                     30),
             _offset.dy + size.height / 2);
       }
@@ -88,7 +89,7 @@ class ReplyLinePainter extends BoxPainter {
         final x = _offset.dx + size.width - 35 - radius;
         path.arcToPoint(Offset(x, _offset.dy + size.height / 2), clockwise: false, radius: Radius.circular(radius));
         path.lineTo(
-            (_offset.dx + NavigationSvc.width(context) * MessageWidgetController.maxBubbleSizeFactor).clamp(0, x),
+            (_offset.dx + NavigationSvc.width(context) * MessageState.maxBubbleSizeFactor).clamp(0, x),
             _offset.dy + size.height / 2);
       } else {
         path.moveTo(_offset.dx, _offset.dy + size.height);
@@ -97,7 +98,7 @@ class ReplyLinePainter extends BoxPainter {
         final x = _offset.dx + radius;
         path.arcToPoint(Offset(x, _offset.dy + size.height / 2), clockwise: true, radius: Radius.circular(radius));
         path.lineTo(
-            (_offset.dx + size.width - NavigationSvc.width(context) * MessageWidgetController.maxBubbleSizeFactor - 30)
+            (_offset.dx + size.width - NavigationSvc.width(context) * MessageState.maxBubbleSizeFactor - 30)
                 .clamp(x, double.infinity),
             _offset.dy + size.height / 2);
       }

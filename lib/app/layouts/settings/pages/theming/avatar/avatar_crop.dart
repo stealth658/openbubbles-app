@@ -1,6 +1,5 @@
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/wrappers/bb_scaffold.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:crop_your_image/crop_your_image.dart';
@@ -20,7 +19,7 @@ class AvatarCrop extends StatefulWidget {
   State<AvatarCrop> createState() => _AvatarCropState();
 }
 
-class _AvatarCropState extends OptimizedState<AvatarCrop> {
+class _AvatarCropState extends State<AvatarCrop> with ThemeHelpers {
   final _cropController = CropController();
   Uint8List? _imageData;
   bool _isLoading = true;

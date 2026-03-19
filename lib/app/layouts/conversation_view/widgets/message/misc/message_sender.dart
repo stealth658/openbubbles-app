@@ -1,15 +1,17 @@
+import 'package:bluebubbles/app/state/message_state_scope.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class MessageSender extends StatelessWidget {
-  const MessageSender({super.key, required this.message, required this.olderMessage});
+  const MessageSender({super.key, required this.olderMessage});
 
-  final Message message;
   final Message? olderMessage;
 
   @override
   Widget build(BuildContext context) {
+    final message = MessageStateScope.maybeMessageOf(context);
+    if (message == null) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 25).add(const EdgeInsets.only(bottom: 3)),
       child: Text(

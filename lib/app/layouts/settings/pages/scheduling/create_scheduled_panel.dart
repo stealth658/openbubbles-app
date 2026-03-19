@@ -4,7 +4,6 @@ import 'package:bluebubbles/app/layouts/conversation_details/dialogs/timeframe_p
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
 import 'package:bluebubbles/database/models.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:dio/dio.dart';
@@ -24,7 +23,7 @@ class CreateScheduledMessage extends StatefulWidget {
   State<CreateScheduledMessage> createState() => _CreateScheduledMessageState();
 }
 
-class _CreateScheduledMessageState extends OptimizedState<CreateScheduledMessage> {
+class _CreateScheduledMessageState extends State<CreateScheduledMessage> with ThemeHelpers {
   late final TextEditingController messageController = TextEditingController(text: widget.existing?.payload.message);
   final FocusNode messageNode = FocusNode();
   late final TextEditingController numberController =

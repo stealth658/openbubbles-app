@@ -4,7 +4,6 @@ import 'package:bluebubbles/app/layouts/settings/widgets/content/next_button.dar
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/conversation_list/pinned_order_panel.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -18,7 +17,7 @@ class ChatListPanel extends StatefulWidget {
   State<StatefulWidget> createState() => _ChatListPanelState();
 }
 
-class _ChatListPanelState extends OptimizedState<ChatListPanel> {
+class _ChatListPanelState extends State<ChatListPanel> with ThemeHelpers {
   @override
   Widget build(BuildContext context) {
     return SettingsScaffold(

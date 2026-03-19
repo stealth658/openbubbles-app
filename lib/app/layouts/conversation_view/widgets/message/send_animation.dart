@@ -9,6 +9,7 @@ import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/misc/t
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/app/state/message_state.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -37,7 +38,7 @@ class _SendAnimationState extends CustomState<SendAnimation,
   void initState() {
     super.initState();
     controller.sendFunc = send;
-    updateObx(() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       final box = controller.textFieldKey.currentContext?.findRenderObject() as RenderBox?;
       textFieldSize = box?.size.height ?? 0;
     });
@@ -193,7 +194,7 @@ class _SendAnimationState extends CustomState<SendAnimation,
   Widget build(BuildContext context) {
     final typicalWidth = message?.isBigEmoji ?? false
         ? NavigationSvc.width(context)
-        : NavigationSvc.width(context) * MessageWidgetController.maxBubbleSizeFactor - 40;
+        : NavigationSvc.width(context) * MessageState.maxBubbleSizeFactor - 40;
     const duration = 450;
     const curve = Curves.easeInOut;
     const buttonSize = 88;

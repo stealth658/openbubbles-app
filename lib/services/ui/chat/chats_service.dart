@@ -293,6 +293,15 @@ class ChatsService {
     return chatStates[guid];
   }
 
+  /// Returns the [ChatState] for [chat], creating a bare one if it doesn't exist yet.
+  ///
+  /// Used by [ConversationView] to obtain a state instance before the chat list
+  /// has fully loaded (e.g. opened via deep-link or chat creator). The returned
+  /// state is cached in [chatStates] so subsequent lookups return the same instance.
+  ChatState getOrCreateChatState(Chat chat) {
+    return chatStates.putIfAbsent(chat.guid, () => ChatState(chat));
+  }
+
   /// Set up listeners on a ChatState to track unread count changes
   void _setupChatStateListeners(ChatState chatState) {
     // Listen to hasUnreadMessage changes to update global unread count

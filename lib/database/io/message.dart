@@ -5,6 +5,7 @@ import 'dart:math';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/database.dart';
+import 'package:bluebubbles/app/state/message_state.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/services/backend/interfaces/message_interface.dart';
@@ -725,7 +726,7 @@ class Message {
   bool showUpperMessage(Message olderMessage) {
     // find the part count of the older message
     final olderPartCount = chat.target?.guid != null
-        ? MessagesSvc(chat.target!.guid).getControllerIfExists(olderMessage.guid!)?.parts.length ?? 1
+        ? MessagesSvc(chat.target!.guid).getMessageStateIfExists(olderMessage.guid!)?.parts.length ?? 1
         : 1;
     // make sure the older message is none of the following:
     // 1) thread originator
@@ -742,7 +743,7 @@ class Message {
 
   bool connectToLower(Message newerMessage) {
     final thisPartCount =
-        chat.target?.guid != null ? MessagesSvc(chat.target!.guid).getControllerIfExists(guid!)?.parts.length ?? 1 : 1;
+        chat.target?.guid != null ? MessagesSvc(chat.target!.guid).getMessageStateIfExists(guid!)?.parts.length ?? 1 : 1;
     if (newerMessage.isFromMe != isFromMe) return false;
     if (newerMessage.normalizedThreadPart != thisPartCount - 1) return false;
     if (threadOriginatorGuid != null) {
@@ -802,7 +803,7 @@ class Message {
     // initialize constraints for text rendering
     final fontSizeFactor = isBigEmoji ? bigEmojiScaleFactor : 1.0;
     final constraints = BoxConstraints(
-      maxWidth: maxWidthOverride ?? NavigationSvc.width(context) * MessageWidgetController.maxBubbleSizeFactor - 30,
+      maxWidth: maxWidthOverride ?? NavigationSvc.width(context) * MessageState.maxBubbleSizeFactor - 30,
       minHeight: minHeightOverride ?? Theme.of(context).textTheme.bodySmall!.fontSize! * fontSizeFactor,
     );
     final renderParagraph = RichText(

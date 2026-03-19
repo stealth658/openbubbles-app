@@ -6,7 +6,6 @@ import 'package:bluebubbles/app/layouts/settings/widgets/search/settings_search_
 import 'package:bluebubbles/app/layouts/settings/widgets/search/settings_search_empty_result.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
 import 'package:bluebubbles/app/wrappers/bb_annotated_region.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/app/wrappers/tablet_mode_wrapper.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -27,7 +26,7 @@ class SettingsPage extends StatefulWidget {
   State<SettingsPage> createState() => _SettingsPageState();
 }
 
-class _SettingsPageState extends OptimizedState<SettingsPage> {
+class _SettingsPageState extends State<SettingsPage> with ThemeHelpers {
   final RxBool uploadingContacts = false.obs;
   final RxnDouble progress = RxnDouble();
   final RxnInt totalSize = RxnInt();

@@ -1,4 +1,3 @@
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
@@ -20,7 +19,7 @@ class SendButton extends StatefulWidget {
   SendButtonState createState() => SendButtonState();
 }
 
-class SendButtonState extends OptimizedState<SendButton> with SingleTickerProviderStateMixin {
+class SendButtonState extends State<SendButton> with SingleTickerProviderStateMixin, ThemeHelpers {
   late final controller = AnimationController(
       vsync: this,
       duration: Duration(seconds: SettingsSvc.settings.sendDelay.value),

@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'dart:ui';
 
+import 'package:bluebubbles/app/state/message_state_scope.dart';
 import 'package:bluebubbles/app/components/custom_text_editing_controllers.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/misc/bubble_effects.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/misc/tail_clipper.dart';
@@ -18,6 +19,7 @@ import 'package:bluebubbles/app/animations/love_classes.dart';
 import 'package:bluebubbles/app/animations/love_rendering.dart';
 import 'package:bluebubbles/app/animations/spotlight_classes.dart';
 import 'package:bluebubbles/app/animations/spotlight_rendering.dart';
+import 'package:bluebubbles/app/state/message_state.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:confetti/confetti.dart';
@@ -107,6 +109,7 @@ void sendEffectAction(
     ],
   );
   message.generateTempGuid();
+  final previewState = MessageState(message);
   final GlobalKey key = GlobalKey();
   Control animController = Control.stop;
   final FireworkController fireworkController =
@@ -220,8 +223,7 @@ void sendEffectAction(
                                                     setState(() {
                                                       bubbleSelected = bubbleEffects[index];
                                                       message.expressiveSendStyleId = effectMap[bubbleSelected];
-                                                      EventDispatcherSvc.emit(
-                                                          'play-bubble-effect', '0/${message.guid}');
+                                                      previewState.triggerBubbleEffect(0);
                                                       if (bubbleSelected == "gentle") {
                                                         animController = Control.playFromStart;
                                                       }
@@ -382,12 +384,13 @@ void sendEffectAction(
                                         child: Padding(
                                           key: key,
                                           padding: const EdgeInsets.only(right: 5.0),
-                                          child: BubbleEffects(
-                                            globalKey: key,
-                                            part: 0,
-                                            message: message,
-                                            showTail: true,
-                                            child: ClipPath(
+                                          child: MessageStateScope(
+                                            messageState: previewState,
+                                            child: BubbleEffects(
+                                              globalKey: key,
+                                              part: 0,
+                                              showTail: true,
+                                              child: ClipPath(
                                               clipper: TailClipper(
                                                 isFromMe: true,
                                                 showTail: true,
@@ -397,7 +400,7 @@ void sendEffectAction(
                                               child: Container(
                                                 constraints: BoxConstraints(
                                                   maxWidth: NavigationSvc.width(context) *
-                                                          MessageWidgetController.maxBubbleSizeFactor -
+                                                          MessageState.maxBubbleSizeFactor -
                                                       40,
                                                   minHeight: 40,
                                                 ),
@@ -464,7 +467,7 @@ void sendEffectAction(
                                             ),
                                           ),
                                         ),
-                                      );
+                                      ));
                                     }),
                                   ),
                                 const Spacer(),

@@ -3,12 +3,12 @@ import 'dart:ui';
 
 import 'package:bluebubbles/app/layouts/conversation_view/mixins/messages_service_mixin.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/message_holder.dart';
+import 'package:bluebubbles/app/state/chat_state_scope.dart';
 import 'package:bluebubbles/app/wrappers/bb_annotated_region.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/pages/conversation_view.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/app/wrappers/titlebar_wrapper.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:defer_pointer/defer_pointer.dart';
 import 'package:flutter/cupertino.dart' as cupertino;
@@ -48,8 +48,7 @@ class ConversationPeekView extends StatefulWidget {
   State<StatefulWidget> createState() => _ConversationPeekViewState();
 }
 
-class _ConversationPeekViewState extends OptimizedState<ConversationPeekView> 
-    with SingleTickerProviderStateMixin, MessagesServiceMixin {
+class _ConversationPeekViewState extends State<ConversationPeekView> with SingleTickerProviderStateMixin, MessagesServiceMixin, ThemeHelpers {
   late final AnimationController controller;
   late final ConversationViewController cvController = cvc(widget.chat);
   final double itemHeight = kIsDesktop || kIsWeb ? 56 : 48;
@@ -164,7 +163,9 @@ class _ConversationPeekViewState extends OptimizedState<ConversationPeekView>
                             (route) => route.isFirst,
                           );
                         },
-                        child: DeferredPointerHandler(
+                          child: ChatStateScope(
+                            chatState: ChatsSvc.getOrCreateChatState(widget.chat),
+                            child: DeferredPointerHandler(
                           child: Container(
                             decoration: BoxDecoration(
                               color: ThemeSvc.inDarkMode(context)
@@ -207,6 +208,7 @@ class _ConversationPeekViewState extends OptimizedState<ConversationPeekView>
                           ),
                         ),
                       ),
+                    ),
                       const SizedBox(height: 5),
                       buildDetailsMenu(context),
                     ],

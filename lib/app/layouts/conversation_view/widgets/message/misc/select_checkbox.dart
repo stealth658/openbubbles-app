@@ -1,18 +1,18 @@
+import 'package:bluebubbles/app/state/message_state_scope.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class SelectCheckbox extends StatelessWidget {
-  const SelectCheckbox({super.key, required this.message, required this.controller});
+  const SelectCheckbox({super.key, required this.controller});
 
-  final Message message;
   final ConversationViewController controller;
 
   @override
   Widget build(BuildContext context) {
+    final message = MessageStateScope.messageOf(context);
     return Obx(() => AnimatedSize(
           duration: const Duration(milliseconds: 150),
           child: !controller.inSelectMode.value

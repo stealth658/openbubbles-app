@@ -1,7 +1,12 @@
+import 'dart:async';
+
 import 'package:bluebubbles/app/state/attachment_state.dart';
+import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
+import 'package:collection/collection.dart';
 import 'package:faker/faker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 
 /// State wrapper for Message that provides granular reactivity for UI components.
@@ -13,9 +18,9 @@ import 'package:get/get.dart';
 /// - Granular observables instead of boolean toggle flags
 /// - Direct property updates instead of coordinator timestamps
 /// - Type-safe state changes
-class MessageState {
+class MessageState extends StatefulController {
   /// Reference to the underlying message object
-  final Message message;
+  Message message;
 
   /// Reactive state objects for each attachment on this message.
   /// Keyed by attachment GUID.  Created eagerly in the constructor for any
@@ -61,6 +66,47 @@ class MessageState {
   final RxBool isSent; // not temp guid
   final RxBool isReaction; // has associatedMessageGuid
 
+  /// Set to the part index that should play its bubble animation next frame.
+  /// Consumers (BubbleEffects, TextBubble) wrap their animation trigger in Obx
+  /// and react when this equals their own part index.  Reset to null after
+  /// the animation has been kicked off so it can be retriggered later.
+  final RxnInt playEffectPart = RxnInt(null);
+
+  /// Increment to trigger a re-download of all attachments in this message.
+  /// [AttachmentHolder] registers `ever()` on this key to call _loadContent().
+  final RxInt attachmentRefreshKey = 0.obs;
+
+  /// Increment to trigger a re-fetch of embedded media in this message.
+  /// [EmbeddedMedia] registers `ever()` on this key to call getContent().
+  final RxInt embeddedMediaRefreshKey = 0.obs;
+
+  // ========== Widget Controller Fields (merged from MessageWidgetController) ==========
+
+  /// Whether to show previous edits for this message
+  final RxBool showEdits = false.obs;
+
+  /// Set when an audio message is kept; triggers delivered indicator
+  final Rxn<DateTime> audioWasKept = Rxn<DateTime>(null);
+
+  /// Reactive list of parsed message parts (text/attachments/edits/unsends).
+  /// Populated by [buildMessageParts] in [onInit] and on content changes.
+  final RxList<MessagePart> parts = <MessagePart>[].obs;
+
+  /// Adjacent messages for layout context (set by MessageHolder in initState)
+  Message? oldMessage;
+  Message? newMessage;
+
+  /// Parent conversation view controller (set by MessageHolder in initState)
+  ConversationViewController? cvController;
+
+  StreamSubscription? _sub;
+  bool built = false;
+  bool _partsCached = false;
+
+  static const maxBubbleSizeFactor = 0.75;
+
+  // ========== End Widget Controller Fields ==========
+
   MessageState(this.message)
       : guid = RxnString(message.guid),
         text = RxnString(message.text),
@@ -93,6 +139,30 @@ class MessageState {
         attachmentStates[attachment!.guid!] = AttachmentState(attachment);
       }
     }
+  }
+
+  @override
+  void onInit() {
+    super.onInit();
+    buildMessageParts();
+    if (kIsWeb) {
+      _sub = WebListeners.messageUpdate.listen((tuple) {
+        final msg = tuple.item1;
+        final tempGuid = tuple.item2;
+        if (msg.guid == message.guid || tempGuid == message.guid) {
+          updateMessage(msg);
+        }
+      });
+    }
+  }
+
+  /// Signals that the bubble animation for [part] should play.
+  /// [BubbleEffects] and [TextBubble] observe [playEffectPart] via ever() and
+  /// fire their animation when its value matches their own part index.
+  /// Resetting to null first ensures re-triggering the same part always fires.
+  void triggerBubbleEffect(int part) {
+    if (playEffectPart.value == part) playEffectPart.value = null;
+    playEffectPart.value = part;
   }
 
   /// Returns the [AttachmentState] for [attachmentGuid], or `null` if none
@@ -173,13 +243,14 @@ class MessageState {
     });
   }
 
-  /// Disposes all [AttachmentState] workers.  Called by [MessagesService]
-  /// when the owning message is evicted.
-  void dispose() {
+  @override
+  void onClose() {
+    _sub?.cancel();
     for (final state in attachmentStates.values) {
       state.dispose();
     }
     attachmentStates.clear();
+    super.onClose();
   }
 
   // ========== End AttachmentState Management ==========
@@ -515,4 +586,173 @@ class MessageState {
   void unredactFields() {
     unredactMessageContent();
   }
+
+  // ========== Part Building (merged from MessageWidgetController) ==========
+
+  void buildMessageParts({bool force = false}) {
+    if (_partsCached && !force) return;
+    final newParts = <MessagePart>[];
+
+    if (message.attributedBody.firstOrNull?.runs.isNotEmpty ?? false) {
+      newParts.addAll(attributedBodyToMessagePart(message.attributedBody.first));
+    }
+    if (message.messageSummaryInfo.firstOrNull?.editedParts.isNotEmpty ?? false) {
+      for (int part in message.messageSummaryInfo.first.editedParts) {
+        final edits = message.messageSummaryInfo.first.editedContent[part.toString()] ?? [];
+        final existingPart = newParts.firstWhereOrNull((element) => element.part == part);
+        if (existingPart != null) {
+          existingPart.edits.addAll(edits
+              .where((e) => e.text?.values.isNotEmpty ?? false)
+              .map((e) => attributedBodyToMessagePart(e.text!.values.first).firstOrNull)
+              .where((e) => e != null)
+              .map((e) => e!)
+              .toList());
+          if (existingPart.edits.isNotEmpty) {
+            existingPart.edits.removeLast();
+          }
+        }
+      }
+    }
+    if (message.messageSummaryInfo.firstOrNull?.retractedParts.isNotEmpty ?? false) {
+      for (int part in message.messageSummaryInfo.first.retractedParts) {
+        final existing = newParts.indexWhere((e) => e.part == part);
+        if (existing >= 0) {
+          newParts.removeAt(existing);
+        }
+        newParts.add(MessagePart(
+          part: part,
+          isUnsent: true,
+        ));
+      }
+    }
+    if (newParts.isEmpty) {
+      if (!message.hasApplePayloadData &&
+          !message.isLegacyUrlPreview &&
+          !message.isInteractive &&
+          !message.isGroupEvent) {
+        newParts.addAll(message.attachments.mapIndexed((index, e) => MessagePart(
+              attachments: [e!],
+              part: index,
+            )));
+      } else if (message.isInteractive) {
+        newParts.add(MessagePart(
+          part: 0,
+        ));
+      }
+
+      if (message.fullText.isNotEmpty || message.isGroupEvent) {
+        newParts.add(MessagePart(
+          subject: message.subject,
+          text: message.text,
+          part: newParts.length,
+        ));
+      }
+    }
+    newParts.sort((a, b) => a.part.compareTo(b.part));
+    parts.assignAll(newParts);
+    _partsCached = true;
+  }
+
+  List<MessagePart> attributedBodyToMessagePart(AttributedBody body) {
+    final mainString = body.string;
+    final list = <MessagePart>[];
+    body.runs.sort((a, b) => a.range.first.compareTo(b.range.first));
+    body.runs.forEachIndexed((i, e) async {
+      if (e.attributes?.messagePart == null) return;
+      final existingPart = list.firstWhereOrNull((element) => element.part == e.attributes!.messagePart!);
+      if (existingPart != null) {
+        final newText = mainString.substring(e.range.first, e.range.first + e.range.last);
+        final currentLength = existingPart.text?.length ?? 0;
+        existingPart.text = (existingPart.text ?? "") + newText;
+        if (e.hasMention) {
+          existingPart.mentions.add(Mention(
+            mentionedAddress: e.attributes?.mention,
+            range: [currentLength, currentLength + e.range.last],
+          ));
+          existingPart.mentions.sort((a, b) => a.range.first.compareTo(b.range.first));
+        }
+      } else {
+        Attachment? foundAttachment;
+        if (e.isAttachment && (cvController?.chat != null || ChatsSvc.activeChat != null)) {
+          final attachmentGuid = e.attributes!.attachmentGuid!;
+          foundAttachment = message.attachments.firstWhereOrNull((a) => a?.guid == attachmentGuid);
+          if (foundAttachment == null) {
+            foundAttachment = MessagesSvc(cvController?.chat.guid ?? ChatsSvc.activeChat!.chat.guid)
+                .struct
+                .getAttachment(attachmentGuid);
+            foundAttachment ??= await Attachment.findOneAsync(attachmentGuid);
+          }
+        }
+
+        list.add(MessagePart(
+          subject: i == 0 ? message.subject : null,
+          text: e.isAttachment ? null : mainString.substring(e.range.first, e.range.first + e.range.last),
+          attachments: foundAttachment != null ? [foundAttachment] : [],
+          mentions: !e.hasMention
+              ? []
+              : [
+                  Mention(
+                    mentionedAddress: e.attributes?.mention,
+                    range: [0, e.range.last],
+                  )
+                ],
+          part: e.attributes!.messagePart!,
+        ));
+      }
+    });
+    return list;
+  }
+
+  /// Called by [MessagesService] during a temp → real GUID swap AFTER the
+  /// service has already updated this [MessageState] and the state map.
+  /// Merges the updated message, rebuilds parts — without re-entering
+  /// [MessagesService.updateMessage].
+  void notifyGuidSwap(Message updated) {
+    message = Message.merge(updated, message);
+    _partsCached = false;
+    buildMessageParts(force: true);
+  }
+
+  /// Called by the web listener to handle incoming message updates.
+  /// Merges the new data and delegates to [MessagesService.updateMessage]
+  /// for struct/state coordination.
+  void updateMessage(Message newItem) {
+    final chat = message.chat.target?.guid ?? cvController?.chat.guid ?? ChatsSvc.activeChat!.chat.guid;
+    final oldGuid = message.guid;
+
+    if (newItem.guid != oldGuid && oldGuid!.contains("temp")) {
+      message = Message.merge(newItem, message);
+      MessagesSvc(chat).updateMessage(message, oldGuid: oldGuid);
+      _partsCached = false;
+      buildMessageParts(force: true);
+      return;
+    }
+
+    final hasDeliveryChanged = newItem.dateDelivered != message.dateDelivered;
+    final hasReadChanged = newItem.dateRead != message.dateRead;
+    final hasEdited = newItem.dateEdited != message.dateEdited;
+
+    if (hasDeliveryChanged || hasReadChanged) {
+      message = Message.merge(newItem, message);
+      MessagesSvc(chat).updateMessage(message);
+      if (hasEdited) {
+        _partsCached = false;
+        buildMessageParts(force: true);
+      }
+      return;
+    }
+
+    if (hasEdited) {
+      message = Message.merge(newItem, message);
+      _partsCached = false;
+      buildMessageParts(force: true);
+      MessagesSvc(chat).updateMessage(message);
+      return;
+    }
+
+    message = Message.merge(newItem, message);
+    MessagesSvc(chat).updateMessage(message);
+  }
+
+  // ========== End Part Building ==========
 }

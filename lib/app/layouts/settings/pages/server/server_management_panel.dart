@@ -57,9 +57,7 @@ class ServerManagementPanelController extends StatefulController {
   @override
   void onReady() {
     super.onReady();
-    updateObx(() {
-      getServerStats();
-    });
+    getServerStats();
   }
 
   void getServerStats() async {

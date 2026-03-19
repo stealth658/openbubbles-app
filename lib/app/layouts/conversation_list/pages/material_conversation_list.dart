@@ -3,7 +3,6 @@ import 'package:bluebubbles/app/layouts/conversation_list/pages/conversation_lis
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/conversation_list_fab.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/header/material_header.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/tile/list_item.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/app/wrappers/scrollbar_wrapper.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -21,7 +20,7 @@ class MaterialConversationList extends StatefulWidget {
   State<MaterialConversationList> createState() => _MaterialConversationListState();
 }
 
-class _MaterialConversationListState extends OptimizedState<MaterialConversationList> {
+class _MaterialConversationListState extends State<MaterialConversationList> {
   bool get showArchived => widget.parentController.showArchivedChats;
   bool get showUnknown => widget.parentController.showUnknownSenders;
   Color get backgroundColor => SettingsSvc.settings.windowEffect.value == WindowEffect.disabled

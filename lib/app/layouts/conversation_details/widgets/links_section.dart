@@ -1,7 +1,6 @@
 import 'dart:math';
 
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/interactive/url_preview.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
@@ -25,7 +24,7 @@ class LinksSection extends StatefulWidget {
   State<LinksSection> createState() => _LinksSectionState();
 }
 
-class _LinksSectionState extends OptimizedState<LinksSection> {
+class _LinksSectionState extends State<LinksSection> with ThemeHelpers {
   List<Message> links = [];
   bool _isLoading = true;
 
@@ -152,7 +151,6 @@ class _LinksSectionState extends OptimizedState<LinksSection> {
                           child: Center(
                             child: UrlPreview(
                               data: links[index].payloadData!.urlData!.first,
-                              message: links[index],
                             ),
                           ),
                         ),

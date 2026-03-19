@@ -3,8 +3,8 @@ import 'dart:math';
 
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/reply/reply_bubble.dart';
 import 'package:bluebubbles/app/layouts/fullscreen_media/fullscreen_holder.dart';
+import 'package:bluebubbles/app/state/chat_state_scope.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -27,7 +27,7 @@ class VideoPlayer extends StatefulWidget {
   final ConversationViewController? controller;
 
   @override
-  OptimizedState createState() => _VideoPlayerState();
+  State<StatefulWidget> createState() => _VideoPlayerState();
 }
 
 class PlayPauseButton extends StatelessWidget {
@@ -182,7 +182,7 @@ class MuteButton extends StatelessWidget {
   }
 }
 
-class _VideoPlayerState extends OptimizedState<VideoPlayer> with AutomaticKeepAliveClientMixin {
+class _VideoPlayerState extends State<VideoPlayer> with AutomaticKeepAliveClientMixin, ThemeHelpers {
   Attachment get attachment => widget.attachment;
 
   PlatformFile get file => widget.file;
@@ -210,15 +210,11 @@ class _VideoPlayerState extends OptimizedState<VideoPlayer> with AutomaticKeepAl
       // Reuse existing controller
       videoController = cachedController;
       aspectRatio.value = videoController!.aspectRatio;
-      updateObx(() {
-        createListener(videoController!);
-      });
+      createListener(videoController!);
     } else {
       // Load thumbnail for non-desktop platforms while controller initializes
       if (!kIsDesktop && !kIsWeb) {
-        updateObx(() {
           getThumbnail();
-        });
       }
       // Initialize new controller
       initializeController();
@@ -308,6 +304,7 @@ class _VideoPlayerState extends OptimizedState<VideoPlayer> with AutomaticKeepAl
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final currentChat = widget.controller?.chat ?? ChatStateScope.maybeChatOf(context);
     if (videoController != null) {
       return MouseRegion(
         onEnter: (event) => showPlayPauseOverlay.value = true,
@@ -325,7 +322,7 @@ class _VideoPlayerState extends OptimizedState<VideoPlayer> with AutomaticKeepAl
                     await Navigator.of(Get.context!).push(
                       ThemeSwitcher.buildPageRoute(
                         builder: (context) => FullscreenMediaHolder(
-                          currentChat: ChatsSvc.activeChat?.chat,
+                          currentChat: currentChat,
                           attachment: attachment,
                           showInteractions: true,
                           videoController: videoController,
@@ -341,7 +338,7 @@ class _VideoPlayerState extends OptimizedState<VideoPlayer> with AutomaticKeepAl
                   await Navigator.of(Get.context!).push(
                     ThemeSwitcher.buildPageRoute(
                       builder: (context) => FullscreenMediaHolder(
-                        currentChat: ChatsSvc.activeChat?.chat,
+                        currentChat: currentChat,
                         attachment: attachment,
                         showInteractions: true,
                         mute: muted,
@@ -385,7 +382,7 @@ class _VideoPlayerState extends OptimizedState<VideoPlayer> with AutomaticKeepAl
             await Navigator.of(Get.context!).push(
               ThemeSwitcher.buildPageRoute(
                 builder: (context) => FullscreenMediaHolder(
-                  currentChat: ChatsSvc.activeChat?.chat,
+                  currentChat: currentChat,
                   attachment: attachment,
                   showInteractions: true,
                   mute: muted,
@@ -509,6 +506,7 @@ class FullscreenButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final currentChat = ChatStateScope.maybeChatOf(context);
     return Positioned(
       bottom: 8,
       left: (!isFromMe) ? 15 : 8,
@@ -522,7 +520,7 @@ class FullscreenButton extends StatelessWidget {
               await Navigator.of(Get.context!).push(
                 ThemeSwitcher.buildPageRoute(
                   builder: (context) => FullscreenMediaHolder(
-                      currentChat: ChatsSvc.activeChat?.chat,
+                        currentChat: currentChat,
                       attachment: attachment,
                       showInteractions: true,
                       videoController: videoController,

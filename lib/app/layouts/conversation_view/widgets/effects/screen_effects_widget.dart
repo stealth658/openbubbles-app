@@ -12,7 +12,6 @@ import 'package:bluebubbles/app/animations/love_classes.dart';
 import 'package:bluebubbles/app/animations/love_rendering.dart';
 import 'package:bluebubbles/app/animations/spotlight_classes.dart';
 import 'package:bluebubbles/app/animations/spotlight_rendering.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
@@ -27,7 +26,7 @@ class ScreenEffectsWidget extends StatefulWidget {
   }
 }
 
-class _ScreenEffectsWidgetState extends OptimizedState<ScreenEffectsWidget> with TickerProviderStateMixin {
+class _ScreenEffectsWidgetState extends State<ScreenEffectsWidget> with TickerProviderStateMixin {
   late final FireworkController fireworkController;
   late final CelebrationController celebrationController;
   late final ConfettiController confettiController;
@@ -41,7 +40,7 @@ class _ScreenEffectsWidgetState extends OptimizedState<ScreenEffectsWidget> with
   void initState() {
     super.initState();
 
-    updateObx(() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       fireworkController =
           FireworkController(vsync: this, windowSize: Size(NavigationSvc.width(context), context.height));
       celebrationController =

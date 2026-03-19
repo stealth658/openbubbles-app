@@ -7,7 +7,6 @@ import 'package:bluebubbles/app/wrappers/scrollbar_wrapper.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/reaction_type_picker.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:animated_size_and_fade/animated_size_and_fade.dart';
@@ -25,7 +24,7 @@ class NotificationPanel extends StatefulWidget {
   State<StatefulWidget> createState() => _NotificationPanelState();
 }
 
-class _NotificationPanelState extends OptimizedState<NotificationPanel> with SingleTickerProviderStateMixin {
+class _NotificationPanelState extends State<NotificationPanel> with SingleTickerProviderStateMixin, ThemeHelpers {
   final ScrollController controller1 = ScrollController();
   late final TabController tabController;
   final RxInt index = 0.obs;
@@ -377,7 +376,7 @@ class ChatList extends StatefulWidget {
   State<StatefulWidget> createState() => ChatListState();
 }
 
-class ChatListState extends OptimizedState<ChatList> {
+class ChatListState extends State<ChatList> with ThemeHelpers {
   final ScrollController controller = ScrollController();
 
   String getSubtitle(Chat chat) {

@@ -1,5 +1,7 @@
+import 'package:bluebubbles/app/state/message_state.dart';
+import 'package:bluebubbles/app/state/message_state_scope.dart';
+import 'package:bluebubbles/app/state/chat_state_scope.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/reply/reply_thread_popup.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -9,10 +11,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
-class MessageProperties extends CustomStateful<MessageWidgetController> {
+class MessageProperties extends StatefulWidget {
   const MessageProperties({
     super.key,
-    required super.parentController,
     required this.part,
     this.globalKey,
   });
@@ -21,17 +22,21 @@ class MessageProperties extends CustomStateful<MessageWidgetController> {
   final GlobalKey? globalKey;
 
   @override
-  CustomState createState() => _MessagePropertiesState();
+  State<StatefulWidget> createState() => _MessagePropertiesState();
 }
 
-class _MessagePropertiesState extends CustomState<MessageProperties, void, MessageWidgetController> {
+class _MessagePropertiesState extends State<MessageProperties> with ThemeHelpers {
+  late MessageState _ms;
+  MessageState get controller => _ms;
+  late final String _chatGuid;
   Message get message => controller.message;
-  MessagesService get service => MessagesSvc(controller.cvController?.chat.guid ?? ChatsSvc.activeChat!.chat.guid);
+  MessagesService get service => MessagesSvc(_chatGuid);
 
   @override
   void initState() {
-    forceDelete = false;
     super.initState();
+    _ms = MessageStateScope.readStateOnce(context);
+    _chatGuid = controller.cvController?.chat.guid ?? ChatStateScope.readChatOnce(context).guid;
   }
 
   List<TextSpan> getProperties() {
@@ -51,7 +56,7 @@ class _MessagePropertiesState extends CustomState<MessageProperties, void, Messa
               }
               HapticFeedback.mediumImpact();
               if ((stringToMessageEffect[effect] ?? MessageEffect.none).isBubble) {
-                EventDispatcherSvc.emit('play-bubble-effect', '${widget.part.part}/${message.guid}');
+                MessageStateScope.of(context).triggerBubbleEffect(widget.part.part);
               } else if (widget.globalKey != null) {
                 EventDispatcherSvc.emit('play-effect', {
                   'type': effect,
@@ -85,7 +90,7 @@ class _MessagePropertiesState extends CustomState<MessageProperties, void, Messa
   Widget build(BuildContext context) {
     return Obx(() {
       // Observe granular MessageState fields for thread replies and edits
-      controller.messageState?.associatedMessages.length;
+      controller.associatedMessages.length;
       // Also observe showEdits since that's toggled directly
       controller.showEdits.value;
 

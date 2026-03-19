@@ -27,7 +27,7 @@ export 'ui/chat/chats_service.dart';
 export 'ui/chat/conversation_view_controller.dart';
 // GlobalChatService merged into ChatsService
 // MessageUpdateCoordinator removed - replaced by MessageState
-export 'ui/message/message_widget_controller.dart';
+// MessageWidgetController merged into MessageState
 export 'ui/message/messages_service.dart';
 export 'ui/navigator/navigator_service.dart';
 export 'ui/theme/themes_service.dart';

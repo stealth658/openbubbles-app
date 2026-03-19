@@ -1,4 +1,4 @@
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
+import 'package:bluebubbles/app/state/message_state_scope.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -11,43 +11,22 @@ import 'package:universal_io/io.dart';
 class UnsupportedInteractive extends StatefulWidget {
   const UnsupportedInteractive({
     super.key,
-    required this.message,
     required this.payloadData,
   });
 
-  final Message message;
   final iMessageAppData? payloadData;
 
   @override
   State<UnsupportedInteractive> createState() => _UnsupportedInteractiveState();
 }
 
-class _UnsupportedInteractiveState extends OptimizedState<UnsupportedInteractive> with AutomaticKeepAliveClientMixin {
+class _UnsupportedInteractiveState extends State<UnsupportedInteractive> with AutomaticKeepAliveClientMixin, ThemeHelpers {
   iMessageAppData? get data => widget.payloadData;
-  Message get message => widget.message;
   dynamic get file => File(content.path!);
 
   dynamic content;
 
-  @override
-  void initState() {
-    super.initState();
-    updateObx(() async {
-      final attachment = widget.message.attachments.firstOrNull;
-      if (attachment != null) {
-        content = AttachmentsSvc.getContent(attachment, autoDownload: true, onComplete: (file) {
-          setState(() {
-            content = file;
-          });
-        });
-        if (content is PlatformFile) {
-          setState(() {});
-        }
-      }
-    });
-  }
-
-  String getAppName() {
+  String getAppName(Message message) {
     final balloonBundleId = message.balloonBundleId;
     final temp = balloonBundleIdMap[balloonBundleId?.split(":").first];
     String? name;
@@ -59,7 +38,7 @@ class _UnsupportedInteractiveState extends OptimizedState<UnsupportedInteractive
     return name ?? "Unknown";
   }
 
-  IconData getIcon() {
+  IconData getIcon(Message message) {
     final balloonBundleId = message.balloonBundleId;
     final temp = balloonBundleIdIconMap[balloonBundleId?.split(":").first];
     IconData? icon;
@@ -77,6 +56,19 @@ class _UnsupportedInteractiveState extends OptimizedState<UnsupportedInteractive
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final message = MessageStateScope.messageOf(context);
+    if (content == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final attachment = MessageStateScope.messageOf(context).attachments.firstOrNull;
+        if (attachment != null) {
+          content = AttachmentsSvc.getContent(attachment, autoDownload: true, onComplete: (file) {
+            if (mounted) setState(() { content = file; });
+          });
+          if (content != null && mounted) setState(() {});
+        }
+      });
+    }
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -108,7 +100,7 @@ class _UnsupportedInteractiveState extends OptimizedState<UnsupportedInteractive
               Flexible(
                 child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(
-                    data?.appName ?? getAppName(),
+                    data?.appName ?? getAppName(message),
                     style: context.theme.textTheme.bodyLarge!.apply(fontWeightDelta: 2),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -129,7 +121,7 @@ class _UnsupportedInteractiveState extends OptimizedState<UnsupportedInteractive
                   ),
                 ]),
               ),
-              Icon(getIcon(), color: context.theme.colorScheme.properOnSurface, size: 48),
+              Icon(getIcon(message), color: context.theme.colorScheme.properOnSurface, size: 48),
             ],
           ),
         ),

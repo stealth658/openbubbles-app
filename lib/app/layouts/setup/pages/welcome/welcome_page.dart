@@ -3,7 +3,6 @@ import 'dart:math';
 import 'package:bluebubbles/app/components/avatars/contact_avatar_widget.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/misc/tail_clipper.dart';
 import 'package:bluebubbles/app/layouts/setup/pages/page_template.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -21,7 +20,7 @@ class WelcomePage extends StatefulWidget {
   State<WelcomePage> createState() => _WelcomePageState();
 }
 
-class _WelcomePageState extends OptimizedState<WelcomePage> with TickerProviderStateMixin {
+class _WelcomePageState extends State<WelcomePage> with TickerProviderStateMixin, ThemeHelpers {
   late final AnimationController _titleController;
   late final AnimationController _subtitleController;
   final confettiController = ConfettiController(duration: const Duration(milliseconds: 500));

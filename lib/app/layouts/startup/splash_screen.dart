@@ -1,5 +1,4 @@
 import 'package:bluebubbles/app/layouts/setup/setup_view.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/app/wrappers/titlebar_wrapper.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -13,7 +12,7 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends OptimizedState<SplashScreen> {
+class _SplashScreenState extends State<SplashScreen> {
   bool didNavigate = false;
 
   void navigate() async {

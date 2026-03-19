@@ -2,7 +2,6 @@ import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/dialogs/chat_sync_dialog.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/dialogs/timeframe_picker.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/reply/reply_thread_popup.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/theming/avatar/avatar_crop.dart';
@@ -24,10 +23,10 @@ class ChatOptions extends StatefulWidget {
   final Chat chat;
 
   @override
-  OptimizedState createState() => _ChatOptionsState();
+  State<StatefulWidget> createState() => _ChatOptionsState();
 }
 
-class _ChatOptionsState extends OptimizedState<ChatOptions> {
+class _ChatOptionsState extends State<ChatOptions> with ThemeHelpers {
   Chat get chat => widget.chat;
 
   @override

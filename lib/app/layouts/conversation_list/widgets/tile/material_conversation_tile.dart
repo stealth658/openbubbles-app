@@ -157,7 +157,7 @@ class _MaterialTrailingState extends CustomState<MaterialTrailing, void, Convers
     dateCreated = cachedLatestMessage?.dateCreated;
     // run query after render has completed
     if (!kIsWeb) {
-      updateObx(() {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
         final latestMessageQuery = (Database.messages.query(Message_.dateDeleted.isNull())
               ..link(Message_.chat, Chat_.guid.equals(controller.chat.guid))
               ..order(Message_.dateCreated, flags: Order.descending))

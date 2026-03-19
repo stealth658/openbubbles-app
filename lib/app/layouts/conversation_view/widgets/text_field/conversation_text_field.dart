@@ -88,7 +88,7 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
     if (controller.fromChatCreator) {
       controller.focusNode.requestFocus();
     } else if (SettingsSvc.settings.autoOpenKeyboard.value) {
-      updateObx(() {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
         controller.focusNode.requestFocus();
       });
     }
@@ -1326,8 +1326,8 @@ class TextFieldComponentState extends State<TextFieldComponent> {
           SettingsSvc.serverDetailsSync().item4 >= 148) {
         final message = MessagesSvc(chat!.guid).mostRecentSent;
         if (message != null) {
-          final messageController = MessagesSvc(chat!.guid).getOrCreateController(message);
-          final isSending = messageController.messageState?.isSending.value ?? false;
+          final messageController = MessagesSvc(chat!.guid).getOrCreateState(message);
+          final isSending = messageController.isSending.value;
           if (!isSending) {
             final parts = messageController.parts;
             final part = parts.filter((p) => p.text?.isNotEmpty ?? false).lastOrNull;

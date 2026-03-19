@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:bluebubbles/app/layouts/settings/pages/server/oauth_panel.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/content/next_button.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -21,7 +20,7 @@ class FirebasePanel extends StatefulWidget {
   State<StatefulWidget> createState() => _FirebasePanelState();
 }
 
-class _FirebasePanelState extends OptimizedState<FirebasePanel> {
+class _FirebasePanelState extends State<FirebasePanel> with ThemeHelpers {
   @override
   Widget build(BuildContext context) {
     return SettingsScaffold(

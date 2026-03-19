@@ -1,9 +1,11 @@
 import 'dart:math';
 
+import 'package:bluebubbles/app/state/message_state.dart';
+import 'package:bluebubbles/app/state/chat_state_scope.dart';
+import 'package:bluebubbles/app/state/message_state_scope.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/popup/message_popup.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/reaction/reaction_clipper.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/shared/message_error_helper.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -16,17 +18,15 @@ import 'package:get/get.dart';
 class ReactionWidget extends StatefulWidget {
   const ReactionWidget({
     super.key,
-    required this.message,
     required this.reaction,
     this.reactions,
     this.chatGuid,
   });
 
-  final Message? message;
   final Message reaction;
   final List<Message>? reactions;
 
-  /// Explicit chat GUID used when [message] is null (e.g. pinned tile context).
+  /// Explicit chat GUID used when outside a [MessageStateScope] (e.g. pinned tile context).
   /// Allows [ReactionWidgetState] to resolve MessageState from the correct
   /// MessagesService rather than falling back to [ChatsSvc.activeChat].
   final String? chatGuid;
@@ -35,8 +35,12 @@ class ReactionWidget extends StatefulWidget {
   ReactionWidgetState createState() => ReactionWidgetState();
 }
 
-class ReactionWidgetState extends OptimizedState<ReactionWidget> {
+class ReactionWidgetState extends State<ReactionWidget> with ThemeHelpers {
   List<Message>? get reactions => widget.reactions;
+
+  /// Parent [Message] resolved live from the nearest [MessageStateScope].
+  /// Returns null when outside a scope (e.g. pinned-tile context).
+  Message? get _parentMessage => MessageStateScope.maybeOf(context)?.message;
 
   // Observe the reaction from parent message's associatedMessages list
   // This is already an RxList in MessageState, so changes propagate automatically
@@ -45,12 +49,12 @@ class ReactionWidgetState extends OptimizedState<ReactionWidget> {
     //  1. widget.chatGuid – explicitly provided (e.g. from a pinned tile)
     //  2. parent message's chat relation – used in conversation view
     //  3. ChatsSvc.activeChat – last-resort fallback
-    final chatGuid = widget.chatGuid ?? widget.message?.chat.target?.guid ?? ChatsSvc.activeChat?.chat.guid;
+    final chatGuid = widget.chatGuid ?? _parentMessage?.chat.target?.guid ?? ChatsSvc.activeChat?.chat.guid;
     final parentController =
-        chatGuid != null ? MessagesSvc(chatGuid).getControllerIfExists(widget.message?.guid ?? '') : null;
-    if (parentController?.messageState != null) {
+        chatGuid != null ? MessagesSvc(chatGuid).getMessageStateIfExists(_parentMessage?.guid ?? '') : null;
+    if (parentController != null) {
       // Find our reaction in the observable associatedMessages list
-      final found = parentController!.messageState!.associatedMessages.firstWhereOrNull((m) =>
+      final found = parentController.associatedMessages.firstWhereOrNull((m) =>
           m.guid == widget.reaction.guid ||
           (m.associatedMessageType == widget.reaction.associatedMessageType &&
               m.associatedMessagePart == widget.reaction.associatedMessagePart &&
@@ -63,17 +67,17 @@ class ReactionWidgetState extends OptimizedState<ReactionWidget> {
 
   /// Guard against isFromMe being null on partially-hydrated messages.
   bool get reactionIsFromMe => reaction.isFromMe ?? false;
-  bool get messageIsFromMe => widget.message?.isFromMe ?? true;
+  bool get messageIsFromMe => _parentMessage?.isFromMe ?? true;
 
   /// Guard against associatedMessageType being null.
   /// An empty string produces no SVG match, which is handled in build().
   String get reactionType => reaction.associatedMessageType ?? '';
 
-  MessageWidgetController? get reactionController {
+  MessageState? get reactionController {
     // Use same resolution order as reaction getter
-    final chatGuid = widget.chatGuid ?? widget.message?.chat.target?.guid ?? ChatsSvc.activeChat?.chat.guid;
+    final chatGuid = widget.chatGuid ?? _parentMessage?.chat.target?.guid ?? ChatsSvc.activeChat?.chat.guid;
     if (chatGuid == null || reaction.guid == null) return null;
-    return MessagesSvc(chatGuid).getControllerIfExists(reaction.guid!);
+    return MessagesSvc(chatGuid).getMessageStateIfExists(reaction.guid!);
   }
 
   static const double iosSize = 35;
@@ -84,7 +88,7 @@ class ReactionWidgetState extends OptimizedState<ReactionWidget> {
     // MessageState or MessageWidgetController to observe.  Wrapping in Obx with
     // no observables causes GetX to emit "improper use" and suppresses the render.
     // Use a plain Builder for this case so we just render the reaction statically.
-    if (widget.message == null) {
+    if (_parentMessage == null) {
       return _buildStatic(context, widget.reaction);
     }
 
@@ -197,7 +201,7 @@ class ReactionWidgetState extends OptimizedState<ReactionWidget> {
           ClipPath(
               clipper: ReactionClipper(isFromMe: messageIsFromMe),
               child: Obx(() {
-                final isSending = reactionController?.messageState?.isSending.value ?? false;
+                final isSending = reactionController?.isSending.value ?? false;
                 return Container(
                     width: iosSize,
                     height: iosSize,
@@ -229,7 +233,7 @@ class ReactionWidgetState extends OptimizedState<ReactionWidget> {
             left: !messageIsFromMe ? 0 : -75,
             right: messageIsFromMe ? 0 : -75,
             child: Obx(() {
-              final hasError = reactionController?.messageState?.hasError.value ?? false;
+              final hasError = reactionController?.hasError.value ?? false;
               if (reaction.error > 0 || hasError) {
                 final errorCode = reaction.error;
                 final errorText = ErrorHelper.getErrorText(errorCode, reaction.guid);
@@ -243,9 +247,11 @@ class ReactionWidgetState extends OptimizedState<ReactionWidget> {
                       color: context.theme.colorScheme.error,
                     ),
                     onTap: () {
-                      final chat = ChatsSvc.activeChat!.chat;
+                      final chat = ChatStateScope.maybeChatOf(context) ??
+                          ChatsSvc.getChatState(widget.chatGuid ?? _parentMessage?.chat.target?.guid ?? '')?.chat ??
+                          ChatsSvc.activeChat!.chat;
                       final selected =
-                          MessagesSvc(chat.guid).getControllerIfExists(reaction.associatedMessageGuid!)!.message;
+                          MessagesSvc(chat.guid).getMessageStateIfExists(reaction.associatedMessageGuid!)!.message;
 
                       showDialog(
                         context: context,

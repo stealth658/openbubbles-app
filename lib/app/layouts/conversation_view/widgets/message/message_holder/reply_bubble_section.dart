@@ -1,5 +1,7 @@
+import 'package:bluebubbles/app/state/message_state_scope.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/reply/reply_bubble.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/reply/reply_line_painter.dart';
+import 'package:bluebubbles/app/state/chat_state_scope.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -12,8 +14,6 @@ class ReplyBubbleSection extends StatelessWidget {
   const ReplyBubbleSection({
     super.key,
     required this.replyTo,
-    required this.message,
-    required this.chat,
     required this.cvController,
     required this.showAvatar,
     required this.alwaysShowAvatars,
@@ -23,8 +23,6 @@ class ReplyBubbleSection extends StatelessWidget {
   });
 
   final Message replyTo;
-  final Message message;
-  final Chat chat;
   final ConversationViewController cvController;
   final bool showAvatar;
   final bool alwaysShowAvatars;
@@ -34,9 +32,8 @@ class ReplyBubbleSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = MessagesSvc(chat.guid).getControllerIfExists(replyTo.guid!);
-    if (controller == null) return const SizedBox.shrink();
-
+    final chat = ChatStateScope.chatOf(context);
+    final message = MessageStateScope.messageOf(context);
     final part = replyTo.guid == message.threadOriginatorGuid ? message.normalizedThreadPart : 0;
     final showReplyAvatar = (chat.isGroup || alwaysShowAvatars || !isIOS) && !replyTo.isFromMe!;
 
@@ -55,7 +52,6 @@ class ReplyBubbleSection extends StatelessWidget {
           width: double.infinity,
           alignment: replyTo.isFromMe! ? Alignment.centerRight : Alignment.centerLeft,
           child: ReplyBubble(
-            parentController: controller,
             part: part,
             showAvatar: showReplyAvatar,
             cvController: cvController,
@@ -74,7 +70,6 @@ class ReplyBubbleSection extends StatelessWidget {
             border: Border.fromBorderSide(BorderSide(color: context.theme.colorScheme.properSurface)),
           ),
           child: ReplyBubble(
-            parentController: controller,
             part: part,
             showAvatar: showReplyAvatar,
             cvController: cvController,

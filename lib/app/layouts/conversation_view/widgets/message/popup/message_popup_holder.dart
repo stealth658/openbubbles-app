@@ -1,5 +1,6 @@
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/popup/message_popup.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
+import 'package:bluebubbles/app/state/chat_state_scope.dart';
+import 'package:bluebubbles/app/state/message_state.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -23,15 +24,15 @@ class MessagePopupHolder extends StatefulWidget {
 
   final Widget child;
   final MessagePart part;
-  final MessageWidgetController controller;
+  final MessageState controller;
   final ConversationViewController cvController;
   final bool isEditing;
 
   @override
-  OptimizedState createState() => _MessagePopupHolderState();
+  State<StatefulWidget> createState() => _MessagePopupHolderState();
 }
 
-class _MessagePopupHolderState extends OptimizedState<MessagePopupHolder> {
+class _MessagePopupHolderState extends State<MessagePopupHolder> with ThemeHelpers {
   final GlobalKey globalKey = GlobalKey();
 
   Message get message => widget.controller.message;
@@ -138,7 +139,7 @@ class _MessagePopupHolderState extends OptimizedState<MessagePopupHolder> {
 
     OutgoingMsgHandler.queue(OutgoingItem(
       type: QueueType.sendMessage,
-      chat: message.getChat() ?? ChatsSvc.activeChat!.chat,
+      chat: message.getChat() ?? ChatStateScope.chatOf(context),
       message: tempMessage,
       selected: message,
       reaction: reaction,
@@ -148,7 +149,7 @@ class _MessagePopupHolderState extends OptimizedState<MessagePopupHolder> {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final isTempMessage = widget.controller.messageState?.isSending.value ?? false;
+      final isTempMessage = widget.controller.isSending.value;
       return GestureDetector(
         key: globalKey,
         onDoubleTap: widget.isEditing

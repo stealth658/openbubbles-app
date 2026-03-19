@@ -3,7 +3,6 @@ import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
 import 'package:bluebubbles/database/models.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
@@ -17,7 +16,7 @@ class ScheduledMessagesPanel extends StatefulWidget {
   State<ScheduledMessagesPanel> createState() => _ScheduledMessagesPanelState();
 }
 
-class _ScheduledMessagesPanelState extends OptimizedState<ScheduledMessagesPanel> {
+class _ScheduledMessagesPanelState extends State<ScheduledMessagesPanel> with ThemeHelpers {
   final RxList<ScheduledMessage> scheduled = <ScheduledMessage>[].obs;
   final Rx<bool?> fetching = Rx<bool?>(true);
 

@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:bluebubbles/app/layouts/conversation_details/dialogs/timeframe_picker.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/utils/share.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/media_picker/attachment_picker_file.dart';
@@ -34,7 +33,7 @@ class AttachmentPicker extends StatefulWidget {
   State<AttachmentPicker> createState() => _AttachmentPickerState();
 }
 
-class _AttachmentPickerState extends OptimizedState<AttachmentPicker> {
+class _AttachmentPickerState extends State<AttachmentPicker> with ThemeHelpers {
   List<AssetEntity> _images = <AssetEntity>[];
   bool _isLoadingImages = false;
 
@@ -400,7 +399,7 @@ class _FeatureButton extends StatelessWidget {
   }
 
   Future<void> _handleLocation() async {
-    await Share.location(ChatsSvc.activeChat!.chat);
+    await Share.location(controller.chat);
   }
 
   Future<void> _handleSchedule(BuildContext context) async {

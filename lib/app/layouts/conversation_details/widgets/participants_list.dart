@@ -1,6 +1,5 @@
 import 'package:bluebubbles/app/layouts/conversation_details/dialogs/add_participant.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/widgets/contact_tile.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -20,7 +19,7 @@ class ParticipantsList extends StatefulWidget {
   State<ParticipantsList> createState() => _ParticipantsListState();
 }
 
-class _ParticipantsListState extends OptimizedState<ParticipantsList> {
+class _ParticipantsListState extends State<ParticipantsList> with ThemeHelpers {
   bool showMoreParticipants = false;
 
   bool get shouldShowMore => widget.chat.handles.length > 5;

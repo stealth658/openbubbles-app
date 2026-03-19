@@ -56,7 +56,6 @@ class _ReactionTypePickerState extends State<ReactionTypePicker> {
                   associatedMessageType: reaction,
                   isFromMe: selectedValue != reaction,
                 ),
-                message: null,
               ),
             ))
         .toList();
