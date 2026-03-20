@@ -16,13 +16,11 @@ class ContactAvatarWidget extends StatefulWidget {
       this.editable = true,
       this.handle,
       this.contact,
-      this.contactV2,
       this.scaleSize = true,
       this.preferHighResAvatar = false,
       this.padding = EdgeInsets.zero});
   final Handle? handle;
-  final Contact? contact;
-  final ContactV2? contactV2;
+  final ContactV2? contact;
   final double? size;
   final double? fontSize;
   final double borderThickness;
@@ -36,8 +34,7 @@ class ContactAvatarWidget extends StatefulWidget {
 }
 
 class _ContactAvatarWidgetState extends State<ContactAvatarWidget> with ThemeHelpers {
-  Contact? get contact => widget.contact ?? widget.handle?.contact;
-  ContactV2? get contactV2 => widget.contactV2 ?? widget.handle?.contactsV2.firstOrNull;
+  ContactV2? get contactV2 => widget.contact ?? widget.handle?.contactsV2.firstOrNull;
   late final String keyPrefix = widget.handle?.address ?? randomString(8);
 
   // Cache computed values to avoid recalculating on every build
@@ -66,7 +63,7 @@ class _ContactAvatarWidgetState extends State<ContactAvatarWidget> with ThemeHel
   void didUpdateWidget(ContactAvatarWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     // Update cache if widget properties changed
-    if (oldWidget.handle?.id != widget.handle?.id || oldWidget.contact?.id != widget.contact?.id) {
+    if (oldWidget.handle?.id != widget.handle?.id) {
       _updateCachedValues();
     }
   }
@@ -168,15 +165,12 @@ class _ContactAvatarWidgetState extends State<ContactAvatarWidget> with ThemeHel
             ? MouseCursor.defer
             : SystemMouseCursors.click,
         child: GestureDetector(
-          onTap: !widget.editable || (widget.handle == null && contact == null && contactV2 == null)
+          onTap: !widget.editable || (widget.handle == null && contactV2 == null)
               ? null
               : () async {
-                  // Prefer ContactV2, then fall back to Contact
-                  if (contactV2 != null) {
+                  if (contactV2 != null && contactV2!.isNative) {
                     await MethodChannelSvc.invokeMethod("view-contact-form", {'id': contactV2!.nativeContactId});
-                  } else if (contact != null) {
-                    await MethodChannelSvc.invokeMethod("view-contact-form", {'id': contact!.id});
-                  } else {
+                  } else if (widget.handle != null) {
                     await MethodChannelSvc.invokeMethod("open-contact-form", {
                       'address': widget.handle!.address,
                       'address_type': widget.handle!.address.isEmail ? 'email' : 'phone'
@@ -212,7 +206,6 @@ class _ContactAvatarWidgetState extends State<ContactAvatarWidget> with ThemeHel
             child: () {
               // Use cached values to avoid getter calls
               final contactV2Avatar = _cachedAvatarPath;
-              final avatar = contact?.avatar;
 
               if (!hideContactInfo && widget.handle == null && userAvatarPath != null) {
                 dynamic file = File(userAvatarPath);
@@ -254,7 +247,7 @@ class _ContactAvatarWidgetState extends State<ContactAvatarWidget> with ThemeHel
                     },
                   ),
                 );
-              } else if (isNullOrEmpty(avatar) || hideContactInfo) {
+              } else if (isNullOrEmpty(contactV2Avatar) || hideContactInfo) {
                 // Use cached initials
                 String? initials = _cachedInitials?.substring(0, iOS ? null : 1);
                 if (!isNullOrEmpty(initials) && !hideContactInfo) {
@@ -271,8 +264,7 @@ class _ContactAvatarWidgetState extends State<ContactAvatarWidget> with ThemeHel
                   return widget.handle!.fakeAvatar;
                 } else if (genAvatars && contactV2?.fakeAvatar != null) {
                   return contactV2!.fakeAvatar;
-                } else if (genAvatars && widget.contact?.fakeAvatar != null) {
-                  return widget.contact!.fakeAvatar;
+
                 } else {
                   return Padding(
                       padding: const EdgeInsets.only(left: 1),
@@ -283,18 +275,6 @@ class _ContactAvatarWidgetState extends State<ContactAvatarWidget> with ThemeHel
                         size: size / 2 * (material ? 1.25 : 1),
                       ));
                 }
-              } else {
-                // Use old Contact avatar (from memory)
-                return SizedBox.expand(
-                  child: Image.memory(
-                    avatar!,
-                    cacheHeight: size.toInt() * 2,
-                    cacheWidth: size.toInt() * 2,
-                    filterQuality: FilterQuality.none,
-                    fit: BoxFit.cover,
-                    gaplessPlayback: true,
-                  ),
-                );
               }
             }(),
           ),

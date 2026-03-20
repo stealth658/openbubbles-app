@@ -14,8 +14,8 @@ import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/pages/messages_view.dart';
 import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/database/models.dart';
-import 'package:bluebubbles/services/backend/interfaces/contact_v2_interface.dart';
 import 'package:bluebubbles/services/services.dart';
+import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/utils/string_utils.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
@@ -61,8 +61,8 @@ class ChatCreatorState extends State<ChatCreator> with ThemeHelpers {
   final FocusNode addressNode = FocusNode();
   final ScrollController addressScrollController = ScrollController();
 
-  List<Contact> contacts = [];
-  final filteredContacts = <Contact>[].obs;
+  List<ContactV2> contacts = [];
+  final filteredContacts = <ContactV2>[].obs;
   List<Chat> existingChats = [];
   final filteredChats = <Chat>[].obs;
   late final RxList<SelectedContact> selectedContacts = List<SelectedContact>.from(widget.initialSelected).obs;
@@ -103,23 +103,22 @@ class ChatCreatorState extends State<ChatCreator> with ThemeHelpers {
           final query = addressController.text.toLowerCase();
           final _contacts = contacts
               .where((e) =>
-                  e.displayName.toLowerCase().contains(query) ||
-                  e.phones.firstWhereOrNull((e) => cleansePhoneNumber(e.toLowerCase()).contains(query)) != null ||
-                  e.emails.firstWhereOrNull((e) => e.toLowerCase().contains(query)) != null)
+                  e.computedDisplayName.toLowerCase().contains(query) ||
+                  (e.nickname?.toLowerCase().contains(query) ?? false) ||
+                  e.phoneNumbers.firstWhereOrNull((p) => cleansePhoneNumber(p.number.toLowerCase()).contains(query)) != null ||
+                  e.emailAddresses.firstWhereOrNull((e) => e.address.toLowerCase().contains(query)) != null)
               .toList();
-          final ids = _contacts.map((e) => e.id);
           final _chats = existingChats.where((e) =>
               ((iMessage.value && e.isIMessage) || (sms.value && !e.isIMessage)) &&
               ((e.title?.toLowerCase().contains(query) ?? false) ||
                   e.handles.firstWhereOrNull((e) =>
-                          ids.contains(e.contact?.id) ||
                           e.address.contains(query) ||
                           e.displayName.toLowerCase().contains(query)) !=
                       null));
           return Tuple2(_contacts, _chats);
         }, Priority.animation);
         _debounce = null;
-        filteredContacts.value = List<Contact>.from(tuple.item1);
+        filteredContacts.value = tuple.item1;
         filteredChats.value = List<Chat>.from(tuple.item2);
         if (addressController.text.isNotEmpty) {
           filteredChats.sort((a, b) => a.handles.length.compareTo(b.handles.length));
@@ -129,20 +128,19 @@ class ChatCreatorState extends State<ChatCreator> with ThemeHelpers {
 
     // Load contacts and chats asynchronously
     () async {
-      if (widget.initialAttachments.isEmpty && !kIsWeb) {
-        final contactMaps = await ContactV2Interface.getAddressBook();
-        contacts = await Future.wait(contactMaps.map((e) => Contact.fromFastContact(e)));
+      if (widget.initialAttachments.isEmpty) {
+        contacts = await ContactsSvcV2.getAllContacts();
         if (mounted) {
-          filteredContacts.value = List<Contact>.from(contacts);
+          filteredContacts.value = contacts;
         }
       }
       if (ChatsSvc.loadedAllChats.isCompleted) {
         existingChats = ChatsSvc.allChats;
-        filteredChats.value = List<Chat>.from(existingChats.where((e) => e.isIMessage));
+        filteredChats.value = existingChats.where((e) => e.isIMessage).toList();
       } else {
         ChatsSvc.loadedAllChats.future.then((_) {
           existingChats = ChatsSvc.allChats;
-          filteredChats.value = List<Chat>.from(existingChats.where((e) => e.isIMessage));
+          filteredChats.value = existingChats.where((e) => e.isIMessage).toList();
         });
       }
       if (widget.initialSelected.isNotEmpty) {
@@ -281,10 +279,13 @@ class ChatCreatorState extends State<ChatCreator> with ThemeHelpers {
         address: text,
       ));
     } else if (filteredContacts.length == 1) {
-      final possibleAddresses = [...filteredContacts.first.phones, ...filteredContacts.first.emails];
+      final possibleAddresses = [
+        ...filteredContacts.first.phoneNumbers.map((p) => p.number),
+        ...filteredContacts.first.emailAddresses.map((e) => e.address),
+      ];
       if (possibleAddresses.length == 1) {
         addSelected(SelectedContact(
-          displayName: filteredContacts.first.displayName,
+          displayName: filteredContacts.first.computedDisplayName,
           address: possibleAddresses.first,
         ));
       }

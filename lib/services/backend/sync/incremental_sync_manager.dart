@@ -359,9 +359,6 @@ class IncrementalSyncManager extends SyncManager {
       await SettingsSvc.settings.saveManyAsync(toSave);
     }
 
-    // Reload contacts and match them to handles
-    await ContactsSvcV2.syncContactsToHandles();
-
     // Update the chat service with the latest chats
     for (var chat in syncedChats.values) {
       chat.dbLatestMessage;

@@ -18,21 +18,14 @@ class ContactTile extends StatelessWidget {
   final Chat chat;
   final bool canBeRemoved;
 
-  Contact? get contact => handle.contact;
-  ContactV2? get contactV2 => handle.contactsV2.firstOrNull;
+  ContactV2? get contact => handle.contactsV2.firstOrNull;
 
   bool get hasPhones {
-    if (contactV2 != null) {
-      return contactV2!.addresses.any((addr) => !addr.contains('@'));
-    }
-    return contact?.phones.isNotEmpty ?? false;
+    return contact?.addresses.any((addr) => !addr.contains('@')) ?? false;
   }
 
   bool get hasEmails {
-    if (contactV2 != null) {
-      return contactV2!.addresses.any((addr) => addr.contains('@'));
-    }
-    return contact?.emails.isNotEmpty ?? false;
+    return contact?.addresses.any((addr) => addr.contains('@')) ?? false;
   }
 
   const ContactTile({
@@ -56,13 +49,12 @@ class ContactTile extends StatelessWidget {
         },
         onTap: () async {
           final contactV2 = handle.contactsV2.firstOrNull;
-          if (contactV2 == null && contact == null) {
+          if (contactV2 == null || !contactV2.isNative) {
             await MethodChannelSvc.invokeMethod("open-contact-form",
                 {'address': handle.address, 'address_type': handle.address.isEmail ? 'email' : 'phone'});
           } else {
             try {
-              final contactId = contactV2?.nativeContactId ?? contact!.id;
-              await MethodChannelSvc.invokeMethod("view-contact-form", {'id': contactId});
+              await MethodChannelSvc.invokeMethod("view-contact-form", {'id': contactV2.nativeContactId});
             } catch (_) {
               showSnackbar("Error", "Failed to find contact on device!");
             }
@@ -75,7 +67,7 @@ class ContactTile extends StatelessWidget {
               children: MessageHelper.buildEmojiText(handle.displayName, context.theme.textTheme.bodyLarge!),
             ),
           ),
-          subtitle: (contact == null && handle.contactsV2.isEmpty) || hideInfo
+          subtitle: handle.contactsV2.isEmpty || hideInfo
               ? null
               : Text(
                   handle.formattedAddress ?? handle.address,
@@ -93,7 +85,7 @@ class ContactTile extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.end,
                     mainAxisSize: MainAxisSize.max,
                     children: <Widget>[
-                      if ((contact == null && contactV2 == null && isEmail) || hasEmails)
+                      if ((contact == null && isEmail) || hasEmails)
                         ButtonTheme(
                           minWidth: 1,
                           child: TextButton(
@@ -114,7 +106,7 @@ class ContactTile extends StatelessWidget {
                                 size: SettingsSvc.settings.skin.value != Skins.iOS ? 25 : 20),
                           ),
                         ),
-                      if (((contact == null && contactV2 == null && !isEmail) || hasPhones) && !kIsWeb && !kIsDesktop)
+                      if (((contact == null && !isEmail) || hasPhones) && !kIsWeb && !kIsDesktop)
                         ButtonTheme(
                           minWidth: 1,
                           child: TextButton(
@@ -134,7 +126,7 @@ class ContactTile extends StatelessWidget {
                                 size: SettingsSvc.settings.skin.value != Skins.iOS ? 25 : 20),
                           ),
                         ),
-                      if (((contact == null && contactV2 == null && !isEmail) || hasPhones) && !kIsWeb && !kIsDesktop)
+                      if (((contact == null && !isEmail) || hasPhones) && !kIsWeb && !kIsDesktop)
                         ButtonTheme(
                           minWidth: 1,
                           child: TextButton(

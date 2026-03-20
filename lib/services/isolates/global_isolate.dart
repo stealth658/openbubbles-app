@@ -596,10 +596,6 @@ enum IsolateRequestType {
   findOneHandleAsync,
   findHandlesAsync,
 
-  // Contact actions
-  saveContactAsync,
-  findOneContactAsync,
-
   // ContactV2 actions (new contact service)
   syncContactsToHandles,
   getStoredContactIds,
@@ -609,6 +605,7 @@ enum IsolateRequestType {
   getAllContacts,
   fetchNetworkContacts,
   getContactAvatar,
+  uploadContactsV2,
 
   // Attachment actions
   saveAttachmentAsync,
@@ -620,8 +617,6 @@ enum IsolateRequestType {
 
   // Sync actions
   performIncrementalSync,
-  uploadContacts,
-  getAllContactsAsync,
 
   // Message actions
   bulkSaveNewMessages,

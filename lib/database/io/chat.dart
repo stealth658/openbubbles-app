@@ -224,7 +224,7 @@ class Chat {
   String getChatCreatorSubtitle() {
     // generate names for group chats or DMs
     List<String> titles = handles
-        .map((e) => e.displayName.trim().split(isGroup && e.contact != null ? " " : String.fromCharCode(65532)).first)
+        .map((e) => e.displayName.trim().split(isGroup && e.contactsV2.isNotEmpty ? " " : String.fromCharCode(65532)).first)
         .toList();
     if (titles.isEmpty) {
       if (chatIdentifier!.startsWith("urn:biz")) {
@@ -250,7 +250,7 @@ class Chat {
   /// Return whether or not the notification should be muted
   bool shouldMuteNotification(Message? message) {
     /// Filter unknown senders & sender doesn't have a contact, then don't notify
-    if (SettingsSvc.settings.filterUnknownSenders.value && handles.length == 1 && handles.first.contact == null) {
+    if (SettingsSvc.settings.filterUnknownSenders.value && handles.length == 1 && handles.first.contactsV2.isEmpty) {
       return true;
 
       /// Check if global text detection is on and notify accordingly

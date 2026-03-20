@@ -42,9 +42,14 @@ class DownloadingContent extends StatelessWidget {
               top: isInReply ? 10.0 : 40.0,
               bottom: isInReply ? 10.0 : 20.0,
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.center,
+            child: ConstrainedBox(
+              // Minimum width sized to the longest possible label ("Failed to
+              // download") so all states render at a consistent width and the
+              // widget never resizes when transitioning between states.
+              constraints: const BoxConstraints(minWidth: 150),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 // Large document-type icon — always represents the file kind
                 Icon(
@@ -117,6 +122,7 @@ class DownloadingContent extends StatelessWidget {
                   ],
                 ),
               ],
+            ),
             ),
           ),
           // Mime-type badge — top-left, styled like the LIVE photo tag

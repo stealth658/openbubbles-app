@@ -13,12 +13,11 @@ import 'package:io/io.dart';
 import 'package:path/path.dart';
 
 class Database {
-  static int version = 6;
+  static int version = 7;
 
   static late final Store store;
   static late final Box<Attachment> attachments;
   static late final Box<Chat> chats;
-  static late final Box<Contact> contacts;
   static late final Box<ContactV2> contactsV2;
   static late final Box<FCMData> fcmData;
   static late final Box<Handle> handles;
@@ -47,7 +46,6 @@ class Database {
     try {
       Database.attachments = store.box<Attachment>();
       Database.chats = store.box<Chat>();
-      Database.contacts = store.box<Contact>();
       Database.contactsV2 = store.box<ContactV2>();
       Database.fcmData = store.box<FCMData>();
       Database.handles = store.box<Handle>();
@@ -74,7 +72,6 @@ class Database {
 
         Database.attachments.removeAll();
         Database.chats.removeAll();
-        Database.contacts.removeAll();
         Database.contactsV2.removeAll();
         Database.fcmData.removeAll();
         Database.handles.removeAll();
@@ -247,6 +244,11 @@ class Database {
           Logger.info("Executing Message-Handle relationship migration (Phase 2)...", tag: "DB-Migration");
           MessageHandleRelationshipMigration.migrate();
           break;
+
+        // Version 7: Remove V1 Contact entity (we don't need to do anything.)
+        // We removed the code, so it's unused, but it'll remain in the database.
+        case 7:
+          break;
       }
 
       // Update the current version and save it
@@ -268,7 +270,6 @@ class Database {
     Database.attachments.removeAll();
     Database.chats.removeAll();
     Database.fcmData.removeAll();
-    Database.contacts.removeAll();
     Database.contactsV2.removeAll();
     Database.handles.removeAll();
     Database.messages.removeAll();

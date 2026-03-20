@@ -20,7 +20,6 @@ class HandleActions {
 
       if (existing != null) {
         handle.id = existing.id;
-        handle.contactRelation.target = existing.contactRelation.target;
       }
       // Contact matching is now handled automatically by ContactServiceV2
       if (!updateColor) {

@@ -217,26 +217,24 @@ class AttachmentsService extends GetxService {
     }
   }
 
-  Contact parseAppleContact(String appleContact) {
+  ContactV2 parseAppleContact(String appleContact) {
     final contact = VCardStack.fromData(appleContact).items.first;
-    final c = Contact(
-      id: randomString(8),
+    final nameVals = contact.findFirstProperty(VConstants.name)?.values;
+    final c = ContactV2(
+      nativeContactId: randomString(8),
       displayName: contact.findFirstProperty(VConstants.formattedName)?.values.firstOrNull ?? "Unknown",
-      phones: contact.findFirstProperty(VConstants.phone)?.values ?? [],
-      emails: contact.findFirstProperty(VConstants.email)?.values ?? [],
-      structuredName: StructuredName(
-        namePrefix: contact.findFirstProperty(VConstants.name)?.values.elementAtOrNull(3) ?? "",
-        familyName: contact.findFirstProperty(VConstants.name)?.values.elementAtOrNull(0) ?? "",
-        givenName: contact.findFirstProperty(VConstants.name)?.values.elementAtOrNull(1) ?? "",
-        middleName: contact.findFirstProperty(VConstants.name)?.values.elementAtOrNull(2) ?? "",
-        nameSuffix: contact.findFirstProperty(VConstants.name)?.values.elementAtOrNull(4) ?? "",
-      ),
+      firstName: nameVals?.elementAtOrNull(1),
+      lastName: nameVals?.elementAtOrNull(0),
+      middleName: nameVals?.elementAtOrNull(2),
+      namePrefix: nameVals?.elementAtOrNull(3),
+      nameSuffix: nameVals?.elementAtOrNull(4),
     );
-    try {
-      // contact_card.dart does real avatar parsing since no plugins can parse the photo correctly when the base64 is multiline
-      c.avatar =
-          (isNullOrEmpty(contact.findFirstProperty(VConstants.photo)?.values.firstOrNull) ? null : [0]) as Uint8List?;
-    } catch (_) {}
+    c.phoneNumbers = (contact.findFirstProperty(VConstants.phone)?.values ?? [])
+        .map((v) => ContactPhone(number: v.toString(), label: ''))
+        .toList();
+    c.emailAddresses = (contact.findFirstProperty(VConstants.email)?.values ?? [])
+        .map((v) => ContactEmail(address: v.toString(), label: ''))
+        .toList();
     return c;
   }
 

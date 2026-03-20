@@ -69,15 +69,13 @@ class MaterialHeader extends StatelessWidget implements PreferredSizeWidget {
                       }
                     : () async {
                         final handle = controller.chat.handles.first;
-                        final contactV2 = handle.contactsV2.firstOrNull;
-                        final contact = handle.contact;
-                        if (contactV2 == null && contact == null) {
+                        final contact = handle.contactsV2.firstOrNull;
+                        if (contact == null || !contact.isNative) {
                           await MethodChannelSvc.invokeMethod("open-contact-form",
                               {'address': handle.address, 'address_type': handle.address.isEmail ? 'email' : 'phone'});
                         } else {
                           try {
-                            final contactId = contactV2?.nativeContactId ?? contact!.id;
-                            await MethodChannelSvc.invokeMethod("view-contact-form", {'id': contactId});
+                            await MethodChannelSvc.invokeMethod("view-contact-form", {'id': contact.nativeContactId});
                           } catch (_) {
                             showSnackbar("Error", "Failed to find contact on device!");
                           }

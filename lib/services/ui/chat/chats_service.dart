@@ -115,9 +115,9 @@ class ChatsService {
     // Apply unknown senders filter
     if (showUnknown != null && SettingsSvc.settings.filterUnknownSenders.value) {
       if (showUnknown) {
-        chats = chats.where((e) => !e.isGroup && e.handles.firstOrNull?.contact == null).toList();
+        chats = chats.where((e) => !e.isGroup && e.handles.firstOrNull?.contactsV2.isEmpty != false).toList();
       } else {
-        chats = chats.where((e) => e.isGroup || (!e.isGroup && e.handles.firstOrNull?.contact != null)).toList();
+        chats = chats.where((e) => e.isGroup || (!e.isGroup && e.handles.firstOrNull?.contactsV2.isNotEmpty == true)).toList();
       }
     }
 

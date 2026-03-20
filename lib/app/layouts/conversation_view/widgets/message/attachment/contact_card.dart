@@ -27,7 +27,7 @@ class ContactCard extends StatefulWidget {
 }
 
 class _ContactCardState extends State<ContactCard> with AutomaticKeepAliveClientMixin, ThemeHelpers {
-  Contact? contact;
+  ContactV2? contact;
 
   @override
   void initState() {
@@ -70,15 +70,17 @@ class _ContactCardState extends State<ContactCard> with AutomaticKeepAliveClient
     try {
       contact = AttachmentsSvc.parseAppleContact(appleContact);
     } catch (ex) {
-      contact = Contact(displayName: "Invalid Contact", id: randomString(8));
+      contact = ContactV2(displayName: "Invalid Contact", nativeContactId: randomString(8));
     }
 
-    if (contact != null) {
-      final map = contact!.toMap();
-      if (avatarStr.isNotEmpty) {
-        map["avatar"] = "/${avatarStr.split("/").sublist(1).join('/').trim()}";
-      }
-      contact = Contact.fromMap(map);
+    if (contact != null && avatarStr.isNotEmpty) {
+      try {
+        final b64 = "/${avatarStr.split("/").sublist(1).join('/').trim()}";
+        final bytes = base64Decode(b64);
+        final tempPath = '${Directory.systemTemp.path}/contact_card_${contact!.nativeContactId}.jpg';
+        await File(tempPath).writeAsBytes(bytes);
+        contact!.avatarPath = tempPath;
+      } catch (_) {}
     }
 
     if (!kIsWeb && widget.file.path != null) setState(() {});
@@ -112,7 +114,7 @@ class _ContactCardState extends State<ContactCard> with AutomaticKeepAliveClient
                 children: <Widget>[
                   Expanded(
                     child: Text(
-                      contact?.displayName ?? 'Unknown',
+                      contact?.computedDisplayName ?? 'Unknown',
                       style: context.theme.textTheme.bodyLarge!.copyWith(fontWeight: FontWeight.bold),
                       overflow: TextOverflow.ellipsis,
                       maxLines: 2,

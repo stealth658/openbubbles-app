@@ -35,10 +35,6 @@ class Handle {
   String? get color => _color.value;
   set color(String? val) => _color.value = val;
 
-  final contactRelation = ToOne<Contact>();
-  @Transient()
-  Contact? webContact;
-
   // N:M Relationship to ContactV2 (new contact service)
   // This is a backlink - ContactV2 owns the relationship
   @Backlink('handles')
@@ -60,7 +56,6 @@ class Handle {
     return _fakeAvatar!;
   }
 
-  Contact? get contact => kIsWeb ? webContact : contactRelation.target;
   String get displayName {
     if (SettingsSvc.settings.redactedMode.value) {
       if (SettingsSvc.settings.generateFakeContactNames.value) {
@@ -78,12 +73,7 @@ class Handle {
 
     // Try to access ContactV2 directly (only works if in a transaction)
     if (!kIsWeb && contactsV2.isNotEmpty) {
-      return contactsV2.first.displayName;
-    }
-
-    // Fall back to old Contact system
-    if (contact != null) {
-      return contact!.displayName;
+      return contactsV2.first.computedDisplayName;
     }
 
     return address.contains("@") ? address : (formattedAddress ?? address);
@@ -176,7 +166,6 @@ class Handle {
 
       if (existing != null) {
         id = existing.id;
-        contactRelation.target = existing.contactRelation.target;
       }
       // Contact matching is now handled automatically by ContactServiceV2
       if (!updateColor) {
@@ -202,7 +191,6 @@ class Handle {
     // Update this handle with the saved data
     id = savedHandle.id;
     color = savedHandle.color;
-    contactRelation.target = savedHandle.contactRelation.target;
 
     return this;
   }
@@ -249,7 +237,6 @@ class Handle {
       if (i < savedHandles.length) {
         handles[i].id = savedHandles[i].id;
         handles[i].color = savedHandles[i].color;
-        handles[i].contactRelation.target = savedHandles[i].contactRelation.target;
       }
     }
 
@@ -351,8 +338,6 @@ class Handle {
       "color": color,
       "defaultPhone": defaultPhone,
       "defaultEmail": defaultEmail,
-      'contact': contact?.toMap(),
-      'contactRelation': contactRelation.target?.toMap(),
     };
   }
 }

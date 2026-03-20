@@ -8,9 +8,9 @@ import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/network/http_service.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:crypto/crypto.dart';
-import 'package:fast_contacts/fast_contacts.dart' hide Contact, StructuredName;
-import 'package:fast_contacts/fast_contacts.dart' as fc show Contact;
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_contacts/flutter_contacts.dart' as fc;
 import 'package:path/path.dart' as p;
 
 /// ContactV2Actions - Isolate-side logic for the new contact service
@@ -86,8 +86,8 @@ class ContactV2Actions {
     final affectedHandleIds = <int>[];
 
     try {
-      List<fc.Contact> fastContacts = [];
-      List<Contact> networkContacts = [];
+      List<fc.Contact> deviceContacts = [];
+      List<ContactV2> networkContacts = [];
       final avatarPaths = <String, String?>{};
 
       if (kIsDesktop) {
@@ -98,56 +98,45 @@ class ContactV2Actions {
         if (response.statusCode == 200 && !isNullOrEmpty(response.data['data'])) {
           for (Map<String, dynamic> map in response.data['data']) {
             final displayName = getDisplayName(map['displayName'], map['firstName'], map['lastName']);
-            final emails = (map['emails'] as List<dynamic>? ?? []).map((e) => e['address'].toString()).toList();
-            final phones = (map['phoneNumbers'] as List<dynamic>? ?? []).map((e) => e['address'].toString()).toList();
+            final emails = (map['emails'] as List<dynamic>? ?? []).map((e) => ContactEmail(address: e['address'].toString(), label: e['label']?.toString() ?? '')).toList();
+            final phones = (map['phoneNumbers'] as List<dynamic>? ?? []).map((e) => ContactPhone(number: e['address'].toString(), label: e['label']?.toString() ?? '')).toList();
 
-            networkContacts.add(Contact(
-              id: (map['id'] ?? (phones.isNotEmpty ? phones : emails)).toString(),
+            final contactId = (map['id'] ?? displayName).toString();
+            if (!isNullOrEmpty(map['avatar'])) {
+              try {
+                avatarPaths[contactId] = await _saveContactAvatar(contactId, base64Decode(map['avatar'].toString()));
+              } catch (_) {}
+            }
+
+            final nc = ContactV2(
+              nativeContactId: contactId,
               displayName: displayName,
-              emails: emails,
-              phones: phones,
-              avatar: !isNullOrEmpty(map['avatar']) ? base64Decode(map['avatar'].toString()) : null,
-            ));
+              firstName: map['firstName']?.toString(),
+              lastName: map['lastName']?.toString(),
+            );
+            nc.phoneNumbers = phones;
+            nc.emailAddresses = emails;
+            networkContacts.add(nc);
           }
           Logger.info('[ContactV2] Fetched ${networkContacts.length} contacts from server');
         } else {
           Logger.info('[ContactV2] No server contacts found!');
         }
-
-        for (Contact c in networkContacts) {
-          if (c.avatar != null && c.avatar!.isNotEmpty) {
-            avatarPaths[c.id] = await _saveContactAvatar(c.id, c.avatar!);
-          }
-        }
       } else {
-        // Step 1: Fetch contacts using FastContacts
-        Logger.info('[ContactV2] Starting contact fetch from device (FastContacts)...');
-        fastContacts = await FastContacts.getAllContacts(
-          fields: List<ContactField>.from(ContactField.values)
-            ..removeWhere((e) => [
-                  ContactField.company,
-                  ContactField.department,
-                  ContactField.jobDescription,
-                  ContactField.emailLabels,
-                  ContactField.phoneLabels
-                ].contains(e)),
-        );
-        Logger.info('[ContactV2] Fetched ${fastContacts.length} contacts from device');
+        // Step 1: Fetch contacts using flutter_contacts
+        Logger.info('[ContactV2] Starting contact fetch from device (flutter_contacts)...');
+        deviceContacts = await fc.FlutterContacts.getContacts(withProperties: true);
+        Logger.info('[ContactV2] Fetched ${deviceContacts.length} contacts from device');
 
         // Step 1.5: Pre-fetch and save all contact avatars (async operations must be done BEFORE transaction)
-        for (final rawContact in fastContacts) {
+        for (final rawContact in deviceContacts) {
           try {
-            Uint8List? avatarData = await FastContacts.getContactImage(
+            final contactWithPhoto = await fc.FlutterContacts.getContact(
               rawContact.id,
-              size: ContactImageSize.fullSize,
+              withPhoto: true,
+              withThumbnail: true,
             );
-
-            if (avatarData == null || avatarData.isEmpty) {
-              avatarData = await FastContacts.getContactImage(
-                rawContact.id,
-                size: ContactImageSize.thumbnail,
-              );
-            }
+            final avatarData = contactWithPhoto?.photo ?? contactWithPhoto?.thumbnail;
 
             if (avatarData != null && avatarData.isNotEmpty) {
               avatarPaths[rawContact.id] = await _saveContactAvatar(rawContact.id, avatarData);
@@ -199,7 +188,7 @@ class ContactV2Actions {
         Logger.info(
             '[ContactV2] Built lookup maps: ${emailHandleMap.length} email keys, ${phoneHandleMap.length} phone variant keys');
 
-        for (final rawContact in [...fastContacts, ...networkContacts]) {
+        for (final rawContact in [...deviceContacts, ...networkContacts]) {
           // Normalize addresses
           final normalizedAddresses = <String>{};
 
@@ -220,18 +209,18 @@ class ContactV2Actions {
                 normalizedAddresses.add(normalized);
               }
             }
-          } else if (rawContact is Contact) {
+          } else if (rawContact is ContactV2) {
             // Add normalized phone numbers
-            for (final phone in rawContact.phones) {
-              final normalized = ContactV2.normalizePhoneNumber(phone);
+            for (final phone in rawContact.phoneNumbers) {
+              final normalized = ContactV2.normalizePhoneNumber(phone.number);
               if (normalized.isNotEmpty) {
                 normalizedAddresses.add(normalized);
               }
             }
 
             // Add normalized emails
-            for (final email in rawContact.emails) {
-              final normalized = ContactV2.normalizeEmail(email);
+            for (final email in rawContact.emailAddresses) {
+              final normalized = ContactV2.normalizeEmail(email.address);
               if (normalized.isNotEmpty) {
                 normalizedAddresses.add(normalized);
               }
@@ -242,12 +231,42 @@ class ContactV2Actions {
 
           String contactId = "";
           String displayName = "";
+          String? firstName, lastName, middleName, namePrefix, nameSuffix, nickname, company;
+          List<ContactPhone> contactPhones = [];
+          List<ContactEmail> contactEmails = [];
+
           if (rawContact is fc.Contact) {
             contactId = rawContact.id;
             displayName = rawContact.displayName;
-          } else if (rawContact is Contact) {
-            contactId = rawContact.id;
+
+            final name = rawContact.name;
+            firstName = name.first.isEmpty ? null : name.first;
+            lastName = name.last.isEmpty ? null : name.last;
+            middleName = name.middle.isEmpty ? null : name.middle;
+            namePrefix = name.prefix.isEmpty ? null : name.prefix;
+            nameSuffix = name.suffix.isEmpty ? null : name.suffix;
+            nickname = name.nickname.isEmpty ? null : name.nickname;
+
+            if (rawContact.organizations.isNotEmpty) {
+              final orgCompany = rawContact.organizations.first.company;
+              if (orgCompany.isNotEmpty) company = orgCompany;
+            }
+
+            for (final phone in rawContact.phones) {
+              final label = phone.label == fc.PhoneLabel.custom ? phone.customLabel : phone.label.name;
+              contactPhones.add(ContactPhone(number: phone.number, label: label));
+            }
+            for (final email in rawContact.emails) {
+              final label = email.label == fc.EmailLabel.custom ? email.customLabel : email.label.name;
+              contactEmails.add(ContactEmail(address: email.address, label: label));
+            }
+          } else if (rawContact is ContactV2) {
+            contactId = rawContact.nativeContactId;
             displayName = rawContact.displayName;
+            firstName = rawContact.firstName;
+            lastName = rawContact.lastName;
+            contactPhones = rawContact.phoneNumbers;
+            contactEmails = rawContact.emailAddresses;
           }
 
           // Get pre-fetched avatar path
@@ -264,16 +283,25 @@ class ContactV2Actions {
           if (existingContact != null) {
             // Update existing contact
             contact = existingContact;
-            final nameChanged = contact.displayName != displayName;
+            final oldComputedName = contact.computedDisplayName;
             contact.displayName = displayName;
             contact.addresses = normalizedAddresses.toList();
             contact.avatarPath = avatarPath;
+            contact.firstName = firstName;
+            contact.lastName = lastName;
+            contact.middleName = middleName;
+            contact.namePrefix = namePrefix;
+            contact.nameSuffix = nameSuffix;
+            contact.nickname = nickname;
+            contact.company = company;
+            contact.phoneNumbers = contactPhones;
+            contact.emailAddresses = contactEmails;
 
             // Track existing handles to detect changes
             existingHandleIds = contact.handles.map((h) => h.id).whereType<int>().toSet();
 
-            if (nameChanged) {
-              // Mark all existing handles for this contact as affected (name changed)
+            if (oldComputedName != contact.computedDisplayName) {
+              // Mark all existing handles for this contact as affected (computed name changed)
               affectedHandleIds.addAll(existingHandleIds);
             }
           } else {
@@ -283,8 +311,20 @@ class ContactV2Actions {
               nativeContactId: contactId,
               avatarPath: avatarPath,
               addresses: normalizedAddresses.toList(),
+              firstName: firstName,
+              lastName: lastName,
+              middleName: middleName,
+              namePrefix: namePrefix,
+              nameSuffix: nameSuffix,
+              nickname: nickname,
+              company: company,
             );
+            contact.phoneNumbers = contactPhones;
+            contact.emailAddresses = contactEmails;
           }
+
+          // Mark contact as native only when it originates from flutter_contacts
+          contact.isNative = rawContact is fc.Contact;
 
           // Step 3: Match contact to handles using lookup maps (O(addresses) instead of O(addresses × handles))
           final matchedHandles = <Handle>{};
@@ -312,25 +352,26 @@ class ContactV2Actions {
 
           // Compare new handles with existing handles to detect changes
           final newHandleIds = matchedHandles.map((h) => h.id).whereType<int>().toSet();
-          final hasChanges = existingContact == null ||
+          final handlesChanged = existingContact == null ||
               existingHandleIds.length != newHandleIds.length ||
               !existingHandleIds.containsAll(newHandleIds);
 
-          if (hasChanges) {
-            // Only update if handles actually changed
-            contact.handles.clear();
-            contact.handles.addAll(matchedHandles);
+          // Always update handles on the in-memory object so the put below persists them.
+          contact.handles.clear();
+          contact.handles.addAll(matchedHandles);
 
-            // Mark all affected handles (both old and new)
+          // Always persist the contact — this ensures phone/email JSON columns are
+          // written to the DB regardless of whether handle assignments changed.
+          try {
+            contactsBox.put(contact);
+          } on UniqueViolationException catch (e) {
+            Logger.warn('[ContactV2] Unique violation for contact ${contact.nativeContactId}: $e');
+          }
+
+          if (handlesChanged) {
+            // Mark all affected handles (both old and new) for UI refresh
             affectedHandleIds.addAll(existingHandleIds);
             affectedHandleIds.addAll(newHandleIds);
-
-            // Save the contact with its relationships
-            try {
-              contactsBox.put(contact);
-            } on UniqueViolationException catch (e) {
-              Logger.warn('[ContactV2] Unique violation for contact ${contact.nativeContactId}: $e');
-            }
 
             // Link handles to chats without handles
             final chatsToUpdate = <Chat>{};
@@ -378,9 +419,7 @@ class ContactV2Actions {
       Logger.info('[ContactV2] Checking for contact changes...');
 
       // Get current device contact IDs (only fetch minimal data)
-      final currentContacts = await FastContacts.getAllContacts(
-        fields: [ContactField.displayName], // Minimal fetch for ID comparison
-      );
+      final currentContacts = await fc.FlutterContacts.getContacts(); // IDs only by default
       final currentIds = currentContacts.map((c) => c.id).toSet();
 
       // Get stored contact IDs
@@ -419,7 +458,8 @@ class ContactV2Actions {
   }
 
   /// Find a single ContactV2 by native contact ID
-  static Future<Map<String, dynamic>?> findOneContact(dynamic data) async {
+  /// Returns the ObjectBox ID of the matching contact, or null if not found.
+  static Future<int?> findOneContact(dynamic data) async {
     final dataMap = data as Map<dynamic, dynamic>;
     final nativeContactId = dataMap['nativeContactId'] as String;
 
@@ -430,34 +470,30 @@ class ContactV2Actions {
       final contact = query.findFirst();
       query.close();
 
-      return contact?.toMap();
+      return contact?.id;
     });
   }
 
-  /// Get ContactV2 entities for a list of Handle IDs
-  static Future<List<Map<String, dynamic>>> getContactsForHandles(dynamic data) async {
+  /// Get ContactV2 IDs for a list of Handle IDs.
+  /// Returns de-duplicated ObjectBox IDs so the interface can hydrate full objects.
+  static Future<List<int>> getContactsForHandles(dynamic data) async {
     final dataMap = data as Map<dynamic, dynamic>;
     final handleIds = (dataMap['handleIds'] as List).cast<int>();
 
     return await Database.runInTransaction(TxMode.read, () {
       final handlesBox = Database.handles;
-      final contacts = <ContactV2>[];
+      final uniqueIds = <int>{};
 
       for (final handleId in handleIds) {
         final handle = handlesBox.get(handleId);
-        if (handle != null && handle.contactsV2.isNotEmpty) {
-          // Get the first contact (should typically only be one)
-          contacts.addAll(handle.contactsV2);
+        if (handle != null) {
+          for (final contact in handle.contactsV2) {
+            if (contact.id != 0) uniqueIds.add(contact.id);
+          }
         }
       }
 
-      // Remove duplicates based on nativeContactId
-      final uniqueContacts = <String, ContactV2>{};
-      for (final contact in contacts) {
-        uniqueContacts[contact.nativeContactId] = contact;
-      }
-
-      return uniqueContacts.values.map((c) => c.toMap()).toList();
+      return uniqueIds.toList();
     });
   }
 
@@ -513,8 +549,9 @@ class ContactV2Actions {
     }
   }
 
-  /// Get a contact by address (email or phone number)
-  static Future<Map<String, dynamic>?> getContactByAddress(dynamic data) async {
+  /// Get a contact by address (email or phone number).
+  /// Returns the ObjectBox ID of the matching contact, or null if not found.
+  static Future<int?> getContactByAddress(dynamic data) async {
     final dataMap = data as Map<dynamic, dynamic>;
     final address = dataMap['address'] as String;
 
@@ -530,7 +567,7 @@ class ContactV2Actions {
 
       for (final contact in allContacts) {
         if (contact.hasMatchingAddress(normalized)) {
-          return contact.toMap();
+          return contact.id;
         }
       }
 
@@ -538,12 +575,14 @@ class ContactV2Actions {
     });
   }
 
-  /// Get all contacts from the database
-  static Future<List<Map<String, dynamic>>> getAllContacts(dynamic data) async {
+  /// Get all contacts from the database.
+  /// Returns a list of ObjectBox IDs so the interface can hydrate full objects.
+  static Future<List<int>> getAllContacts(dynamic data) async {
     return await Database.runInTransaction(TxMode.read, () {
       final contactsBox = Database.contactsV2;
-      final allContacts = contactsBox.getAll();
-      return allContacts.map((c) => c.toMap()).toList();
+      final query = (contactsBox.query()..order(ContactV2_.displayName)).build();
+      final allContacts = query.find();
+      return allContacts.map((c) => c.id).toList();
     });
   }
 
@@ -567,17 +606,14 @@ class ContactV2Actions {
         Uint8List? avatar;
 
         try {
-          avatar = await FastContacts.getContactImage(nativeContactId, size: ContactImageSize.fullSize);
+          final contact = await fc.FlutterContacts.getContact(
+            nativeContactId,
+            withPhoto: true,
+            withThumbnail: true,
+          );
+          avatar = contact?.photo ?? contact?.thumbnail;
         } catch (e) {
-          Logger.warn('[ContactV2] Failed to get full size avatar for ID $nativeContactId: $e');
-        }
-
-        if (avatar == null) {
-          try {
-            avatar = await FastContacts.getContactImage(nativeContactId);
-          } catch (e) {
-            Logger.warn('[ContactV2] Failed to get small size avatar for ID $nativeContactId: $e');
-          }
+          Logger.warn('[ContactV2] Failed to get avatar for ID $nativeContactId: $e');
         }
 
         // Save it to disk for future use
@@ -592,6 +628,22 @@ class ContactV2Actions {
     } catch (e, stack) {
       Logger.error('[ContactV2] Error getting contact avatar for $nativeContactId', error: e, trace: stack);
       return null;
+    }
+  }
+
+  /// Uploads contacts to the server
+  static Future<void> uploadContacts(Map<String, dynamic> data) async {
+    final contacts = data['contacts'] as List<Map<String, dynamic>>;
+
+    try {
+      await HttpSvc.createContact(contacts);
+      Logger.info('[ContactV2] Successfully uploaded ${contacts.length} contacts to server');
+    } catch (err, stack) {
+      if (err is Response) {
+        Logger.error(err.data["error"]["message"].toString(), error: err, trace: stack, tag: 'ContactV2Actions');
+      } else {
+        Logger.error('Failed to upload contacts!', error: err, trace: stack, tag: 'ContactV2Actions');
+      }
     }
   }
 }

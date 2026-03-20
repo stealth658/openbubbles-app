@@ -195,7 +195,7 @@ class Chat {
   String getChatCreatorSubtitle() {
     // generate names for group chats or DMs
     List<String> titles = participants
-        .map((e) => e.displayName.trim().split(isGroup && e.contact != null ? " " : String.fromCharCode(65532)).first)
+        .map((e) => e.displayName.trim().split(isGroup ? " " : String.fromCharCode(65532)).first)
         .toList();
     if (titles.isEmpty) {
       if (chatIdentifier!.startsWith("urn:biz")) {
@@ -221,7 +221,7 @@ class Chat {
   bool shouldMuteNotification(Message? message) {
     if (SettingsSvc.settings.filterUnknownSenders.value &&
         participants.length == 1 &&
-        participants[0].contact == null) {
+        participants[0].contacts.isEmpty) {
       return true;
     } else if (SettingsSvc.settings.globalTextDetection.value.isNotEmpty) {
       List<String> text = SettingsSvc.settings.globalTextDetection.value.split(",");

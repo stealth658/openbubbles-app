@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:bluebubbles/helpers/ui/ui_helpers.dart';
-import 'package:bluebubbles/services/backend/interfaces/contact_interface.dart';
+import 'package:bluebubbles/services/backend/interfaces/contact_v2_interface.dart';
 import 'package:bluebubbles/services/backend/interfaces/sync_interface.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -90,7 +90,7 @@ class SyncService {
           _contacts.add(c.toMap());
         }
 
-        await ContactInterface.uploadContacts(_contacts);
+        await ContactV2Interface.uploadContacts(_contacts);
         contactUploadStopwatch.stop();
         Logger.debug("Contact upload complete in ${contactUploadStopwatch.elapsedMilliseconds}ms",
             tag: "Contact Upload");

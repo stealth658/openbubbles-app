@@ -17,14 +17,16 @@ class ChatCreatorTile extends StatefulWidget {
     this.contact,
     this.format = false,
     this.showTrailing = true,
+    this.label,
   });
 
   final String title;
   final String subtitle;
   final Chat? chat;
-  final Contact? contact;
+  final ContactV2? contact;
   final bool format;
   final bool showTrailing;
+  final String? label;
 
   @override
   State<StatefulWidget> createState() => _ChatCreatorTileState();
@@ -61,6 +63,14 @@ class _ChatCreatorTileState extends State<ChatCreatorTile> with ThemeHelpers {
     }
   }
 
+  String _buildSubtitleText() {
+    final base = widget.format ? (_formattedPhone ?? widget.subtitle) : widget.subtitle;
+    if (widget.label != null && widget.label!.isNotEmpty) {
+      return '$base  •  ${widget.label!}';
+    }
+    return base;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Obx(() => ListTile(
@@ -79,7 +89,7 @@ class _ChatCreatorTileState extends State<ChatCreatorTile> with ThemeHelpers {
           overflow: TextOverflow.ellipsis,
         ),
         subtitle: Text(
-          widget.format ? (_formattedPhone ?? widget.subtitle) : widget.subtitle,
+          _buildSubtitleText(),
           style: context.theme.textTheme.bodySmall!.copyWith(color: context.theme.colorScheme.outline),
         ),
         leading: Padding(
@@ -91,7 +101,7 @@ class _ChatCreatorTileState extends State<ChatCreatorTile> with ThemeHelpers {
                 )
               : ContactAvatarWidget(
                   handle: Handle(address: widget.subtitle),
-                  contact: widget.contact!,
+                  contact: widget.contact,
                   editable: false,
                 ),
         ),

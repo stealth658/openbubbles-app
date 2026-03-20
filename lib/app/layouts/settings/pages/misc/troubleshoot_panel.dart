@@ -114,7 +114,7 @@ class _TroubleshootPanelState extends State<TroubleshootPanel> with ThemeHelpers
                                       ),
                                     ),
                                   ));
-                          await ContactsSvc.fetchNetworkContacts(logger: (newLog) {
+                          await ContactsSvcV2.fetchNetworkContacts(logger: (newLog) {
                             log.add(newLog);
                           });
                         },

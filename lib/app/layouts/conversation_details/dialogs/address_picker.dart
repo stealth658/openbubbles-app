@@ -22,12 +22,12 @@ void launchIntent(bool video, String address) async {
   }
 }
 
-void showAddressPicker(Contact? contact, Handle handle, BuildContext context,
+void showAddressPicker(ContactV2? contact, Handle handle, BuildContext context,
     {bool isEmail = false, bool video = false, bool isLongPressed = false}) async {
   if (contact == null) {
     launchIntent(video, handle.address);
   } else {
-    List<String> items = isEmail ? getUniqueEmails(contact.emails) : getUniqueNumbers(contact.phones);
+    List<String> items = isEmail ? getUniqueEmails(contact.emailAddresses.map((e) => e.address)) : getUniqueNumbers(contact.phoneNumbers.map((p) => p.number));
     if (items.length == 1) {
       launchIntent(video, items.first);
     } else if (!isEmail && handle.defaultPhone != null && !isLongPressed) {

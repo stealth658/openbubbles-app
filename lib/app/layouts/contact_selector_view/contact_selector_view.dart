@@ -147,7 +147,7 @@ class ContactSelectorViewState extends State<ContactSelectorView> with ThemeHelp
                                 return Obx(() {
                                   final hideInfo = SettingsSvc.settings.redactedMode.value &&
                                       SettingsSvc.settings.hideContactInfo.value;
-                                  String _title = contact.displayName;
+                                  String _title = contact.computedDisplayName;
                                   if (hideInfo) {
                                     _title = "Contact";
                                   }
@@ -177,7 +177,7 @@ class ContactSelectorViewState extends State<ContactSelectorView> with ThemeHelp
                                           leading: Padding(
                                             padding: const EdgeInsets.only(right: 5.0),
                                             child: ContactAvatarWidget(
-                                              contactV2: contact,
+                                              contact: contact,
                                               editable: false,
                                             ),
                                           )),

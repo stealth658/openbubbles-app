@@ -634,17 +634,6 @@ Future<void> paintAvatar(
     }
   }
 
-  // Fall back to old Contact avatar for backwards compatibility
-  Contact? contact = handle?.contact;
-  if (contact?.avatar != null) {
-    Uint8List? contactAvatar =
-        await clip(contact!.avatar ?? contact.avatar!, size: size.toInt(), circle: kIsDesktop || inGroup);
-    if (contactAvatar != null) {
-      canvas.drawImage(await loadImage(contactAvatar), offset, Paint());
-      return;
-    }
-  }
-
   List<Color> colors;
   if (handle?.color == null) {
     colors = toColorGradient(handle?.address);

@@ -84,9 +84,9 @@ class HandleSelectorViewState extends State<HandleSelectorView> with ThemeHelper
 
     // Sort alphabetically, prioritizing handles with contact associations
     handles.sort((a, b) {
-      if (a.contact != null && b.contact == null) {
+      if (a.contactsV2.isNotEmpty && b.contactsV2.isEmpty) {
         return -1;
-      } else if (a.contact == null && b.contact != null) {
+      } else if (a.contactsV2.isEmpty && b.contactsV2.isNotEmpty) {
         return 1;
       } else {
         return a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase());
@@ -227,7 +227,6 @@ class HandleSelectorViewState extends State<HandleSelectorView> with ThemeHelper
                                               padding: const EdgeInsets.only(right: 5.0),
                                               child: ContactAvatarWidget(
                                                 handle: handle,
-                                                contact: handle.contact,
                                                 editable: false,
                                               ),
                                             ))),

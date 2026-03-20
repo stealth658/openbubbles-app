@@ -1,7 +1,6 @@
 import 'package:bluebubbles/services/backend/actions/app_actions.dart';
 import 'package:bluebubbles/services/backend/actions/attachment_actions.dart';
 import 'package:bluebubbles/services/backend/actions/chat_actions.dart';
-import 'package:bluebubbles/services/backend/actions/contact_actions.dart';
 import 'package:bluebubbles/services/backend/actions/contact_v2_actions.dart';
 import 'package:bluebubbles/services/backend/actions/handle_actions.dart';
 import 'package:bluebubbles/services/backend/actions/image_actions.dart';
@@ -74,10 +73,6 @@ class IsolateActons {
     IsolateRequestType.findOneHandleAsync: HandleActions.findOneHandleAsync,
     IsolateRequestType.findHandlesAsync: HandleActions.findHandlesAsync,
 
-    // Contact
-    IsolateRequestType.saveContactAsync: ContactActions.saveContactAsync,
-    IsolateRequestType.findOneContactAsync: ContactActions.findOneContactAsync,
-
     // ContactV2 (new contact service)
     IsolateRequestType.syncContactsToHandles: ContactV2Actions.syncContactsToHandles,
     IsolateRequestType.getStoredContactIds: ContactV2Actions.getStoredContactIds,
@@ -86,6 +81,7 @@ class IsolateActons {
     IsolateRequestType.getContactByAddress: ContactV2Actions.getContactByAddress,
     IsolateRequestType.getAllContacts: ContactV2Actions.getAllContacts,
     IsolateRequestType.getContactAvatar: ContactV2Actions.getContactAvatar,
+    IsolateRequestType.uploadContactsV2: ContactV2Actions.uploadContacts,
 
     // Attachment
     IsolateRequestType.saveAttachmentAsync: AttachmentActions.saveAttachmentAsync,
@@ -97,7 +93,5 @@ class IsolateActons {
 
     // Sync
     IsolateRequestType.performIncrementalSync: SyncActions.performIncrementalSync,
-    IsolateRequestType.uploadContacts: ContactActions.uploadContacts,
-    IsolateRequestType.getAllContactsAsync: ContactActions.getAllContactsAsync,
   };
 }

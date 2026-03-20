@@ -58,8 +58,8 @@ class _ContactAvatarGroupWidgetState extends State<ContactAvatarGroupWidget> wit
     participants = widget.chat.handles.toList();
     participants.sort((a, b) {
       // Check ContactV2 avatars first, then fall back to old Contact
-      bool avatarA = (a.contactsV2.firstOrNull?.avatarPath != null) || (a.contact?.avatar?.isNotEmpty ?? false);
-      bool avatarB = (b.contactsV2.firstOrNull?.avatarPath != null) || (b.contact?.avatar?.isNotEmpty ?? false);
+      bool avatarA = a.contactsV2.firstOrNull?.avatarPath != null;
+      bool avatarB = b.contactsV2.firstOrNull?.avatarPath != null;
       if (!avatarA && avatarB) return 1;
       if (avatarA && !avatarB) return -1;
       return 0;

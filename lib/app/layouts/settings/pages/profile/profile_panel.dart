@@ -5,7 +5,6 @@ import 'package:bluebubbles/app/layouts/settings/pages/theming/avatar/avatar_cro
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
-import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
@@ -416,17 +415,13 @@ class _ProfilePanelState extends State<ProfilePanel> with WidgetsBindingObserver
                   backgroundColor: tileColor,
                   children: [
                     SettingsTile(
-                      leading: (accountContact['avatar'] == null)
-                          ? const CircleAvatar()
-                          : ContactAvatarWidget(
-                              handle: null,
-                              contact: isNullOrEmpty(accountContact['avatar'])
-                                  ? null
-                                  : Contact(
-                                      id: randomString(9),
-                                      displayName: "",
-                                      avatar: base64Decode(accountContact['avatar'])),
-                            ),
+                      leading: !isNullOrEmpty(accountContact['avatar'])
+                          ? CircleAvatar(
+                              backgroundImage:
+                                  MemoryImage(base64Decode(accountContact['avatar'].toString())),
+                              radius: 20,
+                            )
+                          : const CircleAvatar(),
                       title: accountContact['name'],
                       subtitle: "Your sharable iMessage contact card",
                     ),

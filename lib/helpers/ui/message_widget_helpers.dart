@@ -47,15 +47,15 @@ List<InlineSpan> buildMessageSpans(BuildContext context, MessagePart part, Messa
               if (kIsDesktop || kIsWeb) return;
               final handle = ChatsSvc.activeChat!.chat.handles
                   .firstWhereOrNull((e) => e.address == part.mentions[i].mentionedAddress);
-              if (handle?.contact == null && handle != null) {
-                await MethodChannelSvc.invokeMethod("open-contact-form",
-                    {'address': handle.address, 'address_type': handle.address.isEmail ? 'email' : 'phone'});
-              } else if (handle?.contact != null) {
+              if (handle?.contactsV2.isNotEmpty == true && handle!.contactsV2.first.isNative) {
                 try {
-                  await MethodChannelSvc.invokeMethod("view-contact-form", {'id': handle!.contact!.id});
+                  await MethodChannelSvc.invokeMethod("view-contact-form", {'id': handle.contactsV2.first.nativeContactId});
                 } catch (_) {
                   showSnackbar("Error", "Failed to find contact on device!");
                 }
+              } else if (handle != null) {
+                await MethodChannelSvc.invokeMethod("open-contact-form",
+                    {'address': handle.address, 'address_type': handle.address.isEmail ? 'email' : 'phone'});
               }
             }));
       if (i == part.mentions.length - 1) {
@@ -177,16 +177,16 @@ Future<List<InlineSpan>> buildEnrichedMessageSpans(BuildContext context, Message
               ..onTap = () async {
                 if (kIsDesktop || kIsWeb) return;
                 final handle = ChatsSvc.activeChat!.chat.handles.firstWhereOrNull((e) => e.address == data!.first);
-                if (handle?.contact == null && handle != null) {
-                  await MethodChannelSvc.invokeMethod("open-contact-form",
-                      {'address': handle.address, 'address_type': handle.address.isEmail ? 'email' : 'phone'});
-                } else if (handle?.contact != null) {
-                  try {
-                    await MethodChannelSvc.invokeMethod("view-contact-form", {'id': handle!.contact!.id});
-                  } catch (_) {
-                    showSnackbar("Error", "Failed to find contact on device!");
-                  }
+              if (handle?.contactsV2.isNotEmpty == true && handle!.contactsV2.first.isNative) {
+                try {
+                  await MethodChannelSvc.invokeMethod("view-contact-form", {'id': handle.contactsV2.first.nativeContactId});
+                } catch (_) {
+                  showSnackbar("Error", "Failed to find contact on device!");
                 }
+              } else if (handle != null) {
+                await MethodChannelSvc.invokeMethod("open-contact-form",
+                    {'address': handle.address, 'address_type': handle.address.isEmail ? 'email' : 'phone'});
+              }
               }));
       } else if (urlRegex.hasMatch(text) ||
           type == "map" ||

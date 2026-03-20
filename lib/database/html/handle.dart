@@ -1,6 +1,5 @@
+import 'package:bluebubbles/database/io/contact_v2.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/database/html/contact.dart';
-import 'package:bluebubbles/database/html/objectbox.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:faker/faker.dart';
 import 'package:get/get.dart';
@@ -18,14 +17,13 @@ class Handle {
   String? defaultPhone;
   final String fakeName = faker.person.name();
 
-  final contactRelation = ToOne<Contact>();
-  Contact? webContact;
+  // Web has no ObjectBox relations; expose empty list for API compatibility.
+  List<ContactV2> get contacts => [];
 
   final RxnString _color = RxnString();
   String? get color => _color.value;
   set color(String? val) => _color.value = val;
 
-  Contact? get contact => webContact;
   String get displayName {
     if (SettingsSvc.settings.redactedMode.value) {
       if (SettingsSvc.settings.generateFakeContactNames.value) {
@@ -35,7 +33,6 @@ class Handle {
       }
     }
     if (address.startsWith("urn:biz")) return "Business";
-    if (contact != null) return contact!.displayName;
     return address.contains("@") ? address : (formattedAddress ?? address);
   }
 
@@ -150,8 +147,6 @@ class Handle {
       "color": color,
       "defaultPhone": defaultPhone,
       "defaultEmail": defaultEmail,
-      "contact": contact?.toMap(),
-      "contactRelation": contactRelation.target?.toMap(),
     };
   }
 }

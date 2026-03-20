@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
@@ -5,9 +8,11 @@ import 'package:bluebubbles/services/backend/interfaces/contact_v2_interface.dar
 import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_contacts/flutter_contacts.dart' as fc;
 import 'package:get/get.dart';
 import 'package:get_it/get_it.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:universal_io/io.dart';
 
 // ignore: non_constant_identifier_names
 ContactServiceV2 get ContactsSvcV2 => GetIt.I<ContactServiceV2>();
@@ -25,6 +30,8 @@ class ContactServiceV2 {
 
   /// Whether we have permission to access contacts
   bool _hasContactAccess = false;
+
+  void Function()? _contactChangeListener;
 
   bool get hasContactAccessSync {
     return _hasContactAccess;
@@ -76,6 +83,12 @@ class ContactServiceV2 {
       await hasContactAccess;
       Logger.info('[ContactServiceV2] Contact access: $_hasContactAccess');
       await syncContactsToHandles(wait: false);
+
+      // Subscribe to device contact change events (mobile only)
+      if (!kIsDesktop && !kIsWeb) {
+        _contactChangeListener = () => syncContactsToHandles(wait: false);
+        fc.FlutterContacts.addListener(_contactChangeListener!);
+      }
     } else {
       Logger.info('[ContactServiceV2] Headless mode, skipping contact sync opeerations');
     }
@@ -128,7 +141,7 @@ class ContactServiceV2 {
       );
 
       if (contacts.isEmpty) return null;
-      return ContactV2.fromMap(contacts.first);
+      return contacts.first;
     } catch (e, stack) {
       Logger.error('[ContactServiceV2] Error getting contact for handle $handleId', error: e, trace: stack);
       return null;
@@ -141,11 +154,9 @@ class ContactServiceV2 {
     if (!access) return [];
 
     try {
-      final contactMaps = await ContactV2Interface.getContactsForHandles(
+      return await ContactV2Interface.getContactsForHandles(
         handleIds: handleIds,
       );
-
-      return contactMaps.map((m) => ContactV2.fromMap(m)).toList();
     } catch (e, stack) {
       Logger.error('[ContactServiceV2] Error getting contacts for handles', error: e, trace: stack);
       return [];
@@ -229,9 +240,7 @@ class ContactServiceV2 {
   /// This will search through all contacts to find a match
   Future<ContactV2?> getContact(String address) async {
     try {
-      final contactMap = await ContactV2Interface.getContactByAddress(address: address);
-      if (contactMap == null) return null;
-      return ContactV2.fromMap(contactMap);
+      return await ContactV2Interface.getContactByAddress(address: address);
     } catch (e, stack) {
       Logger.error('[ContactServiceV2] Error getting contact by address', error: e, trace: stack);
       return null;
@@ -256,8 +265,7 @@ class ContactServiceV2 {
   /// Returns a list of all ContactV2 entities
   Future<List<ContactV2>> getAllContacts() async {
     try {
-      final contactMaps = await ContactV2Interface.getAllContacts();
-      return contactMaps.map((m) => ContactV2.fromMap(m)).toList();
+      return await ContactV2Interface.getAllContacts();
     } catch (e, stack) {
       Logger.error('[ContactServiceV2] Error getting all contacts', error: e, trace: stack);
       return [];
@@ -272,6 +280,71 @@ class ContactServiceV2 {
     } catch (e, stack) {
       Logger.error('[ContactServiceV2] Error getting contact avatar', error: e, trace: stack);
       return null;
+    }
+  }
+
+  /// Fetch contacts from the server with optional verbose logging.
+  /// This is a diagnostic/troubleshoot helper — primary sync uses [syncContactsToHandles].
+  Future<List<ContactV2>> fetchNetworkContacts({Function(String)? logger}) async {
+    final networkContacts = <ContactV2>[];
+    logger?.call("Fetching contacts from server...");
+    try {
+      final response = await HttpSvc.contacts(withAvatars: true);
+
+      if (response.statusCode == 200 && !isNullOrEmpty(response.data['data'])) {
+        logger?.call("Found contacts!");
+        for (Map<String, dynamic> map in response.data['data']) {
+          final displayName = getDisplayName(map['displayName'], map['firstName'], map['lastName']);
+          final phones = (map['phoneNumbers'] as List<dynamic>? ?? [])
+              .map((e) => ContactPhone(number: e['address'].toString(), label: e['label']?.toString() ?? ''))
+              .toList();
+          final emails = (map['emails'] as List<dynamic>? ?? [])
+              .map((e) => ContactEmail(address: e['address'].toString(), label: e['label']?.toString() ?? ''))
+              .toList();
+
+          if (emails.isEmpty && phones.isEmpty) {
+            logger?.call("Contact has no saved addresses: $displayName");
+          }
+          logger?.call("Parsing contact: $displayName");
+
+          final c = ContactV2(
+            nativeContactId: (map['id'] ?? displayName).toString(),
+            displayName: displayName,
+            firstName: map['firstName']?.toString(),
+            lastName: map['lastName']?.toString(),
+          );
+          c.phoneNumbers = phones;
+          c.emailAddresses = emails;
+
+          if (!isNullOrEmpty(map['avatar'])) {
+            try {
+              final bytes = base64Decode(map['avatar'].toString());
+              final avatarsDir = Directory('${Database.appDocPath}/contact_avatars');
+              if (!avatarsDir.existsSync()) avatarsDir.createSync(recursive: true);
+              final file = File('${avatarsDir.path}/${c.nativeContactId}.jpg');
+              await file.writeAsBytes(bytes);
+              c.avatarPath = file.path;
+            } catch (_) {}
+          }
+
+          networkContacts.add(c);
+        }
+      } else {
+        logger?.call("No contacts found!");
+      }
+      logger?.call("Finished contacts sync");
+    } catch (e, s) {
+      logger?.call("Got exception: $e");
+      logger?.call(s.toString());
+    }
+    return networkContacts;
+  }
+
+  /// Remove the contact change listener and release resources
+  void dispose() {
+    if (_contactChangeListener != null) {
+      fc.FlutterContacts.removeListener(_contactChangeListener!);
+      _contactChangeListener = null;
     }
   }
 }

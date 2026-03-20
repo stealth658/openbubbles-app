@@ -1,9 +1,11 @@
 import 'dart:typed_data';
 
+import 'package:bluebubbles/database/database.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/env.dart';
 import 'package:bluebubbles/services/backend/actions/contact_v2_actions.dart';
 import 'package:bluebubbles/services/isolates/global_isolate.dart';
-import 'package:fast_contacts/fast_contacts.dart';
+import 'package:flutter_contacts/flutter_contacts.dart' as fc;
 import 'package:get_it/get_it.dart';
 
 /// ContactV2Interface provides the bridge between the main isolate and the GlobalIsolate
@@ -34,75 +36,82 @@ class ContactV2Interface {
   }
 
   /// Find a single ContactV2 by native contact ID
-  static Future<Map<String, dynamic>?> findOneContact({
+  static Future<ContactV2?> findOneContact({
     required String nativeContactId,
   }) async {
     final data = {
       'nativeContactId': nativeContactId,
     };
 
+    final int? id;
     if (isIsolate) {
-      return await ContactV2Actions.findOneContact(data);
+      id = await ContactV2Actions.findOneContact(data);
     } else {
-      return await GetIt.I<GlobalIsolate>().send<Map<String, dynamic>?>(IsolateRequestType.findOneContact, input: data);
+      id = await GetIt.I<GlobalIsolate>().send<int?>(IsolateRequestType.findOneContact, input: data);
     }
+
+    if (id == null) return null;
+    return Database.contactsV2.get(id);
   }
 
   /// Get ContactV2 entities for a list of Handle IDs
-  static Future<List<Map<String, dynamic>>> getContactsForHandles({
+  static Future<List<ContactV2>> getContactsForHandles({
     required List<int> handleIds,
   }) async {
     final data = {
       'handleIds': handleIds,
     };
 
+    final List<int> ids;
     if (isIsolate) {
-      return await ContactV2Actions.getContactsForHandles(data);
+      ids = await ContactV2Actions.getContactsForHandles(data);
     } else {
-      return await GetIt.I<GlobalIsolate>()
-          .send<List<Map<String, dynamic>>>(IsolateRequestType.getContactsForHandles, input: data);
+      ids = await GetIt.I<GlobalIsolate>()
+          .send<List<int>>(IsolateRequestType.getContactsForHandles, input: data);
     }
+
+    return Database.contactsV2.getMany(ids).whereType<ContactV2>().toList();
   }
 
   /// Get a contact by address (email or phone number)
-  static Future<Map<String, dynamic>?> getContactByAddress({
+  static Future<ContactV2?> getContactByAddress({
     required String address,
   }) async {
     final data = {
       'address': address,
     };
 
+    final int? id;
     if (isIsolate) {
-      return await ContactV2Actions.getContactByAddress(data);
+      id = await ContactV2Actions.getContactByAddress(data);
     } else {
-      return await GetIt.I<GlobalIsolate>()
-          .send<Map<String, dynamic>?>(IsolateRequestType.getContactByAddress, input: data);
+      id = await GetIt.I<GlobalIsolate>()
+          .send<int?>(IsolateRequestType.getContactByAddress, input: data);
     }
+
+    if (id == null) return null;
+    return Database.contactsV2.get(id);
   }
 
   /// Get all contacts from the database
-  static Future<List<Map<String, dynamic>>> getAllContacts() async {
+  static Future<List<ContactV2>> getAllContacts() async {
+    final List<int> ids;
     if (isIsolate) {
-      return await ContactV2Actions.getAllContacts(<String, dynamic>{});
+      ids = await ContactV2Actions.getAllContacts(<String, dynamic>{});
     } else {
-      return await GetIt.I<GlobalIsolate>()
-          .send<List<Map<String, dynamic>>>(IsolateRequestType.getAllContacts, input: <String, dynamic>{});
+      ids = await GetIt.I<GlobalIsolate>()
+          .send<List<int>>(IsolateRequestType.getAllContacts, input: <String, dynamic>{});
     }
+
+    return Database.contactsV2.getMany(ids).whereType<ContactV2>().toList();
   }
 
-  /// We don't want to have to serialize and deserialize the objects over the isolate,
-  /// so we just won't use the isolate and we'll use FastContacts directly here.
-  /// This should be fine since FastContacts is already optimized for performance.
-  static Future<List<Contact>> getAddressBook() async {
-    return await FastContacts.getAllContacts(
-      fields: List<ContactField>.from(ContactField.values)
-        ..removeWhere((e) => [
-              ContactField.company,
-              ContactField.department,
-              ContactField.jobDescription,
-              ContactField.emailLabels,
-              ContactField.phoneLabels
-            ].contains(e)),
+  /// Returns live flutter_contacts Contact objects so the chat creator can
+  /// display contacts not yet linked to existing handles.
+  static Future<List<fc.Contact>> getAddressBook() async {
+    return await fc.FlutterContacts.getContacts(
+      withProperties: true,
+      withThumbnail: true,
     );
   }
 
@@ -118,6 +127,17 @@ class ContactV2Interface {
       return await ContactV2Actions.getContactAvatar(data);
     } else {
       return await GetIt.I<GlobalIsolate>().send<Uint8List?>(IsolateRequestType.getContactAvatar, input: data);
+    }
+  }
+
+  /// Uploads contacts to the server
+  static Future<void> uploadContacts(List<Map<String, dynamic>> contacts) async {
+    final data = {'contacts': contacts};
+
+    if (isIsolate) {
+      return await ContactV2Actions.uploadContacts(data);
+    } else {
+      return await GetIt.I<GlobalIsolate>().send<void>(IsolateRequestType.uploadContactsV2, input: data);
     }
   }
 }

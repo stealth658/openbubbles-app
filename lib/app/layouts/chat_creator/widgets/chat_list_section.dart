@@ -20,7 +20,7 @@ class ChatListSection extends StatelessWidget {
   });
 
   final List<Chat> filteredChats;
-  final List<Contact> filteredContacts;
+  final List<ContactV2> filteredContacts;
   final Function(List<SelectedContact>) onChatTap;
   final Function(SelectedContact) onContactTap;
   final List<SelectedContact> selectedContacts;
@@ -82,40 +82,45 @@ class ChatListSection extends StatelessWidget {
           delegate: SliverChildBuilderDelegate(
             (context, index) {
               final contact = filteredContacts[index];
-              contact.phones = getUniqueNumbers(contact.phones);
-              contact.emails = getUniqueEmails(contact.emails);
+              // Dedup by phone number / email address, preserving labels
+              final seenNumbers = <String>{};
+              final uniquePhones = contact.phoneNumbers.where((p) => seenNumbers.add(p.number.numericOnly())).toList();
+              final seenAddresses = <String>{};
+              final uniqueEmails = contact.emailAddresses.where((e) => seenAddresses.add(e.address.trim())).toList();
 
               return Obx(() {
                 final hideInfo = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
                 return Column(
-                  key: ValueKey(contact.id),
+                  key: ValueKey(contact.nativeContactId),
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    ...contact.phones.map((e) => Material(
+                    ...uniquePhones.map((p) => Material(
                           color: Colors.transparent,
                           child: InkWell(
                             onTap: () {
-                              if (selectedContacts.firstWhereOrNull((c) => c.address == e) != null) return;
-                              onContactTap(SelectedContact(displayName: contact.displayName, address: e));
+                              if (selectedContacts.firstWhereOrNull((c) => c.address == p.number) != null) return;
+                              onContactTap(SelectedContact(displayName: contact.computedDisplayName, address: p.number));
                             },
                             child: ChatCreatorTile(
-                              title: hideInfo ? "Contact" : contact.displayName,
-                              subtitle: hideInfo ? "" : e,
+                              title: hideInfo ? "Contact" : contact.computedDisplayName,
+                              subtitle: hideInfo ? "" : p.number,
+                              label: hideInfo ? null : p.label,
                               contact: contact,
                               format: true,
                             ),
                           ),
                         )),
-                    ...contact.emails.map((e) => Material(
+                    ...uniqueEmails.map((e) => Material(
                           color: Colors.transparent,
                           child: InkWell(
                             onTap: () {
-                              if (selectedContacts.firstWhereOrNull((c) => c.address == e) != null) return;
-                              onContactTap(SelectedContact(displayName: contact.displayName, address: e));
+                              if (selectedContacts.firstWhereOrNull((c) => c.address == e.address) != null) return;
+                              onContactTap(SelectedContact(displayName: contact.computedDisplayName, address: e.address));
                             },
                             child: ChatCreatorTile(
-                              title: hideInfo ? "Contact" : contact.displayName,
-                              subtitle: hideInfo ? "" : e,
+                              title: hideInfo ? "Contact" : contact.computedDisplayName,
+                              subtitle: hideInfo ? "" : e.address,
+                              label: hideInfo ? null : e.label,
                               contact: contact,
                             ),
                           ),

@@ -1,8 +1,6 @@
 export 'package:bluebubbles/database/io/attachment.dart'
     if (dart.library.html) 'package:bluebubbles/models/html/attachment.dart';
 export 'package:bluebubbles/database/io/chat.dart' if (dart.library.html) 'package:bluebubbles/models/html/chat.dart';
-export 'package:bluebubbles/database/io/contact.dart'
-    if (dart.library.html) 'package:bluebubbles/models/html/contact.dart';
 export 'package:bluebubbles/database/io/contact_v2.dart'
     if (dart.library.html) 'package:bluebubbles/models/html/contact_v2.dart';
 export 'package:media_kit/media_kit.dart' if (dart.library.html) 'package:bluebubbles/models/html/media_kit.dart';
@@ -27,7 +25,6 @@ export 'package:bluebubbles/database/io/tenor.dart' if (dart.library.html) 'pack
 export 'package:bluebubbles/database/global/platform_file.dart';
 export 'package:bluebubbles/database/global/settings.dart';
 export 'package:bluebubbles/database/global/attributed_body.dart';
-export 'package:bluebubbles/database/global/structured_name.dart';
 export 'package:bluebubbles/database/global/queue_items.dart';
 export 'package:bluebubbles/database/global/async_image_input.dart';
 export 'package:bluebubbles/database/global/chat_messages.dart';

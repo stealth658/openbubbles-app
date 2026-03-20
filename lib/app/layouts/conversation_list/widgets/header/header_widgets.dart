@@ -257,7 +257,6 @@ class CupertinoOverflowMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final userName = SettingsSvc.settings.userName.value;
-    final iCloudAccount = SettingsSvc.settings.iCloudAccount.value;
     final filterUnknownSenders = SettingsSvc.settings.filterUnknownSenders.value;
     final moveChatCreatorToHeader = SettingsSvc.settings.moveChatCreatorToHeader.value;
 
@@ -287,10 +286,9 @@ class CupertinoOverflowMenu extends StatelessWidget {
                   borderThickness: 0.1,
                   editable: false,
                   fontSize: 16,
-                  contact: Contact(
-                    id: 'you',
+                  contact: ContactV2(
+                    nativeContactId: 'you',
                     displayName: userName,
-                    emails: [iCloudAccount],
                   ),
                 ));
           },
