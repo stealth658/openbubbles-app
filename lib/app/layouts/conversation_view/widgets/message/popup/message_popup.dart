@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'dart:ui';
@@ -770,14 +771,15 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
       popDetails();
       service.getMessageStateIfExists(message.guid!)?.embeddedMediaRefreshKey.value++;
     } else {
-      // Image caching is now handled by Flutter's image cache automatically
-      for (Attachment? element in part.attachments) {
-        if (element != null) {
-          AttachmentsSvc.redownloadAttachment(element);
+      final msgGuid = message.guid;
+      if (msgGuid != null) {
+        for (Attachment? element in part.attachments) {
+          if (element != null) {
+            unawaited(service.redownloadAttachment(msgGuid, element));
+          }
         }
       }
       popDetails();
-      service.getMessageStateIfExists(message.guid!)?.attachmentRefreshKey.value++;
     }
   }
 
@@ -992,7 +994,7 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
           !kIsDesktop &&
           !message.isFromMe! &&
           message.handleRelation.target != null &&
-          message.handleRelation.target!.contact == null)
+          message.handleRelation.target!.contactsV2.isEmpty)
         DetailsMenuActionWidget(
           onTap: createContact,
           action: DetailsMenuAction.CreateContact,

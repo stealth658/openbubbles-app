@@ -21,53 +21,127 @@ class DownloadingContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: 20.0,
-        vertical: isInReply ? 10.0 : 20.0,
-      ),
-      child: Obx(() {
-        final isError = downloadController.state.value == AttachmentDownloadState.error;
-        final isProcessing = downloadController.state.value == AttachmentDownloadState.processing;
-        final isQueued = downloadController.state.value == AttachmentDownloadState.queued;
+    final mimeType = downloadController.attachment.mimeType ?? '';
+    final friendlyType = mimeTypeToFriendlyName(mimeType);
+    final totalBytes = downloadController.attachment.totalBytes ?? 0;
+    final fileSize = totalBytes > 0 ? (totalBytes.toDouble()).getFriendlySize(decimals: 0) : null;
 
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              height: 40,
-              width: 40,
-              child: Center(
-                child: isError
-                    ? Icon(isiOS ? CupertinoIcons.arrow_clockwise : Icons.refresh, size: 30)
-                    : isProcessing
-                        ? (isiOS ? const CupertinoActivityIndicator(radius: 14) : const CircularProgressIndicator())
-                        : isQueued
-                            ? Icon(isiOS ? CupertinoIcons.clock : Icons.schedule, size: 30)
-                            : CircleProgressBar(
-                                value: downloadController.progress.value?.toDouble() ?? 0,
-                                backgroundColor: context.theme.colorScheme.outline,
-                                foregroundColor: context.theme.colorScheme.properOnSurface,
-                              ),
+    return Obx(() {
+      final isError = downloadController.state.value == AttachmentDownloadState.error;
+      final isProcessing = downloadController.state.value == AttachmentDownloadState.processing;
+      final isQueued = downloadController.state.value == AttachmentDownloadState.queued;
+
+      return Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.center,
+        children: [
+          Padding(
+            padding: EdgeInsets.only(
+              left: 20.0,
+              right: 20.0,
+              top: isInReply ? 10.0 : 40.0,
+              bottom: isInReply ? 10.0 : 20.0,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Large document-type icon — always represents the file kind
+                Icon(
+                  getAttachmentIcon(mimeType),
+                  size: 52,
+                  color: context.theme.colorScheme.properOnSurface,
+                ),
+                const SizedBox(height: 8),
+                // File size (shown when known)
+                if (fileSize != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Text(
+                      fileSize,
+                      style: context.theme.textTheme.bodySmall!.copyWith(
+                        color: context.theme.colorScheme.properOnSurface.withValues(alpha: 0.6),
+                      ),
+                    ),
+                  ),
+                // Download state row: small indicator + label
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: isError
+                          ? Icon(
+                              isiOS ? CupertinoIcons.arrow_clockwise : Icons.refresh,
+                              size: 14,
+                              color: context.theme.colorScheme.error,
+                            )
+                          : isProcessing
+                              ? (isiOS
+                                  ? const CupertinoActivityIndicator(radius: 7)
+                                  : CircularProgressIndicator(
+                                      strokeWidth: 1.5,
+                                      valueColor: AlwaysStoppedAnimation(
+                                        context.theme.colorScheme.properOnSurface,
+                                      ),
+                                    ))
+                              : isQueued
+                                  ? Icon(
+                                      isiOS ? CupertinoIcons.clock : Icons.schedule,
+                                      size: 14,
+                                      color: context.theme.colorScheme.properOnSurface,
+                                    )
+                                  : CircleProgressBar(
+                                      value: downloadController.progress.value?.toDouble() ?? 0,
+                                      backgroundColor: context.theme.colorScheme.outline,
+                                      foregroundColor: context.theme.colorScheme.properOnSurface,
+                                      strokeWidth: 1.5,
+                                    ),
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      isError
+                          ? 'Failed to download'
+                          : isProcessing
+                              ? 'Processing'
+                              : isQueued
+                                  ? 'Queued'
+                                  : 'Downloading',
+                      style: context.theme.textTheme.bodySmall!.copyWith(
+                        color: isError
+                            ? context.theme.colorScheme.error
+                            : context.theme.colorScheme.properOnSurface,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          // Mime-type badge — top-left, styled like the LIVE photo tag
+          Positioned(
+            top: 5,
+            left: 0,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                friendlyType,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
+                ),
               ),
             ),
-            isError ? const SizedBox(height: 10) : const SizedBox(height: 5),
-            Text(
-              isError
-                  ? "Failed to download!"
-                  : isProcessing
-                      ? "Processing"
-                      : isQueued
-                          ? "Queued"
-                          : (downloadController.attachment.mimeType ?? ""),
-              style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.properOnSurface),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-            ),
-          ],
+          ),
+        ],
         );
-      }),
-    );
+      });
   }
 }

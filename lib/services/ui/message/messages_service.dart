@@ -155,27 +155,17 @@ class MessagesService extends GetxController {
     final msgGuid = message.guid;
     if (msgGuid == null) return;
 
-    Logger.test('Restoring in-flight attachment states for message $msgGuid', tag: 'AttachmentState');
-    Logger.test('  -> message has ${message.dbAttachments.length} attachments', tag: 'AttachmentState');
-
     for (final attachment in message.dbAttachments) {
       if (attachment.guid == null || !(attachment.guid!.startsWith('temp'))) continue;
       // Only restore if the upload is actively tracked in the singleton handler.
       // This intentionally skips stale temp records from crashed/killed sessions.
       final inFlight = OutgoingMsgHandler.attachmentProgress.firstWhereOrNull((e) => e.item1 == attachment.guid);
-
-      Logger.test(
-          '  -> attachment ${attachment.guid} is ${inFlight == null ? 'not ' : ''}actively tracked in OutgoingMsgHandler',
-          tag: 'AttachmentState');
       if (inFlight == null) continue;
 
       final msgState = messageStates[msgGuid];
-      Logger.test('  -> found MessageState for message $msgGuid: ${msgState != null}', tag: 'AttachmentState');
       if (msgState == null) continue;
 
-      Logger.test('  -> restoring state for attachment ${attachment.guid} (msg $msgGuid)', tag: 'AttachmentState');
       final attState = msgState.getOrCreateAttachmentState(attachment.guid!, attachment: attachment);
-
       if (attState.transferState.value != AttachmentTransferState.uploading) {
         attState.updateTransferStateInternal(AttachmentTransferState.uploading);
       }
@@ -568,6 +558,38 @@ class MessagesService extends GetxController {
     // Clear stale active-download reference before restarting.
     messageStates[messageGuid]?.getAttachmentState(attachment.guid!)?.updateActiveDownloadInternal(null);
     _startAttachmentDownload(messageGuid, attachment);
+  }
+
+  /// Deletes the local attachment files, resets the [AttachmentState] so the
+  /// UI immediately shows the downloading UI, and starts a fresh download.
+  ///
+  /// Called when the user picks "Re-download from server".  Unlike a simple
+  /// `attachmentRefreshKey` bump, this method explicitly clears `resolvedFile`
+  /// and transitions the state to [AttachmentTransferState.downloading] so
+  /// that [loadAttachmentContent]'s early-exit guards don't swallow the event.
+  Future<void> redownloadAttachment(String messageGuid, Attachment attachment) async {
+    final attGuid = attachment.guid;
+    if (attGuid == null) return;
+
+    // 1. Reset the AttachmentState so the UI drops the resolved file
+    //    immediately and shows the downloading widget instead.
+    final attState = messageStates[messageGuid]?.getAttachmentState(attGuid);
+    if (attState != null) {
+      attState.updateResolvedFileInternal(null);
+      attState.updateActiveDownloadInternal(null);
+      attState.updateIsDownloadedInternal(false);
+      attState.updateTransferStateInternal(AttachmentTransferState.idle);
+    }
+
+    // 2. Delete local files, reset DB flag, and register a new controller.
+    await AttachmentsSvc.redownloadAttachment(attachment);
+
+    // 3. Wire the freshly created controller into the state machine so the
+    //    Obx in AttachmentHolder rebuilds with DownloadingContent.
+    final ctrl = AttachmentDownloader.getController(attGuid);
+    if (ctrl != null) {
+      notifyAttachmentDownloadStarted(messageGuid, attGuid, ctrl);
+    }
   }
 
   // ========== End Attachment Download Orchestration ==========

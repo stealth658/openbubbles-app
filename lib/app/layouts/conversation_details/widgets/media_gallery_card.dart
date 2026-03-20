@@ -234,23 +234,81 @@ class _MediaGalleryCardState extends State<MediaGalleryCard> with AutomaticKeepA
       });
     } else if (content is Attachment) {
       // Attachment not downloaded yet
+      final mimeType = attachment.mimeType ?? '';
+      final friendlyType = mimeTypeToFriendlyName(mimeType);
+      final totalBytes = attachment.totalBytes ?? 0;
+      final friendlySize = totalBytes > 0
+          ? (totalBytes.toDouble()).getFriendlySize(decimals: 0)
+          : null;
+
+      Widget _badge(String label) => Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.6),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.5,
+              ),
+            ),
+          );
+
       child = InkWell(
         onTap: downloadAttachment,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        child: Stack(
+          fit: StackFit.expand,
           children: [
-            Text(
-              attachment.getFriendlySize(),
-              style: Theme.of(context).textTheme.bodyLarge,
+            // Centered content
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Icon(
+                  getAttachmentIcon(mimeType),
+                  size: 52,
+                  color: context.theme.colorScheme.properOnSurface,
+                ),
+                const SizedBox(height: 6),
+                if (friendlySize != null)
+                  Text(
+                    friendlySize,
+                    style: context.theme.textTheme.bodySmall!.copyWith(
+                      color: context.theme.colorScheme.properOnSurface.withValues(alpha: 0.6),
+                    ),
+                  ),
+                const SizedBox(height: 6),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      SettingsSvc.settings.skin.value == Skins.iOS
+                          ? CupertinoIcons.cloud_download
+                          : Icons.cloud_download,
+                      size: 13,
+                      color: context.theme.colorScheme.properOnSurface.withValues(alpha: 0.6),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Tap to download',
+                      style: context.theme.textTheme.bodySmall!.copyWith(
+                        color: context.theme.colorScheme.properOnSurface.withValues(alpha: 0.6),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-            const SizedBox(height: 5),
-            Icon(SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.cloud_download : Icons.cloud_download,
-                size: 28.0, color: context.theme.colorScheme.properOnSurface),
-            const SizedBox(height: 5),
-            Text(
-              attachment.mimeType ?? "Unknown File Type",
-              style: Theme.of(context).textTheme.bodyLarge,
-              textAlign: TextAlign.center,
+            // Mime-type badge — top-left
+            Positioned(
+              top: 8,
+              left: 8,
+              child: _badge(friendlyType),
             ),
           ],
         ),

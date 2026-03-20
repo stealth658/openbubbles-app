@@ -341,23 +341,103 @@ Future<void> showConversationTileMenu(
 }
 
 IconData getAttachmentIcon(String mimeType) {
+  final bool isiOS = SettingsSvc.settings.skin.value == Skins.iOS;
+
   if (mimeType.isEmpty) {
-    return SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.arrow_up_right_square : Icons.open_in_new;
+    return isiOS ? CupertinoIcons.arrow_up_right_square : Icons.open_in_new;
   }
-  if (mimeType == "application/pdf") {
-    return SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.doc_on_doc : Icons.picture_as_pdf;
-  } else if (mimeType == "application/zip") {
-    return SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.folder : Icons.folder;
-  } else if (mimeType.startsWith("audio")) {
-    return SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.music_note : Icons.music_note;
-  } else if (mimeType.startsWith("image")) {
-    return SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.photo : Icons.photo;
-  } else if (mimeType.startsWith("video")) {
-    return SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.videocam : Icons.videocam;
-  } else if (mimeType.startsWith("text")) {
-    return SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.doc_text : Icons.note;
+
+  // ── Exact-match for well-known types ──────────────────────────────────────
+  switch (mimeType) {
+    // Documents
+    case "application/pdf":
+      return isiOS ? CupertinoIcons.doc_on_doc : Icons.picture_as_pdf;
+    case "application/msword":
+    case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+      return isiOS ? CupertinoIcons.doc_text : Icons.article;
+    case "application/vnd.ms-excel":
+    case "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+      return isiOS ? CupertinoIcons.table : Icons.table_chart;
+    case "application/vnd.ms-powerpoint":
+    case "application/vnd.openxmlformats-officedocument.presentationml.presentation":
+      return isiOS ? CupertinoIcons.play_rectangle : Icons.slideshow;
+    case "application/rtf":
+      return isiOS ? CupertinoIcons.doc_plaintext : Icons.text_snippet;
+    // Archives
+    case "application/zip":
+    case "application/x-zip-compressed":
+    case "application/x-tar":
+    case "application/gzip":
+    case "application/x-gzip":
+    case "application/x-7z-compressed":
+    case "application/x-rar-compressed":
+      return isiOS ? CupertinoIcons.archivebox : Icons.folder_zip;
+    // Data / code
+    case "application/json":
+      return isiOS ? CupertinoIcons.doc_text : Icons.data_object;
+    case "application/xml":
+    case "text/xml":
+      return isiOS ? CupertinoIcons.chevron_left_slash_chevron_right : Icons.code;
+    case "application/javascript":
+    case "text/javascript":
+      return isiOS ? CupertinoIcons.chevron_left_slash_chevron_right : Icons.javascript;
+    // Contacts / calendar
+    case "text/vcard":
+    case "text/x-vcard":
+      return isiOS ? CupertinoIcons.person_crop_rectangle : Icons.contact_page;
+    case "text/calendar":
+      return isiOS ? CupertinoIcons.calendar : Icons.event;
+    // Fonts
+    case "font/ttf":
+    case "font/otf":
+    case "font/woff":
+    case "font/woff2":
+      return isiOS ? CupertinoIcons.textformat : Icons.font_download;
+    // Audio formats with distinct icons
+    case "audio/mpeg":
+    case "audio/mp3":
+      return isiOS ? CupertinoIcons.music_note : Icons.music_note;
+    case "audio/wav":
+    case "audio/x-wav":
+    case "audio/flac":
+    case "audio/x-flac":
+      return isiOS ? CupertinoIcons.waveform : Icons.graphic_eq;
+    case "audio/aac":
+    case "audio/ogg":
+    case "audio/caf":
+    case "audio/amr":
+      return isiOS ? CupertinoIcons.music_note : Icons.audiotrack;
+    // Image formats
+    case "image/gif":
+      return isiOS ? CupertinoIcons.play_rectangle_fill : Icons.gif_box;
+    case "image/svg+xml":
+      return isiOS ? CupertinoIcons.paintbrush : Icons.draw;
+    case "image/heic":
+    case "image/heif":
+      return isiOS ? CupertinoIcons.photo : Icons.photo;
+    // Video formats
+    case "video/quicktime":
+      return isiOS ? CupertinoIcons.videocam : Icons.movie;
+    case "video/x-msvideo": // AVI
+    case "video/x-matroska": // MKV
+    case "video/webm":
+      return isiOS ? CupertinoIcons.videocam : Icons.video_file;
   }
-  return SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.arrow_up_right_square : Icons.open_in_new;
+
+  // ── Category-level fallbacks ───────────────────────────────────────────────
+  if (mimeType.startsWith("audio/")) {
+    return isiOS ? CupertinoIcons.music_note : Icons.music_note;
+  } else if (mimeType.startsWith("image/")) {
+    return isiOS ? CupertinoIcons.photo : Icons.photo;
+  } else if (mimeType.startsWith("video/")) {
+    return isiOS ? CupertinoIcons.videocam : Icons.videocam;
+  } else if (mimeType.startsWith("text/")) {
+    return isiOS ? CupertinoIcons.doc_text : Icons.description;
+  } else if (mimeType.startsWith("font/")) {
+    return isiOS ? CupertinoIcons.textformat : Icons.font_download;
+  }
+
+  return isiOS ? CupertinoIcons.arrow_up_right_square : Icons.open_in_new;
 }
 
 void showSnackbar(String title, String message,

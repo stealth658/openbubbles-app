@@ -146,6 +146,67 @@ enum PlayerStatus { NONE, STOPPED, PAUSED, PLAYING, ENDED }
 
 enum PayloadType { url, app }
 
+const mimeTypeFriendlyNames = <String, String>{
+  'application/pdf': 'PDF',
+  'application/zip': 'ZIP',
+  'application/x-zip-compressed': 'ZIP',
+  'application/x-tar': 'TAR',
+  'application/gzip': 'GZIP',
+  'application/x-gzip': 'GZIP',
+  'application/json': 'JSON',
+  'application/xml': 'XML',
+  'application/msword': 'Word',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'Word',
+  'application/vnd.ms-excel': 'Excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'Excel',
+  'application/vnd.ms-powerpoint': 'PowerPoint',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'PowerPoint',
+  'application/rtf': 'RTF',
+  'audio/mpeg': 'MP3',
+  'audio/mp4': 'Audio',
+  'audio/aac': 'AAC',
+  'audio/wav': 'WAV',
+  'audio/x-wav': 'WAV',
+  'audio/caf': 'Audio',
+  'audio/ogg': 'OGG',
+  'audio/flac': 'FLAC',
+  'audio/x-flac': 'FLAC',
+  'audio/amr': 'AMR',
+  'image/jpeg': 'JPEG',
+  'image/png': 'PNG',
+  'image/gif': 'GIF',
+  'image/webp': 'WebP',
+  'image/bmp': 'BMP',
+  'image/tiff': 'TIFF',
+  'image/svg+xml': 'SVG',
+  'image/heic': 'HEIC',
+  'image/heif': 'HEIF',
+  'video/mp4': 'MP4',
+  'video/quicktime': 'MOV',
+  'video/x-msvideo': 'AVI',
+  'video/webm': 'WebM',
+  'video/x-matroska': 'MKV',
+  'video/3gpp': '3GP',
+  'video/mpeg': 'MPEG',
+  'text/plain': 'Text',
+  'text/html': 'HTML',
+  'text/css': 'CSS',
+  'text/javascript': 'JS',
+  'text/csv': 'CSV',
+  'text/xml': 'XML',
+};
+
+String mimeTypeToFriendlyName(String? mimeType) {
+  if (mimeType == null || mimeType.isEmpty) return 'File';
+  final exact = mimeTypeFriendlyNames[mimeType.toLowerCase()];
+  if (exact != null) return exact;
+  if (mimeType.startsWith('image/')) return 'Image';
+  if (mimeType.startsWith('video/')) return 'Video';
+  if (mimeType.startsWith('audio/')) return 'Audio';
+  if (mimeType.startsWith('text/')) return 'Text';
+  return 'File';
+}
+
 final urlRegex = RegExp(
     r"(?:^| )(((((H|h)(T|t)|(F|f))(T|t)(P|p)((S|s)?))\://)|www.)[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,6}(\:[0-9]{1,5})*(/($|[a-zA-Z0-9\.\,\;\?\'\\\+&amp;%\$#@!^*()\=~_\/-]+))*");
 
