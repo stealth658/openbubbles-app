@@ -57,7 +57,7 @@ dependencies:
   encrypter_plus: ^5.1.0
   exif: ^3.3.0
   faker: ^2.2.0
-  fast_contacts: ^5.0.1  # mobile only
+  flutter_contacts: ^1.1.9+1  # mobile only
   file_picker: ^10.3.2
   firebase_dart:
     git:
