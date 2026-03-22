@@ -1,11 +1,9 @@
-import 'package:async_task/async_task_extension.dart';
-import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/tile/conversation_tile.dart';
+import 'package:bluebubbles/app/layouts/conversation_list/widgets/tile/trailing_state_mixin.dart';
+import 'package:bluebubbles/app/state/chat_state_scope.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
-import 'package:bluebubbles/database/database.dart';
-import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/services.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -90,45 +88,48 @@ class _MaterialConversationTileState extends CustomState<MaterialConversationTil
       ),
     );
 
-    return Obx(() {
-      NavigationSvc.listener.value;
-      return AnimatedContainer(
-        padding: const EdgeInsets.only(left: 10),
-        clipBehavior: Clip.antiAlias,
-        decoration: BoxDecoration(
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(20),
-            bottomLeft: Radius.circular(20),
+    return ChatStateScope(
+      chatState: controller.chatState!,
+      child: Obx(() {
+        NavigationSvc.listener.value;
+        return AnimatedContainer(
+          padding: const EdgeInsets.only(left: 10),
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(20),
+              bottomLeft: Radius.circular(20),
+            ),
+            color: controller.isSelected
+                ? context.theme.colorScheme.primaryContainer.withValues(alpha: 0.5)
+                : shouldPartialHighlight
+                    ? context.theme.colorScheme.properSurface
+                    : shouldHighlight
+                        ? context.theme.colorScheme.primaryContainer
+                        : hoverHighlight
+                            ? context.theme.colorScheme.properSurface.withValues(alpha: 0.5)
+                            : null,
           ),
-          color: controller.isSelected
-              ? context.theme.colorScheme.primaryContainer.withValues(alpha: 0.5)
-              : shouldPartialHighlight
-                  ? context.theme.colorScheme.properSurface
-                  : shouldHighlight
-                      ? context.theme.colorScheme.primaryContainer
-                      : hoverHighlight
-                          ? context.theme.colorScheme.properSurface.withValues(alpha: 0.5)
-                          : null,
-        ),
-        duration: const Duration(milliseconds: 100),
-        child: NavigationSvc.isAvatarOnly(context)
-            ? InkWell(
-                mouseCursor: MouseCursor.defer,
-                onTap: () => controller.onTap(context),
-                onSecondaryTapUp: (details) => controller.onSecondaryTap(Get.context!, details),
-                onLongPress: controller.onLongPress,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  bottomLeft: Radius.circular(20),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 15.0),
-                  child: Center(child: leading),
-                ),
-              )
-            : child,
-      );
-    });
+          duration: const Duration(milliseconds: 100),
+          child: NavigationSvc.isAvatarOnly(context)
+              ? InkWell(
+                  mouseCursor: MouseCursor.defer,
+                  onTap: () => controller.onTap(context),
+                  onSecondaryTapUp: (details) => controller.onSecondaryTap(Get.context!, details),
+                  onLongPress: controller.onLongPress,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    bottomLeft: Radius.circular(20),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 15.0),
+                    child: Center(child: leading),
+                  ),
+                )
+              : child,
+        );
+      }),
+    );
   }
 }
 
@@ -139,156 +140,86 @@ class MaterialTrailing extends CustomStateful<ConversationTileController> {
   State<StatefulWidget> createState() => _MaterialTrailingState();
 }
 
-class _MaterialTrailingState extends CustomState<MaterialTrailing, void, ConversationTileController> {
-  DateTime? dateCreated;
-  StreamSubscription? sub;
-  String? cachedLatestMessageGuid = "";
-  Message? cachedLatestMessage;
-
-  @override
-  void initState() {
-    super.initState();
-    tag = controller.chat.guid;
-    // keep controller in memory since the widget is part of a list
-    // (it will be disposed when scrolled out of view)
-    forceDelete = false;
-    cachedLatestMessage = controller.chat.latestMessage;
-    cachedLatestMessageGuid = cachedLatestMessage?.guid;
-    dateCreated = cachedLatestMessage?.dateCreated;
-    // run query after render has completed
-    if (!kIsWeb) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        final latestMessageQuery = (Database.messages.query(Message_.dateDeleted.isNull())
-              ..link(Message_.chat, Chat_.guid.equals(controller.chat.guid))
-              ..order(Message_.dateCreated, flags: Order.descending))
-            .watch();
-
-        sub = latestMessageQuery.listen((Query<Message> query) async {
-          final message = await runAsync(() {
-            return query.findFirst();
-          });
-          if (message != null &&
-              SettingsSvc.settings.statusIndicatorsOnChats.value &&
-              (message.dateDelivered != cachedLatestMessage?.dateDelivered ||
-                  message.dateRead != cachedLatestMessage?.dateRead)) {
-            setState(() {});
-          }
-          cachedLatestMessage = message;
-          // check if we really need to update this widget
-          if (message != null && message.guid != cachedLatestMessageGuid) {
-            if (dateCreated != message.dateCreated) {
-              setState(() {
-                dateCreated = message.dateCreated;
-              });
-            }
-          }
-          cachedLatestMessageGuid = message?.guid;
-        });
-      });
-    } else {
-      sub = WebListeners.newMessage.listen((tuple) {
-        if (tuple.item2?.guid == controller.chat.guid &&
-            (dateCreated == null || tuple.item1.dateCreated!.isAfter(dateCreated!))) {
-          cachedLatestMessage = tuple.item1;
-          setState(() {
-            dateCreated = tuple.item1.dateCreated;
-          });
-          cachedLatestMessageGuid = tuple.item1.guid;
-        }
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    sub?.cancel();
-    super.dispose();
-  }
-
+class _MaterialTrailingState extends CustomState<MaterialTrailing, void, ConversationTileController>
+    with TrailingStateMixin<MaterialTrailing> {
   @override
   Widget build(BuildContext context) {
+    final chatState = ChatStateScope.of(context);
     return Padding(
-        padding: const EdgeInsets.only(right: 3),
-        child: Obx(() {
-          final unread = ChatsSvc.getChatState(controller.chat.guid)?.hasUnreadMessage.value ?? false;
-          final muteType = ChatsSvc.getChatState(controller.chat.guid)?.muteType.value;
-
-          String indicatorText = "";
-          if (SettingsSvc.settings.statusIndicatorsOnChats.value &&
-              (cachedLatestMessage?.isFromMe ?? false) &&
-              !controller.chat.isGroup) {
-            Indicator show = cachedLatestMessage?.indicatorToShow ?? Indicator.NONE;
-            if (show != Indicator.NONE) {
-              indicatorText = show.name.toLowerCase().capitalizeFirst!;
-            }
-          }
-
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Text(
-                    (cachedLatestMessage?.error ?? 0) > 0
-                        ? "Error"
-                        : "${indicatorText.isNotEmpty ? "$indicatorText\n" : ""}${buildChatListDateMaterial(dateCreated)}",
-                    textAlign: TextAlign.right,
-                    style: context.theme.textTheme.bodySmall!
-                        .copyWith(
-                          color: (cachedLatestMessage?.error ?? 0) > 0
-                              ? context.theme.colorScheme.error
-                              : controller.shouldHighlight.value || unread
-                                  ? context.theme.colorScheme.onBackground
-                                  : context.theme.colorScheme.outline,
-                          fontWeight: unread
-                              ? FontWeight.w600
-                              : controller.shouldHighlight.value
-                                  ? FontWeight.w500
-                                  : null,
-                        )
-                        .apply(fontSizeFactor: 1.1),
-                    overflow: TextOverflow.clip,
-                  ),
-                  if (muteType != "mute" && unread)
-                    Padding(
-                      padding: const EdgeInsets.only(left: 8.0),
-                      child: Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: context.theme.colorScheme.primary,
-                        ),
+      padding: const EdgeInsets.only(right: 3),
+      child: Obx(() {
+        final message = chatState.latestMessage.value;
+        final indicator = computeIndicatorText(message, controller.chat.isGroup);
+        final hasError = (message?.error ?? 0) > 0;
+        final unread = chatState.hasUnreadMessage.value;
+        final muteType = chatState.muteType.value;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Text(
+                  hasError
+                      ? "Error"
+                      : "${indicator.isNotEmpty ? "$indicator\n" : ""}${buildChatListDateMaterial(message?.dateCreated)}",
+                  textAlign: TextAlign.right,
+                  style: context.theme.textTheme.bodySmall!
+                      .copyWith(
+                        color: hasError
+                            ? context.theme.colorScheme.error
+                            : controller.shouldHighlight.value || unread
+                                ? context.theme.colorScheme.onBackground
+                                : context.theme.colorScheme.outline,
+                        fontWeight: unread
+                            ? FontWeight.w600
+                            : controller.shouldHighlight.value
+                                ? FontWeight.w500
+                                : null,
+                      )
+                      .apply(fontSizeFactor: 1.1),
+                  overflow: TextOverflow.clip,
+                ),
+                if (muteType != "mute" && unread)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8.0),
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: context.theme.colorScheme.primary,
                       ),
-                    )
-                ],
-              ),
-              const SizedBox(height: 5),
-              Obx(() => Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (controller.chatState?.isPinned.value ?? false)
-                        Icon(Icons.push_pin_outlined, size: 15, color: context.theme.colorScheme.outline),
-                      if (muteType == "mute") const SizedBox(width: 5),
-                      if (muteType == "mute")
-                        Icon(
-                          Icons.notifications_off_outlined,
-                          color: controller.shouldHighlight.value || unread
-                              ? context.theme.colorScheme.primary
-                              : context.theme.colorScheme.outline,
-                          size: 15,
-                        ),
-                    ],
-                  )),
-            ],
-          );
-        }));
+                    ),
+                  )
+              ],
+            ),
+            const SizedBox(height: 5),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (chatState.isPinned.value)
+                  Icon(Icons.push_pin_outlined, size: 15, color: context.theme.colorScheme.outline),
+                if (muteType == "mute") const SizedBox(width: 5),
+                if (muteType == "mute")
+                  Icon(
+                    Icons.notifications_off_outlined,
+                    color: controller.shouldHighlight.value || unread
+                        ? context.theme.colorScheme.primary
+                        : context.theme.colorScheme.outline,
+                    size: 15,
+                  ),
+              ],
+            ),
+          ],
+        );
+      }),
+    );
   }
 }
 
