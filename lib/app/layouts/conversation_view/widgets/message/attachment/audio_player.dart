@@ -13,6 +13,7 @@ class AudioPlayer extends StatefulWidget {
   final PlatformFile file;
   final Attachment? attachment;
   final String? transcript;
+  final ConversationViewController? controller;
 
   const AudioPlayer({
     super.key,
@@ -22,10 +23,13 @@ class AudioPlayer extends StatefulWidget {
     this.controller,
   });
 
-  final ConversationViewController? controller;
-
   @override
-  State<StatefulWidget> createState() => kIsDesktop ? _DesktopAudioPlayerState() : _AudioPlayerState();
+  State<StatefulWidget> createState() => _createState();
+
+  State<StatefulWidget> _createState() {
+    if (kIsDesktop) return _DesktopAudioPlayerState();
+    return _AudioPlayerState();
+  }
 }
 
 class _AudioPlayerState extends State<AudioPlayer> with AutomaticKeepAliveClientMixin, SingleTickerProviderStateMixin {
@@ -86,25 +90,25 @@ class _AudioPlayerState extends State<AudioPlayer> with AutomaticKeepAliveClient
         child: Column(mainAxisSize: MainAxisSize.min, mainAxisAlignment: MainAxisAlignment.center, children: [
           Row(
             children: [
-              Obx(() => IconButton(
-                    onPressed: () async {
-                      if (controller == null) return;
-                      if (playerState.value == PlayerState.playing) {
-                        animController.reverse();
-                        await controller!.pausePlayer();
-                      } else {
-                        animController.forward();
-                        controller!.setFinishMode(finishMode: FinishMode.pause);
-                        await controller!.startPlayer();
-                      }
-                    },
-                    icon: AnimatedIcon(
-                      icon: AnimatedIcons.play_pause,
-                      progress: animController,
-                    ),
-                    color: context.theme.colorScheme.properOnSurface,
-                    visualDensity: VisualDensity.compact,
-                  )),
+              IconButton(
+                onPressed: () async {
+                  if (controller == null) return;
+                  if (playerState.value == PlayerState.playing) {
+                    animController.reverse();
+                    await controller!.pausePlayer();
+                  } else {
+                    animController.forward();
+                    controller!.setFinishMode(finishMode: FinishMode.pause);
+                    await controller!.startPlayer();
+                  }
+                },
+                icon: AnimatedIcon(
+                  icon: AnimatedIcons.play_pause,
+                  progress: animController,
+                ),
+                color: context.theme.colorScheme.properOnSurface,
+                visualDensity: VisualDensity.compact,
+              ),
               Obx(() => maxDuration.value == 0
                   ? SizedBox(width: NavigationSvc.width(context) * 0.25)
                   : AudioFileWaveforms(
@@ -208,24 +212,24 @@ class _DesktopAudioPlayerState extends State<AudioPlayer>
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Obx(() => IconButton(
-                  onPressed: () async {
-                    if (controller == null) return;
-                    if (isPlaying.value) {
-                      animController.reverse();
-                      await controller!.pause();
-                    } else {
-                      animController.forward();
-                      await controller!.play();
-                    }
-                  },
-                  icon: AnimatedIcon(
-                    icon: AnimatedIcons.play_pause,
-                    progress: animController,
-                  ),
-                  color: context.theme.colorScheme.properOnSurface,
-                  visualDensity: VisualDensity.compact,
-                )),
+            IconButton(
+              onPressed: () async {
+                if (controller == null) return;
+                if (isPlaying.value) {
+                  animController.reverse();
+                  await controller!.pause();
+                } else {
+                  animController.forward();
+                  await controller!.play();
+                }
+              },
+              icon: AnimatedIcon(
+                icon: AnimatedIcons.play_pause,
+                progress: animController,
+              ),
+              color: context.theme.colorScheme.properOnSurface,
+              visualDensity: VisualDensity.compact,
+            ),
             if (controller != null)
               Obx(() => SizedBox(
                     height: 30,
