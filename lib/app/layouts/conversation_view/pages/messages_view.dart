@@ -80,6 +80,7 @@ class MessagesViewState extends State<MessagesView> with MessagesServiceMixin, T
     // initialize synchronously to prevent GetX errors from accessing MessageStates before they exist
     // This happens when reusing a service from chat_creator that already loaded messages
     if (widget.customService != null && widget.customService!.struct.messages.isNotEmpty) {
+      _messages = List<Message>.from(widget.customService!.struct.messages);
       initializeMessagesService(
         chat,
         widget.customService!.struct.messages,
@@ -89,8 +90,8 @@ class MessagesViewState extends State<MessagesView> with MessagesServiceMixin, T
         onUpdatedMessage: handleUpdatedMessage,
         onDeletedMessage: handleDeletedMessage,
         onJumpToMessage: jumpToMessage,
+        messagesRef: _messages,
       );
-      _messages = List<Message>.from(widget.customService!.struct.messages);
       _messages.sort(Message.sort);
       handlersInitialized = true;
 
@@ -111,6 +112,7 @@ class MessagesViewState extends State<MessagesView> with MessagesServiceMixin, T
           onUpdatedMessage: handleUpdatedMessage,
           onDeletedMessage: handleDeletedMessage,
           onJumpToMessage: jumpToMessage,
+          messages: _messages,
         );
         setState(() {});
       } else if (e.item1 == "add-custom-smartreply") {
@@ -140,6 +142,7 @@ class MessagesViewState extends State<MessagesView> with MessagesServiceMixin, T
           handleUpdatedMessage,
           handleDeletedMessage,
           jumpToMessage,
+          _messages,
         );
 
         // Load messages if needed (check service flag to avoid redundant loads)
@@ -257,7 +260,6 @@ class MessagesViewState extends State<MessagesView> with MessagesServiceMixin, T
     if (results.status == SmartReplySuggestionResultStatus.success) {
       Logger.info("Smart Replies found: ${results.suggestions.length}");
       smartReplies.value = results.suggestions.map((e) => _buildReply(e)).toList();
-      Logger.debug(smartReplies.toString());
     } else {
       smartReplies.clear();
     }
@@ -305,7 +307,7 @@ class MessagesViewState extends State<MessagesView> with MessagesServiceMixin, T
 
     // Initialize message widget controllers for new messages
     for (final newMsg in newMessages) {
-      createControllerForMessage(newMsg, controller);
+      createStateForMessage(newMsg, controller);
     }
 
     // Update the list without animation (bulk load)
@@ -339,7 +341,7 @@ class MessagesViewState extends State<MessagesView> with MessagesServiceMixin, T
     final insertIndex = _messages.indexOf(message);
 
     // Initialize message widget controller
-    createControllerForMessage(message, controller);
+    createStateForMessage(message, controller);
 
     // Mark this message for animation (all new messages)
     if (message.guid != null) {

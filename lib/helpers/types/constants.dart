@@ -104,6 +104,16 @@ enum MessageEffect {
 
 enum MessageError { NO_ERROR, TIMEOUT, NO_CONNECTION, BAD_REQUEST, SERVER_ERROR }
 
+/// Client-side send errors. Codes start at 10000 to avoid overlap with
+/// server-generated error codes (which are HTTP status codes or values < 1000).
+enum ClientMessageError {
+  clientError,      // 10001 — generic app-side / validation error
+  badGateway,       // 10002 — HTTP 502
+  gatewayTimeout,   // 10003 — HTTP 504 or Dio timeout
+  connectionRefused, // 10004 — connection refused / unreachable
+  notFound,         // 10005 — HTTP 404
+}
+
 enum Skins {
   iOS,
   Material,
@@ -145,6 +155,8 @@ enum LineType { meToMe, otherToMe, meToOther, otherToOther }
 enum PlayerStatus { NONE, STOPPED, PAUSED, PLAYING, ENDED }
 
 enum PayloadType { url, app }
+
+enum Origin { incomingMessageHandler, outgoingMessageHandler }
 
 const mimeTypeFriendlyNames = <String, String>{
   'application/pdf': 'PDF',

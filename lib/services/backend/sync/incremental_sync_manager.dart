@@ -1,4 +1,5 @@
 import 'package:async_task/async_task_extension.dart';
+import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/backend/sync/sync_manager_impl.dart';
@@ -251,6 +252,7 @@ class IncrementalSyncManager extends SyncManager {
         }
 
         Message msg = Message.fromMap(msgData);
+        if (msg.error > 0) msg.errorMessage = serverErrorMessage(msg.error);
         messagesToSync[chat['guid']]!.add(msg);
 
         // Save the last synced ROWID

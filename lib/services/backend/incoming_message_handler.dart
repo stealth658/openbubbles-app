@@ -356,7 +356,7 @@ class IncomingMessageHandler {
     if (saved.guid != null) _markProcessed(saved.guid!);
 
     // 6. Complete any pending outgoing send-progress tracker.
-    if (tempGuid != null) OutgoingMsgHandler.completeSendProgressIfExists(tempGuid);
+    if (tempGuid != null) OutgoingMsgHandler.completeSendProgressIfExists(tempGuid, Origin.incomingMessageHandler);
 
     // 7. Audible receive feedback.
     //    The original ActionHandler gates sound on its shouldNotifyForNewMessageGuid dedup flag.
@@ -393,7 +393,7 @@ class IncomingMessageHandler {
     );
 
     // 1. Complete any pending send-progress tracker first.
-    if (tempGuid != null) OutgoingMsgHandler.completeSendProgressIfExists(tempGuid);
+    if (tempGuid != null) OutgoingMsgHandler.completeSendProgressIfExists(tempGuid, Origin.incomingMessageHandler);
 
     // 2. Locate the existing DB record.
     //    Try tempGuid first (outgoing echo), then fall back to the real GUID

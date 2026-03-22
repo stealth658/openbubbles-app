@@ -82,6 +82,7 @@ class ActionHandler extends GetxService {
         if (!isNullOrEmpty(data)) {
           final payload = ServerPayload.fromJson(data);
           final message = Message.fromMap(payload.data);
+          if (message.error > 0) message.errorMessage = serverErrorMessage(message.error);
           if (message.isFromMe!) {
             if (payload.data['tempGuid'] == null) {
               // No tempGuid — we don't know which local temp message this echo
@@ -110,12 +111,14 @@ class ActionHandler extends GetxService {
       case "updated-message":
         if (!isNullOrEmpty(data)) {
           final payload = ServerPayload.fromJson(data);
+          final updatedMessage = Message.fromMap(payload.data);
+          if (updatedMessage.error > 0) updatedMessage.errorMessage = serverErrorMessage(updatedMessage.error);
           await IncomingMsgHandler.handle(
               IncomingPayload(
                 type: MessageEventType.updatedMessage,
                 source: MessageSource.socket,
                 chat: Chat.fromMap(payload.data['chats'].first.cast<String, Object>()),
-                message: Message.fromMap(payload.data),
+                message: updatedMessage,
                 tempGuid: payload.data['tempGuid'],
               ),
               front: !useQueue);

@@ -85,13 +85,18 @@ class OutgoingMessageHandler {
   /// Completes the registered completer early and drives the progress
   /// animation to its final state so the UI doesn't wait for the HTTP
   /// response.
-  void completeSendProgressIfExists(String tempGuid) {
+  void completeSendProgressIfExists(String tempGuid, Origin origin) {
     final tracker = _sendProgressTrackers.remove(tempGuid);
     if (tracker == null) return;
-    Logger.debug(
-      'Socket event arrived before HTTP response for $tempGuid — completing send progress early',
-      tag: _tag,
-    );
+
+    if (origin == Origin.incomingMessageHandler) {
+      Logger.debug('Server event arrived before HTTP response for $tempGuid — completing send progress early', tag: _tag);
+    } else if (origin == Origin.outgoingMessageHandler) {
+      Logger.debug('Outgoing send request returned before server event for $tempGuid — completing send progress', tag: _tag);
+    } else {
+      Logger.warn('Unknown origin $origin for send progress completion of $tempGuid', tag: _tag);
+    }
+
     final chat = tracker.item1;
     final completer = tracker.item2;
     if (chat.sendProgress.value != 0) {
@@ -239,7 +244,7 @@ class OutgoingMessageHandler {
     registerSendProgressTracker(tempGuid, chat, race);
 
     httpCall().then((response) async {
-      completeSendProgressIfExists(tempGuid);
+      completeSendProgressIfExists(tempGuid, Origin.outgoingMessageHandler);
       try {
         await onSuccess(Message.fromMap(response.data['data']));
       } catch (ex, st) {
@@ -247,7 +252,7 @@ class OutgoingMessageHandler {
       }
       if (!race.isCompleted) race.complete();
     }, onError: (Object error, StackTrace stack) async {
-      completeSendProgressIfExists(tempGuid);
+      completeSendProgressIfExists(tempGuid, Origin.outgoingMessageHandler);
       try {
         await onError(error, stack);
       } catch (ex, st) {
@@ -291,6 +296,7 @@ class OutgoingMessageHandler {
           item.selected,
           item.reaction,
           clearNotificationsIfFromMe: !(item.customArgs?['notifReply'] ?? false),
+          isRetry: item.customArgs?['isRetry'] ?? false,
         );
       case QueueType.sendAttachment:
         await prepAttachment(item.chat, item.message);
@@ -311,7 +317,10 @@ class OutgoingMessageHandler {
     Message? selected,
     String? r, {
     bool clearNotificationsIfFromMe = true,
+    bool isRetry = false,
   }) async {
+    // If it's a retry, the message should already be in the correct format
+    if (isRetry) return [m];
     if ((m.text?.isEmpty ?? true) && (m.subject?.isEmpty ?? true) && r == null) return [];
 
     final List<Message> messages = [];
@@ -505,6 +514,7 @@ class OutgoingMessageHandler {
           tag: _tag,
         );
         m = handleSendError(error, m);
+        Logger.test('Updated message with error: error=${m.error} errorMessage=${m.errorMessage}', tag: _tag);
         if (!LifecycleSvc.isAlive || !(ChatsSvc.getChatController(c.guid)?.isAlive.value ?? false)) {
           await NotificationsSvc.createFailedToSend(c);
         }
@@ -744,8 +754,6 @@ class OutgoingMessageHandler {
         );
       }
     }
-
-    Logger.debug('[_matchMessageWithExisting] END existingGuid=$existingGuid → ${replacement.guid}', tag: _tag);
   }
 
   /// Swaps a temp attachment GUID for the real one after the server confirms

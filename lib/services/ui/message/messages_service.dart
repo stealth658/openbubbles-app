@@ -34,6 +34,7 @@ class MessagesService extends GetxController {
   late Function(Message, {String? oldGuid}) updateFunc;
   late Function(Message) removeFunc;
   late Function(String) jumpToMessage;
+  late List<Message> messagesRef;
 
   final String tag;
   MessagesService(this.tag);
@@ -595,7 +596,7 @@ class MessagesService extends GetxController {
   // ========== End Attachment Download Orchestration ==========
 
   void init(Chat c, Function(Message) onNewMessage, Function(Message, {String? oldGuid}) onUpdatedMessage,
-      Function(Message) onDeletedMessage, Function(String) jumpToMessageFunc) {
+      Function(Message) onDeletedMessage, Function(String) jumpToMessageFunc, List<Message> messagesRef) {
     chat = c;
     Get.put<String>(tag, tag: 'lastReloadedChat');
 
@@ -603,6 +604,7 @@ class MessagesService extends GetxController {
     removeFunc = onDeletedMessage;
     newFunc = onNewMessage;
     jumpToMessage = jumpToMessageFunc;
+    this.messagesRef = messagesRef;
 
     // watch for new messages
     if (!_init) {
@@ -814,7 +816,6 @@ class MessagesService extends GetxController {
       final state = MessageState(updated);
       state.onInit();
       messageStates[updated.guid!] = state;
-      Logger.debug("Created MessageState for updated message ${updated.guid}", tag: "MessageState");
     }
 
     // Trigger granular update for this specific message
@@ -860,6 +861,7 @@ class MessagesService extends GetxController {
 
     // Clear error and delivery status
     message.error = 0;
+    message.errorMessage = null;
     message.dateCreated = DateTime.now();
     message.dateDelivered = null;
     message.dateRead = null;
@@ -869,22 +871,56 @@ class MessagesService extends GetxController {
     message.id = null;
     message.save(chat: chat);
 
-    // Update struct and MessageState
+    // Update struct using the proper map API (struct.messages returns a copy, not the backing map)
+    struct.removeMessage(guidToDelete);
+    struct.addMessages([message]);
+
+    // If the message isn't the last one in the list, we should remove it from the message view first
+    // before re-adding it so it shows up in the proper order based on the retry.
+    if (messagesRef.isNotEmpty && messagesRef.last.guid != guidToDelete) {
+      removeFunc(message);
+      newFunc(message);
+    }
+
+    // Clean up old MessageState, then create new one with updated struct entry
+    messageStates.remove(guidToDelete);
     final messageState = getOrCreateMessageState(message.guid!);
     messageState.updateErrorInternal(0);
+    messageState.updateErrorMessageInternal(null);
     messageState.updateDateCreatedInternal(message.dateCreated);
     messageState.updateDateDeliveredInternal(null);
     messageState.updateDateReadInternal(null);
 
-    // Update in struct
-    final index = struct.messages.indexWhere((m) => m.guid == guidToDelete);
-    if (index >= 0) {
-      struct.messages[index] = message;
+    // Clear notification
+    await NotificationsSvc.clearFailedToSend(chat.id!);
+
+    // Reload attachment bytes if needed
+    for (Attachment? a in message.dbAttachments) {
+      if (a == null) continue;
+      await Attachment.deleteAsync(a.guid!);
+      a.bytes = await File(a.path).readAsBytes();
     }
 
-    // Clean up old MessageState and create new one
-    messageStates.remove(guidToDelete);
-    getOrCreateMessageState(message.guid!);
+    // Queue for sending (message already in UI, just updated)
+    if (message.dbAttachments.isNotEmpty) {
+      OutgoingMsgHandler.queue(OutgoingItem(
+        type: QueueType.sendAttachment,
+        chat: chat,
+        message: message,
+        customArgs: {
+          'isRetry': true,
+        }
+      ));
+    } else {
+      OutgoingMsgHandler.queue(OutgoingItem(
+        type: QueueType.sendMessage,
+        chat: chat,
+        message: message,
+        customArgs: {
+          'isRetry': true,
+        }
+      ));
+    }
   }
 
   /// Delete a message from DB, struct, and MessageState

@@ -46,6 +46,48 @@ extension MessageErrorExtension on MessageError {
   int get code => codes[this]!;
 }
 
+extension ClientMessageErrorExtension on ClientMessageError {
+  static const codes = {
+    ClientMessageError.clientError: 10001,
+    ClientMessageError.badGateway: 10002,
+    ClientMessageError.gatewayTimeout: 10003,
+    ClientMessageError.connectionRefused: 10004,
+    ClientMessageError.notFound: 10005,
+  };
+
+  static const friendlyTitles = {
+    ClientMessageError.clientError: "Client Error",
+    ClientMessageError.badGateway: "Bad Gateway",
+    ClientMessageError.gatewayTimeout: "Gateway Timeout",
+    ClientMessageError.connectionRefused: "Connection Refused",
+    ClientMessageError.notFound: "Not Found",
+  };
+
+  int get code => codes[this]!;
+  String get friendlyTitle => friendlyTitles[this]!;
+
+  /// Returns the [ClientMessageError] whose code matches [code], or null if
+  /// the code belongs to a server-side error.
+  static ClientMessageError? fromCode(int code) {
+    for (final entry in codes.entries) {
+      if (entry.value == code) return entry.key;
+    }
+    return null;
+  }
+}
+
+/// Returns a user-facing error message for an incoming server error code.
+/// Add specific mappings in the switch statement as needed.
+/// Defaults to "iMessage Error" for any unrecognised server code.
+String serverErrorMessage(int code) {
+  switch (code) {
+    // Add specific server error code → message mappings here, e.g.:
+    // case 22: return "The recipient is not registered with iMessage.";
+    default:
+      return "iMessage Error";
+  }
+}
+
 extension EffectHelper on MessageEffect {
   bool get isBubble =>
       this == MessageEffect.slam ||

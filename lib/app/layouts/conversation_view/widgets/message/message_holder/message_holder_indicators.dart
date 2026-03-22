@@ -48,7 +48,7 @@ class ErrorIndicatorObserver extends StatelessWidget {
 
       if (hasError) {
         final errorCode = message.error;
-        final errorText = ErrorHelper.getErrorText(errorCode, message.guid);
+        final errorText = ErrorHelper.getErrorText(message);
 
         return IconButton(
           icon: Icon(

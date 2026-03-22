@@ -60,9 +60,12 @@ class MessageState extends StatefulController {
   final RxnString associatedMessageType; // For reactions: reaction type (loved, liked, etc)
   final RxnInt associatedMessagePart; // For reactions: which part of message
 
+  /// Error message matching the [error] code. Null when no error.
+  final RxnString errorMessage;
+
   // Derived/computed states for UI convenience
   final RxBool hasError;
-  final RxBool isSending; // temp guid exists
+  final RxBool isSending; // temp guid, no error
   final RxBool isSent; // not temp guid
   final RxBool isReaction; // has associatedMessageGuid
 
@@ -129,8 +132,9 @@ class MessageState extends StatefulController {
         associatedMessageGuid = RxnString(message.associatedMessageGuid),
         associatedMessageType = RxnString(message.associatedMessageType),
         associatedMessagePart = RxnInt(message.associatedMessagePart),
+        errorMessage = RxnString(message.errorMessage),
         hasError = (message.error > 0).obs,
-        isSending = (message.guid?.startsWith('temp') ?? false).obs,
+        isSending = (message.guid?.startsWith('temp') == true && message.error == 0).obs,
         isSent = (!(message.guid?.startsWith('temp') ?? false)).obs,
         isReaction = (message.associatedMessageGuid != null).obs {
     // Create AttachmentState for every attachment already on the message.
@@ -268,7 +272,7 @@ class MessageState extends StatefulController {
       message.guid = value;
 
       // Update derived states
-      isSending.value = value?.startsWith('temp') ?? false;
+      isSending.value = (value?.startsWith('temp') ?? false) && !hasError.value;
       isSent.value = !(value?.startsWith('temp') ?? false);
     }
   }
@@ -330,6 +334,16 @@ class MessageState extends StatefulController {
       message.error = value;
       // Auto-update hasError flag
       hasError.value = value > 0;
+      // A temp GUID with a non-zero error is no longer "sending"
+      isSending.value = (guid.value?.startsWith('temp') ?? false) && value == 0;
+    }
+  }
+
+  /// Update the client-side error message
+  void updateErrorMessageInternal(String? value) {
+    if (errorMessage.value != value) {
+      errorMessage.value = value;
+      message.errorMessage = value;
     }
   }
 
@@ -483,6 +497,7 @@ class MessageState extends StatefulController {
     updateDateReadInternal(updatedMessage.dateRead);
     updateDateEditedInternal(updatedMessage.dateEdited);
     updateErrorInternal(updatedMessage.error);
+    updateErrorMessageInternal(updatedMessage.errorMessage);
     updateDidNotifyRecipientInternal(updatedMessage.didNotifyRecipient);
     updateWasDeliveredQuietlyInternal(updatedMessage.wasDeliveredQuietly);
     updateThreadOriginatorGuidInternal(updatedMessage.threadOriginatorGuid);

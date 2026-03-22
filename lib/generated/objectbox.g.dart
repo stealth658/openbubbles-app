@@ -477,7 +477,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(13, 4148278195232901830),
     name: 'Message',
-    lastPropertyId: const obx_int.IdUid(51, 566585826105040267),
+    lastPropertyId: const obx_int.IdUid(52, 5891619424061212086),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -731,6 +731,12 @@ final _entities = <obx_int.ModelEntity>[
         flags: 520,
         indexId: const obx_int.IdUid(18, 669353420101708385),
         relationTarget: 'Handle',
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(52, 5891619424061212086),
+        name: 'errorMessage',
+        type: 9,
+        flags: 0,
       ),
     ],
     relations: <obx_int.ModelRelation>[],
@@ -1788,7 +1794,10 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final dbMetadataOffset = object.dbMetadata == null
             ? null
             : fbb.writeString(object.dbMetadata!);
-        fbb.startTable(52);
+        final errorMessageOffset = object.errorMessage == null
+            ? null
+            : fbb.writeString(object.errorMessage!);
+        fbb.startTable(53);
         fbb.addInt64(0, object.id ?? 0);
         fbb.addInt64(1, object.originalROWID);
         fbb.addOffset(2, guidOffset);
@@ -1830,6 +1839,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
         fbb.addBool(48, object.isBookmarked);
         fbb.addBool(49, object.isDelivered);
         fbb.addInt64(50, object.handleRelation.targetId);
+        fbb.addOffset(51, errorMessageOffset);
         fbb.finish(fbb.endTable());
         return object.id ?? 0;
       },
@@ -1904,6 +1914,9 @@ obx_int.ModelDefinition getObjectBoxModel() {
           78,
           0,
         );
+        final errorMessageParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 106);
         final dateCreatedParam = dateCreatedValue == null
             ? null
             : DateTime.fromMillisecondsSinceEpoch(dateCreatedValue);
@@ -2012,6 +2025,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
                 subject: subjectParam,
                 country: countryParam,
                 error: errorParam,
+                errorMessage: errorMessageParam,
                 dateCreated: dateCreatedParam,
                 dateRead: dateReadParam,
                 dateDelivered: dateDeliveredParam,
@@ -2915,6 +2929,11 @@ class Message_ {
   /// See [Message.handleRelation].
   static final handleRelation = obx.QueryRelationToOne<Message, Handle>(
     _entities[5].properties[40],
+  );
+
+  /// See [Message.errorMessage].
+  static final errorMessage = obx.QueryStringProperty<Message>(
+    _entities[5].properties[41],
   );
 
   /// see [Message.dbAttachments]

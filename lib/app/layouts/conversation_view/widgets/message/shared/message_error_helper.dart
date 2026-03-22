@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:bluebubbles/app/state/message_state.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
@@ -9,13 +7,22 @@ import 'package:get/get.dart';
 
 /// Helper class for getting error display information
 class ErrorHelper {
-  static String getErrorText(int errorCode, String? guid) {
-    if (errorCode == 22) {
-      return "The recipient is not registered with iMessage!";
-    } else if (guid != null && guid.startsWith("error-")) {
-      return guid.split('-')[1];
-    }
-    return "An unknown internal error occurred.";
+  /// Returns the body text to display for an error dialog.
+  /// Uses the message's [errorMessage] field when available; falls back to a
+  /// generic string for older/legacy entries that may not have it set.
+  static String getErrorText(Message message) {
+    return message.errorMessage ?? "An unknown error occurred.";
+  }
+
+  /// Returns the dialog title for the given numeric error code.
+  /// Client-side errors show their [ClientMessageError.friendlyTitle].
+  /// Server-side errors (including the well-known code 22) fall back to
+  /// "iMessage Error", and zero / unrecognised codes use a generic title.
+  static String getErrorTitle(int errorCode) {
+    final clientError = ClientMessageErrorExtension.fromCode(errorCode);
+    if (clientError != null) return clientError.friendlyTitle;
+    if (errorCode > 0) return "iMessage Error";
+    return "Message Failed to Send";
   }
 }
 
@@ -40,8 +47,8 @@ class MessageErrorDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return AlertDialog(
       backgroundColor: context.theme.colorScheme.properSurface,
-      title: Text("Message failed to send", style: context.theme.textTheme.titleLarge),
-      content: Text("Error ($errorCode): $errorText", style: context.theme.textTheme.bodyLarge),
+      title: Text(ErrorHelper.getErrorTitle(errorCode), style: context.theme.textTheme.titleLarge),
+      content: Text(errorText, style: context.theme.textTheme.bodyLarge),
       actions: <Widget>[
         TextButton(
           child: Text("Retry",
@@ -135,37 +142,9 @@ Future<void> retryMessage({
   required MessagesService service,
   required MessageState controller,
 }) async {
-  // Save old GUID for cleanup
-  final oldGuid = message.guid!;
-
   // Retry message through service (updates DB and MessageState)
-  await service.retryFailedMessage(message, oldGuid: oldGuid);
-
-  // Clear notification
-  await NotificationsSvc.clearFailedToSend(chat.id!);
+  await service.retryFailedMessage(message, oldGuid: message.guid);
 
   // Force UI rebuild to show unsent color
   controller.update();
-
-  // Reload attachment bytes if needed
-  for (Attachment? a in message.dbAttachments) {
-    if (a == null) continue;
-    await Attachment.deleteAsync(a.guid!);
-    a.bytes = await File(a.path).readAsBytes();
-  }
-
-  // Queue for sending (message already in UI, just updated)
-  if (message.dbAttachments.isNotEmpty) {
-    OutgoingMsgHandler.queue(OutgoingItem(
-      type: QueueType.sendAttachment,
-      chat: chat,
-      message: message,
-    ));
-  } else {
-    OutgoingMsgHandler.queue(OutgoingItem(
-      type: QueueType.sendMessage,
-      chat: chat,
-      message: message,
-    ));
-  }
 }

@@ -236,7 +236,7 @@ class ReactionWidgetState extends State<ReactionWidget> with ThemeHelpers {
               final hasError = reactionController?.hasError.value ?? false;
               if (reaction.error > 0 || hasError) {
                 final errorCode = reaction.error;
-                final errorText = ErrorHelper.getErrorText(errorCode, reaction.guid);
+                final errorText = ErrorHelper.getErrorText(reaction);
 
                 return DeferPointer(
                   child: GestureDetector(

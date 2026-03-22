@@ -46,6 +46,7 @@ mixin MessagesServiceMixin<T extends StatefulWidget> on State<T> {
     void Function(Message, {String? oldGuid})? onUpdatedMessage,
     void Function(Message)? onDeletedMessage,
     void Function(String)? onJumpToMessage,
+    List<Message>? messagesRef,
   }) {
     // Use custom service or get/create singleton
     _messageService = customService ?? MessagesSvc(chat.guid);
@@ -60,6 +61,7 @@ mixin MessagesServiceMixin<T extends StatefulWidget> on State<T> {
         onUpdatedMessage ?? (_, {String? oldGuid}) {},
         onDeletedMessage ?? (_) {},
         onJumpToMessage ?? (_) {},
+        messagesRef ?? messages,
       );
     } else {
       // For customService, just update the handlers without reinitializing,
@@ -69,6 +71,7 @@ mixin MessagesServiceMixin<T extends StatefulWidget> on State<T> {
       _messageService!.removeFunc = onDeletedMessage ?? (_) {};
       _messageService!.newFunc = onNewMessage ?? (_) {};
       _messageService!.jumpToMessage = onJumpToMessage ?? (_) {};
+      _messageService!.messagesRef = messagesRef ?? messages;
     }
 
     // Add messages to struct (required for MessageState creation)
@@ -132,17 +135,18 @@ mixin MessagesServiceMixin<T extends StatefulWidget> on State<T> {
     required void Function(Message, {String? oldGuid}) onUpdatedMessage,
     required void Function(Message) onDeletedMessage,
     required void Function(String) onJumpToMessage,
+    required List<Message> messages,
   }) async {
     assert(_messageService != null, 'MessagesService not initialized');
 
     _messageService!.reload();
-    _messageService!.init(chat, onNewMessage, onUpdatedMessage, onDeletedMessage, onJumpToMessage);
+    _messageService!.init(chat, onNewMessage, onUpdatedMessage, onDeletedMessage, onJumpToMessage, messages);
   }
 
-  /// Create and link a controller for a new message
+  /// Create and link a state for a new message
   /// Use this when handling new messages that aren't in the existing list
-  /// Returns the created controller
-  MessageState createControllerForMessage(
+  /// Returns the created state
+  MessageState createStateForMessage(
     Message message,
     ConversationViewController cvController,
   ) {
@@ -153,9 +157,9 @@ mixin MessagesServiceMixin<T extends StatefulWidget> on State<T> {
     return controller;
   }
 
-  /// Create and link controllers for multiple new messages
+  /// Create and link states for multiple new messages
   /// Use this when handling bulk message additions
-  void createControllersForMessages(
+  void createStatesForMessages(
     List<Message> messages,
     ConversationViewController cvController,
   ) {

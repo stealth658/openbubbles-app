@@ -249,6 +249,7 @@ class MessageActions {
       existing.didNotifyRecipient =
           inputNewMessage.didNotifyRecipient ? inputNewMessage.didNotifyRecipient : existing.didNotifyRecipient;
       existing.error = inputNewMessage.error;
+      existing.errorMessage = inputNewMessage.errorMessage;
 
       try {
         messageBox.put(existing, mode: PutMode.update);

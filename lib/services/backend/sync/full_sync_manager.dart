@@ -260,7 +260,11 @@ class FullSyncManager extends SyncManager {
 
       // Convert the returned chat dictionaries to a list of Chat Objects
       List<dynamic> messageResponse = data["data"];
-      List<Message> messages = messageResponse.map((e) => Message.fromMap(e)).toList();
+      List<Message> messages = messageResponse.map((e) {
+        final m = Message.fromMap(e);
+        if (m.error > 0) m.errorMessage = serverErrorMessage(m.error);
+        return m;
+      }).toList();
       yield Tuple2<double, List<Message>>((i + 1) / batches, messages);
     }
   }
