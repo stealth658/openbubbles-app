@@ -700,6 +700,15 @@ class MessagesService extends GetxController {
     Get.reload<MessagesService>(tag: tag);
   }
 
+  /// Adds [message] to the active chat view if it is not already present.
+  /// Called by external synchronization paths (e.g. incremental sync) as an
+  /// explicit dispatch that complements the ObjectBox watch-based flow.
+  Future<void> addNewMessage(Message message) async {
+    if (message.guid == null) return;
+    if (struct.getMessage(message.guid!) != null) return;
+    await _handleNewMessage(message);
+  }
+
   Future<void> _handleNewMessage(Message message) async {
     if (message.hasAttachments && !kIsWeb) {
       message.attachments = List<Attachment>.from(message.dbAttachments);

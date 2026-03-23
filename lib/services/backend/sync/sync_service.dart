@@ -66,12 +66,25 @@ class SyncService {
             latestPerChat[chatGuid] = message;
           }
         }
+
         // IncrementalSyncManager.complete() already called ChatsSvc.updateChat() for every
         // synced chat. Here we only need to push the subtitle update into ChatState.
         for (final entry in latestPerChat.entries) {
           ChatsSvc.updateChatLatestMessage(entry.key, entry.value);
         }
+
+        // Dispatch newly synced messages to any currently active chat view.
+        // MessagesService.addNewMessage() is a no-op if the message is already present,
+        // so this is safe to call even though the ObjectBox watcher may also fire.
+        for (final message in syncedMessages) {
+          final chatGuid = message.chat.target?.guid;
+          if (chatGuid == null || message.guid == null) continue;
+          if (Get.isRegistered<MessagesService>(tag: chatGuid)) {
+            unawaited(Get.find<MessagesService>(tag: chatGuid).addNewMessage(message));
+          }
+        }
       }
+
       chatStopwatch.stop();
       Logger.info(
           'Incremental chat sync completed! Synced ${syncedMessages.length} messages across '
