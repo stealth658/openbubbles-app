@@ -74,10 +74,7 @@ class MessageHelper {
 
     // If there are attachments, return the number of attachments
     if (message.realAttachments.isNotEmpty) {
-      int aCount = message.realAttachments.length;
-      // Build the attachment output by counting the attachments
-      String output = "Attachment${aCount > 1 ? "s" : ""}";
-      return "$output: ${_getAttachmentText(message.realAttachments)}";
+      return "$sender${_getAttachmentText(message.realAttachments)}";
     } else if (!isNullOrEmpty(message.associatedMessageGuid)) {
       // It's a reaction message, get the sender
       String sender = message.isFromMe! ? 'You' : (message.handleRelation.target?.reactionDisplayName ?? "Someone");
@@ -159,7 +156,9 @@ class MessageHelper {
       } else if (mime.contains("contact")) {
         key = "contact";
       } else if (mime.contains("video")) {
-        key = "movie";
+        key = "video";
+      } else if (mime.contains("audio")) {
+        key = "audio message";
       } else if (mime.contains("image")) {
         key = "photo";
       } else if (mime.contains("image/gif")) {
@@ -180,7 +179,7 @@ class MessageHelper {
     counts.forEach((key, value) {
       attachmentStr.add("$value $key${value > 1 ? "s" : ""}");
     });
-    return attachmentStr.join(attachmentStr.length == 2 ? " & " : ", ");
+    return attachmentStr.join(attachmentStr.length == 2 ? " & " : ", ").toTitleCase();
   }
 
   /// Removes duplicate associated message guids from a list of [associatedMessages]
