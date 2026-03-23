@@ -369,7 +369,7 @@ class IncomingMessageHandler {
 
     // 9. Drive UI reactivity, if not in a background isolate.
     if (!isIsolate) {
-      _dispatchNewMessage(c, saved, tempGuid: tempGuid);
+      unawaited(_dispatchNewMessage(c, saved, tempGuid: tempGuid));
 
       // 10. Refresh chat-list ordering and subtitle.
       c.dbLatestMessage;
@@ -723,13 +723,13 @@ class IncomingMessageHandler {
   /// set), [MessagesService.updateMessage] is called explicitly with the old
   /// GUID so the temp bubble transitions to its final state.
   ///
-  /// For *incoming* messages from other participants, [MessagesService] will be
-  /// notified automatically by the ObjectBox DB watch (`countSub`) that is
-  /// established inside [MessagesService.init] — no explicit call is needed.
+  /// For *incoming* messages from other participants, [MessagesService.addNewMessage]
+  /// is called explicitly so the message enters the view immediately without
+  /// relying on the ObjectBox DB watch.
   ///
   /// An `EventDispatcherSvc.emit` is fired in both cases so chat tiles, badge
   /// counts, and any other cross-cutting listeners can react.
-  void _dispatchNewMessage(Chat chat, Message message, {String? tempGuid}) {
+  Future<void> _dispatchNewMessage(Chat chat, Message message, {String? tempGuid}) async {
     final msvcRegistered = Get.isRegistered<MessagesService>(tag: chat.guid);
     Logger.debug(
       '[_dispatchNewMessage] guid=${message.guid} tempGuid=$tempGuid '
@@ -743,6 +743,13 @@ class IncomingMessageHandler {
         tag: _tag,
       );
       MessagesSvc(chat.guid).updateMessage(message, oldGuid: tempGuid);
+    } else if (msvcRegistered) {
+      // Pure incoming message — push it into the active chat view explicitly.
+      Logger.debug(
+        '[_dispatchNewMessage] calling addNewMessage for incoming guid=${message.guid}',
+        tag: _tag,
+      );
+      await MessagesSvc(chat.guid).addNewMessage(message);
     }
 
     EventDispatcherSvc.emit('new-message', {

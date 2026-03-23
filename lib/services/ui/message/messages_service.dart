@@ -5,7 +5,6 @@ import 'package:bluebubbles/app/state/attachment_state.dart';
 import 'package:bluebubbles/app/state/message_state.dart';
 import 'package:bluebubbles/helpers/types/helpers/message_helper.dart';
 import 'package:bluebubbles/helpers/types/constants.dart';
-import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
@@ -14,7 +13,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart' hide Response;
-import 'package:rxdart/rxdart.dart';
 import 'package:tuple/tuple.dart';
 
 // ignore: non_constant_identifier_names
@@ -28,7 +26,7 @@ String? lastReloadedChat() =>
 class MessagesService extends GetxController {
   static final Map<String, Size> cachedBubbleSizes = {};
   late Chat chat;
-  late StreamSubscription countSub;
+  StreamSubscription? _webMessageSub;
   final ChatMessages struct = ChatMessages();
   late Function(Message) newFunc;
   late Function(Message, {String? oldGuid}) updateFunc;
@@ -39,8 +37,6 @@ class MessagesService extends GetxController {
   final String tag;
   MessagesService(this.tag);
 
-  int currentCount = 0;
-  bool isFetching = false;
   bool _init = false;
   bool messagesLoaded = false;
   String? method;
@@ -606,36 +602,10 @@ class MessagesService extends GetxController {
     jumpToMessage = jumpToMessageFunc;
     this.messagesRef = messagesRef;
 
-    // watch for new messages
+    // watch for new messages (web only; native platforms use explicit addNewMessage calls)
     if (!_init) {
-      if (chat.id != null) {
-        final countQuery = (Database.messages.query(Message_.dateDeleted.isNull())
-              ..link(Message_.chat, Chat_.id.equals(chat.id!))
-              ..order(Message_.id, flags: Order.descending))
-            .watch(triggerImmediately: true);
-
-        // Debounce the stream to batch rapid changes (reduces processing overhead)
-        countSub = countQuery.debounceTime(const Duration(milliseconds: 100)).listen((event) async {
-          if (!SettingsSvc.settings.finishedSetup.value) return;
-          final newCount = event.count();
-          if (!isFetching && newCount > currentCount && currentCount != 0) {
-            event.limit = newCount - currentCount;
-            final messages = event.find();
-            event.limit = 0;
-            for (Message message in messages) {
-              // Use addNewMessage (which has the struct-presence guard) rather
-              // than _handleNewMessage directly.  This ensures that outgoing
-              // messages explicitly pushed via addNewMessage (e.g. attachment
-              // sends whose DB write happens in the GlobalIsolate) are not
-              // processed a second time if the cross-isolate change notification
-              // happens to fire.
-              await addNewMessage(message);
-            }
-          }
-          currentCount = newCount;
-        });
-      } else if (kIsWeb) {
-        countSub = WebListeners.newMessage.listen((tuple) {
+      if (kIsWeb) {
+        _webMessageSub = WebListeners.newMessage.listen((tuple) {
           if (tuple.item2?.guid == chat.guid) {
             _handleNewMessage(tuple.item1);
           }
@@ -678,7 +648,7 @@ class MessagesService extends GetxController {
   @override
   void onClose() {
     if (_init) {
-      countSub.cancel();
+      _webMessageSub?.cancel();
       _redactedModeListener?.cancel();
       _hideMessageContentListener?.cancel();
     }
@@ -956,7 +926,6 @@ class MessagesService extends GetxController {
   }
 
   Future<bool> loadChunk(int offset, ConversationViewController controller, {int limit = 25}) async {
-    isFetching = true;
     List<Message> _messages = [];
 
     // Adjust offset because reactions _are_ messages. We just separate them out in the struct.
@@ -1049,13 +1018,11 @@ class MessagesService extends GetxController {
       }
     }
 
-    isFetching = false;
     messagesLoaded = true;
     return _messages.isNotEmpty;
   }
 
   Future<void> loadSearchChunk(Message around, SearchMethod method) async {
-    isFetching = true;
     List<Message> _messages = [];
     if (method == SearchMethod.local) {
       _messages = await Chat.getMessagesAsync(chat, searchAround: around.dateCreated!.millisecondsSinceEpoch);
@@ -1083,7 +1050,6 @@ class MessagesService extends GetxController {
       // Create MessageStates for loaded messages
       _ensureMessageStates(_messages);
     }
-    isFetching = false;
   }
 
   static Future<List<dynamic>> getMessages(

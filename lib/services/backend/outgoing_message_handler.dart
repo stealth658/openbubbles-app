@@ -183,6 +183,9 @@ class OutgoingMessageHandler {
               m.guid = m.guid!.replaceAll('temp', 'error-Canceled due to previous failure');
               m.error = MessageError.BAD_REQUEST.code;
               await Message.replaceMessage(tempGuid, m);
+              if (Get.isRegistered<MessagesService>(tag: pending.chat.guid)) {
+                MessagesSvc(pending.chat.guid).updateMessage(m, oldGuid: tempGuid);
+              }
             }
           }
         });
@@ -356,11 +359,20 @@ class OutgoingMessageHandler {
 
       for (final message in messages) {
         message.generateTempGuid();
-        await c.addMessage(message, clearNotificationsIfFromMe: clearNotificationsIfFromMe);
+        // r == null is guaranteed by the outer guard, so these are never reactions.
+        final saved = (await c.addMessage(message, clearNotificationsIfFromMe: clearNotificationsIfFromMe)).item1;
+        if (Get.isRegistered<MessagesService>(tag: c.guid)) {
+          await MessagesSvc(c.guid).addNewMessage(saved);
+        }
       }
     } else {
       m.generateTempGuid();
-      await c.addMessage(m, clearNotificationsIfFromMe: clearNotificationsIfFromMe);
+      final saved = (await c.addMessage(m, clearNotificationsIfFromMe: clearNotificationsIfFromMe)).item1;
+      // Don't call addNewMessage for reactions — sendMessage already adds the
+      // temp reaction to the parent's associated messages list explicitly.
+      if (m.associatedMessageGuid == null && Get.isRegistered<MessagesService>(tag: c.guid)) {
+        await MessagesSvc(c.guid).addNewMessage(saved);
+      }
       messages.add(m);
     }
     return messages;
@@ -546,6 +558,9 @@ class OutgoingMessageHandler {
           await NotificationsSvc.createFailedToSend(c);
         }
         await Message.replaceMessage(tempGuid, m);
+        if (Get.isRegistered<MessagesService>(tag: c.guid)) {
+          MessagesSvc(c.guid).updateMessage(m, oldGuid: tempGuid);
+        }
       },
     );
   }
@@ -585,6 +600,9 @@ class OutgoingMessageHandler {
           await NotificationsSvc.createFailedToSend(c);
         }
         await Message.replaceMessage(tempGuid, m);
+        if (Get.isRegistered<MessagesService>(tag: c.guid)) {
+          MessagesSvc(c.guid).updateMessage(m, oldGuid: tempGuid);
+        }
       },
     );
   }
@@ -688,9 +706,13 @@ class OutgoingMessageHandler {
           await NotificationsSvc.createFailedToSend(c);
         }
         await Message.replaceMessage(tempGuid, m);
-        // Mark attachment as errored so the UI shows a retry option.
         if (Get.isRegistered<MessagesService>(tag: c.guid)) {
-          MessagesSvc(c.guid).notifyAttachmentTransferError(tempGuid, attachment.guid!);
+          // Swap the message GUID and flip hasError/isSending in the reactive state.
+          MessagesSvc(c.guid).updateMessage(m, oldGuid: tempGuid);
+          // Mark attachment as errored so the UI shows a retry option.
+          // notifyAttachmentTransferError uses the new error GUID since updateMessage
+          // already re-keyed the MessageState map.
+          MessagesSvc(c.guid).notifyAttachmentTransferError(m.guid!, attachment.guid!);
         }
         // Use the saved tempGuid — m.guid is now the error GUID after handleSendError.
         attachmentProgress.removeWhere((e) => e.item1 == tempGuid);
