@@ -329,6 +329,7 @@ class _MediaGalleryCardState extends State<MediaGalleryCard> with AutomaticKeepA
           );
         }
       } else {
+        addPadding = false;
         child = OtherFile(
           file: file,
           attachment: attachment,
