@@ -137,7 +137,12 @@ class _AttachmentHolderState extends State<AttachmentHolder> with ThemeHelpers {
       right: message.isFromMe! ? 10 : 0,
     );
 
-    if (state.resolvedFile.value != null && !hideAttachments) {
+    // Treat an error preview the same as a resolved file — no extra padding.
+    final hasError = state.hasError.value || message.error > 0;
+    final effectiveFile = state.resolvedFile.value ??
+        (hasError && message.isFromMe == true ? state.uploadPreviewFile.value : null);
+
+    if (effectiveFile != null && !hideAttachments) {
       return showTail ? EdgeInsets.zero : sideInsets;
     }
     if (isInReply) {
