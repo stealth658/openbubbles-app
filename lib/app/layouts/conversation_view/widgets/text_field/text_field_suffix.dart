@@ -7,6 +7,7 @@ import 'package:bluebubbles/app/wrappers/cupertino_icon_wrapper.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
+import 'package:bluebubbles/services/ui/chat/send_data.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -288,15 +289,12 @@ class _RecordingButton extends StatelessWidget {
                         ),
                       ),
                       onPressed: () async {
-                        await controller!.send(
-                          [file],
-                          "",
-                          "",
-                          null,
-                          null,
-                          null,
-                          true,
-                        );
+                        await controller!.send(SendData(
+                          attachments: [file],
+                          text: "",
+                          subject: "",
+                          isAudioMessage: true,
+                        ));
                         onDeleteRecording(file.path!);
                         Navigator.of(context, rootNavigator: true).pop();
                       },

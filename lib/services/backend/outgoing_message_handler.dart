@@ -398,12 +398,34 @@ class OutgoingMessageHandler {
         } else {
           await File(sourcePath).copy(destinationPath);
         }
+        // For interactive messages (any balloonBundleId), also stage the media
+        // at interactiveMediaPath so EmbeddedMedia can display it on first
+        // render without waiting for a server download.
+        if (m.balloonBundleId != null) {
+          final mediaPath = m.interactiveMediaPath;
+          if (mediaPath != null) {
+            await File(mediaPath).create(recursive: true);
+            await File(destinationPath).copy(mediaPath);
+          }
+        }
       } else {
         Uint8List bytesToWrite = attachment.bytes!;
         if (attachment.mimeType == 'image/gif') {
           bytesToWrite = await fixSpeedyGifs(bytesToWrite);
         }
         await destinationFile.writeAsBytes(bytesToWrite);
+
+        // For interactive messages (any balloonBundleId), also stage the media
+        // at interactiveMediaPath so EmbeddedMedia can display it on first
+        // render without waiting for a server download.
+        if (m.balloonBundleId != null) {
+          final mediaPath = m.interactiveMediaPath;
+          if (mediaPath != null) {
+            await File(mediaPath).create(recursive: true);
+            await File(mediaPath).writeAsBytes(bytesToWrite);
+          }
+        }
+
         attachment.bytes = null;
       }
 
@@ -757,6 +779,31 @@ class OutgoingMessageHandler {
           '[_matchMessageWithExisting] FAILED: Unable to find & replace message with GUID $existingGuid',
           error: ex,
           trace: st,
+          tag: _tag,
+        );
+      }
+    }
+
+    // Move the interactive media directory (for handwriten / digital-touch
+    // messages) from the temp-GUID path to the real-GUID path so that
+    // EmbeddedMedia.getContent finds the pre-staged local file immediately
+    // instead of falling back to a server download.
+    if (!kIsWeb && existingGuid != replacement.guid && existingGuid.startsWith('temp')) {
+      try {
+        final appDocPath = FilesystemSvc.appDocDir.path;
+        final oldMessageDir = Directory('$appDocPath/messages/$existingGuid');
+        final newMessageDir = Directory('$appDocPath/messages/${replacement.guid}');
+        if (oldMessageDir.existsSync() && !newMessageDir.existsSync()) {
+          oldMessageDir.renameSync(newMessageDir.path);
+          Logger.debug(
+            '[_matchMessageWithExisting] moved message media dir $existingGuid → ${replacement.guid}',
+            tag: _tag,
+          );
+        }
+      } catch (ex) {
+        Logger.warn(
+          '[_matchMessageWithExisting] failed to move message media dir $existingGuid → ${replacement.guid}',
+          error: ex,
           tag: _tag,
         );
       }

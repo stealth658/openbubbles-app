@@ -17,6 +17,7 @@ import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
+import 'package:bluebubbles/services/ui/chat/send_data.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/utils/share.dart';
 import 'package:chunked_stream/chunked_stream.dart';
@@ -393,15 +394,14 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
             break;
         }
       }
-      await controller.send(
-        controller.pickedAttachments,
-        text,
-        controller.subjectTextController.text,
-        controller.replyToMessage?.item1.threadOriginatorGuid ?? controller.replyToMessage?.item1.guid,
-        controller.replyToMessage?.item2,
-        effect,
-        false,
-      );
+      await controller.send(SendData(
+        attachments: controller.pickedAttachments,
+        text: text,
+        subject: controller.subjectTextController.text,
+        replyGuid: controller.replyToMessage?.item1.threadOriginatorGuid ?? controller.replyToMessage?.item1.guid,
+        replyPart: controller.replyToMessage?.item2,
+        effectId: effect,
+      ));
     }
     controller.pickedAttachments.clear();
     controller.textController.clear();

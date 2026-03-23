@@ -11,11 +11,11 @@ import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/app/state/message_state.dart';
 import 'package:bluebubbles/services/services.dart';
+import 'package:bluebubbles/services/ui/chat/send_data.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:mime_type/mime_type.dart';
 import 'package:simple_animations/simple_animations.dart';
-import 'package:tuple/tuple.dart';
 
 class SendAnimation extends CustomStateful<ConversationViewController> {
   const SendAnimation({super.key, required super.parentController});
@@ -24,8 +24,7 @@ class SendAnimation extends CustomStateful<ConversationViewController> {
   CustomState createState() => _SendAnimationState();
 }
 
-class _SendAnimationState extends CustomState<SendAnimation,
-    Tuple6<List<PlatformFile>, String, String, String?, int?, String?>, ConversationViewController> {
+class _SendAnimationState extends CustomState<SendAnimation, SendData, ConversationViewController> {
   Message? message;
   Tween<double> tween = Tween<double>(begin: 1, end: 0);
   Control control = Control.stop;
@@ -44,20 +43,16 @@ class _SendAnimationState extends CustomState<SendAnimation,
     });
   }
 
-  Future<void> send(
-      Tuple6<List<PlatformFile>, String, String, String?, int?, String?> tuple, bool isAudioMessage) async {
+  Future<void> send(SendData data) async {
     // do not add anything above this line, the attachments must be extracted first
-    final attachments = List<PlatformFile>.from(tuple.item1);
-    String text = tuple.item2;
-    final subject = tuple.item3;
-    final replyGuid = tuple.item4;
-    final part = tuple.item5;
-    final effectId = tuple.item6;
+    final attachments = List<PlatformFile>.from(data.attachments);
+    // text is mutable — reassigned during mention processing below
+    String text = data.text;
     if (SettingsSvc.settings.scrollToBottomOnSend.value) {
       await controller.scrollToBottom();
     }
     if (SettingsSvc.settings.sendSoundPath.value != null &&
-        !(isNullOrEmptyString(text) && isNullOrEmptyString(subject) && controller.pickedAttachments.isEmpty)) {
+        !(isNullOrEmptyString(text) && isNullOrEmptyString(data.subject) && controller.pickedAttachments.isEmpty)) {
       if (kIsDesktop) {
         Player player = Player();
         await player.setVolume(SettingsSvc.settings.soundVolume.value.toDouble());
@@ -81,6 +76,7 @@ class _SendAnimationState extends CustomState<SendAnimation,
         text: "",
         dateCreated: DateTime.now(),
         hasAttachments: true,
+        balloonBundleId: file.balloonBundleId,
         attachments: [
           Attachment(
             isOutgoing: true,
@@ -97,9 +93,9 @@ class _SendAnimationState extends CustomState<SendAnimation,
         ],
         isFromMe: true,
         handleId: 0,
-        threadOriginatorGuid: i == 0 ? replyGuid : null,
-        threadOriginatorPart: i == 0 ? "${part ?? 0}:0:0" : null,
-        expressiveSendStyleId: effectId,
+        threadOriginatorGuid: i == 0 ? data.replyGuid : null,
+        threadOriginatorPart: i == 0 ? "${data.replyPart ?? 0}:0:0" : null,
+        expressiveSendStyleId: data.effectId,
       );
       message.generateTempGuid();
       message.attachments.first!.guid = message.guid;
@@ -107,10 +103,10 @@ class _SendAnimationState extends CustomState<SendAnimation,
           type: QueueType.sendAttachment,
           chat: controller.chat,
           message: message,
-          customArgs: {"audio": isAudioMessage}));
+          customArgs: {"audio": data.isAudioMessage}));
     }
 
-    if (text.isNotEmpty || subject.isNotEmpty) {
+    if (text.isNotEmpty || data.subject.isNotEmpty) {
       final textSplit = MentionTextEditingController.splitText(text);
       bool flag = false;
       final newText = [];
@@ -132,11 +128,11 @@ class _SendAnimationState extends CustomState<SendAnimation,
       }
       int currentPos = 0;
       final _message = Message(
-        text: text.isEmpty && subject.isNotEmpty ? subject : text,
-        subject: text.isEmpty && subject.isNotEmpty ? null : subject,
-        threadOriginatorGuid: attachments.isEmpty ? replyGuid : null,
-        threadOriginatorPart: attachments.isEmpty ? "${part ?? 0}:0:0" : null,
-        expressiveSendStyleId: effectId,
+        text: text.isEmpty && data.subject.isNotEmpty ? data.subject : text,
+        subject: text.isEmpty && data.subject.isNotEmpty ? null : data.subject,
+        threadOriginatorGuid: attachments.isEmpty ? data.replyGuid : null,
+        threadOriginatorPart: attachments.isEmpty ? "${data.replyPart ?? 0}:0:0" : null,
+        expressiveSendStyleId: data.effectId,
         dateCreated: DateTime.now(),
         hasAttachments: false,
         isFromMe: true,
@@ -187,7 +183,7 @@ class _SendAnimationState extends CustomState<SendAnimation,
         message = _message;
       });
     }
-    super.updateWidget(tuple);
+    super.updateWidget(data);
   }
 
   @override

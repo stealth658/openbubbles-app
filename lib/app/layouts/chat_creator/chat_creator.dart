@@ -15,6 +15,7 @@ import 'package:bluebubbles/app/layouts/conversation_view/pages/messages_view.da
 import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
+import 'package:bluebubbles/services/ui/chat/send_data.dart';
 import 'package:bluebubbles/utils/string_utils.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
@@ -570,16 +571,15 @@ class ChatCreatorState extends State<ChatCreator> with ThemeHelpers {
                                   fakeController.value!.pickedAttachments.value = widget.initialAttachments;
                                 }
 
-                                await fakeController.value!.send(
-                                  widget.initialAttachments,
-                                  fakeController.value!.textController.text,
-                                  "",
-                                  fakeController.value!.replyToMessage?.item1.threadOriginatorGuid ??
+                                await fakeController.value!.send(SendData(
+                                  attachments: widget.initialAttachments,
+                                  text: fakeController.value!.textController.text,
+                                  subject: "",
+                                  replyGuid: fakeController.value!.replyToMessage?.item1.threadOriginatorGuid ??
                                       fakeController.value!.replyToMessage?.item1.guid,
-                                  fakeController.value!.replyToMessage?.item2,
-                                  effect,
-                                  false,
-                                );
+                                  replyPart: fakeController.value!.replyToMessage?.item2,
+                                  effectId: effect,
+                                ));
 
                                 fakeController.value!.replyToMessage = null;
                                 fakeController.value!.pickedAttachments.clear();

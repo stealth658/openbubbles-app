@@ -108,7 +108,7 @@ class _InteractiveHolderState extends State<InteractiveHolder> with AutomaticKee
                                     child: Builder(builder: (context) {
                                       if (payloadData == null && !(message.isLegacyUrlPreview)) {
                                         switch (message.interactiveText) {
-                                          case "Handwritten Message":
+                                          case "Handwriten Message":
                                           case "Digital Touch Message":
                                             if (SettingsSvc.settings.enablePrivateAPI.value &&
                                                 SettingsSvc.isMinBigSurSync &&

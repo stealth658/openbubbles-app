@@ -35,7 +35,7 @@ const stringToMessageEffect = {
 
 // known balloon bundle IDs - there will be a lot more
 const balloonBundleIdMap = {
-  'com.apple.Handwriting.HandwritingProvider': 'Handwritten Message',
+  'com.apple.Handwriting.HandwritingProvider': 'Handwriten Message',
   'com.apple.DigitalTouchBalloonProvider': 'Digital Touch Message',
   'com.apple.messages.MSMessageExtensionBalloonPlugin': {
     'com.nearfuturespecialists.imessagepoll.MessagesExtension': 'iMessage Poll',

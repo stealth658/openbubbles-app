@@ -195,6 +195,14 @@ class _MessageHolderState extends State<MessageHolder> with ThemeHelpers {
         final messageParts = widget.isReplyThread && widget.replyPart != null
             ? [controller.parts[widget.replyPart!]]
             : controller.parts.toList();
+
+        // Grow per-part arrays so replyOffsets[index] and keys[index] are
+        // always safe to access, even when parts are added after initState.
+        while (replyOffsets.length < messageParts.length) {
+          replyOffsets.add(0.0.obs);
+          keys.add(GlobalKey());
+        }
+
         // Use MessageState observables for proper reactivity
         final isTempMessage = controller.isSending.value;
         final isFromMe = controller.isFromMe.value;

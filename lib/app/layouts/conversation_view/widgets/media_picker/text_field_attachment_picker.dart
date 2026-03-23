@@ -155,7 +155,7 @@ class _AttachmentPickerState extends State<AttachmentPicker> with ThemeHelpers {
                     // Camera and Video buttons
                     _buildActionButtons(context),
                     const SliverPadding(padding: EdgeInsets.only(left: 5, right: 5)),
-                    // Files, Location, Schedule, Handwritten buttons
+                    // Files, Location, Schedule, Handwriten buttons
                     _buildFeatureButtons(context),
                     const SliverPadding(padding: EdgeInsets.only(left: 5, right: 5)),
                     // Image grid
@@ -353,7 +353,7 @@ class _FeatureButton extends StatelessWidget {
       case 2:
         return "Schedule";
       case 3:
-        return "Handwritten";
+        return "Handwriten";
     }
     return "";
   }
@@ -462,7 +462,7 @@ class _FeatureButton extends StatelessWidget {
         builder: (BuildContext context) {
           return AlertDialog(
             title: Text(
-              "Draw Handwritten Message",
+              "Draw Handwriten Message",
               style: context.theme.textTheme.titleLarge,
             ),
             content: AspectRatio(
@@ -500,9 +500,10 @@ class _FeatureButton extends StatelessWidget {
                     final uint8 = bytes.buffer.asUint8List();
                     controller.pickedAttachments.add(PlatformFile(
                       path: null,
-                      name: "handwritten-${controller.pickedAttachments.length + 1}.png",
+                      name: "handwriten-${controller.pickedAttachments.length + 1}.png",
                       bytes: uint8,
                       size: uint8.lengthInBytes,
+                      balloonBundleId: 'com.apple.Handwriting.HandwritingProvider',
                     ));
                   }
                 },

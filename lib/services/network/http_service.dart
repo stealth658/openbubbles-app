@@ -616,7 +616,7 @@ class HttpService {
     });
   }
 
-  /// Get embedded media for a single digital touch or handwritten message by [guid].
+  /// Get embedded media for a single digital touch or handwriten message by [guid].
   Future<Response> embeddedMedia(String guid,
       {void Function(int, int)? onReceiveProgress, CancelToken? cancelToken}) async {
     return runApiGuarded(() async {

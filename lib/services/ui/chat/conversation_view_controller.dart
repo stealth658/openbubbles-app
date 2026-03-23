@@ -13,6 +13,7 @@ import 'package:get/get.dart';
 import 'package:google_ml_kit/google_ml_kit.dart' hide Message;
 import 'package:metadata_fetch/metadata_fetch.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
+import 'package:bluebubbles/services/ui/chat/send_data.dart';
 import 'package:tuple/tuple.dart';
 import 'package:unicode_emojis/unicode_emojis.dart';
 
@@ -91,7 +92,7 @@ class ConversationViewController extends StatefulController with GetSingleTicker
   bool keyboardOpen = false;
   double _keyboardOffset = 0;
   Timer? _scrollDownDebounce;
-  Future<void> Function(Tuple6<List<PlatformFile>, String, String, String?, int?, String?>, bool)? sendFunc;
+  Future<void> Function(SendData)? sendFunc;
 
   @override
   void onInit() {
@@ -172,9 +173,8 @@ class ConversationViewController extends StatefulController with GetSingleTicker
     }
   }
 
-  Future<void> send(List<PlatformFile> attachments, String text, String subject, String? replyGuid, int? replyPart,
-      String? effectId, bool isAudioMessage) async {
-    sendFunc?.call(Tuple6(attachments, text, subject, replyGuid, replyPart, effectId), isAudioMessage);
+  Future<void> send(SendData data) async {
+    sendFunc?.call(data);
   }
 
   bool isSelected(String guid) {
