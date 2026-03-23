@@ -10,7 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 /// Widget that handles documents/files section display
-class DocumentsSection extends StatelessWidget {
+class DocumentsSection extends StatefulWidget {
   final List<Attachment> docs;
   final bool isLoading;
 
@@ -19,6 +19,22 @@ class DocumentsSection extends StatelessWidget {
     required this.docs,
     this.isLoading = false,
   });
+
+  @override
+  State<DocumentsSection> createState() => _DocumentsSectionState();
+}
+
+class _DocumentsSectionState extends State<DocumentsSection> {
+  static const int _chunkSize = 24;
+  int _displayCount = _chunkSize;
+
+  @override
+  void didUpdateWidget(DocumentsSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.docs.length != widget.docs.length) {
+      _displayCount = _chunkSize;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +55,7 @@ class DocumentsSection extends StatelessWidget {
             ),
           ),
         ),
-        if (isLoading)
+        if (widget.isLoading)
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 20.0),
@@ -48,7 +64,7 @@ class DocumentsSection extends StatelessWidget {
               ),
             ),
           )
-        else if (docs.isEmpty)
+        else if (widget.docs.isEmpty)
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 20.0),
@@ -62,7 +78,7 @@ class DocumentsSection extends StatelessWidget {
               ),
             ),
           )
-        else
+        else ...[
           Obx(() => SliverPadding(
                 padding: EdgeInsets.only(
                   left: SettingsSvc.settings.skin.value == Skins.iOS ? 20 : 10,
@@ -80,13 +96,26 @@ class DocumentsSection extends StatelessWidget {
                   delegate: SliverChildBuilderDelegate(
                     (context, int index) {
                       return MediaGalleryCard(
-                        attachment: docs[index],
+                        attachment: widget.docs[index],
                       );
                     },
-                    childCount: docs.length,
+                    childCount: min(_displayCount, widget.docs.length),
                   ),
                 ),
               )),
+          if (_displayCount < widget.docs.length)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Center(
+                  child: TextButton(
+                    onPressed: () => setState(() => _displayCount += _chunkSize),
+                    child: const Text("Show more"),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ],
     );
   }

@@ -41,8 +41,9 @@ class _AttachmentsLoaderState extends State<AttachmentsLoader> {
               !(e.message.target?.isGroupEvent ?? true) &&
               !(e.message.target?.isInteractive ?? true) &&
               (e.mimeStart == "image" || e.mimeStart == "video"))
-          .take(24)
-          .toList();
+          .toList()
+        ..sort((a, b) => (b.message.target?.dateCreated ?? DateTime(0))
+            .compareTo(a.message.target?.dateCreated ?? DateTime(0)));
 
       final docs = attachments
           .where((e) =>
@@ -51,10 +52,15 @@ class _AttachmentsLoaderState extends State<AttachmentsLoader> {
               e.mimeStart != "image" &&
               e.mimeStart != "video" &&
               !(e.mimeType ?? "").contains("location"))
-          .take(24)
-          .toList();
+          .toList()
+        ..sort((a, b) => (b.message.target?.dateCreated ?? DateTime(0))
+            .compareTo(a.message.target?.dateCreated ?? DateTime(0)));
 
-      final locations = attachments.where((e) => (e.mimeType ?? "").contains("location")).take(10).toList();
+      final locations = attachments
+          .where((e) => (e.mimeType ?? "").contains("location"))
+          .toList()
+        ..sort((a, b) => (b.message.target?.dateCreated ?? DateTime(0))
+            .compareTo(a.message.target?.dateCreated ?? DateTime(0)));
 
       setState(() {
         isLoading = false;

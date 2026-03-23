@@ -12,7 +12,7 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Widget that handles locations section display
-class LocationsSection extends StatelessWidget {
+class LocationsSection extends StatefulWidget {
   final List<Attachment> locations;
   final bool isLoading;
 
@@ -21,6 +21,22 @@ class LocationsSection extends StatelessWidget {
     required this.locations,
     this.isLoading = false,
   });
+
+  @override
+  State<LocationsSection> createState() => _LocationsSectionState();
+}
+
+class _LocationsSectionState extends State<LocationsSection> {
+  static const int _chunkSize = 10;
+  int _displayCount = _chunkSize;
+
+  @override
+  void didUpdateWidget(LocationsSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.locations.length != widget.locations.length) {
+      _displayCount = _chunkSize;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +57,7 @@ class LocationsSection extends StatelessWidget {
             ),
           ),
         ),
-        if (isLoading)
+        if (widget.isLoading)
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 20.0),
@@ -50,7 +66,7 @@ class LocationsSection extends StatelessWidget {
               ),
             ),
           )
-        else if (locations.isEmpty)
+        else if (widget.locations.isEmpty)
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 20.0),
@@ -64,7 +80,7 @@ class LocationsSection extends StatelessWidget {
               ),
             ),
           )
-        else
+        else ...[
           Obx(() => SliverPadding(
                 padding: EdgeInsets.only(
                   left: SettingsSvc.settings.skin.value == Skins.iOS ? 20 : 10,
@@ -80,7 +96,7 @@ class LocationsSection extends StatelessWidget {
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     itemBuilder: (context, index) {
-                      if (AttachmentsSvc.getContent(locations[index]) is! PlatformFile) {
+                      if (AttachmentsSvc.getContent(widget.locations[index]) is! PlatformFile) {
                         return const Text("Failed to load location!");
                       }
                       return Material(
@@ -90,7 +106,7 @@ class LocationsSection extends StatelessWidget {
                         child: InkWell(
                           borderRadius: BorderRadius.circular(20),
                           onTap: () async {
-                            final attachment = locations[index];
+                            final attachment = widget.locations[index];
                             if (attachment.mimeType?.contains("location") ?? false) {
                               // Launch the location in maps
                               final location = attachment.transferName;
@@ -104,19 +120,32 @@ class LocationsSection extends StatelessWidget {
                             child: UrlPreview(
                               data: UrlPreviewData(
                                 title:
-                                    "Location from ${DateFormat.yMd().format(locations[index].message.target!.dateCreated!)}",
+                                    "Location from ${DateFormat.yMd().format(widget.locations[index].message.target!.dateCreated!)}",
                                 siteName: "Tap to open",
                               ),
-                              file: AttachmentsSvc.getContent(locations[index]),
+                              file: AttachmentsSvc.getContent(widget.locations[index]),
                             ),
                           ),
                         ),
                       );
                     },
-                    itemCount: locations.length,
+                    itemCount: min(_displayCount, widget.locations.length),
                   ),
                 ),
               )),
+          if (_displayCount < widget.locations.length)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Center(
+                  child: TextButton(
+                    onPressed: () => setState(() => _displayCount += _chunkSize),
+                    child: const Text("Show more"),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ],
     );
   }

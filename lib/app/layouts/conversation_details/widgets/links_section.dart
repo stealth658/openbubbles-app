@@ -25,6 +25,8 @@ class LinksSection extends StatefulWidget {
 }
 
 class _LinksSectionState extends State<LinksSection> with ThemeHelpers {
+  static const int _chunkSize = 20;
+  int _displayCount = _chunkSize;
   List<Message> links = [];
   bool _isLoading = true;
 
@@ -53,8 +55,6 @@ class _LinksSectionState extends State<LinksSection> with ThemeHelpers {
             ..link(Message_.chat, Chat_.id.equals(widget.chat.id!))
             ..order(Message_.dateCreated, flags: Order.descending))
           .build();
-      query.limit = 20;
-
       final fetchedLinks = await query.findAsync();
       query.close();
 
@@ -115,7 +115,7 @@ class _LinksSectionState extends State<LinksSection> with ThemeHelpers {
               ),
             ),
           )
-        else
+        else ...[
           Obx(() => SliverPadding(
                 padding: EdgeInsets.only(
                   left: SettingsSvc.settings.skin.value == Skins.iOS ? 20 : 10,
@@ -156,10 +156,23 @@ class _LinksSectionState extends State<LinksSection> with ThemeHelpers {
                         ),
                       );
                     },
-                    itemCount: links.length,
+                    itemCount: min(_displayCount, links.length),
                   ),
                 ),
               )),
+          if (_displayCount < links.length)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Center(
+                  child: TextButton(
+                    onPressed: () => setState(() => _displayCount += _chunkSize),
+                    child: const Text("Show more"),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ],
     );
   }

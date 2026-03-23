@@ -27,9 +27,15 @@ class MediaGridSection extends StatefulWidget {
 }
 
 class _MediaGridSectionState extends State<MediaGridSection> with ThemeHelpers {
+  static const int _chunkSize = 24;
+  int _displayCount = _chunkSize;
+
   @override
   void didUpdateWidget(MediaGridSection oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.media.length != widget.media.length) {
+      _displayCount = _chunkSize;
+    }
     // Rebuild when isLoading changes
     if (oldWidget.isLoading != widget.isLoading) {
       setState(() {});
@@ -78,7 +84,7 @@ class _MediaGridSectionState extends State<MediaGridSection> with ThemeHelpers {
               ),
             ),
           )
-        else
+        else ...[
           Obx(() => SliverPadding(
                 padding: EdgeInsets.only(
                   left: SettingsSvc.settings.skin.value == Skins.iOS ? 20 : 10,
@@ -149,10 +155,23 @@ class _MediaGridSectionState extends State<MediaGridSection> with ThemeHelpers {
                             ),
                           ));
                     },
-                    childCount: widget.media.length,
+                    childCount: min(_displayCount, widget.media.length),
                   ),
                 ),
               )),
+          if (_displayCount < widget.media.length)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Center(
+                  child: TextButton(
+                    onPressed: () => setState(() => _displayCount += _chunkSize),
+                    child: const Text("Show more"),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ],
     );
   }
