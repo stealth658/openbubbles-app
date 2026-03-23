@@ -109,7 +109,7 @@ class ChatCreatorState extends State<ChatCreator> with ThemeHelpers {
               .toList();
           final _chats = existingChats.where((e) =>
               ((iMessage.value && e.isIMessage) || (sms.value && !e.isIMessage)) &&
-              ((e.title?.toLowerCase().contains(query) ?? false) ||
+              ((e.getTitle().toLowerCase().contains(query)) ||
                   e.handles.firstWhereOrNull((e) =>
                           e.address.contains(query) ||
                           e.displayName.toLowerCase().contains(query)) !=

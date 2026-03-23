@@ -87,53 +87,6 @@ class NotificationsService {
         IntentsSvc.openChat(details.notificationResponse!.payload!);
       }
     }
-
-    // watch for new messages and handle the notification
-    // TODO: See if this is even needed. The ActionHandler.handleNewMessage should
-    // already be taking care of this. We also want to avoid services needing to depend
-    // on each other when they don't have to. It creates a messy web of dependencies.
-    // If anything, this should be moved to the MessagesService.
-    // if (!kIsWeb) {
-    //   final countQuery =
-    //       (Database.messages.query()..order(Message_.id, flags: Order.descending)).watch(triggerImmediately: true);
-    //   countSub = countQuery.listen((event) {
-    //     if (!SettingsSvc.settings.finishedSetup.value) return;
-    //     final newCount = event.count();
-    //     final activeChat = ChatsSvc.activeChat;
-    //     final activeChatFetching = activeChat != null ? MessagesSvc(activeChat.chat.guid).isFetching : false;
-    //     if (LifecycleSvc.isAlive &&
-    //         (!SyncSvc.isIncrementalSyncing.value && !kIsDesktop) &&
-    //         !activeChatFetching &&
-    //         newCount > currentCount &&
-    //         currentCount != 0) {
-    //       final messagesToFetch = newCount - currentCount;
-    //       event.limit = messagesToFetch;
-    //       final messages = event.find();
-    //       event.limit = 0;
-    //       // Pre-load relationships for all messages
-    //       for (Message message in messages) {
-    //         if (message.chat.target == null) continue;
-    //         message.attachments = List<Attachment>.from(message.dbAttachments);
-    //       }
-    //       // Handle notifications for messages with valid chat targets
-    //       for (Message message in messages) {
-    //         final chatTarget = message.chat.target;
-    //         if (chatTarget != null) {
-    //           MessageHelper.handleNotification(message, chatTarget, findExisting: false);
-    //         }
-    //       }
-    //     }
-    //     currentCount = newCount;
-    //   });
-    // } else {
-    //   countSub = WebListeners.newMessage.listen((tuple) {
-    //     final activeChat = ChatsSvc.activeChat;
-    //     final activeChatFetching = activeChat != null ? MessagesSvc(activeChat.chat.guid).isFetching : false;
-    //     if (LifecycleSvc.isAlive && !activeChatFetching && tuple.item2 != null) {
-    //       MessageHelper.handleNotification(tuple.item1, tuple.item2!, findExisting: false);
-    //     }
-    //   });
-    // }
   }
 
   void close() {

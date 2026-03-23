@@ -1,5 +1,5 @@
 import 'package:bluebubbles/app/components/avatars/contact_avatar_group_widget.dart';
-import 'package:bluebubbles/app/layouts/conversation_view/widgets/header/shared/chat_title_controller.dart';
+import 'package:bluebubbles/app/layouts/conversation_view/widgets/header/shared/chat_title_mixin.dart';
 import 'package:bluebubbles/app/state/chat_state.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
@@ -142,14 +142,13 @@ class ChatTitleAndAvatar extends StatefulWidget {
   State<ChatTitleAndAvatar> createState() => _ChatTitleAndAvatarState();
 }
 
-class _ChatTitleAndAvatarState extends State<ChatTitleAndAvatar> {
-  late final RxString title;
+class _ChatTitleAndAvatarState extends State<ChatTitleAndAvatar> with ChatTitleMixin {
+  late final RxnString title;
 
   @override
   void initState() {
     super.initState();
-    initChatTitleController();
-    title = ChatTitleController.to.getTitleObservable(widget.chat);
+    title = getChatTitleObservable(widget.chat);
   }
 
   @override
@@ -182,8 +181,7 @@ class _ChatTitleAndAvatarState extends State<ChatTitleAndAvatar> {
               maxWidth: widget.maxTitleWidth ?? NavigationSvc.width(context) / 2.5,
             ),
             child: Obx(() {
-              String displayTitle = chatState?.title.value ?? title.value;
-
+              String displayTitle = title.value ?? '';
               return RichText(
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -242,7 +240,7 @@ class _ChatTitleAndAvatarState extends State<ChatTitleAndAvatar> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Obx(() {
-                String displayTitle = chatState?.title.value ?? title.value;
+                String displayTitle = title.value ?? '';
 
                 if (widget.controller.inSelectMode.value) {
                   displayTitle = "${widget.controller.selected.length} selected";
@@ -259,7 +257,7 @@ class _ChatTitleAndAvatarState extends State<ChatTitleAndAvatar> {
                 );
               }),
               if (widget.showSubtitle &&
-                  (widget.chat.isGroup || (!title.value.isPhoneNumber && !title.value.isEmail)) &&
+                  (widget.chat.isGroup || (!(title.value?.isPhoneNumber ?? false) && !(title.value?.isEmail ?? false))) &&
                   chatState != null &&
                   (chatState.chatCreatorSubtitle.value?.isNotEmpty ?? false))
                 Text(

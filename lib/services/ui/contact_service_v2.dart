@@ -204,8 +204,6 @@ class ContactServiceV2 {
 
         // Update each chat in the ChatsService to trigger UI updates
         for (final chat in chatsWithHandle) {
-          // Force the chat to recalculate its title
-          chat.title = null;
           ChatsService chats = Get.find<ChatsService>();
           chats.updateChat(chat);
         }

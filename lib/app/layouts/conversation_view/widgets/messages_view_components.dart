@@ -86,7 +86,7 @@ class NotificationsSilencedBanner extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        " ${chat.title ?? "Recipient"} has notifications silenced",
+                        " ${chat.getTitle()} has notifications silenced",
                         style: context.theme.textTheme.bodyMedium!
                             .copyWith(color: context.theme.colorScheme.tertiaryContainer),
                       ),

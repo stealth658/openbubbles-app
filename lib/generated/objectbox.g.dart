@@ -192,12 +192,6 @@ final _entities = <obx_int.ModelEntity>[
         flags: 0,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(15, 4266631519717388837),
-        name: 'title',
-        type: 9,
-        flags: 0,
-      ),
-      obx_int.ModelProperty(
         id: const obx_int.IdUid(16, 1181486482872028222),
         name: 'displayName',
         type: 9,
@@ -1292,9 +1286,6 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final muteArgsOffset = object.muteArgs == null
             ? null
             : fbb.writeString(object.muteArgs!);
-        final titleOffset = object.title == null
-            ? null
-            : fbb.writeString(object.title!);
         final displayNameOffset = object.displayName == null
             ? null
             : fbb.writeString(object.displayName!);
@@ -1325,7 +1316,6 @@ obx_int.ModelDefinition getObjectBoxModel() {
           11,
           object.dbOnlyLatestMessageDate?.millisecondsSinceEpoch,
         );
-        fbb.addOffset(14, titleOffset);
         fbb.addOffset(15, displayNameOffset);
         fbb.addOffset(17, customAvatarPathOffset);
         fbb.addInt64(18, object.pinIndex);
@@ -1446,9 +1436,6 @@ obx_int.ModelDefinition getObjectBoxModel() {
                   : DateTime.fromMillisecondsSinceEpoch(
                       dbOnlyLatestMessageDateValue,
                     )
-              ..title = const fb.StringReader(
-                asciiOptimization: true,
-              ).vTableGetNullable(buffer, rootOffset, 32)
               ..customAvatarPath = const fb.StringReader(
                 asciiOptimization: true,
               ).vTableGetNullable(buffer, rootOffset, 38)
@@ -2516,69 +2503,64 @@ class Chat_ {
     _entities[1].properties[8],
   );
 
-  /// See [Chat.title].
-  static final title = obx.QueryStringProperty<Chat>(
-    _entities[1].properties[9],
-  );
-
   /// See [Chat.displayName].
   static final displayName = obx.QueryStringProperty<Chat>(
-    _entities[1].properties[10],
+    _entities[1].properties[9],
   );
 
   /// See [Chat.customAvatarPath].
   static final customAvatarPath = obx.QueryStringProperty<Chat>(
-    _entities[1].properties[11],
+    _entities[1].properties[10],
   );
 
   /// See [Chat.pinIndex].
   static final pinIndex = obx.QueryIntegerProperty<Chat>(
-    _entities[1].properties[12],
+    _entities[1].properties[11],
   );
 
   /// See [Chat.autoSendReadReceipts].
   static final autoSendReadReceipts = obx.QueryBooleanProperty<Chat>(
-    _entities[1].properties[13],
+    _entities[1].properties[12],
   );
 
   /// See [Chat.autoSendTypingIndicators].
   static final autoSendTypingIndicators = obx.QueryBooleanProperty<Chat>(
-    _entities[1].properties[14],
+    _entities[1].properties[13],
   );
 
   /// See [Chat.textFieldText].
   static final textFieldText = obx.QueryStringProperty<Chat>(
-    _entities[1].properties[15],
+    _entities[1].properties[14],
   );
 
   /// See [Chat.textFieldAttachments].
   static final textFieldAttachments = obx.QueryStringVectorProperty<Chat>(
-    _entities[1].properties[16],
+    _entities[1].properties[15],
   );
 
   /// See [Chat.dateDeleted].
   static final dateDeleted = obx.QueryDateProperty<Chat>(
-    _entities[1].properties[17],
+    _entities[1].properties[16],
   );
 
   /// See [Chat.style].
   static final style = obx.QueryIntegerProperty<Chat>(
-    _entities[1].properties[18],
+    _entities[1].properties[17],
   );
 
   /// See [Chat.lockChatName].
   static final lockChatName = obx.QueryBooleanProperty<Chat>(
-    _entities[1].properties[19],
+    _entities[1].properties[18],
   );
 
   /// See [Chat.lockChatIcon].
   static final lockChatIcon = obx.QueryBooleanProperty<Chat>(
-    _entities[1].properties[20],
+    _entities[1].properties[19],
   );
 
   /// See [Chat.lastReadMessageGuid].
   static final lastReadMessageGuid = obx.QueryStringProperty<Chat>(
-    _entities[1].properties[21],
+    _entities[1].properties[20],
   );
 
   /// see [Chat.handles]

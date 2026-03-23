@@ -33,7 +33,6 @@ class Chat {
   String? muteArgs;
   bool? isPinned;
   bool? hasUnreadMessage;
-  String? title;
 
   String? displayName;
   bool? autoSendReadReceipts;
@@ -211,14 +210,8 @@ class Chat {
   }
 
   /// Get a chat's title
-  String getTitle() {
-    if (isNullOrEmpty(displayName)) {
-      title = getChatCreatorSubtitle();
-    } else {
-      title = displayName;
-    }
-    return title!;
-  }
+  String getTitle() =>
+      isNullOrEmpty(displayName) ? getChatCreatorSubtitle() : displayName!;
 
   /// Get a chat's title
   String getChatCreatorSubtitle() {
@@ -718,12 +711,6 @@ class Chat {
     //   }
     // });
 
-    // Generate titles on the main thread (lightweight operation)
-    for (Chat c in chats) {
-      final generatedTitle = c.getTitle();
-      c.title = generatedTitle;
-    }
-
     return chats;
   }
 
@@ -806,7 +793,6 @@ class Chat {
     isPinned ??= other.isPinned;
     _latestMessage ??= other.latestMessage;
     muteArgs ??= other.muteArgs;
-    title ??= other.title;
     dateDeleted ??= other.dateDeleted;
     style ??= other.style;
     return this;

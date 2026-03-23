@@ -45,7 +45,7 @@ class ChatState {
         isArchived = (chat.isArchived ?? false).obs,
         displayName = RxnString(chat.displayName),
         customAvatarPath = RxnString(chat.customAvatarPath),
-        title = RxnString(chat.title),
+        title = RxnString(chat.getTitle()),
         chatCreatorSubtitle = RxnString(chat.isGroup
             ? chat.getChatCreatorSubtitle()
             : (chat.handles.isNotEmpty ? (chat.handles.first.formattedAddress ?? chat.handles.first.address) : null)),
@@ -130,6 +130,7 @@ class ChatState {
   void updateDisplayNameInternal(String? value) {
     if (displayName.value != value) {
       displayName.value = value;
+      updateTitleInternal(_computeTitle());
     }
   }
 
@@ -145,9 +146,13 @@ class ChatState {
     }
   }
 
+  String? _computeTitle() =>
+      isNullOrEmpty(displayName.value) ? chatCreatorSubtitle.value : displayName.value;
+
   void updateChatCreatorSubtitleInternal(String? value) {
     if (chatCreatorSubtitle.value != value) {
       chatCreatorSubtitle.value = value;
+      updateTitleInternal(_computeTitle());
     }
   }
 
@@ -185,7 +190,11 @@ class ChatState {
     updateArchivedInternal(updatedChat.isArchived ?? false);
     updateDisplayNameInternal(updatedChat.displayName);
     updateCustomAvatarPathInternal(updatedChat.customAvatarPath);
-    updateTitleInternal(updatedChat.title);
+    updateChatCreatorSubtitleInternal(updatedChat.isGroup
+        ? updatedChat.getChatCreatorSubtitle()
+        : (updatedChat.handles.isNotEmpty
+            ? (updatedChat.handles.first.formattedAddress ?? updatedChat.handles.first.address)
+            : null));
     updateLatestMessageInternal(updatedChat.latestMessage);
     updateTextFieldTextInternal(updatedChat.textFieldText);
     updateTextFieldAttachmentsInternal(updatedChat.textFieldAttachments);
@@ -216,7 +225,6 @@ class ChatState {
     chat.isArchived = updatedChat.isArchived;
     chat.displayName = updatedChat.displayName;
     chat.customAvatarPath = updatedChat.customAvatarPath;
-    chat.title = updatedChat.title;
     chat.latestMessage = updatedChat.latestMessage;
     chat.textFieldText = updatedChat.textFieldText;
     chat.textFieldAttachments = updatedChat.textFieldAttachments;
@@ -264,14 +272,12 @@ class ChatState {
 
     // Apply fake name as title and displayName, clear subtitle
     final fakeName = chat.isGroup ? chat.fakeName : (chat.handles.isNotEmpty ? chat.handles[0].fakeName : 'Unknown');
-    updateTitleInternal(fakeName);
     updateDisplayNameInternal(fakeName);
     updateChatCreatorSubtitleInternal('');
   }
 
   /// Restore contact information to original values
   void unredactContactInfo() {
-    updateTitleInternal(chat.title);
     updateDisplayNameInternal(chat.displayName);
     // TODO: cache this value if needed to avoid over-processing
     final computedSubtitle = chat.isGroup

@@ -581,10 +581,10 @@ class ChatsService {
       StartupTasks.waitForUI().then((_) async {
         // Create a snapshot to avoid concurrent modification during iteration
         final chatList = getSortedChats();
-        final chatSnapshot = chatList.where((e) => !isNullOrEmpty(e.title)).take(4).toList();
+        final chatSnapshot = chatList.where((e) => !isNullOrEmpty(e.displayName ?? e.chatIdentifier)).take(4).toList();
         for (Chat c in chatSnapshot) {
           await MethodChannelSvc.invokeMethod("push-share-targets", {
-            "title": c.title,
+            "title": c.getTitle(),
             "guid": c.guid,
             "icon": await avatarAsBytes(chat: c, quality: 256),
           });
@@ -1088,20 +1088,6 @@ class ChatsService {
 
     // Update state if available
     state?.updateCustomAvatarPathInternal(value);
-  }
-
-  /// Set chat title
-  Future<void> setChatTitle(Chat chat, String? value) async {
-    final state = getChatState(chat.guid);
-
-    if (state != null && state.title.value == value) return;
-
-    // Update Chat model (use state.chat if available, otherwise use passed in chat)
-    final chatToUpdate = state?.chat ?? chat;
-    chatToUpdate.title = value;
-
-    // Update state if available
-    state?.updateTitleInternal(value);
   }
 
   /// Set chat latest message

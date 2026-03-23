@@ -452,7 +452,7 @@ class _ChatOptionsState extends State<ChatOptions> with ThemeHelpers {
                         filePath = (await getDownloadsDirectory())!.path;
                       }
                       filePath = p.join(filePath,
-                          "${(chat.title ?? "Unknown Chat").replaceAll(RegExp(r'[<>:"/\\|?*]'), "")}-transcript-${now.year}${now.month}${now.day}_${now.hour}${now.minute}${now.second}.txt");
+                          "${chat.getTitle().replaceAll(RegExp(r'[<>:"/\\|?*]'), "")}-transcript-${now.year}${now.month}${now.day}_${now.hour}${now.minute}${now.second}.txt");
                       File file = File(filePath);
                       await file.create(recursive: true);
                       await file.writeAsString(lines.join('\n'));
@@ -526,7 +526,7 @@ class _ChatOptionsState extends State<ChatOptions> with ThemeHelpers {
                           maxPages: 1000,
                           header: (pw.Context context) => pw.Padding(
                               padding: const pw.EdgeInsets.only(bottom: 10),
-                              child: pw.Text(chat.title ?? "Unknown Chat",
+                              child: pw.Text(chat.getTitle(),
                                   textScaleFactor: 2,
                                   style: pw.Theme.of(context)
                                       .defaultTextStyle
@@ -565,7 +565,7 @@ class _ChatOptionsState extends State<ChatOptions> with ThemeHelpers {
                         filePath = (await getDownloadsDirectory())!.path;
                       }
                       filePath = p.join(filePath,
-                          "${(chat.title ?? "Unknown Chat").replaceAll(RegExp(r'[<>:"/\\|?*]'), "")}-transcript-${now.year}${now.month}${now.day}_${now.hour}${now.minute}${now.second}.pdf");
+                          "${chat.getTitle().replaceAll(RegExp(r'[<>:"/\\|?*]'), "")}-transcript-${now.year}${now.month}${now.day}_${now.hour}${now.minute}${now.second}.pdf");
                       File file = File(filePath);
                       await file.create(recursive: true);
                       await file.writeAsBytes(await doc.save());
