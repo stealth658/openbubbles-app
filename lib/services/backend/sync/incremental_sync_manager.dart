@@ -39,6 +39,11 @@ class IncrementalSyncManager extends SyncManager {
   // A cache of all the chats we've synced
   Map<String, Chat> syncedChats = {};
 
+  // Tracks the DB ID of the latest (highest dateCreated) message synced per chat.
+  // Used by SyncActions to return message IDs instead of chat IDs so the interface
+  // can hydrate Message objects and update ChatState subtitles.
+  Map<String, int> latestMessageIdPerChat = {};
+
   // A flag telling the "complete" function to save the timestamp/row ID markers.
   bool saveMarker;
 
@@ -316,6 +321,16 @@ class IncrementalSyncManager extends SyncManager {
       List<Message> s = await Chat.bulkSyncMessages(theChat, item.value);
       messagesSynced += s.length;
       setProgress(messagesSynced, total);
+
+      // Track the latest message per chat (highest dateCreated with a valid DB id)
+      // so the action layer can return message IDs instead of chat IDs.
+      final latest = s
+          .where((m) => m.id != null && m.dateCreated != null)
+          .fold<Message?>(null, (prev, m) =>
+              prev == null || m.dateCreated!.isAfter(prev.dateCreated!) ? m : prev);
+      if (latest != null) {
+        latestMessageIdPerChat[item.key] = latest.id!;
+      }
     }
   }
 

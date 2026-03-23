@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/helpers/ui/ui_helpers.dart';
 import 'package:bluebubbles/services/backend/interfaces/contact_v2_interface.dart';
 import 'package:bluebubbles/services/backend/interfaces/sync_interface.dart';
@@ -48,13 +49,34 @@ class SyncService {
     try {
       Logger.info('Starting incremental chat sync...', tag: 'Incremental Chat Sync');
       final chatStopwatch = Stopwatch()..start();
-      final syncedChats = await SyncInterface.performIncrementalSync();
-      if (syncedChats.isNotEmpty) {
-        ChatsSvc.updateChats(syncedChats, override: true);
+      final syncedMessages = await SyncInterface.performIncrementalSync();
+      if (syncedMessages.isNotEmpty) {
+        // latestMessageIdPerChat is keyed by chat GUID, so syncedMessages already contains
+        // at most one message per chat. Deduplicate defensively by keeping the latest
+        // message per chat GUID in case the data ever changes.
+        final Map<String, Message> latestPerChat = {};
+        for (final message in syncedMessages) {
+          final chatGuid = message.chat.target?.guid;
+          if (chatGuid == null) continue;
+          final existing = latestPerChat[chatGuid];
+          if (existing == null ||
+              (message.dateCreated != null &&
+                  (existing.dateCreated == null ||
+                      message.dateCreated!.isAfter(existing.dateCreated!)))) {
+            latestPerChat[chatGuid] = message;
+          }
+        }
+        // IncrementalSyncManager.complete() already called ChatsSvc.updateChat() for every
+        // synced chat. Here we only need to push the subtitle update into ChatState.
+        for (final entry in latestPerChat.entries) {
+          ChatsSvc.updateChatLatestMessage(entry.key, entry.value);
+        }
       }
       chatStopwatch.stop();
       Logger.info(
-          'Incremental chat sync completed! Synced ${syncedChats.length} chats in ${chatStopwatch.elapsedMilliseconds}ms',
+          'Incremental chat sync completed! Synced ${syncedMessages.length} messages across '
+          '${syncedMessages.map((m) => m.chat.target?.guid).toSet().length} chats '
+          'in ${chatStopwatch.elapsedMilliseconds}ms',
           tag: 'Incremental Chat Sync');
     } catch (e, stack) {
       Logger.error('Incremental chat sync failed!', error: e, trace: stack, tag: 'Incremental Chat Sync');

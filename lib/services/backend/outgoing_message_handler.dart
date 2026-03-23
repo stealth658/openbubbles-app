@@ -445,6 +445,7 @@ class OutgoingMessageHandler {
   /// immediately before the HTTP call so the user sees instant feedback.
   Future<void> sendMessage(Chat c, Message m, Message? selected, String? r) {
     ChatsSvc.updateChat(c);
+    ChatsSvc.updateChatLatestMessage(c.guid, m);
     final tempGuid = m.guid!;
     Logger.debug(
       '[sendMessage] START tempGuid=$tempGuid chat=${c.guid} '
@@ -525,6 +526,8 @@ class OutgoingMessageHandler {
 
   /// Sends a multipart (mention / mixed-content) message.
   Future<void> sendMultipart(Chat c, Message m, Message? selected, String? r) {
+    ChatsSvc.updateChat(c);
+    ChatsSvc.updateChatLatestMessage(c.guid, m);
     final tempGuid = m.guid!;
     Logger.debug('[sendMultipart] START tempGuid=$tempGuid chat=${c.guid}', tag: _tag);
     final parts = m.attributedBody.first.runs
@@ -567,6 +570,10 @@ class OutgoingMessageHandler {
     // Save both GUIDs before any mutation — attachment.guid == m.guid by design
     // (set in send_animation.dart: attachment.guid = message.guid).
     final tempGuid = m.guid!;
+    // The temp message was already saved to DB in prepAttachment; update ChatState
+    // subtitle immediately so the tile reflects the outgoing attachment.
+    ChatsSvc.updateChat(c);
+    ChatsSvc.updateChatLatestMessage(c.guid, m);
     Logger.debug(
       '[sendAttachment] START tempGuid=$tempGuid chat=${c.guid} '
       'attachmentGuid=${attachment.guid} mimeType=${attachment.mimeType} '

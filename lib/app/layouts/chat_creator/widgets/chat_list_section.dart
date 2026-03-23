@@ -68,7 +68,7 @@ class ChatListSection extends StatelessWidget {
                   child: ChatCreatorTile(
                     key: ValueKey(chat.guid),
                     title: title,
-                    subtitle: chatState?.subtitle.value ?? chat.getChatCreatorSubtitle(),
+                    subtitle: chatState?.chatCreatorSubtitle.value ?? chat.getChatCreatorSubtitle(),
                     chat: chat,
                   ),
                 ),

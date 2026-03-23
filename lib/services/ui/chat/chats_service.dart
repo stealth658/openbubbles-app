@@ -1122,6 +1122,19 @@ class ChatsService {
     state?.updateLatestMessageInternal(value);
   }
 
+  /// Update chat latest message and subtitle in response to a new or updated message.
+  /// Called by IncomingMessageHandler and SyncService to keep ChatState as the single
+  /// source of truth for the conversation tile subtitle.
+  void updateChatLatestMessage(String chatGuid, Message message) {
+    final state = getChatState(chatGuid);
+    if (state == null) return;
+
+    state.updateLatestMessageInternal(message);
+    state.updateSubtitleInternal(MessageHelper.getNotificationText(message));
+    state.chat.latestMessage = message;
+    _repositionChat(state.chat, immediate: true);
+  }
+
   /// Set chat text field text
   Future<void> setChatTextFieldText(Chat chat, String? value) async {
     final state = getChatState(chat.guid);

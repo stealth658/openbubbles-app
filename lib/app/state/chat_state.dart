@@ -1,4 +1,5 @@
 import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
@@ -20,6 +21,7 @@ class ChatState {
   final RxnString displayName;
   final RxnString customAvatarPath;
   final RxnString title;
+  final RxnString chatCreatorSubtitle;
   final RxnString subtitle;
   final Rxn<Message> latestMessage;
   final RxnString textFieldText;
@@ -44,9 +46,10 @@ class ChatState {
         displayName = RxnString(chat.displayName),
         customAvatarPath = RxnString(chat.customAvatarPath),
         title = RxnString(chat.title),
-        subtitle = RxnString(chat.isGroup
+        chatCreatorSubtitle = RxnString(chat.isGroup
             ? chat.getChatCreatorSubtitle()
             : (chat.handles.isNotEmpty ? (chat.handles.first.formattedAddress ?? chat.handles.first.address) : null)),
+        subtitle = RxnString(MessageHelper.getNotificationText(chat.latestMessage)),
         latestMessage = Rxn<Message>(chat.latestMessage),
         textFieldText = RxnString(chat.textFieldText),
         textFieldAttachments = chat.textFieldAttachments.obs,
@@ -139,6 +142,12 @@ class ChatState {
   void updateTitleInternal(String? value) {
     if (title.value != value) {
       title.value = value;
+    }
+  }
+
+  void updateChatCreatorSubtitleInternal(String? value) {
+    if (chatCreatorSubtitle.value != value) {
+      chatCreatorSubtitle.value = value;
     }
   }
 
@@ -257,7 +266,7 @@ class ChatState {
     final fakeName = chat.isGroup ? chat.fakeName : (chat.handles.isNotEmpty ? chat.handles[0].fakeName : 'Unknown');
     updateTitleInternal(fakeName);
     updateDisplayNameInternal(fakeName);
-    updateSubtitleInternal('');
+    updateChatCreatorSubtitleInternal('');
   }
 
   /// Restore contact information to original values
@@ -268,7 +277,7 @@ class ChatState {
     final computedSubtitle = chat.isGroup
         ? chat.getChatCreatorSubtitle()
         : (chat.handles.isNotEmpty ? (chat.handles.first.formattedAddress ?? chat.handles.first.address) : null);
-    updateSubtitleInternal(computedSubtitle);
+    updateChatCreatorSubtitleInternal(computedSubtitle);
   }
 
   /// Redact/hide avatars by clearing custom avatar path

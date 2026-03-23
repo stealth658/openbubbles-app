@@ -12,7 +12,7 @@ class SyncActions {
           IncrementalSyncManager(startTimestamp: syncStart, startRowId: startRowId, saveMarker: true);
 
       await incrementalSyncManager.start();
-      return incrementalSyncManager.syncedChats.values.map((e) => e.id!).toList();
+      return incrementalSyncManager.latestMessageIdPerChat.values.toList();
     } catch (ex, s) {
       Logger.error('Incremental sync failed!', error: ex, trace: s);
     }

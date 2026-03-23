@@ -371,9 +371,10 @@ class IncomingMessageHandler {
     if (!isIsolate) {
       _dispatchNewMessage(c, saved, tempGuid: tempGuid);
 
-      // 10. Refresh chat-list ordering.
+      // 10. Refresh chat-list ordering and subtitle.
       c.dbLatestMessage;
       ChatsSvc.updateChat(c, override: true);
+      ChatsSvc.updateChatLatestMessage(c.guid, saved);
     }
 
     // 11. Flush any out-of-order updated-message that arrived before us.
@@ -441,8 +442,12 @@ class IncomingMessageHandler {
     if (!isIsolate) {
       _dispatchUpdatedMessage(c, m, oldGuid: tempGuid);
 
-      // 8. Refresh chat-list ordering.
+      // 8. Refresh chat-list ordering and subtitle (only if this message is the latest).
       ChatsSvc.updateChat(c, override: true);
+      final chatState = ChatsSvc.getChatState(c.guid);
+      if (chatState != null && chatState.latestMessage.value?.guid == m.guid) {
+        ChatsSvc.updateChatLatestMessage(c.guid, m);
+      }
     }
   }
 

@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/typing/typing_indicator.dart';
 import 'package:bluebubbles/app/state/chat_state.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
@@ -11,10 +9,8 @@ import 'package:bluebubbles/app/layouts/conversation_view/pages/conversation_vie
 import 'package:bluebubbles/app/components/avatars/contact_avatar_group_widget.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
-import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
-import 'package:faker/faker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -222,14 +218,6 @@ class ChatSubtitle extends CustomStateful<ConversationTileController> {
 }
 
 class _ChatSubtitleState extends CustomState<ChatSubtitle, void, ConversationTileController> {
-  final subtitle = "Unknown".obs;
-  final fakeText = faker.lorem.words(1).join(" ").obs;
-  StreamSubscription? sub;
-  String? cachedLatestMessageGuid = "";
-  DateTime? cachedDateCreated;
-  DateTime? cachedDateEdited;
-  bool isDelivered = false;
-  bool isFromMe = false;
 
   @override
   void initState() {
@@ -238,101 +226,26 @@ class _ChatSubtitleState extends CustomState<ChatSubtitle, void, ConversationTil
     // keep controller in memory since the widget is part of a list
     // (it will be disposed when scrolled out of view)
     forceDelete = false;
-    subtitle.value = MessageHelper.getNotificationText(controller.chat.latestMessage);
-    cachedLatestMessageGuid = controller.chat.latestMessage.guid!;
-    cachedDateEdited = controller.chat.latestMessage.dateEdited;
-    isFromMe = controller.chat.latestMessage.isFromMe!;
-    isDelivered = controller.chat.isGroup ||
-        !isFromMe ||
-        controller.chat.latestMessage.dateDelivered != null ||
-        controller.chat.latestMessage.dateRead != null;
-    fakeText.value = faker.lorem.words(subtitle.value.split(" ").length).join(" ");
-    // run query after render has completed
-    if (!kIsWeb) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        final latestMessageQuery = (Database.messages.query(Message_.dateDeleted.isNull())
-              ..link(Message_.chat, Chat_.guid.equals(controller.chat.guid))
-              ..order(Message_.dateCreated, flags: Order.descending))
-            .watch();
-
-        sub = latestMessageQuery.listen((Query<Message> query) async {
-          final message = await runAsync(() {
-            return query.findFirst();
-          });
-          isFromMe = message?.isFromMe ?? false;
-          isDelivered =
-              controller.chat.isGroup || !isFromMe || message?.dateDelivered != null || message?.dateRead != null;
-          // check if we really need to update this widget
-          if (message != null && (message.guid != cachedLatestMessageGuid || message.dateEdited != cachedDateEdited)) {
-            String newSubtitle = MessageHelper.getNotificationText(message);
-            if (newSubtitle != subtitle.value) {
-              subtitle.value = newSubtitle;
-              fakeText.value = faker.lorem.words(subtitle.value.split(" ").length).join(" ");
-            }
-          } else if (!controller.chat.isGroup &&
-              message != null &&
-              message.isFromMe! &&
-              (message.dateDelivered != null || message.dateRead != null)) {
-            // update delivered status - no change needed, Obx will handle rebuild
-          }
-          cachedLatestMessageGuid = message?.guid;
-          cachedDateEdited = message?.dateEdited;
-        });
-      });
-    } else {
-      // listen for contacts update (if tile is active, we can update it)
-      EventDispatcherSvc.stream.listen((event) {
-        if (event.item1 != 'update-contacts') return;
-        if (event.item2.isNotEmpty) {
-          String newSubtitle = MessageHelper.getNotificationText(controller.chat.latestMessage);
-          if (newSubtitle != subtitle.value) {
-            subtitle.value = newSubtitle;
-            fakeText.value = faker.lorem.words(subtitle.value.split(" ").length).join(" ");
-          }
-        }
-      });
-      sub = WebListeners.newMessage.listen((tuple) {
-        final message = tuple.item1;
-        if (tuple.item2?.guid == controller.chat.guid &&
-            (cachedDateCreated == null || message.dateCreated!.isAfter(cachedDateCreated!))) {
-          isFromMe = message.isFromMe ?? false;
-          isDelivered =
-              controller.chat.isGroup || !isFromMe || message.dateDelivered != null || message.dateRead != null;
-          if (message.guid != cachedLatestMessageGuid || message.dateEdited != cachedDateEdited) {
-            String newSubtitle = MessageHelper.getNotificationText(message);
-            if (newSubtitle != subtitle.value) {
-              subtitle.value = newSubtitle;
-              fakeText.value = faker.lorem.words(subtitle.value.split(" ").length).join(" ");
-            }
-          } else if (!controller.chat.isGroup &&
-              message.isFromMe! &&
-              (message.dateDelivered != null || message.dateRead != null)) {
-            // update delivered status - no change needed, Obx will handle rebuild
-          }
-          cachedDateCreated = message.dateCreated;
-          cachedLatestMessageGuid = message.guid;
-          cachedDateEdited = message.dateEdited;
-        }
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    sub?.cancel();
-    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Obx(() {
+      final chatState = ChatsSvc.getChatState(controller.chat.guid);
+      final latestMessage = chatState?.latestMessage.value;
+      final isFromMe = latestMessage?.isFromMe ?? false;
+      final isDelivered = controller.chat.isGroup ||
+          !isFromMe ||
+          latestMessage?.dateDelivered != null ||
+          latestMessage?.dateRead != null;
+
       final hideContacts = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
-      // subtitle.value is kept up-to-date by the ObjectBox query watcher (including text edits via dateEdited).
-      // Do NOT reconstruct Message from MessageState here: MessageState only holds text/subject, so
-      // attachment-only messages would get a skeletal Message with hasAttachments=false and return "Empty message".
-      String _subtitle = hideContacts && !kIsWeb
-          ? MessageHelper.getNotificationText(Message.findOne(guid: cachedLatestMessageGuid!)!)
-          : subtitle.value;
+      // In redacted mode with hidden contacts, re-compute from the cached message object to
+      // avoid leaking contact-name formatting that may have been embedded at subtitle-update time.
+      // TODO: move this redacted-mode path to ChatState as part of the redacted-mode refactor.
+      final String _subtitle = hideContacts && !kIsWeb && latestMessage != null
+          ? MessageHelper.getNotificationText(latestMessage)
+          : (chatState?.subtitle.value ?? '');
 
       return RichText(
         text: TextSpan(

@@ -261,7 +261,7 @@ class _ChatTitleAndAvatarState extends State<ChatTitleAndAvatar> {
               if (widget.showSubtitle &&
                   (widget.chat.isGroup || (!title.value.isPhoneNumber && !title.value.isEmail)) &&
                   chatState != null &&
-                  (chatState.subtitle.value?.isNotEmpty ?? false))
+                  (chatState.chatCreatorSubtitle.value?.isNotEmpty ?? false))
                 Text(
                   widget.chat.isGroup ? "${widget.chat.handles.length} recipients" : widget.chat.handles[0].address,
                   style: context.theme.textTheme.labelLarge!.apply(

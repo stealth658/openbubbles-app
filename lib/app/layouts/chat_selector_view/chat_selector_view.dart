@@ -159,7 +159,7 @@ class ChatSelectorViewState extends State<ChatSelectorView> with ThemeHelpers {
                                     child: ChatCreatorTile(
                                       key: ValueKey(chat.guid),
                                       title: _title,
-                                      subtitle: chatState?.subtitle.value ?? chat.getChatCreatorSubtitle(),
+                                      subtitle: chatState?.chatCreatorSubtitle.value ?? chat.getChatCreatorSubtitle(),
                                       chat: chat,
                                       showTrailing: false,
                                     ),
