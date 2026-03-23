@@ -768,7 +768,16 @@ class MessagesService extends GetxController {
     toUpdate ??= struct.getMessage(updated.guid!);
     if (toUpdate == null) return;
 
+    // Preserve error fields before merging — Message.merge unconditionally
+    // copies newMessage.error onto existing.error when they differ, but here
+    // toUpdate is the stale struct copy (error = 0) and updated is the
+    // authoritative new state (error may be set by handleSendError).
+    // Without this, the error is silently reset to 0 before updateFromMessage runs.
+    final incomingError = updated.error;
+    final incomingErrorMessage = updated.errorMessage;
     updated = updated.mergeWith(toUpdate);
+    updated.error = incomingError;
+    updated.errorMessage = incomingErrorMessage;
     struct.removeMessage(oldGuid ?? updated.guid!);
     struct.removeAttachments(toUpdate.attachments.map((e) => e!.guid!));
     struct.addMessages([updated]);

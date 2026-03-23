@@ -180,8 +180,8 @@ class OutgoingMessageHandler {
               _queue.removeWhere((e) => e.item == pending);
               final m = pending.message;
               final tempGuid = m.guid;
-              m.guid = m.guid!.replaceAll('temp', 'error-Canceled due to previous failure');
               m.error = MessageError.BAD_REQUEST.code;
+              m.errorMessage = 'Canceled due to previous failure';
               await Message.replaceMessage(tempGuid, m);
               if (Get.isRegistered<MessagesService>(tag: pending.chat.guid)) {
                 MessagesSvc(pending.chat.guid).updateMessage(m, oldGuid: tempGuid);
