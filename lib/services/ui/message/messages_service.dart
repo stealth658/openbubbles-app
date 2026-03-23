@@ -623,7 +623,13 @@ class MessagesService extends GetxController {
             final messages = event.find();
             event.limit = 0;
             for (Message message in messages) {
-              await _handleNewMessage(message);
+              // Use addNewMessage (which has the struct-presence guard) rather
+              // than _handleNewMessage directly.  This ensures that outgoing
+              // messages explicitly pushed via addNewMessage (e.g. attachment
+              // sends whose DB write happens in the GlobalIsolate) are not
+              // processed a second time if the cross-isolate change notification
+              // happens to fire.
+              await addNewMessage(message);
             }
           }
           currentCount = newCount;

@@ -140,7 +140,10 @@ class AttachmentState {
         resolvedFile = Rxn<PlatformFile>(),
         activeDownload = Rxn<AttachmentDownloadController>(),
         uploadPreviewFile = Rxn<PlatformFile>(),
-        isSending = ((attachment.guid?.startsWith('temp') ?? false) && !attachment.isDownloaded).obs,
+        // Previously had a condition for !isDownloaded. However, isDownloaded is set to true
+        // immediately for outgoing attachments to reflect that the file is available locally,
+        // even though the upload is still in progress.
+        isSending = (attachment.guid?.startsWith('temp') ?? false).obs,
         hasError = false.obs;
 
   // ── Internal state update methods ──────────────────────────────────────────
@@ -156,7 +159,6 @@ class AttachmentState {
       // Refresh derived isSending: still uploading but no longer a temp GUID
       isSending.value =
           (value?.startsWith('temp') ?? false) && transferState.value == AttachmentTransferState.uploading;
-      hasError.value = (value?.startsWith('error') ?? false);
     }
   }
 

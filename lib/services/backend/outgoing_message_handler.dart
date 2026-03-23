@@ -444,18 +444,22 @@ class OutgoingMessageHandler {
       'prepAttachment: calling addMessage with attachment.guid=${attachment.guid}',
       tag: _tag,
     );
-    await c.addMessage(m);
-    final savedAttachment = await Attachment.findOneAsync(attachment.guid!);
-    Logger.debug(
-      'prepAttachment: attachment ${attachment.guid} in DB = ${savedAttachment != null}',
-      tag: _tag,
-    );
 
-    // Register upload-in-progress state so the UI can react immediately.
-    // Must come after addMessage so the message is in the DB.
+    // ChatInterface.addMessageToChat returns a DB-hydrated Message loaded from
+    // the main isolate's Store (Database.messages.get(id)) after the
+    // GlobalIsolate transaction commits.  This object has its id set and its
+    // dbAttachments ToMany linked to the main Store, so _handleNewMessage can
+    // reload attachments from DB without racing against cross-isolate write timing.
+    final savedMessage = (await c.addMessage(m)).item1;
+
+    // The DB write goes through the GlobalIsolate, so the main-isolate OB watch
+    // subscription won't fire for it.  Explicitly push the message into the view
+    // using the Store-hydrated object so _handleNewMessage can load dbAttachments.
     if (Get.isRegistered<MessagesService>(tag: c.guid)) {
-      MessagesSvc(c.guid).notifyAttachmentUploadStarted(m, attachment);
-      Logger.debug('prepAttachment: AttachmentState set to uploading for ${attachment.guid}', tag: _tag);
+      await MessagesSvc(c.guid).addNewMessage(savedMessage);
+      // Register upload-in-progress state.  Must come after addNewMessage so the
+      // MessageState already exists.
+      MessagesSvc(c.guid).notifyAttachmentUploadStarted(savedMessage, attachment);
     }
   }
 
