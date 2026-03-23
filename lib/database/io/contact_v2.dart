@@ -75,8 +75,9 @@ class ContactV2 {
   /// Display name of the contact
   String displayName;
 
-  /// Native contact ID from the device's contact database
-  /// Essential for tracking updates/changes
+  /// Contact ID. May be "native", or not, depending on if it
+  /// originated from the device's native contact store or was created on the server.
+  /// The name is a bit misleading, but I don't want to rename it at this point.
   @Index()
   @Unique()
   String nativeContactId;

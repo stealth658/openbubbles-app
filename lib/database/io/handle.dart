@@ -40,11 +40,6 @@ class Handle {
   @Backlink('handles')
   final contactsV2 = ToMany<ContactV2>();
 
-  // Cache the contact display name so it can be accessed outside of transactions
-  // This is populated when the handle is fetched within a transaction
-  @Transient()
-  String? cachedContactName;
-
   @Transient()
   Widget? _fakeAvatar;
 
@@ -65,18 +60,38 @@ class Handle {
       }
     }
     if (address.startsWith("urn:biz")) return "Business";
-
-    // Check cached contact name first (populated within transaction)
-    if (cachedContactName != null) {
-      return cachedContactName!;
-    }
-
-    // Try to access ContactV2 directly (only works if in a transaction)
     if (!kIsWeb && contactsV2.isNotEmpty) {
-      return contactsV2.first.computedDisplayName;
+      // Prioritize native contacts, but fall back to any contact if no native ones exist (should be rare)
+      final firstNativeContact = contactsV2.where((c) => c.isNative).firstOrNull;
+      return firstNativeContact?.nickname ?? firstNativeContact?.displayName ?? contactsV2.first.computedDisplayName;
     }
 
     return address.contains("@") ? address : (formattedAddress ?? address);
+  }
+
+  String get reactionDisplayName {
+    if (SettingsSvc.settings.redactedMode.value) {
+      if (SettingsSvc.settings.generateFakeContactNames.value) {
+        return fakeName;
+      } else if (SettingsSvc.settings.hideContactInfo.value) {
+        return "";
+      }
+    }
+    if (address.startsWith("urn:biz")) return "Business";
+
+    // Try to access ContactV2 directly (only works if in a transaction)
+    if (!kIsWeb && contactsV2.isNotEmpty) {
+      // Prioritize native contacts, but fall back to any contact if no native ones exist (should be rare)
+      final firstNativeContact = contactsV2.where((c) => c.isNative).firstOrNull;
+      return firstNativeContact?.nickname ?? firstNativeContact?.firstName ?? firstNativeContact?.computedDisplayName ?? contactsV2.first.computedDisplayName;
+    }
+
+    // For reactions, we want to show the formatted address for phone numbers, but the regular address for emails
+    if (address.contains("@")) {
+      return address;
+    } else {
+      return formattedAddress ?? address;
+    }
   }
 
   String? get initials {

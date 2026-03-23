@@ -195,3 +195,11 @@ extension ShortenString on String {
     return "${substring(0, length)}...";
   }
 }
+
+extension FirstWord on String {
+  /// Returns the first whitespace-delimited word, or the full string if there is none.
+  String get firstWord {
+    final spaceIdx = indexOf(' ');
+    return spaceIdx == -1 ? this : substring(0, spaceIdx);
+  }
+}

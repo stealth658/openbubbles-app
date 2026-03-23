@@ -222,30 +222,37 @@ class Chat {
 
   /// Get a chat's title
   String getChatCreatorSubtitle() {
-    // generate names for group chats or DMs
-    List<String> titles = handles
-        .map((e) => e.displayName.trim().split(isGroup && e.contactsV2.isNotEmpty ? " " : String.fromCharCode(65532)).first)
-        .toList();
-    if (titles.isEmpty) {
+    final count = handles.length;
+    if (count == 0) {
       if (chatIdentifier!.startsWith("urn:biz")) {
         return "Business Chat";
       }
       return chatIdentifier!;
-    } else if (titles.length == 1) {
-      return titles[0];
-    } else if (titles.length <= 4) {
-      final _title = titles.join(", ");
-      int pos = _title.lastIndexOf(", ");
-      if (pos != -1) {
-        return "${_title.substring(0, pos)} & ${_title.substring(pos + 2)}";
-      } else {
-        return _title;
+    } else if (count == 1) {
+      return handles.first.displayName;
+    }
+
+    // For group chats, extract first names only from reactionDisplayName.
+    // reactionDisplayName may be a full name (e.g. "John Doe"), a nickname, or
+    // just a first name — take only the first word.
+    if (count <= 4) {
+      final buffer = StringBuffer();
+      for (int i = 0; i < count; i++) {
+        if (i > 0) buffer.write(i == count - 1 ? ' & ' : ', ');
+        buffer.write(handles[i].reactionDisplayName.firstWord);
       }
+      return buffer.toString();
     } else {
-      final _title = titles.take(3).join(", ");
-      return "$_title & ${titles.length - 3} others";
+      final buffer = StringBuffer();
+      for (int i = 0; i < 3; i++) {
+        if (i > 0) buffer.write(', ');
+        buffer.write(handles[i].reactionDisplayName.firstWord);
+      }
+      buffer.write(' & ${count - 3} others');
+      return buffer.toString();
     }
   }
+
 
   /// Return whether or not the notification should be muted
   bool shouldMuteNotification(Message? message) {
