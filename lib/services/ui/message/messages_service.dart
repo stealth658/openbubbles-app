@@ -164,7 +164,11 @@ class MessagesService extends GetxController {
 
       final attState = msgState.getOrCreateAttachmentState(attachment.guid!, attachment: attachment);
       if (attState.transferState.value != AttachmentTransferState.uploading) {
-        attState.updateTransferStateInternal(AttachmentTransferState.uploading);
+        attState.updateTransferStateInternal(AttachmentTransferState.uploading, progress: inFlight.item2.value);
+      } else {
+        // Already uploading (same service instance, mid-upload refresh).
+        // Sync the current progress value without a full state transition.
+        attState.updateUploadProgressInternal(inFlight.item2.value);
       }
 
       // Populate the preview file so UploadProgressContent can render the
@@ -869,16 +873,37 @@ class MessagesService extends GetxController {
     struct.removeMessage(guidToDelete);
     struct.addMessages([message]);
 
-    // If the message isn't the last one in the list, we should remove it from the message view first
-    // before re-adding it so it shows up in the proper order based on the retry.
+    // Always update the UI entry in-place first so error decorations are
+    // immediately cleared, regardless of position.  updateFunc swaps the old
+    // guid entry in _messages for the new temp message object at the same
+    // list index.
+    updateFunc(message, oldGuid: guidToDelete);
+
+    // For non-last messages the date is now newer than the surrounding entries,
+    // so remove the freshly-placed entry and re-insert it at the sorted
+    // position.  removeFunc works correctly after updateFunc because the new
+    // guid is now present in _messages.
     if (messagesRef.isNotEmpty && messagesRef.last.guid != guidToDelete) {
       removeFunc(message);
       newFunc(message);
     }
 
-    // Clean up old MessageState, then create new one with updated struct entry
-    messageStates.remove(guidToDelete);
-    final messageState = getOrCreateMessageState(message.guid!);
+    // Re-key the existing MessageState under the new temp GUID instead of
+    // discarding it.  Attachment widgets capture a direct reference to their
+    // MessageState in initState() via MessageStateScope.readStateOnce() and
+    // never re-resolve it; keeping the same object in memory means that
+    // existing Obx subscriptions on AttachmentState react to the in-place
+    // resetForRetryInternal() call below and immediately show upload progress.
+    // If no prior state exists (e.g. user navigated away during error), fall
+    // back to creating a fresh one as before.
+    final existingState = messageStates.remove(guidToDelete);
+    final MessageState messageState;
+    if (existingState != null) {
+      messageStates[message.guid!] = existingState;
+      messageState = existingState;
+    } else {
+      messageState = getOrCreateMessageState(message.guid!);
+    }
     messageState.updateErrorInternal(0);
     messageState.updateErrorMessageInternal(null);
     messageState.updateDateCreatedInternal(message.dateCreated);
@@ -888,12 +913,62 @@ class MessagesService extends GetxController {
     // Clear notification
     await NotificationsSvc.clearFailedToSend(chat.id!);
 
-    // Reload attachment bytes if needed
+    // Reload attachment bytes and synchronise the attachment GUID with the
+    // new message GUID so that:
+    //   (a) the server's socket echo carries a tempGuid that exists in the DB
+    //       (preventing a spurious duplicate message in the list), and
+    //   (b) the attachment progress / state map keys stay consistent across
+    //       prepAttachment → sendAttachment → onSuccess/onError.
+    // The attachment.guid == message.guid invariant is established in
+    // send_animation.dart for initial sends; we must restore it on retry.
     for (Attachment? a in message.dbAttachments) {
       if (a == null) continue;
-      await Attachment.deleteAsync(a.guid!);
+      final oldAttGuid = a.guid!;
+
+      // Read bytes while the file is still at the old (pre-rename) path.
       a.bytes = await File(a.path).readAsBytes();
+
+      // Move the attachment directory so the file is immediately accessible
+      // at the new guid-based path.  This lets _restoreInFlightAttachmentStates
+      // populate uploadPreviewFile even before prepAttachment runs.
+      if (!kIsWeb) {
+        final oldDir = Directory("${Attachment.baseDirectory}/$oldAttGuid");
+        final newDir = Directory("${Attachment.baseDirectory}/${message.guid}");
+        if (oldDir.existsSync() && !newDir.existsSync()) {
+          oldDir.renameSync(newDir.path);
+        }
+      }
+
+      // Sync attachment GUID with the new temp message GUID.
+      a.guid = message.guid;
+
+      // Persist the updated GUID to DB immediately (in-place update via
+      // existing ObjectBox ID).  Without this there is a window between
+      // retryFailedMessage returning and prepAttachment's c.addMessage call
+      // where message.dbAttachments is empty, causing _restoreInFlightAttachmentStates
+      // to skip the message on re-entry and the progress overlay to never show.
+      await a.saveAsync(message);
+
+      // Pre-register in attachmentProgress so _restoreInFlightAttachmentStates
+      // finds the entry the moment the user re-enters, even before prepAttachment
+      // runs its own add.  prepAttachment will add a second entry for the same
+      // guid; both are cleaned up together by the removeWhere in onSuccess/onError.
+      if (!OutgoingMsgHandler.attachmentProgress.any((e) => e.item1 == message.guid)) {
+        OutgoingMsgHandler.attachmentProgress.add(Tuple2(message.guid!, 0.0.obs));
+      }
+
+      // Reset the existing AttachmentState in-place (re-key + uploading transition)
+      // so the widget's Obx sees isSending=true without needing a full rebuild.
+      final attState = messageState.attachmentStates.remove(oldAttGuid);
+      if (attState != null) {
+        attState.resetForRetryInternal(message.guid!);
+        messageState.attachmentStates[message.guid!] = attState;
+      }
     }
+
+    // Refresh the flat attachments list so prepAttachment.m.attachments.first
+    // returns the updated Attachment object with new GUID and bytes.
+    message.attachments = List<Attachment>.from(message.dbAttachments);
 
     // Queue for sending (message already in UI, just updated)
     if (message.dbAttachments.isNotEmpty) {

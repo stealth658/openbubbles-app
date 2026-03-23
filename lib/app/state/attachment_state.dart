@@ -350,6 +350,26 @@ class AttachmentState {
     }
   }
 
+  /// Resets this attachment state in-place for a retry send.
+  ///
+  /// Updates the GUID observable to [newGuid] and immediately transitions to
+  /// [AttachmentTransferState.uploading] so that any existing [Obx] subscriptions
+  /// (which hold a direct reference to this object) react to the change and
+  /// show the upload-progress UI without waiting for [notifyAttachmentUploadStarted].
+  ///
+  /// Called exclusively from [MessagesService.retryFailedMessage].
+  void resetForRetryInternal(String newGuid) {
+    if (guid.value != newGuid) {
+      guid.value = newGuid;
+      attachment.guid = newGuid;
+    }
+    // Clear resolved file — this attachment has not yet been confirmed by the server.
+    if (resolvedFile.value != null) resolvedFile.value = null;
+    // Transition directly to uploading — sets isSending=true, hasError=false,
+    // uploadProgress=0.0, clears download progress workers.
+    updateTransferStateInternal(AttachmentTransferState.uploading);
+  }
+
   /// Disposes internal workers.  Called by [MessageState] when the owning
   /// message is removed.
   void dispose() {
