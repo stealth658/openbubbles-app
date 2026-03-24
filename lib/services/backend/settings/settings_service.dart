@@ -334,6 +334,7 @@ class SettingsService {
                     child: ElevatedButton(
                       onPressed: () async {
                         await PrefsSvc.i.setBool('private-api-enable-tip', true);
+                        if (!context.mounted) return;
                         Navigator.of(context).pop();
                         NavigationSvc.closeSettings(context);
                         NavigationSvc.closeAllConversationView(context);
@@ -365,6 +366,7 @@ class SettingsService {
                     child: TextButton(
                       onPressed: () async {
                         await PrefsSvc.i.setBool('private-api-enable-tip', true);
+                        if (!context.mounted) return;
                         Navigator.of(context).pop();
                       },
                       child: const Text("Don't ask again"),
@@ -455,19 +457,16 @@ class SettingsService {
   /// Group chats can be created on macOS <= Catalina or
   /// if the Private API is enabled, and the server supports it (v1.8.0).
   Future<bool> canCreateGroupChat() async {
-    int serverVersion = (await SettingsSvc.getServerDetails()).serverVersionCode;
-    bool isMin_1_8_0 = serverVersion >= 268; // Server: v1.8.0 (1 * 100 + 8 * 21 + 0)
+    final serverDetails = await SettingsSvc.getServerDetails();
     bool papiEnabled = settings.enablePrivateAPI.value;
-    return (isMin_1_8_0 && papiEnabled) || !isMinBigSurSync;
+    return (serverDetails.supportsCreateGroupChat && papiEnabled) || !isMinBigSurSync;
   }
 
   /// Group chats can be created on macOS <= Catalina or
   /// if the Private API is enabled, and the server supports it (v1.8.0).
   bool canCreateGroupChatSync() {
-    int serverVersion = SettingsSvc.serverDetailsSync().serverVersionCode;
-    bool isMin_1_8_0 = serverVersion >= 268; // Server: v1.8.0 (1 * 100 + 8 * 21 + 0)
     bool papiEnabled = settings.enablePrivateAPI.value;
-    return (isMin_1_8_0 && papiEnabled) || !isMinBigSurSync;
+    return (SettingsSvc.serverDetailsSync().supportsCreateGroupChat && papiEnabled) || !isMinBigSurSync;
   }
 
   Future<Map<String, dynamic>> getServerUpdateDict() async {

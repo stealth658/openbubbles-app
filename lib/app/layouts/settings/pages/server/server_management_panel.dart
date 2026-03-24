@@ -14,6 +14,7 @@ import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
 import 'package:bluebubbles/app/layouts/setup/pages/sync/qr_code_scanner.dart';
 import 'package:bluebubbles/app/layouts/setup/dialogs/manual_entry_dialog.dart';
 import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/models/models.dart' show ServerDetails;
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:firebase_dart/firebase_dart.dart';
@@ -33,13 +34,8 @@ import 'package:version/version.dart';
 class ServerManagementPanelController extends StatefulController {
   final RxnInt latency = RxnInt();
   final RxnString fetchStatus = RxnString();
-  final RxnString serverVersion = RxnString();
-  final RxnString macOSVersion = RxnString();
-  final RxnString iCloudAccount = RxnString();
-  final RxnInt serverVersionCode = RxnInt();
-  final RxBool privateAPIStatus = RxBool(false);
+  final Rx<ServerDetails> serverDetails = Rx(const ServerDetails.empty());
   final RxBool helperBundleStatus = RxBool(false);
-  final RxnString proxyService = RxnString();
   final RxnDouble timeSync = RxnDouble();
   final RxMap<String, dynamic> stats = RxMap({});
   final RxBool hasAccountInfo = RxBool(false);
@@ -66,14 +62,20 @@ class ServerManagementPanelController extends StatefulController {
     int later = DateTime.now().toUtc().millisecondsSinceEpoch;
     latency.value = later - now;
     HttpSvc.serverInfo().then((response) {
-      macOSVersion.value = response.data['data']['os_version'];
-      serverVersion.value = response.data['data']['server_version'];
-      Version version = Version.parse(serverVersion.value!);
-      serverVersionCode.value = version.major * 100 + version.minor * 21 + version.patch;
-      privateAPIStatus.value = response.data['data']['private_api'] ?? false;
+      final String macOSVersionStr = response.data['data']['os_version'] ?? '0.0';
+      final String serverVersionStr = response.data['data']['server_version'] ?? '0.0.0';
+      Version version = Version.parse(serverVersionStr);
+      final osParts = macOSVersionStr.split('.');
+      serverDetails.value = ServerDetails(
+        macOSVersion: int.tryParse(osParts.isNotEmpty ? osParts[0] : '0') ?? 0,
+        macOSMinorVersion: int.tryParse(osParts.length > 1 ? osParts[1] : '0') ?? 0,
+        serverVersion: serverVersionStr,
+        serverVersionCode: version.major * 100 + version.minor * 21 + version.patch,
+        privateApiEnabled: response.data['data']['private_api'] ?? false,
+        iCloudAccount: response.data['data']['detected_icloud'],
+        proxyService: response.data['data']['proxy_service'],
+      );
       helperBundleStatus.value = response.data['data']['helper_connected'] ?? false;
-      proxyService.value = response.data['data']['proxy_service'];
-      iCloudAccount.value = response.data['data']['detected_icloud'];
       timeSync.value = response.data['data']['macos_time_sync'];
       hasCheckedStats.value = true;
 
@@ -160,26 +162,28 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                               // if (socket.lastError.value.isNotEmpty && (socket.state.value == SocketState.error || socket.state.value == SocketState.disconnected))
                               //   TextSpan(text: " (${socket.lastError.value})", style: TextStyle(color: getIndicatorColor(socket.state.value))),
                               const TextSpan(text: "\n\n"),
-                              if ((controller.serverVersionCode.value ?? 0) >= 42)
+                              if (controller.serverDetails.value.supportsPrivateApiStatus)
                                 const TextSpan(text: "Private API Status: "),
-                              if ((controller.serverVersionCode.value ?? 0) >= 42)
+                              if (controller.serverDetails.value.supportsPrivateApiStatus)
                                 TextSpan(
-                                    text: controller.privateAPIStatus.value ? "ENABLED" : "DISABLED",
+                                    text: controller.serverDetails.value.privateApiEnabled == true ? "ENABLED" : "DISABLED",
                                     style: TextStyle(
-                                        color: getIndicatorColor(controller.privateAPIStatus.value
+                                        color: getIndicatorColor(controller.serverDetails.value.privateApiEnabled == true
                                             ? SocketState.connected
                                             : SocketState.disconnected))),
-                              if ((controller.serverVersionCode.value ?? 0) >= 42) const TextSpan(text: "\n\n"),
-                              if ((controller.serverVersionCode.value ?? 0) >= 42)
+                              if (controller.serverDetails.value.supportsPrivateApiStatus)
+                                const TextSpan(text: "\n\n"),
+                              if (controller.serverDetails.value.supportsPrivateApiStatus)
                                 const TextSpan(text: "Private API Helper Bundle Status: "),
-                              if ((controller.serverVersionCode.value ?? 0) >= 42)
+                              if (controller.serverDetails.value.supportsPrivateApiStatus)
                                 TextSpan(
                                     text: controller.helperBundleStatus.value ? "CONNECTED" : "DISCONNECTED",
                                     style: TextStyle(
                                         color: getIndicatorColor(controller.helperBundleStatus.value
                                             ? SocketState.connected
                                             : SocketState.disconnected))),
-                              if ((controller.serverVersionCode.value ?? 0) >= 42) const TextSpan(text: "\n\n"),
+                              if (controller.serverDetails.value.supportsPrivateApiStatus)
+                                const TextSpan(text: "\n\n"),
                               TextSpan(
                                   text: "Server URL: ${redact ? "Redacted" : HttpSvc.origin}",
                                   recognizer: TapGestureRecognizer()
@@ -202,18 +206,18 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                               const TextSpan(text: "\n\n"),
                               TextSpan(
                                   text:
-                                      "Server Version: ${redact ? "Redacted" : (controller.serverVersion.value ?? "N/A")}"),
+                                      "Server Version: ${redact ? "Redacted" : (controller.serverDetails.value.serverVersion.isNotEmpty ? controller.serverDetails.value.serverVersion : "N/A")}"),
                               const TextSpan(text: "\n\n"),
                               TextSpan(
                                   text:
-                                      "macOS Version: ${redact ? "Redacted" : (controller.macOSVersion.value ?? "N/A")}"),
-                              if (controller.iCloudAccount.value != null) const TextSpan(text: "\n\n"),
-                              if (controller.iCloudAccount.value != null)
+                                      "macOS Version: ${redact ? "Redacted" : (controller.serverDetails.value.macOSVersionString)}"),
+                              if (controller.serverDetails.value.iCloudAccount != null) const TextSpan(text: "\n\n"),
+                              if (controller.serverDetails.value.iCloudAccount != null)
                                 TextSpan(
-                                    text: "iCloud Account: ${redact ? "Redacted" : controller.iCloudAccount.value}"),
-                              if (controller.proxyService.value != null) const TextSpan(text: "\n\n"),
-                              if (controller.proxyService.value != null)
-                                TextSpan(text: "Proxy Service: ${controller.proxyService.value!.capitalizeFirst}"),
+                                    text: "iCloud Account: ${redact ? "Redacted" : controller.serverDetails.value.iCloudAccount}"),
+                              if (controller.serverDetails.value.proxyService != null) const TextSpan(text: "\n\n"),
+                              if (controller.serverDetails.value.proxyService != null)
+                                TextSpan(text: "Proxy Service: ${controller.serverDetails.value.proxyService!.capitalizeFirst}"),
                               if (controller.timeSync.value != null) const TextSpan(text: "\n\n"),
                               if (controller.timeSync.value != null) const TextSpan(text: "Server Time Sync: "),
                               if (controller.timeSync.value != null)
@@ -237,7 +241,7 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                       ));
                     }),
                     Obx(() => AnimatedSizeAndFade.showHide(
-                        show: (controller.serverVersionCode.value ?? 0) >= 42 && controller.stats.isNotEmpty,
+                        show: controller.serverDetails.value.supportsPrivateApiStatus && controller.stats.isNotEmpty,
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -827,7 +831,7 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                     const SettingsDivider(),
                     Obx(() => AnimatedSizeAndFade.showHide(
                           show: SettingsSvc.settings.enablePrivateAPI.value &&
-                              (controller.serverVersionCode.value ?? 0) >= 41,
+                              controller.serverDetails.value.supportsRestartPrivateApi,
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -946,7 +950,7 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                                   valueColor: AlwaysStoppedAnimation<Color>(context.theme.colorScheme.primary),
                                 )))),
                     Obx(() => AnimatedSizeAndFade.showHide(
-                          show: (controller.serverVersionCode.value ?? 0) >= 42,
+                          show: controller.serverDetails.value.supportsPrivateApiStatus,
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [

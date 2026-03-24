@@ -1009,7 +1009,7 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
       if (SettingsSvc.isMinVenturaSync &&
           message.isFromMe! &&
           !widget.controller.isSending.value &&
-          SettingsSvc.serverDetailsSync().serverVersionCode >= 148)
+          SettingsSvc.serverDetailsSync().supportsEditAndUnsend)
         DetailsMenuActionWidget(
           onTap: unsend,
           action: DetailsMenuAction.UndoSend,
@@ -1017,7 +1017,7 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
       if (SettingsSvc.isMinVenturaSync &&
           message.isFromMe! &&
           !widget.controller.isSending.value &&
-          SettingsSvc.serverDetailsSync().serverVersionCode >= 148 &&
+          SettingsSvc.serverDetailsSync().supportsEditAndUnsend &&
           (part.text?.isNotEmpty ?? false))
         DetailsMenuActionWidget(
           onTap: edit,

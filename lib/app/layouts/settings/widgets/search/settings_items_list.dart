@@ -143,8 +143,8 @@ List<Widget> buildSettingItemList({
             material: material,
           ),
 
-          if (SettingsSvc.serverDetailsSync().serverVersionCode >= 205) const SettingsDivider(),
-          if (SettingsSvc.serverDetailsSync().serverVersionCode >= 205)
+          if (SettingsSvc.serverDetailsSync().supportsScheduledMessages) const SettingsDivider(),
+          if (SettingsSvc.serverDetailsSync().supportsScheduledMessages)
             SearchableSettingItem(
                 title: "Scheduled Messages",
                 searchTags: ["Scheduled Messages"],

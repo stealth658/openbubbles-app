@@ -46,8 +46,7 @@ class ContactServiceV2 {
   /// Check if we can access contacts
   Future<bool> _canAccessContacts() async {
     if (kIsWeb || kIsDesktop) {
-      int versionCode = (await SettingsSvc.getServerDetails()).serverVersionCode;
-      return versionCode >= 42;
+      return (await SettingsSvc.getServerDetails()).supportsContactsApi;
     } else {
       return (await Permission.contacts.status).isGranted;
     }

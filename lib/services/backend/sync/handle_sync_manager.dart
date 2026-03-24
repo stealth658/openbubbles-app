@@ -41,10 +41,8 @@ class HandleSyncManager extends SyncManager {
     }
 
     // Check if the user is on v1.5.2 or newer
-    int serverVersion = (await SettingsSvc.getServerDetails()).serverVersionCode;
-    // 100(major) + 21(minor) + 1(bug)
-    bool isMin1_5_2 = serverVersion >= 207; // Server: v1.5.2
-    if (!isMin1_5_2) {
+    final serverDetails = await SettingsSvc.getServerDetails();
+    if (!serverDetails.supportsHandleSync) {
       throw Exception("Please update your server to v1.5.2 or newer!");
     }
 

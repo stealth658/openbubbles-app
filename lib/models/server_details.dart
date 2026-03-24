@@ -6,17 +6,83 @@ class ServerDetails {
   final int macOSMinorVersion;
   final String serverVersion;
   final int serverVersionCode;
+  final bool? privateApiEnabled;
+  final String? iCloudAccount;
+  final String? proxyService;
 
   const ServerDetails({
     required this.macOSVersion,
     required this.macOSMinorVersion,
     required this.serverVersion,
     required this.serverVersionCode,
+    this.privateApiEnabled,
+    this.iCloudAccount,
+    this.proxyService,
   });
 
   const ServerDetails.empty()
       : macOSVersion = 0,
         macOSMinorVersion = 0,
         serverVersion = "",
-        serverVersionCode = 0;
+        serverVersionCode = 0,
+        privateApiEnabled = null,
+        iCloudAccount = null,
+        proxyService = null;
+
+  // ---------------------------------------------------------------------------
+  // Server feature helpers
+  //
+  // Version code formula: major * 100 + minor * 21 + patch
+  // e.g. v1.6.0 → 1*100 + 6*21 + 0 = 226
+  // ---------------------------------------------------------------------------
+
+  /// Can restart the Private API helper bundle from the client (~v0.1.x).
+  bool get supportsRestartPrivateApi => serverVersionCode >= 41;
+
+  /// Min supported server version (v0.2.0).
+  bool get minimumSupportedVersion => serverVersionCode >= 42;
+
+  /// Exposes Private API status indicators, iMessage stats, contacts API on
+  /// desktop/web, server update checks, and is the minimum for web clients (v0.2.0).
+  bool get supportsPrivateApiStatus => serverVersionCode >= 42;
+
+  /// Supports iMessage stats(v0.2.0).
+  bool get supportsMessageStats => serverVersionCode >= 42;
+
+  /// Supports contacts API (v0.2.0).
+  bool get supportsContactsApi => serverVersionCode >= 42;
+
+  /// Private API subject line field when composing messages (v0.3.0).
+  bool get supportsSubjectLines => serverVersionCode >= 63;
+
+  /// Send regular iMessages via the Private API for faster delivery (v0.4.0).
+  bool get supportsPrivateApiSend => serverVersionCode >= 84;
+
+  /// Improved incremental message sync algorithm (v1.2.0).
+  bool get supportsImprovedSync => serverVersionCode >= 142;
+
+  /// Undo send (unsend) and edit already-sent messages (v1.2.6).
+  bool get supportsEditAndUnsend => serverVersionCode >= 148;
+
+  /// Scheduled message sending (v1.5.0).
+  bool get supportsScheduledMessages => serverVersionCode >= 205;
+
+  /// Server-side handle / contact sync endpoint (v1.5.2).
+  bool get supportsHandleSync => serverVersionCode >= 207;
+
+  /// Send attachments via the Private API (v1.5.3).
+  bool get supportsPrivateApiAttachmentSend => serverVersionCode >= 208;
+
+  /// Private API group chat management — update/delete group icon, leave a
+  /// group chat, and send handwritten / Digital Touch messages (v1.6.0).
+  bool get supportsGroupChatManagement => serverVersionCode >= 226;
+
+  /// Incremental sync using message row IDs instead of timestamps (v1.6.0).
+  bool get supportsRowIdSync => serverVersionCode >= 226;
+
+  /// Create new group chats via the Private API (v1.8.0).
+  bool get supportsCreateGroupChat => serverVersionCode >= 268;
+
+  /// macOS version as a display string, e.g. "14.2".
+  String get macOSVersionString => '$macOSVersion.$macOSMinorVersion';
 }

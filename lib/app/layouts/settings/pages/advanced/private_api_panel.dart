@@ -3,6 +3,7 @@ import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/reaction_type_picker.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
+import 'package:bluebubbles/models/models.dart' show ServerDetails;
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -12,15 +13,20 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:version/version.dart';
 
 class PrivateAPIPanelController extends StatefulController {
-  final RxInt serverVersionCode = RxInt(0);
+  final Rx<ServerDetails> serverDetails = Rx(ServerDetails.empty());
 
   @override
   void onReady() {
     super.onReady();
     HttpSvc.serverInfo().then((response) {
-      final String serverVersion = response.data['data']['server_version'] ?? "0.0.1";
-      Version version = Version.parse(serverVersion);
-      serverVersionCode.value = version.major * 100 + version.minor * 21 + version.patch;
+      final String serverVersionStr = response.data['data']['server_version'] ?? "0.0.1";
+      Version version = Version.parse(serverVersionStr);
+      serverDetails.value = ServerDetails(
+        macOSVersion: SettingsSvc.serverDetailsSync().macOSVersion,
+        macOSMinorVersion: SettingsSvc.serverDetailsSync().macOSMinorVersion,
+        serverVersion: serverVersionStr,
+        serverVersionCode: version.major * 100 + version.minor * 21 + version.patch,
+      );
     });
   }
 }
@@ -47,9 +53,14 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
         SettingsSvc.settings.enablePrivateAPI.value = true;
         SettingsSvc.settings.privateAPISend.value = true;
         HttpSvc.serverInfo().then((response) {
-          final String serverVersion = response.data['data']['server_version'] ?? "0.0.1";
-          Version version = Version.parse(serverVersion);
-          controller.serverVersionCode.value = version.major * 100 + version.minor * 21 + version.patch;
+          final String serverVersionStr = response.data['data']['server_version'] ?? "0.0.1";
+          Version version = Version.parse(serverVersionStr);
+          controller.serverDetails.value = ServerDetails(
+            macOSVersion: SettingsSvc.serverDetailsSync().macOSVersion,
+            macOSMinorVersion: SettingsSvc.serverDetailsSync().macOSMinorVersion,
+            serverVersion: serverVersionStr,
+            serverVersionCode: version.major * 100 + version.minor * 21 + version.patch,
+          );
         });
       }
     });
@@ -268,7 +279,7 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
                             ),
                           ),
                           AnimatedSizeAndFade.showHide(
-                            show: SettingsSvc.isMinVenturaSync && SettingsSvc.serverDetailsSync().serverVersionCode >= 148,
+                            show: SettingsSvc.isMinVenturaSync && SettingsSvc.serverDetailsSync().supportsEditAndUnsend,
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
@@ -292,7 +303,7 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
                             ),
                           ),
                           AnimatedSizeAndFade.showHide(
-                            show: controller.serverVersionCode.value >= 63,
+                            show: controller.serverDetails.value.supportsSubjectLines,
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
@@ -317,7 +328,7 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
                             ),
                           ),
                           AnimatedSizeAndFade.showHide(
-                            show: controller.serverVersionCode.value >= 84,
+                            show: controller.serverDetails.value.supportsPrivateApiSend,
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
@@ -342,7 +353,7 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
                             ),
                           ),
                           AnimatedSizeAndFade.showHide(
-                            show: controller.serverVersionCode.value >= 208,
+                            show: controller.serverDetails.value.supportsPrivateApiAttachmentSend,
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [

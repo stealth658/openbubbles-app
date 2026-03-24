@@ -463,8 +463,8 @@ class _HomeState extends State<Home> with WidgetsBindingObserver, TrayListener {
       };
       /* ----- SERVER VERSION CHECK ----- */
       if (kIsWeb && SettingsSvc.settings.finishedSetup.value) {
-        int version = (await SettingsSvc.getServerDetails()).serverVersionCode;
-        if (version < 42) {
+        final serverDetails = await SettingsSvc.getServerDetails();
+        if (!serverDetails.minimumSupportedVersion) {
           setState(() {
             serverCompatible = false;
           });
