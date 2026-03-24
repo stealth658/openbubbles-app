@@ -191,9 +191,9 @@ Future<Null> initApp(bool bubble, List<String> arguments) async {
       ThemeData light = ThemeStruct.getLightTheme().data;
       ThemeData dark = ThemeStruct.getDarkTheme().data;
 
-      final tuple = ThemeSvc.getStructsFromData(light, dark);
-      light = tuple.item1;
-      dark = tuple.item2;
+      final pair = ThemeSvc.getStructsFromData(light, dark);
+      light = pair.light;
+      dark = pair.dark;
 
       runApp(MaterialApp(
           home: Main(
@@ -443,7 +443,7 @@ class _HomeState extends State<Home> with WidgetsBindingObserver, TrayListener {
 
     /* ----- APP REFRESH LISTENER INITIALIZATION ----- */
     EventDispatcherSvc.stream.listen((event) {
-      if (event.item1 == 'refresh-all') {
+      if (event.type == 'refresh-all') {
         setState(() {});
       }
     });
@@ -463,7 +463,7 @@ class _HomeState extends State<Home> with WidgetsBindingObserver, TrayListener {
       };
       /* ----- SERVER VERSION CHECK ----- */
       if (kIsWeb && SettingsSvc.settings.finishedSetup.value) {
-        int version = (await SettingsSvc.getServerDetails()).item4;
+        int version = (await SettingsSvc.getServerDetails()).serverVersionCode;
         if (version < 42) {
           setState(() {
             serverCompatible = false;
@@ -497,7 +497,7 @@ class _HomeState extends State<Home> with WidgetsBindingObserver, TrayListener {
 
           /* ----- WINDOW EFFECT INITIALIZATION ----- */
           EventDispatcherSvc.stream.listen((event) async {
-            if (event.item1 == 'theme-update') {
+            if (event.type == 'theme-update') {
               EasyDebounce.debounce('window-effect', const Duration(milliseconds: 500), () async {
                 if (mounted) {
                   await WindowEffects.setEffect(color: context.theme.colorScheme.background);

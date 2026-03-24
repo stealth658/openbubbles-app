@@ -350,9 +350,9 @@ class ThemeStruct {
     if (returnMaterialYou) {
       final tuple = ThemeSvc.getStructsFromData(data, data);
       if (dark) {
-        finalData = tuple.item2;
+        finalData = tuple.dark;
       } else {
-        finalData = tuple.item1;
+        finalData = tuple.light;
       }
     }
     return {

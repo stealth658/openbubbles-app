@@ -15,9 +15,9 @@ import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' hide Intent;
 import 'package:get/get.dart';
+import 'package:bluebubbles/models/models.dart' show HandleLookupKey;
 import 'package:path/path.dart';
 import 'package:receive_intent/receive_intent.dart';
-import 'package:tuple/tuple.dart';
 import 'package:universal_io/io.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:get_it/get_it.dart';
@@ -87,7 +87,7 @@ class IntentsService {
               Uri.tryParse(intent.data!.replaceFirst("imessage://", "imessage:").replaceFirst("&body=", "?body="));
           if (uri != null) {
             final address = uri.path;
-            final handle = Handle.findOne(addressAndService: Tuple2(address, "iMessage"));
+            final handle = Handle.findOne(addressAndService: HandleLookupKey(address, "iMessage"));
             NavigationSvc.pushAndRemoveUntil(
               Get.context!,
               ChatCreator(

@@ -151,8 +151,8 @@ class MessageState extends StatefulController {
     buildMessageParts();
     if (kIsWeb) {
       _sub = WebListeners.messageUpdate.listen((tuple) {
-        final msg = tuple.item1;
-        final tempGuid = tuple.item2;
+        final msg = tuple.message;
+        final tempGuid = tuple.tempGuid;
         if (msg.guid == message.guid || tempGuid == message.guid) {
           updateMessage(msg);
         }

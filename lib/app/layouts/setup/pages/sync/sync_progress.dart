@@ -15,7 +15,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:simple_animations/simple_animations.dart';
-import 'package:tuple/tuple.dart';
+import 'package:bluebubbles/services/backend/sync/sync_manager_impl.dart' show SyncLogEntry;
 
 class SyncProgress extends StatefulWidget {
   const SyncProgress({super.key});
@@ -103,11 +103,11 @@ class _SyncProgressState extends State<SyncProgress> {
                         child: Obx(() => ListView.builder(
                               physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
                               itemBuilder: (context, index) {
-                                Tuple2<LogLevel, String> log = syncManager.output.reversed.toList()[index];
+                                SyncLogEntry log = syncManager.output.reversed.toList()[index];
                                 return Text(
-                                  log.item2,
+                                  log.message,
                                   style: TextStyle(
-                                    color: log.item1 == LogLevel.INFO
+                                    color: log.level == LogLevel.INFO
                                         ? context.theme.colorScheme.properOnSurface
                                         : context.theme.colorScheme.error,
                                     fontSize: 10,

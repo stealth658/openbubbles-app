@@ -5,7 +5,7 @@ import 'package:bluebubbles/services/backend/sync/sync_manager_impl.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:dio/dio.dart';
-import 'package:tuple/tuple.dart';
+import 'package:bluebubbles/models/models.dart' show ChatSyncPage;
 import 'package:universal_io/io.dart';
 import 'package:windows_taskbar/windows_taskbar.dart';
 
@@ -61,8 +61,8 @@ class ChatSyncManager extends SyncManager {
 
       addToOutput("Streaming chats from server...");
       await for (final chatEvent in streamChatPages(totalChats, batchSize: 100)) {
-        double chatProgress = chatEvent.item1;
-        List<Chat> serverChats = chatEvent.item2;
+        double chatProgress = chatEvent.progress;
+        List<Chat> serverChats = chatEvent.chats;
 
         addToOutput('Saving chunk of ${serverChats.length} chats(s)...');
 
@@ -124,7 +124,7 @@ class ChatSyncManager extends SyncManager {
     return null;
   }
 
-  Stream<Tuple2<double, List<Chat>>> streamChatPages(int? count, {int batchSize = 200}) async* {
+  Stream<ChatSyncPage> streamChatPages(int? count, {int batchSize = 200}) async* {
     // Set some default sync values
     int batches = 1;
     int countPerBatch = batchSize;
@@ -151,7 +151,7 @@ class ChatSyncManager extends SyncManager {
       // Convert the returned handle dictionaries to a list of Handle Objects
       List<dynamic> chatResponse = data["data"];
       List<Chat> chats = chatResponse.map((e) => Chat.fromMap(e)).toList();
-      yield Tuple2<double, List<Chat>>((i + 1) / batches, chats);
+      yield ChatSyncPage((i + 1) / batches, chats);
     }
   }
 

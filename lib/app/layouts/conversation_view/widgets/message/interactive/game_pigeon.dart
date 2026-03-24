@@ -35,10 +35,11 @@ class _GamePigeonState extends State<GamePigeon> with AutomaticKeepAliveClientMi
         final attachment = MessageStateScope.messageOf(context).dbAttachments.firstOrNull;
         if (attachment != null) {
           content = AttachmentsSvc.getContent(attachment, autoDownload: true, onComplete: (file) {
-            if (mounted)
+            if (mounted) {
               setState(() {
                 content = file;
               });
+            }
           });
           if (content != null && mounted) setState(() {});
         }

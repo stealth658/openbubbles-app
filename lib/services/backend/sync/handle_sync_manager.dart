@@ -6,7 +6,7 @@ import 'package:bluebubbles/services/backend/sync/sync_manager_impl.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:dio/dio.dart';
-import 'package:tuple/tuple.dart';
+import 'package:bluebubbles/models/models.dart' show HandleSyncPage;
 import 'package:universal_io/io.dart';
 import 'package:windows_taskbar/windows_taskbar.dart';
 
@@ -41,7 +41,7 @@ class HandleSyncManager extends SyncManager {
     }
 
     // Check if the user is on v1.5.2 or newer
-    int serverVersion = (await SettingsSvc.getServerDetails()).item4;
+    int serverVersion = (await SettingsSvc.getServerDetails()).serverVersionCode;
     // 100(major) + 21(minor) + 1(bug)
     bool isMin1_5_2 = serverVersion >= 207; // Server: v1.5.2
     if (!isMin1_5_2) {
@@ -92,8 +92,8 @@ class HandleSyncManager extends SyncManager {
       addToOutput("Streaming handles from server...");
       // Contact matching is now handled automatically by ContactServiceV2
       await for (final handleEvent in streamHandlePages(totalHandles)) {
-        double handleProgress = handleEvent.item1;
-        List<Handle> serverHandles = handleEvent.item2;
+        double handleProgress = handleEvent.progress;
+        List<Handle> serverHandles = handleEvent.handles;
 
         addToOutput('Saving chunk of ${serverHandles.length} handles(s)...');
 
@@ -223,7 +223,7 @@ class HandleSyncManager extends SyncManager {
     });
   }
 
-  Stream<Tuple2<double, List<Handle>>> streamHandlePages(int? count, {int batchSize = 200}) async* {
+  Stream<HandleSyncPage> streamHandlePages(int? count, {int batchSize = 200}) async* {
     // Set some default sync values
     int batches = 1;
     int countPerBatch = batchSize;
@@ -248,7 +248,7 @@ class HandleSyncManager extends SyncManager {
       // Convert the returned handle dictionaries to a list of Handle Objects
       List<dynamic> handleResponse = data["data"];
       List<Handle> handles = handleResponse.map((e) => Handle.fromMap(e)).toList();
-      yield Tuple2<double, List<Handle>>((i + 1) / batches, handles);
+      yield HandleSyncPage((i + 1) / batches, handles);
     }
   }
 

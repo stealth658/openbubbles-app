@@ -9,7 +9,7 @@ import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:tuple/tuple.dart';
+import 'package:bluebubbles/models/models.dart' show MessageReplyContext;
 
 class OpenSettingsIntent extends Intent {
   const OpenSettingsIntent();
@@ -111,7 +111,7 @@ class ReplyRecentAction extends Action<ReplyRecentIntent> {
     final message = MessagesSvc(chatGuid).mostRecentReceived;
     if (message != null && SettingsSvc.settings.enablePrivateAPI.value) {
       final parts = MessagesSvc(chatGuid).getOrCreateState(message).parts;
-      cvc(chat).replyToMessage = Tuple2(message, parts.length - 1);
+      cvc(chat).replyToMessage = MessageReplyContext(message, parts.length - 1);
     }
     return null;
   }

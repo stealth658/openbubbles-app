@@ -1,12 +1,12 @@
 import 'package:async_task/async_task_extension.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
+import 'package:bluebubbles/models/models.dart';
 import 'package:bluebubbles/services/backend/sync/sync_manager_impl.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:tuple/tuple.dart';
 import 'package:universal_io/io.dart';
 import 'package:windows_taskbar/windows_taskbar.dart';
 
@@ -73,9 +73,9 @@ class FullSyncManager extends SyncManager {
         await WindowsTaskbar.setProgressMode(TaskbarProgressMode.normal);
       }
       await for (final chatEvent in streamChatPages(totalChats)) {
-        double chatProgress = chatEvent.item1;
-        List<Chat> newChats = chatEvent.item2;
-        int filteredInBatch = chatEvent.item3;
+        double chatProgress = chatEvent.progress;
+        List<Chat> newChats = chatEvent.chats;
+        int filteredInBatch = chatEvent.filteredCount;
 
         // Update total filtered chats count
         filteredChatsCount += filteredInBatch;
@@ -93,7 +93,7 @@ class FullSyncManager extends SyncManager {
           if (kIsWeb || (chat.chatIdentifier ?? "").startsWith("urn:biz")) continue;
           try {
             await for (final messageEvent in streamChatMessages(chat.guid, messageCount, batchSize: messageCount)) {
-              List<Message> newMessages = messageEvent.item2;
+              List<Message> newMessages = messageEvent.messages;
               String? displayName = chat.guid;
               if (chat.displayName != null && chat.displayName!.isNotEmpty) {
                 displayName = chat.displayName;
@@ -178,7 +178,7 @@ class FullSyncManager extends SyncManager {
     return completer!.future;
   }
 
-  Stream<Tuple3<double, List<Chat>, int>> streamChatPages(int? count, {int batchSize = 200}) async* {
+  Stream<ChatSyncPage> streamChatPages(int? count, {int batchSize = 200}) async* {
     // Set some default sync values
     int batches = 1;
     int countPerBatch = batchSize;
@@ -227,11 +227,11 @@ class FullSyncManager extends SyncManager {
         filteredCount = originalCount - chats.length;
       }
 
-      yield Tuple3<double, List<Chat>, int>((i + 1) / batches, chats, filteredCount);
+      yield ChatSyncPage((i + 1) / batches, chats, filteredCount);
     }
   }
 
-  Stream<Tuple2<double, List<Message>>> streamChatMessages(String chatGuid, int? count, {int batchSize = 25}) async* {
+  Stream<MessageSyncPage> streamChatMessages(String chatGuid, int? count, {int batchSize = 25}) async* {
     // Set some default sync values
     int batches = 1;
     int countPerBatch = batchSize;
@@ -265,7 +265,7 @@ class FullSyncManager extends SyncManager {
         if (m.error > 0) m.errorMessage = serverErrorMessage(m.error);
         return m;
       }).toList();
-      yield Tuple2<double, List<Message>>((i + 1) / batches, messages);
+      yield MessageSyncPage((i + 1) / batches, messages);
     }
   }
 

@@ -11,7 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart' hide GetStringUtils;
 import 'package:material_color_utilities/material_color_utilities.dart' as mui_utils;
 import 'package:simple_animations/simple_animations.dart';
-import 'package:tuple/tuple.dart';
+import 'package:bluebubbles/models/models.dart' show ThemePair;
 import 'package:universal_io/io.dart';
 import 'package:get_it/get_it.dart';
 
@@ -210,9 +210,9 @@ class ThemesService {
     ThemeData light = (lightOverride ?? ThemeStruct.getLightTheme()).data;
     ThemeData dark = (darkOverride ?? ThemeStruct.getDarkTheme()).data;
 
-    final tuple = getStructsFromData(light, dark);
-    light = tuple.item1;
-    dark = tuple.item2;
+    final pair = getStructsFromData(light, dark);
+    light = pair.light;
+    dark = pair.dark;
 
     AdaptiveTheme.of(context).setTheme(
       light: light,
@@ -220,7 +220,7 @@ class ThemesService {
     );
   }
 
-  Tuple2 getStructsFromData(ThemeData light, ThemeData dark) {
+  ThemePair getStructsFromData(ThemeData light, ThemeData dark) {
     return Platform.isWindows ? _applyWindowsAccent(light, dark) : _applyMonet(light, dark);
   }
 
@@ -259,7 +259,7 @@ class ThemesService {
     _loadTheme(context);
   }
 
-  Tuple2<ThemeData, ThemeData> _applyMonet(ThemeData light, ThemeData dark) {
+  ThemePair _applyMonet(ThemeData light, ThemeData dark) {
     if (SettingsSvc.settings.monetTheming.value == Monet.harmonize && monetPalette != null) {
       light = light.copyWith(
         colorScheme: light.colorScheme.copyWith(
@@ -402,12 +402,12 @@ class ThemesService {
         ),
       );
     }
-    return Tuple2(light, dark);
+    return ThemePair(light: light, dark: dark);
   }
 
-  Tuple2<ThemeData, ThemeData> _applyWindowsAccent(ThemeData light, ThemeData dark) {
+  ThemePair _applyWindowsAccent(ThemeData light, ThemeData dark) {
     if (desktopAccentColor == null || !SettingsSvc.settings.useDesktopAccent.value) {
-      return Tuple2(light, dark);
+      return ThemePair(light: light, dark: dark);
     }
 
     CorePalette palette = CorePalette.of(desktopAccentColor!.toARGB32());
@@ -478,6 +478,6 @@ class ThemesService {
         scrim: dark.colorScheme.outlineVariant.harmonizeWith(Color(palette.neutral.get(0))),
       ),
     );
-    return Tuple2(light, dark);
+    return ThemePair(light: light, dark: dark);
   }
 }

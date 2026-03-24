@@ -3,9 +3,9 @@ import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/env.dart';
 import 'package:bluebubbles/services/backend/actions/chat_actions.dart';
 import 'package:bluebubbles/services/backend/lifecycle/lifecycle_service.dart';
+import 'package:bluebubbles/models/models.dart' show MessageSaveResult;
 import 'package:get_it/get_it.dart';
 import 'package:bluebubbles/services/isolates/global_isolate.dart';
-import 'package:tuple/tuple.dart';
 
 class ChatInterface {
   static Future<void> clearNotificationForChat({
@@ -104,7 +104,7 @@ class ChatInterface {
     }
   }
 
-  static Future<Tuple2<Message, bool>> addMessageToChat({
+  static Future<MessageSaveResult> addMessageToChat({
     required Map<String, dynamic> messageData,
     required Map<String, dynamic> chatData,
     required Map<String, dynamic> latestMessageData,
@@ -127,7 +127,7 @@ class ChatInterface {
 
     final message = Database.messages.get(result['messageId'] as int)!;
     final isNewer = result['isNewer'] as bool;
-    return Tuple2(message, isNewer);
+    return MessageSaveResult(message, isNewer);
   }
 
   static Future<List<Message>> loadSupplementalData({

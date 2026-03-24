@@ -36,9 +36,16 @@ import 'package:pasteboard/pasteboard.dart';
 import 'package:path/path.dart' hide context;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:sprung/sprung.dart';
-import 'package:tuple/tuple.dart';
+import 'package:bluebubbles/models/models.dart' show MessageReplyContext;
 import 'package:url_launcher/url_launcher_string.dart';
 import 'package:universal_io/io.dart';
+
+class MessagePopupServerDetails {
+  final bool minSierra;
+  final bool minBigSur;
+  final bool supportsOriginalDownload;
+  const MessagePopupServerDetails({required this.minSierra, required this.minBigSur, required this.supportsOriginalDownload});
+}
 
 class MessagePopup extends StatefulWidget {
   final Offset childPosition;
@@ -47,7 +54,7 @@ class MessagePopup extends StatefulWidget {
   final MessagePart part;
   final MessageState controller;
   final ConversationViewController cvController;
-  final Tuple3<bool, bool, bool> serverDetails;
+  final MessagePopupServerDetails serverDetails;
   final Function([String? type, int? part]) sendTapback;
   final BuildContext? Function() widthContext;
 
@@ -116,11 +123,11 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
           message.balloonBundleId == "com.apple.DigitalTouchBalloonProvider") &&
       File(message.interactiveMediaPath!).existsSync();
 
-  bool get minSierra => widget.serverDetails.item1;
+  bool get minSierra => widget.serverDetails.minSierra;
 
-  bool get minBigSur => widget.serverDetails.item2;
+  bool get minBigSur => widget.serverDetails.minBigSur;
 
-  bool get supportsOriginalDownload => widget.serverDetails.item3;
+  bool get supportsOriginalDownload => widget.serverDetails.supportsOriginalDownload;
 
   BuildContext get widthContext => widget.widthContext.call() ?? context;
 
@@ -452,7 +459,7 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
 
   void reply() {
     popDetails();
-    cvController.replyToMessage = Tuple2(message, part.part);
+    cvController.replyToMessage = MessageReplyContext(message, part.part);
   }
 
   Future<void> download() async {
@@ -834,7 +841,7 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
   void edit() {
     popDetails();
     final FocusNode? node = kIsDesktop || kIsWeb ? FocusNode() : null;
-    cvController.editing.add(Tuple3(message, part, SpellCheckTextEditingController(text: part.text!, focusNode: node)));
+    cvController.editing.add(MessageEditEntry(message: message, part: part, controller: SpellCheckTextEditingController(text: part.text!, focusNode: node)));
   }
 
   void delete() {
@@ -1002,7 +1009,7 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
       if (SettingsSvc.isMinVenturaSync &&
           message.isFromMe! &&
           !widget.controller.isSending.value &&
-          SettingsSvc.serverDetailsSync().item4 >= 148)
+          SettingsSvc.serverDetailsSync().serverVersionCode >= 148)
         DetailsMenuActionWidget(
           onTap: unsend,
           action: DetailsMenuAction.UndoSend,
@@ -1010,7 +1017,7 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
       if (SettingsSvc.isMinVenturaSync &&
           message.isFromMe! &&
           !widget.controller.isSending.value &&
-          SettingsSvc.serverDetailsSync().item4 >= 148 &&
+          SettingsSvc.serverDetailsSync().serverVersionCode >= 148 &&
           (part.text?.isNotEmpty ?? false))
         DetailsMenuActionWidget(
           onTap: edit,

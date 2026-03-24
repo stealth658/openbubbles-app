@@ -55,11 +55,11 @@ class _ScreenEffectsWidgetState extends State<ScreenEffectsWidget> with TickerPr
     });
 
     EventDispatcherSvc.stream.listen((event) async {
-      if (event.item1 == 'play-effect' && mounted && screenSelected.isEmpty) {
+      if (event.type == 'play-effect' && mounted && screenSelected.isEmpty) {
         setState(() {
-          screenSelected = event.item2['type'];
+          screenSelected = event.data['type'];
         });
-        final rect = event.item2['size'];
+        final rect = event.data['size'];
         if (screenSelected == "fireworks" && !fireworkController.isPlaying) {
           fireworkController.windowSize = Size(NavigationSvc.width(context), context.height);
           fireworkController.start();

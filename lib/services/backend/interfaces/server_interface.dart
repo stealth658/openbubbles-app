@@ -1,6 +1,7 @@
 import 'package:bluebubbles/env.dart';
-import 'package:bluebubbles/services/backend/settings/settings_service.dart';
+import 'package:bluebubbles/models/models.dart' show ServerDetails;
 import 'package:bluebubbles/services/backend/actions/server_actions.dart';
+import 'package:bluebubbles/services/backend/settings/settings_service.dart' show ServerUpdateInfo;
 import 'package:get_it/get_it.dart';
 import 'package:bluebubbles/services/isolates/global_isolate.dart';
 
@@ -22,7 +23,7 @@ class ServerInterface {
     );
   }
 
-  static Future<ServerDetailsInfo> getServerDetails() async {
+  static Future<ServerDetails> getServerDetails() async {
     late Map<String, dynamic> response;
 
     if (isIsolate) {
@@ -31,7 +32,7 @@ class ServerInterface {
       response = await GetIt.I<GlobalIsolate>().send<Map<String, dynamic>>(IsolateRequestType.getServerDetails);
     }
 
-    return ServerDetailsInfo(
+    return ServerDetails(
       macOSVersion: response['macOSVersion'] as int,
       macOSMinorVersion: response['macOSMinorVersion'] as int,
       serverVersion: response['serverVersion'] as String,

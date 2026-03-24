@@ -14,7 +14,7 @@ import 'package:get/get.dart' hide Condition;
 // (needed when generating objectbox model code)
 // ignore: unnecessary_import
 import 'package:objectbox/objectbox.dart';
-import 'package:tuple/tuple.dart';
+import 'package:bluebubbles/models/models.dart' show HandleLookupKey;
 
 @Entity()
 class Handle {
@@ -176,7 +176,7 @@ class Handle {
       if (matchOnOriginalROWID) {
         existing = Handle.findOne(originalROWID: originalROWID);
       } else {
-        existing = Handle.findOne(addressAndService: Tuple2(address, service));
+        existing = Handle.findOne(addressAndService: HandleLookupKey(address, service));
       }
 
       if (existing != null) {
@@ -219,7 +219,7 @@ class Handle {
         if (matchOnOriginalROWID) {
           existing = Handle.findOne(originalROWID: h.originalROWID);
         } else {
-          existing = Handle.findOne(addressAndService: Tuple2(h.address, h.service));
+          existing = Handle.findOne(addressAndService: HandleLookupKey(h.address, h.service));
         }
 
         if (existing != null) {
@@ -276,7 +276,7 @@ class Handle {
     return this;
   }
 
-  static Handle? findOne({int? id, int? originalROWID, Tuple2<String, String>? addressAndService}) {
+  static Handle? findOne({int? id, int? originalROWID, HandleLookupKey? addressAndService}) {
     if (kIsWeb || id == 0) return null;
     if (id != null) {
       final handle = Database.handles.get(id) ?? Handle.findOne(originalROWID: id);
@@ -289,7 +289,7 @@ class Handle {
       return result;
     } else if (addressAndService != null) {
       final query = Database.handles
-          .query(Handle_.address.equals(addressAndService.item1) & Handle_.service.equals(addressAndService.item2))
+          .query(Handle_.address.equals(addressAndService.address) & Handle_.service.equals(addressAndService.service))
           .build();
       query.limit = 1;
       final result = query.findFirst();
@@ -299,14 +299,14 @@ class Handle {
     return null;
   }
 
-  static Future<Handle?> findOneAsync({int? id, int? originalROWID, Tuple2<String, String>? addressAndService}) async {
+  static Future<Handle?> findOneAsync({int? id, int? originalROWID, HandleLookupKey? addressAndService}) async {
     if (kIsWeb || id == 0) return null;
 
     return await HandleInterface.findOneHandleAsync(
       id: id,
       originalROWID: originalROWID,
-      address: addressAndService?.item1,
-      service: addressAndService?.item2,
+      address: addressAndService?.address,
+      service: addressAndService?.service,
     );
   }
 

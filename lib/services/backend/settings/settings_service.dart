@@ -19,7 +19,7 @@ import 'package:github/github.dart' hide Source;
 import 'package:local_auth/local_auth.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:store_checker/store_checker.dart';
-import 'package:tuple/tuple.dart';
+import 'package:bluebubbles/models/models.dart' show ServerDetails;
 import 'package:universal_io/io.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:version/version.dart';
@@ -58,24 +58,6 @@ class ServerUpdateInfo {
     this.releaseDate,
     this.releaseName,
   });
-}
-
-class ServerDetailsInfo {
-  final int macOSVersion;
-  final int macOSMinorVersion;
-  final String serverVersion;
-  final int serverVersionCode;
-
-  ServerDetailsInfo({
-    required this.macOSVersion,
-    required this.macOSMinorVersion,
-    required this.serverVersion,
-    required this.serverVersionCode,
-  });
-
-  Tuple4<int, int, String, int> toTuple() {
-    return Tuple4(macOSVersion, macOSMinorVersion, serverVersion, serverVersionCode);
-  }
 }
 
 class FCMDataInfo {
@@ -260,9 +242,9 @@ class SettingsService {
     };
   }
 
-  Future<ServerDetailsInfo> fetchServerDetails() async {
+  Future<ServerDetails> fetchServerDetails() async {
     final detailsDict = await getServerDetailsDict();
-    return ServerDetailsInfo(
+    return ServerDetails(
       macOSVersion: detailsDict['macOSVersion'] as int,
       macOSMinorVersion: detailsDict['macOSMinorVersion'] as int,
       serverVersion: detailsDict['serverVersion'] as String,
@@ -270,9 +252,9 @@ class SettingsService {
     );
   }
 
-  Future<Tuple4<int, int, String, int>> getServerDetails({bool refresh = false, String? origin}) async {
+  Future<ServerDetails> getServerDetails({bool refresh = false, String? origin}) async {
     if (refresh) {
-      late ServerDetailsInfo detailsInfo;
+      late ServerDetails detailsInfo;
       if (Platform.isAndroid) {
         detailsInfo = await ServerInterface.getServerDetails();
       } else {
@@ -287,7 +269,7 @@ class SettingsService {
         }
       }
 
-      return detailsInfo.toTuple();
+      return detailsInfo;
     } else {
       return serverDetailsSync();
     }
@@ -398,25 +380,25 @@ class SettingsService {
     _showingPapiPopup = false;
   }
 
-  Tuple4<int, int, String, int> serverDetailsSync() => Tuple4(
-      PrefsSvc.i.getInt("macos-version") ?? 11,
-      PrefsSvc.i.getInt("macos-minor-version") ?? 0,
-      PrefsSvc.i.getString("server-version") ?? "0.0.0",
-      PrefsSvc.i.getInt("server-version-code") ?? 0);
+  ServerDetails serverDetailsSync() => ServerDetails(
+      macOSVersion: PrefsSvc.i.getInt("macos-version") ?? 11,
+      macOSMinorVersion: PrefsSvc.i.getInt("macos-minor-version") ?? 0,
+      serverVersion: PrefsSvc.i.getString("server-version") ?? "0.0.0",
+      serverVersionCode: PrefsSvc.i.getInt("server-version-code") ?? 0);
 
   Future<bool> get isMinSierra async {
     final val = await getServerDetails();
-    return val.item1 > 10 || (val.item1 == 10 && val.item2 > 11);
+    return val.macOSVersion > 10 || (val.macOSVersion == 10 && val.macOSMinorVersion > 11);
   }
 
   Future<bool> get isMinBigSur async {
     final val = await getServerDetails();
-    return val.item1 >= 11;
+    return val.macOSVersion >= 11;
   }
 
   Future<bool> get isMinMonterey async {
     final val = await getServerDetails();
-    return val.item1 >= 12;
+    return val.macOSVersion >= 12;
   }
 
   Future<bool> get isMinVentura async {
@@ -473,7 +455,7 @@ class SettingsService {
   /// Group chats can be created on macOS <= Catalina or
   /// if the Private API is enabled, and the server supports it (v1.8.0).
   Future<bool> canCreateGroupChat() async {
-    int serverVersion = (await SettingsSvc.getServerDetails()).item4;
+    int serverVersion = (await SettingsSvc.getServerDetails()).serverVersionCode;
     bool isMin_1_8_0 = serverVersion >= 268; // Server: v1.8.0 (1 * 100 + 8 * 21 + 0)
     bool papiEnabled = settings.enablePrivateAPI.value;
     return (isMin_1_8_0 && papiEnabled) || !isMinBigSurSync;
@@ -482,7 +464,7 @@ class SettingsService {
   /// Group chats can be created on macOS <= Catalina or
   /// if the Private API is enabled, and the server supports it (v1.8.0).
   bool canCreateGroupChatSync() {
-    int serverVersion = SettingsSvc.serverDetailsSync().item4;
+    int serverVersion = SettingsSvc.serverDetailsSync().serverVersionCode;
     bool isMin_1_8_0 = serverVersion >= 268; // Server: v1.8.0 (1 * 100 + 8 * 21 + 0)
     bool papiEnabled = settings.enablePrivateAPI.value;
     return (isMin_1_8_0 && papiEnabled) || !isMinBigSurSync;

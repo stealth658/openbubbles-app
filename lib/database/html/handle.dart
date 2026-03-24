@@ -1,9 +1,9 @@
 import 'package:bluebubbles/database/io/contact_v2.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/services.dart';
+import 'package:bluebubbles/models/models.dart' show HandleLookupKey;
 import 'package:faker/faker.dart';
 import 'package:get/get.dart';
-import 'package:tuple/tuple.dart';
 
 class Handle {
   int? id;
@@ -108,11 +108,11 @@ class Handle {
     return this;
   }
 
-  static Handle? findOne({int? id, int? originalROWID, Tuple2<String, String>? addressAndService}) {
+  static Handle? findOne({int? id, int? originalROWID, HandleLookupKey? addressAndService}) {
     // ignore: argument_type_not_assignable, return_of_invalid_type, invalid_assignment, for_in_of_invalid_element_type
     return ChatsSvc.webCachedHandles.firstWhereOrNull((e) => originalROWID != null
         ? e.originalROWID == originalROWID
-        : e.uniqueAddressAndService == "${addressAndService?.item1}/${addressAndService?.item2}");
+        : e.uniqueAddressAndService == "${addressAndService?.address}/${addressAndService?.service}");
   }
 
   static List<Handle> find() {

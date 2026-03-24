@@ -1,7 +1,7 @@
 import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/models/models.dart' show HandleLookupKey;
 import 'package:collection/collection.dart';
 import 'package:intl/intl.dart';
-import 'package:tuple/tuple.dart';
 
 enum LocationStatus { legacy, shallow, live }
 
@@ -39,7 +39,7 @@ class FindMyFriend {
         subtitle: json["subtitle"],
         handle: json["handle"] == null && json["title"] == null
             ? null
-            : Handle.findOne(addressAndService: Tuple2(json["handle"] ?? json["title"], "iMessage")),
+            : Handle.findOne(addressAndService: HandleLookupKey(json["handle"] ?? json["title"], "iMessage")),
         lastUpdated:
             (json["last_updated"] ?? 0) == 0 ? null : DateTime.fromMillisecondsSinceEpoch(json["last_updated"]),
         status: LocationStatus.values.firstWhereOrNull((e) => e.name == json["status"]),

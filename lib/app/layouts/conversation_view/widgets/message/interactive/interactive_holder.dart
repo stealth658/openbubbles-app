@@ -112,7 +112,7 @@ class _InteractiveHolderState extends State<InteractiveHolder> with AutomaticKee
                                           case "Digital Touch Message":
                                             if (SettingsSvc.settings.enablePrivateAPI.value &&
                                                 SettingsSvc.isMinBigSurSync &&
-                                                SettingsSvc.serverDetailsSync().item4 >= 226) {
+                                                SettingsSvc.serverDetailsSync().serverVersionCode >= 226) {
                                               return const EmbeddedMedia();
                                             } else {
                                               return const UnsupportedInteractive(

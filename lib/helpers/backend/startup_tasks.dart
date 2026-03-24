@@ -17,9 +17,16 @@ import 'package:in_app_review/in_app_review.dart';
 import 'package:on_exit/init.dart';
 import 'package:app_install_date/app_install_date.dart';
 import 'package:path/path.dart';
-import 'package:tuple/tuple.dart';
+import 'package:bluebubbles/models/models.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:get_it/get_it.dart';
+
+class WindowEntry {
+  final String id;
+  final String name;
+
+  const WindowEntry(this.id, this.name);
+}
 
 class StartupTasks {
   static final Completer<void> uiReady = Completer<void>();
@@ -451,7 +458,7 @@ class StartupTasks {
     Logger.info("Fetching server details in background...");
     SettingsSvc.getServerDetails(refresh: true).catchError((e, s) {
       Logger.warn("Failed to fetch server details on startup!", error: e, trace: s);
-      return const Tuple4(0, 0, "", 0); // Return default tuple on error
+      return const ServerDetails.empty(); // Return default on error
     });
 
     // Only register FCM device on startup
@@ -568,18 +575,18 @@ class StartupTasks {
       Logger.debug("Got Signal to go to foreground");
       doWhenWindowReady(() async {
         await windowManager.show();
-        List<Tuple2<String, String>?> widAndNames = await (await Process.start('wmctrl', ['-pl']))
+        List<WindowEntry?> widAndNames = await (await Process.start('wmctrl', ['-pl']))
             .stdout
             .transform(utf8.decoder)
             .transform(const LineSplitter())
             .map((line) => line.replaceAll(RegExp(r"\s+"), " ").split(" "))
-            .map((split) => split[2] == "$pid" ? Tuple2(split.first, split.last) : null)
-            .where((tuple) => tuple != null)
+            .map((split) => split[2] == "$pid" ? WindowEntry(split.first, split.last) : null)
+            .where((entry) => entry != null)
             .toList();
 
-        for (Tuple2<String, String>? window in widAndNames) {
-          if (window?.item2 == "BlueBubbles") {
-            Process.runSync('wmctrl', ['-iR', window!.item1]);
+        for (WindowEntry? window in widAndNames) {
+          if (window?.name == "BlueBubbles") {
+            Process.runSync('wmctrl', ['-iR', window!.id]);
             break;
           }
         }

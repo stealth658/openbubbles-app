@@ -17,14 +17,19 @@ import 'package:flutter/services.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:get/get.dart';
 import 'package:flutter_sliding_up_panel/flutter_sliding_up_panel.dart';
-import 'package:tuple/tuple.dart';
 import 'package:objectbox/src/native/query/query.dart' as obx;
+
+class _SearchResult {
+  final Chat chat;
+  final Message message;
+  const _SearchResult({required this.chat, required this.message});
+}
 
 class SearchResult {
   final String search;
   final String chatGuidFilter;
   final String method;
-  final List<Tuple2<Chat, Message>> results;
+  final List<_SearchResult> results;
 
   SearchResult({
     required this.search,
@@ -142,7 +147,7 @@ class SearchViewState extends State<SearchView> with ThemeHelpers {
       chats = results.map((e) => e.chat.target!).toList();
       chats.forEachIndexed((index, element) {
         element.latestMessage = messages[index];
-        search.results.add(Tuple2(element, messages[index]));
+        search.results.add(_SearchResult(chat: element, message: messages[index]));
       });
     } else {
       final whereClause = [
@@ -186,21 +191,21 @@ class SearchViewState extends State<SearchView> with ThemeHelpers {
         withChatParticipants: true,
         where: whereClause,
       );
-      // we query chats from DB so we can get contact names
       // ignore: prefer_const_constructors
-      final items = Tuple2(<Chat>[], <Message>[]);
+      final List<Chat> itemChats = [];
+      final List<Message> itemMessages = [];
       for (dynamic item in results) {
         final chat = Chat.fromMap(item['chats'][0]);
         final message = Message.fromMap(item);
-        items.item1.add(chat);
-        items.item2.add(message);
+        itemChats.add(chat);
+        itemMessages.add(message);
       }
-      final chatsToGet = items.item1.map((e) => e.guid).toList();
+      final chatsToGet = itemChats.map((e) => e.guid).toList();
       final dbChats = Database.chats.query(Chat_.guid.oneOf(chatsToGet)).build().find();
-      for (int i = 0; i < items.item1.length; i++) {
-        final chat = dbChats.firstWhereOrNull((e) => e.guid == items.item1[i].guid) ?? items.item1[i];
-        chat.latestMessage = items.item2[i];
-        search.results.add(Tuple2(chat, items.item2[i]));
+      for (int i = 0; i < itemChats.length; i++) {
+        final chat = dbChats.firstWhereOrNull((e) => e.guid == itemChats[i].guid) ?? itemChats[i];
+        chat.latestMessage = itemMessages[i];
+        search.results.add(_SearchResult(chat: chat, message: itemMessages[i]));
       }
     }
 
@@ -437,8 +442,8 @@ class SearchViewState extends State<SearchView> with ThemeHelpers {
                             .copyWith(color: context.theme.colorScheme.outline, height: 1.5)
                             .apply(fontSizeFactor: SettingsSvc.settings.skin.value == Skins.Material ? 1.05 : 1.0);
 
-                        final chat = currentSearch.value!.results[index].item1;
-                        final message = currentSearch.value!.results[index].item2;
+                        final chat = currentSearch.value!.results[index].chat;
+                        final message = currentSearch.value!.results[index].message;
 
                         // Create the textspans
                         List<InlineSpan> spans = [];

@@ -37,7 +37,6 @@ import 'package:pasteboard/pasteboard.dart';
 import 'package:path/path.dart' hide context;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:supercharged/supercharged.dart';
-import 'package:tuple/tuple.dart';
 import 'package:unicode_emojis/unicode_emojis.dart';
 import 'package:universal_io/io.dart';
 
@@ -106,14 +105,14 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
         String emoji = proxyController.text;
         proxyController.clear();
         TextEditingController realController =
-            controller.editing.lastOrNull?.item3 ?? controller.lastFocusedTextController;
+            controller.editing.lastOrNull?.controller ?? controller.lastFocusedTextController;
         String text = realController.text;
         TextSelection selection = realController.selection;
 
         realController.text = text.substring(0, selection.start) + emoji + text.substring(selection.end);
         realController.selection = TextSelection.collapsed(offset: selection.start + emoji.length);
 
-        (controller.editing.lastOrNull?.item3.focusNode ?? controller.lastFocusedNode).requestFocus();
+        (controller.editing.lastOrNull?.controller.focusNode ?? controller.lastFocusedNode).requestFocus();
       });
     }
   }
@@ -398,8 +397,8 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
         attachments: controller.pickedAttachments,
         text: text,
         subject: controller.subjectTextController.text,
-        replyGuid: controller.replyToMessage?.item1.threadOriginatorGuid ?? controller.replyToMessage?.item1.guid,
-        replyPart: controller.replyToMessage?.item2,
+        replyGuid: controller.replyToMessage?.message.threadOriginatorGuid ?? controller.replyToMessage?.message.guid,
+        replyPart: controller.replyToMessage?.partIndex,
         effectId: effect,
       ));
     }
@@ -643,7 +642,7 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
                       color: context.theme.colorScheme.outline, size: 28),
                   onPressed: () {
                     showEmojiPicker.value = !showEmojiPicker.value;
-                    (controller.editing.lastOrNull?.item3.focusNode ?? controller.lastFocusedNode).requestFocus();
+                    (controller.editing.lastOrNull?.controller.focusNode ?? controller.lastFocusedNode).requestFocus();
                   },
                 ),
               if (kIsDesktop && !Platform.isLinux)
@@ -1323,7 +1322,7 @@ class TextFieldComponentState extends State<TextFieldComponent> {
           controller!.lastFocusedTextController.text.isEmpty &&
           SettingsSvc.settings.editLastSentMessageOnUpArrow.value &&
           SettingsSvc.isMinVenturaSync &&
-          SettingsSvc.serverDetailsSync().item4 >= 148) {
+          SettingsSvc.serverDetailsSync().serverVersionCode >= 148) {
         final message = MessagesSvc(chat!.guid).mostRecentSent;
         if (message != null) {
           final messageController = MessagesSvc(chat!.guid).getOrCreateState(message);
@@ -1334,7 +1333,7 @@ class TextFieldComponentState extends State<TextFieldComponent> {
             if (part != null) {
               final FocusNode? node = kIsDesktop || kIsWeb ? FocusNode() : null;
               controller!.editing
-                  .add(Tuple3(message, part, SpellCheckTextEditingController(text: part.text!, focusNode: node)));
+                  .add(MessageEditEntry(message: message, part: part, controller: SpellCheckTextEditingController(text: part.text!, focusNode: node)));
               node?.requestFocus();
               return KeyEventResult.handled;
             }

@@ -268,7 +268,7 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
                             ),
                           ),
                           AnimatedSizeAndFade.showHide(
-                            show: SettingsSvc.isMinVenturaSync && SettingsSvc.serverDetailsSync().item4 >= 148,
+                            show: SettingsSvc.isMinVenturaSync && SettingsSvc.serverDetailsSync().serverVersionCode >= 148,
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [

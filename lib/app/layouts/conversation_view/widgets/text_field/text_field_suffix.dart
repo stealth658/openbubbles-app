@@ -106,8 +106,8 @@ class _TextFieldSuffixState extends State<TextFieldSuffix> with ThemeHelpers {
                     widget.controller!,
                     widget.textController.text.trim(),
                     widget.subjectTextController?.text.trim() ?? "",
-                    widget.controller!.replyToMessage?.item1.guid,
-                    widget.controller!.replyToMessage?.item2,
+                    widget.controller!.replyToMessage?.message.guid,
+                    widget.controller!.replyToMessage?.partIndex,
                     widget.controller!.chat.guid,
                     widget.sendMessage,
                     widget.textController is MentionTextEditingController

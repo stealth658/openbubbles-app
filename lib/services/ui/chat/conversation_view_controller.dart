@@ -14,8 +14,15 @@ import 'package:google_ml_kit/google_ml_kit.dart' hide Message;
 import 'package:metadata_fetch/metadata_fetch.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:bluebubbles/services/ui/chat/send_data.dart';
-import 'package:tuple/tuple.dart';
+import 'package:bluebubbles/models/models.dart' show MessageReplyContext;
 import 'package:unicode_emojis/unicode_emojis.dart';
+
+class MessageEditEntry {
+  final Message message;
+  final MessagePart part;
+  final SpellCheckTextEditingController controller;
+  const MessageEditEntry({required this.message, required this.part, required this.controller});
+}
 
 ConversationViewController cvc(Chat chat, {String? tag}) =>
     Get.isRegistered<ConversationViewController>(tag: tag ?? chat.guid)
@@ -47,8 +54,8 @@ class ConversationViewController extends StatefulController with GetSingleTicker
   final RxDouble timestampOffset = 0.0.obs;
   final RxBool inSelectMode = false.obs;
   final RxList<Message> selected = <Message>[].obs;
-  final RxList<Tuple3<Message, MessagePart, SpellCheckTextEditingController>> editing =
-      <Tuple3<Message, MessagePart, SpellCheckTextEditingController>>[].obs;
+  final RxList<MessageEditEntry> editing =
+      <MessageEditEntry>[].obs;
   final GlobalKey focusInfoKey = GlobalKey();
   final RxBool recipientNotifsSilenced = false.obs;
   bool showingOverlays = false;
@@ -74,9 +81,9 @@ class ConversationViewController extends StatefulController with GetSingleTicker
   final RxInt mentionSelectedIndex = 0.obs;
   final ScrollController emojiScrollController = ScrollController();
   final Rxn<DateTime> scheduledDate = Rxn<DateTime>(null);
-  final Rxn<Tuple2<Message, int>> _replyToMessage = Rxn<Tuple2<Message, int>>(null);
-  Tuple2<Message, int>? get replyToMessage => _replyToMessage.value;
-  set replyToMessage(Tuple2<Message, int>? m) {
+  final Rxn<MessageReplyContext> _replyToMessage = Rxn<MessageReplyContext>(null);
+  MessageReplyContext? get replyToMessage => _replyToMessage.value;
+  set replyToMessage(MessageReplyContext? m) {
     _replyToMessage.value = m;
     if (m != null) {
       lastFocusedNode.requestFocus();
@@ -182,7 +189,7 @@ class ConversationViewController extends StatefulController with GetSingleTicker
   }
 
   bool isEditing(String guid, int part) {
-    return editing.firstWhereOrNull((e) => e.item1.guid == guid && e.item2.part == part) != null;
+    return editing.firstWhereOrNull((e) => e.message.guid == guid && e.part.part == part) != null;
   }
 
   void close() {
@@ -194,8 +201,8 @@ class ConversationViewController extends StatefulController with GetSingleTicker
   Future<void> saveReplyToMessageState() async {
     await PrefsInterface.saveReplyToMessageState(
       chat.guid,
-      replyToMessage?.item1.guid,
-      replyToMessage?.item2,
+      replyToMessage?.message.guid,
+      replyToMessage?.partIndex,
     );
   }
 
@@ -206,7 +213,7 @@ class ConversationViewController extends StatefulController with GetSingleTicker
       final messagePart = data['messagePart'] as int;
       final message = Message.findOne(guid: messageGuid);
       if (message != null) {
-        replyToMessage = Tuple2(message, messagePart);
+        replyToMessage = MessageReplyContext(message, messagePart);
       }
     }
   }

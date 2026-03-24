@@ -10,7 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_ml_kit/google_ml_kit.dart' hide Message;
 import 'package:maps_launcher/maps_launcher.dart';
-import 'package:tuple/tuple.dart';
+import 'package:bluebubbles/models/models.dart' show TextEntityMatch;
 import 'package:url_launcher/url_launcher.dart';
 
 class MentionEntity extends Entity {
@@ -86,7 +86,7 @@ Future<List<InlineSpan>> buildEnrichedMessageSpans(BuildContext context, Message
   // extract rich content
   final urlRegex = RegExp(
       r'((https?://)|(www\.))[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}([-a-zA-Z0-9/()@:%_.~#?&=*\[\]]*)\b');
-  final linkIndexMatches = <Tuple3<String, List<int>, List?>>[];
+  final linkIndexMatches = <TextEntityMatch>[];
   final controller = cvc(message.chat.target ?? ChatsSvc.activeChat!.chat);
   if (!isNullOrEmpty(part.text)) {
     if (!kIsWeb && !kIsDesktop && SettingsSvc.settings.smartReply.value) {
@@ -120,36 +120,36 @@ Future<List<InlineSpan>> buildEnrichedMessageSpans(BuildContext context, Message
       }
       for (EntityAnnotation element in normalizedEntities) {
         if (element.entities.first is AddressEntity) {
-          linkIndexMatches.add(Tuple3("map", [element.start, element.end], null));
+          linkIndexMatches.add(TextEntityMatch("map", element.start, element.end, null));
         } else if (element.entities.first is PhoneEntity) {
-          linkIndexMatches.add(Tuple3("phone", [element.start, element.end], null));
+          linkIndexMatches.add(TextEntityMatch("phone", element.start, element.end, null));
         } else if (element.entities.first is EmailEntity) {
-          linkIndexMatches.add(Tuple3("email", [element.start, element.end], null));
+          linkIndexMatches.add(TextEntityMatch("email", element.start, element.end, null));
         } else if (element.entities.first is UrlEntity) {
-          linkIndexMatches.add(Tuple3("link", [element.start, element.end], null));
+          linkIndexMatches.add(TextEntityMatch("link", element.start, element.end, null));
         } else if (element.entities.first is DateTimeEntity) {
           final ent = (element.entities.first as DateTimeEntity);
           if (part.text?.substring(element.start, element.end).toLowerCase() == "now") {
             continue;
           }
-          linkIndexMatches.add(Tuple3("date", [element.start, element.end], [ent.timestamp]));
+          linkIndexMatches.add(TextEntityMatch("date", element.start, element.end, [ent.timestamp]));
         } else if (element.entities.first is TrackingNumberEntity) {
           final ent = (element.entities.first as TrackingNumberEntity);
-          linkIndexMatches.add(Tuple3("tracking", [element.start, element.end], [ent.carrier, ent.number]));
+          linkIndexMatches.add(TextEntityMatch("tracking", element.start, element.end, [ent.carrier, ent.number]));
         } else if (element.entities.first is FlightNumberEntity) {
           final ent = (element.entities.first as FlightNumberEntity);
-          linkIndexMatches.add(Tuple3("flight", [element.start, element.end], [ent.airlineCode, ent.flightNumber]));
+          linkIndexMatches.add(TextEntityMatch("flight", element.start, element.end, [ent.airlineCode, ent.flightNumber]));
         } else if (element.entities.first is MentionEntity) {
-          linkIndexMatches.add(Tuple3("mention", [element.start, element.end], [element.entities.first.rawValue]));
+          linkIndexMatches.add(TextEntityMatch("mention", element.start, element.end, [element.entities.first.rawValue]));
         }
       }
     } else {
       List<RegExpMatch> matches = urlRegex.allMatches(part.text!).toList();
       for (RegExpMatch match in matches) {
-        linkIndexMatches.add(Tuple3("link", [match.start, match.end], null));
+        linkIndexMatches.add(TextEntityMatch("link", match.start, match.end, null));
       }
       linkIndexMatches.addAll(
-          part.mentions.map((e) => Tuple3("mention", [e.range.first, e.range.last], [e.mentionedAddress ?? ""])));
+          part.mentions.map((e) => TextEntityMatch("mention", e.range.first, e.range.last, [e.mentionedAddress ?? ""])));
     }
   }
   // render subject
@@ -159,16 +159,15 @@ Future<List<InlineSpan>> buildEnrichedMessageSpans(BuildContext context, Message
       textStyle.apply(fontWeightDelta: 2),
     ));
   }
-  linkIndexMatches.sort((a, b) => a.item2.first.compareTo(b.item2.first));
+  linkIndexMatches.sort((a, b) => a.start.compareTo(b.start));
   // render rich content if needed
   if (linkIndexMatches.isNotEmpty) {
     linkIndexMatches.forEachIndexed((i, e) {
-      final type = e.item1;
-      final range = e.item2;
-      final data = e.item3;
-      final text = part.displayText!.substring(range.first, range.last);
+      final type = e.type;
+      final data = e.metadata;
+      final text = part.displayText!.substring(e.start, e.end);
       textSpans.addAll(MessageHelper.buildEmojiText(
-        part.displayText!.substring(i == 0 ? 0 : linkIndexMatches[i - 1].item2.last, range.first),
+        part.displayText!.substring(i == 0 ? 0 : linkIndexMatches[i - 1].end, e.start),
         textStyle,
       ));
       if (type == "mention") {
@@ -238,7 +237,7 @@ Future<List<InlineSpan>> buildEnrichedMessageSpans(BuildContext context, Message
       }
       if (i == linkIndexMatches.length - 1) {
         textSpans.addAll(MessageHelper.buildEmojiText(
-          part.displayText!.substring(range.last),
+          part.displayText!.substring(e.end),
           textStyle,
         ));
       }

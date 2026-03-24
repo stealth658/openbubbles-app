@@ -4,7 +4,12 @@ import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:tuple/tuple.dart';
+
+class _TimestampParts {
+  final String? date;
+  final String time;
+  const _TimestampParts({this.date, required this.time});
+}
 
 class TimestampSeparator extends StatelessWidget {
   const TimestampSeparator({
@@ -18,16 +23,16 @@ class TimestampSeparator extends StatelessWidget {
     return second.dateCreated!.difference(first.dateCreated!).inMinutes.abs() > 30;
   }
 
-  Tuple2<String?, String>? buildTimeStamp(Message message) {
+  _TimestampParts? buildTimeStamp(Message message) {
     if (SettingsSvc.settings.skin.value == Skins.Samsung &&
         message.dateCreated?.day != olderMessage?.dateCreated?.day) {
-      return Tuple2(null, buildSeparatorDateSamsung(message.dateCreated!));
+      return _TimestampParts(time: buildSeparatorDateSamsung(message.dateCreated!));
     } else if (SettingsSvc.settings.skin.value != Skins.Samsung && withinTimeThreshold(message, olderMessage)) {
       final time = message.dateCreated!;
       if (SettingsSvc.settings.skin.value == Skins.iOS) {
-        return Tuple2(time.isToday() ? "Today" : buildDate(time), buildTime(time));
+        return _TimestampParts(date: time.isToday() ? "Today" : buildDate(time), time: buildTime(time));
       } else {
-        return Tuple2(time.isToday() ? "Today" : buildSeparatorDateMaterial(time), buildTime(time));
+        return _TimestampParts(date: time.isToday() ? "Today" : buildSeparatorDateMaterial(time), time: buildTime(time));
       }
     } else {
       return null;
@@ -47,13 +52,13 @@ class TimestampSeparator extends StatelessWidget {
                 style: context.theme.textTheme.labelSmall!
                     .copyWith(color: context.theme.colorScheme.outline, fontWeight: FontWeight.normal),
                 children: [
-                  if (timestamp.item1 != null)
+                  if (timestamp.date != null)
                     TextSpan(
-                      text: "${timestamp.item1!} ",
+                      text: "${timestamp.date!} ",
                       style: context.theme.textTheme.labelSmall!
                           .copyWith(fontWeight: FontWeight.w600, color: context.theme.colorScheme.outline),
                     ),
-                  TextSpan(text: timestamp.item2)
+                  TextSpan(text: timestamp.time)
                 ],
               ),
             ),

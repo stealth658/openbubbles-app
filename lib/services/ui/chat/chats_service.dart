@@ -10,10 +10,10 @@ import 'package:bluebubbles/services/backend/interfaces/chat_interface.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:collection/collection.dart';
+import 'package:bluebubbles/models/models.dart' show HandleLookupKey, MessageSaveResult;
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart' hide Response;
-import 'package:tuple/tuple.dart';
 import 'package:universal_io/io.dart';
 import 'package:bluebubbles/database/database.dart';
 import 'package:get_it/get_it.dart';
@@ -274,7 +274,7 @@ class ChatsService {
         if (uri == null) return;
 
         final address = uri.path;
-        final handle = Handle.findOne(addressAndService: Tuple2(address, "iMessage"));
+        final handle = Handle.findOne(addressAndService: HandleLookupKey(address, "iMessage"));
         NavigationSvc.closeSettings(Get.context!);
         await NavigationSvc.pushAndRemoveUntil(
           Get.context!,
@@ -885,7 +885,7 @@ class ChatsService {
   }
 
   /// Add message to chat with full service orchestration
-  Future<Tuple2<Message, bool>> addMessageToChat(Chat chat, Message message,
+  Future<MessageSaveResult> addMessageToChat(Chat chat, Message message,
       {bool changeUnreadStatus = true, bool checkForMessageText = true, bool clearNotificationsIfFromMe = true}) async {
     // Perform the DB operation to add the message
     final result = await chat.addMessage(message,
@@ -893,7 +893,7 @@ class ChatsService {
         checkForMessageText: checkForMessageText,
         clearNotificationsIfFromMe: clearNotificationsIfFromMe);
 
-    final isNewer = result.item2;
+    final isNewer = result.isNewer;
 
     // Handle service-level operations if this is a newer message
     if (isNewer) {

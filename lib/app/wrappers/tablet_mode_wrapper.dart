@@ -52,11 +52,11 @@ class _TabletModeWrapperState extends State<TabletModeWrapper> with ThemeHelpers
     _ratio =
         RxDouble((PrefsSvc.i.getDouble('splitRatio') ?? widget.initialRatio).clamp(widget.minRatio, widget.maxRatio));
     EventDispatcherSvc.stream.listen((event) {
-      if (event.item1 == 'split-refresh') {
+      if (event.type == 'split-refresh') {
         _ratio.value = PrefsSvc.i.getDouble('splitRatio') ?? _ratio.value;
         setState(() {});
-      } else if (event.item1 == 'override-split') {
-        _ratio.value = event.item2;
+      } else if (event.type == 'override-split') {
+        _ratio.value = event.data;
         setState(() {});
       }
     });

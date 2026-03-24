@@ -93,7 +93,7 @@ class _MessageHolderState extends State<MessageHolder> with ThemeHelpers {
 
   bool isEditing(int part) =>
       message.isFromMe! &&
-      widget.cvController.editing.firstWhereOrNull((e2) => e2.item1.guid == message.guid! && e2.item2.part == part) !=
+      widget.cvController.editing.firstWhereOrNull((e2) => e2.message.guid == message.guid! && e2.part.part == part) !=
           null;
 
   List<RxDouble> replyOffsets = [];
@@ -115,7 +115,7 @@ class _MessageHolderState extends State<MessageHolder> with ThemeHelpers {
   }
 
   void completeEdit(String newEdit, int part) async {
-    widget.cvController.editing.removeWhere((e2) => e2.item1.guid == message.guid! && e2.item2.part == part);
+    widget.cvController.editing.removeWhere((e2) => e2.message.guid == message.guid! && e2.part.part == part);
     if (newEdit.isNotEmpty && newEdit != controller.parts.firstWhere((element) => element.part == part).text) {
       bool dismissed = false;
       showDialog(
@@ -485,8 +485,8 @@ class _MessageHolderState extends State<MessageHolder> with ThemeHelpers {
                                                                             final editStuff = widget
                                                                                 .cvController.editing
                                                                                 .firstWhereOrNull((e2) =>
-                                                                                    e2.item1.guid == message.guid! &&
-                                                                                    e2.item2.part == e.part);
+                                                                                    e2.message.guid == message.guid! &&
+                                                                                    e2.part.part == e.part);
                                                                             return AnimatedSize(
                                                                                 duration:
                                                                                     const Duration(milliseconds: 250),
@@ -496,7 +496,7 @@ class _MessageHolderState extends State<MessageHolder> with ThemeHelpers {
                                                                                     ? const SizedBox.shrink()
                                                                                     : MessageEditField(
                                                                                         part: e.part,
-                                                                                        editController: editStuff.item3,
+                                                                                        editController: editStuff.controller,
                                                                                         cvController:
                                                                                             widget.cvController,
                                                                                         onComplete: completeEdit,

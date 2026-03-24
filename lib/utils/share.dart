@@ -9,7 +9,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:metadata_fetch/metadata_fetch.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:tuple/tuple.dart';
+import 'package:bluebubbles/models/models.dart' show LocationAttachmentData;
 import 'package:universal_io/io.dart';
 
 class Share {
@@ -110,7 +110,7 @@ class Share {
     String? url;
     String? title;
 
-    Future<Tuple5<String, String, Uint8List, String, String?>> getLocationPreview() async {
+    Future<LocationAttachmentData> getLocationPreview() async {
       _locationData = await Geolocator.getCurrentPosition();
       String vcfString = AttachmentsSvc.createAppleLocation(_locationData.latitude, _locationData.longitude);
 
@@ -123,7 +123,7 @@ class Share {
       String url = meta.image!;
       String? title = meta.title;
 
-      return Tuple5(_attachmentGuid, fileName, bytes, url, title);
+      return LocationAttachmentData(guid: _attachmentGuid, fileName: fileName, bytes: bytes, mapImageUrl: url, title: title);
     }
 
     bool send = false;
@@ -136,11 +136,11 @@ class Share {
             future: getLocationPreview(),
             builder: (context, snapshot) {
               if (snapshot.data != null) {
-                _attachmentGuid = snapshot.data!.item1;
-                fileName = snapshot.data!.item2;
-                bytes = snapshot.data!.item3;
-                url = snapshot.data!.item4;
-                title = snapshot.data!.item5;
+                _attachmentGuid = snapshot.data!.guid;
+                fileName = snapshot.data!.fileName;
+                bytes = snapshot.data!.bytes;
+                url = snapshot.data!.mapImageUrl;
+                title = snapshot.data!.title;
               }
               if (url == null) {
                 return AbsorbPointer(

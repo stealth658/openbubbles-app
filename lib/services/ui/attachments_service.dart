@@ -14,10 +14,10 @@ import 'package:get/get.dart';
 import 'package:image_size_getter/file_input.dart';
 import 'package:image_size_getter/image_size_getter.dart' as isg;
 import 'package:path/path.dart';
+import 'package:bluebubbles/models/models.dart' show AttachmentUploadProgress;
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:saver_gallery/saver_gallery.dart';
-import 'package:tuple/tuple.dart';
 import 'package:universal_html/html.dart' as html;
 import 'package:universal_io/io.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -31,7 +31,7 @@ AttachmentsService AttachmentsSvc =
 /// Wrapper class for attachments being sent that includes both the file and send progress
 class AttachmentWithProgress {
   final PlatformFile file;
-  final Tuple2<String, RxDouble> progress;
+  final AttachmentUploadProgress progress;
 
   AttachmentWithProgress(this.file, this.progress);
 }
@@ -39,7 +39,7 @@ class AttachmentWithProgress {
 class AttachmentsService extends GetxService {
   dynamic getContent(Attachment attachment, {String? path, bool? autoDownload, Function(PlatformFile)? onComplete}) {
     if (attachment.guid?.startsWith("temp") ?? false) {
-      final sendProgress = OutgoingMsgHandler.attachmentProgress.firstWhereOrNull((e) => e.item1 == attachment.guid);
+      final sendProgress = OutgoingMsgHandler.attachmentProgress.firstWhereOrNull((e) => e.guid == attachment.guid);
       if (sendProgress != null) {
         // Check if we can also get the file to display behind the progress
         if (!kIsWeb) {

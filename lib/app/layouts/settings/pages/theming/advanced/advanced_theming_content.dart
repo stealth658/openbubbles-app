@@ -14,7 +14,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:tuple/tuple.dart';
 import 'package:universal_io/io.dart';
 
 class AdvancedThemingContent extends StatefulWidget {
@@ -330,11 +329,11 @@ class _AdvancedThemingContentState extends State<AdvancedThemingContent> with Th
               (context, index) {
                 return Obx(() => AdvancedThemingTile(
                       currentTheme: currentTheme,
-                      tuple: Tuple2(
-                          currentTheme.colors(widget.isDarkMode).entries.toList()[index < length - 1
+                      colorEntry: AdvancedThemingEntry(
+                          primary: currentTheme.colors(widget.isDarkMode).entries.toList()[index < length - 1
                               ? index * 2
                               : currentTheme.colors(widget.isDarkMode).entries.length - (length - index)],
-                          index < length - 1
+                          textColor: index < length - 1
                               ? currentTheme.colors(widget.isDarkMode).entries.toList()[index * 2 + 1]
                               : null),
                       editable: editable.value,

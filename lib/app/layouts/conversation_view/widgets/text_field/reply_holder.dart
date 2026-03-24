@@ -25,8 +25,8 @@ class _ReplyHolderState extends State<ReplyHolder> with ThemeHelpers {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final message = widget.controller.replyToMessage?.item1;
-      final part = widget.controller.replyToMessage?.item2 ?? 0;
+      final message = widget.controller.replyToMessage?.message;
+      final part = widget.controller.replyToMessage?.partIndex ?? 0;
       final chatGuid = message?.chat.target?.guid ?? ChatStateScope.maybeChatOf(context)?.guid;
       final reply = message?.guid == null || chatGuid == null
           ? message

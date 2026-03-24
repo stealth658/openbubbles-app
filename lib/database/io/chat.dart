@@ -11,9 +11,9 @@ import 'package:dio/dio.dart';
 import 'package:faker/faker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:bluebubbles/models/models.dart' show MessageSaveResult;
 import 'package:get/get.dart' hide Response;
 import 'package:metadata_fetch/metadata_fetch.dart';
-import 'package:tuple/tuple.dart';
 // (needed when generating objectbox model code)
 // ignore: unnecessary_import
 import 'package:objectbox/objectbox.dart';
@@ -330,7 +330,7 @@ class Chat {
 
   /// Add message to chat - pure DB operation
   /// Note: For full message add with service updates, use ChatsSvc.addMessageToChat
-  Future<Tuple2<Message, bool>> addMessage(Message message,
+  Future<MessageSaveResult> addMessage(Message message,
       {bool changeUnreadStatus = true, bool checkForMessageText = true, bool clearNotificationsIfFromMe = true}) async {
     // If this is a message preview and we don't already have metadata for this, get it
     if (message.fullText.replaceAll("\n", " ").hasUrl &&
@@ -358,9 +358,9 @@ class Chat {
         checkForMessageText: checkForMessageText,
       );
 
-      // Extract from Tuple2
-      newMessage = result.item1;
-      isNewer = result.item2;
+      // Extract from MessageSaveResult
+      newMessage = result.message;
+      isNewer = result.isNewer;
     } catch (ex, stacktrace) {
       newMessage = Message.findOne(guid: message.guid);
       if (newMessage == null) {
@@ -402,8 +402,8 @@ class Chat {
       serverSyncParticipantsAsync();
     }
 
-    // Return the saved message and isNewer flag as a Tuple
-    return Tuple2(newMessage ?? message, isNewer);
+    // Return the saved message and isNewer flag
+    return MessageSaveResult(newMessage ?? message, isNewer);
   }
 
   Future<void> serverSyncParticipantsAsync() async {

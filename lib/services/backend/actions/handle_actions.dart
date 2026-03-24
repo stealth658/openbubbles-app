@@ -1,6 +1,6 @@
 import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/database/models.dart';
-import 'package:tuple/tuple.dart';
+import 'package:bluebubbles/models/models.dart' show HandleLookupKey;
 
 class HandleActions {
   static Future<int> saveHandleAsync(Map<String, dynamic> data) async {
@@ -15,7 +15,7 @@ class HandleActions {
       if (matchOnOriginalROWID) {
         existing = Handle.findOne(originalROWID: handle.originalROWID);
       } else {
-        existing = Handle.findOne(addressAndService: Tuple2(handle.address, handle.service));
+        existing = Handle.findOne(addressAndService: HandleLookupKey(handle.address, handle.service));
       }
 
       if (existing != null) {
@@ -51,7 +51,7 @@ class HandleActions {
         if (matchOnOriginalROWID) {
           existing = Handle.findOne(originalROWID: h.originalROWID);
         } else {
-          existing = Handle.findOne(addressAndService: Tuple2(h.address, h.service));
+          existing = Handle.findOne(addressAndService: HandleLookupKey(h.address, h.service));
         }
 
         if (existing != null) {

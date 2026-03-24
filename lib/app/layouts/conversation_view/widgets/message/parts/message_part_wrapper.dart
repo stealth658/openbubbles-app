@@ -18,7 +18,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:tuple/tuple.dart';
+import 'package:bluebubbles/models/models.dart' show MessageReplyContext;
 
 /// Extracted child widget to reduce MessageHolder rebuild scope
 class MessagePartWrapper extends StatelessWidget {
@@ -53,11 +53,11 @@ class MessagePartWrapper extends StatelessWidget {
 
   bool get isEditing =>
       message.isFromMe! &&
-      cvController.editing.firstWhereOrNull((e2) => e2.item1.guid == message.guid! && e2.item2.part == part.part) !=
+      cvController.editing.firstWhereOrNull((e2) => e2.message.guid == message.guid! && e2.part.part == part.part) !=
           null;
 
   void completeEdit(String newEdit) async {
-    cvController.editing.removeWhere((e2) => e2.item1.guid == message.guid! && e2.item2.part == part.part);
+    cvController.editing.removeWhere((e2) => e2.message.guid == message.guid! && e2.part.part == part.part);
     if (newEdit.isNotEmpty && newEdit != part.text) {
       bool dismissed = false;
       showDialog(
@@ -138,7 +138,7 @@ class MessagePartWrapper extends StatelessWidget {
                   : (details) {
                       if (ReplyScope.maybeOf(context) != null) return;
                       if (replyOffset.value.abs() >= SlideToReply.replyThreshold) {
-                        cvController.replyToMessage = Tuple2(message, part.part);
+                        cvController.replyToMessage = MessageReplyContext(message, part.part);
                       }
                       replyOffset.value = 0;
                     },
@@ -242,7 +242,7 @@ class _MessageContentBubble extends StatelessWidget {
           if (message.isFromMe!)
             Obx(() {
               final editStuff = cvController.editing
-                  .firstWhereOrNull((e2) => e2.item1.guid == message.guid! && e2.item2.part == part.part);
+                  .firstWhereOrNull((e2) => e2.message.guid == message.guid! && e2.part.part == part.part);
               return AnimatedSize(
                 duration: const Duration(milliseconds: 250),
                 alignment: Alignment.centerRight,
@@ -276,7 +276,7 @@ class _EditModeTextField extends StatelessWidget {
     required this.onComplete,
   });
 
-  final Tuple3<Message, MessagePart, TextEditingController> editStuff;
+  final MessageEditEntry editStuff;
   final Message message;
   final Chat chat;
   final ConversationViewController cvController;
@@ -312,15 +312,15 @@ class _EditModeTextField extends StatelessWidget {
                 return KeyEventResult.ignored;
               }
               if (ev.logicalKey == LogicalKeyboardKey.enter && !HardwareKeyboard.instance.isShiftPressed) {
-                onComplete(editStuff.item3.text);
+                onComplete(editStuff.controller.text);
                 return KeyEventResult.handled;
               }
               if (ev.logicalKey == LogicalKeyboardKey.escape) {
-                cvController.editing.removeWhere((e2) => e2.item1.guid == message.guid! && e2.item2.part == part.part);
+                cvController.editing.removeWhere((e2) => e2.message.guid == message.guid! && e2.part.part == part.part);
                 if (cvController.editing.isEmpty) {
                   cvController.lastFocusedNode.requestFocus();
                 } else {
-                  cvController.editing.last.item3.focusNode?.requestFocus();
+                  cvController.editing.last.controller.focusNode?.requestFocus();
                 }
                 return KeyEventResult.handled;
               }
@@ -332,7 +332,7 @@ class _EditModeTextField extends StatelessWidget {
             child: TextField(
               textCapitalization: TextCapitalization.sentences,
               autocorrect: true,
-              controller: editStuff.item3,
+              controller: editStuff.controller,
               scrollPhysics: const CustomBouncingScrollPhysics(),
               style: context.theme.extension<BubbleText>()!.bubbleText.apply(
                     fontSizeFactor: message.isBigEmoji ? 3 : 1,
@@ -382,7 +382,7 @@ class _EditModeTextField extends StatelessWidget {
                   ),
                   onPressed: () {
                     cvController.editing
-                        .removeWhere((e2) => e2.item1.guid == message.guid! && e2.item2.part == part.part);
+                        .removeWhere((e2) => e2.message.guid == message.guid! && e2.part.part == part.part);
                     cvController.lastFocusedNode.requestFocus();
                   },
                   iconSize: 22,
@@ -393,7 +393,7 @@ class _EditModeTextField extends StatelessWidget {
                 ),
                 suffixIconConstraints: const BoxConstraints(minHeight: 0, minWidth: 40),
                 suffixIcon: ValueListenableBuilder(
-                  valueListenable: editStuff.item3,
+                  valueListenable: editStuff.controller,
                   builder: (context, value, _) {
                     return Padding(
                       padding: const EdgeInsets.all(3.0),
@@ -413,7 +413,7 @@ class _EditModeTextField extends StatelessWidget {
                             shape: SettingsSvc.settings.skin.value == Skins.iOS ? BoxShape.circle : BoxShape.rectangle,
                             color: SettingsSvc.settings.skin.value != Skins.iOS
                                 ? null
-                                : editStuff.item3.text.isNotEmpty
+                                : editStuff.controller.text.isNotEmpty
                                     ? Colors.white
                                     : context.theme.colorScheme.outline,
                           ),
@@ -429,7 +429,7 @@ class _EditModeTextField extends StatelessWidget {
                           ),
                         ),
                         onPressed: () {
-                          onComplete(editStuff.item3.text);
+                          onComplete(editStuff.controller.text);
                         },
                       ),
                     );

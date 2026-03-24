@@ -25,7 +25,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart' hide Response;
 import 'package:slugify/slugify.dart';
-import 'package:tuple/tuple.dart';
+import 'package:bluebubbles/models/models.dart' show ContactSearchResult;
 
 class SelectedContact {
   final String displayName;
@@ -88,7 +88,7 @@ class ChatCreatorState extends State<ChatCreator> with ThemeHelpers {
           // If you type and then delete everything, show selected chat view
           if (addressController.text.isEmpty && selectedContacts.isNotEmpty) {
             await findExistingChat();
-            return Tuple2(contacts, existingChats);
+            return ContactSearchResult(contacts, existingChats);
           }
 
           if (addressController.text != oldText) {
@@ -114,12 +114,12 @@ class ChatCreatorState extends State<ChatCreator> with ThemeHelpers {
                   e.handles.firstWhereOrNull((e) =>
                           e.address.contains(query) ||
                           e.displayName.toLowerCase().contains(query)) !=
-                      null));
-          return Tuple2(_contacts, _chats);
+                      null)).toList();
+          return ContactSearchResult(_contacts, _chats);
         }, Priority.animation);
         _debounce = null;
-        filteredContacts.value = tuple.item1;
-        filteredChats.value = List<Chat>.from(tuple.item2);
+        filteredContacts.value = tuple.contacts;
+        filteredChats.value = List<Chat>.from(tuple.chats);
         if (addressController.text.isNotEmpty) {
           filteredChats.sort((a, b) => a.handles.length.compareTo(b.handles.length));
         }
@@ -575,9 +575,9 @@ class ChatCreatorState extends State<ChatCreator> with ThemeHelpers {
                                   attachments: widget.initialAttachments,
                                   text: fakeController.value!.textController.text,
                                   subject: "",
-                                  replyGuid: fakeController.value!.replyToMessage?.item1.threadOriginatorGuid ??
-                                      fakeController.value!.replyToMessage?.item1.guid,
-                                  replyPart: fakeController.value!.replyToMessage?.item2,
+                                  replyGuid: fakeController.value!.replyToMessage?.message.threadOriginatorGuid ??
+                                      fakeController.value!.replyToMessage?.message.guid,
+                                  replyPart: fakeController.value!.replyToMessage?.partIndex,
                                   effectId: effect,
                                 ));
 

@@ -34,9 +34,9 @@ class CreateNewThemeDialog extends StatelessWidget {
               ThemeData finalData = currentTheme.data;
               final tuple = ThemeSvc.getStructsFromData(finalData, finalData);
               if (isDarkMode) {
-                finalData = tuple.item2;
+                finalData = tuple.dark;
               } else {
-                finalData = tuple.item1;
+                finalData = tuple.light;
               }
               ThemeStruct newTheme = ThemeStruct(themeData: finalData, name: controller.text);
               onComplete.call(newTheme);

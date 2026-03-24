@@ -4,12 +4,18 @@ import 'package:bluebubbles/services/services.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:tuple/tuple.dart';
+
+@immutable
+class AdvancedThemingEntry {
+  final MapEntry<String, Color> primary;
+  final MapEntry<String, Color>? textColor;
+  const AdvancedThemingEntry({required this.primary, this.textColor});
+}
 
 class AdvancedThemingTile extends StatefulWidget {
-  const AdvancedThemingTile({super.key, required this.currentTheme, required this.tuple, required this.editable});
+  const AdvancedThemingTile({super.key, required this.currentTheme, required this.colorEntry, required this.editable});
   final ThemeStruct currentTheme;
-  final Tuple2<MapEntry<String, Color>, MapEntry<String, Color>?> tuple;
+  final AdvancedThemingEntry colorEntry;
   final bool editable;
 
   @override
@@ -19,15 +25,15 @@ class AdvancedThemingTile extends StatefulWidget {
 class _AdvancedThemingTileState extends State<AdvancedThemingTile> {
   @override
   Widget build(BuildContext context) {
-    final textColor = widget.tuple.item2?.value ?? Colors.black;
+    final textColor = widget.colorEntry.textColor?.value ?? Colors.black;
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: ClipRRect(
           borderRadius: BorderRadius.circular(20),
           child: Material(
-              color: widget.tuple.item1.value,
+              color: widget.colorEntry.primary.value,
               child: Container(
-                decoration: widget.tuple.item1.value.computeDifference(
+                decoration: widget.colorEntry.primary.value.computeDifference(
                             ThemeSvc.inDarkMode(context) || SettingsSvc.settings.skin.value == Skins.Samsung
                                 ? context.theme.colorScheme.background
                                 : context.theme.colorScheme.properSurface) <
@@ -40,10 +46,10 @@ class _AdvancedThemingTileState extends State<AdvancedThemingTile> {
                   onTap: () async {
                     BuildContext _context = context;
                     if (widget.editable) {
-                      final result = await showThemeDialog(widget.tuple.item1.value);
+                      final result = await showThemeDialog(widget.colorEntry.primary.value);
                       if (result != null) {
                         final map = widget.currentTheme.toMap();
-                        map["data"]["colorScheme"][widget.tuple.item1.key] = result.toARGB32();
+                        map["data"]["colorScheme"][widget.colorEntry.primary.key] = result.toARGB32();
                         widget.currentTheme.data = ThemeStruct.fromMap(map).data;
                         widget.currentTheme.save();
                         if (widget.currentTheme.name == PrefsSvc.i.getString("selected-dark")) {
@@ -60,14 +66,14 @@ class _AdvancedThemingTileState extends State<AdvancedThemingTile> {
                       }
                     }
                   },
-                  onLongPress: widget.tuple.item2 != null
+                  onLongPress: widget.colorEntry.textColor != null
                       ? () async {
                           BuildContext _context = context;
                           if (widget.editable) {
-                            final result = await showThemeDialog(widget.tuple.item2!.value);
+                            final result = await showThemeDialog(widget.colorEntry.textColor!.value);
                             if (result != null) {
                               final map = widget.currentTheme.toMap();
-                              map["data"]["colorScheme"][widget.tuple.item2!.key] = result.toARGB32();
+                              map["data"]["colorScheme"][widget.colorEntry.textColor!.key] = result.toARGB32();
                               widget.currentTheme.data = ThemeStruct.fromMap(map).data;
                               widget.currentTheme.save();
                               if (widget.currentTheme.name == PrefsSvc.i.getString("selected-dark")) {
@@ -91,14 +97,14 @@ class _AdvancedThemingTileState extends State<AdvancedThemingTile> {
                       builder: (BuildContext context) {
                         return AlertDialog(
                           title: Text(
-                            "Info - ${widget.tuple.item1.key} ${widget.tuple.item2 != null ? "/ ${widget.tuple.item2!.key}" : ""}",
+                            "Info - ${widget.colorEntry.primary.key} ${widget.colorEntry.textColor != null ? "/ ${widget.colorEntry.textColor!.key}" : ""}",
                             style: context.theme.textTheme.titleLarge,
                           ),
                           backgroundColor: context.theme.colorScheme.properSurface,
                           content: Padding(
                             padding: const EdgeInsets.all(8.0),
                             child: Text(
-                                "${ThemeStruct.colorDescriptions[widget.tuple.item1.key]}${widget.tuple.item2 != null ? "\n\n${ThemeStruct.colorDescriptions[widget.tuple.item2!.key]}" : ""}",
+                                "${ThemeStruct.colorDescriptions[widget.colorEntry.primary.key]}${widget.colorEntry.textColor != null ? "\n\n${ThemeStruct.colorDescriptions[widget.colorEntry.textColor!.key]}" : ""}",
                                 style: context.theme.textTheme.bodyLarge),
                           ),
                           actions: <Widget>[
@@ -122,17 +128,17 @@ class _AdvancedThemingTileState extends State<AdvancedThemingTile> {
                       Icon(
                         Icons.color_lens,
                         size: 40,
-                        color: textColor.computeDifference(widget.tuple.item1.value) < 15
-                            ? widget.tuple.item1.value.lightenOrDarken(50)
+                        color: textColor.computeDifference(widget.colorEntry.primary.value) < 15
+                            ? widget.colorEntry.primary.value.lightenOrDarken(50)
                             : textColor,
                       ),
                       Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: Text(
-                          widget.tuple.item1.key + (widget.tuple.item2 != null ? " / ${widget.tuple.item2!.key}" : ""),
+                          widget.colorEntry.primary.key + (widget.colorEntry.textColor != null ? " / ${widget.colorEntry.textColor!.key}" : ""),
                           style: context.textTheme.titleMedium?.copyWith(
-                              color: textColor.computeDifference(widget.tuple.item1.value) < 15
-                                  ? widget.tuple.item1.value.lightenOrDarken(20)
+                              color: textColor.computeDifference(widget.colorEntry.primary.value) < 15
+                                  ? widget.colorEntry.primary.value.lightenOrDarken(20)
                                   : textColor),
                           textAlign: TextAlign.center,
                         ),

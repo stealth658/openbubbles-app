@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/database/models.dart';
@@ -47,7 +46,7 @@ class ContactServiceV2 {
   /// Check if we can access contacts
   Future<bool> _canAccessContacts() async {
     if (kIsWeb || kIsDesktop) {
-      int versionCode = (await SettingsSvc.getServerDetails()).item4;
+      int versionCode = (await SettingsSvc.getServerDetails()).serverVersionCode;
       return versionCode >= 42;
     } else {
       return (await Permission.contacts.status).isGranted;

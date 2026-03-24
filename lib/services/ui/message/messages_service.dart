@@ -10,10 +10,10 @@ import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:collection/collection.dart';
 import 'package:dio/dio.dart';
+import 'package:bluebubbles/models/models.dart' show AttachmentUploadProgress;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart' hide Response;
-import 'package:tuple/tuple.dart';
 
 // ignore: non_constant_identifier_names
 MessagesService MessagesSvc(String chatGuid) => Get.isRegistered<MessagesService>(tag: chatGuid)
@@ -156,7 +156,7 @@ class MessagesService extends GetxController {
       if (attachment.guid == null || !(attachment.guid!.startsWith('temp'))) continue;
       // Only restore if the upload is actively tracked in the singleton handler.
       // This intentionally skips stale temp records from crashed/killed sessions.
-      final inFlight = OutgoingMsgHandler.attachmentProgress.firstWhereOrNull((e) => e.item1 == attachment.guid);
+      final inFlight = OutgoingMsgHandler.attachmentProgress.firstWhereOrNull((e) => e.guid == attachment.guid);
       if (inFlight == null) continue;
 
       final msgState = messageStates[msgGuid];
@@ -164,11 +164,11 @@ class MessagesService extends GetxController {
 
       final attState = msgState.getOrCreateAttachmentState(attachment.guid!, attachment: attachment);
       if (attState.transferState.value != AttachmentTransferState.uploading) {
-        attState.updateTransferStateInternal(AttachmentTransferState.uploading, progress: inFlight.item2.value);
+        attState.updateTransferStateInternal(AttachmentTransferState.uploading, progress: inFlight.progress.value);
       } else {
         // Already uploading (same service instance, mid-upload refresh).
         // Sync the current progress value without a full state transition.
-        attState.updateUploadProgressInternal(inFlight.item2.value);
+        attState.updateUploadProgressInternal(inFlight.progress.value);
       }
 
       // Populate the preview file so UploadProgressContent can render the
@@ -508,7 +508,7 @@ class MessagesService extends GetxController {
       return;
     }
 
-    if (content is Tuple2<String, RxDouble>) {
+    if (content is AttachmentUploadProgress) {
       // Upload in progress without an accessible preview file.
       if (attState.transferState.value != AttachmentTransferState.uploading) {
         attState.updateTransferStateInternal(AttachmentTransferState.uploading);
@@ -610,8 +610,8 @@ class MessagesService extends GetxController {
     if (!_init) {
       if (kIsWeb) {
         _webMessageSub = WebListeners.newMessage.listen((tuple) {
-          if (tuple.item2?.guid == chat.guid) {
-            _handleNewMessage(tuple.item1);
+          if (tuple.chat?.guid == chat.guid) {
+            _handleNewMessage(tuple.message);
           }
         });
       }
@@ -953,8 +953,8 @@ class MessagesService extends GetxController {
       // finds the entry the moment the user re-enters, even before prepAttachment
       // runs its own add.  prepAttachment will add a second entry for the same
       // guid; both are cleaned up together by the removeWhere in onSuccess/onError.
-      if (!OutgoingMsgHandler.attachmentProgress.any((e) => e.item1 == message.guid)) {
-        OutgoingMsgHandler.attachmentProgress.add(Tuple2(message.guid!, 0.0.obs));
+      if (!OutgoingMsgHandler.attachmentProgress.any((e) => e.guid == message.guid)) {
+        OutgoingMsgHandler.attachmentProgress.add(AttachmentUploadProgress(message.guid!, 0.0.obs));
       }
 
       // Reset the existing AttachmentState in-place (re-key + uploading transition)

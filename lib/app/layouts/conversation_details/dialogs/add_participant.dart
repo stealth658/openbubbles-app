@@ -5,7 +5,12 @@ import 'package:bluebubbles/utils/string_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:slugify/slugify.dart';
-import 'package:tuple/tuple.dart';
+
+class _ParticipantContact {
+  final String address;
+  final String displayName;
+  const _ParticipantContact({required this.address, required this.displayName});
+}
 
 void showAddParticipant(BuildContext context, Chat chat) {
   final TextEditingController participantController = TextEditingController();
@@ -23,7 +28,7 @@ void showAddParticipant(BuildContext context, Chat chat) {
               child: Text("Pick Contact",
                   style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
               onPressed: () async {
-                final contacts = <Tuple2<String, String>>[];
+                final contacts = <_ParticipantContact>[];
                 final cache = [];
                 String slugText(String text) {
                   return slugify(text, delimiter: '').toString().replaceAll('-', '');
@@ -37,12 +42,12 @@ void showAddParticipant(BuildContext context, Chat chat) {
 
                     if (!cache.contains(cleansed)) {
                       cache.add(cleansed);
-                      contacts.add(Tuple2(address, contact.displayName));
+                      contacts.add(_ParticipantContact(address: address, displayName: contact.displayName));
                     }
                   }
                 }
-                contacts.sort((c1, c2) => c1.item2.compareTo(c2.item2));
-                Tuple2<String, String>? selected;
+                contacts.sort((c1, c2) => c1.displayName.compareTo(c2.displayName));
+                _ParticipantContact? selected;
                 await showDialog(
                     context: context,
                     builder: (context) => AlertDialog(
@@ -66,13 +71,13 @@ void showAddParticipant(BuildContext context, Chat chat) {
                                       shrinkWrap: true,
                                       itemCount: contacts.length,
                                       findChildIndexCallback: (key) =>
-                                          findChildIndexByKey(contacts, key, (item) => "${item.item1}-${item.item2}"),
+                                          findChildIndexByKey(contacts, key, (item) => "${item.address}-${item.displayName}"),
                                       itemBuilder: (context, index) {
                                         return ListTile(
-                                          key: ValueKey("${contacts[index].item1}-${contacts[index].item2}"),
+                                          key: ValueKey("${contacts[index].address}-${contacts[index].displayName}"),
                                           mouseCursor: MouseCursor.defer,
-                                          title: Text(contacts[index].item2),
-                                          subtitle: Text(contacts[index].item1),
+                                          title: Text(contacts[index].displayName),
+                                          subtitle: Text(contacts[index].address),
                                           onTap: () {
                                             selected = contacts[index];
                                             Navigator.of(context).pop();
@@ -86,11 +91,11 @@ void showAddParticipant(BuildContext context, Chat chat) {
                             ),
                           ),
                         ));
-                if (selected?.item1 != null) {
-                  if (!selected!.item1.isEmail) {
-                    participantController.text = cleansePhoneNumber(selected!.item1);
+                if (selected?.address != null) {
+                  if (!selected!.address.isEmail) {
+                    participantController.text = cleansePhoneNumber(selected!.address);
                   } else {
-                    participantController.text = selected!.item1;
+                    participantController.text = selected!.address;
                   }
                 }
               },

@@ -1,11 +1,11 @@
 import 'package:bluebubbles/app/state/message_state_scope.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/misc/slide_to_reply.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/reply/reply_bubble.dart';
+import 'package:bluebubbles/models/models.dart' show MessageReplyContext;
 import 'package:bluebubbles/services/ui/chat/conversation_view_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:tuple/tuple.dart';
 
 /// Handles swipe-to-reply gesture detection and haptic feedback
 /// Extracted from MessageHolder to improve readability and reusability
@@ -69,7 +69,7 @@ class _SwipeToReplyWrapperState extends State<SwipeToReplyWrapper> {
 
         // Trigger reply if threshold reached
         if (widget.replyOffset.value.abs() >= SlideToReply.replyThreshold) {
-          widget.cvController.replyToMessage = Tuple2(message, widget.partIndex);
+          widget.cvController.replyToMessage = MessageReplyContext(message, widget.partIndex);
         }
 
         widget.replyOffset.value = 0;

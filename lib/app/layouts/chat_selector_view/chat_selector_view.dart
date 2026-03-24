@@ -54,16 +54,18 @@ class ChatSelectorViewState extends State<ChatSelectorView> with ThemeHelpers {
     });
 
     if (ChatsSvc.loadedAllChats.isCompleted) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           filteredChats = ChatsSvc.allChats;
         });
+      }
     } else {
       ChatsSvc.loadedAllChats.future.then((_) {
-        if (mounted)
+        if (mounted) {
           setState(() {
             filteredChats = ChatsSvc.allChats;
           });
+        }
       });
     }
   }

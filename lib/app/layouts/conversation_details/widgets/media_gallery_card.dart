@@ -12,9 +12,9 @@ import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
+import 'package:bluebubbles/models/models.dart' show AttachmentUploadProgress;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:tuple/tuple.dart';
 import 'package:universal_io/io.dart';
 import 'package:video_player/video_player.dart';
 
@@ -170,13 +170,13 @@ class _MediaGalleryCardState extends State<MediaGalleryCard> with AutomaticKeepA
                       child: CircleProgressBar(
                         foregroundColor: context.theme.colorScheme.primary,
                         backgroundColor: context.theme.colorScheme.outline,
-                        value: progress.item2.value,
+                        value: progress.progress.value,
                       ),
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      progress.item2.value < 1
-                          ? "${(progress.item2.value * 100).toStringAsFixed(0)}%"
+                      progress.progress.value < 1
+                          ? "${(progress.progress.value * 100).toStringAsFixed(0)}%"
                           : "Waiting for iMessage...",
                       style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                             color: context.theme.colorScheme.properOnSurface,
@@ -206,9 +206,9 @@ class _MediaGalleryCardState extends State<MediaGalleryCard> with AutomaticKeepA
                 );
         }),
       );
-    } else if (content is Tuple2<String, RxDouble>) {
+    } else if (content is AttachmentUploadProgress) {
       // Fallback: Progress without file preview (shouldn't normally happen but handle it)
-      final progress = content as Tuple2<String, RxDouble>;
+      final progress = content as AttachmentUploadProgress;
       child = Obx(() {
         return Column(
           mainAxisSize: MainAxisSize.min,
@@ -219,13 +219,13 @@ class _MediaGalleryCardState extends State<MediaGalleryCard> with AutomaticKeepA
               child: CircleProgressBar(
                 foregroundColor: context.theme.colorScheme.primary,
                 backgroundColor: context.theme.colorScheme.outline,
-                value: progress.item2.value,
+                value: progress.progress.value,
               ),
             ),
             const SizedBox(height: 10),
             Text(
-              progress.item2.value < 1
-                  ? "${(progress.item2.value * 100).toStringAsFixed(0)}%"
+              progress.progress.value < 1
+                  ? "${(progress.progress.value * 100).toStringAsFixed(0)}%"
                   : "Waiting for iMessage...",
               style: Theme.of(context).textTheme.bodyMedium,
               textAlign: TextAlign.center,

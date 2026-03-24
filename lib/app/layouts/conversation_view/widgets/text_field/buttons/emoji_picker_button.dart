@@ -28,7 +28,7 @@ class EmojiPickerButton extends StatelessWidget {
       ),
       onPressed: () {
         controller.showEmojiPicker.value = !controller.showEmojiPicker.value;
-        (controller.editing.lastOrNull?.item3.focusNode ?? controller.lastFocusedNode).requestFocus();
+        (controller.editing.lastOrNull?.controller.focusNode ?? controller.lastFocusedNode).requestFocus();
       },
     );
   }

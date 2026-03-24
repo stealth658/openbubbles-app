@@ -30,11 +30,11 @@ class MessageEditField extends StatelessWidget {
   MessageState _getController(Message message) => MessagesSvc(cvController.chat.guid).getOrCreateState(message);
 
   void _cancelEdit(Message message) {
-    cvController.editing.removeWhere((e2) => e2.item1.guid == message.guid! && e2.item2.part == part);
+    cvController.editing.removeWhere((e2) => e2.message.guid == message.guid! && e2.part.part == part);
     if (cvController.editing.isEmpty) {
       cvController.lastFocusedNode.requestFocus();
     } else {
-      cvController.editing.last.item3.focusNode?.requestFocus();
+      cvController.editing.last.controller.focusNode?.requestFocus();
     }
   }
 

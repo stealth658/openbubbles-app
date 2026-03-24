@@ -1,3 +1,4 @@
+import 'package:bluebubbles/models/models.dart' show AttachmentUploadProgress;
 import 'dart:async';
 import 'dart:collection';
 import 'package:bluebubbles/database/models.dart';
@@ -10,7 +11,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart' hide Response;
 import 'package:get_it/get_it.dart';
-import 'package:tuple/tuple.dart';
 import 'package:universal_io/io.dart';
 
 // ─── Singleton accessor ───────────────────────────────────────────────────────
@@ -51,12 +51,19 @@ class _OutgoingEntry {
 ///
 /// 5. **Error marking** — failed sends update the message's GUID and error code
 ///    so the UI can show a retry/error badge.
+class _SendProgressTracker {
+  final Chat chat;
+  final Completer<void> completer;
+
+  _SendProgressTracker(this.chat, this.completer);
+}
+
 class OutgoingMessageHandler {
   // ── Attachment upload progress ───────────────────────────────────────────
 
   /// Observable list of (attachmentGuid, uploadProgress) pairs.
   /// Read by [AttachmentsService] to drive progress indicators in the UI.
-  final RxList<Tuple2<String, RxDouble>> attachmentProgress = <Tuple2<String, RxDouble>>[].obs;
+  final RxList<AttachmentUploadProgress> attachmentProgress = <AttachmentUploadProgress>[].obs;
 
   /// The active [CancelToken] for the most-recently-started attachment upload.
   /// The UI cancels this when the user presses the cancel button in the
@@ -69,13 +76,13 @@ class OutgoingMessageHandler {
   ///
   /// Allows [IncomingMessageHandler] to complete a send early when a socket
   /// event echoing our own message arrives before the HTTP response.
-  final Map<String, Tuple2<Chat, Completer<void>>> _sendProgressTrackers = {};
+  final Map<String, _SendProgressTracker> _sendProgressTrackers = {};
 
   /// Registers a tracker so that [completeSendProgressIfExists] can complete
   /// [completer] and update [chat.sendProgress] if the socket event wins the
   /// HTTP vs. socket race.
   void registerSendProgressTracker(String tempGuid, Chat chat, Completer<void> completer) {
-    _sendProgressTrackers[tempGuid] = Tuple2(chat, completer);
+    _sendProgressTrackers[tempGuid] = _SendProgressTracker(chat, completer);
     Logger.debug('Registered send-progress tracker for $tempGuid', tag: _tag);
   }
 
@@ -97,8 +104,8 @@ class OutgoingMessageHandler {
       Logger.warn('Unknown origin $origin for send progress completion of $tempGuid', tag: _tag);
     }
 
-    final chat = tracker.item1;
-    final completer = tracker.item2;
+    final chat = tracker.chat;
+    final completer = tracker.completer;
     if (chat.sendProgress.value != 0) {
       chat.sendProgress.value = 1;
       Timer(const Duration(milliseconds: 500), () {
@@ -360,14 +367,14 @@ class OutgoingMessageHandler {
       for (final message in messages) {
         message.generateTempGuid();
         // r == null is guaranteed by the outer guard, so these are never reactions.
-        final saved = (await c.addMessage(message, clearNotificationsIfFromMe: clearNotificationsIfFromMe)).item1;
+        final saved = (await c.addMessage(message, clearNotificationsIfFromMe: clearNotificationsIfFromMe)).message;
         if (Get.isRegistered<MessagesService>(tag: c.guid)) {
           await MessagesSvc(c.guid).addNewMessage(saved);
         }
       }
     } else {
       m.generateTempGuid();
-      final saved = (await c.addMessage(m, clearNotificationsIfFromMe: clearNotificationsIfFromMe)).item1;
+      final saved = (await c.addMessage(m, clearNotificationsIfFromMe: clearNotificationsIfFromMe)).message;
       // Don't call addNewMessage for reactions — sendMessage already adds the
       // temp reaction to the parent's associated messages list explicitly.
       if (m.associatedMessageGuid == null && Get.isRegistered<MessagesService>(tag: c.guid)) {
@@ -386,7 +393,7 @@ class OutgoingMessageHandler {
   /// optimisation).
   Future<void> prepAttachment(Chat c, Message m) async {
     final attachment = m.attachments.first!;
-    final progress = Tuple2(attachment.guid!, 0.0.obs);
+    final progress = AttachmentUploadProgress(attachment.guid!, 0.0.obs);
     attachmentProgress.add(progress);
 
     if (!kIsWeb) {
@@ -462,7 +469,7 @@ class OutgoingMessageHandler {
     // GlobalIsolate transaction commits.  This object has its id set and its
     // dbAttachments ToMany linked to the main Store, so _handleNewMessage can
     // reload attachments from DB without racing against cross-isolate write timing.
-    final savedMessage = (await c.addMessage(m)).item1;
+    final savedMessage = (await c.addMessage(m)).message;
 
     // The DB write goes through the GlobalIsolate, so the main-isolate OB watch
     // subscription won't fire for it.  Explicitly push the message into the view
@@ -636,7 +643,7 @@ class OutgoingMessageHandler {
     }
     if (bytes == null) return;
 
-    final progress = attachmentProgress.firstWhere((e) => e.item1 == attachment.guid);
+    final progress = attachmentProgress.firstWhere((e) => e.guid == attachment.guid);
     latestCancelToken = CancelToken();
     // Capture token so the closure below uses the one created for THIS send,
     // not a later one overwritten by a concurrent (post-queue) sendAttachment.
@@ -656,7 +663,7 @@ class OutgoingMessageHandler {
         ),
         onSendProgress: (count, total) {
           final uploadFraction = count / bytes!.length;
-          progress.item2.value = uploadFraction;
+          progress.progress.value = uploadFraction;
           // Mirror upload progress into AttachmentState for reactive UI.
           if (Get.isRegistered<MessagesService>(tag: c.guid)) {
             MessagesSvc(c.guid).notifyAttachmentUploadProgress(tempGuid, attachment.guid!, uploadFraction);
@@ -696,7 +703,7 @@ class OutgoingMessageHandler {
           }
         }
         await _matchMessageWithExisting(c, tempGuid, newMessage);
-        attachmentProgress.removeWhere((e) => e.item1 == tempGuid);
+        attachmentProgress.removeWhere((e) => e.guid == tempGuid);
       },
       onError: (error, stack) async {
         latestCancelToken = null;
@@ -715,7 +722,7 @@ class OutgoingMessageHandler {
           MessagesSvc(c.guid).notifyAttachmentTransferError(m.guid!, attachment.guid!);
         }
         // Use the saved tempGuid — m.guid is now the error GUID after handleSendError.
-        attachmentProgress.removeWhere((e) => e.item1 == tempGuid);
+        attachmentProgress.removeWhere((e) => e.guid == tempGuid);
       },
     );
   }

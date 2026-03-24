@@ -10,8 +10,13 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:path/path.dart' as p;
-import 'package:tuple/tuple.dart';
 import 'package:universal_io/io.dart';
+
+class _DownloadProgress {
+  final int current;
+  final int total;
+  const _DownloadProgress(this.current, this.total);
+}
 
 class EmbeddedMedia extends StatefulWidget {
   const EmbeddedMedia({
@@ -63,11 +68,11 @@ class _EmbeddedMediaState extends State<EmbeddedMedia> with AutomaticKeepAliveCl
       );
       setState(() {});
     } else {
-      content = Rx<Tuple2<int, int>>(const Tuple2(0, 0));
+      content = Rx<_DownloadProgress>(const _DownloadProgress(0, 0));
       setState(() {});
       HttpSvc.embeddedMedia(message.guid!, onReceiveProgress: (current, total) {
         if (content is Rx) {
-          (content as Rx<Tuple2<int, int>>).value = Tuple2(current, total);
+          (content as Rx<_DownloadProgress>).value = _DownloadProgress(current, total);
         }
       }).then((response) async {
         await File(path).create(recursive: true);
@@ -170,13 +175,13 @@ class _EmbeddedMediaState extends State<EmbeddedMedia> with AutomaticKeepAliveCl
                       ),
                     ]),
                   ),
-                  if (content is Rx<Tuple2>)
+                  if (content is Rx<_DownloadProgress>)
                     SizedBox(
                       height: 40,
                       width: 40,
                       child: Center(
                         child: Obx(() => CircleProgressBar(
-                              value: content.value.item2 > 0 ? content.value.item1 / content.value.item2 : 0,
+                              value: content.value.total > 0 ? content.value.current / content.value.total : 0,
                               backgroundColor: context.theme.colorScheme.outline,
                               foregroundColor: context.theme.colorScheme.properOnSurface,
                             )),

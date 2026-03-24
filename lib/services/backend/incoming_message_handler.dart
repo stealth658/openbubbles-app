@@ -348,7 +348,7 @@ class IncomingMessageHandler {
     final clearNotificationFromMe = (m.isFromMe ?? false) && m.associatedMessageGuid == null;
     Logger.debug('[new-message] calling addMessage for guid=${m.guid}', tag: _tag);
     final result = await c.addMessage(m, clearNotificationsIfFromMe: clearNotificationFromMe);
-    final saved = result.item1;
+    final saved = result.message;
     Logger.debug('[new-message] addMessage complete — saved.guid=${saved.guid} id=${saved.id}', tag: _tag);
 
     // 5. Mark as processed before any async I/O so a duplicate delivery that

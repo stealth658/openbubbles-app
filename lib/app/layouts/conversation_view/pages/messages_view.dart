@@ -100,7 +100,7 @@ class MessagesViewState extends State<MessagesView> with MessagesServiceMixin, T
     }
 
     EventDispatcherSvc.stream.listen((e) async {
-      if (e.item1 == "refresh-messagebloc" && e.item2 == chat.guid) {
+      if (e.type == "refresh-messagebloc" && e.data == chat.guid) {
         // Clear state items
         noMoreMessages = false;
         _messages = [];
@@ -115,10 +115,10 @@ class MessagesViewState extends State<MessagesView> with MessagesServiceMixin, T
           messages: _messages,
         );
         setState(() {});
-      } else if (e.item1 == "add-custom-smartreply") {
-        if (e.item2 != null && internalSmartReplies['attach-recent'] == null) {
+      } else if (e.type == "add-custom-smartreply") {
+        if (e.data != null && internalSmartReplies['attach-recent'] == null) {
           internalSmartReplies['attach-recent'] = _buildReply("Attach recent photo", onTap: () async {
-            controller.pickedAttachments.add(e.item2);
+            controller.pickedAttachments.add(e.data);
             internalSmartReplies.clear();
           });
         }

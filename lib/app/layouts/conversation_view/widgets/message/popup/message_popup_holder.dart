@@ -9,7 +9,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:tuple/tuple.dart';
 import 'package:universal_html/html.dart' as html;
 
 class MessagePopupHolder extends StatefulWidget {
@@ -49,8 +48,8 @@ class _MessagePopupHolderState extends State<MessagePopupHolder> with ThemeHelpe
             MediaQueryData.fromView(View.of(context)).padding.left -
             (iOS ? 0 : NavigationSvc.widthChatListLeft(context)),
         childPos.dy);
-    final tuple = await SettingsSvc.getServerDetails();
-    final version = tuple.item4;
+    final serverDetails = await SettingsSvc.getServerDetails();
+    final version = serverDetails.serverVersionCode;
     final minSierra = await SettingsSvc.isMinSierra;
     final minBigSur = await SettingsSvc.isMinBigSur;
     if (!iOS) {
@@ -89,7 +88,7 @@ class _MessagePopupHolderState extends State<MessagePopupHolder> with ThemeHelpe
                   part: widget.part,
                   controller: widget.controller,
                   cvController: widget.cvController,
-                  serverDetails: Tuple3(minSierra, minBigSur, version > 100),
+                  serverDetails: MessagePopupServerDetails(minSierra: minSierra, minBigSur: minBigSur, supportsOriginalDownload: version > 100),
                   sendTapback: sendTapback,
                   widthContext: () => mounted ? context : null,
                   child: widget.child,
@@ -114,7 +113,7 @@ class _MessagePopupHolderState extends State<MessagePopupHolder> with ThemeHelpe
         // This delay is necessary because there is a second instance of the focus node in the popup which gets focused otherwise
         // The autofocus doesn't seem to work on desktop
         Future.delayed(
-            const Duration(milliseconds: 500), () => widget.cvController.editing.last.item3.focusNode?.requestFocus());
+            const Duration(milliseconds: 500), () => widget.cvController.editing.last.controller.focusNode?.requestFocus());
       }
     }
   }
