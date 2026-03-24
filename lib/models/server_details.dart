@@ -40,7 +40,7 @@ class ServerDetails {
   bool get supportsRestartPrivateApi => serverVersionCode >= 41;
 
   /// Min supported server version (v0.2.0).
-  bool get minimumSupportedVersion => serverVersionCode >= 42;
+  bool get minimumWebSupportedVersion => serverVersionCode >= 42;
 
   /// Exposes Private API status indicators, iMessage stats, contacts API on
   /// desktop/web, server update checks, and is the minimum for web clients (v0.2.0).

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:animated_size_and_fade/animated_size_and_fade.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/dialogs/timeframe_picker.dart';
 import 'package:bluebubbles/app/layouts/settings/dialogs/custom_headers_dialog.dart';
+import 'package:bluebubbles/app/layouts/settings/pages/server/imessage_stats/imessage_stats_page.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/server/oauth_panel.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/helpers/backend/settings_helpers.dart';
@@ -246,43 +247,26 @@ class _ServerManagementPanelState extends CustomState<ServerManagementPanel, voi
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             SettingsTile(
-                              title: "Show Stats",
-                              subtitle: "Show iMessage statistics",
+                              title: "View Stats",
+                              subtitle: "View iMessage statistics",
                               backgroundColor: tileColor,
                               leading: const SettingsLeadingIcon(
                                 iosIcon: CupertinoIcons.chart_bar_square,
                                 materialIcon: Icons.stacked_bar_chart,
                                 containerColor: Colors.green,
                               ),
+                              trailing: Obx(() => Icon(
+                                    SettingsSvc.settings.skin.value != Skins.Material
+                                        ? CupertinoIcons.chevron_right
+                                        : Icons.chevron_right,
+                                    color: context.theme.colorScheme.outline.withValues(alpha: 0.5),
+                                    size: 18,
+                                  )),
                               onTap: () {
-                                showDialog(
-                                    context: context,
-                                    builder: (context) => AlertDialog(
-                                          backgroundColor: context.theme.colorScheme.properSurface,
-                                          content: Padding(
-                                            padding: const EdgeInsets.only(bottom: 8.0, left: 15, top: 8.0, right: 15),
-                                            child: SelectableText.rich(
-                                              TextSpan(
-                                                  children: controller.stats.entries
-                                                      .map((e) => TextSpan(
-                                                          text:
-                                                              "${e.key.capitalizeFirst!.replaceAll("Handles", "iMessage Numbers")}: ${e.value}${controller.stats.keys.last != e.key ? "\n\n" : ""}"))
-                                                      .toList()),
-                                              style: context.theme.textTheme.bodyLarge,
-                                            ),
-                                          ),
-                                          title: Text("Stats", style: context.theme.textTheme.titleLarge),
-                                          actions: <Widget>[
-                                            TextButton(
-                                              child: Text("Dismiss",
-                                                  style: context.theme.textTheme.bodyLarge!
-                                                      .copyWith(color: context.theme.colorScheme.primary)),
-                                              onPressed: () {
-                                                Navigator.of(context).pop();
-                                              },
-                                            ),
-                                          ],
-                                        ));
+                                NavigationSvc.pushSettings(
+                                  context,
+                                  IMessageStatsPage(parentController: controller),
+                                );
                               },
                             ),
                             const SettingsDivider(),

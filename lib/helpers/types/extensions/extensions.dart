@@ -124,6 +124,23 @@ extension NonZero on int? {
   int? get nonZero => (this ?? 0) == 0 ? null : this;
 }
 
+extension FormatStatCount on num {
+  /// Formats a large integer count into a compact string (e.g. 10500 → "10.5k", 1200000 → "1.2M").
+  String formatStatCount() {
+    if (this >= 1000000) {
+      final val = this / 1000000;
+      final formatted = val.toStringAsFixed(1);
+      return '${formatted.endsWith('.0') ? formatted.substring(0, formatted.length - 2) : formatted}M';
+    } else if (this >= 1000) {
+      final val = this / 1000;
+      final formatted = val.toStringAsFixed(1);
+      return '${formatted.endsWith('.0') ? formatted.substring(0, formatted.length - 2) : formatted}k';
+    } else {
+      return toInt().toString();
+    }
+  }
+}
+
 extension FriendlySize on double {
   String getFriendlySize({int decimals = 2, bool withSuffix = true}) {
     double size = this / 1024000.0;

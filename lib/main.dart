@@ -464,7 +464,7 @@ class _HomeState extends State<Home> with WidgetsBindingObserver, TrayListener {
       /* ----- SERVER VERSION CHECK ----- */
       if (kIsWeb && SettingsSvc.settings.finishedSetup.value) {
         final serverDetails = await SettingsSvc.getServerDetails();
-        if (!serverDetails.minimumSupportedVersion) {
+        if (!serverDetails.minimumWebSupportedVersion) {
           setState(() {
             serverCompatible = false;
           });
