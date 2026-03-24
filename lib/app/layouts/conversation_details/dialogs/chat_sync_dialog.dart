@@ -49,7 +49,16 @@ class _ChatSyncDialogState extends State<ChatSyncDialog> {
           this.progress = progress / length;
         }
         setState(() {});
-      }).then((List<Message> __) {
+      }).then((List<Message> savedMessages) {
+        // Add the messages to the active messages view.
+        // They addition will get dropped if they already exist in the view.
+        // Only do this if we aren't using an offset, otherwise messages
+        // may end up out of order in the view.
+        if (!widget.withOffset && Get.isRegistered<MessagesService>(tag: widget.chat.guid)) {
+          for (var msg in savedMessages) {
+            Get.find<MessagesService>(tag: widget.chat.guid).addNewMessage(msg);
+          }
+        }
         onFinish(true);
       });
     }).catchError((_) {

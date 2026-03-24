@@ -35,7 +35,6 @@ class _ConversationDetailsState extends State<ConversationDetails> with WidgetsB
   @override
   void initState() {
     super.initState();
-
     ChatsSvc.setActiveToDead();
   }
 
@@ -172,6 +171,7 @@ class _ConversationDetailsState extends State<ConversationDetails> with WidgetsB
                                   );
                                 });
                             final response = await HttpSvc.leaveChat(chat.guid);
+                            if (!context.mounted) return;
                             if (response.statusCode == 200) {
                               Navigator.of(context, rootNavigator: true).pop();
                               showSnackbar("Notice", "Left chat successfully!");
