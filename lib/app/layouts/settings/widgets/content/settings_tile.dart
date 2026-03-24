@@ -63,13 +63,16 @@ class SettingsTile extends StatelessWidget {
                 : null,
             trailing: trailing == null
                 ? null
-                : Padding(
-                    padding: EdgeInsets.only(bottom: isThreeLine ? 10 : 0.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        trailing!,
-                      ],
+                : ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 160),
+                    child: Padding(
+                      padding: EdgeInsets.only(bottom: isThreeLine ? 10 : 0.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          trailing!,
+                        ],
+                      ),
                     ),
                   ),
             subtitle: subtitle != null

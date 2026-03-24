@@ -18,7 +18,7 @@ class SettingsHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (SettingsSvc.settings.skin.value == Skins.Samsung) return const SizedBox(height: 15);
+    if (SettingsSvc.settings.skin.value == Skins.Samsung) return const SizedBox(height: 10);
     return Container(
       height: height ?? (SettingsSvc.settings.skin.value == Skins.iOS ? 60 : 40),
       alignment: Alignment.bottomLeft,
