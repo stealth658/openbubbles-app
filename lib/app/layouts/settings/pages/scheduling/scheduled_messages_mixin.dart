@@ -13,16 +13,13 @@ mixin ScheduledMessagesMixin<T extends StatefulWidget> on State<T> {
   List<ScheduledMessage> get oneTime =>
       scheduled.where((e) => e.schedule.type == "once" && e.status == "pending").toList();
 
-  List<ScheduledMessage> get recurring =>
-      scheduled.where((e) => e.schedule.type == "recurring").toList();
+  List<ScheduledMessage> get recurring => scheduled.where((e) => e.schedule.type == "recurring").toList();
 
   List<ScheduledMessage> get oneTimeCompleted =>
       scheduled.where((e) => e.schedule.type == "once" && e.status != "pending").toList();
 
   DateTime? get nextScheduled {
-    final pending = scheduled
-        .where((e) => e.status == "pending" && e.scheduledFor.isAfter(DateTime.now()))
-        .toList();
+    final pending = scheduled.where((e) => e.status == "pending" && e.scheduledFor.isAfter(DateTime.now())).toList();
     if (pending.isEmpty) return null;
     pending.sort((a, b) => a.scheduledFor.compareTo(b.scheduledFor));
     return pending.first.scheduledFor;

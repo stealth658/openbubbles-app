@@ -140,7 +140,6 @@ class _MaterialIMessageStatsPageState
             },
           ),
         ),
-        
         Padding(
           padding: const EdgeInsets.fromLTRB(15, 12, 15, 4),
           child: Text(

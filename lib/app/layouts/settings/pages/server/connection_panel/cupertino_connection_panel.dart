@@ -14,7 +14,8 @@ class CupertinoConnectionPanel extends CustomStateful<ServerManagementPanelContr
   State<StatefulWidget> createState() => _CupertinoConnectionPanelState();
 }
 
-class _CupertinoConnectionPanelState extends CustomState<CupertinoConnectionPanel, void, ServerManagementPanelController>
+class _CupertinoConnectionPanelState
+    extends CustomState<CupertinoConnectionPanel, void, ServerManagementPanelController>
     with ConnectionPanelHelpersMixin {
   IncrementalSyncManager? _manager;
 
@@ -76,9 +77,7 @@ class _CupertinoConnectionPanelState extends CustomState<CupertinoConnectionPane
 
   Widget _buildStatusGrid() {
     // Pre-compute cards here (inside the Obx callback) so GetX tracks reactive reads.
-    final cards = ConnectionPanelHelpersMixin.kStatusItems
-        .map((item) => _buildStatusCard(item))
-        .toList();
+    final cards = ConnectionPanelHelpersMixin.kStatusItems.map((item) => _buildStatusCard(item)).toList();
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10),
       child: LayoutBuilder(

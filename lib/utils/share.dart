@@ -123,7 +123,8 @@ class Share {
       String url = meta.image!;
       String? title = meta.title;
 
-      return LocationAttachmentData(guid: _attachmentGuid, fileName: fileName, bytes: bytes, mapImageUrl: url, title: title);
+      return LocationAttachmentData(
+          guid: _attachmentGuid, fileName: fileName, bytes: bytes, mapImageUrl: url, title: title);
     }
 
     bool send = false;

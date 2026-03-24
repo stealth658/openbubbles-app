@@ -148,7 +148,8 @@ class _ChatInfoState extends State<ChatInfo> with ThemeHelpers {
         !kIsDesktop &&
         !chat.chatIdentifier!.startsWith("urn:biz") &&
         (chat.handles.isNotEmpty &&
-            ((chat.handles.first.contactsV2.firstOrNull?.phoneNumbers.isNotEmpty ?? false) || !chat.handles.first.address.contains("@")));
+            ((chat.handles.first.contactsV2.firstOrNull?.phoneNumbers.isNotEmpty ?? false) ||
+                !chat.handles.first.address.contains("@")));
 
     return DeferredPointerHandler(
       child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -392,7 +393,9 @@ class InfoButton extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
-                  chat.handles.isNotEmpty && chat.handles.first.contactsV2.isNotEmpty && chat.handles.first.contactsV2.first.isNative
+                  chat.handles.isNotEmpty &&
+                          chat.handles.first.contactsV2.isNotEmpty &&
+                          chat.handles.first.contactsV2.first.isNative
                       ? (iOS ? CupertinoIcons.info : Icons.info)
                       : (iOS ? CupertinoIcons.plus_circle : Icons.add_circle_outline),
                   color: context.theme.colorScheme.onSurface,

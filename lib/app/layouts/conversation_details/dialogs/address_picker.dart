@@ -27,7 +27,9 @@ void showAddressPicker(ContactV2? contact, Handle handle, BuildContext context,
   if (contact == null) {
     launchIntent(video, handle.address);
   } else {
-    List<String> items = isEmail ? getUniqueEmails(contact.emailAddresses.map((e) => e.address)) : getUniqueNumbers(contact.phoneNumbers.map((p) => p.number));
+    List<String> items = isEmail
+        ? getUniqueEmails(contact.emailAddresses.map((e) => e.address))
+        : getUniqueNumbers(contact.phoneNumbers.map((p) => p.number));
     if (items.length == 1) {
       launchIntent(video, items.first);
     } else if (!isEmail && handle.defaultPhone != null && !isLongPressed) {

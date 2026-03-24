@@ -972,23 +972,13 @@ class MessagesService extends GetxController {
 
     // Queue for sending (message already in UI, just updated)
     if (message.dbAttachments.isNotEmpty) {
-      OutgoingMsgHandler.queue(OutgoingItem(
-        type: QueueType.sendAttachment,
-        chat: chat,
-        message: message,
-        customArgs: {
-          'isRetry': true,
-        }
-      ));
+      OutgoingMsgHandler.queue(OutgoingItem(type: QueueType.sendAttachment, chat: chat, message: message, customArgs: {
+        'isRetry': true,
+      }));
     } else {
-      OutgoingMsgHandler.queue(OutgoingItem(
-        type: QueueType.sendMessage,
-        chat: chat,
-        message: message,
-        customArgs: {
-          'isRetry': true,
-        }
-      ));
+      OutgoingMsgHandler.queue(OutgoingItem(type: QueueType.sendMessage, chat: chat, message: message, customArgs: {
+        'isRetry': true,
+      }));
     }
   }
 

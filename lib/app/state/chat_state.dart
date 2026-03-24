@@ -146,8 +146,7 @@ class ChatState {
     }
   }
 
-  String? _computeTitle() =>
-      isNullOrEmpty(displayName.value) ? chatCreatorSubtitle.value : displayName.value;
+  String? _computeTitle() => isNullOrEmpty(displayName.value) ? chatCreatorSubtitle.value : displayName.value;
 
   void updateChatCreatorSubtitleInternal(String? value) {
     if (chatCreatorSubtitle.value != value) {

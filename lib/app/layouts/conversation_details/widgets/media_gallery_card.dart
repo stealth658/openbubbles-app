@@ -238,9 +238,7 @@ class _MediaGalleryCardState extends State<MediaGalleryCard> with AutomaticKeepA
       final mimeType = attachment.mimeType ?? '';
       final friendlyType = mimeTypeToFriendlyName(mimeType);
       final totalBytes = attachment.totalBytes ?? 0;
-      final friendlySize = totalBytes > 0
-          ? (totalBytes.toDouble()).getFriendlySize(decimals: 0)
-          : null;
+      final friendlySize = totalBytes > 0 ? (totalBytes.toDouble()).getFriendlySize(decimals: 0) : null;
 
       Widget _badge(String label) => Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),

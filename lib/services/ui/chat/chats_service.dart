@@ -117,7 +117,9 @@ class ChatsService {
       if (showUnknown) {
         chats = chats.where((e) => !e.isGroup && e.handles.firstOrNull?.contactsV2.isEmpty != false).toList();
       } else {
-        chats = chats.where((e) => e.isGroup || (!e.isGroup && e.handles.firstOrNull?.contactsV2.isNotEmpty == true)).toList();
+        chats = chats
+            .where((e) => e.isGroup || (!e.isGroup && e.handles.firstOrNull?.contactsV2.isNotEmpty == true))
+            .toList();
       }
     }
 

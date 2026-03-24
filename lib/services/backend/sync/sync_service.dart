@@ -61,8 +61,7 @@ class SyncService {
           final existing = latestPerChat[chatGuid];
           if (existing == null ||
               (message.dateCreated != null &&
-                  (existing.dateCreated == null ||
-                      message.dateCreated!.isAfter(existing.dateCreated!)))) {
+                  (existing.dateCreated == null || message.dateCreated!.isAfter(existing.dateCreated!)))) {
             latestPerChat[chatGuid] = message;
           }
         }

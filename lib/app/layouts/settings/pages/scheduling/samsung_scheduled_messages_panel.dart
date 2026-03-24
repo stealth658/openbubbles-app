@@ -349,8 +349,7 @@ class _SamsungScheduledMessagesPanelState extends State<SamsungScheduledMessages
               if (scheduled.isNotEmpty) _buildStatsHeader(context),
 
               // One-time pending
-              if (oneTime.isNotEmpty)
-                _buildSamsungHeader(context, "One-Time Messages"),
+              if (oneTime.isNotEmpty) _buildSamsungHeader(context, "One-Time Messages"),
               if (oneTime.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -364,8 +363,7 @@ class _SamsungScheduledMessagesPanelState extends State<SamsungScheduledMessages
                 ),
 
               // Recurring
-              if (recurring.isNotEmpty)
-                _buildSamsungHeader(context, "Recurring Messages"),
+              if (recurring.isNotEmpty) _buildSamsungHeader(context, "Recurring Messages"),
               if (recurring.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -380,8 +378,7 @@ class _SamsungScheduledMessagesPanelState extends State<SamsungScheduledMessages
                 ),
 
               // Completed
-              if (oneTimeCompleted.isNotEmpty)
-                _buildSamsungHeader(context, "Completed Messages"),
+              if (oneTimeCompleted.isNotEmpty) _buildSamsungHeader(context, "Completed Messages"),
               if (oneTimeCompleted.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),

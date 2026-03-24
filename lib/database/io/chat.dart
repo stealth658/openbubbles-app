@@ -210,8 +210,7 @@ class Chat {
   }
 
   /// Get a chat's title
-  String getTitle() =>
-      isNullOrEmpty(displayName) ? getChatCreatorSubtitle() : displayName!;
+  String getTitle() => isNullOrEmpty(displayName) ? getChatCreatorSubtitle() : displayName!;
 
   /// Get a chat's title
   String getChatCreatorSubtitle() {
@@ -245,7 +244,6 @@ class Chat {
       return buffer.toString();
     }
   }
-
 
   /// Return whether or not the notification should be muted
   bool shouldMuteNotification(Message? message) {

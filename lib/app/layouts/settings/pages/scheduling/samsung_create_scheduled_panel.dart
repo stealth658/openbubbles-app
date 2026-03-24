@@ -78,9 +78,7 @@ class _SamsungCreateScheduledMessageState extends State<SamsungCreateScheduledMe
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
-            color: isSelected
-                ? context.theme.colorScheme.primary.withValues(alpha: 0.15)
-                : Colors.transparent,
+            color: isSelected ? context.theme.colorScheme.primary.withValues(alpha: 0.15) : Colors.transparent,
             border: Border.all(
               color: isSelected
                   ? context.theme.colorScheme.primary

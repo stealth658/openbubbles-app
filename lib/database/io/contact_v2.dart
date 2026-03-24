@@ -110,12 +110,12 @@ class ContactV2 {
   @Transient()
   List<ContactPhone> phoneNumbers = [];
 
-  String? get dbPhoneNumbers =>
-      phoneNumbers.isEmpty ? null : jsonEncode(phoneNumbers.map((e) => e.toMap()).toList());
+  String? get dbPhoneNumbers => phoneNumbers.isEmpty ? null : jsonEncode(phoneNumbers.map((e) => e.toMap()).toList());
 
   set dbPhoneNumbers(String? json) {
-    phoneNumbers =
-        json == null ? [] : (jsonDecode(json) as List).map((e) => ContactPhone.fromMap(e as Map<String, dynamic>)).toList();
+    phoneNumbers = json == null
+        ? []
+        : (jsonDecode(json) as List).map((e) => ContactPhone.fromMap(e as Map<String, dynamic>)).toList();
   }
 
   // --- Labeled emails (JSON-backed) ---
@@ -127,8 +127,9 @@ class ContactV2 {
       emailAddresses.isEmpty ? null : jsonEncode(emailAddresses.map((e) => e.toMap()).toList());
 
   set dbEmailAddresses(String? json) {
-    emailAddresses =
-        json == null ? [] : (jsonDecode(json) as List).map((e) => ContactEmail.fromMap(e as Map<String, dynamic>)).toList();
+    emailAddresses = json == null
+        ? []
+        : (jsonDecode(json) as List).map((e) => ContactEmail.fromMap(e as Map<String, dynamic>)).toList();
   }
 
   /// N:M Relationship to Handles

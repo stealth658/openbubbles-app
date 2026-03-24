@@ -219,7 +219,6 @@ class ChatSubtitle extends CustomStateful<ConversationTileController> {
 }
 
 class _ChatSubtitleState extends CustomState<ChatSubtitle, void, ConversationTileController> {
-
   @override
   void initState() {
     super.initState();

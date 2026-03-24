@@ -66,8 +66,7 @@ class ContactV2Interface {
     if (isIsolate) {
       ids = await ContactV2Actions.getContactsForHandles(data);
     } else {
-      ids = await GetIt.I<GlobalIsolate>()
-          .send<List<int>>(IsolateRequestType.getContactsForHandles, input: data);
+      ids = await GetIt.I<GlobalIsolate>().send<List<int>>(IsolateRequestType.getContactsForHandles, input: data);
     }
 
     return Database.contactsV2.getMany(ids).whereType<ContactV2>().toList();
@@ -85,8 +84,7 @@ class ContactV2Interface {
     if (isIsolate) {
       id = await ContactV2Actions.getContactByAddress(data);
     } else {
-      id = await GetIt.I<GlobalIsolate>()
-          .send<int?>(IsolateRequestType.getContactByAddress, input: data);
+      id = await GetIt.I<GlobalIsolate>().send<int?>(IsolateRequestType.getContactByAddress, input: data);
     }
 
     if (id == null) return null;
@@ -99,8 +97,8 @@ class ContactV2Interface {
     if (isIsolate) {
       ids = await ContactV2Actions.getAllContacts(<String, dynamic>{});
     } else {
-      ids = await GetIt.I<GlobalIsolate>()
-          .send<List<int>>(IsolateRequestType.getAllContacts, input: <String, dynamic>{});
+      ids =
+          await GetIt.I<GlobalIsolate>().send<List<int>>(IsolateRequestType.getAllContacts, input: <String, dynamic>{});
     }
 
     return Database.contactsV2.getMany(ids).whereType<ContactV2>().toList();

@@ -97,9 +97,11 @@ class OutgoingMessageHandler {
     if (tracker == null) return;
 
     if (origin == Origin.incomingMessageHandler) {
-      Logger.debug('Server event arrived before HTTP response for $tempGuid — completing send progress early', tag: _tag);
+      Logger.debug('Server event arrived before HTTP response for $tempGuid — completing send progress early',
+          tag: _tag);
     } else if (origin == Origin.outgoingMessageHandler) {
-      Logger.debug('Outgoing send request returned before server event for $tempGuid — completing send progress', tag: _tag);
+      Logger.debug('Outgoing send request returned before server event for $tempGuid — completing send progress',
+          tag: _tag);
     } else {
       Logger.warn('Unknown origin $origin for send progress completion of $tempGuid', tag: _tag);
     }

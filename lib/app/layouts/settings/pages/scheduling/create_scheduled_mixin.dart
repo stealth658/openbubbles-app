@@ -11,14 +11,12 @@ import 'package:get/get.dart' hide Response;
 mixin CreateScheduledMixin<T extends StatefulWidget> on State<T> {
   ScheduledMessage? get existingMessage;
 
-  late final TextEditingController messageController =
-      TextEditingController(text: existingMessage?.payload.message);
+  late final TextEditingController messageController = TextEditingController(text: existingMessage?.payload.message);
   final FocusNode messageNode = FocusNode();
   late final TextEditingController numberController =
       TextEditingController(text: existingMessage?.schedule.interval?.toString() ?? '1');
 
-  late final RxString selectedChat =
-      (existingMessage?.payload.chatGuid ?? ChatsSvc.allChats.first.guid).obs;
+  late final RxString selectedChat = (existingMessage?.payload.chatGuid ?? ChatsSvc.allChats.first.guid).obs;
   late final RxString schedule = (existingMessage?.schedule.type ?? "once").obs;
   late final RxString frequency = (existingMessage?.schedule.intervalType ?? "daily").obs;
   late final RxInt repeatInterval = (existingMessage?.schedule.interval ?? 1).obs;
@@ -144,10 +142,7 @@ mixin CreateScheduledMixin<T extends StatefulWidget> on State<T> {
         borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
       ),
       fillColor: Colors.transparent,
-      hintStyle: context.theme
-          .extension<BubbleText>()!
-          .bubbleText
-          .copyWith(color: context.theme.colorScheme.outline),
+      hintStyle: context.theme.extension<BubbleText>()!.bubbleText.copyWith(color: context.theme.colorScheme.outline),
     );
   }
 
@@ -161,9 +156,8 @@ mixin CreateScheduledMixin<T extends StatefulWidget> on State<T> {
       keyboardType: TextInputType.multiline,
       maxLines: 14,
       minLines: 1,
-      selectionControls: SettingsSvc.settings.skin.value == Skins.iOS
-          ? cupertinoTextSelectionControls
-          : materialTextSelectionControls,
+      selectionControls:
+          SettingsSvc.settings.skin.value == Skins.iOS ? cupertinoTextSelectionControls : materialTextSelectionControls,
       enableIMEPersonalizedLearning: !SettingsSvc.settings.incognitoKeyboard.value,
       textInputAction: TextInputAction.newline,
       cursorColor: context.theme.colorScheme.primary,

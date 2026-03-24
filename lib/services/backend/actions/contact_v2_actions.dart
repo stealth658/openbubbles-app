@@ -98,8 +98,12 @@ class ContactV2Actions {
         if (response.statusCode == 200 && !isNullOrEmpty(response.data['data'])) {
           for (Map<String, dynamic> map in response.data['data']) {
             final displayName = getDisplayName(map['displayName'], map['firstName'], map['lastName']);
-            final emails = (map['emails'] as List<dynamic>? ?? []).map((e) => ContactEmail(address: e['address'].toString(), label: e['label']?.toString() ?? '')).toList();
-            final phones = (map['phoneNumbers'] as List<dynamic>? ?? []).map((e) => ContactPhone(number: e['address'].toString(), label: e['label']?.toString() ?? '')).toList();
+            final emails = (map['emails'] as List<dynamic>? ?? [])
+                .map((e) => ContactEmail(address: e['address'].toString(), label: e['label']?.toString() ?? ''))
+                .toList();
+            final phones = (map['phoneNumbers'] as List<dynamic>? ?? [])
+                .map((e) => ContactPhone(number: e['address'].toString(), label: e['label']?.toString() ?? ''))
+                .toList();
 
             final contactId = (map['id'] ?? displayName).toString();
             if (!isNullOrEmpty(map['avatar'])) {

@@ -50,79 +50,77 @@ class DownloadingContent extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // Large document-type icon — always represents the file kind
-                Icon(
-                  getAttachmentIcon(mimeType),
-                  size: 52,
-                  color: context.theme.colorScheme.properOnSurface,
-                ),
-                const SizedBox(height: 8),
-                // File size (shown when known)
-                if (fileSize != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
-                    child: Text(
-                      fileSize,
-                      style: context.theme.textTheme.bodySmall!.copyWith(
-                        color: context.theme.colorScheme.properOnSurface.withValues(alpha: 0.6),
-                      ),
-                    ),
+                children: [
+                  // Large document-type icon — always represents the file kind
+                  Icon(
+                    getAttachmentIcon(mimeType),
+                    size: 52,
+                    color: context.theme.colorScheme.properOnSurface,
                   ),
-                // Download state row: small indicator + label
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: isError
-                          ? Icon(
-                              isiOS ? CupertinoIcons.arrow_clockwise : Icons.refresh,
-                              size: 14,
-                              color: context.theme.colorScheme.error,
-                            )
-                          : isProcessing
-                              ? (isiOS
-                                  ? const CupertinoActivityIndicator(radius: 7)
-                                  : CircularProgressIndicator(
-                                      strokeWidth: 1.5,
-                                      valueColor: AlwaysStoppedAnimation(
-                                        context.theme.colorScheme.properOnSurface,
-                                      ),
-                                    ))
-                              : isQueued
-                                  ? Icon(
-                                      isiOS ? CupertinoIcons.clock : Icons.schedule,
-                                      size: 14,
-                                      color: context.theme.colorScheme.properOnSurface,
-                                    )
-                                  : CircleProgressBar(
-                                      value: downloadController.progress.value?.toDouble() ?? 0,
-                                      backgroundColor: context.theme.colorScheme.outline,
-                                      foregroundColor: context.theme.colorScheme.properOnSurface,
-                                      strokeWidth: 1.5,
-                                    ),
-                    ),
-                    const SizedBox(width: 5),
-                    Text(
-                      isError
-                          ? 'Failed to download'
-                          : isProcessing
-                              ? 'Processing'
-                              : isQueued
-                                  ? 'Queued'
-                                  : 'Downloading',
-                      style: context.theme.textTheme.bodySmall!.copyWith(
-                        color: isError
-                            ? context.theme.colorScheme.error
-                            : context.theme.colorScheme.properOnSurface,
+                  const SizedBox(height: 8),
+                  // File size (shown when known)
+                  if (fileSize != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Text(
+                        fileSize,
+                        style: context.theme.textTheme.bodySmall!.copyWith(
+                          color: context.theme.colorScheme.properOnSurface.withValues(alpha: 0.6),
+                        ),
                       ),
                     ),
-                  ],
-                ),
-              ],
-            ),
+                  // Download state row: small indicator + label
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: isError
+                            ? Icon(
+                                isiOS ? CupertinoIcons.arrow_clockwise : Icons.refresh,
+                                size: 14,
+                                color: context.theme.colorScheme.error,
+                              )
+                            : isProcessing
+                                ? (isiOS
+                                    ? const CupertinoActivityIndicator(radius: 7)
+                                    : CircularProgressIndicator(
+                                        strokeWidth: 1.5,
+                                        valueColor: AlwaysStoppedAnimation(
+                                          context.theme.colorScheme.properOnSurface,
+                                        ),
+                                      ))
+                                : isQueued
+                                    ? Icon(
+                                        isiOS ? CupertinoIcons.clock : Icons.schedule,
+                                        size: 14,
+                                        color: context.theme.colorScheme.properOnSurface,
+                                      )
+                                    : CircleProgressBar(
+                                        value: downloadController.progress.value?.toDouble() ?? 0,
+                                        backgroundColor: context.theme.colorScheme.outline,
+                                        foregroundColor: context.theme.colorScheme.properOnSurface,
+                                        strokeWidth: 1.5,
+                                      ),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        isError
+                            ? 'Failed to download'
+                            : isProcessing
+                                ? 'Processing'
+                                : isQueued
+                                    ? 'Queued'
+                                    : 'Downloading',
+                        style: context.theme.textTheme.bodySmall!.copyWith(
+                          color: isError ? context.theme.colorScheme.error : context.theme.colorScheme.properOnSurface,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
           // Mime-type badge — top-left, styled like the LIVE photo tag
@@ -147,7 +145,7 @@ class DownloadingContent extends StatelessWidget {
             ),
           ),
         ],
-        );
-      });
+      );
+    });
   }
 }

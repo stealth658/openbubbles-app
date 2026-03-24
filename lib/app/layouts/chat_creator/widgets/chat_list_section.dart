@@ -99,7 +99,8 @@ class ChatListSection extends StatelessWidget {
                           child: InkWell(
                             onTap: () {
                               if (selectedContacts.firstWhereOrNull((c) => c.address == p.number) != null) return;
-                              onContactTap(SelectedContact(displayName: contact.computedDisplayName, address: p.number));
+                              onContactTap(
+                                  SelectedContact(displayName: contact.computedDisplayName, address: p.number));
                             },
                             child: ChatCreatorTile(
                               title: hideInfo ? "Contact" : contact.computedDisplayName,
@@ -115,7 +116,8 @@ class ChatListSection extends StatelessWidget {
                           child: InkWell(
                             onTap: () {
                               if (selectedContacts.firstWhereOrNull((c) => c.address == e.address) != null) return;
-                              onContactTap(SelectedContact(displayName: contact.computedDisplayName, address: e.address));
+                              onContactTap(
+                                  SelectedContact(displayName: contact.computedDisplayName, address: e.address));
                             },
                             child: ChatCreatorTile(
                               title: hideInfo ? "Contact" : contact.computedDisplayName,

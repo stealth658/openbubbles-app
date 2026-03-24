@@ -13,8 +13,7 @@ class SamsungConnectionPanel extends CustomStateful<ServerManagementPanelControl
   State<StatefulWidget> createState() => _SamsungConnectionPanelState();
 }
 
-class _SamsungConnectionPanelState
-    extends CustomState<SamsungConnectionPanel, void, ServerManagementPanelController>
+class _SamsungConnectionPanelState extends CustomState<SamsungConnectionPanel, void, ServerManagementPanelController>
     with ConnectionPanelHelpersMixin {
   IncrementalSyncManager? _manager;
 
@@ -73,9 +72,7 @@ class _SamsungConnectionPanelState
 
   Widget _buildStatusGrid() {
     // Pre-compute cards here (inside the Obx callback) so GetX tracks reactive reads.
-    final cards = ConnectionPanelHelpersMixin.kStatusItems
-        .map((item) => _buildStatusCard(item))
-        .toList();
+    final cards = ConnectionPanelHelpersMixin.kStatusItems.map((item) => _buildStatusCard(item)).toList();
     return LayoutBuilder(
       builder: (context, constraints) {
         final itemWidth = (constraints.maxWidth - 12) / 2;
@@ -197,14 +194,13 @@ class _SamsungConnectionPanelState
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
-                child: SettingsSection(
-                  backgroundColor: tileColor,
-                  children: [
-                    buildViewStatsSection(context, controller, tileColor),
-                  ],
-                )
-              ),
+                  padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
+                  child: SettingsSection(
+                    backgroundColor: tileColor,
+                    children: [
+                      buildViewStatsSection(context, controller, tileColor),
+                    ],
+                  )),
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
                 child: Text(

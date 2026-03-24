@@ -264,7 +264,6 @@ class _ContactAvatarWidgetState extends State<ContactAvatarWidget> with ThemeHel
                   return widget.handle!.fakeAvatar;
                 } else if (genAvatars && contactV2?.fakeAvatar != null) {
                   return contactV2!.fakeAvatar;
-
                 } else {
                   return Padding(
                       padding: const EdgeInsets.only(left: 1),

@@ -324,8 +324,7 @@ class IncrementalSyncManager extends SyncManager {
       // so the action layer can return message IDs instead of chat IDs.
       final latest = s
           .where((m) => m.id != null && m.dateCreated != null)
-          .fold<Message?>(null, (prev, m) =>
-              prev == null || m.dateCreated!.isAfter(prev.dateCreated!) ? m : prev);
+          .fold<Message?>(null, (prev, m) => prev == null || m.dateCreated!.isAfter(prev.dateCreated!) ? m : prev);
       if (latest != null) {
         latestMessageIdPerChat[item.key] = latest.id!;
       }

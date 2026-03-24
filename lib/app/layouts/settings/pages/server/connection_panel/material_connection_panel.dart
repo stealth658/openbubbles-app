@@ -13,8 +13,7 @@ class MaterialConnectionPanel extends CustomStateful<ServerManagementPanelContro
   State<StatefulWidget> createState() => _MaterialConnectionPanelState();
 }
 
-class _MaterialConnectionPanelState
-    extends CustomState<MaterialConnectionPanel, void, ServerManagementPanelController>
+class _MaterialConnectionPanelState extends CustomState<MaterialConnectionPanel, void, ServerManagementPanelController>
     with ConnectionPanelHelpersMixin {
   IncrementalSyncManager? _manager;
 
@@ -70,9 +69,7 @@ class _MaterialConnectionPanelState
 
   Widget _buildStatusGrid() {
     // Pre-compute cards here (inside the Obx callback) so GetX tracks reactive reads.
-    final cards = ConnectionPanelHelpersMixin.kStatusItems
-        .map((item) => _buildStatusCard(item))
-        .toList();
+    final cards = ConnectionPanelHelpersMixin.kStatusItems.map((item) => _buildStatusCard(item)).toList();
     return LayoutBuilder(
       builder: (context, constraints) {
         final itemWidth = (constraints.maxWidth - 12) / 2;

@@ -54,8 +54,7 @@ class ConversationViewController extends StatefulController with GetSingleTicker
   final RxDouble timestampOffset = 0.0.obs;
   final RxBool inSelectMode = false.obs;
   final RxList<Message> selected = <Message>[].obs;
-  final RxList<MessageEditEntry> editing =
-      <MessageEditEntry>[].obs;
+  final RxList<MessageEditEntry> editing = <MessageEditEntry>[].obs;
   final GlobalKey focusInfoKey = GlobalKey();
   final RxBool recipientNotifsSilenced = false.obs;
   bool showingOverlays = false;

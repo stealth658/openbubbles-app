@@ -257,7 +257,8 @@ class _ChatTitleAndAvatarState extends State<ChatTitleAndAvatar> with ChatTitleM
                 );
               }),
               if (widget.showSubtitle &&
-                  (widget.chat.isGroup || (!(title.value?.isPhoneNumber ?? false) && !(title.value?.isEmail ?? false))) &&
+                  (widget.chat.isGroup ||
+                      (!(title.value?.isPhoneNumber ?? false) && !(title.value?.isEmail ?? false))) &&
                   chatState != null &&
                   (chatState.chatCreatorSubtitle.value?.isNotEmpty ?? false))
                 Text(

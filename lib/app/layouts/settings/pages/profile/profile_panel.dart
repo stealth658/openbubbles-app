@@ -417,8 +417,7 @@ class _ProfilePanelState extends State<ProfilePanel> with WidgetsBindingObserver
                     SettingsTile(
                       leading: !isNullOrEmpty(accountContact['avatar'])
                           ? CircleAvatar(
-                              backgroundImage:
-                                  MemoryImage(base64Decode(accountContact['avatar'].toString())),
+                              backgroundImage: MemoryImage(base64Decode(accountContact['avatar'].toString())),
                               radius: 20,
                             )
                           : const CircleAvatar(),

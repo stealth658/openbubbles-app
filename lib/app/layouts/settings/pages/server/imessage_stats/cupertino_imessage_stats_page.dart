@@ -13,7 +13,8 @@ class CupertinoIMessageStatsPage extends CustomStateful<ServerManagementPanelCon
   State<StatefulWidget> createState() => _CupertinoIMessageStatsPageState();
 }
 
-class _CupertinoIMessageStatsPageState extends CustomState<CupertinoIMessageStatsPage, void, ServerManagementPanelController>
+class _CupertinoIMessageStatsPageState
+    extends CustomState<CupertinoIMessageStatsPage, void, ServerManagementPanelController>
     with IMessageStatsHelpersMixin {
   @override
   void initState() {
@@ -101,8 +102,7 @@ class _CupertinoIMessageStatsPageState extends CustomState<CupertinoIMessageStat
             ),
           ),
         ),
-        if (item != IMessageStatsHelpersMixin.kStatItems.where((e) => e.isFullWidth).last)
-          const SettingsDivider(),
+        if (item != IMessageStatsHelpersMixin.kStatItems.where((e) => e.isFullWidth).last) const SettingsDivider(),
       ],
     );
   }

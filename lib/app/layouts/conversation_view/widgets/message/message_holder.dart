@@ -496,7 +496,8 @@ class _MessageHolderState extends State<MessageHolder> with ThemeHelpers {
                                                                                     ? const SizedBox.shrink()
                                                                                     : MessageEditField(
                                                                                         part: e.part,
-                                                                                        editController: editStuff.controller,
+                                                                                        editController:
+                                                                                            editStuff.controller,
                                                                                         cvController:
                                                                                             widget.cvController,
                                                                                         onComplete: completeEdit,

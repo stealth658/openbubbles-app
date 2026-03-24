@@ -194,9 +194,8 @@ class Chat {
   /// Get a chat's title
   String getChatCreatorSubtitle() {
     // generate names for group chats or DMs
-    List<String> titles = participants
-        .map((e) => e.displayName.trim().split(isGroup ? " " : String.fromCharCode(65532)).first)
-        .toList();
+    List<String> titles =
+        participants.map((e) => e.displayName.trim().split(isGroup ? " " : String.fromCharCode(65532)).first).toList();
     if (titles.isEmpty) {
       if (chatIdentifier!.startsWith("urn:biz")) {
         return "Business Chat";

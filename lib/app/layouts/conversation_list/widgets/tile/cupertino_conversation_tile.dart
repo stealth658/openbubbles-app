@@ -161,9 +161,7 @@ class _CupertinoTrailingState extends CustomState<CupertinoTrailing, void, Conve
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             Text(
-              hasError
-                  ? "Error"
-                  : "${indicator.isNotEmpty ? "$indicator\n" : ""}${buildDate(message?.dateCreated)}",
+              hasError ? "Error" : "${indicator.isNotEmpty ? "$indicator\n" : ""}${buildDate(message?.dateCreated)}",
               textAlign: TextAlign.right,
               style: context.theme.textTheme.bodySmall!
                   .copyWith(

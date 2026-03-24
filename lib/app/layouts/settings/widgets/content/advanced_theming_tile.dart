@@ -135,7 +135,8 @@ class _AdvancedThemingTileState extends State<AdvancedThemingTile> {
                       Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: Text(
-                          widget.colorEntry.primary.key + (widget.colorEntry.textColor != null ? " / ${widget.colorEntry.textColor!.key}" : ""),
+                          widget.colorEntry.primary.key +
+                              (widget.colorEntry.textColor != null ? " / ${widget.colorEntry.textColor!.key}" : ""),
                           style: context.textTheme.titleMedium?.copyWith(
                               color: textColor.computeDifference(widget.colorEntry.primary.value) < 15
                                   ? widget.colorEntry.primary.value.lightenOrDarken(20)

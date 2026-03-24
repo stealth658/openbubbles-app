@@ -62,7 +62,8 @@ class _CupertinoCreateScheduledMessageState extends State<CupertinoCreateSchedul
             ),
             Expanded(
               child: CupertinoDatePicker(
-                initialDateTime: date.value.isAfter(DateTime.now()) ? date.value : DateTime.now().add(const Duration(minutes: 1)),
+                initialDateTime:
+                    date.value.isAfter(DateTime.now()) ? date.value : DateTime.now().add(const Duration(minutes: 1)),
                 minimumDate: DateTime.now(),
                 mode: CupertinoDatePickerMode.dateAndTime,
                 onDateTimeChanged: (dt) => picked = dt,
@@ -112,8 +113,7 @@ class _CupertinoCreateScheduledMessageState extends State<CupertinoCreateSchedul
                       return Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          if (chat != null)
-                            ContactAvatarGroupWidget(chat: chat, size: 28, editable: false),
+                          if (chat != null) ContactAvatarGroupWidget(chat: chat, size: 28, editable: false),
                           const SizedBox(width: 8),
                           ConstrainedBox(
                             constraints: const BoxConstraints(maxWidth: 120),

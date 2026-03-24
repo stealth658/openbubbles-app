@@ -32,7 +32,8 @@ class TimestampSeparator extends StatelessWidget {
       if (SettingsSvc.settings.skin.value == Skins.iOS) {
         return _TimestampParts(date: time.isToday() ? "Today" : buildDate(time), time: buildTime(time));
       } else {
-        return _TimestampParts(date: time.isToday() ? "Today" : buildSeparatorDateMaterial(time), time: buildTime(time));
+        return _TimestampParts(
+            date: time.isToday() ? "Today" : buildSeparatorDateMaterial(time), time: buildTime(time));
       }
     } else {
       return null;

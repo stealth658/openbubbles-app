@@ -83,7 +83,10 @@ class Handle {
     if (!kIsWeb && contactsV2.isNotEmpty) {
       // Prioritize native contacts, but fall back to any contact if no native ones exist (should be rare)
       final firstNativeContact = contactsV2.where((c) => c.isNative).firstOrNull;
-      return firstNativeContact?.nickname ?? firstNativeContact?.firstName ?? firstNativeContact?.computedDisplayName ?? contactsV2.first.computedDisplayName;
+      return firstNativeContact?.nickname ??
+          firstNativeContact?.firstName ??
+          firstNativeContact?.computedDisplayName ??
+          contactsV2.first.computedDisplayName;
     }
 
     // For reactions, we want to show the formatted address for phone numbers, but the regular address for emails

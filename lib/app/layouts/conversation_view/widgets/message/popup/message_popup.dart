@@ -44,7 +44,8 @@ class MessagePopupServerDetails {
   final bool minSierra;
   final bool minBigSur;
   final bool supportsOriginalDownload;
-  const MessagePopupServerDetails({required this.minSierra, required this.minBigSur, required this.supportsOriginalDownload});
+  const MessagePopupServerDetails(
+      {required this.minSierra, required this.minBigSur, required this.supportsOriginalDownload});
 }
 
 class MessagePopup extends StatefulWidget {
@@ -841,7 +842,8 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
   void edit() {
     popDetails();
     final FocusNode? node = kIsDesktop || kIsWeb ? FocusNode() : null;
-    cvController.editing.add(MessageEditEntry(message: message, part: part, controller: SpellCheckTextEditingController(text: part.text!, focusNode: node)));
+    cvController.editing.add(MessageEditEntry(
+        message: message, part: part, controller: SpellCheckTextEditingController(text: part.text!, focusNode: node)));
   }
 
   void delete() {

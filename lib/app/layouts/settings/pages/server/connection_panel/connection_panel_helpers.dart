@@ -224,7 +224,8 @@ mixin ConnectionPanelHelpersMixin {
         final enabled = controller.serverDetails.value.privateApiEnabled;
         return getIndicatorColor(enabled == true ? SocketState.connected : SocketState.disconnected);
       case 'helperBundle':
-        return getIndicatorColor(controller.helperBundleStatus.value ? SocketState.connected : SocketState.disconnected);
+        return getIndicatorColor(
+            controller.helperBundleStatus.value ? SocketState.connected : SocketState.disconnected);
       case 'timeSync':
         final t = controller.timeSync.value;
         if (t == null) return getIndicatorColor(SocketState.disconnected);
@@ -347,9 +348,8 @@ mixin ConnectionPanelHelpersMixin {
           children: [
             SettingsTile(
               title: "Re-configure with BlueBubbles Server",
-              subtitle: kIsWeb || kIsDesktop
-                  ? "Click for manual entry"
-                  : "Tap to scan QR code\nLong press for manual entry",
+              subtitle:
+                  kIsWeb || kIsDesktop ? "Click for manual entry" : "Tap to scan QR code\nLong press for manual entry",
               isThreeLine: kIsWeb || kIsDesktop ? false : true,
               leading: const SettingsLeadingIcon(
                 iosIcon: CupertinoIcons.gear,
@@ -390,9 +390,7 @@ mixin ConnectionPanelHelpersMixin {
                       } catch (e) {
                         return;
                       }
-                      if (fcmData != null &&
-                          fcmData[0] != null &&
-                          sanitizeServerAddress(address: fcmData[1]) != null) {
+                      if (fcmData != null && fcmData[0] != null && sanitizeServerAddress(address: fcmData[1]) != null) {
                         final data = FCMData(
                           projectID: fcmData[2],
                           storageBucket: fcmData[3],
@@ -497,8 +495,7 @@ mixin ConnectionPanelHelpersMixin {
                                 )
                               : null,
                           color: Colors.transparent,
-                          borderRadius:
-                              SettingsSvc.settings.skin.value == Skins.iOS ? BorderRadius.circular(6) : null,
+                          borderRadius: SettingsSvc.settings.skin.value == Skins.iOS ? BorderRadius.circular(6) : null,
                           child: SizedBox(
                             width: 31,
                             height: 31,
@@ -752,12 +749,12 @@ mixin ConnectionPanelHelpersMixin {
                     children: [
                       SettingsTile(
                         title: "Restart Private API & Services",
-                        subtitle: controller.isRestartingPrivateAPI.value &&
-                                SocketSvc.state.value == SocketState.connected
-                            ? "Restart in progress..."
-                            : SocketSvc.state.value == SocketState.connected
-                                ? "Restart the Private API"
-                                : "Disconnected, cannot restart",
+                        subtitle:
+                            controller.isRestartingPrivateAPI.value && SocketSvc.state.value == SocketState.connected
+                                ? "Restart in progress..."
+                                : SocketSvc.state.value == SocketState.connected
+                                    ? "Restart the Private API"
+                                    : "Disconnected, cannot restart",
                         backgroundColor: tileColor,
                         leading: const SettingsLeadingIcon(
                           iosIcon: CupertinoIcons.exclamationmark_shield,
@@ -803,7 +800,8 @@ mixin ConnectionPanelHelpersMixin {
                 )),
             Obx(() => SettingsTile(
                   title: "Restart BlueBubbles Server",
-                  subtitle: controller.isRestarting.value ? "Restart in progress..." : "This will briefly disconnect you",
+                  subtitle:
+                      controller.isRestarting.value ? "Restart in progress..." : "This will briefly disconnect you",
                   leading: const SettingsLeadingIcon(
                     iosIcon: CupertinoIcons.desktopcomputer,
                     materialIcon: Icons.dvr,

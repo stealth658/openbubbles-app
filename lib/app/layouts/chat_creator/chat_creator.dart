@@ -105,16 +105,18 @@ class ChatCreatorState extends State<ChatCreator> with ThemeHelpers {
               .where((e) =>
                   e.computedDisplayName.toLowerCase().contains(query) ||
                   (e.nickname?.toLowerCase().contains(query) ?? false) ||
-                  e.phoneNumbers.firstWhereOrNull((p) => cleansePhoneNumber(p.number.toLowerCase()).contains(query)) != null ||
+                  e.phoneNumbers.firstWhereOrNull((p) => cleansePhoneNumber(p.number.toLowerCase()).contains(query)) !=
+                      null ||
                   e.emailAddresses.firstWhereOrNull((e) => e.address.toLowerCase().contains(query)) != null)
               .toList();
-          final _chats = existingChats.where((e) =>
-              ((iMessage.value && e.isIMessage) || (sms.value && !e.isIMessage)) &&
-              ((e.getTitle().toLowerCase().contains(query)) ||
-                  e.handles.firstWhereOrNull((e) =>
-                          e.address.contains(query) ||
-                          e.displayName.toLowerCase().contains(query)) !=
-                      null)).toList();
+          final _chats = existingChats
+              .where((e) =>
+                  ((iMessage.value && e.isIMessage) || (sms.value && !e.isIMessage)) &&
+                  ((e.getTitle().toLowerCase().contains(query)) ||
+                      e.handles.firstWhereOrNull(
+                              (e) => e.address.contains(query) || e.displayName.toLowerCase().contains(query)) !=
+                          null))
+              .toList();
           return ContactSearchResult(_contacts, _chats);
         }, Priority.animation);
         _debounce = null;

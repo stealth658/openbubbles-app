@@ -88,7 +88,8 @@ class _MessagePopupHolderState extends State<MessagePopupHolder> with ThemeHelpe
                   part: widget.part,
                   controller: widget.controller,
                   cvController: widget.cvController,
-                  serverDetails: MessagePopupServerDetails(minSierra: minSierra, minBigSur: minBigSur, supportsOriginalDownload: version > 100),
+                  serverDetails: MessagePopupServerDetails(
+                      minSierra: minSierra, minBigSur: minBigSur, supportsOriginalDownload: version > 100),
                   sendTapback: sendTapback,
                   widthContext: () => mounted ? context : null,
                   child: widget.child,
@@ -112,8 +113,8 @@ class _MessagePopupHolderState extends State<MessagePopupHolder> with ThemeHelpe
       } else {
         // This delay is necessary because there is a second instance of the focus node in the popup which gets focused otherwise
         // The autofocus doesn't seem to work on desktop
-        Future.delayed(
-            const Duration(milliseconds: 500), () => widget.cvController.editing.last.controller.focusNode?.requestFocus());
+        Future.delayed(const Duration(milliseconds: 500),
+            () => widget.cvController.editing.last.controller.focusNode?.requestFocus());
       }
     }
   }

@@ -42,8 +42,8 @@ class _AttachmentsLoaderState extends State<AttachmentsLoader> {
               !(e.message.target?.isInteractive ?? true) &&
               (e.mimeStart == "image" || e.mimeStart == "video"))
           .toList()
-        ..sort((a, b) => (b.message.target?.dateCreated ?? DateTime(0))
-            .compareTo(a.message.target?.dateCreated ?? DateTime(0)));
+        ..sort((a, b) =>
+            (b.message.target?.dateCreated ?? DateTime(0)).compareTo(a.message.target?.dateCreated ?? DateTime(0)));
 
       final docs = attachments
           .where((e) =>
@@ -53,14 +53,12 @@ class _AttachmentsLoaderState extends State<AttachmentsLoader> {
               e.mimeStart != "video" &&
               !(e.mimeType ?? "").contains("location"))
           .toList()
-        ..sort((a, b) => (b.message.target?.dateCreated ?? DateTime(0))
-            .compareTo(a.message.target?.dateCreated ?? DateTime(0)));
+        ..sort((a, b) =>
+            (b.message.target?.dateCreated ?? DateTime(0)).compareTo(a.message.target?.dateCreated ?? DateTime(0)));
 
-      final locations = attachments
-          .where((e) => (e.mimeType ?? "").contains("location"))
-          .toList()
-        ..sort((a, b) => (b.message.target?.dateCreated ?? DateTime(0))
-            .compareTo(a.message.target?.dateCreated ?? DateTime(0)));
+      final locations = attachments.where((e) => (e.mimeType ?? "").contains("location")).toList()
+        ..sort((a, b) =>
+            (b.message.target?.dateCreated ?? DateTime(0)).compareTo(a.message.target?.dateCreated ?? DateTime(0)));
 
       setState(() {
         isLoading = false;

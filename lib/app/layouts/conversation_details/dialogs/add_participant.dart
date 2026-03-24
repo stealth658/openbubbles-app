@@ -70,8 +70,8 @@ void showAddParticipant(BuildContext context, Chat chat) {
                                     child: ListView.builder(
                                       shrinkWrap: true,
                                       itemCount: contacts.length,
-                                      findChildIndexCallback: (key) =>
-                                          findChildIndexByKey(contacts, key, (item) => "${item.address}-${item.displayName}"),
+                                      findChildIndexCallback: (key) => findChildIndexByKey(
+                                          contacts, key, (item) => "${item.address}-${item.displayName}"),
                                       itemBuilder: (context, index) {
                                         return ListTile(
                                           key: ValueKey("${contacts[index].address}-${contacts[index].displayName}"),

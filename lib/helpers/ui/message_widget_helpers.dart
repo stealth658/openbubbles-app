@@ -49,7 +49,8 @@ List<InlineSpan> buildMessageSpans(BuildContext context, MessagePart part, Messa
                   .firstWhereOrNull((e) => e.address == part.mentions[i].mentionedAddress);
               if (handle?.contactsV2.isNotEmpty == true && handle!.contactsV2.first.isNative) {
                 try {
-                  await MethodChannelSvc.invokeMethod("view-contact-form", {'id': handle.contactsV2.first.nativeContactId});
+                  await MethodChannelSvc.invokeMethod(
+                      "view-contact-form", {'id': handle.contactsV2.first.nativeContactId});
                 } catch (_) {
                   showSnackbar("Error", "Failed to find contact on device!");
                 }
@@ -138,9 +139,11 @@ Future<List<InlineSpan>> buildEnrichedMessageSpans(BuildContext context, Message
           linkIndexMatches.add(TextEntityMatch("tracking", element.start, element.end, [ent.carrier, ent.number]));
         } else if (element.entities.first is FlightNumberEntity) {
           final ent = (element.entities.first as FlightNumberEntity);
-          linkIndexMatches.add(TextEntityMatch("flight", element.start, element.end, [ent.airlineCode, ent.flightNumber]));
+          linkIndexMatches
+              .add(TextEntityMatch("flight", element.start, element.end, [ent.airlineCode, ent.flightNumber]));
         } else if (element.entities.first is MentionEntity) {
-          linkIndexMatches.add(TextEntityMatch("mention", element.start, element.end, [element.entities.first.rawValue]));
+          linkIndexMatches
+              .add(TextEntityMatch("mention", element.start, element.end, [element.entities.first.rawValue]));
         }
       }
     } else {
@@ -148,8 +151,8 @@ Future<List<InlineSpan>> buildEnrichedMessageSpans(BuildContext context, Message
       for (RegExpMatch match in matches) {
         linkIndexMatches.add(TextEntityMatch("link", match.start, match.end, null));
       }
-      linkIndexMatches.addAll(
-          part.mentions.map((e) => TextEntityMatch("mention", e.range.first, e.range.last, [e.mentionedAddress ?? ""])));
+      linkIndexMatches.addAll(part.mentions
+          .map((e) => TextEntityMatch("mention", e.range.first, e.range.last, [e.mentionedAddress ?? ""])));
     }
   }
   // render subject
@@ -176,16 +179,17 @@ Future<List<InlineSpan>> buildEnrichedMessageSpans(BuildContext context, Message
               ..onTap = () async {
                 if (kIsDesktop || kIsWeb) return;
                 final handle = ChatsSvc.activeChat!.chat.handles.firstWhereOrNull((e) => e.address == data!.first);
-              if (handle?.contactsV2.isNotEmpty == true && handle!.contactsV2.first.isNative) {
-                try {
-                  await MethodChannelSvc.invokeMethod("view-contact-form", {'id': handle.contactsV2.first.nativeContactId});
-                } catch (_) {
-                  showSnackbar("Error", "Failed to find contact on device!");
+                if (handle?.contactsV2.isNotEmpty == true && handle!.contactsV2.first.isNative) {
+                  try {
+                    await MethodChannelSvc.invokeMethod(
+                        "view-contact-form", {'id': handle.contactsV2.first.nativeContactId});
+                  } catch (_) {
+                    showSnackbar("Error", "Failed to find contact on device!");
+                  }
+                } else if (handle != null) {
+                  await MethodChannelSvc.invokeMethod("open-contact-form",
+                      {'address': handle.address, 'address_type': handle.address.isEmail ? 'email' : 'phone'});
                 }
-              } else if (handle != null) {
-                await MethodChannelSvc.invokeMethod("open-contact-form",
-                    {'address': handle.address, 'address_type': handle.address.isEmail ? 'email' : 'phone'});
-              }
               }));
       } else if (urlRegex.hasMatch(text) ||
           type == "map" ||

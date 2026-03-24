@@ -183,7 +183,9 @@ extension ChatListHelpers on RxList<Chat> {
     if (unknown) {
       return where((e) => !e.isGroup && e.handles.firstOrNull?.contactsV2.isEmpty != false).toList().obs;
     } else {
-      return where((e) => e.isGroup || (!e.isGroup && e.handles.firstOrNull?.contactsV2.isNotEmpty == true)).toList().obs;
+      return where((e) => e.isGroup || (!e.isGroup && e.handles.firstOrNull?.contactsV2.isNotEmpty == true))
+          .toList()
+          .obs;
     }
   }
 }
@@ -224,6 +226,8 @@ extension FirstWord on String {
 extension TitleCase on String {
   String toTitleCase() {
     if (isEmpty) return this;
-    return split(' ').map((word) => word.isEmpty ? word : '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}').join(' ');
+    return split(' ')
+        .map((word) => word.isEmpty ? word : '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}')
+        .join(' ');
   }
 }
