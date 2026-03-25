@@ -5,6 +5,7 @@ import 'dart:ui';
 
 import 'package:bluebubbles/app/components/custom_text_editing_controllers.dart';
 import 'package:bluebubbles/app/layouts/chat_creator/chat_creator.dart';
+import 'package:bluebubbles/app/layouts/chat_creator/new_chat_creator.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/dialogs/timeframe_picker.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/popup/details_menu_action.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/popup/reaction_picker_clipper.dart';
@@ -741,7 +742,7 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
     popDetails();
     NavigationSvc.pushAndRemoveUntil(
       context,
-      ChatCreator(initialSelected: [SelectedContact(displayName: handle.displayName, address: handle.address)]),
+      NewChatCreator(initialSelected: [SelectedContact(displayName: handle.displayName, address: handle.address)]),
       (route) => route.isFirst,
     );
   }
@@ -765,7 +766,7 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
     if (attachments.isNotEmpty || !isNullOrEmpty(message.text)) {
       NavigationSvc.pushAndRemoveUntil(
         context,
-        ChatCreator(
+        NewChatCreator(
           initialText: message.text,
           initialAttachments: attachments,
         ),

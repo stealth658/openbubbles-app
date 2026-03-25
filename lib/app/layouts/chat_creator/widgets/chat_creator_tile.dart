@@ -54,7 +54,7 @@ class _ChatCreatorTileState extends State<ChatCreatorTile> with ThemeHelpers {
 
   Future<void> _formatPhoneNumber() async {
     _isFormatting = true;
-    final formatted = await formatPhoneNumber(cleansePhoneNumber(widget.subtitle));
+    final formatted = formatPhoneNumber(cleansePhoneNumber(widget.subtitle));
     if (mounted) {
       setState(() {
         _formattedPhone = formatted;

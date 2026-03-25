@@ -149,7 +149,7 @@ class _UrlPreviewState extends State<UrlPreview> with AutomaticKeepAliveClientMi
                   child: Center(
                     heightFactor: 1,
                     child: ConstrainedBox(
-                      constraints: BoxConstraints(maxHeight: context.height * 0.4),
+                      constraints: BoxConstraints(maxHeight: context.height * 0.4, minHeight: 100),
                       child: Image.network(
                         effectiveImageMetadata.url!,
                         gaplessPlayback: true,
@@ -177,7 +177,7 @@ class _UrlPreviewState extends State<UrlPreview> with AutomaticKeepAliveClientMi
                 child: Center(
                   heightFactor: 1,
                   child: ConstrainedBox(
-                    constraints: BoxConstraints(maxHeight: context.height * 0.4),
+                    constraints: BoxConstraints(maxHeight: context.height * 0.4, minHeight: 100),
                     child: Image.memory(
                       content!.bytes!,
                       gaplessPlayback: true,
@@ -209,7 +209,7 @@ class _UrlPreviewState extends State<UrlPreview> with AutomaticKeepAliveClientMi
                 child: Center(
                   heightFactor: 1,
                   child: ConstrainedBox(
-                    constraints: BoxConstraints(maxHeight: context.height * 0.4),
+                    constraints: BoxConstraints(maxHeight: context.height * 0.4, minHeight: 100),
                     child: Image.file(
                       file!,
                       gaplessPlayback: true,
@@ -268,7 +268,7 @@ class _UrlPreviewState extends State<UrlPreview> with AutomaticKeepAliveClientMi
               ),
             ),
           Padding(
-            padding: const EdgeInsets.all(15.0),
+            padding: const EdgeInsets.fromLTRB(15.0, 20, 15.0, 15.0),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [

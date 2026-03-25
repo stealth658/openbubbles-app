@@ -957,7 +957,7 @@ class TextFieldComponentState extends State<TextFieldComponent> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (!isChatCreator) ReplyHolder(controller: controller!),
+                      if (widget.controller != null) ReplyHolder(controller: widget.controller!),
                       if (initialAttachments.isNotEmpty || !isChatCreator || widget.controller != null)
                         PickedAttachmentsHolder(
                           controller: widget.controller,

@@ -167,7 +167,7 @@ class _ReplyText extends StatelessWidget {
         if (isIOS && reply != null) const TextSpan(text: "Replying to "),
         if (reply != null)
           TextSpan(
-            text: message!.handleRelation.target?.displayName ?? 'You',
+            text: message!.isFromMe! ? 'Yourself' : message!.handleRelation.target?.displayName ?? 'Unknown',
             style: context.textTheme.bodyMedium!.copyWith(
               fontWeight: isIOS ? FontWeight.bold : FontWeight.w400,
             ),

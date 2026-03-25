@@ -13,7 +13,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:bluebubbles/models/models.dart' show MessageSaveResult;
 import 'package:get/get.dart' hide Response;
-import 'package:metadata_fetch/metadata_fetch.dart';
 // (needed when generating objectbox model code)
 // ignore: unnecessary_import
 import 'package:objectbox/objectbox.dart';
@@ -330,19 +329,6 @@ class Chat {
   /// Note: For full message add with service updates, use ChatsSvc.addMessageToChat
   Future<MessageSaveResult> addMessage(Message message,
       {bool changeUnreadStatus = true, bool checkForMessageText = true, bool clearNotificationsIfFromMe = true}) async {
-    // If this is a message preview and we don't already have metadata for this, get it
-    if (message.fullText.replaceAll("\n", " ").hasUrl &&
-        !MetadataHelper.mapIsNotEmpty(message.metadata) &&
-        !message.hasApplePayloadData) {
-      MetadataHelper.fetchMetadata(message).then((Metadata? meta) async {
-        // If the metadata is empty, don't do anything
-        if (!MetadataHelper.isNotEmpty(meta)) return;
-
-        // Save the metadata to the object
-        message.metadata = meta!.toJson();
-      });
-    }
-
     // Save the message using the interface
     Message? latest = latestMessage;
     Message? newMessage;

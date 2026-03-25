@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:app_links/app_links.dart';
 import 'package:bluebubbles/app/layouts/chat_creator/chat_creator.dart';
+import 'package:bluebubbles/app/layouts/chat_creator/new_chat_creator.dart';
 import 'package:bluebubbles/app/state/chat_state.dart';
 import 'package:bluebubbles/helpers/backend/startup_tasks.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
@@ -280,7 +281,7 @@ class ChatsService {
         NavigationSvc.closeSettings(Get.context!);
         await NavigationSvc.pushAndRemoveUntil(
           Get.context!,
-          ChatCreator(
+          NewChatCreator(
             initialSelected: [SelectedContact(displayName: handle?.displayName ?? address, address: address)],
             initialText: uri.queryParameters['body'],
           ),
@@ -850,6 +851,10 @@ class ChatsService {
 
     // Update service state
     updateChat(chat);
+
+    // Archive status changes the filtered list (not sort order), so we must
+    // explicitly trigger a list version update so all conversation list views re-filter.
+    _scheduleListVersionUpdate(immediate: true);
 
     return chat;
   }

@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:bluebubbles/app/layouts/chat_creator/chat_creator.dart';
+import 'package:bluebubbles/app/layouts/chat_creator/new_chat_creator.dart';
 import 'package:bluebubbles/app/state/chat_state_scope.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
@@ -119,7 +119,7 @@ class ManualMarkState extends State<ManualMark> with ThemeHelpers {
                 widget.controller.selected.clear();
                 NavigationSvc.pushAndRemoveUntil(
                   context,
-                  ChatCreator(
+                  NewChatCreator(
                     initialText: text,
                     initialAttachments: attachments,
                   ),

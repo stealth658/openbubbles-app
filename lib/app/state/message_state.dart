@@ -88,6 +88,15 @@ class MessageState extends StatefulController {
   /// Whether to show previous edits for this message
   final RxBool showEdits = false.obs;
 
+  /// Set by [MessagesService] when this outgoing message is the newest one
+  /// whose [dateRead] is non-null.  Drives the "Read" indicator.
+  final RxBool showReadIndicator = false.obs;
+
+  /// Set by [MessagesService] when this outgoing message is the newest one
+  /// with [dateDelivered] != null or [isDelivered] == true.  Drives the
+  /// "Delivered" indicator.
+  final RxBool showDeliveredIndicator = false.obs;
+
   /// Set when an audio message is kept; triggers delivered indicator
   final Rxn<DateTime> audioWasKept = Rxn<DateTime>(null);
 
@@ -430,6 +439,16 @@ class MessageState extends StatefulController {
       isBookmarked.value = value;
       message.isBookmarked = value;
     }
+  }
+
+  /// Called by [MessagesService] — do not invoke from UI code.
+  void updateShowReadIndicatorInternal(bool value) {
+    if (showReadIndicator.value != value) showReadIndicator.value = value;
+  }
+
+  /// Called by [MessagesService] — do not invoke from UI code.
+  void updateShowDeliveredIndicatorInternal(bool value) {
+    if (showDeliveredIndicator.value != value) showDeliveredIndicator.value = value;
   }
 
   /// Update thread reply count (computed from thread messages)

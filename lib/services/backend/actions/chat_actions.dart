@@ -441,9 +441,26 @@ class ChatActions {
     for (final chat in inputChats) {
       // Use participants here because handles will be empty on inputChat.
       // This is because handles are a ToMany relation that isn't passed across isolates
-      for (final participant in chat.participants) {
-        if (!inputHandlesMap.containsKey(participant.uniqueAddressAndService)) {
-          inputHandlesMap[participant.uniqueAddressAndService] = participant;
+      if (chat.participants.isNotEmpty) {
+        for (final participant in chat.participants) {
+          if (!inputHandlesMap.containsKey(participant.uniqueAddressAndService)) {
+            inputHandlesMap[participant.uniqueAddressAndService] = participant;
+          }
+        }
+      } else if (chat.guid.contains(';-;')) {  // Basic check to see if it's a DM with an address in the GUID
+        // If the participants list is empty, try and extract the handle from the chat's GUID
+        final address = chat.guid.split(';-;').lastOrNull;
+
+        // If we have an address, try finding a handle for it and add it to the map if found
+        if (address != null) {
+          final handleQuery = Database.handles.query(Handle_.address.equals(address)).build();
+          handleQuery.limit = 1;
+          final handle = handleQuery.findFirst();
+          handleQuery.close();
+
+          if (handle != null) {
+            inputHandlesMap[handle.uniqueAddressAndService] = handle;
+          }
         }
       }
     }

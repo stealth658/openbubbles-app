@@ -562,7 +562,6 @@ class OutgoingMessageHandler {
           tag: _tag,
         );
         m = handleSendError(error, m);
-        Logger.test('Updated message with error: error=${m.error} errorMessage=${m.errorMessage}', tag: _tag);
         if (!LifecycleSvc.isAlive || !(ChatsSvc.getChatController(c.guid)?.isAlive.value ?? false)) {
           await NotificationsSvc.createFailedToSend(c);
         }

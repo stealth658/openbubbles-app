@@ -1,4 +1,5 @@
 export 'dispatched_event.dart';
+export 'message_receipt_info.dart';
 export 'handle_lookup_key.dart';
 export 'message_reply_context.dart';
 export 'message_save_result.dart';

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:bluebubbles/app/layouts/chat_creator/new_chat_creator.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/scheduling/scheduled_messages_panel.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/server/server_management_panel.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
@@ -90,7 +91,7 @@ class IntentsService {
             final handle = Handle.findOne(addressAndService: HandleLookupKey(address, "iMessage"));
             NavigationSvc.pushAndRemoveUntil(
               Get.context!,
-              ChatCreator(
+              NewChatCreator(
                 initialSelected: [SelectedContact(displayName: handle?.displayName ?? address, address: address)],
                 initialText: uri.queryParameters['body'],
               ),
@@ -165,7 +166,7 @@ class IntentsService {
       await StartupTasks.waitForUI();
       NavigationSvc.pushAndRemoveUntil(
         Get.context!,
-        ChatCreator(
+        NewChatCreator(
           initialAttachments: attachments,
           initialText: text,
         ),

@@ -4,7 +4,6 @@ import 'package:bluebubbles/app/state/chat_state_scope.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -21,9 +20,7 @@ class DeliveredIndicator extends StatefulWidget {
 }
 
 class _DeliveredIndicatorState extends State<DeliveredIndicator> with ThemeHelpers {
-  late MessageState _ms;
-  MessageState get controller => _ms;
-  late final String _chatGuid;
+  late MessageState controller;
   late final bool _isGroup;
   Message get message => controller.message;
   bool get showAvatar => _isGroup;
@@ -31,9 +28,8 @@ class _DeliveredIndicatorState extends State<DeliveredIndicator> with ThemeHelpe
   @override
   void initState() {
     super.initState();
-    _ms = MessageStateScope.readStateOnce(context);
+    controller = MessageStateScope.readStateOnce(context);
     final fallbackChat = ChatStateScope.maybeReadChatOnce(context);
-    _chatGuid = controller.cvController?.chat.guid ?? fallbackChat?.guid ?? '';
     _isGroup = controller.cvController?.chat.isGroup ?? fallbackChat?.isGroup ?? false;
   }
 
@@ -43,36 +39,10 @@ class _DeliveredIndicatorState extends State<DeliveredIndicator> with ThemeHelpe
     if (widget.forceShow || isTempMessage) return true;
     if ((!message.isFromMe! && iOS) || (controller.parts.lastOrNull?.isUnsent ?? false)) return false;
 
-    // Prefer reactive messageState values to avoid stale reads on delivery/read receipts.
-    final dateRead = controller.dateRead.value;
-    final dateDelivered = controller.dateDelivered.value;
-
-    final chatGuid = _chatGuid;
-    final allMessages = MessagesSvc(chatGuid).struct.messages;
-
-    // Non-iOS: show "Received" only on the most recent incoming message.
-    if (!message.isFromMe!) {
-      final lastIncoming = allMessages.where((e) => !e.isFromMe!).toList()..sort(Message.sort);
-      return lastIncoming.firstOrNull?.guid == message.guid;
-    }
-
-    // Show "Read" on the most recently read outgoing message.
-    // This takes priority over "Delivered" even when a newer message is only delivered.
-    if (dateRead != null) {
-      final lastRead = allMessages.where((e) => e.isFromMe! && e.dateRead != null).toList()..sort(Message.sort);
-      return lastRead.firstOrNull?.guid == message.guid;
-    }
-
-    // Show "Delivered" only on the newest outgoing message that has any receipt.
-    if (dateDelivered != null) {
-      final lastDelivered = allMessages
-          .where((e) => e.isFromMe! && (e.dateDelivered != null || e.dateRead != null))
-          .toList()
-        ..sort(Message.sort);
-      return lastDelivered.firstOrNull?.guid == message.guid;
-    }
-
-    return false;
+    // Visibility for "last delivered/read/sent" is computed by
+    // MessagesService._recomputeDeliveredIndicators and stored reactively on
+    // the MessageState — each tier is independent.
+    return controller.showReadIndicator.value || controller.showDeliveredIndicator.value;
   }
 
   List<InlineSpan> buildTwoPiece(String action, String? date) {
@@ -127,8 +97,11 @@ class _DeliveredIndicatorState extends State<DeliveredIndicator> with ThemeHelpe
       alignment: Alignment.bottomCenter,
       duration: const Duration(milliseconds: 250),
       child: Obx(() {
-        // Observe granular MessageState fields directly
-        controller.guid.value;
+        // Observe the fields that affect both shouldShow and getText.
+        controller.showReadIndicator.value;
+        controller.showDeliveredIndicator.value;
+        controller.audioWasKept.value;
+        controller.isSending.value;
         controller.dateDelivered.value;
         controller.dateRead.value;
         return shouldShow && getText().isNotEmpty

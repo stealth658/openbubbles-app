@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:bluebubbles/app/layouts/chat_creator/chat_creator.dart';
+import 'package:bluebubbles/app/layouts/chat_creator/new_chat_creator.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/conversation_list_fab.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/footer/samsung_footer.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/header/material_header.dart';
@@ -90,7 +90,7 @@ class ConversationListController extends StatefulController {
   void openNewChatCreator(BuildContext context, {List<PlatformFile>? existing}) async {
     NavigationSvc.pushAndRemoveUntil(
       context,
-      ChatCreator(initialAttachments: existing ?? []),
+      NewChatCreator(initialAttachments: existing ?? []),
       (route) => route.isFirst,
     );
   }

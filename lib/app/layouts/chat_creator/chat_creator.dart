@@ -37,6 +37,7 @@ class SelectedContact {
   }
 }
 
+@Deprecated("Use NewChatCreator instead")
 class ChatCreator extends StatefulWidget {
   const ChatCreator({
     super.key,
