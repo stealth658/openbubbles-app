@@ -335,7 +335,7 @@ class Settings {
       'actionList': actionList,
       'detailsMenuActions': detailsMenuActions.map((action) => action.name).toList(),
       'askWhereToSave': askWhereToSave.value,
-      'indicatorsOnPinnedChats': statusIndicatorsOnChats.value,
+      'statusIndicatorsOnChats': statusIndicatorsOnChats.value,
       'apiTimeout': apiTimeout.value,
       'allowUpsideDownRotation': allowUpsideDownRotation.value,
       'cancelQueuedMessages': cancelQueuedMessages.value,
@@ -516,7 +516,7 @@ class Settings {
     SettingsSvc.settings.minimizeToTray.value = map['minimizeToTray'] ?? SettingsSvc.settings.minimizeToTray.value;
     SettingsSvc.settings.askWhereToSave.value = map['askWhereToSave'] ?? SettingsSvc.settings.askWhereToSave.value;
     SettingsSvc.settings.statusIndicatorsOnChats.value =
-        map['indicatorsOnPinnedChats'] ?? SettingsSvc.settings.statusIndicatorsOnChats.value;
+        map['statusIndicatorsOnChats'] ?? SettingsSvc.settings.statusIndicatorsOnChats.value;
     SettingsSvc.settings.apiTimeout.value = map['apiTimeout'] ?? SettingsSvc.settings.apiTimeout.value;
     SettingsSvc.settings.allowUpsideDownRotation.value =
         map['allowUpsideDownRotation'] ?? SettingsSvc.settings.allowUpsideDownRotation.value;
@@ -666,6 +666,8 @@ class Settings {
     s.onlyWifiDownload.value = map['onlyWifiDownload'] ?? false;
     s.maxConcurrentDownloads.value = map['maxConcurrentDownloads'] ?? 2;
     s.autoSave.value = map['autoSave'] ?? false;
+    s.autoSavePicsLocation.value = map['autoSavePicsLocation'] ?? "Pictures";
+    s.autoSaveDocsLocation.value = map['autoSaveDocsLocation'] ?? "/storage/emulated/0/Download/";
     s.previewImageQuality.value = map['imageQuality']?.toDouble() ?? 1.0;
     s.autoOpenKeyboard.value = map['autoOpenKeyboard'] ?? true;
     s.hideTextPreviews.value = map['hideTextPreviews'] ?? false;
@@ -716,7 +718,7 @@ class Settings {
     s.spellcheckLanguage.value = map['spellcheckLanguage'] ?? 'auto';
     s.minimizeToTray.value = map['minimizeToTray'] ?? false;
     s.askWhereToSave.value = map['askWhereToSave'] ?? false;
-    s.statusIndicatorsOnChats.value = map['indicatorsOnPinnedChats'] ?? false;
+    s.statusIndicatorsOnChats.value = map['statusIndicatorsOnChats'] ?? false;
     s.apiTimeout.value = map['apiTimeout'] ?? 15000;
     s.allowUpsideDownRotation.value = map['allowUpsideDownRotation'] ?? false;
     s.cancelQueuedMessages.value = map['cancelQueuedMessages'] ?? false;
