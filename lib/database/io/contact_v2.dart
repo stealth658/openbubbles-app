@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:dice_bear/dice_bear.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -158,10 +159,11 @@ class ContactV2 {
   }
 
   /// Get the initials from the structured name, falling back to display name.
+  /// Only alphabetical characters are considered; returns null if none are found.
   String? get initials {
     // Prefer structured first/last name when available
-    final first = firstName?.isNotEmpty == true ? firstName![0].toUpperCase() : null;
-    final last = lastName?.isNotEmpty == true ? lastName![0].toUpperCase() : null;
+    final first = firstName.firstAlpha;
+    final last = lastName.firstAlpha;
 
     if (first != null || last != null) {
       return (first ?? '') + (last ?? '');
@@ -172,13 +174,13 @@ class ContactV2 {
     if (parts.isEmpty || displayName.isEmpty) return null;
 
     if (parts.length == 1) {
-      return parts[0].isNotEmpty ? parts[0][0].toUpperCase() : null;
+      return parts[0].firstAlpha;
     }
 
-    final firstPart = parts.first.isNotEmpty ? parts.first[0] : '';
-    final lastPart = parts.last.isNotEmpty ? parts.last[0] : '';
+    final firstPart = parts.first.firstAlpha ?? '';
+    final lastPart = parts.last.firstAlpha ?? '';
 
-    return (firstPart + lastPart).isEmpty ? null : (firstPart + lastPart).toUpperCase();
+    return (firstPart + lastPart).isEmpty ? null : firstPart + lastPart;
   }
 
   /// Normalize a phone number by removing all non-digit characters

@@ -97,7 +97,7 @@ class _ReplyBubbleState extends State<ReplyBubble> with ThemeHelpers {
     }
 
     return Opacity(
-        opacity: 0.5,
+        opacity: 0.6,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
           child: SizeTransition(

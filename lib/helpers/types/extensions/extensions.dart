@@ -141,6 +141,21 @@ extension FormatStatCount on num {
   }
 }
 
+extension StringAlpha on String? {
+  /// Returns the first ASCII alphabetical character from the string, uppercased,
+  /// or null if the string is null / contains no alphabetical characters.
+  String? get firstAlpha {
+    if (this == null) return null;
+    for (int i = 0; i < this!.length; i++) {
+      final c = this!.codeUnitAt(i);
+      if ((c >= 65 && c <= 90) || (c >= 97 && c <= 122)) {
+        return String.fromCharCode(c & ~0x20); // force uppercase
+      }
+    }
+    return null;
+  }
+}
+
 extension FriendlySize on double {
   String getFriendlySize({int decimals = 2, bool withSuffix = true}) {
     double size = this / 1024000.0;

@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -107,17 +105,14 @@ class Handle {
       if (contactV2Initials != null) return contactV2Initials;
     }
 
-    String importantChars = displayName.toUpperCase().replaceAll(RegExp(r'[^a-zA-Z _-]'), "").trim();
-    if (importantChars.isEmpty) return null;
+    // Split by space/dash/underscore and take first alpha of first + last word
+    final parts = displayName.trim().split(RegExp(r'[ \-_]'));
+    if (parts.length == 1) return parts[0].firstAlpha;
 
-    // Split by a space or special character delimiter, take each of the items and
-    // reduce it to just the capitalized first letter. Then join the array by an empty char
-    List<String> initials =
-        importantChars.split(RegExp(r'[ \-_]')).map((e) => e.isEmpty ? '' : e[0].toUpperCase()).toList();
+    final firstPart = parts.first.firstAlpha ?? '';
+    final lastPart = parts.last.firstAlpha ?? '';
 
-    initials.removeRange(1, max(initials.length - 1, 1));
-
-    return initials.join("").isEmpty ? null : initials.join("");
+    return (firstPart + lastPart).isEmpty ? null : firstPart + lastPart;
   }
 
   Handle({

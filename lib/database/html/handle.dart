@@ -39,14 +39,14 @@ class Handle {
   String? get initials {
     // Remove any numbers, certain symbols, and non-alphabet characters
     if (address.startsWith("urn:biz")) return null;
-    String importantChars = displayName.toUpperCase().replaceAll(RegExp(r'[^a-zA-Z _-]'), "").trim();
-    if (importantChars.isEmpty) return null;
+    // Split by space/dash/underscore and take first alpha of first two words
+    final parts = displayName.trim().split(RegExp(r'[ \-_]'));
+    if (parts.length == 1) return parts[0].firstAlpha;
 
-    // Split by a space or special character delimiter, take each of the items and
-    // reduce it to just the capitalized first letter. Then join the array by an empty char
-    String reduced =
-        importantChars.split(RegExp(r'[ \-_]')).take(2).map((e) => e.isEmpty ? '' : e[0].toUpperCase()).join('');
-    return reduced.isEmpty ? null : reduced;
+    final firstPart = parts.first.firstAlpha ?? '';
+    final secondPart = parts[1].firstAlpha ?? '';
+
+    return (firstPart + secondPart).isEmpty ? null : firstPart + secondPart;
   }
 
   Handle({
