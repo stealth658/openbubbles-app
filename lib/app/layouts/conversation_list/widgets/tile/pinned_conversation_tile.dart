@@ -346,10 +346,13 @@ class PinnedIndicators extends StatelessWidget {
         );
       }
 
-      final showMarker = controller.chat.latestMessage.indicatorToShow;
+      // Read the reactive status from ChatState so that delivery/read-receipt
+      // updates on the same message propagate to the tile without a GUID change.
+      final chatState = ChatsSvc.getChatState(controller.chat.guid);
+      final showMarker = chatState?.latestMessageStatus.value ?? MessageStatusIndicator.NONE;
       if (SettingsSvc.settings.statusIndicatorsOnChats.value &&
           !controller.chat.isGroup &&
-          showMarker != Indicator.NONE) {
+          showMarker != MessageStatusIndicator.NONE) {
         return Positioned(
           left: sqrt(width) - width * 0.05 * sqrt(2),
           top: width - width * 0.13 * 2,
@@ -362,11 +365,11 @@ class PinnedIndicators extends StatelessWidget {
               color: context.theme.colorScheme.tertiaryContainer,
             ),
             child: Transform.rotate(
-              angle: showMarker != Indicator.SENT ? pi / 2 : 0,
+              angle: showMarker != MessageStatusIndicator.SENT ? pi / 2 : 0,
               child: Icon(
-                showMarker == Indicator.DELIVERED
+                showMarker == MessageStatusIndicator.DELIVERED
                     ? CupertinoIcons.location_north_fill
-                    : showMarker == Indicator.READ
+                    : showMarker == MessageStatusIndicator.READ
                         ? CupertinoIcons.location_north
                         : CupertinoIcons.location_fill,
                 color: context.theme.colorScheme.onTertiaryContainer,

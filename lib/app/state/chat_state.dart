@@ -32,6 +32,12 @@ class ChatState {
   final RxBool lockChatIcon;
   final RxnString lastReadMessageGuid;
 
+  /// The delivery/read status of the latest outgoing message.  Updated any
+  /// time [updateLatestMessageInternal] is called, even when the GUID has not
+  /// changed (e.g. a delivery or read receipt arrives for the current latest
+  /// message).  Drives the status indicator on conversation-list tiles.
+  final Rx<MessageStatusIndicator> latestMessageStatus;
+
   final RxBool isActive;
   final RxBool isAlive;
   ConversationViewController? controller;
@@ -51,6 +57,9 @@ class ChatState {
             : (chat.handles.isNotEmpty ? (chat.handles.first.formattedAddress ?? chat.handles.first.address) : null)),
         subtitle = RxnString(MessageHelper.getNotificationText(chat.latestMessage)),
         latestMessage = Rxn<Message>(chat.latestMessage),
+        latestMessageStatus = Rx<MessageStatusIndicator>(
+          chat.latestMessage.isFromMe != true ? MessageStatusIndicator.NONE : chat.latestMessage.indicatorToShow,
+        ),
         textFieldText = RxnString(chat.textFieldText),
         textFieldAttachments = chat.textFieldAttachments.obs,
         autoSendReadReceipts = RxnBool(chat.autoSendReadReceipts),
@@ -165,6 +174,14 @@ class ChatState {
     if (latestMessage.value?.guid != value?.guid) {
       latestMessage.value = value;
     }
+    // Always update status even when the GUID is unchanged — a delivery or
+    // read receipt arrives for the same message object, and the indicator
+    // must reflect the new state without a full GUID change.
+    updateLatestMessageStatusInternal(value?.indicatorToShow ?? MessageStatusIndicator.NONE);
+  }
+
+  void updateLatestMessageStatusInternal(MessageStatusIndicator value) {
+    if (latestMessageStatus.value != value) latestMessageStatus.value = value;
   }
 
   void updateTextFieldTextInternal(String? value) {

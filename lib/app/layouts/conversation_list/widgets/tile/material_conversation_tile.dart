@@ -149,7 +149,7 @@ class _MaterialTrailingState extends CustomState<MaterialTrailing, void, Convers
       padding: const EdgeInsets.only(right: 3),
       child: Obx(() {
         final message = chatState.latestMessage.value;
-        final indicator = computeIndicatorText(message, controller.chat.isGroup);
+        final indicator = computeIndicatorText(chatState.latestMessageStatus.value, controller.chat.isGroup);
         final hasError = (message?.error ?? 0) > 0;
         final unread = chatState.hasUnreadMessage.value;
         final muteType = chatState.muteType.value;

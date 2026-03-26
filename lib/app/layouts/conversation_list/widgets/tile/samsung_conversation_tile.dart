@@ -117,7 +117,7 @@ class _SamsungTrailingState extends CustomState<SamsungTrailing, void, Conversat
     final chatState = ChatStateScope.of(context);
     return Obx(() {
       final message = chatState.latestMessage.value;
-      final indicator = computeIndicatorText(message, controller.chat.isGroup);
+      final indicator = computeIndicatorText(chatState.latestMessageStatus.value, controller.chat.isGroup);
       final hasError = (message?.error ?? 0) > 0;
       final unread = chatState.hasUnreadMessage.value;
       final muteType = chatState.muteType.value;

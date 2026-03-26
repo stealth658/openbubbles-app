@@ -1,6 +1,5 @@
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/tile/conversation_tile.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
-import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:get/get.dart';
@@ -25,20 +24,18 @@ mixin TrailingStateMixin<W extends CustomStateful<ConversationTileController>>
     forceDelete = false;
   }
 
-  /// Compute the status indicator text for [message].
+  /// Compute the status indicator text for a given [status] enum value.
   ///
   /// Must be called **inside an `Obx()`** — it reads
-  /// [SettingsSvc.settings.statusIndicatorsOnChats] and
-  /// [Message.indicatorToShow] (which reads [Message.dateDelivered] /
-  /// [Message.dateRead] through their reactive getters), registering GetX
-  /// dependencies so the enclosing `Obx` rebuilds on changes.
+  /// [SettingsSvc.settings.statusIndicatorsOnChats], registering a GetX
+  /// dependency so the enclosing `Obx` rebuilds when the setting changes.
+  /// Pass [ChatState.latestMessageStatus.value] as [status] so that delivery
+  /// and read-receipt updates also trigger a rebuild.
   ///
   /// Returns an empty string when no indicator should be shown.
-  String computeIndicatorText(Message? message, bool isGroup) {
+  String computeIndicatorText(MessageStatusIndicator status, bool isGroup) {
     if (!SettingsSvc.settings.statusIndicatorsOnChats.value) return "";
-    if (!(message?.isFromMe ?? false) || isGroup) return "";
-    final show = message?.indicatorToShow ?? Indicator.NONE;
-    if (show == Indicator.NONE) return "";
-    return show.name.toLowerCase().capitalizeFirst!;
+    if (isGroup || status == MessageStatusIndicator.NONE) return "";
+    return status.name.toLowerCase().capitalizeFirst!;
   }
 }

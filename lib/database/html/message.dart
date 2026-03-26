@@ -380,12 +380,12 @@ class Message {
       .where((item) => ReactionTypes.toList().contains(item.associatedMessageType?.replaceAll("-", "")))
       .toList();
 
-  Indicator get indicatorToShow {
-    if (!isFromMe!) return Indicator.NONE;
-    if (dateRead != null) return Indicator.READ;
-    if (dateDelivered != null) return Indicator.DELIVERED;
-    if (dateCreated != null) return Indicator.SENT;
-    return Indicator.NONE;
+  MessageStatusIndicator get indicatorToShow {
+    if (!isFromMe!) return MessageStatusIndicator.NONE;
+    if (dateRead != null) return MessageStatusIndicator.READ;
+    if (dateDelivered != null) return MessageStatusIndicator.DELIVERED;
+    if (dateCreated != null) return MessageStatusIndicator.SENT;
+    return MessageStatusIndicator.NONE;
   }
 
   bool showTail(Message? newer) {
