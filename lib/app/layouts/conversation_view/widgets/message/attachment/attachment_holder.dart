@@ -181,6 +181,7 @@ class _AttachmentHolderState extends State<AttachmentHolder> with ThemeHelpers {
           showTail: showTail,
           isiOS: isiOS,
           cvController: controller.cvController,
+          isInReply: isInReply,
         );
       }
     }
@@ -194,6 +195,7 @@ class _AttachmentHolderState extends State<AttachmentHolder> with ThemeHelpers {
         showTail: showTail,
         isiOS: isiOS,
         cvController: controller.cvController,
+        isInReply: isInReply,
       );
     }
 
@@ -226,9 +228,9 @@ class _AttachmentHolderState extends State<AttachmentHolder> with ThemeHelpers {
 
   @override
   Widget build(BuildContext context) {
-    final bool showTail = message.showTail(newerMessage) && part.part == controller.parts.length - 1;
-    final bool hideAttachments = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideAttachments.value;
     final bool isInReply = ReplyScope.maybeOf(context) != null;
+    final bool showTail = !isInReply && message.showTail(newerMessage) && part.part == controller.parts.length - 1;
+    final bool hideAttachments = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideAttachments.value;
 
     // Resolve state once for the scope.  The AttachmentState object is updated
     // in-place by the service layer; no re-lookup is needed on reactive changes.

@@ -37,6 +37,19 @@ class ReplyBubbleSection extends StatelessWidget {
     final part = replyTo.guid == message.threadOriginatorGuid ? message.normalizedThreadPart : 0;
     final showReplyAvatar = (chat.isGroup || alwaysShowAvatars || !isIOS) && !replyTo.isFromMe!;
 
+    // Provide the replyTo message's state so ReplyBubble displays the original
+    // message content rather than the current (reply) message's content.
+    final replyToState = MessagesSvc(cvController.chat.guid).getOrCreateState(replyTo);
+
+    Widget replyBubble = MessageStateScope(
+      messageState: replyToState,
+      child: ReplyBubble(
+        part: part,
+        showAvatar: showReplyAvatar,
+        cvController: cvController,
+      ),
+    );
+
     if (isIOS) {
       // iOS style - integrated with message bubble
       // Note: Padding is handled by the parent MessageHolder, not here
@@ -51,11 +64,7 @@ class ReplyBubbleSection extends StatelessWidget {
         child: Container(
           width: double.infinity,
           alignment: replyTo.isFromMe! ? Alignment.centerRight : Alignment.centerLeft,
-          child: ReplyBubble(
-            part: part,
-            showAvatar: showReplyAvatar,
-            cvController: cvController,
-          ),
+          child: replyBubble,
         ),
       );
     } else {
@@ -69,11 +78,7 @@ class ReplyBubbleSection extends StatelessWidget {
             borderRadius: BorderRadius.circular(25),
             border: Border.fromBorderSide(BorderSide(color: context.theme.colorScheme.properSurface)),
           ),
-          child: ReplyBubble(
-            part: part,
-            showAvatar: showReplyAvatar,
-            cvController: cvController,
-          ),
+          child: replyBubble,
         ),
       );
     }

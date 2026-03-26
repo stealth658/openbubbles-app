@@ -555,7 +555,7 @@ class AttachmentsService extends GetxService {
     // We don't want to rely on the height/width or metadata alone because
     // it doesn't give the full picture of how to display the image (orientation, etc).
     // We need to "double-check" by reading EXIF and image properties directly.
-    if (attachment.metadata?['_dimensions_processed'] == 'true') {
+    if (attachment.metadata?['_dimensions_processed'] == true) {
       return filePath;
     }
 
@@ -657,7 +657,7 @@ class AttachmentsService extends GetxService {
     // Mark dimensions as processed to avoid reprocessing
     if (dimensionsLoaded) {
       attachment.metadata ??= {};
-      attachment.metadata!['_dimensions_processed'] = 'true';
+      attachment.metadata!['_dimensions_processed'] = true;
       await attachment.saveAsync(null);
     }
 

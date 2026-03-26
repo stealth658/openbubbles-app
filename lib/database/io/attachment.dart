@@ -192,10 +192,24 @@ class Attachment {
     return (totalBytes ?? 0.0).toDouble().getFriendlySize();
   }
 
-  bool get hasValidSize => (width ?? 0) > 0 && (height ?? 0) > 0;
+  /// Returns the best available width for display purposes.
+  /// Prefers the dedicated DB field; falls back to a `width` key in metadata
+  /// (e.g. sent by the server before local dimension extraction runs).
+  int? get displayWidth {
+    if (width != null && width! > 0) return width;
+    return (metadata?['width'] as num?)?.toInt();
+  }
 
-  double get aspectRatio =>
-      hasValidSize ? (_isPortrait && height! < width! ? (height! / width!).abs() : (width! / height!).abs()) : 0.78;
+  /// Returns the best available height for display purposes.
+  /// Prefers the dedicated DB field; falls back to a `height` key in metadata.
+  int? get displayHeight {
+    if (height != null && height! > 0) return height;
+    return (metadata?['height'] as num?)?.toInt();
+  }
+
+  bool get hasValidSize => (displayWidth ?? 0) > 0 && (displayHeight ?? 0) > 0;
+
+  double get aspectRatio => hasValidSize ? (displayWidth! / displayHeight!).abs() : 0.78;
 
   String? get mimeStart => mimeType?.split("/").first;
 
@@ -264,12 +278,4 @@ class Attachment {
         "hasLivePhoto": hasLivePhoto,
         "isDownloaded": isDownloaded,
       };
-
-  bool get _isPortrait {
-    if (metadata?['orientation'] == '1') return true;
-    if (metadata?['orientation'] == 1) return true;
-    if (metadata?['orientation'] == 'portrait') return true;
-    if (metadata?['Image Orientation']?.contains("90") ?? false) return true;
-    return false;
-  }
 }

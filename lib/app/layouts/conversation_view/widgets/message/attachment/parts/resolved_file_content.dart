@@ -27,6 +27,7 @@ class ResolvedFileContent extends StatelessWidget {
     required this.showTail,
     required this.isiOS,
     required this.cvController,
+    this.isInReply = false,
   });
 
   final PlatformFile file;
@@ -34,6 +35,7 @@ class ResolvedFileContent extends StatelessWidget {
   final bool showTail;
   final bool isiOS;
   final ConversationViewController? cvController;
+  final bool isInReply;
 
   @override
   Widget build(BuildContext context) {
@@ -78,6 +80,7 @@ class ResolvedFileContent extends StatelessWidget {
               file: file,
               attachment: attachment,
               isFromMe: message.isFromMe!,
+              isInReply: isInReply,
               controller: cvController,
             ),
           ),
@@ -125,17 +128,6 @@ class ResolvedFileContent extends StatelessWidget {
       return Padding(
         padding: showTail ? tailPadding : EdgeInsets.zero,
         child: ContactCard(attachment: attachment, file: file),
-      );
-    }
-
-    if (attachment.mimeType == null) {
-      return Padding(
-        padding: showTail ? tailPadding : EdgeInsets.zero,
-        child: SizedBox(
-          height: 80,
-          width: 80,
-          child: Icon(isiOS ? CupertinoIcons.exclamationmark_circle : Icons.error_outline, size: 30),
-        ),
       );
     }
 

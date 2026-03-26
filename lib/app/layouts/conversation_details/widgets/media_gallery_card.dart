@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:math';
-import 'dart:ui' as ui;
 
 import 'package:animations/animations.dart';
+import 'package:bluebubbles/app/components/image_blur_canvas.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/attachment/other_file.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/fullscreen_media/fullscreen_holder.dart';
@@ -371,28 +371,6 @@ class ImageDisplay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final double cardSize = NavigationSvc.width(context) / max(2, NavigationSvc.width(context) ~/ 200);
-    final int fgCacheWidth = (cardSize * MediaQuery.of(context).devicePixelRatio).toInt();
-
-    // Builds the image widget for either the blurred background (low-res) or the foreground (full-res).
-    Widget buildImg({required bool background}) {
-      if (file != null && file!.path != null) {
-        return Image.file(
-          File(file!.path!),
-          fit: background ? BoxFit.cover : BoxFit.contain,
-          alignment: Alignment.center,
-          // Background needs only ~64px since heavy blur hides all detail.
-          cacheWidth: background ? 64 : fgCacheWidth,
-        );
-      } else if (image != null) {
-        return Image.memory(
-          image!,
-          fit: background ? BoxFit.cover : BoxFit.contain,
-          alignment: Alignment.center,
-          cacheWidth: background ? 64 : fgCacheWidth,
-        );
-      }
-      return const SizedBox.shrink();
-    }
 
     return OpenContainer(
       openBuilder: (_, closeContainer) {
@@ -412,13 +390,11 @@ class ImageDisplay extends StatelessWidget {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                // Blurred background: low-res image stretched to cover, blurred on the GPU.
-                ImageFiltered(
-                  imageFilter: ui.ImageFilter.blur(sigmaX: 20, sigmaY: 20, tileMode: TileMode.decal),
-                  child: buildImg(background: true),
+                // Blurred canvas: filled background + centered foreground.
+                ImageBlurCanvas(
+                  filePath: file?.path,
+                  bytes: file?.bytes ?? image,
                 ),
-                // Foreground: full-res image centered with BoxFit.contain.
-                Center(child: buildImg(background: false)),
                 if ((attachment.mimeType?.contains("video") ?? false) && duration != null)
                   Positioned(
                     bottom: 10,

@@ -138,8 +138,10 @@ class _AnimatedHeader extends StatelessWidget {
               ? Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    const SizedBox(height: 8),
                     ServiceTypePicker(controller: controller),
                     RecipientChipsRow(controller: controller),
+                    const SizedBox(height: 8),
                     Divider(
                       height: 1,
                       thickness: 1,

@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'dart:io';
 
+import 'package:bluebubbles/app/components/image_blur_canvas.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/attachment/live_photo_mixin.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
@@ -14,6 +15,7 @@ class ImageViewer extends StatefulWidget {
   final PlatformFile file;
   final Attachment attachment;
   final bool isFromMe;
+  final bool isInReply;
 
   const ImageViewer({
     super.key,
@@ -21,6 +23,7 @@ class ImageViewer extends StatefulWidget {
     required this.attachment,
     required this.isFromMe,
     this.controller,
+    this.isInReply = false,
   });
 
   final ConversationViewController? controller;
@@ -47,6 +50,65 @@ class _ImageViewerState extends State<ImageViewer> with AutomaticKeepAliveClient
       return Image.asset(attachment.transferName!, fit: BoxFit.cover);
     }
 
+    // In reply context use a compact blur canvas instead of the full viewer.
+    // Size is dynamic: scale the image down to fit within maxReplySize × maxReplySize
+    // (never scaling up). The blur canvas only activates when the scaled image is
+    // genuinely smaller than the minimum dimension — otherwise just show the image
+    // at its natural scaled size to avoid the blurred background appearing wider than
+    // the actual image content.
+    if (widget.isInReply) {
+      final String? imagePath = (!kIsWeb && file.path != null) ? file.path : null;
+      final imageBytes = file.bytes;
+      if (imagePath != null || imageBytes != null) {
+        const double maxReplySize = 100;
+        // Minimum size below which blur kicks in to fill the container.
+        // Kept small so normal portrait/landscape photos are shown without blur;
+        // only truly extreme aspect ratios (e.g. panoramas, tall screenshots) get it.
+        const double minReplyDimension = 48.0;
+
+        final double? naturalW = attachment.displayWidth?.toDouble();
+        final double? naturalH = attachment.displayHeight?.toDouble();
+
+        double containerW, containerH;
+        bool needsBlur;
+        if (naturalW != null && naturalH != null && naturalW > 0 && naturalH > 0) {
+          // Scale down to fit within the max box; never scale up.
+          final scale = min(1.0, min(maxReplySize / naturalW, maxReplySize / naturalH));
+          final scaledW = naturalW * scale;
+          final scaledH = naturalH * scale;
+
+          // If the image fits within reasonable bounds, use its natural scaled size
+          // (no empty space, no blur). Only expand + blur when a dimension is too small.
+          needsBlur = scaledW < minReplyDimension || scaledH < minReplyDimension;
+          containerW = needsBlur ? max(minReplyDimension, scaledW) : scaledW;
+          containerH = needsBlur ? max(minReplyDimension, scaledH) : scaledH;
+        } else {
+          // Unknown dimensions — square default with blur.
+          needsBlur = true;
+          containerW = maxReplySize;
+          containerH = maxReplySize;
+        }
+
+        Widget imageContent;
+        if (needsBlur) {
+          imageContent = ImageBlurCanvas(filePath: imagePath, bytes: imageBytes);
+        } else if (imagePath != null) {
+          imageContent = Image.file(File(imagePath), fit: BoxFit.contain);
+        } else {
+          imageContent = Image.memory(imageBytes!, fit: BoxFit.contain);
+        }
+
+        return SizedBox(
+          width: containerW,
+          height: containerH,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: imageContent,
+          ),
+        );
+      }
+    }
+
     // Build the appropriate image widget based on platform and file availability
     Widget imageWidget;
     if (kIsWeb || file.path == null) {
@@ -54,15 +116,15 @@ class _ImageViewerState extends State<ImageViewer> with AutomaticKeepAliveClient
       if (file.bytes == null) {
         imageWidget = SizedBox(
           width: min(
-              (attachment.width?.toDouble() ?? NavigationSvc.width(context) * 0.5), NavigationSvc.width(context) * 0.5),
-          height: min((attachment.height?.toDouble() ?? NavigationSvc.width(context) * 0.5 / attachment.aspectRatio),
+              (attachment.displayWidth?.toDouble() ?? NavigationSvc.width(context) * 0.5), NavigationSvc.width(context) * 0.5),
+          height: min((attachment.displayHeight?.toDouble() ?? NavigationSvc.width(context) * 0.5 / attachment.aspectRatio),
               NavigationSvc.width(context) * 0.5 / attachment.aspectRatio),
         );
       } else {
         final displayWidth = min(
-            (attachment.width?.toDouble() ?? NavigationSvc.width(context) * 0.5), NavigationSvc.width(context) * 0.5);
+            (attachment.displayWidth?.toDouble() ?? NavigationSvc.width(context) * 0.5), NavigationSvc.width(context) * 0.5);
         final displayHeight = min(
-            (attachment.height?.toDouble() ?? NavigationSvc.width(context) * 0.5 / attachment.aspectRatio),
+            (attachment.displayHeight?.toDouble() ?? NavigationSvc.width(context) * 0.5 / attachment.aspectRatio),
             NavigationSvc.width(context) * 0.5 / attachment.aspectRatio);
         final qualityFactor = SettingsSvc.settings.previewImageQuality.value;
         final calculatedWidth = (displayWidth * Get.pixelRatio * qualityFactor).round().abs().nonZero;
@@ -146,9 +208,9 @@ class _ImageViewerState extends State<ImageViewer> with AutomaticKeepAliveClient
       // Image.file will handle it on iOS/macOS (native support), or fail gracefully
       // and trigger errorBuilder where we can attempt conversion.
       final displayWidth =
-          min((attachment.width?.toDouble() ?? NavigationSvc.width(context) * 0.5), NavigationSvc.width(context) * 0.5);
+          min((attachment.displayWidth?.toDouble() ?? NavigationSvc.width(context) * 0.5), NavigationSvc.width(context) * 0.5);
       final displayHeight = min(
-          (attachment.height?.toDouble() ?? NavigationSvc.width(context) * 0.5 / attachment.aspectRatio),
+          (attachment.displayHeight?.toDouble() ?? NavigationSvc.width(context) * 0.5 / attachment.aspectRatio),
           NavigationSvc.width(context) * 0.5 / attachment.aspectRatio);
       // Use configured quality factor from settings (25% to 100%)
       final qualityFactor = SettingsSvc.settings.previewImageQuality.value;
@@ -184,10 +246,10 @@ class _ImageViewerState extends State<ImageViewer> with AutomaticKeepAliveClient
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return SizedBox(
-                width: min((attachment.width?.toDouble() ?? NavigationSvc.width(context) * 0.5),
+                width: min((attachment.displayWidth?.toDouble() ?? NavigationSvc.width(context) * 0.5),
                     NavigationSvc.width(context) * 0.5),
                 height: min(
-                    (attachment.height?.toDouble() ?? NavigationSvc.width(context) * 0.5 / attachment.aspectRatio),
+                    (attachment.displayHeight?.toDouble() ?? NavigationSvc.width(context) * 0.5 / attachment.aspectRatio),
                     NavigationSvc.width(context) * 0.5 / attachment.aspectRatio),
                 child: const Center(child: CircularProgressIndicator()),
               );

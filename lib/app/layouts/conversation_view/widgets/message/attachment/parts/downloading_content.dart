@@ -31,6 +31,65 @@ class DownloadingContent extends StatelessWidget {
       final isProcessing = downloadController.state.value == AttachmentDownloadState.processing;
       final isQueued = downloadController.state.value == AttachmentDownloadState.queued;
 
+      // Compact variant: just a small ring + status label, no icon, no file size.
+      if (isInReply) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 8.0),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 16,
+                height: 16,
+                child: isError
+                    ? Icon(
+                        isiOS ? CupertinoIcons.arrow_clockwise : Icons.refresh,
+                        size: 14,
+                        color: context.theme.colorScheme.error,
+                      )
+                    : isProcessing
+                        ? (isiOS
+                            ? const CupertinoActivityIndicator(radius: 7)
+                            : CircularProgressIndicator(
+                                strokeWidth: 1.5,
+                                valueColor: AlwaysStoppedAnimation(context.theme.colorScheme.properOnSurface),
+                              ))
+                        : isQueued
+                            ? Icon(
+                                isiOS ? CupertinoIcons.clock : Icons.schedule,
+                                size: 14,
+                                color: context.theme.colorScheme.properOnSurface,
+                              )
+                            : CircleProgressBar(
+                                value: downloadController.progress.value?.toDouble() ?? 0,
+                                backgroundColor: context.theme.colorScheme.outline,
+                                foregroundColor: context.theme.colorScheme.properOnSurface,
+                                strokeWidth: 1.5,
+                              ),
+              ),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  isError
+                      ? 'Failed'
+                      : isProcessing
+                          ? 'Processing'
+                          : isQueued
+                              ? 'Queued'
+                              : 'Downloading',
+                  style: context.theme.textTheme.bodySmall!.copyWith(
+                    color: isError
+                        ? context.theme.colorScheme.error
+                        : context.theme.colorScheme.properOnSurface,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+
       return Stack(
         clipBehavior: Clip.none,
         alignment: Alignment.center,
