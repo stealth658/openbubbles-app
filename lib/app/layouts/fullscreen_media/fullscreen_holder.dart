@@ -45,7 +45,9 @@ class FullscreenMediaHolderState extends State<FullscreenMediaHolder> with Theme
   int currentIndex = 0;
   ScrollPhysics? physics;
   Attachment get attachment => widget.attachment;
-  bool showAppBar = true;
+  // Start hidden for video (video auto-plays and manages its own overlay); show for images
+  bool get _isVideoAttachment => attachment.mimeStart == "video";
+  late bool showAppBar = kIsDesktop || kIsWeb || !_isVideoAttachment;
 
   @override
   void initState() {
@@ -194,6 +196,13 @@ class FullscreenMediaHolderState extends State<FullscreenMediaHolder> with Theme
                           showInteractions: widget.showInteractions,
                           videoController: widget.videoController,
                           mute: widget.mute,
+                          onOverlayToggle: (show) {
+                            if (showAppBar != show) {
+                              setState(() {
+                                showAppBar = show;
+                              });
+                            }
+                          },
                         );
                       } else {
                         return const SizedBox.shrink();

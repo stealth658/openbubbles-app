@@ -23,6 +23,7 @@ class FullscreenVideo extends StatefulWidget {
     required this.showInteractions,
     this.videoController,
     this.mute,
+    this.onOverlayToggle,
   });
 
   final PlatformFile file;
@@ -31,6 +32,7 @@ class FullscreenVideo extends StatefulWidget {
 
   final VideoController? videoController;
   final RxBool? mute;
+  final Function(bool)? onOverlayToggle;
 
   @override
   State<StatefulWidget> createState() => _FullscreenVideoState();
@@ -43,6 +45,7 @@ class _FullscreenVideoState extends State<FullscreenVideo> with AutomaticKeepAli
 
   bool hasListener = false;
   bool hasDisposed = false;
+  Offset? _pointerDownPosition;
   final RxBool muted = SettingsSvc.settings.startVideosMutedFullscreen.value.obs;
   final RxBool showPlayPauseOverlay = true.obs;
   final RxDouble aspectRatio = 1.0.obs;
@@ -92,7 +95,19 @@ class _FullscreenVideoState extends State<FullscreenVideo> with AutomaticKeepAli
     }
 
     createListener(videoController);
-    showPlayPauseOverlay.value = true;
+
+    if (!kIsDesktop && !kIsWeb) {
+      // Start with all overlays hidden
+      showPlayPauseOverlay.value = false;
+      widget.onOverlayToggle?.call(false);
+      // Auto-play after a short delay so the viewer is fully visible first
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (!hasDisposed) videoController.player.play();
+      });
+    } else {
+      showPlayPauseOverlay.value = true;
+    }
+
     setState(() {});
   }
 
@@ -109,18 +124,62 @@ class _FullscreenVideoState extends State<FullscreenVideo> with AutomaticKeepAli
         await controller.player.pause();
         await controller.player.seek(Duration.zero);
         await controller.player.pause();
+        _cancelHideTimer();
         showPlayPauseOverlay.value = true;
         showPlayPauseOverlay.refresh();
+        widget.onOverlayToggle?.call(true);
+      }
+    });
+
+    controller.player.stream.playing.listen((playing) {
+      if (hasDisposed || kIsDesktop || kIsWeb) return;
+      if (playing) {
+        // Only start the hide timer if the overlays are currently visible
+        if (showPlayPauseOverlay.value) {
+          _startHideTimer();
+        }
+      } else {
+        // Video paused — always show all overlays
+        _cancelHideTimer();
+        showPlayPauseOverlay.value = true;
+        widget.onOverlayToggle?.call(true);
       }
     });
 
     hasListener = true;
   }
 
+  void _cancelHideTimer() {
+    hideOverlayTimer?.cancel();
+    hideOverlayTimer = null;
+  }
+
+  void _startHideTimer() {
+    _cancelHideTimer();
+    hideOverlayTimer = Timer(const Duration(seconds: 3), () {
+      if (!hasDisposed) {
+        showPlayPauseOverlay.value = false;
+        widget.onOverlayToggle?.call(false);
+      }
+    });
+  }
+
+  void _handleTap() {
+    if (!widget.showInteractions || kIsDesktop || kIsWeb) return;
+    final newVal = !showPlayPauseOverlay.value;
+    showPlayPauseOverlay.value = newVal;
+    widget.onOverlayToggle?.call(newVal);
+    if (newVal && videoController.player.state.playing) {
+      _startHideTimer();
+    } else {
+      _cancelHideTimer();
+    }
+  }
+
   @override
   void dispose() {
     hasDisposed = true;
-    hideOverlayTimer?.cancel();
+    _cancelHideTimer();
     _setFullscreen(false);
 
     // Sync mute state back to parent
@@ -179,16 +238,32 @@ class _FullscreenVideoState extends State<FullscreenVideo> with AutomaticKeepAli
                 child: Stack(
                   alignment: Alignment.center,
                   children: <Widget>[
-                    Video(
-                        controller: videoController,
-                        controls: (state) => Padding(
-                              padding: EdgeInsets.all(!kIsWeb && !kIsDesktop ? 0 : 20)
-                                  .copyWith(bottom: !kIsWeb && !kIsDesktop ? 10 : 0),
-                              child: kIsDesktop
-                                  ? media_kit_video_controls.MaterialDesktopVideoControls(state)
-                                  : media_kit_video_controls.MaterialVideoControls(state),
-                            ),
-                        filterQuality: FilterQuality.medium),
+                    Listener(
+                      behavior: HitTestBehavior.translucent,
+                      onPointerDown: (event) {
+                        _pointerDownPosition = event.position;
+                      },
+                      onPointerUp: (event) {
+                        if (_pointerDownPosition != null) {
+                          final distance = (_pointerDownPosition! - event.position).distance;
+                          if (distance < 20) _handleTap();
+                          _pointerDownPosition = null;
+                        }
+                      },
+                      child: Video(
+                          controller: videoController,
+                          controls: (state) => Padding(
+                                padding: EdgeInsets.all(!kIsWeb && !kIsDesktop ? 0 : 20)
+                                    .copyWith(
+                                        bottom: !kIsWeb && !kIsDesktop
+                                            ? (iOS && widget.showInteractions ? 70 : 10)
+                                            : 0),
+                                child: kIsDesktop
+                                    ? media_kit_video_controls.MaterialDesktopVideoControls(state)
+                                    : media_kit_video_controls.MaterialVideoControls(state),
+                              ),
+                          filterQuality: FilterQuality.medium),
+                    ),
                     if (kIsWeb || kIsDesktop)
                       Obx(() {
                         return MouseRegion(
