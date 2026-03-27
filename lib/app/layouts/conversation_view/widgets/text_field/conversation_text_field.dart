@@ -854,6 +854,7 @@ class TextFieldComponent extends StatefulWidget {
     required this.sendMessage,
     this.focusNode,
     this.initialAttachments = const [],
+    this.alwaysShowSend = false,
   });
 
   final SpellCheckTextEditingController? subjectTextController;
@@ -864,6 +865,9 @@ class TextFieldComponent extends StatefulWidget {
   final FocusNode? focusNode;
 
   final List<PlatformFile> initialAttachments;
+  /// When true the send button is always shown even with no text/attachments.
+  /// Used by the chat creator when an existing chat has been resolved.
+  final bool alwaysShowSend;
 
   @override
   State<StatefulWidget> createState() => TextFieldComponentState();
@@ -1084,6 +1088,8 @@ class TextFieldComponentState extends State<TextFieldComponent> {
                                     recorderController: recorderController,
                                     sendMessage: sendMessage,
                                     isChatCreator: isChatCreator,
+                                    alwaysShowSend: widget.alwaysShowSend,
+                                    hasInitialAttachments: initialAttachments.isNotEmpty,
                                   ),
                                 ),
                         ),

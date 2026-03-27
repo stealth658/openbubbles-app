@@ -119,10 +119,15 @@ class _PickedAttachmentState extends State<PickedAttachment> with AutomaticKeepA
                 openColor: Colors.black,
                 closedColor: context.theme.colorScheme.background,
                 openBuilder: (_, closeContainer) {
+                  // Use the full file path as transferName so getContent can locate
+                  // the file on disk when bytes are not pre-loaded (e.g. gallery picker).
+                  // Prefer state-cached bytes (imageBytes) over the raw widget bytes so
+                  // that HEIC/TIFF files, which have already been decoded into imagePath,
+                  // still have their fallback bytes available.
                   final fakeAttachment = Attachment(
-                    transferName: widget.data.name,
+                    transferName: widget.data.path ?? widget.data.name,
                     mimeType: mime(widget.data.name) ?? "",
-                    bytes: widget.data.bytes,
+                    bytes: imageBytes ?? widget.data.bytes,
                   );
                   return FullscreenMediaHolder(
                     attachment: fakeAttachment,

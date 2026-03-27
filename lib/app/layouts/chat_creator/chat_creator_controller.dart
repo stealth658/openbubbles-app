@@ -444,6 +444,11 @@ class ChatCreatorController extends StatefulController {
     // Auto-submit any typed address before proceeding.
     addressOnSubmitted();
 
+    // Guard: if nothing is selected and no chat is resolved there is no
+    // recipient — do nothing instead of crashing trying to create a chat
+    // with an empty participants list.
+    if (selectedContacts.isEmpty && activeController.value == null) return;
+
     // Re-check for an existing chat in case the debounce hasn't fired yet.
     Chat? resolvedChat =
         activeController.value?.chat ?? await findExistingChat(checkDeleted: true, update: false);
@@ -565,6 +570,12 @@ class ChatCreatorController extends StatefulController {
     final activeCVC = activeController.value!;
     final chat = resolvedChat;
 
+    // Only send a message when there is actual content to send. When the user
+    // taps the send button from the chat creator with an existing chat but no
+    // text/attachments (i.e. "open conversation" intent), skip the send step.
+    final hasContent = activeCVC.textController.text.isNotEmpty ||
+        activeCVC.pickedAttachments.isNotEmpty;
+
     Future<void> doSend() async {
       await activeCVC.send(
         SendData(
@@ -587,7 +598,7 @@ class ChatCreatorController extends StatefulController {
 
     NavigationSvc.pushAndRemoveUntil(
       Get.context!,
-      ConversationView(chat: chat, customService: messagesService, fromChatCreator: true, onInit: doSend),
+      ConversationView(chat: chat, customService: messagesService, fromChatCreator: true, onInit: hasContent ? doSend : null),
       (route) => route.isFirst,
       closeActiveChat: false,
       customRoute: PageRouteBuilder(
@@ -596,7 +607,7 @@ class ChatCreatorController extends StatefulController {
             chat: chat,
             customService: messagesService,
             fromChatCreator: true,
-            onInit: doSend,
+            onInit: hasContent ? doSend : null,
           ),
         ),
         transitionDuration: Duration.zero,

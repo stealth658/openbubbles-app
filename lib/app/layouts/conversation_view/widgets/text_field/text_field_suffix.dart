@@ -27,6 +27,8 @@ class TextFieldSuffix extends StatefulWidget {
     required this.recorderController,
     required this.sendMessage,
     this.isChatCreator = false,
+    this.alwaysShowSend = false,
+    this.hasInitialAttachments = false,
   });
 
   final TextEditingController? subjectTextController;
@@ -35,6 +37,14 @@ class TextFieldSuffix extends StatefulWidget {
   final RecorderController? recorderController;
   final Future<void> Function({String? effect}) sendMessage;
   final bool isChatCreator;
+  /// When true the send button is always shown, regardless of whether there
+  /// is text or attachments. Used in the chat creator when an existing chat
+  /// has been resolved so the user can open the conversation without typing.
+  final bool alwaysShowSend;
+  /// Mirrors `initialAttachments.isNotEmpty` from the parent TextFieldComponent.
+  /// Used in isChatCreator mode to show the send button when attachments are
+  /// pre-loaded (e.g. shared from another app) but no text has been typed yet.
+  final bool hasInitialAttachments;
 
   @override
   State<StatefulWidget> createState() => _TextFieldSuffixState();
@@ -50,6 +60,7 @@ class _TextFieldSuffixState extends State<TextFieldSuffix> with ThemeHelpers {
       kIsDesktop && Platform.isLinux && SysInfo.kernelArchitecture == ProcessorArchitecture.arm64;
 
   bool get isChatCreator => widget.isChatCreator;
+  bool get alwaysShowSend => widget.alwaysShowSend;
 
   void deleteAudioRecording(String path) {
     File(path).delete();
@@ -64,8 +75,12 @@ class _TextFieldSuffixState extends State<TextFieldSuffix> with ThemeHelpers {
         final hasText = widget.textController.text.isNotEmpty;
         final hasSubject = widget.subjectTextController?.text.isNotEmpty ?? false;
 
-        // For chat creator, we don't have a controller, so skip Obx
+        // For chat creator, we don't have a controller, so skip Obx.
+        // Only show the send button when there is actually content to send;
+        // otherwise the button is hidden entirely to avoid a no-op tap.
         if (isChatCreator) {
+          final canSendInCreator = hasText || widget.hasInitialAttachments;
+          if (!canSendInCreator) return const SizedBox.shrink();
           return Padding(
             padding: const EdgeInsets.all(3.0),
             child: SendButton(
@@ -79,7 +94,7 @@ class _TextFieldSuffixState extends State<TextFieldSuffix> with ThemeHelpers {
           // Only reactive values in Obx scope - controller is guaranteed non-null here
           final hasAttachments = widget.controller!.pickedAttachments.isNotEmpty;
           final showRecording = widget.controller!.showRecording.value && widget.recorderController != null;
-          final canSend = hasText || hasSubject || hasAttachments;
+          final canSend = alwaysShowSend || hasText || hasSubject || hasAttachments;
 
           return Padding(
             padding: const EdgeInsets.all(3.0),
@@ -91,6 +106,7 @@ class _TextFieldSuffixState extends State<TextFieldSuffix> with ThemeHelpers {
                 isDesktop: _isDesktop,
                 isLinuxArm64: _isLinuxArm64,
                 isChatCreator: isChatCreator,
+                alwaysShowSend: alwaysShowSend,
                 showRecording: showRecording,
                 controller: widget.controller,
                 recorderController: widget.recorderController,
@@ -139,6 +155,7 @@ class _RecordingButton extends StatelessWidget {
     required this.isDesktop,
     required this.isLinuxArm64,
     required this.isChatCreator,
+    required this.alwaysShowSend,
     required this.showRecording,
     required this.controller,
     required this.recorderController,
@@ -150,6 +167,7 @@ class _RecordingButton extends StatelessWidget {
   final bool isDesktop;
   final bool isLinuxArm64;
   final bool isChatCreator;
+  final bool alwaysShowSend;
   final bool showRecording;
   final ConversationViewController? controller;
   final RecorderController? recorderController;

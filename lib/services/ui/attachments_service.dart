@@ -137,11 +137,22 @@ class AttachmentsService extends GetxService {
 
     if (kIsWeb || attachment.guid == null) {
       if (attachment.bytes == null && (autoDownload ?? SettingsSvc.settings.autoDownload.value)) {
-        return AttachmentDownloader.startDownload(attachment, onComplete: onComplete);
+        // Only start a download when there is actually a GUID to request from the server.
+        // Pre-picked / ephemeral attachments (guid == null) cannot be downloaded; returning
+        // the bare Attachment here will show a placeholder in the UI rather than crashing.
+        if (attachment.guid != null) {
+          return AttachmentDownloader.startDownload(attachment, onComplete: onComplete);
+        }
+        // No GUID and no bytes — return a PlatformFile with whatever path is available.
+        return PlatformFile(
+          name: attachment.transferName!,
+          path: path,
+          size: attachment.totalBytes ?? 0,
+        );
       } else {
         return PlatformFile(
           name: attachment.transferName!,
-          path: null,
+          path: path,
           size: attachment.totalBytes ?? 0,
           bytes: attachment.bytes,
         );

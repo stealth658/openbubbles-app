@@ -261,23 +261,27 @@ class _TextFieldArea extends StatelessWidget {
               return KeyEventResult.ignored;
             },
             child: activeCVC != null
-                // Existing chat: isChatCreator = false → full attachments + reply enabled
+                // Existing chat: isChatCreator = false → full attachments + reply enabled.
+                // alwaysShowSend: true so the send button is visible even with no content,
+                // allowing the user to open the conversation without typing first.
                 ? TextFieldComponent(
                     key: ValueKey(activeCVC.chat.guid),
                     textController: activeCVC.textController,
                     subjectTextController: activeCVC.subjectTextController,
                     controller: activeCVC,
                     recorderController: null,
+                    alwaysShowSend: true,
                     sendMessage: ({String? effect}) =>
                         controller.sendMessage(context, effectId: effect),
                   )
-                // New contact: isChatCreator = true → no attachments
+                // New contact: isChatCreator = true → initialAttachments only (no controller)
                 : TextFieldComponent(
                     key: ValueKey(service),
                     focusNode: controller.messageNode,
                     textController: controller.textController,
                     controller: null,
                     recorderController: null,
+                    initialAttachments: controller.initialAttachments,
                     sendMessage: sending
                         ? ({String? effect}) async {}
                         : ({String? effect}) => controller.sendMessage(context, effectId: effect),
