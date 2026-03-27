@@ -34,7 +34,7 @@ class ConversationView extends StatefulWidget {
   ConversationViewState createState() => ConversationViewState();
 }
 
-class ConversationViewState extends State<ConversationView> with ThemeHelpers<ConversationView> {
+class ConversationViewState extends State<ConversationView> with ThemeHelpers<ConversationView>, RouteAware {
   late final ConversationViewController controller = cvc(chat, tag: widget.customService?.tag);
 
   // Cache actions map to avoid rebuilding on every frame
@@ -81,7 +81,29 @@ class ConversationViewState extends State<ConversationView> with ThemeHelpers<Co
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route != null) {
+      routeObserver.subscribe(this, route);
+    }
+  }
+
+  @override
+  void didPushNext() {
+    // A route was pushed on top of the conversation view (e.g. ConversationDetails).
+    controller.showingSubRoute = true;
+  }
+
+  @override
+  void didPopNext() {
+    // The route above was popped — conversation view is visible again.
+    controller.showingSubRoute = false;
+  }
+
+  @override
   void dispose() {
+    routeObserver.unsubscribe(this);
     controller.saveReplyToMessageState(); // P8bda
     super.dispose();
   }

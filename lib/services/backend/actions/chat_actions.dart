@@ -76,6 +76,9 @@ class ChatActions {
       if (updateFlags['updateCustomAvatarPath']!) {
         chat.customAvatarPath = inputChat.customAvatarPath;
       }
+      if (updateFlags['updateCustomBackgroundPath']!) {
+        chat.customBackgroundPath = inputChat.customBackgroundPath;
+      }
       if (updateFlags['updateTextFieldText']!) {
         chat.textFieldText = inputChat.textFieldText;
       }

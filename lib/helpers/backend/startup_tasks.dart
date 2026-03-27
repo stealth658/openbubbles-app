@@ -511,9 +511,14 @@ class StartupTasks {
     final activeChat = ChatsSvc.activeChat;
     if (activeChat != null) {
       ChatsSvc.setChatHasUnread(activeChat.chat, false);
-      ConversationViewController _cvc = cvc(activeChat.chat);
-      if (!_cvc.showingOverlays && _cvc.editing.isEmpty) {
-        _cvc.lastFocusedNode.requestFocus();
+      // On desktop, always restore focus when the app is resumed (window regains focus).
+      // On mobile, only refocus if the user has auto-open keyboard enabled AND the
+      // conversation view is the active route (not obscured by ConversationDetails etc.).
+      if (kIsDesktop || SettingsSvc.settings.autoOpenKeyboard.value) {
+        ConversationViewController _cvc = cvc(activeChat.chat);
+        if (!_cvc.showingOverlays && !_cvc.showingSubRoute && _cvc.editing.isEmpty) {
+          _cvc.lastFocusedNode.requestFocus();
+        }
       }
     }
 

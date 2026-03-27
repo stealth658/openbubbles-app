@@ -94,7 +94,7 @@
     },
     {
       "id": "3:9017250848141753702",
-      "lastPropertyId": "28:3841196368520260614",
+      "lastPropertyId": "29:439007349630700534",
       "name": "Chat",
       "properties": [
         {
@@ -203,6 +203,11 @@
         {
           "id": "28:3841196368520260614",
           "name": "lastReadMessageGuid",
+          "type": 9
+        },
+        {
+          "id": "29:439007349630700534",
+          "name": "customBackgroundPath",
           "type": 9
         }
       ],

@@ -20,6 +20,7 @@ class ChatState {
   final RxBool isArchived;
   final RxnString displayName;
   final RxnString customAvatarPath;
+  final RxnString customBackgroundPath;
   final RxnString title;
   final RxnString chatCreatorSubtitle;
   final RxnString subtitle;
@@ -51,6 +52,7 @@ class ChatState {
         isArchived = (chat.isArchived ?? false).obs,
         displayName = RxnString(chat.displayName),
         customAvatarPath = RxnString(chat.customAvatarPath),
+        customBackgroundPath = RxnString(chat.customBackgroundPath),
         title = RxnString(chat.getTitle()),
         chatCreatorSubtitle = RxnString(chat.isGroup
             ? chat.getChatCreatorSubtitle()
@@ -149,6 +151,12 @@ class ChatState {
     }
   }
 
+  void updateCustomBackgroundPathInternal(String? value) {
+    if (customBackgroundPath.value != value) {
+      customBackgroundPath.value = value;
+    }
+  }
+
   void updateTitleInternal(String? value) {
     if (title.value != value) {
       title.value = value;
@@ -206,6 +214,7 @@ class ChatState {
     updateArchivedInternal(updatedChat.isArchived ?? false);
     updateDisplayNameInternal(updatedChat.displayName);
     updateCustomAvatarPathInternal(updatedChat.customAvatarPath);
+    updateCustomBackgroundPathInternal(updatedChat.customBackgroundPath);
     updateChatCreatorSubtitleInternal(updatedChat.isGroup
         ? updatedChat.getChatCreatorSubtitle()
         : (updatedChat.handles.isNotEmpty

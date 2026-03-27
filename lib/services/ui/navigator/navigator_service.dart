@@ -12,6 +12,10 @@ import 'package:get/get.dart';
 NavigatorService get NavigationSvc =>
     Get.isRegistered<NavigatorService>() ? Get.find<NavigatorService>() : Get.put(NavigatorService());
 
+/// Global route observer — register with GetMaterialApp.navigatorObservers and subscribe
+/// widgets using the RouteAware mixin to receive didPushNext / didPopNext callbacks.
+final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
+
 /// Handles navigation for the app
 class NavigatorService {
   final GlobalKey<NavigatorState> key = GlobalKey<NavigatorState>();

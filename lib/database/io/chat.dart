@@ -66,6 +66,10 @@ class Chat {
   String? get customAvatarPath => _customAvatarPath.value;
   set customAvatarPath(String? s) => _customAvatarPath.value = s;
 
+  final RxnString _customBackgroundPath = RxnString();
+  String? get customBackgroundPath => _customBackgroundPath.value;
+  set customBackgroundPath(String? s) => _customBackgroundPath.value = s;
+
   final RxnInt _pinIndex = RxnInt();
   int? get pinIndex => _pinIndex.value;
   set pinIndex(int? i) => _pinIndex.value = i;
@@ -104,6 +108,7 @@ class Chat {
     this.hasUnreadMessage = false,
     this.displayName,
     String? customAvatar,
+    String? customBackground,
     int? pinnedIndex,
     Message? latestMessage,
     this.participants = const [],
@@ -118,6 +123,7 @@ class Chat {
     this.lastReadMessageGuid,
   }) {
     customAvatarPath = customAvatar;
+    customBackgroundPath = customBackground;
     pinIndex = pinnedIndex;
     if (textFieldAttachments.isEmpty) textFieldAttachments = [];
     _latestMessage = latestMessage;
@@ -139,6 +145,7 @@ class Chat {
       latestMessage: message,
       displayName: json["displayName"],
       customAvatar: json['_customAvatarPath'],
+      customBackground: json['_customBackgroundPath'],
       pinnedIndex: json['_pinIndex'],
       autoSendReadReceipts: json["autoSendReadReceipts"],
       autoSendTypingIndicators: json["autoSendTypingIndicators"],
@@ -161,6 +168,7 @@ class Chat {
     bool updateAutoSendReadReceipts = false,
     bool updateAutoSendTypingIndicators = false,
     bool updateCustomAvatarPath = false,
+    bool updateCustomBackgroundPath = false,
     bool updateTextFieldText = false,
     bool updateTextFieldAttachments = false,
     bool updateDisplayName = false,
@@ -184,6 +192,7 @@ class Chat {
         'updateAutoSendReadReceipts': updateAutoSendReadReceipts,
         'updateAutoSendTypingIndicators': updateAutoSendTypingIndicators,
         'updateCustomAvatarPath': updateCustomAvatarPath,
+        'updateCustomBackgroundPath': updateCustomBackgroundPath,
         'updateTextFieldText': updateTextFieldText,
         'updateTextFieldAttachments': updateTextFieldAttachments,
         'updateDisplayName': updateDisplayName,
@@ -760,6 +769,7 @@ class Chat {
   Chat merge(Chat other) {
     id ??= other.id;
     _customAvatarPath.value ??= other._customAvatarPath.value;
+    _customBackgroundPath.value ??= other._customBackgroundPath.value;
     _pinIndex.value ??= other._pinIndex.value;
     autoSendReadReceipts ??= other.autoSendReadReceipts;
     autoSendTypingIndicators ??= other.autoSendTypingIndicators;
@@ -853,6 +863,7 @@ class Chat {
       "participants": participants.map((item) => item.toMap()).toList(),
       "hasUnreadMessage": hasUnreadMessage!,
       "_customAvatarPath": _customAvatarPath.value,
+      "_customBackgroundPath": _customBackgroundPath.value,
       "_pinIndex": _pinIndex.value,
       "autoSendReadReceipts": autoSendReadReceipts,
       "autoSendTypingIndicators": autoSendTypingIndicators,

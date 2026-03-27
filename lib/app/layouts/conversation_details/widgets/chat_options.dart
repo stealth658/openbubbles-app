@@ -5,6 +5,7 @@ import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/reply/
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/theming/avatar/avatar_crop.dart';
+import 'package:bluebubbles/app/layouts/settings/pages/theming/background/background_crop.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
@@ -123,6 +124,72 @@ class _ChatOptionsState extends State<ChatOptions> with ThemeHelpers {
                         );
                       } else {
                         Get.to(() => AvatarCrop(chat: chat));
+                      }
+                    },
+                  ),
+                if (!kIsWeb)
+                  SettingsTile(
+                    title: "Custom Background",
+                    trailing: Padding(
+                      padding: const EdgeInsets.only(right: 15.0),
+                      child: Icon(
+                        iOS ? CupertinoIcons.photo : Icons.wallpaper,
+                      ),
+                    ),
+                    onTap: () {
+                      if (chat.customBackgroundPath != null) {
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              backgroundColor: context.theme.colorScheme.properSurface,
+                              title: Text("Custom Background", style: context.theme.textTheme.titleLarge),
+                              content: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "You already have a custom background for this chat. What would you like to do?",
+                                    style: context.theme.textTheme.bodyLarge,
+                                  ),
+                                ],
+                              ),
+                              actions: <Widget>[
+                                TextButton(
+                                  child: Text("Cancel",
+                                      style: context.theme.textTheme.bodyLarge!
+                                          .copyWith(color: context.theme.colorScheme.primary)),
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                  },
+                                ),
+                                TextButton(
+                                  child: Text("Remove",
+                                      style: context.theme.textTheme.bodyLarge!
+                                          .copyWith(color: context.theme.colorScheme.error)),
+                                  onPressed: () async {
+                                    final File bgFile = File(chat.customBackgroundPath!);
+                                    if (await bgFile.exists()) bgFile.delete();
+                                    await ChatsSvc.setChatCustomBackgroundPath(chat, null);
+                                    if (context.mounted) Navigator.of(context, rootNavigator: true).pop();
+                                  },
+                                ),
+                                TextButton(
+                                  child: Text("Set New",
+                                      style: context.theme.textTheme.bodyLarge!
+                                          .copyWith(color: context.theme.colorScheme.primary)),
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                    Get.to(() => BackgroundCrop(chat: chat));
+                                  },
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      } else {
+                        Get.to(() => BackgroundCrop(chat: chat));
                       }
                     },
                   ),

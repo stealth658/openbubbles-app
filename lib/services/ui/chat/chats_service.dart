@@ -1097,6 +1097,21 @@ class ChatsService {
     state?.updateCustomAvatarPathInternal(value);
   }
 
+  /// Set chat custom background path
+  Future<void> setChatCustomBackgroundPath(Chat chat, String? value) async {
+    final state = getChatState(chat.guid);
+
+    if (state != null && state.customBackgroundPath.value == value) return;
+
+    // Update Chat model (use state.chat if available, otherwise use passed in chat)
+    final chatToUpdate = state?.chat ?? chat;
+    chatToUpdate.customBackgroundPath = value;
+    await chatToUpdate.saveAsync(updateCustomBackgroundPath: true);
+
+    // Update state if available
+    state?.updateCustomBackgroundPathInternal(value);
+  }
+
   /// Set chat latest message
   Future<void> setChatLatestMessage(Chat chat, Message? value) async {
     final state = getChatState(chat.guid);

@@ -58,6 +58,9 @@ class ConversationViewController extends StatefulController with GetSingleTicker
   final GlobalKey focusInfoKey = GlobalKey();
   final RxBool recipientNotifsSilenced = false.obs;
   bool showingOverlays = false;
+  /// True while any route is pushed on top of the conversation view route (e.g.
+  /// ConversationDetails). Used by onAppResume to skip keyboard auto-focus on mobile.
+  bool showingSubRoute = false;
   bool _subjectWasLastFocused = false; // If this is false, then message field was last focused (default)
 
   FocusNode get lastFocusedNode => _subjectWasLastFocused ? subjectFocusNode : focusNode;
