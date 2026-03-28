@@ -588,6 +588,24 @@ class MessageState extends StatefulController {
   /// Convenience getter: Count of reactions on this message
   int get reactionCount => associatedMessages.length;
 
+  // ========== Unsent / Retracted Getters ==========
+  // These read from [parts] (RxList) and [dateEdited] (Rxn) so they
+  // automatically trigger Obx rebuilds when either field changes.
+
+  /// Indices of parts that have been unsent, derived from the live [parts] list.
+  List<int> get retractedParts => parts.where((p) => p.isUnsent).map((p) => p.part).toList();
+
+  /// True when at least one part has been retracted.
+  bool get hasUnsentParts => dateEdited.value != null && retractedParts.isNotEmpty;
+
+  /// True when every part has been retracted (entire message unsent).
+  bool get isFullyUnsent => hasUnsentParts && parts.isNotEmpty && parts.every((p) => p.isUnsent);
+
+  /// True when some — but not all — parts have been retracted.
+  bool get isPartiallyUnsent => hasUnsentParts && parts.any((p) => p.isUnsent) && parts.any((p) => !p.isUnsent);
+
+  // ========== End Unsent / Retracted Getters ==========
+
   // ========== Redaction Methods ==========
   // These are called when redacted mode settings change
 

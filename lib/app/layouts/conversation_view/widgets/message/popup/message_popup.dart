@@ -828,16 +828,7 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
 
   void unsend() async {
     popDetails();
-    final response = await HttpSvc.unsend(message.guid!, partIndex: part.part);
-    if (response.statusCode == 200) {
-      final updatedMessage = Message.fromMap(response.data['data']);
-      IncomingMsgHandler.handle(IncomingPayload(
-        type: MessageEventType.updatedMessage,
-        source: MessageSource.apiResponse,
-        chat: chat,
-        message: updatedMessage,
-      ));
-    }
+    await MessagesSvc(chat.guid).unsendMessage(message, part.part);
   }
 
   void edit() {
@@ -923,6 +914,7 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
 
   get _allActions {
     final canEdit = (message.dateCreated?.toUtc().isWithin(DateTime.now().toUtc(), minutes: 15) ?? false);
+    final canUnsend = (message.dateCreated?.toUtc().isWithin(DateTime.now().toUtc(), minutes: 2) ?? false);
     return [
       if (SettingsSvc.settings.enablePrivateAPI.value && minBigSur && chat.isIMessage && isSent)
         DetailsMenuActionWidget(
@@ -1015,6 +1007,8 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
           SettingsSvc.serverDetailsSync().supportsEditAndUnsend)
         DetailsMenuActionWidget(
           onTap: unsend,
+          customTitle: canUnsend ? 'Undo Send' : 'Undo Send (too old)',
+          shouldDisableBtn: !canUnsend,
           action: DetailsMenuAction.UndoSend,
         ),
       if (SettingsSvc.isMinVenturaSync &&

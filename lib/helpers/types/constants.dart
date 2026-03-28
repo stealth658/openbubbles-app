@@ -112,6 +112,8 @@ enum ClientMessageError {
   gatewayTimeout, // 10003 — HTTP 504 or Dio timeout
   connectionRefused, // 10004 — connection refused / unreachable
   notFound, // 10005 — HTTP 404
+  editFailed, // 10006 — message edit rejected or failed
+  unsendFailed, // 10007 — message unsend rejected or failed
 }
 
 enum Skins {

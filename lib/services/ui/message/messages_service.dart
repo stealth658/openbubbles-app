@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:bluebubbles/app/state/attachment_state.dart';
 import 'package:bluebubbles/app/state/message_state.dart';
+import 'package:bluebubbles/helpers/types/extensions/extensions.dart';
 import 'package:bluebubbles/helpers/types/helpers/message_helper.dart';
 import 'package:bluebubbles/helpers/types/constants.dart';
 import 'package:bluebubbles/database/models.dart';
@@ -815,6 +816,13 @@ class MessagesService extends GetxController {
       messageState.updateFromMessage(updated);
       Logger.debug("Updated MessageState for message ${updated.guid}", tag: "MessageState");
 
+      // If dateEdited changed, messageSummaryInfo has new edit/retraction data.
+      // Force-rebuild parts so isUnsent flags and edit history reflect the update.
+      // This mirrors the `hasEdited` check in MessageState.updateMessage (web path).
+      if (updated.dateEdited != toUpdate.dateEdited) {
+        messageState.buildMessageParts(force: true);
+      }
+
       // If guid changed (temp -> real), update the map
       if (oldGuid != null && oldGuid != updated.guid) {
         messageStates.remove(oldGuid);
@@ -1188,6 +1196,168 @@ class MessagesService extends GetxController {
     // Update MessageState if it exists
     final messageState = getMessageStateIfExists(message.guid!);
     messageState?.updateIsBookmarkedInternal(message.isBookmarked);
+  }
+
+  /// Edits the text of [partIndex] on [message] and updates the UI reactively.
+  ///
+  /// [MessageState] is optional — the edit is attempted regardless of whether
+  /// one exists. If it does exist, the UI is updated optimistically before the
+  /// request and reverted on failure. The state is re-fetched after the async
+  /// gap because it may have been disposed while the request was in flight.
+  ///
+  /// Flow:
+  ///   1. If [MessageState] exists: optimistically update [MessagePart.text].
+  ///   2. Call the edit API.
+  ///   3. On success: route the server's authoritative response through
+  ///      [IncomingMsgHandler] so [updateMessage] patches the [MessageState]
+  ///      with the real [messageSummaryInfo] (edit history, etc.) and persists
+  ///      to the DB.
+  ///   4. On failure: if [MessageState] still exists, revert the optimistic
+  ///      text and set [ClientMessageError.editFailed] (10006).
+  Future<void> editMessage(Message message, int partIndex, String newText) async {
+    final messageGuid = message.guid;
+    if (messageGuid == null) return;
+
+    // --- Optional optimistic update (state may not exist) ---
+    final preState = getMessageStateIfExists(messageGuid);
+    final partIdx = preState?.parts.indexWhere((p) => p.part == partIndex) ?? -1;
+    final String? originalText = partIdx >= 0 ? preState!.parts[partIdx].text : null;
+    final DateTime? originalDateEdited = preState?.dateEdited.value;
+    if (preState != null) {
+      if (partIdx >= 0) {
+        preState.parts[partIdx].text = newText;
+        preState.parts.refresh();
+      }
+  
+      preState.updateDateEditedInternal(DateTime.now().toUtc());
+  
+      // Clear any stale edit error from a previous attempt.
+      preState.updateErrorInternal(0);
+      preState.updateErrorMessageInternal(null);
+    }
+
+    try {
+      final response = await HttpSvc.edit(
+        messageGuid,
+        newText,
+        "Edited to: '$newText'",
+        partIndex: partIndex,
+      );
+      // response is always HTTP 200 here — returnSuccessOrError converts
+      // non-200 into Future.error, which is caught below.
+      final updatedMessage = Message.fromMap(response.data['data']);
+      IncomingMsgHandler.handle(IncomingPayload(
+        type: MessageEventType.updatedMessage,
+        source: MessageSource.apiResponse,
+        chat: chat,
+        message: updatedMessage,
+      ));
+    } catch (ex, stack) {
+      Logger.error("Failed to edit message $messageGuid", error: ex, trace: stack, tag: "MessagesService");
+
+      // Re-fetch state — it may have been disposed while the request was in flight.
+      final postState = getMessageStateIfExists(messageGuid);
+      if (postState != null) {
+        // Revert the optimistic text and dateEdited changes so the user sees the original content.
+        if (partIdx >= 0 && originalText != null) {
+          postState.parts[partIdx].text = originalText;
+          postState.parts.refresh();
+        }
+        postState.updateDateEditedInternal(originalDateEdited);
+
+        // Derive a human-readable reason from the caught value.
+        final String reason;
+        if (ex is Response) {
+          final serverMsg = ex.data?['error']?['message'] as String?;
+          reason = serverMsg ?? "Server returned ${ex.statusCode}";
+        } else {
+          reason = ex.toString();
+        }
+
+        postState.updateErrorInternal(ClientMessageError.editFailed.code); // 
+        postState.updateErrorMessageInternal("Failed to edit message: $reason");
+      }
+    }
+  }
+
+  /// Unsends (retracts) [partIndex] on [message] and updates the UI reactively.
+  ///
+  /// [MessageState] is optional — the unsend is attempted regardless of whether
+  /// one exists. If it does exist, the UI is updated optimistically before the
+  /// request and reverted on failure. The state is re-fetched after the async
+  /// gap because it may have been disposed while the request was in flight.
+  ///
+  /// Flow:
+  ///   1. If [MessageState] exists: optimistically mark the part as unsent and
+  ///      set [dateEdited] to now.
+  ///   2. Call the unsend API.
+  ///   3. On success: route the server's authoritative response through
+  ///      [IncomingMsgHandler], then force-rebuild parts so [retractedParts] /
+  ///      [isFullyUnsent] / [isPartiallyUnsent] reflect the true server state.
+  ///   4. On failure: if [MessageState] still exists, revert the optimistic
+  ///      changes and set [ClientMessageError.unsendFailed] (10007).
+  Future<void> unsendMessage(Message message, int partIndex) async {
+    final messageGuid = message.guid;
+    if (messageGuid == null) return;
+
+    // --- Optional optimistic update (state may not exist) ---
+    final preState = getMessageStateIfExists(messageGuid);
+    final partIdx = preState?.parts.indexWhere((p) => p.part == partIndex) ?? -1;
+    final DateTime? originalDateEdited = preState?.dateEdited.value;
+    final bool originalIsUnsent = partIdx >= 0 ? (preState!.parts[partIdx].isUnsent) : false;
+    if (preState != null) {
+      if (partIdx >= 0) {
+        preState.parts[partIdx].isUnsent = true;
+        preState.parts.refresh();
+      }
+
+      preState.updateDateEditedInternal(DateTime.now().toUtc());
+
+      // Clear any stale error from a previous attempt.
+      preState.updateErrorInternal(0);
+      preState.updateErrorMessageInternal(null);
+    }
+
+    try {
+      final response = await HttpSvc.unsend(messageGuid, partIndex: partIndex);
+      final updatedMessage = Message.fromMap(response.data['data']);
+      IncomingMsgHandler.handle(IncomingPayload(
+        type: MessageEventType.updatedMessage,
+        source: MessageSource.apiResponse,
+        chat: chat,
+        message: updatedMessage,
+      ));
+
+      // Re-fetch state and force-rebuild parts so reactive getters (isFullyUnsent,
+      // isPartiallyUnsent, retractedParts) immediately reflect the server response.
+      final postSuccessState = getMessageStateIfExists(messageGuid);
+      postSuccessState?.buildMessageParts(force: true);
+    } catch (ex, stack) {
+      Logger.error("Failed to unsend message $messageGuid", error: ex, trace: stack, tag: "MessagesService");
+
+      // Re-fetch state — it may have been disposed while the request was in flight.
+      final postState = getMessageStateIfExists(messageGuid);
+      if (postState != null) {
+        // Revert the optimistic changes.
+        if (partIdx >= 0) {
+          postState.parts[partIdx].isUnsent = originalIsUnsent;
+          postState.parts.refresh();
+        }
+        postState.updateDateEditedInternal(originalDateEdited);
+
+        // Derive a human-readable reason from the caught value.
+        final String reason;
+        if (ex is Response) {
+          final serverMsg = ex.data?['error']?['message'] as String?;
+          reason = serverMsg ?? "Server returned ${ex.statusCode}";
+        } else {
+          reason = ex.toString();
+        }
+
+        postState.updateErrorInternal(ClientMessageError.unsendFailed.code);
+        postState.updateErrorMessageInternal("Failed to unsend message: $reason");
+      }
+    }
   }
 
   Future<bool> loadChunk(int offset, ConversationViewController controller, {int limit = 25}) async {

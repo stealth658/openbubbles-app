@@ -53,6 +53,8 @@ extension ClientMessageErrorExtension on ClientMessageError {
     ClientMessageError.gatewayTimeout: 10003,
     ClientMessageError.connectionRefused: 10004,
     ClientMessageError.notFound: 10005,
+    ClientMessageError.editFailed: 10006,
+    ClientMessageError.unsendFailed: 10007,
   };
 
   static const friendlyTitles = {
@@ -61,6 +63,8 @@ extension ClientMessageErrorExtension on ClientMessageError {
     ClientMessageError.gatewayTimeout: "Gateway Timeout",
     ClientMessageError.connectionRefused: "Connection Refused",
     ClientMessageError.notFound: "Not Found",
+    ClientMessageError.editFailed: "Edit Failed",
+    ClientMessageError.unsendFailed: "Unsend Failed",
   };
 
   int get code => codes[this]!;

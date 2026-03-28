@@ -59,42 +59,7 @@ class MessagePartWrapper extends StatelessWidget {
   void completeEdit(String newEdit) async {
     cvController.editing.removeWhere((e2) => e2.message.guid == message.guid! && e2.part.part == part.part);
     if (newEdit.isNotEmpty && newEdit != part.text) {
-      bool dismissed = false;
-      showDialog(
-        context: Get.context!,
-        builder: (BuildContext context) => PopScope(
-          onPopInvokedWithResult: (_, __) => dismissed = true,
-          child: AlertDialog(
-            backgroundColor: context.theme.colorScheme.properSurface,
-            title: Text(
-              "Editing message...",
-              style: context.theme.textTheme.titleLarge,
-            ),
-            content: SizedBox(
-              height: 70,
-              child: Center(
-                child: CircularProgressIndicator(
-                  backgroundColor: context.theme.colorScheme.properSurface,
-                  valueColor: AlwaysStoppedAnimation<Color>(context.theme.colorScheme.primary),
-                ),
-              ),
-            ),
-          ),
-        ),
-      );
-      final response = await HttpSvc.edit(message.guid!, newEdit, "Edited to: '$newEdit'", partIndex: part.part);
-      if (response.statusCode == 200) {
-        final updatedMessage = Message.fromMap(response.data['data']);
-        IncomingMsgHandler.handle(IncomingPayload(
-          type: MessageEventType.updatedMessage,
-          source: MessageSource.apiResponse,
-          chat: chat,
-          message: updatedMessage,
-        ));
-      }
-      if (!dismissed) {
-        Navigator.of(Get.context!, rootNavigator: true).pop();
-      }
+      await MessagesSvc(chat.guid).editMessage(message, part.part, newEdit);
     }
     cvController.lastFocusedNode.requestFocus();
   }

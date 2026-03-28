@@ -104,6 +104,12 @@ class Message {
   DateTime? get dateEdited => _dateEdited.value;
   set dateEdited(DateTime? d) => _dateEdited.value = d;
 
+  /// Parts that have been unsent/retracted, as reported by [messageSummaryInfo].
+  List<int> get retractedParts => messageSummaryInfo.firstOrNull?.retractedParts ?? [];
+
+  /// True when this message has at least one retracted part.
+  bool get hasUnsentParts => dateEdited != null && retractedParts.isNotEmpty;
+
   @Backlink('message')
   final dbAttachments = ToMany<Attachment>();
 
