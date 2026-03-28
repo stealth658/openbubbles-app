@@ -27,10 +27,12 @@ import 'package:super_drag_and_drop/super_drag_and_drop.dart';
 class MessagesView extends StatefulWidget {
   final MessagesService? customService;
   final ConversationViewController controller;
+  final String? initialScrollToGuid;
 
   const MessagesView({
     super.key,
     this.customService,
+    this.initialScrollToGuid,
     required this.controller,
   });
 
@@ -171,6 +173,11 @@ class MessagesViewState extends State<MessagesView> with MessagesServiceMixin, T
         setState(() {});
       }
 
+      // If this is a search result, load surrounding context and scroll/highlight it
+      if (widget.initialScrollToGuid != null) {
+        await _scrollToSearchResult(widget.initialScrollToGuid!);
+      }
+
       if (!(_messages.firstOrNull?.isFromMe ?? true)) {
         updateReplies();
       }
@@ -202,6 +209,39 @@ class MessagesViewState extends State<MessagesView> with MessagesServiceMixin, T
     super.dispose();
   }
 
+  Future<void> _scrollToSearchResult(String guid) async {
+    if (!mounted) return;
+
+    // Find the target message in the current (pre-seeded) message list
+    final targetMessage = _messages.firstWhereOrNull((m) => m.guid == guid);
+    if (targetMessage == null) return;
+
+    // Load messages surrounding the search result
+    final method = messageService.method == "local" ? SearchMethod.local : SearchMethod.network;
+    await loadSearchChunk(targetMessage, method);
+
+    if (!mounted) return;
+
+    // Merge newly loaded messages into the local list
+    final oldGuids = Set<String>.from(_messages.map((m) => m.guid).whereType<String>());
+    final newMessages = messageService.struct.messages
+        .where((m) => m.guid != null && !oldGuids.contains(m.guid))
+        .toList();
+
+    if (newMessages.isNotEmpty) {
+      createStatesForMessages(newMessages, controller);
+      _messages = List<Message>.from(messageService.struct.messages);
+      _messages.sort(Message.sort);
+      _listKey = GlobalKey<SliverAnimatedListState>();
+      if (mounted) setState(() {});
+      // Allow the list to render before scrolling
+      await Future.delayed(const Duration(milliseconds: 300));
+    }
+
+    if (!mounted) return;
+    await jumpToMessage(guid);
+  }
+
   void getFocusState() {
     if (!SettingsSvc.isMinMontereySync) return;
     final recipient = chat.handles.firstOrNull;
@@ -220,7 +260,7 @@ class MessagesViewState extends State<MessagesView> with MessagesServiceMixin, T
     int index = _messages.indexWhere((element) => element.guid == guid);
     if (index != -1) {
       await scrollController.scrollToIndex(index, preferPosition: AutoScrollPosition.middle);
-      scrollController.highlight(index, highlightDuration: const Duration(milliseconds: 500));
+      scrollController.highlight(index, highlightDuration: const Duration(milliseconds: 2000));
       return;
     }
     // otherwise fetch until it is loaded
@@ -235,7 +275,7 @@ class MessagesViewState extends State<MessagesView> with MessagesServiceMixin, T
     index = _messages.indexWhere((element) => element.guid == guid);
     if (index != -1) {
       await scrollController.scrollToIndex(index, preferPosition: AutoScrollPosition.middle);
-      scrollController.highlight(index, highlightDuration: const Duration(milliseconds: 500));
+      scrollController.highlight(index, highlightDuration: const Duration(milliseconds: 2000));
     } else {
       showSnackbar("Error", "Failed to find message!");
     }

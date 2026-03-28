@@ -136,7 +136,7 @@ class SearchViewState extends State<SearchView> with ThemeHelpers {
       final results = query.find();
       query.close();
 
-      List<Chat> chats = [];
+      List<Chat?> chats = [];
       List<Message> messages = [];
       messages = results.map((e) {
         // grab attachments, associated messages, and handle
@@ -144,8 +144,9 @@ class SearchViewState extends State<SearchView> with ThemeHelpers {
         e.fetchAssociatedMessages();
         return e;
       }).toList();
-      chats = results.map((e) => e.chat.target!).toList();
+      chats = results.map((e) => e.chat.target).toList();
       chats.forEachIndexed((index, element) {
+        if (element == null) return;
         element.latestMessage = messages[index];
         search.results.add(_SearchResult(chat: element, message: messages[index]));
       });
@@ -535,6 +536,7 @@ class SearchViewState extends State<SearchView> with ThemeHelpers {
                                 ConversationView(
                                   chat: chat,
                                   customService: service,
+                                  initialScrollToGuid: message.guid,
                                 ),
                                 (route) => route.isFirst,
                               );

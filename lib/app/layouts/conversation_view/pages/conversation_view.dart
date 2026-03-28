@@ -21,12 +21,14 @@ class ConversationView extends StatefulWidget {
     super.key,
     required this.chat,
     this.customService,
+    this.initialScrollToGuid,
     this.fromChatCreator = false,
     this.onInit,
   });
 
   final Chat chat;
   final MessagesService? customService;
+  final String? initialScrollToGuid;
   final bool fromChatCreator;
   final void Function()? onInit;
 
@@ -48,6 +50,7 @@ class ConversationViewState extends State<ConversationView> with ThemeHelpers<Co
 
     Logger.debug("Initializing Conversation View for ${chat.guid}");
     controller.fromChatCreator = widget.fromChatCreator;
+    controller.fromSearchResult = widget.initialScrollToGuid != null;
     ChatsSvc.setActiveChatSync(chat);
     ChatsSvc.activeChat!.controller = controller;
     Logger.debug("Conversation View initialized for ${chat.guid}");
@@ -190,6 +193,7 @@ class ConversationViewState extends State<ConversationView> with ThemeHelpers<Co
                                       MessagesView(
                                         key: Key(chat.guid),
                                         customService: widget.customService,
+                                        initialScrollToGuid: widget.initialScrollToGuid,
                                         controller: controller,
                                       ),
                                       ScrollDownButton(controller: controller)
