@@ -6,7 +6,6 @@ import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/intera
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/interactive/supported_interactive.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/interactive/unsupported_interactive.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/interactive/url_preview.dart';
-import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/interactive/url_preview.legacy.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/misc/tail_clipper.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart' hide PayloadType;
@@ -58,11 +57,13 @@ class _InteractiveHolderState extends State<InteractiveHolder> with AutomaticKee
         child: Material(
           color: Colors.transparent,
           child: InkWell(
-            onTap: payloadData == null
+            onTap: (payloadData == null && !message.isLegacyUrlPreview)
                 ? null
                 : () async {
                     String? url;
-                    if (payloadData!.type == PayloadType.url) {
+                    if (payloadData == null) {
+                      url = message.url;
+                    } else if (payloadData!.type == PayloadType.url) {
                       url = payloadData!.urlData!.first.url ?? payloadData!.urlData!.first.originalUrl;
                     } else {
                       url = payloadData!.appData!.first.url;
@@ -125,12 +126,8 @@ class _InteractiveHolderState extends State<InteractiveHolder> with AutomaticKee
                                             );
                                         }
                                       } else if (payloadData?.type == PayloadType.url || message.isLegacyUrlPreview) {
-                                        if (payloadData == null) {
-                                          return const LegacyUrlPreview();
-                                        }
-                                        return UrlPreview(
-                                          data: payloadData!.urlData!.first,
-                                        );
+                                        final urlData = payloadData?.urlData?.first ?? UrlPreviewData(originalUrl: message.url);
+                                        return UrlPreview(data: urlData);
                                       } else {
                                         final data = payloadData!.appData!.first;
                                         switch (message.interactiveText) {

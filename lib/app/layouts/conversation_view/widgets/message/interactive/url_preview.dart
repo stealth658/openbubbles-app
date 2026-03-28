@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:bluebubbles/app/state/message_state_scope.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/reply/reply_bubble.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
+import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:collection/collection.dart';
@@ -35,7 +36,7 @@ class _UrlPreviewState extends State<UrlPreview> with AutomaticKeepAliveClientMi
   UrlPreviewData? dataOverride;
   File? get file => content is PlatformFile && content?.path != null ? File(content!.path!) : null;
   PlatformFile? content;
-  MediaMetadata? localImageMetadata;
+  Metadata? _fetchedMetadata;
 
   @override
   bool get wantKeepAlive => true;
@@ -80,35 +81,40 @@ class _UrlPreviewState extends State<UrlPreview> with AutomaticKeepAliveClientMi
             }
           });
         }
-      } else if (data.imageMetadata?.url == null && data.iconMetadata?.url == null) {
+      } else {
         final message = context.findAncestorWidgetOfExactType<MessageStateScope>()?.messageState.message;
         if (message == null) return;
-        final attachment =
-            message.dbAttachments.firstWhereOrNull((e) => e.transferName?.contains("pluginPayloadAttachment") ?? false);
-        if (attachment != null) {
-          content = AttachmentsSvc.getContent(attachment, autoDownload: true, onComplete: (file) {
-            if (mounted) {
-              setState(() {
-                content = file;
-              });
-            }
-          });
-          if (content is PlatformFile) {
-            if (mounted) setState(() {});
+
+        // If the payload has no image/icon, check for a plugin payload attachment first.
+        if (data.imageMetadata?.url == null && data.iconMetadata?.url == null) {
+          final attachment =
+              message.dbAttachments.firstWhereOrNull((e) => e.transferName?.contains("pluginPayloadAttachment") ?? false);
+          if (attachment != null) {
+            content = AttachmentsSvc.getContent(attachment, autoDownload: true, onComplete: (file) {
+              if (mounted) setState(() { content = file; });
+            });
+            if (content is PlatformFile && mounted) setState(() {});
+            return; // attachment serves as the image; no need to fetch external metadata
           }
-        } else {
-          MetadataFetch.extract((data.url ?? data.originalUrl)!).then((metadata) async {
-            if (metadata?.image != null) {
-              localImageMetadata = MediaMetadata(size: const Size.square(1), url: metadata!.image);
-              if (mounted) setState(() {});
-            } else {
-              final response = await HttpSvc.dio.get((data.url ?? data.originalUrl)!);
-              if (response.headers.value('content-type')?.startsWith("image/") ?? false) {
-                localImageMetadata = MediaMetadata(size: const Size.square(1), url: (data.url ?? data.originalUrl)!);
-                if (mounted) setState(() {});
+        }
+
+        // Fetch on-demand metadata when title or image data is missing, mirroring LegacyUrlPreview.
+        final needsMetadata = isNullOrEmpty(data.title) ||
+            (data.imageMetadata?.url == null && data.iconMetadata?.url == null);
+        if (needsMetadata && message.url != null) {
+          if (MetadataHelper.mapIsNotEmpty(message.metadata)) {
+            if (mounted) setState(() { _fetchedMetadata = Metadata.fromJson(message.metadata!); });
+          } else {
+            try {
+              final fetched = await MetadataHelper.fetchMetadata(message);
+              if (MetadataHelper.isNotEmpty(fetched)) {
+                message.updateMetadata(fetched);
               }
+              if (mounted) setState(() { _fetchedMetadata = fetched; });
+            } catch (ex, stack) {
+              Logger.error("Failed to fetch URL preview metadata", error: ex, trace: stack);
             }
-          });
+          }
         }
       }
     }();
@@ -118,12 +124,13 @@ class _UrlPreviewState extends State<UrlPreview> with AutomaticKeepAliveClientMi
   Widget build(BuildContext context) {
     super.build(context);
     final message = MessageStateScope.maybeMessageOf(context);
-    final effectiveImageMetadata = localImageMetadata ?? data.imageMetadata;
-    final siteText = widget.file != null
+    final effectiveImageUrl = data.imageMetadata?.url ?? _fetchedMetadata?.image;
+    final _rawSiteText = widget.file != null
         ? (dataOverride?.siteName ?? "")
         : Uri.tryParse(data.url ?? data.originalUrl ?? "")?.host ?? data.siteName;
-    final hasAppleImage = (effectiveImageMetadata?.url == null ||
-        (data.iconMetadata?.url == null && effectiveImageMetadata?.size == Size.zero));
+    final siteText = _rawSiteText?.replaceFirst(RegExp(r'^www\.'), '');
+    final hasAppleImage = (effectiveImageUrl == null ||
+        (data.iconMetadata?.url == null && data.imageMetadata?.size == Size.zero));
     final _data = dataOverride ?? data;
     return InkWell(
       onTap: widget.file != null && _data.url != null
@@ -135,11 +142,11 @@ class _UrlPreviewState extends State<UrlPreview> with AutomaticKeepAliveClientMi
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (effectiveImageMetadata?.url != null && ReplyScope.maybeOf(context) == null)
+          if (effectiveImageUrl != null && ReplyScope.maybeOf(context) == null)
             Container(
               decoration: BoxDecoration(
                 image: DecorationImage(
-                  image: NetworkImage(effectiveImageMetadata!.url!),
+                  image: NetworkImage(effectiveImageUrl),
                   fit: BoxFit.cover,
                 ),
               ),
@@ -151,7 +158,7 @@ class _UrlPreviewState extends State<UrlPreview> with AutomaticKeepAliveClientMi
                     child: ConstrainedBox(
                       constraints: BoxConstraints(maxHeight: context.height * 0.4, minHeight: 100),
                       child: Image.network(
-                        effectiveImageMetadata.url!,
+                        effectiveImageUrl,
                         gaplessPlayback: true,
                         filterQuality: FilterQuality.none,
                         errorBuilder: (context, object, stacktrace) => Center(
@@ -276,18 +283,21 @@ class _UrlPreviewState extends State<UrlPreview> with AutomaticKeepAliveClientMi
                   child:
                       Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text(
-                      !isNullOrEmpty(_data.title)
+                      !isNullOrEmpty(_data.title) && _data.title != "www"
                           ? _data.title!
-                          : !isNullOrEmpty(siteText)
-                              ? siteText!
-                              : message?.text ?? '',
+                          : !isNullOrEmpty(_fetchedMetadata?.title) && _fetchedMetadata?.title != "www"
+                              ? _fetchedMetadata!.title!
+                              : !isNullOrEmpty(siteText)
+                                  ? siteText!
+                                  : message?.text ?? '',
                       style: context.theme.textTheme.bodyMedium!.apply(fontWeightDelta: 2),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    if (!isNullOrEmpty(_data.summary)) const SizedBox(height: 5),
-                    if (!isNullOrEmpty(_data.summary))
-                      Text(_data.summary ?? "",
+                    if (!isNullOrEmpty(_data.summary) || !isNullOrEmpty(_fetchedMetadata?.description))
+                      const SizedBox(height: 5),
+                    if (!isNullOrEmpty(_data.summary) || !isNullOrEmpty(_fetchedMetadata?.description))
+                      Text(_data.summary ?? _fetchedMetadata?.description ?? "",
                           maxLines: ReplyScope.maybeOf(context) == null ? 3 : 1,
                           overflow: TextOverflow.ellipsis,
                           style: context.theme.textTheme.labelMedium!.copyWith(fontWeight: FontWeight.normal)),
