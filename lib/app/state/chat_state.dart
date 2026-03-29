@@ -43,11 +43,9 @@ class ChatState {
   final RxBool isAlive;
   ConversationViewController? controller;
 
-  // Redacted mode visibility flags — updated by ChatsService when settings change.
-  // Widgets should observe these instead of reading settings directly.
-  final RxBool shouldHideContactInfo;
-  final RxBool shouldGenerateFakeContactNames;
-  final RxBool shouldGenerateFakeAvatars;
+  // If true, attachment widgets should be hidden. There is no "fake" attachment
+  // to substitute, so a visibility flag is the only meaningful approach here.
+  // Updated by ChatsService when hideAttachments or redactedMode settings change.
   final RxBool shouldHideAttachments;
 
   ChatState(this.chat)
@@ -78,12 +76,6 @@ class ChatState {
         lastReadMessageGuid = RxnString(chat.lastReadMessageGuid),
         isActive = false.obs,
         isAlive = false.obs,
-        shouldHideContactInfo =
-            (SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value).obs,
-        shouldGenerateFakeContactNames =
-            (SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.generateFakeContactNames.value).obs,
-        shouldGenerateFakeAvatars =
-            (SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.generateFakeAvatars.value).obs,
         shouldHideAttachments =
             (SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideAttachments.value).obs {
     // Apply redaction if redacted mode is enabled on initialization
@@ -302,20 +294,6 @@ class ChatState {
     }
   }
 
-  // ========== Redacted Mode Visibility Flag Update Methods ==========
-
-  void updateShouldHideContactInfoInternal(bool value) {
-    if (shouldHideContactInfo.value != value) shouldHideContactInfo.value = value;
-  }
-
-  void updateShouldGenerateFakeContactNamesInternal(bool value) {
-    if (shouldGenerateFakeContactNames.value != value) shouldGenerateFakeContactNames.value = value;
-  }
-
-  void updateShouldGenerateFakeAvatarsInternal(bool value) {
-    if (shouldGenerateFakeAvatars.value != value) shouldGenerateFakeAvatars.value = value;
-  }
-
   void updateShouldHideAttachmentsInternal(bool value) {
     if (shouldHideAttachments.value != value) shouldHideAttachments.value = value;
   }
@@ -323,44 +301,48 @@ class ChatState {
   // ========== Redaction Methods ==========
   // These are called when redacted mode is toggled on/off
 
-  /// Redact contact information (title, displayName, subtitle)
+  /// Redact contact information: sets fake name as display name/title, clears the
+  /// group-member subtitle, and updates the message-preview subtitle so reaction
+  /// notifications cannot leak the sender's real name.
   void redactContactInfo() {
     if (!SettingsSvc.settings.redactedMode.value) return;
     if (!SettingsSvc.settings.hideContactInfo.value && !SettingsSvc.settings.generateFakeContactNames.value) return;
 
-    // Apply fake name as title and displayName, clear subtitle
     final fakeName = chat.isGroup ? chat.fakeName : (chat.handles.isNotEmpty ? chat.handles[0].fakeName : 'Unknown');
     updateDisplayNameInternal(fakeName);
     updateChatCreatorSubtitleInternal('');
-    updateShouldHideContactInfoInternal(SettingsSvc.settings.hideContactInfo.value);
-    updateShouldGenerateFakeContactNamesInternal(SettingsSvc.settings.generateFakeContactNames.value);
+    // Recompute the message-preview subtitle without contact names so reaction
+    // notifications ("John liked…") don't leak the sender after redaction.
+    if (latestMessage.value != null) {
+      updateSubtitleInternal(MessageHelper.getNotificationText(latestMessage.value!, hideContactInfo: true));
+    }
   }
 
-  /// Restore contact information to original values
+  /// Restore contact information to original values from the underlying DB model.
   void unredactContactInfo() {
     updateDisplayNameInternal(chat.displayName);
     final computedSubtitle = chat.isGroup
         ? chat.getChatCreatorSubtitle()
         : (chat.handles.isNotEmpty ? (chat.handles.first.formattedAddress ?? chat.handles.first.address) : null);
     updateChatCreatorSubtitleInternal(computedSubtitle);
-    updateShouldHideContactInfoInternal(false);
-    updateShouldGenerateFakeContactNamesInternal(false);
+    if (latestMessage.value != null) {
+      updateSubtitleInternal(MessageHelper.getNotificationText(latestMessage.value!));
+    }
   }
 
-  /// Redact/hide avatars by clearing custom avatar path
+  /// Redact avatars by clearing the custom avatar path so the widget falls back
+  /// to a generated placeholder.  The original path is preserved in [chat] and
+  /// restored by [unredactAvatars].
   void redactAvatars() {
     if (!SettingsSvc.settings.redactedMode.value) return;
     if (!SettingsSvc.settings.generateFakeAvatars.value) return;
 
-    // Clear the custom avatar path so fake avatars are generated
     updateCustomAvatarPathInternal(null);
-    updateShouldGenerateFakeAvatarsInternal(true);
   }
 
-  /// Restore avatars to original values
+  /// Restore avatars to the original value from the underlying DB model.
   void unredactAvatars() {
     updateCustomAvatarPathInternal(chat.customAvatarPath);
-    updateShouldGenerateFakeAvatarsInternal(false);
   }
 
   /// Apply all redactions based on current settings (used on initialization)

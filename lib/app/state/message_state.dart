@@ -5,7 +5,6 @@ import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:collection/collection.dart';
-import 'package:faker/faker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 
@@ -100,12 +99,11 @@ class MessageState extends StatefulController {
   /// Set when an audio message is kept; triggers delivered indicator
   final Rxn<DateTime> audioWasKept = Rxn<DateTime>(null);
 
-  // Redacted mode visibility flags — updated by MessagesService when settings change.
-  // Widgets should observe these instead of reading settings directly.
+  // If true, attachment widgets should be hidden. There is no "fake" attachment
+  // to substitute, so a visibility flag is the only meaningful approach here.
+  // Updated by MessagesService when hideAttachments or redactedMode settings change.
   final RxBool shouldHideAttachments =
       (SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideAttachments.value).obs;
-  final RxBool shouldHideMessageContent =
-      (SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideMessageContent.value).obs;
 
   /// Reactive list of parsed message parts (text/attachments/edits/unsends).
   /// Populated by [buildMessageParts] in [onInit] and on content changes.
@@ -618,26 +616,26 @@ class MessageState extends StatefulController {
   // ========== Redaction Methods ==========
   // These are called when redacted mode settings change
 
-  /// Redact message content (text and subject)
+  /// Redact message content by setting [MessagePart.shouldRedact] on every part,
+  /// which causes [MessagePart.displayText] / [displaySubject] to return their
+  /// faker-generated fake text.  The real text in [message] is never mutated
+  /// so it can be restored cleanly by [unredactMessageContent].
   void redactMessageContent() {
     if (!SettingsSvc.settings.redactedMode.value) return;
     if (!SettingsSvc.settings.hideMessageContent.value) return;
 
-    // Generate fake text with similar word count
-    final originalText = message.text ?? '';
-    final wordCount = originalText.split(' ').length;
-    final fakeContent = faker.lorem.words(wordCount).join(' ');
-
-    updateTextInternal(fakeContent);
-    updateSubjectInternal(null); // Clear subject when redacted
-    updateShouldHideMessageContentInternal(true);
+    for (final part in parts) {
+      part.shouldRedact = true;
+    }
+    if (parts.isNotEmpty) parts.refresh();
   }
 
-  /// Restore message content to original values
+  /// Restore message content by clearing [MessagePart.shouldRedact] on every part.
   void unredactMessageContent() {
-    updateTextInternal(message.text);
-    updateSubjectInternal(message.subject);
-    updateShouldHideMessageContentInternal(false);
+    for (final part in parts) {
+      part.shouldRedact = false;
+    }
+    if (parts.isNotEmpty) parts.refresh();
   }
 
   /// Apply all redactions based on current settings (used on initialization)
@@ -656,17 +654,6 @@ class MessageState extends StatefulController {
 
   void updateShouldHideAttachmentsInternal(bool value) {
     if (shouldHideAttachments.value != value) shouldHideAttachments.value = value;
-  }
-
-  void updateShouldHideMessageContentInternal(bool value) {
-    if (shouldHideMessageContent.value != value) {
-      shouldHideMessageContent.value = value;
-      // Update MessagePart.shouldRedact and notify the RxList so widgets rebuild.
-      for (final part in parts) {
-        part.shouldRedact = value;
-      }
-      if (parts.isNotEmpty) parts.refresh();
-    }
   }
 
   // ========== Part Building (merged from MessageWidgetController) ==========
@@ -731,9 +718,9 @@ class MessageState extends StatefulController {
       }
     }
     newParts.sort((a, b) => a.part.compareTo(b.part));
-    // Apply the current redaction state to each freshly-built part so widgets
-    // read from MessagePart.shouldRedact instead of checking settings directly.
-    final redact = shouldHideMessageContent.value;
+    // Stamp each freshly-built part with the current redaction state so widgets
+    // read MessagePart.displayText / displaySubject without checking settings.
+    final redact = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideMessageContent.value;
     for (final part in newParts) {
       part.shouldRedact = redact;
     }

@@ -49,7 +49,7 @@ class MessageHelper {
     }
   }
 
-  static String getNotificationText(Message message, {bool withSender = false}) {
+  static String getNotificationText(Message message, {bool withSender = false, bool hideContactInfo = false}) {
     if (message.isGroupEvent) return message.groupEventText;
     if (message.expressiveSendStyleId == "com.apple.MobileSMS.expressivesend.invisibleink") {
       return "Message sent with Invisible Ink";
@@ -57,7 +57,7 @@ class MessageHelper {
 
     String sender = !withSender
         ? ""
-        : "${message.isFromMe! ? "You: " : (message.handleRelation.target?.displayName ?? "Someone")}: ";
+        : "${message.isFromMe! ? "You: " : (hideContactInfo ? "Someone: " : (message.handleRelation.target?.displayName ?? "Someone") + ": ")}";
 
     if (message.isInteractive) {
       return "$sender${message.interactiveText}";
@@ -77,7 +77,7 @@ class MessageHelper {
       return "$sender${_getAttachmentText(message.realAttachments)}";
     } else if (!isNullOrEmpty(message.associatedMessageGuid)) {
       // It's a reaction message, get the sender
-      String sender = message.isFromMe! ? 'You' : (message.handleRelation.target?.reactionDisplayName ?? "Someone");
+      String sender = message.isFromMe! ? 'You' : (hideContactInfo ? "Someone" : (message.handleRelation.target?.reactionDisplayName ?? "Someone"));
       // fetch the associated message object
       Message? associatedMessage = Message.findOne(guid: message.associatedMessageGuid);
       if (associatedMessage != null) {

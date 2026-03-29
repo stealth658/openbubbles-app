@@ -1149,7 +1149,8 @@ class ChatsService {
     if (state == null) return;
 
     state.updateLatestMessageInternal(message);
-    state.updateSubtitleInternal(MessageHelper.getNotificationText(message));
+    final hideContactInfo = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
+    state.updateSubtitleInternal(MessageHelper.getNotificationText(message, hideContactInfo: hideContactInfo));
     state.chat.latestMessage = message;
     _repositionChat(state.chat, immediate: true);
   }

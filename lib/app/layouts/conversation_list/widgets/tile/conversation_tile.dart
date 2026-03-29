@@ -239,12 +239,9 @@ class _ChatSubtitleState extends CustomState<ChatSubtitle, void, ConversationTil
           latestMessage?.dateDelivered != null ||
           latestMessage?.dateRead != null;
 
-      final hideContacts = chatState?.shouldHideContactInfo.value ?? false;
-      // In redacted mode with hidden contacts, re-compute from the cached message object to
-      // avoid leaking contact-name formatting that may have been embedded at subtitle-update time.
-      final String _subtitle = hideContacts && !kIsWeb && latestMessage != null
-          ? MessageHelper.getNotificationText(latestMessage)
-          : (chatState?.subtitle.value ?? '');
+      // subtitle.value is already contact-info-free when redacted mode is on
+      // (ChatState.redactContactInfo / updateChatLatestMessage ensure this).
+      final String _subtitle = chatState?.subtitle.value ?? '';
 
       return RichText(
         text: TextSpan(
