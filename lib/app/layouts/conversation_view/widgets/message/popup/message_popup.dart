@@ -1166,7 +1166,7 @@ class ReactionDetails extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
+    return Obx(() => Material(
       color: Colors.transparent,
       borderRadius: BorderRadius.circular(20),
       clipBehavior: Clip.antiAlias,
@@ -1287,6 +1287,6 @@ class ReactionDetails extends StatelessWidget {
           ),
         ),
       ),
-    );
+    )); // end Obx
   }
 }

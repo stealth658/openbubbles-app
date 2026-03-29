@@ -50,6 +50,7 @@ class MessagesService extends GetxController {
   /// Listeners for redacted mode settings to update all MessageStates
   StreamSubscription? _redactedModeListener;
   StreamSubscription? _hideMessageContentListener;
+  StreamSubscription? _hideAttachmentsListener;
 
   /// Granular reactivity map to track individual message updates
   /// Key: message guid, Value: timestamp of last update
@@ -638,6 +639,7 @@ class MessagesService extends GetxController {
     // Cancel existing listeners if any
     _redactedModeListener?.cancel();
     _hideMessageContentListener?.cancel();
+    _hideAttachmentsListener?.cancel();
 
     // Listen to redacted mode master toggle - when enabled, redact all messages; when disabled, unredact all
     _redactedModeListener = SettingsSvc.settings.redactedMode.listen((enabled) {
@@ -660,6 +662,14 @@ class MessagesService extends GetxController {
         }
       }
     });
+
+    // Listen to hideAttachments toggle - updates shouldHideAttachments on all message states
+    _hideAttachmentsListener = SettingsSvc.settings.hideAttachments.listen((enabled) {
+      final rm = SettingsSvc.settings.redactedMode.value;
+      for (final messageState in messageStates.values) {
+        messageState.updateShouldHideAttachmentsInternal(rm && enabled);
+      }
+    });
   }
 
   @override
@@ -668,6 +678,7 @@ class MessagesService extends GetxController {
       _webMessageSub?.cancel();
       _redactedModeListener?.cancel();
       _hideMessageContentListener?.cancel();
+      _hideAttachmentsListener?.cancel();
     }
     _init = false;
     // Dispose all message states (attachment workers + web subscription)

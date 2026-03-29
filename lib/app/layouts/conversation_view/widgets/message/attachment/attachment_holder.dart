@@ -230,7 +230,6 @@ class _AttachmentHolderState extends State<AttachmentHolder> with ThemeHelpers {
   Widget build(BuildContext context) {
     final bool isInReply = ReplyScope.maybeOf(context) != null;
     final bool showTail = !isInReply && message.showTail(newerMessage) && part.part == controller.parts.length - 1;
-    final bool hideAttachments = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideAttachments.value;
 
     // Resolve state once for the scope.  The AttachmentState object is updated
     // in-place by the service layer; no re-lookup is needed on reactive changes.
@@ -240,6 +239,10 @@ class _AttachmentHolderState extends State<AttachmentHolder> with ThemeHelpers {
       attachmentState: state,
       child: Obx(() {
         final bool isiOS = iOS;
+        // Read shouldHideAttachments inside the Obx so the widget rebuilds
+        // reactively when the setting is toggled (fixes a bug where the value
+        // was computed outside the Obx closure and became stale).
+        final bool hideAttachments = _ms.shouldHideAttachments.value;
         final bool selected = !isiOS && (controller.cvController?.selected.any((m) => m.guid == message.guid) ?? false);
 
         // Reading these observables registers the Obx dependency so the widget

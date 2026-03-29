@@ -82,7 +82,7 @@ class FindMyMapWidget extends StatelessWidget {
   }
 
   Widget _buildDevicePopup(BuildContext context, FindMyDevice item) {
-    return Padding(
+    return Obx(() => Padding(
       padding: const EdgeInsets.only(bottom: 5.0),
       child: Container(
         decoration: BoxDecoration(
@@ -104,11 +104,11 @@ class FindMyMapWidget extends StatelessWidget {
           ],
         ),
       ),
-    );
+    ));
   }
 
   Widget _buildFriendPopup(BuildContext context, FindMyFriend item) {
-    return Padding(
+    return Obx(() => Padding(
       padding: const EdgeInsets.only(bottom: 5.0),
       child: Container(
         decoration: BoxDecoration(
@@ -130,6 +130,6 @@ class FindMyMapWidget extends StatelessWidget {
           ],
         ),
       ),
-    );
+    ));
   }
 }

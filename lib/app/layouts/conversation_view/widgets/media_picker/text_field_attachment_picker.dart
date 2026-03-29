@@ -15,9 +15,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hand_signature/signature.dart';
+import 'package:bluebubbles/app/layouts/camera/camera_screen.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:photo_manager/photo_manager.dart';
+import 'package:universal_io/io.dart';
 
 /// Optimized attachment picker that avoids loading bytes until absolutely necessary
 /// This significantly improves performance and reduces memory usage
@@ -110,8 +112,22 @@ class _AttachmentPickerState extends State<AttachmentPicker> with ThemeHelpers {
       return;
     }
 
-    late final XFile? file;
-    if (type == 'camera') {
+    if (type == 'video') {
+      final micGranted = (await Permission.microphone.request()).isGranted;
+      if (!micGranted) {
+        showSnackbar("Error", "Microphone access was denied!");
+        return;
+      }
+    }
+
+    final XFile? file;
+    if (Platform.isAndroid && !kIsWeb) {
+      file = await Navigator.of(context).push<XFile?>(
+        MaterialPageRoute(
+          builder: (_) => CameraScreen(initialMode: type == 'video' ? 'video' : 'photo'),
+        ),
+      );
+    } else if (type == 'camera') {
       file = await ImagePicker().pickImage(source: ImageSource.camera);
     } else {
       file = await ImagePicker().pickVideo(source: ImageSource.camera);

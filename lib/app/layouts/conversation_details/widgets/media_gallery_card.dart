@@ -125,7 +125,9 @@ class _MediaGalleryCardState extends State<MediaGalleryCard> with AutomaticKeepA
   Widget build(BuildContext context) {
     super.build(context);
 
-    final bool hideAttachments = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideAttachments.value;
+    return Obx(() {
+      final bool hideAttachments =
+          SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideAttachments.value;
 
     late Widget child;
     bool addPadding = true;
@@ -348,6 +350,7 @@ class _MediaGalleryCardState extends State<MediaGalleryCard> with AutomaticKeepA
         child: child,
       ),
     );
+    }); // end Obx
   }
 
   @override

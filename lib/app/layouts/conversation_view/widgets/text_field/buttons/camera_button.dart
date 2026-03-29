@@ -1,3 +1,4 @@
+import 'package:bluebubbles/app/layouts/camera/camera_screen.dart';
 import 'package:bluebubbles/services/ui/chat/conversation_view_controller.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
@@ -12,12 +13,10 @@ import 'package:universal_io/io.dart';
 /// Widget for the camera button that opens the device camera
 class CameraButton extends StatelessWidget {
   final ConversationViewController controller;
-  final Future<void> Function({required String type}) openFullCamera;
 
   const CameraButton({
     super.key,
     required this.controller,
-    required this.openFullCamera,
   });
 
   @override
@@ -28,7 +27,7 @@ class CameraButton extends StatelessWidget {
 
     return GestureDetector(
       onLongPress: () {
-        openFullCamera(type: 'video');
+        openFullCamera(controller, type: 'video', context: context);
       },
       child: IconButton(
         padding: const EdgeInsets.only(left: 10),
@@ -39,17 +38,19 @@ class CameraButton extends StatelessWidget {
         ),
         visualDensity: VisualDensity.compact,
         onPressed: () {
-          openFullCamera(type: 'camera');
+          openFullCamera(controller, type: 'camera', context: context);
         },
       ),
     );
   }
 }
 
-/// Utility function to handle opening the camera (extracted from main widget)
+/// Utility function to handle opening the camera (extracted from main widget).
+/// [context] is required for [Navigator.push] on Android.
 Future<void> openFullCamera(
   ConversationViewController controller, {
   required String type,
+  required BuildContext context,
 }) async {
   bool granted = (await Permission.camera.request()).isGranted;
   if (!granted) {
@@ -57,8 +58,23 @@ Future<void> openFullCamera(
     return;
   }
 
-  late final XFile? file;
-  if (type == 'camera') {
+  // Also request microphone permission when opening in video mode.
+  if (type == 'video') {
+    final micGranted = (await Permission.microphone.request()).isGranted;
+    if (!micGranted) {
+      showSnackbar("Error", "Microphone access was denied!");
+      return;
+    }
+  }
+
+  final XFile? file;
+  if (Platform.isAndroid && !kIsWeb) {
+    file = await Navigator.of(context).push<XFile?>(
+      MaterialPageRoute(
+        builder: (_) => CameraScreen(initialMode: type == 'video' ? 'video' : 'photo'),
+      ),
+    );
+  } else if (type == 'camera') {
     file = await ImagePicker().pickImage(source: ImageSource.camera);
   } else {
     file = await ImagePicker().pickVideo(source: ImageSource.camera);

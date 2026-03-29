@@ -31,14 +31,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get/get.dart';
+import 'package:bluebubbles/app/layouts/camera/camera_screen.dart';
 import 'package:tenor_flutter/tenor_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:pasteboard/pasteboard.dart';
 import 'package:path/path.dart' hide context;
 import 'package:permission_handler/permission_handler.dart';
+import 'package:universal_io/io.dart';
 import 'package:supercharged/supercharged.dart';
 import 'package:unicode_emojis/unicode_emojis.dart';
-import 'package:universal_io/io.dart';
 
 class ConversationTextField extends CustomStateful<ConversationViewController> {
   const ConversationTextField({
@@ -422,12 +423,27 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
       return;
     }
 
-    late final XFile? file;
-    if (type == 'camera') {
+    if (type == 'video') {
+      final micGranted = (await Permission.microphone.request()).isGranted;
+      if (!micGranted) {
+        showSnackbar("Error", "Microphone access was denied!");
+        return;
+      }
+    }
+
+    final XFile? file;
+    if (Platform.isAndroid && !kIsWeb) {
+      file = await Navigator.of(context).push<XFile?>(
+        MaterialPageRoute(
+          builder: (_) => CameraScreen(initialMode: type == 'video' ? 'video' : 'photo'),
+        ),
+      );
+    } else if (type == 'camera') {
       file = await ImagePicker().pickImage(source: ImageSource.camera);
     } else {
       file = await ImagePicker().pickVideo(source: ImageSource.camera);
     }
+
     if (file != null) {
       controller.pickedAttachments.add(PlatformFile(
         path: file.path,

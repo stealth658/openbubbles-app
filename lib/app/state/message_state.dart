@@ -100,6 +100,13 @@ class MessageState extends StatefulController {
   /// Set when an audio message is kept; triggers delivered indicator
   final Rxn<DateTime> audioWasKept = Rxn<DateTime>(null);
 
+  // Redacted mode visibility flags — updated by MessagesService when settings change.
+  // Widgets should observe these instead of reading settings directly.
+  final RxBool shouldHideAttachments =
+      (SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideAttachments.value).obs;
+  final RxBool shouldHideMessageContent =
+      (SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideMessageContent.value).obs;
+
   /// Reactive list of parsed message parts (text/attachments/edits/unsends).
   /// Populated by [buildMessageParts] in [onInit] and on content changes.
   final RxList<MessagePart> parts = <MessagePart>[].obs;
@@ -158,6 +165,8 @@ class MessageState extends StatefulController {
   void onInit() {
     super.onInit();
     buildMessageParts();
+    // Apply initial redaction after parts are built.
+    if (SettingsSvc.settings.redactedMode.value) redactFields();
     if (kIsWeb) {
       _sub = WebListeners.messageUpdate.listen((tuple) {
         final msg = tuple.message;
@@ -621,12 +630,14 @@ class MessageState extends StatefulController {
 
     updateTextInternal(fakeContent);
     updateSubjectInternal(null); // Clear subject when redacted
+    updateShouldHideMessageContentInternal(true);
   }
 
   /// Restore message content to original values
   void unredactMessageContent() {
     updateTextInternal(message.text);
     updateSubjectInternal(message.subject);
+    updateShouldHideMessageContentInternal(false);
   }
 
   /// Apply all redactions based on current settings (used on initialization)
@@ -634,11 +645,28 @@ class MessageState extends StatefulController {
     if (!SettingsSvc.settings.redactedMode.value) return;
 
     redactMessageContent();
+    updateShouldHideAttachmentsInternal(SettingsSvc.settings.hideAttachments.value);
   }
 
   /// Remove all redactions (used when redacted mode is disabled)
   void unredactFields() {
     unredactMessageContent();
+    updateShouldHideAttachmentsInternal(false);
+  }
+
+  void updateShouldHideAttachmentsInternal(bool value) {
+    if (shouldHideAttachments.value != value) shouldHideAttachments.value = value;
+  }
+
+  void updateShouldHideMessageContentInternal(bool value) {
+    if (shouldHideMessageContent.value != value) {
+      shouldHideMessageContent.value = value;
+      // Update MessagePart.shouldRedact and notify the RxList so widgets rebuild.
+      for (final part in parts) {
+        part.shouldRedact = value;
+      }
+      if (parts.isNotEmpty) parts.refresh();
+    }
   }
 
   // ========== Part Building (merged from MessageWidgetController) ==========
@@ -703,6 +731,12 @@ class MessageState extends StatefulController {
       }
     }
     newParts.sort((a, b) => a.part.compareTo(b.part));
+    // Apply the current redaction state to each freshly-built part so widgets
+    // read from MessagePart.shouldRedact instead of checking settings directly.
+    final redact = shouldHideMessageContent.value;
+    for (final part in newParts) {
+      part.shouldRedact = redact;
+    }
     parts.assignAll(newParts);
     _partsCached = true;
   }

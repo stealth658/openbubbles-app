@@ -21,13 +21,14 @@ class FindMyDeviceListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final displayName = SettingsSvc.settings.redactedMode.value
-        ? (isItem ? "Item" : "Device")
-        : (item.name ?? (isItem ? "Unknown Item" : "Unknown Device"));
+    return Obx(() {
+      final displayName = SettingsSvc.settings.redactedMode.value
+          ? (isItem ? "Item" : "Device")
+          : (item.name ?? (isItem ? "Unknown Item" : "Unknown Device"));
 
-    final displayLocation = SettingsSvc.settings.redactedMode.value
-        ? "Location"
-        : (item.address?.label ?? item.address?.mapItemFullAddress ?? "No location found");
+      final displayLocation = SettingsSvc.settings.redactedMode.value
+          ? "Location"
+          : (item.address?.label ?? item.address?.mapItemFullAddress ?? "No location found");
 
     return ListTile(
       mouseCursor: MouseCursor.defer,
@@ -65,5 +66,6 @@ class FindMyDeviceListTile extends StatelessWidget {
         );
       },
     );
+    }); // end Obx
   }
 }

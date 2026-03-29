@@ -59,6 +59,7 @@ class ChatsService {
   StreamSubscription? _hideContactInfoListener;
   StreamSubscription? _generateFakeContactNamesListener;
   StreamSubscription? _generateFakeAvatarsListener;
+  StreamSubscription? _hideAttachmentsListener;
 
   // ========== Helper Getters (replacing direct chats access) ==========
 
@@ -320,6 +321,7 @@ class ChatsService {
     _hideContactInfoListener?.cancel();
     _generateFakeContactNamesListener?.cancel();
     _generateFakeAvatarsListener?.cancel();
+    _hideAttachmentsListener?.cancel();
 
     // Listen to redacted mode master toggle - when enabled, redact all chats; when disabled, unredact all
     _redactedModeListener = SettingsSvc.settings.redactedMode.listen((enabled) {
@@ -364,6 +366,14 @@ class ChatsService {
         }
       }
     });
+
+    // Listen to hideAttachments toggle - updates shouldHideAttachments on all chat states
+    _hideAttachmentsListener = SettingsSvc.settings.hideAttachments.listen((enabled) {
+      final rm = SettingsSvc.settings.redactedMode.value;
+      for (final chatState in chatStates.values) {
+        chatState.updateShouldHideAttachmentsInternal(rm && enabled);
+      }
+    });
   }
 
   /// Recalculate the global unread count based on all chat states
@@ -397,6 +407,7 @@ class ChatsService {
     _hideContactInfoListener?.cancel();
     _generateFakeContactNamesListener?.cancel();
     _generateFakeAvatarsListener?.cancel();
+    _hideAttachmentsListener?.cancel();
   }
 
   /// Get sorted chats (pin index first, then by latest message date)

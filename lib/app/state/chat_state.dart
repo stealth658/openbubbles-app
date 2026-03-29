@@ -43,6 +43,13 @@ class ChatState {
   final RxBool isAlive;
   ConversationViewController? controller;
 
+  // Redacted mode visibility flags — updated by ChatsService when settings change.
+  // Widgets should observe these instead of reading settings directly.
+  final RxBool shouldHideContactInfo;
+  final RxBool shouldGenerateFakeContactNames;
+  final RxBool shouldGenerateFakeAvatars;
+  final RxBool shouldHideAttachments;
+
   ChatState(this.chat)
       : isPinned = (chat.isPinned ?? false).obs,
         pinIndex = RxnInt(chat.pinIndex),
@@ -70,7 +77,15 @@ class ChatState {
         lockChatIcon = chat.lockChatIcon.obs,
         lastReadMessageGuid = RxnString(chat.lastReadMessageGuid),
         isActive = false.obs,
-        isAlive = false.obs {
+        isAlive = false.obs,
+        shouldHideContactInfo =
+            (SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value).obs,
+        shouldGenerateFakeContactNames =
+            (SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.generateFakeContactNames.value).obs,
+        shouldGenerateFakeAvatars =
+            (SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.generateFakeAvatars.value).obs,
+        shouldHideAttachments =
+            (SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideAttachments.value).obs {
     // Apply redaction if redacted mode is enabled on initialization
     if (SettingsSvc.settings.redactedMode.value) {
       redactFields();
@@ -287,6 +302,24 @@ class ChatState {
     }
   }
 
+  // ========== Redacted Mode Visibility Flag Update Methods ==========
+
+  void updateShouldHideContactInfoInternal(bool value) {
+    if (shouldHideContactInfo.value != value) shouldHideContactInfo.value = value;
+  }
+
+  void updateShouldGenerateFakeContactNamesInternal(bool value) {
+    if (shouldGenerateFakeContactNames.value != value) shouldGenerateFakeContactNames.value = value;
+  }
+
+  void updateShouldGenerateFakeAvatarsInternal(bool value) {
+    if (shouldGenerateFakeAvatars.value != value) shouldGenerateFakeAvatars.value = value;
+  }
+
+  void updateShouldHideAttachmentsInternal(bool value) {
+    if (shouldHideAttachments.value != value) shouldHideAttachments.value = value;
+  }
+
   // ========== Redaction Methods ==========
   // These are called when redacted mode is toggled on/off
 
@@ -299,16 +332,19 @@ class ChatState {
     final fakeName = chat.isGroup ? chat.fakeName : (chat.handles.isNotEmpty ? chat.handles[0].fakeName : 'Unknown');
     updateDisplayNameInternal(fakeName);
     updateChatCreatorSubtitleInternal('');
+    updateShouldHideContactInfoInternal(SettingsSvc.settings.hideContactInfo.value);
+    updateShouldGenerateFakeContactNamesInternal(SettingsSvc.settings.generateFakeContactNames.value);
   }
 
   /// Restore contact information to original values
   void unredactContactInfo() {
     updateDisplayNameInternal(chat.displayName);
-    // TODO: cache this value if needed to avoid over-processing
     final computedSubtitle = chat.isGroup
         ? chat.getChatCreatorSubtitle()
         : (chat.handles.isNotEmpty ? (chat.handles.first.formattedAddress ?? chat.handles.first.address) : null);
     updateChatCreatorSubtitleInternal(computedSubtitle);
+    updateShouldHideContactInfoInternal(false);
+    updateShouldGenerateFakeContactNamesInternal(false);
   }
 
   /// Redact/hide avatars by clearing custom avatar path
@@ -318,11 +354,13 @@ class ChatState {
 
     // Clear the custom avatar path so fake avatars are generated
     updateCustomAvatarPathInternal(null);
+    updateShouldGenerateFakeAvatarsInternal(true);
   }
 
   /// Restore avatars to original values
   void unredactAvatars() {
     updateCustomAvatarPathInternal(chat.customAvatarPath);
+    updateShouldGenerateFakeAvatarsInternal(false);
   }
 
   /// Apply all redactions based on current settings (used on initialization)
@@ -331,11 +369,13 @@ class ChatState {
 
     redactContactInfo();
     redactAvatars();
+    updateShouldHideAttachmentsInternal(SettingsSvc.settings.hideAttachments.value);
   }
 
   /// Remove all redactions (used when redacted mode is disabled)
   void unredactFields() {
     unredactContactInfo();
     unredactAvatars();
+    updateShouldHideAttachmentsInternal(false);
   }
 }

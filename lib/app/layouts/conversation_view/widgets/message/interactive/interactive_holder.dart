@@ -100,7 +100,7 @@ class _InteractiveHolderState extends State<InteractiveHolder> with AutomaticKee
                       child: Center(
                         heightFactor: 1,
                         widthFactor: 1,
-                        child: SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideAttachments.value
+                        child: _ms.shouldHideAttachments.value
                             ? const Padding(padding: EdgeInsets.all(15), child: Text("Interactive Message"))
                             : Obx(() {
                                 final isTempMessage = controller.isSending.value;
