@@ -1187,8 +1187,15 @@ class ReactionDetails extends StatelessWidget {
               separatorBuilder: (context, index) => const SizedBox(width: 10),
               itemBuilder: (context, index) {
                 final message = reactions[index];
-                final hideContactInfo =
-                    SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
+                final handle = message.handleRelation.target;
+                String? reactionName;
+                if (!SettingsSvc.settings.hideNamesForReactions.value) {
+                  if (message.isFromMe!) {
+                    reactionName = SettingsSvc.settings.userName.value;
+                  } else if (handle != null) {
+                    reactionName = HandleSvc.getOrCreateHandleState(handle).reactionDisplayName.value;
+                  }
+                }
                 return Column(
                   key: ValueKey(message.guid!),
                   mainAxisSize: MainAxisSize.min,
@@ -1196,38 +1203,23 @@ class ReactionDetails extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 10),
                       child: ContactAvatarWidget(
-                        handle: message.handleRelation.target,
+                        handle: handle,
                         borderThickness: 0.1,
                         editable: false,
                         fontSize: 22,
                       ),
                     ),
-                    if (!SettingsSvc.settings.hideNamesForReactions.value && !hideContactInfo)
+                    if (reactionName != null && reactionName.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 8.0),
                         child: Text(
-                          message.isFromMe!
-                              ? SettingsSvc.settings.userName.value
-                              : (message.handleRelation.target?.displayName ?? "Unknown"),
+                          reactionName,
                           style: context.theme.textTheme.bodySmall!
                               .copyWith(color: context.theme.colorScheme.properOnSurface),
                         ),
-                      ),
-                    if (SettingsSvc.settings.hideNamesForReactions.value)
-                      const SizedBox(
-                        height: 8,
-                      ),
-                    if (!SettingsSvc.settings.hideNamesForReactions.value && hideContactInfo)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8.0),
-                        child: Text(
-                          message.isFromMe!
-                              ? SettingsSvc.settings.userName.value
-                              : (message.handleRelation.target?.fakeName ?? "Friend"),
-                          style: context.theme.textTheme.bodySmall!
-                              .copyWith(color: context.theme.colorScheme.properOnSurface),
-                        ),
-                      ),
+                      )
+                    else
+                      const SizedBox(height: 8),
                     Container(
                       height: 28,
                       width: 28,

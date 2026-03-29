@@ -1625,27 +1625,27 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final countryParam = const fb.StringReader(
           asciiOptimization: true,
         ).vTableGetNullable(buffer, rootOffset, 10);
+        final colorParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 12);
         final defaultEmailParam = const fb.StringReader(
           asciiOptimization: true,
         ).vTableGetNullable(buffer, rootOffset, 18);
         final defaultPhoneParam = const fb.StringReader(
           asciiOptimization: true,
         ).vTableGetNullable(buffer, rootOffset, 14);
-        final object =
-            Handle(
-                id: idParam,
-                originalROWID: originalROWIDParam,
-                address: addressParam,
-                formattedAddress: formattedAddressParam,
-                service: serviceParam,
-                uniqueAddressAndService: uniqueAddressAndServiceParam,
-                country: countryParam,
-                defaultEmail: defaultEmailParam,
-                defaultPhone: defaultPhoneParam,
-              )
-              ..color = const fb.StringReader(
-                asciiOptimization: true,
-              ).vTableGetNullable(buffer, rootOffset, 12);
+        final object = Handle(
+          id: idParam,
+          originalROWID: originalROWIDParam,
+          address: addressParam,
+          formattedAddress: formattedAddressParam,
+          service: serviceParam,
+          uniqueAddressAndService: uniqueAddressAndServiceParam,
+          country: countryParam,
+          color: colorParam,
+          defaultEmail: defaultEmailParam,
+          defaultPhone: defaultPhoneParam,
+        );
         obx_int.InternalToManyAccess.setRelInfo<Handle>(
           object.contactsV2,
           store,

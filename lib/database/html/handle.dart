@@ -1,7 +1,7 @@
 import 'package:bluebubbles/database/io/contact_v2.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/models/models.dart' show HandleLookupKey;
+import 'package:bluebubbles/services/services.dart';
 import 'package:faker/faker.dart';
 import 'package:get/get.dart';
 
@@ -20,26 +20,15 @@ class Handle {
   // Web has no ObjectBox relations; expose empty list for API compatibility.
   List<ContactV2> get contacts => [];
 
-  final RxnString _color = RxnString();
-  String? get color => _color.value;
-  set color(String? val) => _color.value = val;
+  String? color;
 
   String get displayName {
-    if (SettingsSvc.settings.redactedMode.value) {
-      if (SettingsSvc.settings.generateFakeContactNames.value) {
-        return fakeName;
-      } else if (SettingsSvc.settings.hideContactInfo.value) {
-        return "";
-      }
-    }
     if (address.startsWith("urn:biz")) return "Business";
     return address.contains("@") ? address : (formattedAddress ?? address);
   }
 
   String? get initials {
-    // Remove any numbers, certain symbols, and non-alphabet characters
     if (address.startsWith("urn:biz")) return null;
-    // Split by space/dash/underscore and take first alpha of first two words
     final parts = displayName.trim().split(RegExp(r'[ \-_]'));
     if (parts.length == 1) return parts[0].firstAlpha;
 
@@ -57,7 +46,7 @@ class Handle {
     this.uniqueAddressAndService = "",
     this.formattedAddress,
     this.country,
-    String? handleColor,
+    this.color,
     this.defaultEmail,
     this.defaultPhone,
   }) {
@@ -67,7 +56,6 @@ class Handle {
     if (uniqueAddressAndService.isEmpty) {
       uniqueAddressAndService = "$address/$service";
     }
-    color = handleColor;
   }
 
   factory Handle.fromMap(Map<String, dynamic> json) => Handle(
@@ -78,7 +66,7 @@ class Handle {
         uniqueAddressAndService: json["uniqueAddrAndService"] ?? "${json["address"]}/${json["service"] ?? "iMessage"}",
         formattedAddress: json["formattedAddress"],
         country: json["country"],
-        handleColor: json["color"],
+        color: json["color"],
         defaultPhone: json['defaultPhone'],
       );
 
@@ -122,7 +110,7 @@ class Handle {
   static Handle merge(Handle handle1, Handle handle2) {
     handle1.id ??= handle2.id;
     handle1.originalROWID ??= handle2.originalROWID;
-    handle1._color.value ??= handle2._color.value;
+    handle1.color ??= handle2.color;
     handle1.country ??= handle2.country;
     handle1.formattedAddress ??= handle2.formattedAddress;
     if (isNullOrEmpty(handle1.defaultPhone)) {

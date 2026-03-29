@@ -10,17 +10,18 @@ class MessageSender extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final message = MessageStateScope.maybeMessageOf(context);
-    if (message == null) return const SizedBox.shrink();
+    final state = MessageStateScope.maybeOf(context);
+    if (state == null) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 25).add(const EdgeInsets.only(bottom: 3)),
-      child: Text(
-        message.handleRelation.target?.displayName ?? "",
-        style: context.theme.textTheme.labelMedium!
-            .copyWith(color: context.theme.colorScheme.outline, fontWeight: FontWeight.normal),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
+      // Obx makes the sender name reactive: updates when contact data syncs.
+      child: Obx(() => Text(
+            state.sender?.displayName.value ?? state.message.handleRelation.target?.displayName ?? "",
+            style: context.theme.textTheme.labelMedium!
+                .copyWith(color: context.theme.colorScheme.outline, fontWeight: FontWeight.normal),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          )),
     );
   }
 }

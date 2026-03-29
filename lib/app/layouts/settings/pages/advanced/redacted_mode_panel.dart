@@ -143,8 +143,8 @@ class _RedactedModePanelState extends State<RedactedModePanel> with ThemeHelpers
                                               ? 0
                                               : 1,
                                           child: ImageViewer(
-                                            file: AttachmentsSvc.getContent(message.dbAttachments.first),
-                                            attachment: message.dbAttachments.first,
+                                            file: AttachmentsSvc.getContent(message.attachments.first!),
+                                            attachment: message.attachments.first!,
                                             isFromMe: false,
                                           ),
                                         ),

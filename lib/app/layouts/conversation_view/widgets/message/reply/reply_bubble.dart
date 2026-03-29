@@ -44,10 +44,12 @@ class _ReplyBubbleState extends State<ReplyBubble> with ThemeHelpers {
   Color getBubbleColor() {
     Color bubbleColor = context.theme.colorScheme.properSurface;
     if (SettingsSvc.settings.colorfulBubbles.value && !message.isFromMe!) {
-      if (message.handleRelation.target?.color == null) {
-        bubbleColor = toColorGradient(message.handleRelation.target?.address).first;
+      final colorStr = controller.sender?.color.value;
+      final address = controller.sender?.handle.address;
+      if (colorStr == null) {
+        bubbleColor = toColorGradient(address).first;
       } else {
-        bubbleColor = HexColor(message.handleRelation.target!.color!);
+        bubbleColor = HexColor(colorStr);
       }
     }
     return bubbleColor;
@@ -76,7 +78,7 @@ class _ReplyBubbleState extends State<ReplyBubble> with ThemeHelpers {
               child: Text.rich(
                 TextSpan(children: [
                   TextSpan(
-                    text: message.handleRelation.target?.displayName ?? 'You',
+                    text: controller.senderDisplayName,
                     style: context.textTheme.bodyMedium!
                         .copyWith(fontWeight: FontWeight.w400, color: context.theme.colorScheme.outline),
                   ),

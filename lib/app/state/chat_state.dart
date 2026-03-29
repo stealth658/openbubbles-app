@@ -1,3 +1,4 @@
+import 'package:bluebubbles/app/state/handle_state.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -48,6 +49,15 @@ class ChatState {
   // Updated by ChatsService when hideAttachments or redactedMode settings change.
   final RxBool shouldHideAttachments;
 
+  /// Reactive state wrappers for the chat's participants (handles).
+  /// Updated when contact data changes — drives subtitle and avatar recomputes.
+  final List<HandleState> participants = [];
+  final List<Worker> _participantWorkers = [];
+
+  /// Fake name generated once at construction. Reused on every redact toggle
+  /// so the displayed name stays consistent for the lifetime of this state.
+  late final String _cachedFakeName;
+
   ChatState(this.chat)
       : isPinned = (chat.isPinned ?? false).obs,
         pinIndex = RxnInt(chat.pinIndex),
@@ -78,6 +88,18 @@ class ChatState {
         isAlive = false.obs,
         shouldHideAttachments =
             (SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideAttachments.value).obs {
+    // Populate participants from handles and wire up ever() listeners so the
+    // chatCreatorSubtitle stays live when contacts sync.
+    participants.addAll(chat.handles.map((h) => HandleSvc.getOrCreateHandleState(h)));
+    for (final hs in participants) {
+      _participantWorkers.add(
+        ever(hs.displayName, (_) => updateChatCreatorSubtitleInternal(_computeCreatorSubtitle())),
+      );
+    }
+    // Cache fake name for consistent redacted-mode display.
+    _cachedFakeName = chat.isGroup
+        ? chat.fakeName
+        : (participants.isNotEmpty ? participants.first.fakeName : 'Unknown');
     // Apply redaction if redacted mode is enabled on initialization
     if (SettingsSvc.settings.redactedMode.value) {
       redactFields();
@@ -170,13 +192,82 @@ class ChatState {
     }
   }
 
-  String? _computeTitle() => isNullOrEmpty(displayName.value) ? chatCreatorSubtitle.value : displayName.value;
+  String? _computeTitle() {
+    if (!isNullOrEmpty(displayName.value)) return displayName.value;
+    // For DMs, mirror Chat.getTitle() → getChatCreatorSubtitle() which returns
+    // the handle's display name (contact name), not the raw address/phone number.
+    if (!chat.isGroup && participants.isNotEmpty) {
+      final name = participants.first.displayName.value;
+      if (!isNullOrEmpty(name)) return name;
+    }
+    return chatCreatorSubtitle.value;
+  }
 
   void updateChatCreatorSubtitleInternal(String? value) {
     if (chatCreatorSubtitle.value != value) {
       chatCreatorSubtitle.value = value;
       updateTitleInternal(_computeTitle());
     }
+  }
+
+  /// Compute the current chat creator subtitle from [participants] state.
+  /// Mirrors [Chat.getChatCreatorSubtitle] but reads reactive [HandleState] values.
+  String? _computeCreatorSubtitle() {
+    if (!chat.isGroup) {
+      if (participants.isEmpty) return null;
+      final p = participants.first;
+      return p.formattedAddress.value ?? p.handle.address;
+    }
+    final count = participants.length;
+    if (count == 0) {
+      final id = chat.chatIdentifier;
+      if (id != null && id.startsWith('urn:biz')) return 'Business Chat';
+      return id;
+    } else if (count == 1) {
+      return participants.first.displayName.value;
+    }
+    if (count <= 4) {
+      final words = participants
+          .map((p) => (p.reactionDisplayName.value ?? '').firstWord)
+          .where((s) => s.isNotEmpty)
+          .toList();
+      if (words.isEmpty) return null;
+      if (words.length == 1) return words[0];
+      return '${words.take(words.length - 1).join(', ')} & ${words.last}';
+    } else {
+      final words = participants
+          .take(3)
+          .map((p) => (p.reactionDisplayName.value ?? '').firstWord)
+          .where((s) => s.isNotEmpty)
+          .toList();
+      if (words.isEmpty) return null;
+      return '${words.join(', ')} & ${count - 3} others';
+    }
+  }
+
+  /// Rebuild [participants] when the chat's handle list changes, then recompute subtitle.
+  void _updateParticipantsInternal() {
+    for (final w in _participantWorkers) {
+      w.dispose();
+    }
+    _participantWorkers.clear();
+    participants
+      ..clear()
+      ..addAll(chat.handles.map((h) => HandleSvc.getOrCreateHandleState(h)));
+    for (final hs in participants) {
+      _participantWorkers.add(
+        ever(hs.displayName, (_) => updateChatCreatorSubtitleInternal(_computeCreatorSubtitle())),
+      );
+    }
+    updateChatCreatorSubtitleInternal(_computeCreatorSubtitle());
+  }
+
+  /// Release [ever()] workers for participants. Call when this [ChatState] is no longer needed.
+  void dispose() {
+    for (final w in _participantWorkers) {
+      w.dispose();
+    }
+    _participantWorkers.clear();
   }
 
   void updateSubtitleInternal(String? value) {
@@ -222,11 +313,8 @@ class ChatState {
     updateDisplayNameInternal(updatedChat.displayName);
     updateCustomAvatarPathInternal(updatedChat.customAvatarPath);
     updateCustomBackgroundPathInternal(updatedChat.customBackgroundPath);
-    updateChatCreatorSubtitleInternal(updatedChat.isGroup
-        ? updatedChat.getChatCreatorSubtitle()
-        : (updatedChat.handles.isNotEmpty
-            ? (updatedChat.handles.first.formattedAddress ?? updatedChat.handles.first.address)
-            : null));
+    // Rebuild participants if handle membership changed, then recompute subtitle
+    _updateParticipantsInternal();
     updateLatestMessageInternal(updatedChat.latestMessage);
     updateTextFieldTextInternal(updatedChat.textFieldText);
     updateTextFieldAttachmentsInternal(updatedChat.textFieldAttachments);
@@ -308,7 +396,7 @@ class ChatState {
     if (!SettingsSvc.settings.redactedMode.value) return;
     if (!SettingsSvc.settings.hideContactInfo.value && !SettingsSvc.settings.generateFakeContactNames.value) return;
 
-    final fakeName = chat.isGroup ? chat.fakeName : (chat.handles.isNotEmpty ? chat.handles[0].fakeName : 'Unknown');
+    final fakeName = _cachedFakeName;
     updateDisplayNameInternal(fakeName);
     updateChatCreatorSubtitleInternal('');
     // Recompute the message-preview subtitle without contact names so reaction
@@ -321,10 +409,7 @@ class ChatState {
   /// Restore contact information to original values from the underlying DB model.
   void unredactContactInfo() {
     updateDisplayNameInternal(chat.displayName);
-    final computedSubtitle = chat.isGroup
-        ? chat.getChatCreatorSubtitle()
-        : (chat.handles.isNotEmpty ? (chat.handles.first.formattedAddress ?? chat.handles.first.address) : null);
-    updateChatCreatorSubtitleInternal(computedSubtitle);
+    updateChatCreatorSubtitleInternal(_computeCreatorSubtitle());
     if (latestMessage.value != null) {
       updateSubtitleInternal(MessageHelper.getNotificationText(latestMessage.value!));
     }

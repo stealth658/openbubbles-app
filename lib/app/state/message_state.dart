@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:bluebubbles/app/state/attachment_state.dart';
+import 'package:bluebubbles/app/state/handle_state.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -109,6 +110,24 @@ class MessageState extends StatefulController {
   /// Populated by [buildMessageParts] in [onInit] and on content changes.
   final RxList<MessagePart> parts = <MessagePart>[].obs;
 
+  /// Reactive state for the handle that sent this message.
+  /// Null for outgoing messages or when no handle is attached.
+  /// Drives sender name and bubble color without boilerplate [ever()] calls.
+  HandleState? sender;
+
+  /// Resolves the display name for the sender of this message.
+  ///
+  /// - Outgoing: returns "You".
+  /// - Incoming: returns the contact name from [sender], or "Unknown" if no
+  ///   handle is associated.
+  ///
+  /// Reads reactive values, so calling this inside [Obx()] registers rebuild
+  /// dependencies on both [userName] and the contact's [displayName] automatically.
+  String get senderDisplayName {
+    if (message.isFromMe == true) return 'You';
+    return sender?.displayName.value ?? 'Unknown';
+  }
+
   /// Adjacent messages for layout context (set by MessageHolder in initState)
   Message? oldMessage;
   Message? newMessage;
@@ -156,6 +175,10 @@ class MessageState extends StatefulController {
       if (attachment.guid != null) {
         attachmentStates[attachment.guid!] = AttachmentState(attachment);
       }
+    }
+    // Resolve sender HandleState for incoming messages.
+    if (message.isFromMe != true && message.handleRelation.target != null && !kIsWeb) {
+      sender = HandleSvc.getOrCreateHandleState(message.handleRelation.target!);
     }
   }
 

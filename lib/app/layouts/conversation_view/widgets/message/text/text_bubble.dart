@@ -90,12 +90,15 @@ class _TextBubbleState extends State<TextBubble> with ThemeHelpers {
     }
     List<Color> bubbleColors = [context.theme.colorScheme.properSurface, context.theme.colorScheme.properSurface];
     if (SettingsSvc.settings.colorfulBubbles.value && !message.isFromMe!) {
-      if (message.handleRelation.target?.color == null) {
-        bubbleColors = toColorGradient(message.handleRelation.target?.address);
+      // Read from HandleState reactively (called inside Obx so registers dependency).
+      final colorStr = controller.sender?.color.value;
+      final address = controller.sender?.handle.address;
+      if (colorStr == null) {
+        bubbleColors = toColorGradient(address);
       } else {
         bubbleColors = [
-          HexColor(message.handleRelation.target!.color!),
-          HexColor(message.handleRelation.target!.color!).lightenAmount(0.075),
+          HexColor(colorStr),
+          HexColor(colorStr).lightenAmount(0.075),
         ];
       }
     }

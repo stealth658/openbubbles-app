@@ -611,9 +611,21 @@ class Message {
 
   bool get isGroupEvent => groupTitle != null || (itemType ?? 0) > 0 || (groupActionType ?? 0) > 0;
 
+  /// Resolved sender name for the group event — prefers [handleRelation.target]
+  /// over the transient [handle] field since ObjectBox hydrates the relation, not
+  /// the transient field.
   String get groupEventText {
+    final h = handle ?? handleRelation.target;
+    final name = h?.displayName ?? (isFromMe! ? 'You' : 'Unknown');
+    return buildGroupEventText(name);
+  }
+
+  /// Build the group-event description string with a pre-resolved [senderName].
+  /// Call this from the UI with a reactive name (e.g. from [HandleState.displayName])
+  /// so that contact-sync updates are reflected without rebuilding the whole tree.
+  String buildGroupEventText(String senderName) {
     String text = "Unknown group event";
-    String name = handle?.displayName ?? 'You';
+    final name = senderName;
 
     String? other = "someone";
     if (otherHandle != null && isParticipantEvent) {

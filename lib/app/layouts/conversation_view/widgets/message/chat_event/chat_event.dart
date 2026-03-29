@@ -19,6 +19,7 @@ class ChatEvent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final message = MessageStateScope.messageOf(context);
+    final state = MessageStateScope.of(context);
     return Expanded(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
@@ -77,17 +78,21 @@ class ChatEvent extends StatelessWidget {
               ),
             );
           },
-          child: Text(
-            part.isUnsent
+          child: Obx(() {
+            final senderName = state.senderDisplayName;
+            final text = part.isUnsent
                 ? (message.isFromMe!
                     ? "You unsent a message. Others may still see the message on devices where the software hasn't been updated"
-                    : "${message.handleRelation.target?.displayName ?? "Unknown"} unsent a message")
-                : message.groupEventText,
-            style: context.theme.textTheme.bodySmall!.copyWith(color: context.theme.colorScheme.outline),
-            overflow: TextOverflow.ellipsis,
-            maxLines: 2,
-            textAlign: TextAlign.center,
-          ),
+                    : "$senderName unsent a message")
+                : message.buildGroupEventText(senderName);
+            return Text(
+              text,
+              style: context.theme.textTheme.bodySmall!.copyWith(color: context.theme.colorScheme.outline),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 2,
+              textAlign: TextAlign.center,
+            );
+          }),
         ),
       ),
     );

@@ -1,14 +1,11 @@
 import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/database/models.dart';
-import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/services/backend/interfaces/handle_interface.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:dice_bear/dice_bear.dart';
-import 'package:faker/faker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:get/get.dart' hide Condition;
 // (needed when generating objectbox model code)
 // ignore: unnecessary_import
 import 'package:objectbox/objectbox.dart';
@@ -26,12 +23,8 @@ class Handle {
   String? country;
   String? defaultEmail;
   String? defaultPhone;
-  @Transient()
-  final String fakeName = "${faker.person.firstName()} ${faker.person.lastName()}";
 
-  final RxnString _color = RxnString();
-  String? get color => _color.value;
-  set color(String? val) => _color.value = val;
+  String? color;
 
   // N:M Relationship to ContactV2 (new contact service)
   // This is a backlink - ContactV2 owns the relationship
@@ -50,13 +43,6 @@ class Handle {
   }
 
   String get displayName {
-    if (SettingsSvc.settings.redactedMode.value) {
-      if (SettingsSvc.settings.generateFakeContactNames.value) {
-        return fakeName;
-      } else if (SettingsSvc.settings.hideContactInfo.value) {
-        return "";
-      }
-    }
     if (address.startsWith("urn:biz")) return "Business";
     if (!kIsWeb && contactsV2.isNotEmpty) {
       // Prioritize native contacts, but fall back to any contact if no native ones exist (should be rare)
@@ -68,16 +54,7 @@ class Handle {
   }
 
   String get reactionDisplayName {
-    if (SettingsSvc.settings.redactedMode.value) {
-      if (SettingsSvc.settings.generateFakeContactNames.value) {
-        return fakeName;
-      } else if (SettingsSvc.settings.hideContactInfo.value) {
-        return "";
-      }
-    }
     if (address.startsWith("urn:biz")) return "Business";
-
-    // Try to access ContactV2 directly (only works if in a transaction)
     if (!kIsWeb && contactsV2.isNotEmpty) {
       // Prioritize native contacts, but fall back to any contact if no native ones exist (should be rare)
       final firstNativeContact = contactsV2.where((c) => c.isNative).firstOrNull;
@@ -88,15 +65,10 @@ class Handle {
     }
 
     // For reactions, we want to show the formatted address for phone numbers, but the regular address for emails
-    if (address.contains("@")) {
-      return address;
-    } else {
-      return formattedAddress ?? address;
-    }
+    return address.contains("@") ? address : (formattedAddress ?? address);
   }
 
   String? get initials {
-    // Remove any numbers, certain symbols, and non-alphabet characters
     if (address.startsWith("urn:biz")) return null;
 
     // Check ContactV2 first for initials
@@ -123,7 +95,7 @@ class Handle {
     this.service = 'iMessage',
     this.uniqueAddressAndService = "",
     this.country,
-    String? handleColor,
+    this.color,
     this.defaultEmail,
     this.defaultPhone,
   }) {
@@ -133,7 +105,6 @@ class Handle {
     if (uniqueAddressAndService.isEmpty) {
       uniqueAddressAndService = "$address/$service";
     }
-    color = handleColor;
   }
 
   factory Handle.fromMap(Map<String, dynamic> json) => Handle(
@@ -144,7 +115,7 @@ class Handle {
         service: json["service"] ?? "iMessage",
         uniqueAddressAndService: json["uniqueAddrAndService"] ?? "${json["address"]}/${json["service"] ?? "iMessage"}",
         country: json["country"],
-        handleColor: json["color"],
+        color: json["color"],
         defaultPhone: json["defaultPhone"],
         defaultEmail: json["defaultEmail"],
       );
@@ -161,7 +132,7 @@ class Handle {
     if (address.contains('@') || address.startsWith('urn:biz')) {
       formattedAddress = address;
     } else {
-      formattedAddress = await formatPhoneNumber(address);
+      formattedAddress = formatPhoneNumber(address);
     }
   }
 
@@ -311,7 +282,7 @@ class Handle {
   static Handle merge(Handle handle1, Handle handle2) {
     handle1.id ??= handle2.id;
     handle1.originalROWID ??= handle2.originalROWID;
-    handle1._color.value ??= handle2._color.value;
+    handle1.color ??= handle2.color;
     handle1.country ??= handle2.country;
     handle1.formattedAddress ??= handle2.formattedAddress;
     if (isNullOrEmpty(handle1.defaultPhone)) {

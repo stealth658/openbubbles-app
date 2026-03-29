@@ -161,15 +161,24 @@ class ContactServiceV2 {
     }
   }
 
-  /// Notify the UI that certain handles have been updated
-  /// This updates the handleUpdateStatus map with the current timestamp
-  /// UI components observing these handle IDs will rebuild
+  /// Notify the UI that certain handles have been updated.
+  /// Stamps the handleUpdateStatus map (backward-compat) and pushes fresh
+  /// DB data into the HandleState registry so reactive Obx() widgets rebuild.
   void notifyHandlesUpdated(List<int> handleIds) {
     if (handleIds.isEmpty) return;
 
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     for (final id in handleIds) {
       handleUpdateStatus[id] = timestamp;
+    }
+
+    // Push refreshed Handle data into the HandleState registry
+    if (!kIsWeb) {
+      final refreshed = handleIds
+          .map((id) => Database.handles.get(id))
+          .whereType<Handle>()
+          .toList();
+      if (refreshed.isNotEmpty) HandleSvc.updateHandleStates(refreshed);
     }
 
     // Update chats that have these handles as participants

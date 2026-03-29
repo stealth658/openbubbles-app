@@ -1,3 +1,4 @@
+import 'package:bluebubbles/app/state/handle_state.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -37,49 +38,23 @@ class _ContactAvatarWidgetState extends State<ContactAvatarWidget> with ThemeHel
   ContactV2? get contactV2 => widget.contact ?? widget.handle?.contactsV2.firstOrNull;
   late final String keyPrefix = widget.handle?.address ?? randomString(8);
 
-  // Cache computed values to avoid recalculating on every build
-  String? _cachedAvatarPath;
-  String? _cachedInitials;
-  List<Color>? _cachedColors;
+  HandleState? _handleState;
 
   @override
   void initState() {
     super.initState();
-    _updateCachedValues();
-
-    // Observe handle updates from ContactServiceV2
     if (widget.handle?.id != null) {
-      ever(ContactsSvcV2.handleUpdateStatus, (_) {
-        // Check if this specific handle was updated
-        if (ContactsSvcV2.isHandleUpdated(widget.handle!.id!)) {
-          _updateCachedValues();
-          if (mounted) setState(() {});
-        }
-      });
+      _handleState = HandleSvc.getOrCreateHandleState(widget.handle!);
     }
   }
 
   @override
   void didUpdateWidget(ContactAvatarWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Update cache if widget properties changed
     if (oldWidget.handle?.id != widget.handle?.id) {
-      _updateCachedValues();
-    }
-  }
-
-  void _updateCachedValues() {
-    _cachedAvatarPath = contactV2?.avatarPath;
-    _cachedInitials = contactV2?.initials ?? widget.handle?.initials;
-
-    // Cache color gradient
-    if (widget.handle?.color == null) {
-      _cachedColors = toColorGradient(widget.handle?.address);
-    } else {
-      _cachedColors = [
-        HexColor(widget.handle!.color!).lightenAmount(0.02),
-        HexColor(widget.handle!.color!),
-      ];
+      _handleState = widget.handle?.id != null
+          ? HandleSvc.getOrCreateHandleState(widget.handle!)
+          : null;
     }
   }
 
@@ -153,7 +128,13 @@ class _ContactAvatarWidgetState extends State<ContactAvatarWidget> with ThemeHel
     return Obx(() {
       final size =
           ((widget.size ?? 40) * (widget.scaleSize ? SettingsSvc.settings.avatarScale.value : 1)).roundToDouble();
-      final colors = _cachedColors ?? toColorGradient(widget.handle?.address);
+      // Read from HandleState reactively so Obx rebuilds on contact sync.
+      final colorStr = _handleState?.color.value;
+      final colors = colorStr != null
+          ? [HexColor(colorStr).lightenAmount(0.02), HexColor(colorStr)]
+          : toColorGradient(widget.handle?.address);
+      final cachedAvatarPath = _handleState?.avatarPath.value ?? contactV2?.avatarPath;
+      final cachedInitials = _handleState?.initials.value ?? contactV2?.initials ?? widget.handle?.initials;
       final hideContactInfo = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
       final genAvatars = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.generateFakeAvatars.value;
       final iOS = SettingsSvc.settings.skin.value == Skins.iOS;
@@ -204,8 +185,8 @@ class _ContactAvatarWidgetState extends State<ContactAvatarWidget> with ThemeHel
             clipBehavior: Clip.antiAlias,
             alignment: Alignment.center,
             child: () {
-              // Use cached values to avoid getter calls
-              final contactV2Avatar = _cachedAvatarPath;
+              // Reactive values already computed above in Obx scope.
+              final contactV2Avatar = cachedAvatarPath;
 
               if (!hideContactInfo && widget.handle == null && userAvatarPath != null) {
                 dynamic file = File(userAvatarPath);
@@ -227,7 +208,7 @@ class _ContactAvatarWidgetState extends State<ContactAvatarWidget> with ThemeHel
                     gaplessPlayback: true,
                     errorBuilder: (context, error, stackTrace) {
                       // If file doesn't exist, show initials instead
-                      String? initials = _cachedInitials?.substring(0, iOS ? null : 1);
+                      String? initials = cachedInitials?.substring(0, iOS ? null : 1);
                       if (!isNullOrEmpty(initials)) {
                         return Text(
                           initials!,
@@ -248,8 +229,8 @@ class _ContactAvatarWidgetState extends State<ContactAvatarWidget> with ThemeHel
                   ),
                 );
               } else if (isNullOrEmpty(contactV2Avatar) || hideContactInfo) {
-                // Use cached initials
-                String? initials = _cachedInitials?.substring(0, iOS ? null : 1);
+                // Use reactive initials from HandleState
+                String? initials = cachedInitials?.substring(0, iOS ? null : 1);
                 if (!isNullOrEmpty(initials) && !hideContactInfo) {
                   return Text(
                     initials!,

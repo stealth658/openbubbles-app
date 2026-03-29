@@ -149,6 +149,10 @@ class StartupTasks {
     GetIt.I.registerSingleton<NavigatorService>(NavigatorService());
 
     // Do not init here. We will init after authentication
+    Logger.info("Registering HandleService...");
+    GetIt.I.registerSingleton<HandleService>(HandleService());
+    HandleSvc.init();
+
     Logger.info("Registering ChatsService, SocketService, and NotificationsService...");
     GetIt.I.registerSingleton<ChatsService>(ChatsService());
     GetIt.I.registerSingleton<SocketService>(SocketService());
@@ -239,6 +243,11 @@ class StartupTasks {
     Logger.info("ContactServiceV2 ready");
 
     // Since we are starting it headless, it can safely be started early on in the startup.
+    Logger.info("Registering HandleService...");
+    GetIt.I.registerSingleton<HandleService>(HandleService());
+    HandleSvc.init();
+
+    // Since we are starting it headless, it can safely be started early on in the startup.
     Logger.info("Registering ChatsService...");
     GetIt.I.registerSingleton<ChatsService>(ChatsService());
     await ChatsSvc.init(headless: true);
@@ -321,6 +330,10 @@ class StartupTasks {
     Logger.info("ContactServiceV2 ready");
 
     // Sync operations need ChatsService
+    Logger.info("Registering HandleService...");
+    GetIt.I.registerSingleton<HandleService>(HandleService());
+    HandleSvc.init();
+
     Logger.info("Registering ChatsService...");
     GetIt.I.registerSingleton<ChatsService>(ChatsService());
     await ChatsSvc.init(headless: true);
@@ -392,6 +405,11 @@ class StartupTasks {
     });
     await GetIt.I.isReady<ContactServiceV2>();
     Logger.info("ContactServiceV2 ready");
+
+    // Since we are starting it headless, it can safely be started early on in the startup.
+    Logger.info("Registering HandleService...");
+    GetIt.I.registerSingleton<HandleService>(HandleService());
+    HandleSvc.init();
 
     // Since we are starting it headless, it can safely be started early on in the startup.
     Logger.info("Registering ChatsService...");

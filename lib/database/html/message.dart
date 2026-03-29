@@ -337,9 +337,15 @@ class Message {
   bool get isGroupEvent => groupTitle != null || (itemType ?? 0) > 0 || (groupActionType ?? 0) > 0;
 
   String get groupEventText {
-    String text = "Unknown group event";
     handle ??= getHandle();
-    String name = handle?.displayName ?? 'You';
+    final name = handle?.displayName ?? (isFromMe! ? 'You' : 'Unknown');
+    return buildGroupEventText(name);
+  }
+
+  /// Build the group-event description string with a pre-resolved [senderName].
+  String buildGroupEventText(String senderName) {
+    String text = "Unknown group event";
+    final name = senderName;
 
     String? other = "someone";
     if (otherHandle != null && isParticipantEvent) {
