@@ -142,16 +142,15 @@ class ChatCreatorController extends StatefulController {
             contactNotFullySelected(e) &&
             (e.computedDisplayName.toLowerCase().contains(q) ||
                 (e.nickname?.toLowerCase().contains(q) ?? false) ||
-                e.phoneNumbers.firstWhereOrNull((p) => cleansePhoneNumber(p.number.toLowerCase()).contains(q)) != null ||
+                e.phoneNumbers.firstWhereOrNull((p) => cleansePhoneNumber(p.number.toLowerCase()).contains(q)) !=
+                    null ||
                 e.emailAddresses.firstWhereOrNull((e) => e.address.toLowerCase().contains(q)) != null))
         .toList();
 
     final chats = _allChats.where((e) {
       if (!_chatMatchesService(e)) return false;
       return e.getTitle().toLowerCase().contains(q) ||
-          e.handles.firstWhereOrNull(
-                  (h) => h.address.contains(q) || h.displayName.toLowerCase().contains(q)) !=
-              null;
+          e.handles.firstWhereOrNull((h) => h.address.contains(q) || h.displayName.toLowerCase().contains(q)) != null;
     }).toList();
 
     return _SearchResult(chats: chats, contacts: contacts);
@@ -266,7 +265,7 @@ class ChatCreatorController extends StatefulController {
 
   Future<void> removeSelected(SelectedContact contact) async {
     selectedContacts.remove(contact);
-    
+
     // Refresh results immediately so the removed contact is selectable again
     // and the contact exclusion logic reflects the updated selection set.
     final result = _computeSearchResults(addressController.text);
@@ -344,8 +343,7 @@ class ChatCreatorController extends StatefulController {
             }
             final matchLengths = [15, 14, 13, 12, 11, 10, 9, 8, 7];
             final numeric = contact.address.numericOnly();
-            if (matchLengths.contains(numeric.length) &&
-                cleansePhoneNumber(participant.address).endsWith(numeric)) {
+            if (matchLengths.contains(numeric.length) && cleansePhoneNumber(participant.address).endsWith(numeric)) {
               matches++;
               break;
             }
@@ -389,15 +387,13 @@ class ChatCreatorController extends StatefulController {
     // Transfer text/attachments from the "new chat" text field to the resolved CVC
     if (initialAttachments.isNotEmpty) {
       newCVC.pickedAttachments.value = initialAttachments;
-    } else if (activeController.value != null &&
-        activeController.value!.pickedAttachments.isNotEmpty) {
+    } else if (activeController.value != null && activeController.value!.pickedAttachments.isNotEmpty) {
       newCVC.pickedAttachments.value = activeController.value!.pickedAttachments;
     }
 
     if (initialText != null && initialText!.isNotEmpty) {
       newCVC.textController.text = initialText!;
-    } else if (activeController.value != null &&
-        activeController.value!.textController.text.isNotEmpty) {
+    } else if (activeController.value != null && activeController.value!.textController.text.isNotEmpty) {
       newCVC.textController.text = activeController.value!.textController.text;
     } else if (textController.text.isNotEmpty) {
       newCVC.textController.text = textController.text;
@@ -450,8 +446,7 @@ class ChatCreatorController extends StatefulController {
     if (selectedContacts.isEmpty && activeController.value == null) return;
 
     // Re-check for an existing chat in case the debounce hasn't fired yet.
-    Chat? resolvedChat =
-        activeController.value?.chat ?? await findExistingChat(checkDeleted: true, update: false);
+    Chat? resolvedChat = activeController.value?.chat ?? await findExistingChat(checkDeleted: true, update: false);
 
     // ------------------------------------------------------------------
     // Step 1: If we have a local chat, use it directly — no server check.
@@ -464,9 +459,8 @@ class ChatCreatorController extends StatefulController {
       _createCompleter = Completer();
       isSending.value = true;
 
-      final participants = selectedContacts
-          .map((c) => c.address.isEmail ? c.address : cleansePhoneNumber(c.address))
-          .toList();
+      final participants =
+          selectedContacts.map((c) => c.address.isEmail ? c.address : cleansePhoneNumber(c.address)).toList();
       final method = selectedService.value.method;
 
       showDialog(
@@ -538,8 +532,7 @@ class ChatCreatorController extends StatefulController {
                 onPressed: () => Navigator.of(context).pop(),
                 child: Text(
                   'OK',
-                  style: context.theme.textTheme.bodyLarge!
-                      .copyWith(color: Get.context!.theme.colorScheme.primary),
+                  style: context.theme.textTheme.bodyLarge!.copyWith(color: Get.context!.theme.colorScheme.primary),
                 ),
               ),
             ],
@@ -573,8 +566,7 @@ class ChatCreatorController extends StatefulController {
     // Only send a message when there is actual content to send. When the user
     // taps the send button from the chat creator with an existing chat but no
     // text/attachments (i.e. "open conversation" intent), skip the send step.
-    final hasContent = activeCVC.textController.text.isNotEmpty ||
-        activeCVC.pickedAttachments.isNotEmpty;
+    final hasContent = activeCVC.textController.text.isNotEmpty || activeCVC.pickedAttachments.isNotEmpty;
 
     Future<void> doSend() async {
       await activeCVC.send(
@@ -582,8 +574,7 @@ class ChatCreatorController extends StatefulController {
           attachments: activeCVC.pickedAttachments.toList(),
           text: activeCVC.textController.text,
           subject: '',
-          replyGuid: activeCVC.replyToMessage?.message.threadOriginatorGuid ??
-              activeCVC.replyToMessage?.message.guid,
+          replyGuid: activeCVC.replyToMessage?.message.threadOriginatorGuid ?? activeCVC.replyToMessage?.message.guid,
           replyPart: activeCVC.replyToMessage?.partIndex,
           effectId: effectId,
         ),
@@ -598,7 +589,8 @@ class ChatCreatorController extends StatefulController {
 
     NavigationSvc.pushAndRemoveUntil(
       Get.context!,
-      ConversationView(chat: chat, customService: messagesService, fromChatCreator: true, onInit: hasContent ? doSend : null),
+      ConversationView(
+          chat: chat, customService: messagesService, fromChatCreator: true, onInit: hasContent ? doSend : null),
       (route) => route.isFirst,
       closeActiveChat: false,
       customRoute: PageRouteBuilder(

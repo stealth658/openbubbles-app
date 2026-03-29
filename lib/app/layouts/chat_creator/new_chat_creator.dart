@@ -11,7 +11,6 @@ import 'package:bluebubbles/app/wrappers/bb_scaffold.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -242,12 +241,10 @@ class _TextFieldArea extends StatelessWidget {
               onPrimary: context.theme.colorScheme.onBubble(context, isIMsg),
               surface: SettingsSvc.settings.monetTheming.value == Monet.full
                   ? null
-                  : (context.theme.extensions[BubbleColors] as BubbleColors?)
-                      ?.receivedBubbleColor,
+                  : (context.theme.extensions[BubbleColors] as BubbleColors?)?.receivedBubbleColor,
               onSurface: SettingsSvc.settings.monetTheming.value == Monet.full
                   ? null
-                  : (context.theme.extensions[BubbleColors] as BubbleColors?)
-                      ?.onReceivedBubbleColor,
+                  : (context.theme.extensions[BubbleColors] as BubbleColors?)?.onReceivedBubbleColor,
             ),
           ),
           child: Focus(
@@ -271,8 +268,7 @@ class _TextFieldArea extends StatelessWidget {
                     controller: activeCVC,
                     recorderController: null,
                     alwaysShowSend: true,
-                    sendMessage: ({String? effect}) =>
-                        controller.sendMessage(context, effectId: effect),
+                    sendMessage: ({String? effect}) => controller.sendMessage(context, effectId: effect),
                   )
                 // New contact: isChatCreator = true → initialAttachments only (no controller)
                 : TextFieldComponent(

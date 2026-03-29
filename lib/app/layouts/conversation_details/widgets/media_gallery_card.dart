@@ -129,227 +129,227 @@ class _MediaGalleryCardState extends State<MediaGalleryCard> with AutomaticKeepA
       final bool hideAttachments =
           SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideAttachments.value;
 
-    late Widget child;
-    bool addPadding = true;
+      late Widget child;
+      bool addPadding = true;
 
-    if (hideAttachments) {
-      child = Text(
-        attachment.mimeType ?? "Unknown",
-        textAlign: TextAlign.center,
-      );
-    } else if (content is AttachmentWithProgress) {
-      // Attachment being sent - show image with progress overlay
-      final attachmentWithProgress = content as AttachmentWithProgress;
-      final file = attachmentWithProgress.file;
-      final progress = attachmentWithProgress.progress;
+      if (hideAttachments) {
+        child = Text(
+          attachment.mimeType ?? "Unknown",
+          textAlign: TextAlign.center,
+        );
+      } else if (content is AttachmentWithProgress) {
+        // Attachment being sent - show image with progress overlay
+        final attachmentWithProgress = content as AttachmentWithProgress;
+        final file = attachmentWithProgress.file;
+        final progress = attachmentWithProgress.progress;
 
-      addPadding = false;
-      child = Stack(
-        fit: StackFit.expand,
-        children: [
-          // Background image with lower opacity
-          Opacity(
-            opacity: 0.3,
-            child: file.path != null
-                ? (attachment.mimeType?.startsWith("image") ?? false)
-                    ? ImageDisplay(attachment: attachment, file: file)
-                    : (attachment.mimeType?.startsWith("video") ?? false)
-                        ? ImageDisplay(attachment: attachment, image: videoPreview ?? Uint8List(0))
-                        : const SizedBox.shrink()
-                : const SizedBox.shrink(),
-          ),
-          // Progress overlay
-          Container(
-            color: context.theme.colorScheme.properSurface.withValues(alpha: 0.5),
-            child: Center(
-              child: Obx(() {
-                return Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SizedBox(
-                      height: 40,
-                      width: 40,
-                      child: CircleProgressBar(
-                        foregroundColor: context.theme.colorScheme.primary,
-                        backgroundColor: context.theme.colorScheme.outline,
-                        value: progress.progress.value,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      progress.progress.value < 1
-                          ? "${(progress.progress.value * 100).toStringAsFixed(0)}%"
-                          : "Waiting for iMessage...",
-                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                            color: context.theme.colorScheme.properOnSurface,
-                            fontWeight: FontWeight.bold,
-                          ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                );
-              }),
-            ),
-          ),
-        ],
-      );
-    } else if (content is AttachmentDownloadController) {
-      child = SizedBox(
-        height: 40,
-        width: 40,
-        child: Obx(() {
-          final controller = content as AttachmentDownloadController;
-          return controller.state.value == AttachmentDownloadState.processing
-              ? (iOS ? const CupertinoActivityIndicator(radius: 14) : const CircularProgressIndicator())
-              : CircleProgressBar(
-                  foregroundColor: context.theme.colorScheme.primary,
-                  backgroundColor: context.theme.colorScheme.outline,
-                  value: controller.progress.value?.toDouble() ?? 0,
-                );
-        }),
-      );
-    } else if (content is AttachmentUploadProgress) {
-      // Fallback: Progress without file preview (shouldn't normally happen but handle it)
-      final progress = content as AttachmentUploadProgress;
-      child = Obx(() {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
+        addPadding = false;
+        child = Stack(
+          fit: StackFit.expand,
           children: [
-            SizedBox(
-              height: 40,
-              width: 40,
-              child: CircleProgressBar(
-                foregroundColor: context.theme.colorScheme.primary,
-                backgroundColor: context.theme.colorScheme.outline,
-                value: progress.progress.value,
-              ),
+            // Background image with lower opacity
+            Opacity(
+              opacity: 0.3,
+              child: file.path != null
+                  ? (attachment.mimeType?.startsWith("image") ?? false)
+                      ? ImageDisplay(attachment: attachment, file: file)
+                      : (attachment.mimeType?.startsWith("video") ?? false)
+                          ? ImageDisplay(attachment: attachment, image: videoPreview ?? Uint8List(0))
+                          : const SizedBox.shrink()
+                  : const SizedBox.shrink(),
             ),
-            const SizedBox(height: 10),
-            Text(
-              progress.progress.value < 1
-                  ? "${(progress.progress.value * 100).toStringAsFixed(0)}%"
-                  : "Waiting for iMessage...",
-              style: Theme.of(context).textTheme.bodyMedium,
-              textAlign: TextAlign.center,
+            // Progress overlay
+            Container(
+              color: context.theme.colorScheme.properSurface.withValues(alpha: 0.5),
+              child: Center(
+                child: Obx(() {
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        height: 40,
+                        width: 40,
+                        child: CircleProgressBar(
+                          foregroundColor: context.theme.colorScheme.primary,
+                          backgroundColor: context.theme.colorScheme.outline,
+                          value: progress.progress.value,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        progress.progress.value < 1
+                            ? "${(progress.progress.value * 100).toStringAsFixed(0)}%"
+                            : "Waiting for iMessage...",
+                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                              color: context.theme.colorScheme.properOnSurface,
+                              fontWeight: FontWeight.bold,
+                            ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  );
+                }),
+              ),
             ),
           ],
         );
-      });
-    } else if (content is Attachment) {
-      // Attachment not downloaded yet
-      final mimeType = attachment.mimeType ?? '';
-      final friendlyType = mimeTypeToFriendlyName(mimeType);
-      final totalBytes = attachment.totalBytes ?? 0;
-      final friendlySize = totalBytes > 0 ? (totalBytes.toDouble()).getFriendlySize(decimals: 0) : null;
-
-      Widget _badge(String label) => Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.6),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.5,
-              ),
-            ),
-          );
-
-      child = InkWell(
-        onTap: downloadAttachment,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            // Centered content
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Icon(
-                  getAttachmentIcon(mimeType),
-                  size: 52,
-                  color: context.theme.colorScheme.properOnSurface,
+      } else if (content is AttachmentDownloadController) {
+        child = SizedBox(
+          height: 40,
+          width: 40,
+          child: Obx(() {
+            final controller = content as AttachmentDownloadController;
+            return controller.state.value == AttachmentDownloadState.processing
+                ? (iOS ? const CupertinoActivityIndicator(radius: 14) : const CircularProgressIndicator())
+                : CircleProgressBar(
+                    foregroundColor: context.theme.colorScheme.primary,
+                    backgroundColor: context.theme.colorScheme.outline,
+                    value: controller.progress.value?.toDouble() ?? 0,
+                  );
+          }),
+        );
+      } else if (content is AttachmentUploadProgress) {
+        // Fallback: Progress without file preview (shouldn't normally happen but handle it)
+        final progress = content as AttachmentUploadProgress;
+        child = Obx(() {
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                height: 40,
+                width: 40,
+                child: CircleProgressBar(
+                  foregroundColor: context.theme.colorScheme.primary,
+                  backgroundColor: context.theme.colorScheme.outline,
+                  value: progress.progress.value,
                 ),
-                const SizedBox(height: 6),
-                if (friendlySize != null)
-                  Text(
-                    friendlySize,
-                    style: context.theme.textTheme.bodySmall!.copyWith(
-                      color: context.theme.colorScheme.properOnSurface.withValues(alpha: 0.6),
-                    ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                progress.progress.value < 1
+                    ? "${(progress.progress.value * 100).toStringAsFixed(0)}%"
+                    : "Waiting for iMessage...",
+                style: Theme.of(context).textTheme.bodyMedium,
+                textAlign: TextAlign.center,
+              ),
+            ],
+          );
+        });
+      } else if (content is Attachment) {
+        // Attachment not downloaded yet
+        final mimeType = attachment.mimeType ?? '';
+        final friendlyType = mimeTypeToFriendlyName(mimeType);
+        final totalBytes = attachment.totalBytes ?? 0;
+        final friendlySize = totalBytes > 0 ? (totalBytes.toDouble()).getFriendlySize(decimals: 0) : null;
+
+        Widget _badge(String label) => Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            );
+
+        child = InkWell(
+          onTap: downloadAttachment,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // Centered content
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Icon(
+                    getAttachmentIcon(mimeType),
+                    size: 52,
+                    color: context.theme.colorScheme.properOnSurface,
                   ),
-                const SizedBox(height: 6),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      SettingsSvc.settings.skin.value == Skins.iOS
-                          ? CupertinoIcons.cloud_download
-                          : Icons.cloud_download,
-                      size: 13,
-                      color: context.theme.colorScheme.properOnSurface.withValues(alpha: 0.6),
-                    ),
-                    const SizedBox(width: 4),
+                  const SizedBox(height: 6),
+                  if (friendlySize != null)
                     Text(
-                      'Tap to download',
+                      friendlySize,
                       style: context.theme.textTheme.bodySmall!.copyWith(
                         color: context.theme.colorScheme.properOnSurface.withValues(alpha: 0.6),
                       ),
                     ),
-                  ],
-                ),
-              ],
-            ),
-            // Mime-type badge — top-left
-            Positioned(
-              top: 8,
-              left: 8,
-              child: _badge(friendlyType),
-            ),
-          ],
-        ),
-      );
-    } else if (content is PlatformFile) {
-      final file = content as PlatformFile;
-      if (attachment.mimeType?.startsWith("image") ?? false) {
-        child = ImageDisplay(attachment: attachment, file: file);
-        addPadding = false;
-      } else if ((attachment.mimeType?.startsWith("video") ?? false) && !kIsDesktop && !kIsWeb) {
-        if (videoPreview != null) {
-          child = ImageDisplay(attachment: attachment, image: videoPreview!, duration: duration);
+                  const SizedBox(height: 6),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        SettingsSvc.settings.skin.value == Skins.iOS
+                            ? CupertinoIcons.cloud_download
+                            : Icons.cloud_download,
+                        size: 13,
+                        color: context.theme.colorScheme.properOnSurface.withValues(alpha: 0.6),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Tap to download',
+                        style: context.theme.textTheme.bodySmall!.copyWith(
+                          color: context.theme.colorScheme.properOnSurface.withValues(alpha: 0.6),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              // Mime-type badge — top-left
+              Positioned(
+                top: 8,
+                left: 8,
+                child: _badge(friendlyType),
+              ),
+            ],
+          ),
+        );
+      } else if (content is PlatformFile) {
+        final file = content as PlatformFile;
+        if (attachment.mimeType?.startsWith("image") ?? false) {
+          child = ImageDisplay(attachment: attachment, file: file);
           addPadding = false;
+        } else if ((attachment.mimeType?.startsWith("video") ?? false) && !kIsDesktop && !kIsWeb) {
+          if (videoPreview != null) {
+            child = ImageDisplay(attachment: attachment, image: videoPreview!, duration: duration);
+            addPadding = false;
+          } else {
+            child = const Text(
+              "Loading video preview...",
+              textAlign: TextAlign.center,
+            );
+          }
         } else {
-          child = const Text(
-            "Loading video preview...",
-            textAlign: TextAlign.center,
+          addPadding = false;
+          child = OtherFile(
+            file: file,
+            attachment: attachment,
           );
         }
       } else {
-        addPadding = false;
-        child = OtherFile(
-          file: file,
-          attachment: attachment,
-        );
+        child = const SizedBox.shrink();
       }
-    } else {
-      child = const SizedBox.shrink();
-    }
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(15),
-      clipBehavior: Clip.antiAlias,
-      child: Container(
-        alignment: Alignment.center,
-        color: context.theme.colorScheme.properSurface,
-        padding: addPadding ? const EdgeInsets.all(10) : null,
-        child: child,
-      ),
-    );
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(15),
+        clipBehavior: Clip.antiAlias,
+        child: Container(
+          alignment: Alignment.center,
+          color: context.theme.colorScheme.properSurface,
+          padding: addPadding ? const EdgeInsets.all(10) : null,
+          child: child,
+        ),
+      );
     }); // end Obx
   }
 

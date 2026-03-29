@@ -77,7 +77,9 @@ class MessageHelper {
       return "$sender${_getAttachmentText(message.realAttachments)}";
     } else if (!isNullOrEmpty(message.associatedMessageGuid)) {
       // It's a reaction message, get the sender
-      String sender = message.isFromMe! ? 'You' : (hideContactInfo ? "Someone" : (message.handleRelation.target?.reactionDisplayName ?? "Someone"));
+      String sender = message.isFromMe!
+          ? 'You'
+          : (hideContactInfo ? "Someone" : (message.handleRelation.target?.reactionDisplayName ?? "Someone"));
       // fetch the associated message object
       Message? associatedMessage = Message.findOne(guid: message.associatedMessageGuid);
       if (associatedMessage != null) {

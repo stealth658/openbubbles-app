@@ -52,9 +52,7 @@ class _ContactAvatarWidgetState extends State<ContactAvatarWidget> with ThemeHel
   void didUpdateWidget(ContactAvatarWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.handle?.id != widget.handle?.id) {
-      _handleState = widget.handle?.id != null
-          ? HandleSvc.getOrCreateHandleState(widget.handle!)
-          : null;
+      _handleState = widget.handle?.id != null ? HandleSvc.getOrCreateHandleState(widget.handle!) : null;
     }
   }
 

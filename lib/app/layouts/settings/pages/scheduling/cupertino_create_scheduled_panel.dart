@@ -279,7 +279,7 @@ class _CupertinoCreateScheduledMessageState extends State<CupertinoCreateSchedul
                   // Date/time picker tile
                   SettingsTile(
                     title: "Date & Time",
-                    leading: SettingsLeadingIcon(
+                    leading: const SettingsLeadingIcon(
                       iosIcon: CupertinoIcons.calendar,
                       materialIcon: CupertinoIcons.calendar,
                       containerColor: Colors.orange,

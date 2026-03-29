@@ -14,8 +14,7 @@ class ServiceTypePicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final visibleTypes =
-        ChatServiceType.values.where((t) => t.isVisible).toList();
+    final visibleTypes = ChatServiceType.values.where((t) => t.isVisible).toList();
     final primary = context.theme.colorScheme.primary;
     final onPrimary = context.theme.colorScheme.onPrimary;
 
@@ -31,14 +30,11 @@ class ServiceTypePicker extends StatelessWidget {
             children: {
               for (final type in visibleTypes)
                 type: Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12.0, vertical: 6.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
                   child: Text(
                     type.label,
                     style: context.theme.textTheme.bodyMedium?.copyWith(
-                      color: controller.selectedService.value == type
-                          ? onPrimary
-                          : primary,
+                      color: controller.selectedService.value == type ? onPrimary : primary,
                       fontWeight: FontWeight.w500,
                     ),
                   ),

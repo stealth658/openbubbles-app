@@ -40,14 +40,13 @@ class _RecipientChipsRowState extends State<RecipientChipsRow> {
         children: [
           Text(
             'To: ',
-            style: context.theme.textTheme.bodyMedium!
-                .copyWith(color: context.theme.colorScheme.outline),
+            style: context.theme.textTheme.bodyMedium!.copyWith(color: context.theme.colorScheme.outline),
           ),
           Expanded(
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               physics: ThemeSwitcher.getScrollPhysics(),
-              child: Obx(() =>Row(
+              child: Obx(() => Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       AnimatedSize(
@@ -56,17 +55,14 @@ class _RecipientChipsRowState extends State<RecipientChipsRow> {
                         alignment: Alignment.centerLeft,
                         child: ConstrainedBox(
                           constraints: BoxConstraints(
-                            maxHeight:
-                                context.theme.textTheme.bodyMedium!.fontSize! +
-                                    20,
+                            maxHeight: context.theme.textTheme.bodyMedium!.fontSize! + 20,
                           ),
                           child: ListView.builder(
                             itemCount: controller.selectedContacts.length,
                             shrinkWrap: true,
                             scrollDirection: Axis.horizontal,
                             physics: const NeverScrollableScrollPhysics(),
-                            findChildIndexCallback: (key) =>
-                                findChildIndexByKey(
+                            findChildIndexCallback: (key) => findChildIndexByKey(
                               controller.selectedContacts,
                               key,
                               (item) => item.address,
@@ -76,8 +72,7 @@ class _RecipientChipsRowState extends State<RecipientChipsRow> {
                               return SelectedContactChip(
                                 key: ValueKey(e.address),
                                 contact: e,
-                                onRemove: () =>
-                                    controller.removeSelected(e),
+                                onRemove: () => controller.removeSelected(e),
                               );
                             },
                           ),
@@ -90,20 +85,14 @@ class _RecipientChipsRowState extends State<RecipientChipsRow> {
                         child: Focus(
                           onKeyEvent: (node, event) {
                             if (event is KeyDownEvent) {
-                              if (event.logicalKey ==
-                                      LogicalKeyboardKey.backspace &&
-                                  (controller.addressController.selection
-                                              .start ==
-                                          0 ||
-                                      controller.addressController.text
-                                          .isEmpty)) {
+                              if (event.logicalKey == LogicalKeyboardKey.backspace &&
+                                  (controller.addressController.selection.start == 0 ||
+                                      controller.addressController.text.isEmpty)) {
                                 if (controller.selectedContacts.isNotEmpty) {
-                                  controller.removeSelected(
-                                      controller.selectedContacts.last);
+                                  controller.removeSelected(controller.selectedContacts.last);
                                 }
                                 return KeyEventResult.handled;
-                              } else if (!HardwareKeyboard
-                                      .instance.isShiftPressed &&
+                              } else if (!HardwareKeyboard.instance.isShiftPressed &&
                                   event.logicalKey == LogicalKeyboardKey.tab) {
                                 controller.messageNode.requestFocus();
                                 return KeyEventResult.handled;
@@ -119,16 +108,13 @@ class _RecipientChipsRowState extends State<RecipientChipsRow> {
                             keyboardType: TextInputType.text,
                             textInputAction: TextInputAction.done,
                             placeholder: 'Name or number',
-                            placeholderStyle:
-                                context.theme.textTheme.bodyMedium!.copyWith(
+                            placeholderStyle: context.theme.textTheme.bodyMedium!.copyWith(
                               color: context.theme.colorScheme.outline,
                             ),
                             style: context.theme.textTheme.bodyMedium,
                             decoration: null,
-                            enableIMEPersonalizedLearning:
-                                !SettingsSvc.settings.incognitoKeyboard.value,
-                            onSubmitted: (_) =>
-                                widget.controller.addressOnSubmitted(),
+                            enableIMEPersonalizedLearning: !SettingsSvc.settings.incognitoKeyboard.value,
+                            onSubmitted: (_) => widget.controller.addressOnSubmitted(),
                           ),
                         ),
                       ),

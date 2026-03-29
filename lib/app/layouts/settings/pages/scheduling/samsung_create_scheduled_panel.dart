@@ -267,7 +267,7 @@ class _SamsungCreateScheduledMessageState extends State<SamsungCreateScheduledMe
                   // Date/time picker tile
                   SettingsTile(
                     title: "Date & Time",
-                    leading: SettingsLeadingIcon(
+                    leading: const SettingsLeadingIcon(
                       iosIcon: Icons.calendar_month_outlined,
                       materialIcon: Icons.calendar_month_outlined,
                       containerColor: Colors.orange,

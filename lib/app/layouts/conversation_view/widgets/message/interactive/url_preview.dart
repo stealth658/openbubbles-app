@@ -87,11 +87,14 @@ class _UrlPreviewState extends State<UrlPreview> with AutomaticKeepAliveClientMi
 
         // If the payload has no image/icon, check for a plugin payload attachment first.
         if (data.imageMetadata?.url == null && data.iconMetadata?.url == null) {
-          final attachment =
-              message.dbAttachments.firstWhereOrNull((e) => e.transferName?.contains("pluginPayloadAttachment") ?? false);
+          final attachment = message.dbAttachments
+              .firstWhereOrNull((e) => e.transferName?.contains("pluginPayloadAttachment") ?? false);
           if (attachment != null) {
             content = AttachmentsSvc.getContent(attachment, autoDownload: true, onComplete: (file) {
-              if (mounted) setState(() { content = file; });
+              if (mounted)
+                setState(() {
+                  content = file;
+                });
             });
             if (content is PlatformFile && mounted) setState(() {});
             return; // attachment serves as the image; no need to fetch external metadata
@@ -99,18 +102,24 @@ class _UrlPreviewState extends State<UrlPreview> with AutomaticKeepAliveClientMi
         }
 
         // Fetch on-demand metadata when title or image data is missing, mirroring LegacyUrlPreview.
-        final needsMetadata = isNullOrEmpty(data.title) ||
-            (data.imageMetadata?.url == null && data.iconMetadata?.url == null);
+        final needsMetadata =
+            isNullOrEmpty(data.title) || (data.imageMetadata?.url == null && data.iconMetadata?.url == null);
         if (needsMetadata && message.url != null) {
           if (MetadataHelper.mapIsNotEmpty(message.metadata)) {
-            if (mounted) setState(() { _fetchedMetadata = Metadata.fromJson(message.metadata!); });
+            if (mounted)
+              setState(() {
+                _fetchedMetadata = Metadata.fromJson(message.metadata!);
+              });
           } else {
             try {
               final fetched = await MetadataHelper.fetchMetadata(message);
               if (MetadataHelper.isNotEmpty(fetched)) {
                 message.updateMetadata(fetched);
               }
-              if (mounted) setState(() { _fetchedMetadata = fetched; });
+              if (mounted)
+                setState(() {
+                  _fetchedMetadata = fetched;
+                });
             } catch (ex, stack) {
               Logger.error("Failed to fetch URL preview metadata", error: ex, trace: stack);
             }
@@ -129,8 +138,8 @@ class _UrlPreviewState extends State<UrlPreview> with AutomaticKeepAliveClientMi
         ? (dataOverride?.siteName ?? "")
         : Uri.tryParse(data.url ?? data.originalUrl ?? "")?.host ?? data.siteName;
     final siteText = _rawSiteText?.replaceFirst(RegExp(r'^www\.'), '');
-    final hasAppleImage = (effectiveImageUrl == null ||
-        (data.iconMetadata?.url == null && data.imageMetadata?.size == Size.zero));
+    final hasAppleImage =
+        (effectiveImageUrl == null || (data.iconMetadata?.url == null && data.imageMetadata?.size == Size.zero));
     final _data = dataOverride ?? data;
     return InkWell(
       onTap: widget.file != null && _data.url != null

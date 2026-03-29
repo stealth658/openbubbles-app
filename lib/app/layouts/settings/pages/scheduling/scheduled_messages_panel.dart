@@ -9,10 +9,10 @@ class ScheduledMessagesPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ThemeSwitcher(
-      iOSSkin: const CupertinoScheduledMessagesPanel(),
-      materialSkin: const MaterialScheduledMessagesPanel(),
-      samsungSkin: const SamsungScheduledMessagesPanel(),
+    return const ThemeSwitcher(
+      iOSSkin: CupertinoScheduledMessagesPanel(),
+      materialSkin: MaterialScheduledMessagesPanel(),
+      samsungSkin: SamsungScheduledMessagesPanel(),
     );
   }
 }

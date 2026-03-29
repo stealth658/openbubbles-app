@@ -13,7 +13,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:version/version.dart';
 
 class PrivateAPIPanelController extends StatefulController {
-  final Rx<ServerDetails> serverDetails = Rx(ServerDetails.empty());
+  final Rx<ServerDetails> serverDetails = Rx(const ServerDetails.empty());
 
   @override
   void onReady() {

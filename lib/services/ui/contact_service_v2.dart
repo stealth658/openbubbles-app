@@ -174,10 +174,7 @@ class ContactServiceV2 {
 
     // Push refreshed Handle data into the HandleState registry
     if (!kIsWeb) {
-      final refreshed = handleIds
-          .map((id) => Database.handles.get(id))
-          .whereType<Handle>()
-          .toList();
+      final refreshed = handleIds.map((id) => Database.handles.get(id)).whereType<Handle>().toList();
       if (refreshed.isNotEmpty) HandleSvc.updateHandleStates(refreshed);
     }
 

@@ -450,7 +450,8 @@ class ChatActions {
             inputHandlesMap[participant.uniqueAddressAndService] = participant;
           }
         }
-      } else if (chat.guid.contains(';-;')) {  // Basic check to see if it's a DM with an address in the GUID
+      } else if (chat.guid.contains(';-;')) {
+        // Basic check to see if it's a DM with an address in the GUID
         // If the participants list is empty, try and extract the handle from the chat's GUID
         final address = chat.guid.split(';-;').lastOrNull;
 

@@ -233,7 +233,7 @@ class _MaterialCreateScheduledMessageState extends State<MaterialCreateScheduled
                   // Date/time picker tile
                   SettingsTile(
                     title: "Date & Time",
-                    leading: SettingsLeadingIcon(
+                    leading: const SettingsLeadingIcon(
                       iosIcon: Icons.calendar_month_outlined,
                       materialIcon: Icons.calendar_month_outlined,
                       containerColor: Colors.orange,

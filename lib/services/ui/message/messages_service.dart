@@ -906,7 +906,8 @@ class MessagesService extends GetxController {
       _lastReadInfo = MessageReceiptInfo(newGuid, date: _lastReadInfo!.date, createdDate: _lastReadInfo!.createdDate);
     }
     if (_lastDeliveredInfo?.guid == oldGuid) {
-      _lastDeliveredInfo = MessageReceiptInfo(newGuid, date: _lastDeliveredInfo!.date, createdDate: _lastDeliveredInfo!.createdDate);
+      _lastDeliveredInfo =
+          MessageReceiptInfo(newGuid, date: _lastDeliveredInfo!.date, createdDate: _lastDeliveredInfo!.createdDate);
     }
   }
 
@@ -976,8 +977,7 @@ class MessagesService extends GetxController {
     for (final m in struct.messages.where((e) => e.isFromMe == true)) {
       if ((m.dateDelivered == null && !m.isDelivered) || m.dateRead != null) continue;
       final effectiveDate = m.dateDelivered ?? m.dateCreated;
-      if (best == null ||
-          (effectiveDate != null && (bestDate == null || effectiveDate.isAfter(bestDate)))) {
+      if (best == null || (effectiveDate != null && (bestDate == null || effectiveDate.isAfter(bestDate)))) {
         best = m;
         bestDate = effectiveDate;
       }
@@ -1024,8 +1024,9 @@ class MessagesService extends GetxController {
     }
     if (newLastRead?.guid != _lastReadInfo?.guid) {
       messageStates[_lastReadInfo?.guid]?.updateShowReadIndicatorInternal(false);
-      _lastReadInfo =
-          newLastRead != null ? MessageReceiptInfo(newLastRead.guid!, date: newLastRead.dateRead, createdDate: newLastRead.dateCreated) : null;
+      _lastReadInfo = newLastRead != null
+          ? MessageReceiptInfo(newLastRead.guid!, date: newLastRead.dateRead, createdDate: newLastRead.dateCreated)
+          : null;
       if (_lastReadInfo != null) messageStates[_lastReadInfo!.guid]?.updateShowReadIndicatorInternal(true);
     }
 
@@ -1038,8 +1039,7 @@ class MessagesService extends GetxController {
       if ((m.dateDelivered == null && !m.isDelivered) || m.dateRead != null) continue;
       final effectiveDate = m.dateDelivered ?? m.dateCreated;
       if (newLastDelivered == null ||
-          (effectiveDate != null &&
-              (newLastDeliveredDate == null || effectiveDate.isAfter(newLastDeliveredDate)))) {
+          (effectiveDate != null && (newLastDeliveredDate == null || effectiveDate.isAfter(newLastDeliveredDate)))) {
         newLastDelivered = m;
         newLastDeliveredDate = effectiveDate;
       }
@@ -1047,7 +1047,8 @@ class MessagesService extends GetxController {
     if (newLastDelivered?.guid != _lastDeliveredInfo?.guid) {
       messageStates[_lastDeliveredInfo?.guid]?.updateShowDeliveredIndicatorInternal(false);
       _lastDeliveredInfo = newLastDelivered != null
-          ? MessageReceiptInfo(newLastDelivered.guid!, date: newLastDeliveredDate, createdDate: newLastDelivered.dateCreated)
+          ? MessageReceiptInfo(newLastDelivered.guid!,
+              date: newLastDeliveredDate, createdDate: newLastDelivered.dateCreated)
           : null;
       if (_lastDeliveredInfo != null) {
         messageStates[_lastDeliveredInfo!.guid]?.updateShowDeliveredIndicatorInternal(true);
@@ -1058,7 +1059,6 @@ class MessagesService extends GetxController {
   }
 
   // ========== End Delivered Indicator Recomputation ==========
-
 
   /// Generates new temp GUID, clears error state, and updates both DB and MessageState
   Future<void> retryFailedMessage(Message message, {String? oldGuid}) async {
@@ -1239,9 +1239,9 @@ class MessagesService extends GetxController {
         preState.parts[partIdx].text = newText;
         preState.parts.refresh();
       }
-  
+
       preState.updateDateEditedInternal(DateTime.now().toUtc());
-  
+
       // Clear any stale edit error from a previous attempt.
       preState.updateErrorInternal(0);
       preState.updateErrorMessageInternal(null);
@@ -1285,7 +1285,7 @@ class MessagesService extends GetxController {
           reason = ex.toString();
         }
 
-        postState.updateErrorInternal(ClientMessageError.editFailed.code); // 
+        postState.updateErrorInternal(ClientMessageError.editFailed.code); //
         postState.updateErrorMessageInternal("Failed to edit message: $reason");
       }
     }

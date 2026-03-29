@@ -188,7 +188,9 @@ class HandleSelectorViewState extends State<HandleSelectorView> with ThemeHelper
                                   final hideInfo = SettingsSvc.settings.redactedMode.value &&
                                       SettingsSvc.settings.hideContactInfo.value;
                                   final handleState = HandleSvc.getOrCreateHandleState(handle);
-                                  final _title = hideInfo ? handleState.fakeName : handleState.displayName.value ?? handle.displayName;
+                                  final _title = hideInfo
+                                      ? handleState.fakeName
+                                      : handleState.displayName.value ?? handle.displayName;
 
                                   return Material(
                                     color: Colors.transparent,

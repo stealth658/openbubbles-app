@@ -115,14 +115,15 @@ class _ImageViewerState extends State<ImageViewer> with AutomaticKeepAliveClient
       // Web or no path - use memory image
       if (file.bytes == null) {
         imageWidget = SizedBox(
-          width: min(
-              (attachment.displayWidth?.toDouble() ?? NavigationSvc.width(context) * 0.5), NavigationSvc.width(context) * 0.5),
-          height: min((attachment.displayHeight?.toDouble() ?? NavigationSvc.width(context) * 0.5 / attachment.aspectRatio),
+          width: min((attachment.displayWidth?.toDouble() ?? NavigationSvc.width(context) * 0.5),
+              NavigationSvc.width(context) * 0.5),
+          height: min(
+              (attachment.displayHeight?.toDouble() ?? NavigationSvc.width(context) * 0.5 / attachment.aspectRatio),
               NavigationSvc.width(context) * 0.5 / attachment.aspectRatio),
         );
       } else {
-        final displayWidth = min(
-            (attachment.displayWidth?.toDouble() ?? NavigationSvc.width(context) * 0.5), NavigationSvc.width(context) * 0.5);
+        final displayWidth = min((attachment.displayWidth?.toDouble() ?? NavigationSvc.width(context) * 0.5),
+            NavigationSvc.width(context) * 0.5);
         final displayHeight = min(
             (attachment.displayHeight?.toDouble() ?? NavigationSvc.width(context) * 0.5 / attachment.aspectRatio),
             NavigationSvc.width(context) * 0.5 / attachment.aspectRatio);
@@ -207,8 +208,8 @@ class _ImageViewerState extends State<ImageViewer> with AutomaticKeepAliveClient
       // Note: For HEIC/TIFF, the path might point to unconverted file initially.
       // Image.file will handle it on iOS/macOS (native support), or fail gracefully
       // and trigger errorBuilder where we can attempt conversion.
-      final displayWidth =
-          min((attachment.displayWidth?.toDouble() ?? NavigationSvc.width(context) * 0.5), NavigationSvc.width(context) * 0.5);
+      final displayWidth = min((attachment.displayWidth?.toDouble() ?? NavigationSvc.width(context) * 0.5),
+          NavigationSvc.width(context) * 0.5);
       final displayHeight = min(
           (attachment.displayHeight?.toDouble() ?? NavigationSvc.width(context) * 0.5 / attachment.aspectRatio),
           NavigationSvc.width(context) * 0.5 / attachment.aspectRatio);
@@ -249,7 +250,8 @@ class _ImageViewerState extends State<ImageViewer> with AutomaticKeepAliveClient
                 width: min((attachment.displayWidth?.toDouble() ?? NavigationSvc.width(context) * 0.5),
                     NavigationSvc.width(context) * 0.5),
                 height: min(
-                    (attachment.displayHeight?.toDouble() ?? NavigationSvc.width(context) * 0.5 / attachment.aspectRatio),
+                    (attachment.displayHeight?.toDouble() ??
+                        NavigationSvc.width(context) * 0.5 / attachment.aspectRatio),
                     NavigationSvc.width(context) * 0.5 / attachment.aspectRatio),
                 child: const Center(child: CircularProgressIndicator()),
               );

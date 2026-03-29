@@ -78,9 +78,7 @@ class DownloadingContent extends StatelessWidget {
                               ? 'Queued'
                               : 'Downloading',
                   style: context.theme.textTheme.bodySmall!.copyWith(
-                    color: isError
-                        ? context.theme.colorScheme.error
-                        : context.theme.colorScheme.properOnSurface,
+                    color: isError ? context.theme.colorScheme.error : context.theme.colorScheme.properOnSurface,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),

@@ -253,11 +253,8 @@ class _FullscreenVideoState extends State<FullscreenVideo> with AutomaticKeepAli
                       child: Video(
                           controller: videoController,
                           controls: (state) => Padding(
-                                padding: EdgeInsets.all(!kIsWeb && !kIsDesktop ? 0 : 20)
-                                    .copyWith(
-                                        bottom: !kIsWeb && !kIsDesktop
-                                            ? (iOS && widget.showInteractions ? 70 : 10)
-                                            : 0),
+                                padding: EdgeInsets.all(!kIsWeb && !kIsDesktop ? 0 : 20).copyWith(
+                                    bottom: !kIsWeb && !kIsDesktop ? (iOS && widget.showInteractions ? 70 : 10) : 0),
                                 child: kIsDesktop
                                     ? media_kit_video_controls.MaterialDesktopVideoControls(state)
                                     : media_kit_video_controls.MaterialVideoControls(state),

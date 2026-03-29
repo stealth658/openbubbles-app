@@ -224,9 +224,8 @@ class MessagesViewState extends State<MessagesView> with MessagesServiceMixin, T
 
     // Merge newly loaded messages into the local list
     final oldGuids = Set<String>.from(_messages.map((m) => m.guid).whereType<String>());
-    final newMessages = messageService.struct.messages
-        .where((m) => m.guid != null && !oldGuids.contains(m.guid))
-        .toList();
+    final newMessages =
+        messageService.struct.messages.where((m) => m.guid != null && !oldGuids.contains(m.guid)).toList();
 
     if (newMessages.isNotEmpty) {
       createStatesForMessages(newMessages, controller);

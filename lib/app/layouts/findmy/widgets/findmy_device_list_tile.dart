@@ -30,42 +30,42 @@ class FindMyDeviceListTile extends StatelessWidget {
           ? "Location"
           : (item.address?.label ?? item.address?.mapItemFullAddress ?? "No location found");
 
-    return ListTile(
-      mouseCursor: MouseCursor.defer,
-      title: Text(displayName),
-      subtitle: Text(displayLocation),
-      onTap: item.location?.latitude != null && item.location?.longitude != null
-          ? () async {
-              await controller.panelController.close();
-              await controller.completer.future;
-              final marker = controller.markers.values.firstWhere(
-                  (e) => e.point.latitude == item.location?.latitude && e.point.longitude == item.location?.longitude);
-              controller.popupController.showPopupsOnlyFor([marker]);
-              controller.mapController.move(LatLng(item.location!.latitude!, item.location!.longitude!), 10);
-            }
-          : null,
-      trailing: item.location?.latitude != null && item.location?.longitude != null
-          ? ButtonTheme(
-              minWidth: 1,
-              child: TextButton(
-                style: TextButton.styleFrom(
-                  shape: const CircleBorder(),
-                  backgroundColor: context.theme.colorScheme.primaryContainer,
+      return ListTile(
+        mouseCursor: MouseCursor.defer,
+        title: Text(displayName),
+        subtitle: Text(displayLocation),
+        onTap: item.location?.latitude != null && item.location?.longitude != null
+            ? () async {
+                await controller.panelController.close();
+                await controller.completer.future;
+                final marker = controller.markers.values.firstWhere((e) =>
+                    e.point.latitude == item.location?.latitude && e.point.longitude == item.location?.longitude);
+                controller.popupController.showPopupsOnlyFor([marker]);
+                controller.mapController.move(LatLng(item.location!.latitude!, item.location!.longitude!), 10);
+              }
+            : null,
+        trailing: item.location?.latitude != null && item.location?.longitude != null
+            ? ButtonTheme(
+                minWidth: 1,
+                child: TextButton(
+                  style: TextButton.styleFrom(
+                    shape: const CircleBorder(),
+                    backgroundColor: context.theme.colorScheme.primaryContainer,
+                  ),
+                  onPressed: () async {
+                    await MapsLauncher.launchCoordinates(item.location!.latitude!, item.location!.longitude!);
+                  },
+                  child: const Icon(Icons.directions, size: 20),
                 ),
-                onPressed: () async {
-                  await MapsLauncher.launchCoordinates(item.location!.latitude!, item.location!.longitude!);
-                },
-                child: const Icon(Icons.directions, size: 20),
-              ),
-            )
-          : null,
-      onLongPress: () async {
-        showDialog(
-          context: context,
-          builder: (context) => FindMyRawDataDialog(item: item),
-        );
-      },
-    );
+              )
+            : null,
+        onLongPress: () async {
+          showDialog(
+            context: context,
+            builder: (context) => FindMyRawDataDialog(item: item),
+          );
+        },
+      );
     }); // end Obx
   }
 }

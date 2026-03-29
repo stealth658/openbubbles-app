@@ -97,9 +97,8 @@ class ChatState {
       );
     }
     // Cache fake name for consistent redacted-mode display.
-    _cachedFakeName = chat.isGroup
-        ? chat.fakeName
-        : (participants.isNotEmpty ? participants.first.fakeName : 'Unknown');
+    _cachedFakeName =
+        chat.isGroup ? chat.fakeName : (participants.isNotEmpty ? participants.first.fakeName : 'Unknown');
     // Apply redaction if redacted mode is enabled on initialization
     if (SettingsSvc.settings.redactedMode.value) {
       redactFields();
@@ -227,10 +226,8 @@ class ChatState {
       return participants.first.displayName.value;
     }
     if (count <= 4) {
-      final words = participants
-          .map((p) => (p.reactionDisplayName.value ?? '').firstWord)
-          .where((s) => s.isNotEmpty)
-          .toList();
+      final words =
+          participants.map((p) => (p.reactionDisplayName.value ?? '').firstWord).where((s) => s.isNotEmpty).toList();
       if (words.isEmpty) return null;
       if (words.length == 1) return words[0];
       return '${words.take(words.length - 1).join(', ')} & ${words.last}';

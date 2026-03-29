@@ -96,7 +96,10 @@ class HandleState {
     if (h.address.startsWith("urn:biz")) return "Business";
     if (!kIsWeb && h.contactsV2.isNotEmpty) {
       final firstNative = h.contactsV2.where((c) => c.isNative).firstOrNull;
-      return firstNative?.nickname ?? firstNative?.firstName ?? firstNative?.computedDisplayName ?? h.contactsV2.first.computedDisplayName;
+      return firstNative?.nickname ??
+          firstNative?.firstName ??
+          firstNative?.computedDisplayName ??
+          h.contactsV2.first.computedDisplayName;
     }
     return h.address.contains("@") ? h.address : (h.formattedAddress ?? h.address);
   }

@@ -130,9 +130,7 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
     final controller = _controller;
     if (controller == null || !controller.value.isInitialized) return;
     try {
-      await controller.setFlashMode(_mode == 'video' && _flashMode == FlashMode.always
-          ? FlashMode.torch
-          : _flashMode);
+      await controller.setFlashMode(_mode == 'video' && _flashMode == FlashMode.always ? FlashMode.torch : _flashMode);
     } catch (_) {
       // Not all devices support every flash mode — silently ignore.
     }
@@ -224,7 +222,11 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
 
     try {
       final file = await controller.stopVideoRecording();
-      if (mounted) setState(() { _isRecording = false; _previewFile = file; });
+      if (mounted)
+        setState(() {
+          _isRecording = false;
+          _previewFile = file;
+        });
     } catch (e) {
       setState(() => _isRecording = false);
       if (mounted) {
@@ -286,9 +288,7 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
         Container(
           color: Colors.black,
           child: Center(
-            child: isVideo
-                ? _VideoPreview(file: file)
-                : Image.file(File(file.path), fit: BoxFit.contain),
+            child: isVideo ? _VideoPreview(file: file) : Image.file(File(file.path), fit: BoxFit.contain),
           ),
         ),
 
@@ -359,9 +359,7 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
       children: [
         // Camera preview — fills the screen respecting aspect ratio
         Center(
-          child: _isRecording
-              ? _withRecordingBorder(CameraPreview(controller))
-              : CameraPreview(controller),
+          child: _isRecording ? _withRecordingBorder(CameraPreview(controller)) : CameraPreview(controller),
         ),
 
         // Top bar: flash + close
@@ -422,9 +420,7 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         // Flash toggle (hide during recording and on front camera)
-        if (_mode == 'photo' ||
-            (_mode == 'video' &&
-                _cameras[_cameraIndex].lensDirection == CameraLensDirection.back))
+        if (_mode == 'photo' || (_mode == 'video' && _cameras[_cameraIndex].lensDirection == CameraLensDirection.back))
           IconButton(
             icon: Icon(_flashIcon, color: Colors.white, size: 28),
             onPressed: _isRecording ? null : _cycleFlash,
@@ -479,15 +475,25 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        _ModeTab(label: 'PHOTO', selected: _mode == 'photo', onTap: _isRecording ? null : () {
-          setState(() => _mode = 'photo');
-          _applyFlashMode();
-        }),
+        _ModeTab(
+            label: 'PHOTO',
+            selected: _mode == 'photo',
+            onTap: _isRecording
+                ? null
+                : () {
+                    setState(() => _mode = 'photo');
+                    _applyFlashMode();
+                  }),
         const SizedBox(width: 32),
-        _ModeTab(label: 'VIDEO', selected: _mode == 'video', onTap: _isRecording ? null : () {
-          setState(() => _mode = 'video');
-          _applyFlashMode();
-        }),
+        _ModeTab(
+            label: 'VIDEO',
+            selected: _mode == 'video',
+            onTap: _isRecording
+                ? null
+                : () {
+                    setState(() => _mode = 'video');
+                    _applyFlashMode();
+                  }),
       ],
     );
   }

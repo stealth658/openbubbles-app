@@ -126,7 +126,8 @@ class _InteractiveHolderState extends State<InteractiveHolder> with AutomaticKee
                                             );
                                         }
                                       } else if (payloadData?.type == PayloadType.url || message.isLegacyUrlPreview) {
-                                        final urlData = payloadData?.urlData?.first ?? UrlPreviewData(originalUrl: message.url);
+                                        final urlData =
+                                            payloadData?.urlData?.first ?? UrlPreviewData(originalUrl: message.url);
                                         return UrlPreview(data: urlData);
                                       } else {
                                         final data = payloadData!.appData!.first;

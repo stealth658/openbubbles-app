@@ -881,6 +881,7 @@ class TextFieldComponent extends StatefulWidget {
   final FocusNode? focusNode;
 
   final List<PlatformFile> initialAttachments;
+
   /// When true the send button is always shown even with no text/attachments.
   /// Used by the chat creator when an existing chat has been resolved.
   final bool alwaysShowSend;

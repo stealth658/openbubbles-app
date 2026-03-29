@@ -37,10 +37,12 @@ class TextFieldSuffix extends StatefulWidget {
   final RecorderController? recorderController;
   final Future<void> Function({String? effect}) sendMessage;
   final bool isChatCreator;
+
   /// When true the send button is always shown, regardless of whether there
   /// is text or attachments. Used in the chat creator when an existing chat
   /// has been resolved so the user can open the conversation without typing.
   final bool alwaysShowSend;
+
   /// Mirrors `initialAttachments.isNotEmpty` from the parent TextFieldComponent.
   /// Used in isChatCreator mode to show the send button when attachments are
   /// pre-loaded (e.g. shared from another app) but no text has been typed yet.

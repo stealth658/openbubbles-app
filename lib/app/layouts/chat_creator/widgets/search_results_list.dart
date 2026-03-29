@@ -1,5 +1,4 @@
-import 'package:bluebubbles/app/layouts/chat_creator/chat_creator.dart'
-    show SelectedContact;
+import 'package:bluebubbles/app/layouts/chat_creator/chat_creator.dart' show SelectedContact;
 import 'package:bluebubbles/app/layouts/chat_creator/chat_creator_controller.dart';
 import 'package:bluebubbles/app/layouts/chat_creator/widgets/chat_creator_tile.dart';
 import 'package:bluebubbles/app/layouts/chat_creator/widgets/search_contact_tile.dart';
@@ -56,10 +55,8 @@ class SearchResultsList extends StatelessWidget {
       final chatsLoaded = ChatsSvc.loadedAllChats.isCompleted;
       final query = controller.currentQuery.value.trim();
       final selected = controller.selectedContacts.toList();
-      final showFallback =
-          _shouldShowFallback(query, contacts, selected);
-      final isEmpty =
-          chatsLoaded && chats.isEmpty && contacts.isEmpty && !showFallback;
+      final showFallback = _shouldShowFallback(query, contacts, selected);
+      final isEmpty = chatsLoaded && chats.isEmpty && contacts.isEmpty && !showFallback;
 
       return CustomScrollView(
         physics: ThemeSwitcher.getScrollPhysics(),
@@ -89,8 +86,7 @@ class SearchResultsList extends StatelessWidget {
                   ),
                   child: ListTile(
                     leading: CircleAvatar(
-                      backgroundColor:
-                          context.theme.colorScheme.primaryContainer,
+                      backgroundColor: context.theme.colorScheme.primaryContainer,
                       child: Icon(
                         Icons.send,
                         size: 20,
@@ -152,18 +148,14 @@ class SearchResultsList extends StatelessWidget {
                 return Obx(() {
                   final chatState = ChatsSvc.getChatState(chat.guid);
                   final title = chatState?.title.value ?? chat.getTitle();
-                  final subtitle = chatState?.chatCreatorSubtitle.value ??
-                      chat.getChatCreatorSubtitle();
+                  final subtitle = chatState?.chatCreatorSubtitle.value ?? chat.getChatCreatorSubtitle();
                   return Material(
                     color: Colors.transparent,
                     child: InkWell(
                       onTap: () {
                         final participants = chat.handles
                             .where((h) =>
-                                controller.selectedContacts
-                                    .firstWhereOrNull(
-                                        (c) => c.address == h.address) ==
-                                null)
+                                controller.selectedContacts.firstWhereOrNull((c) => c.address == h.address) == null)
                             .map(
                               (h) => SelectedContact(
                                 displayName: h.displayName,

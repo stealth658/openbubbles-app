@@ -43,8 +43,7 @@ class _BackgroundCropState extends State<BackgroundCrop> with ThemeHelpers {
     }
 
     final String appDocPath = FilesystemSvc.appDocDir.path;
-    final String sanitizedGuid =
-        chat.guid.characters.where((char) => char.isAlphabetOnly || char.isNumericOnly).join();
+    final String sanitizedGuid = chat.guid.characters.where((char) => char.isAlphabetOnly || char.isNumericOnly).join();
     final File file = File("$appDocPath/custom_backgrounds/$sanitizedGuid/background-${croppedData.length}.png");
 
     if (!(await file.exists())) {
@@ -174,8 +173,7 @@ class _BackgroundCropState extends State<BackgroundCrop> with ThemeHelpers {
             },
             child: Text(
               _imageData != null ? "Pick New Image" : "Pick Image",
-              style: context.theme.textTheme.bodyLarge!
-                  .copyWith(color: context.theme.colorScheme.onPrimaryContainer),
+              style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.onPrimaryContainer),
             ),
           ),
           SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
