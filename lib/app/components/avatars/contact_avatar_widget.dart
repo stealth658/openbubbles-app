@@ -194,7 +194,7 @@ class _ContactAvatarWidgetState extends State<ContactAvatarWidget> with ThemeHel
                   backgroundImage: Image.file(file).image,
                   backgroundColor: Colors.transparent,
                 );
-              } else if (!hideContactInfo && contactV2Avatar != null) {
+              } else if (!hideContactInfo && !genAvatars && contactV2Avatar != null) {
                 // Use ContactV2 avatar (from file path)
                 return SizedBox.expand(
                   child: Image.file(
@@ -226,10 +226,10 @@ class _ContactAvatarWidgetState extends State<ContactAvatarWidget> with ThemeHel
                     },
                   ),
                 );
-              } else if (isNullOrEmpty(contactV2Avatar) || hideContactInfo) {
+              } else if (isNullOrEmpty(contactV2Avatar) || hideContactInfo || genAvatars) {
                 // Use reactive initials from HandleState
                 String? initials = cachedInitials?.substring(0, iOS ? null : 1);
-                if (!isNullOrEmpty(initials) && !hideContactInfo) {
+                if (!isNullOrEmpty(initials) && !hideContactInfo && !genAvatars) {
                   return Text(
                     initials!,
                     key: Key("$keyPrefix-avatar-text"),

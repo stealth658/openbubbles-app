@@ -232,3 +232,35 @@ const bigEmojiScaleFactor = 3.0;
 const appName = "BlueBubbles";
 const msStorePackageName = "23344BlueBubbles.BlueBubbles";
 const windowsAppPackageName = "23344BlueBubbles.BlueBubbles_2fva2ntdzvhtw!bluebubbles";
+
+const randomAvatarBackgroundColors = [
+  // Pinks
+  "#FFB6C1", // LightPink
+  "#FF69B4", // HotPink
+  "#FF1493", // DeepPink
+  // Reds
+  "#DB7093", // PaleVioletRed
+  "#C71585", // MediumVioletRed
+  // Purples
+  "#E6E6FA", // Lavender
+  "#D8BFD8", // Thistle
+  "#DDA0DD", // Plum
+  "#EE82EE", // Violet
+  "#DA70D6", // Orchid
+  "#BA55D3", // MediumOrchid
+  "#9932CC", // DarkOrchid
+  "#9400D3", // DarkViolet
+  "#8A2BE2", // BlueViolet
+  // Blues
+  "#ADD8E6", // LightBlue
+  "#87CEEB", // SkyBlue
+  "#00BFFF", // DeepSkyBlue
+  "#1E90FF", // DodgerBlue
+  "#6495ED", // CornflowerBlue
+  "#4169E1", // RoyalBlue
+  // Greens
+  "#98FB98", // PaleGreen
+  "#00FF7F", // SpringGreen
+  "#3CB371", // MediumSeaGreen
+  "#228B22", // ForestGreen
+];

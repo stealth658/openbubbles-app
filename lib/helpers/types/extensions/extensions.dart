@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -293,6 +295,10 @@ String _getAttachmentText(List<Attachment?> attachments) {
     attachmentStr.add("$value $key${value > 1 ? "s" : ""}");
   });
   return attachmentStr.join(attachmentStr.length == 2 ? " & " : ", ").toTitleCase();
+}
+
+extension RandomListChoice<E> on List<E> {
+  E randomChoice() => this[Random().nextInt(length)];
 }
 
 extension MessageNotificationExtension on Message {

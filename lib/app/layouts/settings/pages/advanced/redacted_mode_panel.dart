@@ -53,6 +53,7 @@ class _RedactedModePanelState extends State<RedactedModePanel> with ThemeHelpers
       )
     ],
   );
+  late final MessagePart _previewPart = MessagePart(part: 0, text: message.text, subject: message.subject);
   final RxInt placeholder = 0.obs;
 
   @override
@@ -101,11 +102,13 @@ class _RedactedModePanelState extends State<RedactedModePanel> with ThemeHelpers
                           // used to update preview real-time
                           // ignore: unused_local_variable
                           final _placeholder = placeholder.value;
+                          _previewPart.shouldRedact = SettingsSvc.settings.redactedMode.value &&
+                              SettingsSvc.settings.hideMessageContent.value;
                           return Row(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               ContactAvatarWidget(
-                                handle: message.handleRelation.target,
+                                handle: message.handle,
                                 size: iOS ? 30 : 35,
                                 fontSize: context.theme.textTheme.bodyLarge!.fontSize!,
                                 borderThickness: 0.1,
@@ -173,7 +176,7 @@ class _RedactedModePanelState extends State<RedactedModePanel> with ThemeHelpers
                                           text: TextSpan(
                                             children: buildMessageSpans(
                                               context,
-                                              MessagePart(part: 0, text: message.text, subject: message.subject),
+                                              _previewPart,
                                               message,
                                             ),
                                           ),

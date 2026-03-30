@@ -37,7 +37,15 @@ class Handle {
   @Transient()
   Widget get fakeAvatar {
     if (_fakeAvatar != null) return _fakeAvatar!;
-    Avatar _avatar = DiceBearBuilder(seed: address).build();
+    // Pick a random background color from the hex list: randomAvatarBackgroundColors
+    final backgroundColor = randomAvatarBackgroundColors.randomChoice();
+
+    Avatar _avatar = DiceBearBuilder(
+      seed: address,
+      sprite: DiceBearSprite.miniavs,
+      // Random light color scheme with a custom background color to prevent white backgrounds on light mode
+      backgroundColor: HexColor(backgroundColor),
+    ).build();
     _fakeAvatar = _avatar.toImage();
     return _fakeAvatar!;
   }

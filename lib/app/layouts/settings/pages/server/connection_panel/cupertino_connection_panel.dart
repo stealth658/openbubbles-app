@@ -139,18 +139,35 @@ class _CupertinoConnectionPanelState
         if (qrAction != null) qrAction,
       ],
       bodySlivers: [
-        CupertinoSliverRefreshControl(
-          onRefresh: () async => controller.getServerStats(),
-        ),
         SliverToBoxAdapter(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Obx(() => _buildStatusGrid()),
-              SettingsHeader(
-                iosSubtitle: iosSubtitle,
-                materialSubtitle: materialSubtitle,
-                text: "Server Info",
+              Container(
+                height: 60,
+                color: Colors.transparent,
+                alignment: Alignment.bottomLeft,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 8.0, left: 30, right: 4),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Expanded(child: Text("Server Info", style: iosSubtitle)),
+                      Obx(() {
+                        final isLoading = controller.hasCheckedStats.value == false;
+                        return CupertinoButton(
+                          padding: const EdgeInsets.only(right: 16.0),
+                          minSize: 28,
+                          onPressed: isLoading ? null : () => controller.getServerStats(),
+                          child: isLoading
+                              ? const CupertinoActivityIndicator()
+                              : const Icon(CupertinoIcons.refresh, size: 18),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
               ),
               SettingsSection(
                 backgroundColor: tileColor,

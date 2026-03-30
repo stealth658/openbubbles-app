@@ -27,12 +27,19 @@ class ServerManagementPanelController extends StatefulController {
   final RxnBool hasCheckedStats = RxnBool(false);
 
   @override
+  void onInit() {
+    super.onInit();
+    serverDetails.value = SettingsSvc.serverDetails;
+  }
+
+  @override
   void onReady() {
     super.onReady();
     getServerStats();
   }
 
   void getServerStats() async {
+    hasCheckedStats.value = false;
     int now = DateTime.now().toUtc().millisecondsSinceEpoch;
     await HttpSvc.ping();
     int later = DateTime.now().toUtc().millisecondsSinceEpoch;

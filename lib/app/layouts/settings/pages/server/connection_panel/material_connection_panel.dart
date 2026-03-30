@@ -130,22 +130,6 @@ class _MaterialConnectionPanelState extends CustomState<MaterialConnectionPanel,
       headerColor: headerColor,
       actions: [
         if (qrAction != null) qrAction,
-        Obx(() {
-          final isLoading = controller.hasCheckedStats.value == false;
-          return IconButton(
-            icon: isLoading
-                ? SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(context.theme.colorScheme.primary),
-                    ),
-                  )
-                : Icon(Icons.refresh, color: context.theme.colorScheme.onSurface),
-            onPressed: isLoading ? null : () => controller.getServerStats(),
-          );
-        }),
       ],
       bodySlivers: [
         SliverToBoxAdapter(
@@ -158,8 +142,34 @@ class _MaterialConnectionPanelState extends CustomState<MaterialConnectionPanel,
               ),
               Center(child: Obx(() => _buildStatusGrid())),
               Padding(
-                padding: const EdgeInsets.fromLTRB(15, 12, 15, 4),
-                child: Text("Server Info", style: materialSubtitle),
+                padding: const EdgeInsets.fromLTRB(15, 12, 0, 4),
+                child: Row(
+                  children: [
+                    Expanded(child: Text("Server Info", style: materialSubtitle)),
+                    Obx(() {
+                      final isLoading = controller.hasCheckedStats.value == false;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: IconButton(
+                          iconSize: 18,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                          icon: isLoading
+                              ? SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(context.theme.colorScheme.primary),
+                                  ),
+                                )
+                              : Icon(Icons.refresh, color: context.theme.colorScheme.onSurface),
+                          onPressed: isLoading ? null : () => controller.getServerStats(),
+                        ),
+                      );
+                    }),
+                  ],
+                ),
               ),
               ...ConnectionPanelHelpersMixin.kInfoItems.map((item) {
                 return Obx(() => _buildInfoRow(item));
