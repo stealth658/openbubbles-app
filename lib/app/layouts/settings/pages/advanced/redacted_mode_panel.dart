@@ -102,8 +102,8 @@ class _RedactedModePanelState extends State<RedactedModePanel> with ThemeHelpers
                           // used to update preview real-time
                           // ignore: unused_local_variable
                           final _placeholder = placeholder.value;
-                          _previewPart.shouldRedact = SettingsSvc.settings.redactedMode.value &&
-                              SettingsSvc.settings.hideMessageContent.value;
+                          _previewPart.shouldRedact =
+                              SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideMessageContent.value;
                           return Row(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
