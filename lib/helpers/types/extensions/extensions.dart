@@ -296,8 +296,7 @@ String _getAttachmentText(List<Attachment?> attachments) {
 }
 
 extension MessageNotificationExtension on Message {
-  String getNotificationText(
-      {bool withSender = false, bool hideContactInfo = false, bool hideMessageContent = false}) {
+  String getNotificationText({bool withSender = false, bool hideContactInfo = false, bool hideMessageContent = false}) {
     String compute() {
       if (isGroupEvent) return groupEventText;
       if (expressiveSendStyleId == "com.apple.MobileSMS.expressivesend.invisibleink") {
@@ -306,7 +305,9 @@ extension MessageNotificationExtension on Message {
 
       final String sender = !withSender
           ? ""
-          : isFromMe! ? "You: " : (hideContactInfo ? "Someone: " : "${handleRelation.target?.displayName ?? "Someone"}: ");
+          : isFromMe!
+              ? "You: "
+              : (hideContactInfo ? "Someone: " : "${handleRelation.target?.displayName ?? "Someone"}: ");
 
       if (isInteractive) {
         return "$sender$interactiveText";
@@ -351,8 +352,8 @@ extension MessageNotificationExtension on Message {
                   .map((e) => e.range)
                   .sorted((a, b) => a.first.compareTo(b.first));
               final attachmentGuids = attrBod.runs
-                  .where((e) =>
-                      e.attributes?.messagePart == associatedMessagePart && e.attributes?.attachmentGuid != null)
+                  .where(
+                      (e) => e.attributes?.messagePart == associatedMessagePart && e.attributes?.attachmentGuid != null)
                   .map((e) => e.attributes?.attachmentGuid)
                   .toSet();
               if (attachmentGuids.isNotEmpty) {

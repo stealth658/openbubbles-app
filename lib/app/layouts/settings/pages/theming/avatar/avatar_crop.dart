@@ -55,8 +55,8 @@ class _AvatarCropState extends State<AvatarCrop> with ThemeHelpers {
       Navigator.of(context).pop();
       showSnackbar("Notice", "User avatar saved successfully");
     } else if (widget.chat != null) {
-      File file = File(
-          p.join(FilesystemSvc.avatarsPath, FilesystemService.sanitizeGuid(widget.chat!.guid), "avatar-${croppedData.length}.jpg"));
+      File file = File(p.join(FilesystemSvc.avatarsPath, FilesystemService.sanitizeGuid(widget.chat!.guid),
+          "avatar-${croppedData.length}.jpg"));
       if (!(await file.exists())) {
         await file.create(recursive: true);
       }
@@ -70,8 +70,8 @@ class _AvatarCropState extends State<AvatarCrop> with ThemeHelpers {
       Navigator.of(context).pop();
       showSnackbar("Notice", "Custom chat avatar saved successfully");
     } else {
-      File file = File(
-          p.join(FilesystemSvc.avatarsPath, FilesystemService.sanitizeGuid(widget.chat!.guid), "avatar-${croppedData.length}.jpg"));
+      File file = File(p.join(FilesystemSvc.avatarsPath, FilesystemService.sanitizeGuid(widget.chat!.guid),
+          "avatar-${croppedData.length}.jpg"));
       if (!(await file.exists())) {
         await file.create(recursive: true);
       }

@@ -94,7 +94,8 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
                                 const TextSpan(text: " - Send tapbacks, effects, and mentions\n"),
                                 const TextSpan(text: " - Send messages with subject lines\n"),
                                 if (SettingsSvc.serverDetails.isMinBigSur) const TextSpan(text: " - Send replies\n"),
-                                if (SettingsSvc.serverDetails.isMinVentura) const TextSpan(text: " - Edit & Unsend messages\n"),
+                                if (SettingsSvc.serverDetails.isMinVentura)
+                                  const TextSpan(text: " - Edit & Unsend messages\n"),
                                 if (SettingsSvc.serverDetails.isMinBigSur)
                                   const TextSpan(text: " - Receive Digital Touch messages\n"),
                                 const TextSpan(text: "\n"),
@@ -108,8 +109,10 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
                                   const TextSpan(text: " - Change the group chat photo\n"),
                                 const TextSpan(text: "\n"),
                                 const TextSpan(text: " - Know if a recipient is registered with iMessage\n"),
-                                if (SettingsSvc.serverDetails.isMinMonterey) const TextSpan(text: " - View Focus statuses\n"),
-                                if (SettingsSvc.serverDetails.isMinBigSur) const TextSpan(text: " - Use Find My Friends\n"),
+                                if (SettingsSvc.serverDetails.isMinMonterey)
+                                  const TextSpan(text: " - View Focus statuses\n"),
+                                if (SettingsSvc.serverDetails.isMinBigSur)
+                                  const TextSpan(text: " - Use Find My Friends\n"),
                                 if (SettingsSvc.serverDetails.isMinBigSur)
                                   const TextSpan(text: " - Be notified of incoming FaceTime calls\n"),
                                 if (SettingsSvc.serverDetails.isMinVentura)
@@ -279,7 +282,8 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
                             ),
                           ),
                           AnimatedSizeAndFade.showHide(
-                            show: SettingsSvc.serverDetails.isMinVentura && SettingsSvc.serverDetails.supportsEditAndUnsend,
+                            show: SettingsSvc.serverDetails.isMinVentura &&
+                                SettingsSvc.serverDetails.supportsEditAndUnsend,
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [

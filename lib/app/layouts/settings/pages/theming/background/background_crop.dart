@@ -44,7 +44,8 @@ class _BackgroundCropState extends State<BackgroundCrop> with ThemeHelpers {
     }
 
     final String sanitizedGuid = FilesystemService.sanitizeGuid(chat.guid);
-    final File file = File(p.join(FilesystemSvc.customBackgroundsPath, sanitizedGuid, "background-${croppedData.length}.png"));
+    final File file =
+        File(p.join(FilesystemSvc.customBackgroundsPath, sanitizedGuid, "background-${croppedData.length}.png"));
 
     if (!(await file.exists())) {
       await file.create(recursive: true);

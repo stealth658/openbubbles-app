@@ -247,8 +247,8 @@ class ChatState {
   String? _computeSubtitle(Message? message) {
     if (message == null) return null;
     final redacted = SettingsSvc.settings.redactedMode.value;
-    final hideContactInfo = redacted &&
-        (SettingsSvc.settings.hideContactInfo.value || SettingsSvc.settings.generateFakeContactNames.value);
+    final hideContactInfo =
+        redacted && (SettingsSvc.settings.hideContactInfo.value || SettingsSvc.settings.generateFakeContactNames.value);
     final hideMessageContent = redacted && SettingsSvc.settings.hideMessageContent.value;
     return message.getNotificationText(
       hideContactInfo: hideContactInfo,

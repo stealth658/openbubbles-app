@@ -115,8 +115,8 @@ class OtherFile extends StatelessWidget {
             ..setAttribute("download", file.name)
             ..click();
         } else if (kIsDesktop) {
-          File _file = File(join(FilesystemSvc.sysTempPath, "BlueBubbles", "attachments", attachment.guid,
-              basename(file.path!)));
+          File _file = File(
+              join(FilesystemSvc.sysTempPath, "BlueBubbles", "attachments", attachment.guid, basename(file.path!)));
           if (!_file.existsSync()) {
             _file.createSync(recursive: true);
             File(file.path!).copySync(_file.path);
@@ -124,8 +124,8 @@ class OtherFile extends StatelessWidget {
           launchUrl(Uri.file(_file.path));
         } else {
           try {
-            final res = await OpenFilex.open(
-                join(FilesystemSvc.attachmentsPath, attachment.guid!, basename(file.path!)));
+            final res =
+                await OpenFilex.open(join(FilesystemSvc.attachmentsPath, attachment.guid!, basename(file.path!)));
             if (res.type == ResultType.noAppToOpen) {
               showSnackbar('Error', "No handler for this file type! Using share menu instead.");
               await Future.delayed(const Duration(seconds: 1));

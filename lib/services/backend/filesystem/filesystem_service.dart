@@ -72,8 +72,7 @@ class FilesystemService {
 
   /// Strips non-alphanumeric characters from [guid] so it is safe for use as
   /// a filesystem path component (matches the pattern used by AvatarCrop, etc.).
-  static String sanitizeGuid(String guid) =>
-      guid.characters.where((c) => c.isAlphabetOnly || c.isNumericOnly).join();
+  static String sanitizeGuid(String guid) => guid.characters.where((c) => c.isAlphabetOnly || c.isNumericOnly).join();
 
   /// Strips the Android internal storage prefix from [path] for display.
   /// Returns [path] unchanged on non-Android platforms.

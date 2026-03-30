@@ -91,10 +91,11 @@ class _UrlPreviewState extends State<UrlPreview> with AutomaticKeepAliveClientMi
               .firstWhereOrNull((e) => e.transferName?.contains("pluginPayloadAttachment") ?? false);
           if (attachment != null) {
             content = AttachmentsSvc.getContent(attachment, autoDownload: true, onComplete: (file) {
-              if (mounted)
+              if (mounted) {
                 setState(() {
                   content = file;
                 });
+              }
             });
             if (content is PlatformFile && mounted) setState(() {});
             return; // attachment serves as the image; no need to fetch external metadata
@@ -106,20 +107,22 @@ class _UrlPreviewState extends State<UrlPreview> with AutomaticKeepAliveClientMi
             isNullOrEmpty(data.title) || (data.imageMetadata?.url == null && data.iconMetadata?.url == null);
         if (needsMetadata && message.url != null) {
           if (MetadataHelper.mapIsNotEmpty(message.metadata)) {
-            if (mounted)
+            if (mounted) {
               setState(() {
                 _fetchedMetadata = Metadata.fromJson(message.metadata!);
               });
+            }
           } else {
             try {
               final fetched = await MetadataHelper.fetchMetadata(message);
               if (MetadataHelper.isNotEmpty(fetched)) {
                 message.updateMetadata(fetched);
               }
-              if (mounted)
+              if (mounted) {
                 setState(() {
                   _fetchedMetadata = fetched;
                 });
+              }
             } catch (ex, stack) {
               Logger.error("Failed to fetch URL preview metadata", error: ex, trace: stack);
             }

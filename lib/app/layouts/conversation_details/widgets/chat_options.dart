@@ -513,8 +513,7 @@ class _ChatOptionsState extends State<ChatOptions> with ThemeHelpers {
                         lines.add(line);
                       }
                       final now = DateTime.now().toLocal();
-                      final filePath = p.join(
-                          await FilesystemSvc.downloadsDirectory,
+                      final filePath = p.join(await FilesystemSvc.downloadsDirectory,
                           "${chat.getTitle().replaceAll(RegExp(r'[<>:"/\\|?*]'), "")}-transcript-${now.year}${now.month}${now.day}_${now.hour}${now.minute}${now.second}.txt");
                       File file = File(filePath);
                       await file.create(recursive: true);
@@ -623,8 +622,7 @@ class _ChatOptionsState extends State<ChatOptions> with ThemeHelpers {
                                 ]),
                               ]));
                       final now = DateTime.now().toLocal();
-                      final filePath = p.join(
-                          await FilesystemSvc.downloadsDirectory,
+                      final filePath = p.join(await FilesystemSvc.downloadsDirectory,
                           "${chat.getTitle().replaceAll(RegExp(r'[<>:"/\\|?*]'), "")}-transcript-${now.year}${now.month}${now.day}_${now.hour}${now.minute}${now.second}.pdf");
                       File file = File(filePath);
                       await file.create(recursive: true);

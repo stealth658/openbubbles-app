@@ -131,8 +131,7 @@ abstract class SyncManager {
     final List<String> text = output.map((e) => e.message).toList();
     if (text.isNotEmpty) {
       final now = DateTime.now().toLocal();
-      final filePath = p.join(
-          await FilesystemSvc.downloadsDirectory,
+      final filePath = p.join(await FilesystemSvc.downloadsDirectory,
           "BlueBubbles-sync-${now.year}${now.month}${now.day}_${now.hour}${now.minute}${now.second}.txt");
       File file = File(filePath);
       await file.create(recursive: true);

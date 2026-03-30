@@ -222,11 +222,12 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
 
     try {
       final file = await controller.stopVideoRecording();
-      if (mounted)
+      if (mounted) {
         setState(() {
           _isRecording = false;
           _previewFile = file;
         });
+      }
     } catch (e) {
       setState(() => _isRecording = false);
       if (mounted) {
