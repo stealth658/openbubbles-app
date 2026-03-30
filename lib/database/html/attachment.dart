@@ -115,7 +115,7 @@ class Attachment {
 
   String? get mimeStart => mimeType?.split("/").first;
 
-  static String get baseDirectory => "${FilesystemSvc.appDocDir.path}/attachments";
+  static String get baseDirectory => FilesystemSvc.attachmentsPath;
 
   String get directory => "$baseDirectory/$guid";
 

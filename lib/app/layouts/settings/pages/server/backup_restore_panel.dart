@@ -16,7 +16,6 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart' hide Response;
 import 'package:intl/intl.dart';
 import 'package:path/path.dart' hide context;
-import 'package:path_provider/path_provider.dart';
 import 'package:universal_html/html.dart' as html;
 import 'package:universal_io/io.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -394,20 +393,20 @@ class _BackupRestorePanelState extends State<BackupRestorePanel> with ThemeHelpe
                                     );
                                   }
                                 } else {
-                                  String directoryPath = "/storage/emulated/0/Download/BB-Settings-";
-                                  String filePath = "$directoryPath$name.json";
                                   if (kIsWeb) {
                                     final bytes = utf8.encode(jsonEncode(json));
                                     final content = base64.encode(bytes);
                                     html.AnchorElement(
                                         href: "data:application/octet-stream;charset=utf-16le;base64,$content")
-                                      ..setAttribute("download", basename(filePath))
+                                      ..setAttribute("download", "BB-Settings-$name.json")
                                       ..click();
                                     return;
                                   }
+                                  final downloadsDir = await FilesystemSvc.downloadsDirectory;
+                                  String filePath = join(downloadsDir, "BB-Settings-$name.json");
                                   if (kIsDesktop) {
                                     String? _filePath = await FilePicker.platform.saveFile(
-                                      initialDirectory: (await getDownloadsDirectory())?.path,
+                                      initialDirectory: downloadsDir,
                                       dialogTitle: 'Choose a location to save this file',
                                       fileName: "BB-Settings-$name.json",
                                       type: FileType.custom,
@@ -829,25 +828,25 @@ class _BackupRestorePanelState extends State<BackupRestorePanel> with ThemeHelpe
                                   themeData.add(e.toMap());
                                 }
                                 String jsonStr = jsonEncode(themeData);
-                                String directoryPath = "/storage/emulated/0/Download/BlueBubbles-theming-";
                                 DateTime now = DateTime.now().toLocal();
-                                String filePath =
-                                    "$directoryPath${now.year}${now.month}${now.day}_${now.hour}${now.minute}${now.second}.json";
+                                final themeFilename =
+                                    "BlueBubbles-theming-${now.year}${now.month}${now.day}_${now.hour}${now.minute}${now.second}.json";
                                 if (kIsWeb) {
                                   final bytes = utf8.encode(jsonStr);
                                   final content = base64.encode(bytes);
                                   html.AnchorElement(
                                       href: "data:application/octet-stream;charset=utf-16le;base64,$content")
-                                    ..setAttribute("download", basename(filePath))
+                                    ..setAttribute("download", themeFilename)
                                     ..click();
                                   return;
                                 }
+                                final downloadsDir = await FilesystemSvc.downloadsDirectory;
+                                String filePath = join(downloadsDir, themeFilename);
                                 if (kIsDesktop) {
                                   String? _filePath = await FilePicker.platform.saveFile(
-                                    initialDirectory: (await getDownloadsDirectory())?.path,
+                                    initialDirectory: downloadsDir,
                                     dialogTitle: 'Choose a location to save this file',
-                                    fileName:
-                                        "BlueBubbles-theming-${now.year}${now.month}${now.day}_${now.hour}${now.minute}${now.second}.json",
+                                    fileName: themeFilename,
                                     type: FileType.custom,
                                     allowedExtensions: ["json"],
                                   );

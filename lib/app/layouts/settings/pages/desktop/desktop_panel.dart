@@ -230,8 +230,7 @@ class _DesktopPanelState extends State<DesktopPanel> with ThemeHelpers {
                                 await FilePicker.platform.pickFiles(type: FileType.audio, withData: true);
                             if (result != null) {
                               PlatformFile platformFile = result.files.first;
-                              String path =
-                                  "${FilesystemSvc.appDocDir.path}/sounds/${"notification-"}${platformFile.name}";
+                              String path = join(FilesystemSvc.soundsPath, "notification-${platformFile.name}");
                               await File(path).create(recursive: true);
                               await File(path).writeAsBytes(platformFile.bytes!);
                               SettingsSvc.settings.desktopNotificationSoundPath.value = path;

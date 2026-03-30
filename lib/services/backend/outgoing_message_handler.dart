@@ -5,6 +5,7 @@ import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/utils/file_utils.dart';
+import 'package:path/path.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:collection/collection.dart';
 import 'package:dio/dio.dart';
@@ -824,9 +825,8 @@ class OutgoingMessageHandler {
     // instead of falling back to a server download.
     if (!kIsWeb && existingGuid != replacement.guid && existingGuid.startsWith('temp')) {
       try {
-        final appDocPath = FilesystemSvc.appDocDir.path;
-        final oldMessageDir = Directory('$appDocPath/messages/$existingGuid');
-        final newMessageDir = Directory('$appDocPath/messages/${replacement.guid}');
+        final oldMessageDir = Directory(join(FilesystemSvc.messagesPath, existingGuid));
+        final newMessageDir = Directory(join(FilesystemSvc.messagesPath, replacement.guid!));
         if (oldMessageDir.existsSync() && !newMessageDir.existsSync()) {
           oldMessageDir.renameSync(newMessageDir.path);
           Logger.debug(

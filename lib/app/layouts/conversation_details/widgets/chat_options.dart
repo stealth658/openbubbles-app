@@ -13,7 +13,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:universal_io/io.dart';
@@ -514,11 +513,8 @@ class _ChatOptionsState extends State<ChatOptions> with ThemeHelpers {
                         lines.add(line);
                       }
                       final now = DateTime.now().toLocal();
-                      String filePath = "/storage/emulated/0/Download/";
-                      if (kIsDesktop) {
-                        filePath = (await getDownloadsDirectory())!.path;
-                      }
-                      filePath = p.join(filePath,
+                      final filePath = p.join(
+                          await FilesystemSvc.downloadsDirectory,
                           "${chat.getTitle().replaceAll(RegExp(r'[<>:"/\\|?*]'), "")}-transcript-${now.year}${now.month}${now.day}_${now.hour}${now.minute}${now.second}.txt");
                       File file = File(filePath);
                       await file.create(recursive: true);
@@ -627,11 +623,8 @@ class _ChatOptionsState extends State<ChatOptions> with ThemeHelpers {
                                 ]),
                               ]));
                       final now = DateTime.now().toLocal();
-                      String filePath = "/storage/emulated/0/Download/";
-                      if (kIsDesktop) {
-                        filePath = (await getDownloadsDirectory())!.path;
-                      }
-                      filePath = p.join(filePath,
+                      final filePath = p.join(
+                          await FilesystemSvc.downloadsDirectory,
                           "${chat.getTitle().replaceAll(RegExp(r'[<>:"/\\|?*]'), "")}-transcript-${now.year}${now.month}${now.day}_${now.hour}${now.minute}${now.second}.pdf");
                       File file = File(filePath);
                       await file.create(recursive: true);

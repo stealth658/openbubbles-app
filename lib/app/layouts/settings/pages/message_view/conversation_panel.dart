@@ -218,7 +218,7 @@ class _ConversationPanelState extends State<ConversationPanel> with ThemeHelpers
                               await FilePicker.platform.pickFiles(type: FileType.audio, withData: true);
                           if (result != null) {
                             PlatformFile platformFile = result.files.first;
-                            String path = "${FilesystemSvc.appDocDir.path}/sounds/${"send-"}${platformFile.name}";
+                            String path = join(FilesystemSvc.soundsPath, "send-${platformFile.name}");
                             await File(path).create(recursive: true);
                             await File(path).writeAsBytes(platformFile.bytes!);
                             SettingsSvc.settings.sendSoundPath.value = path;
@@ -292,7 +292,7 @@ class _ConversationPanelState extends State<ConversationPanel> with ThemeHelpers
                               await FilePicker.platform.pickFiles(type: FileType.audio, withData: true);
                           if (result != null) {
                             PlatformFile platformFile = result.files.first;
-                            String path = "${FilesystemSvc.appDocDir.path}/sounds/${"receive-"}${platformFile.name}";
+                            String path = join(FilesystemSvc.soundsPath, "receive-${platformFile.name}");
                             await File(path).create(recursive: true);
                             await File(path).writeAsBytes(platformFile.bytes!);
                             SettingsSvc.settings.receiveSoundPath.value = path;

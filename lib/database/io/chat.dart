@@ -836,7 +836,7 @@ class Chat {
     } else {
       Logger.debug("Got chat icon for chat ${c.getTitle()}");
       File file = File(
-          "${FilesystemSvc.appDocDir.path}/avatars/${c.guid.characters.where((char) => char.isAlphabetOnly || char.isNumericOnly).join()}/avatar-${response.data.length}.jpg");
+          "${FilesystemSvc.avatarsPath}/${FilesystemService.sanitizeGuid(c.guid)}/avatar-${response.data.length}.jpg");
       if (!(await file.exists())) {
         await file.create(recursive: true);
       }

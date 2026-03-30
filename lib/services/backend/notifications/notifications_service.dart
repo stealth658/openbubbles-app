@@ -248,7 +248,7 @@ class NotificationsService {
       Uint8List? _avatar = await clip(avatar, size: 256, circle: true);
       if (_avatar != null) {
         // Create a temp file with the avatar
-        path = join(FilesystemSvc.appDocDir.path, "temp", "${randomString(8)}.png");
+        path = join(FilesystemSvc.appTempPath, "${randomString(8)}.png");
         await File(path).create(recursive: true);
         await File(path).writeAsBytes(_avatar);
       }
@@ -342,7 +342,7 @@ class NotificationsService {
         // Need to generate composite avatar
         isTemporaryFile = true;
         final Uint8List avatar = await avatarAsBytes(chat: chat, quality: 256);
-        path = join(FilesystemSvc.appDocDir.path, "temp", "${randomString(8)}.png");
+        path = join(FilesystemSvc.appTempPath, "${randomString(8)}.png");
         final File avatarFile = File(path);
         await avatarFile.create(recursive: true);
         await avatarFile.writeAsBytes(avatar);
@@ -351,7 +351,7 @@ class NotificationsService {
       // Group chat or custom avatar - need to generate composite avatar
       isTemporaryFile = true;
       final Uint8List avatar = await avatarAsBytes(chat: chat, quality: 256);
-      path = join(FilesystemSvc.appDocDir.path, "temp", "${randomString(8)}.png");
+      path = join(FilesystemSvc.appTempPath, "${randomString(8)}.png");
       final File avatarFile = File(path);
       await avatarFile.create(recursive: true);
       await avatarFile.writeAsBytes(avatar);

@@ -15,7 +15,6 @@ import 'package:get/get.dart';
 import 'package:mime_type/mime_type.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path/path.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:universal_html/html.dart' as html;
 import 'package:universal_io/io.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -116,7 +115,7 @@ class OtherFile extends StatelessWidget {
             ..setAttribute("download", file.name)
             ..click();
         } else if (kIsDesktop) {
-          File _file = File(join((await getTemporaryDirectory()).path, "BlueBubbles", "attachments", attachment.guid,
+          File _file = File(join(FilesystemSvc.sysTempPath, "BlueBubbles", "attachments", attachment.guid,
               basename(file.path!)));
           if (!_file.existsSync()) {
             _file.createSync(recursive: true);
@@ -126,7 +125,7 @@ class OtherFile extends StatelessWidget {
         } else {
           try {
             final res = await OpenFilex.open(
-                "${FilesystemSvc.appDocDir.path}/attachments/${attachment.guid!}/${basename(file.path!)}");
+                join(FilesystemSvc.attachmentsPath, attachment.guid!, basename(file.path!)));
             if (res.type == ResultType.noAppToOpen) {
               showSnackbar('Error', "No handler for this file type! Using share menu instead.");
               await Future.delayed(const Duration(seconds: 1));

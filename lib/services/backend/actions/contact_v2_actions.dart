@@ -6,6 +6,7 @@ import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/network/http_service.dart';
+import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
@@ -514,9 +515,7 @@ class ContactV2Actions {
   /// - Falls back to hash comparison if sizes match
   static Future<String?> _saveContactAvatar(String contactId, Uint8List avatarData) async {
     try {
-      // Get the app's documents directory
-      final appDocDir = Directory(Database.appDocPath);
-      final avatarsDir = Directory(p.join(appDocDir.path, 'contact_avatars'));
+      final avatarsDir = Directory(FilesystemSvc.contactAvatarsPath);
 
       // Create the directory if it doesn't exist
       if (!await avatarsDir.exists()) {
@@ -597,8 +596,7 @@ class ContactV2Actions {
 
     try {
       // First try to get from disk (if we've already saved it)
-      final appDocDir = Directory(Database.appDocPath);
-      final avatarsDir = Directory(p.join(appDocDir.path, 'contact_avatars'));
+      final avatarsDir = Directory(FilesystemSvc.contactAvatarsPath);
       final avatarFile = File(p.join(avatarsDir.path, '$nativeContactId.jpg'));
 
       if (await avatarFile.exists()) {

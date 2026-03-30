@@ -918,7 +918,7 @@ List<Widget> buildSettingItemList({
                               style: context.theme.textTheme.bodyLarge!
                                   .copyWith(color: context.theme.colorScheme.primary)),
                           onPressed: () async {
-                            final dir = Directory("${FilesystemSvc.appDocDir.path}/attachments");
+                            final dir = Directory(FilesystemSvc.attachmentsPath);
                             await dir.delete(recursive: true);
                             showSnackbar("Success", "Deleted cached attachments");
                           },

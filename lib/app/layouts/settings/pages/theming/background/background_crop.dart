@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
+import 'package:path/path.dart' as p;
 import 'package:universal_io/io.dart';
 
 class BackgroundCrop extends StatefulWidget {
@@ -42,9 +43,8 @@ class _BackgroundCropState extends State<BackgroundCrop> with ThemeHelpers {
         return;
     }
 
-    final String appDocPath = FilesystemSvc.appDocDir.path;
-    final String sanitizedGuid = chat.guid.characters.where((char) => char.isAlphabetOnly || char.isNumericOnly).join();
-    final File file = File("$appDocPath/custom_backgrounds/$sanitizedGuid/background-${croppedData.length}.png");
+    final String sanitizedGuid = FilesystemService.sanitizeGuid(chat.guid);
+    final File file = File(p.join(FilesystemSvc.customBackgroundsPath, sanitizedGuid, "background-${croppedData.length}.png"));
 
     if (!(await file.exists())) {
       await file.create(recursive: true);

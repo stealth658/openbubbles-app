@@ -169,7 +169,7 @@ class _AttachmentPanelState extends State<AttachmentPanel> with ThemeHelpers {
                       Obx(() => SettingsTile(
                             title: "Save Documents Location",
                             subtitle:
-                                "Saving documents and videos to ${SettingsSvc.settings.autoSaveDocsLocation.value.replaceAll("/storage/emulated/0/", "")}",
+                                "Saving documents and videos to ${FilesystemSvc.toDisplayPath(SettingsSvc.settings.autoSaveDocsLocation.value)}",
                             backgroundColor: tileColor,
                             onTap: () async {
                               final savePath = await FilePicker.platform.getDirectoryPath(

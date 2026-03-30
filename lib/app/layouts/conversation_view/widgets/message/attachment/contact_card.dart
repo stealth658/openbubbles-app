@@ -103,7 +103,7 @@ class _ContactCardState extends State<ContactCard> with AutomaticKeepAliveClient
                 ..click();
             } else {
               await OpenFilex.open(
-                  "${FilesystemSvc.appDocDir.path}/attachments/${widget.attachment.guid!}/${basename(widget.file.path!)}",
+                  join(FilesystemSvc.attachmentsPath, widget.attachment.guid!, basename(widget.file.path!)),
                   type: widget.attachment.mimeType);
             }
           },

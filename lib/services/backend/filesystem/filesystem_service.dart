@@ -1,5 +1,6 @@
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/database.dart';
+import 'package:characters/characters.dart';
 import 'package:collection/collection.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
@@ -19,23 +20,68 @@ import 'package:get_it/get_it.dart';
 FilesystemService get FilesystemSvc => GetIt.I<FilesystemService>();
 
 class FilesystemService {
+  /// The default Android downloads directory path.
+  static const String androidDownloadsPath = '/storage/emulated/0/Download/';
+
   late Directory appDocDir;
   late final PackageInfo packageInfo;
+  late Directory _sysTemp;
   AndroidDeviceInfo? androidInfo;
   late final idb.Database webDb;
   late final Uint8List noVideoPreviewIcon;
   late final Uint8List unplayableVideoIcon;
   final RxBool fontExistsOnDisk = false.obs;
 
+  /// The platform downloads directory. On Android returns [androidDownloadsPath];
+  /// on desktop resolves via path_provider.
   Future<String> get downloadsDirectory async {
     if (kIsWeb) throw "Cannot get downloads directory on web!";
 
-    String filePath = "/storage/emulated/0/Download/";
+    String filePath = androidDownloadsPath;
     if (kIsDesktop) {
       filePath = (await getDownloadsDirectory())!.path;
     }
 
     return filePath;
+  }
+
+  /// The OS-managed system temporary directory (cached at init time).
+  Directory get sysTemp => _sysTemp;
+  String get sysTempPath => _sysTemp.path;
+
+  /// The app-scoped temporary directory inside [appDocDir].
+  String get appTempPath => join(appDocDir.path, 'temp');
+  Directory get appTemp => Directory(appTempPath);
+
+  // ---------------------------------------------------------------------------
+  // Named app-doc sub-directory paths
+  // ---------------------------------------------------------------------------
+
+  String get attachmentsPath => join(appDocDir.path, 'attachments');
+  String get avatarsPath => join(appDocDir.path, 'avatars');
+  String get messagesPath => join(appDocDir.path, 'messages');
+  String get fontPath => join(appDocDir.path, 'font');
+  String get soundsPath => join(appDocDir.path, 'sounds');
+  String get logsPath => join(appDocDir.path, 'logs');
+  String get contactAvatarsPath => join(appDocDir.path, 'contact_avatars');
+  String get customBackgroundsPath => join(appDocDir.path, 'custom_backgrounds');
+
+  // ---------------------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------------------
+
+  /// Strips non-alphanumeric characters from [guid] so it is safe for use as
+  /// a filesystem path component (matches the pattern used by AvatarCrop, etc.).
+  static String sanitizeGuid(String guid) =>
+      guid.characters.where((c) => c.isAlphabetOnly || c.isNumericOnly).join();
+
+  /// Strips the Android internal storage prefix from [path] for display.
+  /// Returns [path] unchanged on non-Android platforms.
+  String toDisplayPath(String path) {
+    if (!kIsWeb && Platform.isAndroid) {
+      return path.replaceAll('/storage/emulated/0/', '');
+    }
+    return path;
   }
 
   Future<void> init({bool headless = false}) async {
@@ -59,6 +105,7 @@ class FilesystemService {
         final file2 = await rootBundle.load("assets/images/unplayable-video.png");
         unplayableVideoIcon = file2.buffer.asUint8List();
       }
+      _sysTemp = await getTemporaryDirectory();
     }
     packageInfo = await PackageInfo.fromPlatform();
     if (!headless && Platform.isAndroid) {
@@ -68,7 +115,7 @@ class FilesystemService {
 
   void checkFont() async {
     if (!kIsWeb) {
-      final file = File("${appDocDir.path}/font/apple.ttf");
+      final file = File(join(fontPath, 'apple.ttf'));
       final exists = await file.exists();
       if (exists) {
         final bytes = await file.readAsBytes();

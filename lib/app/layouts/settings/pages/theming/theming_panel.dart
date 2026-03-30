@@ -18,6 +18,7 @@ import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:get/get.dart' hide Response;
 import 'package:idb_shim/idb.dart';
+import 'package:path/path.dart';
 import 'package:universal_io/io.dart';
 
 class ThemingPanelController extends StatefulController {
@@ -614,7 +615,7 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                               await store.delete("iosFont");
                               await txn.completed;
                             } else {
-                              final file = File("${FilesystemSvc.appDocDir.path}/font/apple.ttf");
+                              final file = File(join(FilesystemSvc.fontPath, 'apple.ttf'));
                               await file.delete();
                             }
                             FilesystemSvc.fontExistsOnDisk.value = false;

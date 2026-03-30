@@ -15,7 +15,6 @@ import 'package:image_size_getter/file_input.dart';
 import 'package:image_size_getter/image_size_getter.dart' as isg;
 import 'package:path/path.dart';
 import 'package:bluebubbles/models/models.dart' show AttachmentUploadProgress;
-import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:saver_gallery/saver_gallery.dart';
 import 'package:universal_html/html.dart' as html;
@@ -100,7 +99,7 @@ class AttachmentsService extends GetxService {
           // Last resort: search for file by name in attachment directories
           // This is less precise but handles edge cases
           try {
-            final attachmentsDir = Directory("${FilesystemSvc.appDocDir.path}/attachments");
+            final attachmentsDir = Directory(FilesystemSvc.attachmentsPath);
             if (attachmentsDir.existsSync()) {
               final dirs = attachmentsDir.listSync().whereType<Directory>();
               for (final dir in dirs) {
@@ -258,7 +257,7 @@ class AttachmentsService extends GetxService {
         ..click();
     } else if (kIsDesktop) {
       String? savePath = await FilePicker.platform.saveFile(
-        initialDirectory: (await getDownloadsDirectory())?.path,
+        initialDirectory: await FilesystemSvc.downloadsDirectory,
         dialogTitle: 'Choose a location to save this file',
         fileName: file.name,
         lockParentWindow: true,
@@ -351,7 +350,7 @@ class AttachmentsService extends GetxService {
         );
       } else {
         if (file.name.toLowerCase().endsWith(".mov")) {
-          savePath = join("/storage/emulated/0/", SettingsSvc.settings.autoSavePicsLocation.value);
+          savePath = join(FilesystemService.androidDownloadsPath, SettingsSvc.settings.autoSavePicsLocation.value);
         } else {
           if (!isDocument) {
             try {
@@ -378,7 +377,7 @@ class AttachmentsService extends GetxService {
       if (savePath != null) {
         final bytes = file.bytes != null && file.bytes!.isNotEmpty ? file.bytes! : await File(file.path!).readAsBytes();
         await File(join(savePath, file.name)).writeAsBytes(bytes);
-        showSnackbar('Success', 'Saved attachment to ${savePath.replaceAll("/storage/emulated/0/", "")} folder!');
+        showSnackbar('Success', 'Saved attachment to ${FilesystemSvc.toDisplayPath(savePath)} folder!');
       } else {
         return showSnackbar('Error', 'You didn\'t select a file path!');
       }

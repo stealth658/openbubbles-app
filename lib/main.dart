@@ -482,7 +482,7 @@ class _HomeState extends State<Home> with WidgetsBindingObserver, TrayListener {
       if (kIsDesktop) {
         if (Platform.isWindows) {
           /* ----- CONTACT IMAGE CACHE DELETION ----- */
-          Directory temp = Directory(join(FilesystemSvc.appDocDir.path, "temp"));
+          Directory temp = FilesystemSvc.appTemp;
           if (await temp.exists()) await temp.delete(recursive: true);
 
           /* ----- BADGE ICON LISTENER ----- */

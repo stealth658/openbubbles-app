@@ -6,6 +6,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/services.dart';
 import 'package:native_dio_adapter/native_dio_adapter.dart';
 import 'package:flutter/foundation.dart';
+import 'package:path/path.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart' hide Response, FormData, MultipartFile;
 import 'package:universal_io/io.dart';
@@ -1177,7 +1178,7 @@ class HttpService {
     if (response.statusCode == 200) {
       try {
         final Uint8List data = response.data;
-        final file = File("${FilesystemSvc.appDocDir.path}/font/apple.ttf");
+        final file = File(join(FilesystemSvc.fontPath, 'apple.ttf'));
         await file.create(recursive: true);
         await file.writeAsBytes(data);
         FilesystemSvc.fontExistsOnDisk.value = true;

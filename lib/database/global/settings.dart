@@ -27,7 +27,7 @@ class Settings {
   final RxInt maxConcurrentDownloads = 2.obs;
   final RxBool autoSave = false.obs;
   final RxString autoSavePicsLocation = "Pictures".obs;
-  final RxString autoSaveDocsLocation = "/storage/emulated/0/Download/".obs;
+  final RxString autoSaveDocsLocation = FilesystemService.androidDownloadsPath.obs;
   final RxDouble previewImageQuality = 0.75.obs; // 0.25 to 1.0
   final RxBool autoOpenKeyboard = true.obs;
   final RxBool hideTextPreviews = false.obs;
@@ -667,7 +667,7 @@ class Settings {
     s.maxConcurrentDownloads.value = map['maxConcurrentDownloads'] ?? 2;
     s.autoSave.value = map['autoSave'] ?? false;
     s.autoSavePicsLocation.value = map['autoSavePicsLocation'] ?? "Pictures";
-    s.autoSaveDocsLocation.value = map['autoSaveDocsLocation'] ?? "/storage/emulated/0/Download/";
+    s.autoSaveDocsLocation.value = map['autoSaveDocsLocation'] ?? FilesystemService.androidDownloadsPath;
     s.previewImageQuality.value = map['imageQuality']?.toDouble() ?? 1.0;
     s.autoOpenKeyboard.value = map['autoOpenKeyboard'] ?? true;
     s.hideTextPreviews.value = map['hideTextPreviews'] ?? false;

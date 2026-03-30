@@ -321,7 +321,7 @@ class ContactServiceV2 {
           if (!isNullOrEmpty(map['avatar'])) {
             try {
               final bytes = base64Decode(map['avatar'].toString());
-              final avatarsDir = Directory('${Database.appDocPath}/contact_avatars');
+              final avatarsDir = Directory(FilesystemSvc.contactAvatarsPath);
               if (!avatarsDir.existsSync()) avatarsDir.createSync(recursive: true);
               final file = File('${avatarsDir.path}/${c.nativeContactId}.jpg');
               await file.writeAsBytes(bytes);

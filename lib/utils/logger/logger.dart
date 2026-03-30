@@ -113,7 +113,7 @@ class BaseLogger {
   }
 
   String get logDir {
-    return join(FilesystemSvc.appDocDir.path, 'logs');
+    return FilesystemSvc.logsPath;
   }
 
   LoggerFactory.Logger get logger {
@@ -201,7 +201,7 @@ class BaseLogger {
       }
 
       final date = DateTime.now().toIso8601String().split('T').first;
-      final File zippedLogFile = File("${FilesystemSvc.appDocDir.path}/bluebubbles-logs-$date.zip");
+      final File zippedLogFile = File(join(FilesystemSvc.appDocDir.path, "bluebubbles-logs-$date.zip"));
       if (zippedLogFile.existsSync()) zippedLogFile.deleteSync();
 
       final List<FileSystemEntity> files = logDir.listSync();

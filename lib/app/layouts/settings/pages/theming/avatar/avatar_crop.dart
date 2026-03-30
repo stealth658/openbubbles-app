@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
+import 'package:path/path.dart' as p;
 import 'package:universal_io/io.dart';
 
 class AvatarCrop extends StatefulWidget {
@@ -39,9 +40,8 @@ class _AvatarCropState extends State<AvatarCrop> with ThemeHelpers {
         return;
     }
 
-    String appDocPath = FilesystemSvc.appDocDir.path;
     if (widget.index == null && widget.chat == null) {
-      File file = File("$appDocPath/avatars/you/avatar-${croppedData.length}.jpg");
+      File file = File(p.join(FilesystemSvc.avatarsPath, "you", "avatar-${croppedData.length}.jpg"));
       if (!(await file.exists())) {
         await file.create(recursive: true);
       }
@@ -56,7 +56,7 @@ class _AvatarCropState extends State<AvatarCrop> with ThemeHelpers {
       showSnackbar("Notice", "User avatar saved successfully");
     } else if (widget.chat != null) {
       File file = File(
-          "$appDocPath/avatars/${widget.chat!.guid.characters.where((char) => char.isAlphabetOnly || char.isNumericOnly).join()}/avatar-${croppedData.length}.jpg");
+          p.join(FilesystemSvc.avatarsPath, FilesystemService.sanitizeGuid(widget.chat!.guid), "avatar-${croppedData.length}.jpg"));
       if (!(await file.exists())) {
         await file.create(recursive: true);
       }
@@ -71,7 +71,7 @@ class _AvatarCropState extends State<AvatarCrop> with ThemeHelpers {
       showSnackbar("Notice", "Custom chat avatar saved successfully");
     } else {
       File file = File(
-          "$appDocPath/avatars/${widget.chat!.guid.characters.where((char) => char.isAlphabetOnly || char.isNumericOnly).join()}/avatar-${croppedData.length}.jpg");
+          p.join(FilesystemSvc.avatarsPath, FilesystemService.sanitizeGuid(widget.chat!.guid), "avatar-${croppedData.length}.jpg"));
       if (!(await file.exists())) {
         await file.create(recursive: true);
       }

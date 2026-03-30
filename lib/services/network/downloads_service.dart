@@ -222,11 +222,10 @@ class AttachmentDownloadController extends GetxController {
         !kIsDesktop &&
         !(attachment.isOutgoing ?? false) &&
         !(attachment.message.target?.isInteractive ?? false)) {
-      String filePath = "/storage/emulated/0/Download/";
       if (attachment.mimeType?.startsWith("image") ?? false) {
         await AttachmentsSvc.saveToDisk(file.value!, isAutoDownload: true);
       } else if (file.value?.bytes != null) {
-        await File(join(filePath, file.value!.name)).writeAsBytes(file.value!.bytes!);
+        await File(join(await FilesystemSvc.downloadsDirectory, file.value!.name)).writeAsBytes(file.value!.bytes!);
       }
     }
   }

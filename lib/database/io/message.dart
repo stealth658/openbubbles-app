@@ -606,7 +606,7 @@ class Message {
         : balloonBundleId!.contains("com.apple.Handwriting")
             ? ".png"
             : null;
-    return "${FilesystemSvc.appDocDir.path}/messages/$guid/embedded-media/$balloonBundleId$extension";
+    return "${FilesystemSvc.messagesPath}/$guid/embedded-media/$balloonBundleId$extension";
   }
 
   bool get isGroupEvent => groupTitle != null || (itemType ?? 0) > 0 || (groupActionType ?? 0) > 0;
