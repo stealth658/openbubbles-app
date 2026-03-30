@@ -167,7 +167,6 @@ class _ChatTitleAndAvatarState extends State<ChatTitleAndAvatar> with ChatTitleM
       IgnorePointer(
         ignoring: true,
         child: ContactAvatarGroupWidget(
-          chat: widget.chat,
           size: 54,
         ),
       ),
@@ -230,7 +229,6 @@ class _ChatTitleAndAvatarState extends State<ChatTitleAndAvatar> with ChatTitleM
           child: IgnorePointer(
             ignoring: true,
             child: ContactAvatarGroupWidget(
-              chat: widget.chat,
               size: !widget.chat.isGroup ? 35 : 40,
             ),
           ),

@@ -272,7 +272,6 @@ class _ChatIconAndTitleState extends CustomState<_ChatIconAndTitle, void, Conver
         IgnorePointer(
           ignoring: true,
           child: ContactAvatarGroupWidget(
-            chat: chatState.chat,
             size: 54,
           ),
         ),

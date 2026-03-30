@@ -166,7 +166,6 @@ class _ChatInfoState extends State<ChatInfo> with ThemeHelpers {
                         }
                       : null,
                   child: ContactAvatarGroupWidget(
-                    chat: chat,
                     size: 100,
                     editable: !chat.isGroup,
                   ),

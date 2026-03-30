@@ -1,5 +1,6 @@
 import 'package:bluebubbles/app/layouts/conversation_details/widgets/attachments_loader.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/widgets/chat_info.dart';
+import 'package:bluebubbles/app/state/chat_state_scope.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/widgets/chat_options.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/widgets/documents_section.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/widgets/links_section.dart';
@@ -61,8 +62,10 @@ class _ConversationDetailsState extends State<ConversationDetails> with WidgetsB
 
   @override
   Widget build(BuildContext context) {
-    return BBAnnotatedRegion(
-      child: Theme(
+    return ChatStateScope(
+      chatState: ChatsSvc.getOrCreateChatState(chat),
+      child: BBAnnotatedRegion(
+        child: Theme(
           data: context.theme.copyWith(
             // in case some components still use legacy theming
             primaryColor: context.theme.colorScheme.bubble(context, chat.isIMessage),
@@ -196,6 +199,7 @@ class _ConversationDetailsState extends State<ConversationDetails> with WidgetsB
                   ),
                 ],
               ))),
+      ),
     );
   }
 }
