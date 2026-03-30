@@ -10,7 +10,6 @@ import 'package:collection/collection.dart';
 import 'package:dio/dio.dart';
 import 'package:faker/faker.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:bluebubbles/models/models.dart' show MessageSaveResult;
 import 'package:get/get.dart' hide Response;
 // (needed when generating objectbox model code)

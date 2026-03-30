@@ -48,8 +48,6 @@ class FullSyncManager extends SyncManager {
     }
     addToOutput('Full sync is starting...');
     addToOutput("Reloading your contacts...");
-    await SettingsSvc.getServerDetails(refresh: true);
-
     addToOutput('Fetching chats from the server...');
 
     // Get the total chats so we can properly fetch them all

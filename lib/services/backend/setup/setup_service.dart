@@ -13,6 +13,9 @@ class SetupService extends GetxService {
     SyncSvc.skipEmptyChats = skipEmptyChats;
     SyncSvc.saveToDownloads = saveToDownloads;
     SyncSvc.syncTimeFilter = syncTimeFilter;
+    // Pre-fetch server details before the full sync so sync managers can
+    // read SettingsSvc.serverDetails.value synchronously during the sync.
+    await SettingsSvc.fetchServerDetails();
     SyncSvc.initFullSync();
     await SyncSvc.startFullSync();
     await _finishSetup();
@@ -21,7 +24,6 @@ class SetupService extends GetxService {
   Future<void> _finishSetup() async {
     SettingsSvc.settings.finishedSetup.value = true;
     await SettingsSvc.settings.saveOneAsync('finishedSetup');
-    await SettingsSvc.fetchServerDetails();
     await StartupTasks.onStartup();
     await NetworkTasks.onConnect();
   }

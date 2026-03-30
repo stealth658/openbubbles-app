@@ -85,4 +85,29 @@ class ServerDetails {
 
   /// macOS version as a display string, e.g. "14.2".
   String get macOSVersionString => '$macOSVersion.$macOSMinorVersion';
+
+  // ---------------------------------------------------------------------------
+  // macOS version range helpers
+  // ---------------------------------------------------------------------------
+
+  /// macOS Sierra (10.12) or newer.
+  bool get isMinSierra => macOSVersion > 10 || (macOSVersion == 10 && macOSMinorVersion >= 12);
+
+  /// macOS Catalina (10.15) or newer.
+  bool get isMinCatalina => macOSMinorVersion >= 15 || macOSVersion >= 11;
+
+  /// macOS Big Sur (11.0) or newer.
+  bool get isMinBigSur => macOSVersion >= 11;
+
+  /// macOS Monterey (12.0) or newer.
+  bool get isMinMonterey => macOSVersion >= 12;
+
+  /// macOS Ventura (13.0) or newer.
+  bool get isMinVentura => macOSVersion >= 13;
+
+  /// macOS Sonoma (14.0) or newer.
+  bool get isMinSonoma => macOSVersion >= 14;
+
+  /// macOS Sequoia (15.0) or newer.
+  bool get isMinSequoia => macOSVersion >= 15;
 }

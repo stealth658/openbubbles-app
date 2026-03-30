@@ -1001,20 +1001,20 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
           onTap: createContact,
           action: DetailsMenuAction.CreateContact,
         ),
-      if (SettingsSvc.isMinVenturaSync &&
+      if (SettingsSvc.serverDetails.isMinVentura &&
           message.isFromMe! &&
           !widget.controller.isSending.value &&
-          SettingsSvc.serverDetailsSync().supportsEditAndUnsend)
+          SettingsSvc.serverDetails.supportsEditAndUnsend)
         DetailsMenuActionWidget(
           onTap: unsend,
           customTitle: canUnsend ? 'Undo Send' : 'Undo Send (too old)',
           shouldDisableBtn: !canUnsend,
           action: DetailsMenuAction.UndoSend,
         ),
-      if (SettingsSvc.isMinVenturaSync &&
+      if (SettingsSvc.serverDetails.isMinVentura &&
           message.isFromMe! &&
           !widget.controller.isSending.value &&
-          SettingsSvc.serverDetailsSync().supportsEditAndUnsend &&
+          SettingsSvc.serverDetails.supportsEditAndUnsend &&
           (part.text?.isNotEmpty ?? false))
         DetailsMenuActionWidget(
           onTap: edit,

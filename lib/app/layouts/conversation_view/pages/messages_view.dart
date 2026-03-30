@@ -242,7 +242,7 @@ class MessagesViewState extends State<MessagesView> with MessagesServiceMixin, T
   }
 
   void getFocusState() {
-    if (!SettingsSvc.isMinMontereySync) return;
+    if (!SettingsSvc.serverDetails.isMinMonterey) return;
     final recipient = chat.handles.firstOrNull;
     if (recipient != null) {
       HttpSvc.handleFocusState(recipient.address).then((response) {

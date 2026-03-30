@@ -82,8 +82,8 @@ class _ChatInfoState extends State<ChatInfo> with ThemeHelpers {
     if (papi &&
         SettingsSvc.settings.enablePrivateAPI.value &&
         result != null &&
-        (await SettingsSvc.isMinBigSur) &&
-        SettingsSvc.serverDetailsSync().supportsGroupChatManagement) {
+        SettingsSvc.serverDetails.isMinBigSur &&
+        SettingsSvc.serverDetails.supportsGroupChatManagement) {
       showDialog(
           context: context,
           builder: (BuildContext context) {
@@ -129,8 +129,8 @@ class _ChatInfoState extends State<ChatInfo> with ThemeHelpers {
     await chat.saveAsync(updateCustomAvatarPath: true);
     if (papi &&
         SettingsSvc.settings.enablePrivateAPI.value &&
-        (await SettingsSvc.isMinBigSur) &&
-        SettingsSvc.serverDetailsSync().supportsGroupChatManagement) {
+        SettingsSvc.serverDetails.isMinBigSur &&
+        SettingsSvc.serverDetails.supportsGroupChatManagement) {
       final response = await HttpSvc.deleteChatIcon(chat.guid);
       if (response.statusCode == 200) {
         showSnackbar("Notice", "Deleted group photo successfully!");

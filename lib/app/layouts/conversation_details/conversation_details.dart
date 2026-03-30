@@ -132,7 +132,7 @@ class _ConversationDetailsState extends State<ConversationDetails> with WidgetsB
                   ),
                   if (chat.handles.length > 2 &&
                       SettingsSvc.settings.enablePrivateAPI.value &&
-                      SettingsSvc.serverDetailsSync().supportsGroupChatManagement)
+                      SettingsSvc.serverDetails.supportsGroupChatManagement)
                     SliverToBoxAdapter(
                       child: Builder(builder: (context) {
                         return ListTile(

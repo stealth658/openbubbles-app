@@ -169,7 +169,7 @@ class MaterialOverflowMenu extends StatelessWidget {
                 style: context.textTheme.bodyLarge!.apply(color: context.theme.colorScheme.properOnSurface),
               ),
             ),
-          if (SettingsSvc.isMinCatalinaSync)
+          if (SettingsSvc.serverDetails.isMinCatalina)
             PopupMenuItem(
               value: 5,
               child: Text(
@@ -315,7 +315,7 @@ class CupertinoOverflowMenu extends StatelessWidget {
             icon: CupertinoIcons.person_crop_circle_badge_xmark,
             onTap: () => goToUnknownSenders(context),
           ),
-        if (SettingsSvc.isMinCatalinaSync)
+        if (SettingsSvc.serverDetails.isMinCatalina)
           PullDownMenuItem(
             itemTheme: itemTheme,
             title: 'Find My',

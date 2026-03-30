@@ -17,7 +17,6 @@ import 'package:in_app_review/in_app_review.dart';
 import 'package:on_exit/init.dart';
 import 'package:app_install_date/app_install_date.dart';
 import 'package:path/path.dart';
-import 'package:bluebubbles/models/models.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:get_it/get_it.dart';
 
@@ -470,14 +469,10 @@ class StartupTasks {
       SocketSvc.init();
     }
 
-    // Fetch server details for the rest of the app.
-    // We only need to fetch it on startup since the metadata shouldn't change.
-    // Don't await - let this happen in background
-    Logger.info("Fetching server details in background...");
-    SettingsSvc.getServerDetails(refresh: true).catchError((e, s) {
-      Logger.warn("Failed to fetch server details on startup!", error: e, trace: s);
-      return const ServerDetails.empty(); // Return default on error
-    });
+    // Refresh server details in the background via the GlobalIsolate.
+    // Error handling is inside refreshServerDetails(); no need to catch here.
+    Logger.info("Refreshing server details in background...");
+    unawaited(SettingsSvc.refreshServerDetails());
 
     // Only register FCM device on startup
     // Don't await - let this happen in background

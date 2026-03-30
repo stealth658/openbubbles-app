@@ -83,7 +83,7 @@ class _MessageHolderState extends State<MessageHolder> with ThemeHelpers {
 
   bool get canSwipeToReply =>
       SettingsSvc.settings.enablePrivateAPI.value &&
-      SettingsSvc.isMinBigSurSync &&
+      SettingsSvc.serverDetails.isMinBigSur &&
       chat.isIMessage &&
       !widget.isReplyThread &&
       !controller.isSending.value &&

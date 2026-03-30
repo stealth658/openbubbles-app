@@ -1344,8 +1344,8 @@ class TextFieldComponentState extends State<TextFieldComponent> {
       if (chat != null &&
           controller!.lastFocusedTextController.text.isEmpty &&
           SettingsSvc.settings.editLastSentMessageOnUpArrow.value &&
-          SettingsSvc.isMinVenturaSync &&
-          SettingsSvc.serverDetailsSync().supportsEditAndUnsend) {
+          SettingsSvc.serverDetails.isMinVentura &&
+          SettingsSvc.serverDetails.supportsEditAndUnsend) {
         final message = MessagesSvc(chat!.guid).mostRecentSent;
         if (message != null) {
           final messageController = MessagesSvc(chat!.guid).getOrCreateState(message);

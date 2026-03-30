@@ -48,10 +48,10 @@ class _MessagePopupHolderState extends State<MessagePopupHolder> with ThemeHelpe
             MediaQueryData.fromView(View.of(context)).padding.left -
             (iOS ? 0 : NavigationSvc.widthChatListLeft(context)),
         childPos.dy);
-    final serverDetails = await SettingsSvc.getServerDetails();
+    final serverDetails = SettingsSvc.serverDetails;
     final version = serverDetails.serverVersionCode;
-    final minSierra = await SettingsSvc.isMinSierra;
-    final minBigSur = await SettingsSvc.isMinBigSur;
+    final minSierra = serverDetails.isMinSierra;
+    final minBigSur = serverDetails.isMinBigSur;
     if (!iOS) {
       widget.cvController.selected.add(message);
     }

@@ -100,7 +100,7 @@ class IncrementalSyncManager extends SyncManager {
     // Check the server version and sync differently based on the version.
     // This is due to bugs in certain server versions as well as new features
     // in server versions to make the sync more efficient.
-    final serverDetails = await SettingsSvc.getServerDetails();
+    final serverDetails = SettingsSvc.serverDetails;
 
     try {
       // If we've don't have a startRowId (null or 0), then sync using timestamps

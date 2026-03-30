@@ -22,8 +22,8 @@ class PrivateAPIPanelController extends StatefulController {
       final String serverVersionStr = response.data['data']['server_version'] ?? "0.0.1";
       Version version = Version.parse(serverVersionStr);
       serverDetails.value = ServerDetails(
-        macOSVersion: SettingsSvc.serverDetailsSync().macOSVersion,
-        macOSMinorVersion: SettingsSvc.serverDetailsSync().macOSMinorVersion,
+        macOSVersion: SettingsSvc.serverDetails.macOSVersion,
+        macOSMinorVersion: SettingsSvc.serverDetails.macOSMinorVersion,
         serverVersion: serverVersionStr,
         serverVersionCode: version.major * 100 + version.minor * 21 + version.patch,
       );
@@ -56,8 +56,8 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
           final String serverVersionStr = response.data['data']['server_version'] ?? "0.0.1";
           Version version = Version.parse(serverVersionStr);
           controller.serverDetails.value = ServerDetails(
-            macOSVersion: SettingsSvc.serverDetailsSync().macOSVersion,
-            macOSMinorVersion: SettingsSvc.serverDetailsSync().macOSMinorVersion,
+            macOSVersion: SettingsSvc.serverDetails.macOSVersion,
+            macOSMinorVersion: SettingsSvc.serverDetails.macOSMinorVersion,
             serverVersion: serverVersionStr,
             serverVersionCode: version.major * 100 + version.minor * 21 + version.patch,
           );
@@ -93,26 +93,26 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
                                 const TextSpan(text: "Private API features give you the ability to:\n"),
                                 const TextSpan(text: " - Send tapbacks, effects, and mentions\n"),
                                 const TextSpan(text: " - Send messages with subject lines\n"),
-                                if (SettingsSvc.isMinBigSurSync) const TextSpan(text: " - Send replies\n"),
-                                if (SettingsSvc.isMinVenturaSync) const TextSpan(text: " - Edit & Unsend messages\n"),
-                                if (SettingsSvc.isMinBigSurSync)
+                                if (SettingsSvc.serverDetails.isMinBigSur) const TextSpan(text: " - Send replies\n"),
+                                if (SettingsSvc.serverDetails.isMinVentura) const TextSpan(text: " - Edit & Unsend messages\n"),
+                                if (SettingsSvc.serverDetails.isMinBigSur)
                                   const TextSpan(text: " - Receive Digital Touch messages\n"),
                                 const TextSpan(text: "\n"),
                                 const TextSpan(text: " - Mark chats read on the Mac server\n"),
-                                if (SettingsSvc.isMinVenturaSync)
+                                if (SettingsSvc.serverDetails.isMinVentura)
                                   const TextSpan(text: " - Mark chats as unread on the Mac server\n"),
                                 const TextSpan(text: "\n"),
                                 const TextSpan(text: " - Rename group chats\n"),
                                 const TextSpan(text: " - Add & remove people from group chats\n"),
-                                if (SettingsSvc.isMinBigSurSync)
+                                if (SettingsSvc.serverDetails.isMinBigSur)
                                   const TextSpan(text: " - Change the group chat photo\n"),
                                 const TextSpan(text: "\n"),
                                 const TextSpan(text: " - Know if a recipient is registered with iMessage\n"),
-                                if (SettingsSvc.isMinMontereySync) const TextSpan(text: " - View Focus statuses\n"),
-                                if (SettingsSvc.isMinBigSurSync) const TextSpan(text: " - Use Find My Friends\n"),
-                                if (SettingsSvc.isMinBigSurSync)
+                                if (SettingsSvc.serverDetails.isMinMonterey) const TextSpan(text: " - View Focus statuses\n"),
+                                if (SettingsSvc.serverDetails.isMinBigSur) const TextSpan(text: " - Use Find My Friends\n"),
+                                if (SettingsSvc.serverDetails.isMinBigSur)
                                   const TextSpan(text: " - Be notified of incoming FaceTime calls\n"),
-                                if (SettingsSvc.isMinVenturaSync)
+                                if (SettingsSvc.serverDetails.isMinVentura)
                                   const TextSpan(text: " - Answer FaceTime calls (experimental)\n"),
                                 const TextSpan(text: "\n"),
                                 const TextSpan(
@@ -279,7 +279,7 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
                             ),
                           ),
                           AnimatedSizeAndFade.showHide(
-                            show: SettingsSvc.isMinVenturaSync && SettingsSvc.serverDetailsSync().supportsEditAndUnsend,
+                            show: SettingsSvc.serverDetails.isMinVentura && SettingsSvc.serverDetails.supportsEditAndUnsend,
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [

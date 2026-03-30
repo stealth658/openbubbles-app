@@ -338,7 +338,7 @@ class OutgoingMessageHandler {
 
     final List<Message> messages = [];
 
-    if (!(await SettingsSvc.isMinBigSur) && r == null) {
+    if (!SettingsSvc.serverDetails.isMinBigSur && r == null) {
       // Split URL messages on OS X to prevent message matching glitches.
       String mainText = m.text!;
       String? secondaryText;
@@ -525,7 +525,7 @@ class OutgoingMessageHandler {
               selectedMessageGuid: m.threadOriginatorGuid,
               effectId: m.expressiveSendStyleId,
               partIndex: int.tryParse(m.threadOriginatorPart?.split(':').firstOrNull ?? ''),
-              ddScan: !SettingsSvc.isMinSonomaSync && m.text!.hasUrl,
+              ddScan: !SettingsSvc.serverDetails.isMinSonoma && m.text!.hasUrl,
             )
           : HttpSvc.sendTapback(
               c.guid,
@@ -599,7 +599,7 @@ class OutgoingMessageHandler {
         selectedMessageGuid: m.threadOriginatorGuid,
         effectId: m.expressiveSendStyleId,
         partIndex: int.tryParse(m.threadOriginatorPart?.split(':').firstOrNull ?? ''),
-        ddScan: !SettingsSvc.isMinSonomaSync && parts.any((e) => e['text'].toString().hasUrl),
+        ddScan: !SettingsSvc.serverDetails.isMinSonoma && parts.any((e) => e['text'].toString().hasUrl),
       ),
       onSuccess: (newMessage) => _matchMessageWithExisting(c, tempGuid, newMessage),
       onError: (error, stack) async {

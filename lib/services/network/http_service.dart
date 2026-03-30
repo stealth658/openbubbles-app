@@ -662,7 +662,7 @@ class HttpService {
 
       if (SettingsSvc.settings.enablePrivateAPI.value &&
           SettingsSvc.settings.privateAPISend.value &&
-          SettingsSvc.isMinVenturaSync) {
+          SettingsSvc.serverDetails.isMinVentura) {
         data["ddScan"] = ddScan;
       }
 
@@ -746,7 +746,7 @@ class HttpService {
         "parts": parts
       };
 
-      if (SettingsSvc.isMinVenturaSync) {
+      if (SettingsSvc.serverDetails.isMinVentura) {
         data["ddScan"] = ddScan;
       }
 

@@ -1,7 +1,6 @@
 import 'package:bluebubbles/env.dart';
-import 'package:bluebubbles/models/models.dart' show ServerDetails;
+import 'package:bluebubbles/models/models.dart' show ServerDetails, ServerUpdateInfo;
 import 'package:bluebubbles/services/backend/actions/server_actions.dart';
-import 'package:bluebubbles/services/backend/settings/settings_service.dart' show ServerUpdateInfo;
 import 'package:get_it/get_it.dart';
 import 'package:bluebubbles/services/isolates/global_isolate.dart';
 

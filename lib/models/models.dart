@@ -10,5 +10,8 @@ export 'message_update_event.dart';
 export 'chat_sync_page.dart';
 export 'handle_sync_page.dart';
 export 'server_details.dart';
+export 'app_update_info.dart';
+export 'server_update_info.dart';
+export 'fcm_data_info.dart';
 export 'location_attachment_data.dart';
 export 'theme_pair.dart';

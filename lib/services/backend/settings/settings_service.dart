@@ -19,7 +19,8 @@ import 'package:github/github.dart' hide Source;
 import 'package:local_auth/local_auth.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:store_checker/store_checker.dart';
-import 'package:bluebubbles/models/models.dart' show ServerDetails;
+import 'package:bluebubbles/models/models.dart' show ServerDetails, AppUpdateInfo, ServerUpdateInfo;
+import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:universal_io/io.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:version/version.dart';
@@ -28,56 +29,6 @@ import 'package:get_it/get_it.dart';
 // ignore: non_constant_identifier_names
 SettingsService get SettingsSvc => GetIt.I<SettingsService>();
 
-class AppUpdateInfo {
-  final bool available;
-  final Release latestRelease;
-  final bool isDesktopRelease;
-  final String version;
-  final String code;
-  final String buildNumber;
-
-  AppUpdateInfo({
-    required this.available,
-    required this.latestRelease,
-    required this.isDesktopRelease,
-    required this.version,
-    required this.code,
-    required this.buildNumber,
-  });
-}
-
-class ServerUpdateInfo {
-  final bool available;
-  final String? version;
-  final String? releaseDate;
-  final String? releaseName;
-
-  ServerUpdateInfo({
-    required this.available,
-    this.version,
-    this.releaseDate,
-    this.releaseName,
-  });
-}
-
-class FCMDataInfo {
-  final String? projectID;
-  final String? storageBucket;
-  final String? apiKey;
-  final String? firebaseURL;
-  final String? clientID;
-  final String? applicationID;
-
-  FCMDataInfo({
-    this.projectID,
-    this.storageBucket,
-    this.apiKey,
-    this.firebaseURL,
-    this.clientID,
-    this.applicationID,
-  });
-}
-
 class SettingsService {
   late Settings settings;
   late FCMData fcmData;
@@ -85,11 +36,24 @@ class SettingsService {
   bool _showingPapiPopup = false;
   Completer<void> initCompleted = Completer<void>();
 
+  /// Cached server details. Populated from [PrefsSvc] on startup and refreshed
+  /// in the background via [refreshServerDetails]. Access via the [serverDetails]
+  /// getter; use [_serverDetails] within this class for reactive ([Obx]) access.
+  final Rx<ServerDetails> _serverDetails = const ServerDetails.empty().obs;
+
   bool get canAuthenticate =>
       _canAuthenticate && (Platform.isWindows || (FilesystemSvc.androidInfo?.version.sdkInt ?? 0) > 28);
 
   Future<void> init({bool headless = false}) async {
     settings = Settings.getSettings();
+    // Populate server details from prefs so sync getters are usable immediately.
+    _serverDetails.value = ServerDetails(
+      macOSVersion: PrefsSvc.i.getInt("macos-version") ?? 11,
+      macOSMinorVersion: PrefsSvc.i.getInt("macos-minor-version") ?? 0,
+      serverVersion: PrefsSvc.i.getString("server-version") ?? "0.0.0",
+      serverVersionCode: PrefsSvc.i.getInt("server-version-code") ?? 0,
+    );
+
     if (!headless && !kIsWeb && !kIsDesktop) {
       // Parallelize independent operations
       try {
@@ -242,38 +206,48 @@ class SettingsService {
     };
   }
 
+  /// Fetches server details via HTTP (main isolate), updates [serverDetails],
+  /// and persists values to [PrefsSvc]. Also handles [iCloudAccount] and
+  /// [serverPrivateAPI] side effects and shows the PAPI popup when applicable.
+  /// Used during the first-time setup flow.
   Future<ServerDetails> fetchServerDetails() async {
     final detailsDict = await getServerDetailsDict();
-    return ServerDetails(
+    final details = ServerDetails(
       macOSVersion: detailsDict['macOSVersion'] as int,
       macOSMinorVersion: detailsDict['macOSMinorVersion'] as int,
       serverVersion: detailsDict['serverVersion'] as String,
       serverVersionCode: detailsDict['serverVersionCode'] as int,
     );
+    _serverDetails.value = details;
+
+    if (detailsDict['recommendPrivateApi'] as bool) {
+      await _showPapiPopup();
+    }
+
+    return details;
   }
 
-  Future<ServerDetails> getServerDetails({bool refresh = false, String? origin}) async {
-    if (refresh) {
-      late ServerDetails detailsInfo;
-      if (Platform.isAndroid) {
-        detailsInfo = await ServerInterface.getServerDetails();
-      } else {
-        detailsInfo = await fetchServerDetails();
-      }
+  /// Refreshes [serverDetails] in the background via [ServerInterface]
+  /// (routes through the GlobalIsolate on all platforms). Updates [serverDetails]
+  /// and persists the new values to [PrefsSvc]. Safe to call fire-and-forget.
+  Future<void> refreshServerDetails() async {
+    try {
+      final details = await ServerInterface.getServerDetails();
+      _serverDetails.value = details;
 
-      // Handle PAPI popup (only if not in isolate since it needs UI context)
-      if (!Platform.isAndroid) {
-        final detailsDict = await getServerDetailsDict();
-        if (detailsDict['recommendPrivateApi'] as bool) {
-          await _showPapiPopup();
-        }
-      }
-
-      return detailsInfo;
-    } else {
-      return serverDetailsSync();
+      await Future.wait([
+        PrefsSvc.i.setInt("macos-version", details.macOSVersion),
+        PrefsSvc.i.setInt("macos-minor-version", details.macOSMinorVersion),
+        PrefsSvc.i.setString("server-version", details.serverVersion),
+        PrefsSvc.i.setInt("server-version-code", details.serverVersionCode),
+      ]);
+    } catch (e, s) {
+      Logger.warn("Failed to refresh server details", error: e, trace: s, tag: 'SettingsService');
     }
   }
+
+  /// Returns the current cached [ServerDetails].
+  ServerDetails getServerDetails() => _serverDetails.value;
 
   Future<void> _showPapiPopup() async {
     final ScrollController controller = ScrollController();
@@ -305,20 +279,20 @@ class SettingsService {
                         const Text(" - Send & Receive typing indicators"),
                         const Text(" - Send tapbacks, effects, and mentions"),
                         const Text(" - Send messages with subject lines"),
-                        if (isMinBigSurSync) const Text(" - Send replies"),
-                        if (isMinVenturaSync) const Text(" - Edit & Unsend messages"),
+                        if (_serverDetails.value.isMinBigSur) const Text(" - Send replies"),
+                        if (_serverDetails.value.isMinVentura) const Text(" - Edit & Unsend messages"),
                         const SizedBox(height: 10),
                         const Text(" - Mark chats read on the Mac server"),
-                        if (isMinVenturaSync) const Text(" - Mark chats as unread on the Mac server"),
+                        if (_serverDetails.value.isMinVentura) const Text(" - Mark chats as unread on the Mac server"),
                         const SizedBox(height: 10),
                         const Text(" - Rename group chats"),
                         const Text(" - Add & remove people from group chats"),
-                        if (isMinBigSurSync) const Text(" - Change the group chat photo"),
-                        if (isMinBigSurSync) const SizedBox(height: 10),
-                        if (isMinMontereySync) const Text(" - View Focus statuses"),
-                        if (isMinBigSurSync) const Text(" - Use Find My Friends"),
-                        if (isMinBigSurSync) const Text(" - Be notified of incoming FaceTime calls"),
-                        if (isMinVenturaSync) const Text(" - Answer FaceTime calls (experimental)"),
+                        if (_serverDetails.value.isMinBigSur) const Text(" - Change the group chat photo"),
+                        if (_serverDetails.value.isMinBigSur) const SizedBox(height: 10),
+                        if (_serverDetails.value.isMinMonterey) const Text(" - View Focus statuses"),
+                        if (_serverDetails.value.isMinBigSur) const Text(" - Use Find My Friends"),
+                        if (_serverDetails.value.isMinBigSur) const Text(" - Be notified of incoming FaceTime calls"),
+                        if (_serverDetails.value.isMinVentura) const Text(" - Answer FaceTime calls (experimental)"),
                         const SizedBox(height: 10),
                       ],
                     ),
@@ -382,91 +356,20 @@ class SettingsService {
     _showingPapiPopup = false;
   }
 
-  ServerDetails serverDetailsSync() => ServerDetails(
-      macOSVersion: PrefsSvc.i.getInt("macos-version") ?? 11,
-      macOSMinorVersion: PrefsSvc.i.getInt("macos-minor-version") ?? 0,
-      serverVersion: PrefsSvc.i.getString("server-version") ?? "0.0.0",
-      serverVersionCode: PrefsSvc.i.getInt("server-version-code") ?? 0);
-
-  Future<bool> get isMinSierra async {
-    final val = await getServerDetails();
-    return val.macOSVersion > 10 || (val.macOSVersion == 10 && val.macOSMinorVersion > 11);
-  }
-
-  Future<bool> get isMinBigSur async {
-    final val = await getServerDetails();
-    return val.macOSVersion >= 11;
-  }
-
-  Future<bool> get isMinMonterey async {
-    final val = await getServerDetails();
-    return val.macOSVersion >= 12;
-  }
-
-  Future<bool> get isMinVentura async {
-    // final val = await getServerDetails();
-    // return val.item1 >= 13;
-    // TODO: REMOVE
-    return true;
-  }
-
-  Future<bool> get isMinSonoma async {
-    // final val = await getServerDetails();
-    // return val.item1 >= 14;
-    // TODO: REMOVE
-    return true;
-  }
-
-  Future<bool> get isMinSequoia async {
-    // final val = await getServerDetails();
-    // return val.item1 >= 15;
-    // TODO: REMOVE
-    return true;
-  }
-
-  bool get isMinMontereySync {
-    return (PrefsSvc.i.getInt("macos-version") ?? 11) >= 12;
-  }
-
-  bool get isMinBigSurSync {
-    return (PrefsSvc.i.getInt("macos-version") ?? 11) >= 11;
-  }
-
-  bool get isMinVenturaSync {
-    // return (PrefsSvc.i.getInt("macos-version") ?? 11) >= 13;
-    // TODO: REMOVE
-    return true;
-  }
-
-  bool get isMinCatalinaSync {
-    return (PrefsSvc.i.getInt("macos-minor-version") ?? 11) >= 15 || isMinBigSurSync;
-  }
-
-  bool get isMinSonomaSync {
-    // return (PrefsSvc.i.getInt("macos-version") ?? 11) >= 14;
-    // TODO: REMOVE
-    return true;
-  }
-
-  bool get isMinSequoiaSync {
-    // return (PrefsSvc.i.getInt("macos-version") ?? 11) >= 15;
-    // TODO: REMOVE
-    return true;
-  }
+  /// Returns the current cached [ServerDetails].
+  ServerDetails get serverDetails => _serverDetails.value;
 
   /// Group chats can be created on macOS <= Catalina or
   /// if the Private API is enabled, and the server supports it (v1.8.0).
-  Future<bool> canCreateGroupChat() async {
-    final serverDetails = await SettingsSvc.getServerDetails();
-    bool papiEnabled = settings.enablePrivateAPI.value;
-    return (serverDetails.supportsCreateGroupChat && papiEnabled) || !isMinBigSurSync;
+  bool canCreateGroupChat() {
+    return canCreateGroupChatSync();
   }
 
   /// Group chats can be created on macOS <= Catalina or
   /// if the Private API is enabled, and the server supports it (v1.8.0).
   bool canCreateGroupChatSync() {
     bool papiEnabled = settings.enablePrivateAPI.value;
-    return (SettingsSvc.serverDetailsSync().supportsCreateGroupChat && papiEnabled) || !isMinBigSurSync;
+    return (_serverDetails.value.supportsCreateGroupChat && papiEnabled) || !_serverDetails.value.isMinBigSur;
   }
 
   Future<Map<String, dynamic>> getServerUpdateDict() async {

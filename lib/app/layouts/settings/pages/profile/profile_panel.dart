@@ -37,7 +37,7 @@ class _ProfilePanelState extends State<ProfilePanel> with WidgetsBindingObserver
         accountInfo.addAll(result.data['data']);
       }
       opacity.value = 1.0;
-      if (SettingsSvc.isMinBigSurSync) {
+      if (SettingsSvc.serverDetails.isMinBigSur) {
         final result2 = await HttpSvc.getAccountContact();
         if (!isNullOrEmpty(result2.data.isNotEmpty)) {
           accountContact.addAll(result2.data['data']);

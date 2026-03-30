@@ -112,8 +112,8 @@ class _InteractiveHolderState extends State<InteractiveHolder> with AutomaticKee
                                           case "Handwriten Message":
                                           case "Digital Touch Message":
                                             if (SettingsSvc.settings.enablePrivateAPI.value &&
-                                                SettingsSvc.isMinBigSurSync &&
-                                                SettingsSvc.serverDetailsSync().supportsGroupChatManagement) {
+                                                SettingsSvc.serverDetails.isMinBigSur &&
+                                                SettingsSvc.serverDetails.supportsGroupChatManagement) {
                                               return const EmbeddedMedia();
                                             } else {
                                               return const UnsupportedInteractive(

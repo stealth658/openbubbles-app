@@ -143,8 +143,8 @@ List<Widget> buildSettingItemList({
             material: material,
           ),
 
-          if (SettingsSvc.serverDetailsSync().supportsScheduledMessages) const SettingsDivider(),
-          if (SettingsSvc.serverDetailsSync().supportsScheduledMessages)
+          if (SettingsSvc.serverDetails.supportsScheduledMessages) const SettingsDivider(),
+          if (SettingsSvc.serverDetails.supportsScheduledMessages)
             SearchableSettingItem(
                 title: "Scheduled Messages",
                 searchTags: ["Scheduled Messages"],
