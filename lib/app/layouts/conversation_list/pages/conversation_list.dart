@@ -150,7 +150,6 @@ class _ConversationListState extends CustomState<ConversationList, void, Convers
         if (notInSettings) {
           SettingsSvc.settings.reachedConversationList.value = true;
           SettingsSvc.settings.saveOneAsync('reachedConversationList');
-          SettingsSvc.getServerDetails(refresh: true);
           t.cancel();
         }
       });
