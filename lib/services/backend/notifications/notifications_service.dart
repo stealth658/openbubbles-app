@@ -98,7 +98,7 @@ class NotificationsService {
     await flnp.zonedSchedule(
       Random().nextInt(9998) + 50000,
       chatTitle ?? 'Reminder: ${chat!.getTitle()}',
-      messageText ?? (hideContent ? "iMessage" : MessageHelper.getNotificationText(message!)),
+      messageText ?? (hideContent ? "iMessage" : message!.getNotificationText()),
       TZDateTime.from(time, local),
       NotificationDetails(
         android: AndroidNotificationDetails(
@@ -121,7 +121,7 @@ class NotificationsService {
     final guid = chat.guid;
     final contactName = message.handleRelation.target?.displayName ?? "Unknown";
     final title = isGroup ? chat.getTitle() : contactName;
-    final text = hideContent ? "iMessage" : MessageHelper.getNotificationText(message);
+    final text = hideContent ? "iMessage" : message.getNotificationText();
     final isReaction = !isNullOrEmpty(message.associatedMessageGuid);
     final personIcon = (await rootBundle.load("assets/images/person64.png")).buffer.asUint8List();
 

@@ -417,7 +417,7 @@ class ChatActions {
 
     // If we plan to update the message, but the dates are the same,
     if (didUpdate && checkMessageText) {
-      if (MessageHelper.getNotificationText(chat.latestMessage) == MessageHelper.getNotificationText(lastMessage)) {
+      if (chat.latestMessage.getNotificationText() == lastMessage.getNotificationText()) {
         didUpdate = false;
       }
     }

@@ -61,7 +61,7 @@ class _ReplyBubbleState extends State<ReplyBubble> with ThemeHelpers {
     if (!iOS) {
       // Use MessageState if available for reactive text content
       final messageText = controller.text.value;
-      String text = MessageHelper.getNotificationText(Message(text: messageText, subject: controller.subject.value));
+      String text = Message(text: messageText, subject: controller.subject.value).getNotificationText();
       return MouseRegion(
         cursor: SystemMouseCursors.click,
         child: ConstrainedBox(

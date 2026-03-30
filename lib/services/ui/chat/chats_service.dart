@@ -1149,8 +1149,11 @@ class ChatsService {
     if (state == null) return;
 
     state.updateLatestMessageInternal(message);
-    final hideContactInfo = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
-    state.updateSubtitleInternal(MessageHelper.getNotificationText(message, hideContactInfo: hideContactInfo));
+    final redacted = SettingsSvc.settings.redactedMode.value;
+    final hideContactInfo = redacted && SettingsSvc.settings.hideContactInfo.value;
+    final hideMessageContent = redacted && SettingsSvc.settings.hideMessageContent.value;
+    state.updateSubtitleInternal(
+        message.getNotificationText(hideContactInfo: hideContactInfo, hideMessageContent: hideMessageContent));
     state.chat.latestMessage = message;
     _repositionChat(state.chat, immediate: true);
   }

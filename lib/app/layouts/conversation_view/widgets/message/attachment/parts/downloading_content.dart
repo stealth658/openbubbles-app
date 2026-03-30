@@ -174,6 +174,8 @@ class DownloadingContent extends StatelessWidget {
                           color: isError ? context.theme.colorScheme.error : context.theme.colorScheme.properOnSurface,
                         ),
                       ),
+                      // Balance the spinner (16) + gap (5) so the text is centered
+                      const SizedBox(width: 21),
                     ],
                   ),
                 ],

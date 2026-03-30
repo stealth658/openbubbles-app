@@ -3,6 +3,9 @@ import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:bluebubbles/utils/logger/logger.dart';
+import 'package:collection/collection.dart';
+import 'package:faker/faker.dart';
 import 'package:get/get.dart';
 
 extension DateHelpers on DateTime {
@@ -248,5 +251,151 @@ extension TitleCase on String {
     return split(' ')
         .map((word) => word.isEmpty ? word : '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}')
         .join(' ');
+  }
+}
+
+// Returns the attachments as a string representation for message preview/notification text.
+String _getAttachmentText(List<Attachment?> attachments) {
+  Map<String, int> counts = {};
+  for (Attachment? attachment in attachments) {
+    String? mime = attachment!.mimeType;
+    String key;
+    if (mime == null) {
+      key = "link";
+    } else if (mime.contains("vcard")) {
+      key = "contact card";
+    } else if (mime.contains("location")) {
+      key = "location";
+    } else if (mime.contains("contact")) {
+      key = "contact";
+    } else if (mime.contains("video")) {
+      key = "video";
+    } else if (mime.contains("audio")) {
+      key = "audio message";
+    } else if (mime.contains("image")) {
+      key = "photo";
+    } else if (mime.contains("image/gif")) {
+      key = "GIF";
+    } else if (mime.contains("application/pdf")) {
+      key = "PDF";
+    } else {
+      key = mime.split("/").first;
+    }
+
+    int current = counts.containsKey(key) ? counts[key]! : 0;
+    counts[key] = current + 1;
+    // a message can only ever have 1 link (but multiple "attachments", so we break out)
+    if (key == "link") break;
+  }
+
+  List<String> attachmentStr = [];
+  counts.forEach((key, value) {
+    attachmentStr.add("$value $key${value > 1 ? "s" : ""}");
+  });
+  return attachmentStr.join(attachmentStr.length == 2 ? " & " : ", ").toTitleCase();
+}
+
+extension MessageNotificationExtension on Message {
+  String getNotificationText(
+      {bool withSender = false, bool hideContactInfo = false, bool hideMessageContent = false}) {
+    String compute() {
+      if (isGroupEvent) return groupEventText;
+      if (expressiveSendStyleId == "com.apple.MobileSMS.expressivesend.invisibleink") {
+        return "Message sent with Invisible Ink";
+      }
+
+      final String sender = !withSender
+          ? ""
+          : isFromMe! ? "You: " : (hideContactInfo ? "Someone: " : "${handleRelation.target?.displayName ?? "Someone"}: ");
+
+      if (isInteractive) {
+        return "$sender$interactiveText";
+      }
+      if (isNullOrEmpty(fullText) && !hasAttachments && isNullOrEmpty(associatedMessageGuid)) {
+        if (dateEdited != null) {
+          return "${sender}Unsent message";
+        }
+        return "${sender}Empty message";
+      }
+      if (hasAttachments && attachments.isEmpty) {
+        fetchAttachments();
+      }
+
+      // If there are attachments, return the number of attachments
+      if (realAttachments.isNotEmpty) {
+        return "$sender${_getAttachmentText(realAttachments)}";
+      } else if (!isNullOrEmpty(associatedMessageGuid)) {
+        // It's a reaction message, get the sender
+        String reactionSender = isFromMe!
+            ? 'You'
+            : (hideContactInfo ? "Someone" : (handleRelation.target?.reactionDisplayName ?? "Someone"));
+        // fetch the associated message object
+        Message? associatedMessage = Message.findOne(guid: associatedMessageGuid);
+        if (associatedMessage != null) {
+          // grab the verb we'll use from the reactionToVerb map
+          String? verb = ReactionTypes.reactionToVerb[associatedMessageType];
+          // we need to check balloonBundleId first because for some reason
+          // game pigeon messages have the text "�"
+          if (associatedMessage.isInteractive) {
+            return "$reactionSender $verb $interactiveText";
+            // now we check if theres a subject or text and construct out message based off that
+          } else if (associatedMessage.expressiveSendStyleId == "com.apple.MobileSMS.expressivesend.invisibleink") {
+            return "$reactionSender $verb a message with Invisible Ink";
+          } else {
+            String? messageText;
+            bool attachment = false;
+            if (associatedMessagePart != null && associatedMessage.attributedBody.firstOrNull != null) {
+              final attrBod = associatedMessage.attributedBody.first;
+              final ranges = attrBod.runs
+                  .where((e) => e.attributes?.messagePart == associatedMessagePart)
+                  .map((e) => e.range)
+                  .sorted((a, b) => a.first.compareTo(b.first));
+              final attachmentGuids = attrBod.runs
+                  .where((e) =>
+                      e.attributes?.messagePart == associatedMessagePart && e.attributes?.attachmentGuid != null)
+                  .map((e) => e.attributes?.attachmentGuid)
+                  .toSet();
+              if (attachmentGuids.isNotEmpty) {
+                attachment = true;
+                messageText = _getAttachmentText(
+                    associatedMessage.fetchAttachments()!.where((e) => attachmentGuids.contains(e?.guid)).toList());
+              } else if (ranges.isNotEmpty) {
+                messageText = "";
+                for (List range in ranges) {
+                  final substring = attrBod.string.substring(range.first, range.first + range.last);
+                  messageText = messageText! + substring;
+                }
+              }
+            }
+            // fallback
+            if (messageText == null) {
+              if (associatedMessage.hasAttachments) {
+                attachment = true;
+                messageText = _getAttachmentText(associatedMessage.fetchAttachments()!);
+              } else {
+                messageText = (associatedMessage.subject ?? "") +
+                    (!isNullOrEmpty(associatedMessage.subject?.trim()) ? "\n" : "") +
+                    (associatedMessage.text ?? "");
+              }
+            }
+            return '$reactionSender $verb ${attachment ? "" : "“"}$messageText${attachment ? "" : "”"}';
+          }
+        }
+        // if we can't fetch the associated message for some reason
+        // (or none of the above conditions about it are true)
+        // then we should fallback to unparsed reaction messages
+        Logger.info("Couldn't fetch associated message for message: $guid");
+        return "$reactionSender $text";
+      } else {
+        // It's all other message types
+        return sender + fullText;
+      }
+    }
+
+    final result = compute();
+    if (hideMessageContent) {
+      return faker.lorem.words(result.split(" ").length).join(" ");
+    }
+    return result;
   }
 }

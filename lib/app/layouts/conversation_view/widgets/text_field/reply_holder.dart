@@ -155,9 +155,9 @@ class _ReplyText extends StatelessWidget {
         subject: reply.subject,
         attachments: reply.attachments,
       ).mergeWith(message!);
-      return MessageHelper.getNotificationText(msg);
+      return msg.getNotificationText();
     }
-    return MessageHelper.getNotificationText(message!);
+    return message!.getNotificationText();
   }
 
   @override

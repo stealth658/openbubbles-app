@@ -509,7 +509,7 @@ class _ChatOptionsState extends State<ChatOptions> with ThemeHelpers {
                         final deliveredStr =
                             m.dateDelivered != null ? "Delivered: ${buildFullDate(m.dateDelivered!)}, " : "";
                         final sentStr = "Sent: ${buildFullDate(m.dateCreated!)}";
-                        final text = MessageHelper.getNotificationText(m, withSender: true);
+                        final text = m.getNotificationText(withSender: true);
                         final line = "($readStr$deliveredStr$sentStr) $text";
                         lines.add(line);
                       }
@@ -580,11 +580,11 @@ class _ChatOptionsState extends State<ChatOptions> with ThemeHelpers {
                             }
                           }
                           timestamps.add(readStr + deliveredStr + sentStr);
-                          content.add(MessageHelper.getNotificationText(m, withSender: true));
+                          content.add(m.getNotificationText(withSender: true));
                           dimensions.add(null);
                         } else {
                           timestamps.add(readStr + deliveredStr + sentStr);
-                          content.add(MessageHelper.getNotificationText(m, withSender: true));
+                          content.add(m.getNotificationText(withSender: true));
                           dimensions.add(null);
                         }
                       }

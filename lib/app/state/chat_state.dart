@@ -72,7 +72,7 @@ class ChatState {
         chatCreatorSubtitle = RxnString(chat.isGroup
             ? chat.getChatCreatorSubtitle()
             : (chat.handles.isNotEmpty ? (chat.handles.first.formattedAddress ?? chat.handles.first.address) : null)),
-        subtitle = RxnString(MessageHelper.getNotificationText(chat.latestMessage)),
+        subtitle = RxnString(chat.latestMessage.getNotificationText()),
         latestMessage = Rxn<Message>(chat.latestMessage),
         latestMessageStatus = Rx<MessageStatusIndicator>(
           chat.latestMessage.isFromMe != true ? MessageStatusIndicator.NONE : chat.latestMessage.indicatorToShow,
@@ -242,6 +242,20 @@ class ChatState {
     }
   }
 
+  /// Compute the subtitle for [message] respecting the current redacted-mode settings.
+  /// Used by all redaction/unredaction methods to ensure subtitle is always correct.
+  String? _computeSubtitle(Message? message) {
+    if (message == null) return null;
+    final redacted = SettingsSvc.settings.redactedMode.value;
+    final hideContactInfo = redacted &&
+        (SettingsSvc.settings.hideContactInfo.value || SettingsSvc.settings.generateFakeContactNames.value);
+    final hideMessageContent = redacted && SettingsSvc.settings.hideMessageContent.value;
+    return message.getNotificationText(
+      hideContactInfo: hideContactInfo,
+      hideMessageContent: hideMessageContent,
+    );
+  }
+
   /// Rebuild [participants] when the chat's handle list changes, then recompute subtitle.
   void _updateParticipantsInternal() {
     for (final w in _participantWorkers) {
@@ -396,10 +410,10 @@ class ChatState {
     final fakeName = _cachedFakeName;
     updateDisplayNameInternal(fakeName);
     updateChatCreatorSubtitleInternal('');
-    // Recompute the message-preview subtitle without contact names so reaction
-    // notifications ("John liked…") don't leak the sender after redaction.
+    // Recompute the message-preview subtitle so contact names and/or message
+    // content are hidden according to the current redacted-mode settings.
     if (latestMessage.value != null) {
-      updateSubtitleInternal(MessageHelper.getNotificationText(latestMessage.value!, hideContactInfo: true));
+      updateSubtitleInternal(_computeSubtitle(latestMessage.value));
     }
   }
 
@@ -407,8 +421,26 @@ class ChatState {
   void unredactContactInfo() {
     updateDisplayNameInternal(chat.displayName);
     updateChatCreatorSubtitleInternal(_computeCreatorSubtitle());
+    // Recompute subtitle — hideMessageContent may still be active even after
+    // contact-info redaction is lifted, so use _computeSubtitle to stay correct.
     if (latestMessage.value != null) {
-      updateSubtitleInternal(MessageHelper.getNotificationText(latestMessage.value!));
+      updateSubtitleInternal(_computeSubtitle(latestMessage.value));
+    }
+  }
+
+  /// Redact message preview text when [hideMessageContent] is enabled.
+  void redactMessageContent() {
+    if (!SettingsSvc.settings.redactedMode.value) return;
+    if (!SettingsSvc.settings.hideMessageContent.value) return;
+    if (latestMessage.value != null) {
+      updateSubtitleInternal(_computeSubtitle(latestMessage.value));
+    }
+  }
+
+  /// Restore message preview text (contact-info redaction may still apply).
+  void unredactMessageContent() {
+    if (latestMessage.value != null) {
+      updateSubtitleInternal(_computeSubtitle(latestMessage.value));
     }
   }
 
@@ -433,6 +465,7 @@ class ChatState {
 
     redactContactInfo();
     redactAvatars();
+    redactMessageContent();
     updateShouldHideAttachmentsInternal(SettingsSvc.settings.hideAttachments.value);
   }
 
@@ -440,6 +473,7 @@ class ChatState {
   void unredactFields() {
     unredactContactInfo();
     unredactAvatars();
+    unredactMessageContent();
     updateShouldHideAttachmentsInternal(false);
   }
 }
