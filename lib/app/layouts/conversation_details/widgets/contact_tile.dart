@@ -2,6 +2,7 @@ import 'package:bluebubbles/app/layouts/conversation_details/dialogs/address_pic
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/app/components/avatars/contact_avatar_widget.dart';
 import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/services/backend/interfaces/chat_interface.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -166,6 +167,10 @@ class ContactTile extends StatelessWidget {
                     backgroundColor: Colors.red,
                     icon: SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.trash : Icons.delete_outlined,
                     onPressed: (_) async {
+                      // Capture navigator before any async gap — the tile may
+                      // be removed from the tree once the participant list
+                      // updates, making context.findAncestorStateOfType unsafe.
+                      final navigator = Navigator.of(context, rootNavigator: true);
                       showDialog(
                           context: context,
                           builder: (BuildContext context) {
@@ -183,7 +188,17 @@ class ContactTile extends StatelessWidget {
                           });
 
                       HttpSvc.chatParticipant("remove", chat.guid, handle.address).then((response) async {
-                        Navigator.of(context, rootNavigator: true).pop();
+                        navigator.pop();
+                        if (response.statusCode == 200 &&
+                            response.data != null &&
+                            response.data['data'] != null) {
+                          final chats = await ChatInterface.bulkSyncChats(
+                            chatsData: [response.data['data'] as Map<String, dynamic>],
+                          );
+                          if (chats.isNotEmpty) {
+                            ChatsSvc.updateChat(chats.first, override: true);
+                          }
+                        }
                         Logger.info("Removed participant ${handle.address}");
                         showSnackbar("Notice", "Removed participant from chat!");
                       }).catchError((err, stack) {

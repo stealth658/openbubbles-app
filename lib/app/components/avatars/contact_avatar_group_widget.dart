@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
 
@@ -27,7 +28,8 @@ class ContactAvatarGroupWidget extends StatefulWidget {
 }
 
 class _ContactAvatarGroupWidgetState extends State<ContactAvatarGroupWidget> with ThemeHelpers {
-  late final List<Handle> participants;
+  late List<Handle> participants;
+  StreamSubscription? _participantsSub;
   final Map materialGeneration = {
     2: [
       24.5 / 40,
@@ -49,42 +51,61 @@ class _ContactAvatarGroupWidgetState extends State<ContactAvatarGroupWidget> wit
   // Cache values to prevent recalculation
   String? _cachedCustomAvatarPath;
 
-  @override
-  void initState() {
-    super.initState();
-    _cachedCustomAvatarPath = widget.chat.customAvatarPath;
-
-    // Sort participants once during init (expensive operation)
-    participants = widget.chat.handles.toList();
-    participants.sort((a, b) {
-      // Check ContactV2 avatars first, then fall back to old Contact
+  /// Rebuilds [participants] from [ChatState] if available, otherwise falls
+  /// back to [Chat.handles]. Sorts by avatar availability.
+  List<Handle> _buildParticipants() {
+    final chatState = ChatsSvc.getChatState(widget.chat.guid);
+    final handles = chatState != null
+        ? chatState.participants.map((hs) => hs.handle).toList()
+        : widget.chat.handles.toList();
+    handles.sort((a, b) {
       bool avatarA = a.contactsV2.firstOrNull?.avatarPath != null;
       bool avatarB = b.contactsV2.firstOrNull?.avatarPath != null;
       if (!avatarA && avatarB) return 1;
       if (avatarA && !avatarB) return -1;
       return 0;
     });
+    return handles;
+  }
 
-    // Observe customAvatarPath changes from ChatState if available
-    final chatState = ChatsSvc.getChatState(widget.chat.guid);
-    if (chatState != null) {
-      chatState.customAvatarPath.listen((newPath) {
-        if (newPath != _cachedCustomAvatarPath && mounted) {
-          setState(() {
-            _cachedCustomAvatarPath = newPath;
-          });
-        }
-      });
-    }
+  void _subscribeToState(String chatGuid) {
+    _participantsSub?.cancel();
+    final chatState = ChatsSvc.getChatState(chatGuid);
+    if (chatState == null) return;
+    _participantsSub = chatState.participants.listen((_) {
+      if (mounted) setState(() => participants = _buildParticipants());
+    });
+    chatState.customAvatarPath.listen((newPath) {
+      if (newPath != _cachedCustomAvatarPath && mounted) {
+        setState(() => _cachedCustomAvatarPath = newPath);
+      }
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _cachedCustomAvatarPath = widget.chat.customAvatarPath;
+    participants = _buildParticipants();
+    _subscribeToState(widget.chat.guid);
   }
 
   @override
   void didUpdateWidget(ContactAvatarGroupWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Only update cache if custom avatar path changed
-    if (oldWidget.chat.customAvatarPath != widget.chat.customAvatarPath) {
+    if (oldWidget.chat.guid != widget.chat.guid) {
+      participants = _buildParticipants();
+      _cachedCustomAvatarPath = widget.chat.customAvatarPath;
+      _subscribeToState(widget.chat.guid);
+    } else if (oldWidget.chat.customAvatarPath != widget.chat.customAvatarPath) {
       _cachedCustomAvatarPath = widget.chat.customAvatarPath;
     }
+  }
+
+  @override
+  void dispose() {
+    _participantsSub?.cancel();
+    super.dispose();
   }
 
   @override

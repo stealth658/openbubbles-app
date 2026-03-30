@@ -51,7 +51,7 @@ class ChatState {
 
   /// Reactive state wrappers for the chat's participants (handles).
   /// Updated when contact data changes — drives subtitle and avatar recomputes.
-  final List<HandleState> participants = [];
+  final RxList<HandleState> participants = <HandleState>[].obs;
   final List<Worker> _participantWorkers = [];
 
   /// Fake name generated once at construction. Reused on every redact toggle
@@ -256,15 +256,17 @@ class ChatState {
     );
   }
 
-  /// Rebuild [participants] when the chat's handle list changes, then recompute subtitle.
-  void _updateParticipantsInternal() {
+  /// Rebuild [participants] from [handles] (or this chat's own handles if omitted),
+  /// then recompute subtitle. Pass [handles] when calling from [updateFromChat] so
+  /// the fresh DB handles are used instead of the potentially stale cached [ToMany].
+  void _updateParticipantsInternal([List<Handle>? handles]) {
     for (final w in _participantWorkers) {
       w.dispose();
     }
     _participantWorkers.clear();
     participants
       ..clear()
-      ..addAll(chat.handles.map((h) => HandleSvc.getOrCreateHandleState(h)));
+      ..addAll((handles ?? chat.handles).map((h) => HandleSvc.getOrCreateHandleState(h)));
     for (final hs in participants) {
       _participantWorkers.add(
         ever(hs.displayName, (_) => updateChatCreatorSubtitleInternal(_computeCreatorSubtitle())),
@@ -324,9 +326,13 @@ class ChatState {
     updateDisplayNameInternal(updatedChat.displayName);
     updateCustomAvatarPathInternal(updatedChat.customAvatarPath);
     updateCustomBackgroundPathInternal(updatedChat.customBackgroundPath);
-    // Rebuild participants if handle membership changed, then recompute subtitle
-    _updateParticipantsInternal();
+    // Rebuild participants from the fresh DB handles on the incoming chat object so
+    // we never read the stale cached ToMany on the original ChatState.chat.
+    _updateParticipantsInternal(updatedChat.handles.toList());
     updateLatestMessageInternal(updatedChat.latestMessage);
+    // Refresh the subtitle so it reflects any updated handle display names
+    // (e.g. a group-event whose sender handle was just added to the DB).
+    updateSubtitleInternal(_computeSubtitle(updatedChat.latestMessage));
     updateTextFieldTextInternal(updatedChat.textFieldText);
     updateTextFieldAttachmentsInternal(updatedChat.textFieldAttachments);
 

@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:bluebubbles/app/layouts/conversation_details/dialogs/add_participant.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/widgets/contact_tile.dart';
+import 'package:bluebubbles/app/state/chat_state.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -21,17 +24,45 @@ class ParticipantsList extends StatefulWidget {
 
 class _ParticipantsListState extends State<ParticipantsList> with ThemeHelpers {
   bool showMoreParticipants = false;
+  StreamSubscription? _participantsSub;
 
-  bool get shouldShowMore => widget.chat.handles.length > 5;
+  /// Returns the reactive ChatState for this chat, if available.
+  ChatState? get _chatState => ChatsSvc.chatStates[widget.chat.guid];
+
+  /// Current participants read from ChatState, falling back to widget.chat.handles.
+  List<Handle> get _currentParticipants {
+    final state = _chatState;
+    if (state != null) return state.participants.map((hs) => hs.handle).toList();
+    return widget.chat.handles.toList();
+  }
+
+  bool get shouldShowMore => _currentParticipants.length > 5;
 
   List<Handle> get clippedParticipants =>
-      showMoreParticipants ? widget.chat.handles : widget.chat.handles.take(5).toList();
+      showMoreParticipants ? _currentParticipants : _currentParticipants.take(5).toList();
+
+  @override
+  void initState() {
+    super.initState();
+    // Rebuild whenever the reactive participants list changes (e.g. after addParticipant).
+    _participantsSub = _chatState?.participants.listen((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _participantsSub?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     if (!widget.chat.isGroup) {
       return const SliverToBoxAdapter(child: SizedBox.shrink());
     }
+
+    final participants = clippedParticipants;
 
     return SliverList(
       delegate: SliverChildBuilderDelegate(
@@ -68,7 +99,7 @@ class _ParticipantsListState extends State<ParticipantsList> with ThemeHelpers {
             },
           );
 
-          if (index > clippedParticipants.length) {
+          if (index > participants.length) {
             if (SettingsSvc.settings.enablePrivateAPI.value &&
                 widget.chat.isIMessage &&
                 widget.chat.isGroup &&
@@ -79,7 +110,7 @@ class _ParticipantsListState extends State<ParticipantsList> with ThemeHelpers {
             }
           }
 
-          if (index == clippedParticipants.length) {
+          if (index == participants.length) {
             if (shouldShowMore) {
               return ListTile(
                 mouseCursor: SystemMouseCursors.click,
@@ -122,13 +153,13 @@ class _ParticipantsListState extends State<ParticipantsList> with ThemeHelpers {
           }
 
           return ContactTile(
-            key: Key(widget.chat.handles[index].address),
-            handle: widget.chat.handles[index],
+            key: Key(participants[index].address),
+            handle: participants[index],
             chat: widget.chat,
             canBeRemoved: widget.chat.isGroup && SettingsSvc.settings.enablePrivateAPI.value && widget.chat.isIMessage,
           );
         },
-        childCount: clippedParticipants.length + 2,
+        childCount: participants.length + 2,
       ),
     );
   }

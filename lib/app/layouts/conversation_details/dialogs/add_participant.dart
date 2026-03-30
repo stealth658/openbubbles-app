@@ -1,6 +1,7 @@
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
+import 'package:bluebubbles/services/backend/interfaces/chat_interface.dart';
 import 'package:bluebubbles/utils/string_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -131,6 +132,16 @@ void showAddParticipant(BuildContext context, Chat chat) {
                     });
                 final response = await HttpSvc.chatParticipant("add", chat.guid, participantController.text);
                 if (response.statusCode == 200) {
+                  // Sync the updated chat (with the new participant) to the DB
+                  // and propagate the changes to ChatState so the UI updates.
+                  if (response.data != null && response.data['data'] != null) {
+                    final chats = await ChatInterface.bulkSyncChats(
+                      chatsData: [response.data['data'] as Map<String, dynamic>],
+                    );
+                    if (chats.isNotEmpty) {
+                      ChatsSvc.updateChat(chats.first, override: true);
+                    }
+                  }
                   Navigator.of(context, rootNavigator: true).pop();
                   Navigator.of(context, rootNavigator: true).pop();
                   showSnackbar("Notice", "Added ${participantController.text} successfully!");

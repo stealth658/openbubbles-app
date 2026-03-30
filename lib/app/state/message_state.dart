@@ -5,6 +5,7 @@ import 'package:bluebubbles/app/state/handle_state.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
+import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
@@ -118,14 +119,18 @@ class MessageState extends StatefulController {
   /// Resolves the display name for the sender of this message.
   ///
   /// - Outgoing: returns "You".
-  /// - Incoming: returns the contact name from [sender], or "Unknown" if no
-  ///   handle is associated.
+  /// - Incoming: returns the contact name from [sender], the handle's DB display
+  ///   name (formatted address) as a fallback, or "Unknown" if no handle is
+  ///   associated.
   ///
-  /// Reads reactive values, so calling this inside [Obx()] registers rebuild
-  /// dependencies on both [userName] and the contact's [displayName] automatically.
+  /// Always reads [isFromMe.value] first, ensuring [Obx()] always registers at
+  /// least one reactive dependency (prevents the GetX "improper use" warning
+  /// even for outgoing group-event messages).
   String get senderDisplayName {
-    if (message.isFromMe == true) return 'You';
-    return sender?.displayName.value ?? 'Unknown';
+    if (isFromMe.value || sender == null) return 'You';
+    return sender?.displayName.value
+        ?? message.handleRelation.target?.displayName
+        ?? 'Unknown';
   }
 
   /// Adjacent messages for layout context (set by MessageHolder in initState)

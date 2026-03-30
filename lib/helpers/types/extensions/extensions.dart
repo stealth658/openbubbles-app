@@ -311,7 +311,7 @@ extension MessageNotificationExtension on Message {
 
       final String sender = !withSender
           ? ""
-          : isFromMe!
+          : isFromMe! || handleRelation.target == null
               ? "You: "
               : (hideContactInfo ? "Someone: " : "${handleRelation.target?.displayName ?? "Someone"}: ");
 

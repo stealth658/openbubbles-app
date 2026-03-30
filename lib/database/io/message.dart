@@ -616,7 +616,7 @@ class Message {
   /// the transient field.
   String get groupEventText {
     final h = handle ?? handleRelation.target;
-    final name = h?.displayName ?? (isFromMe! ? 'You' : 'Unknown');
+    final name = h?.displayName ?? (isFromMe! || handleRelation.target == null ? 'You' : 'Unknown');
     return buildGroupEventText(name);
   }
 
@@ -629,7 +629,8 @@ class Message {
 
     String? other = "someone";
     if (otherHandle != null && isParticipantEvent) {
-      other = Handle.findOne(originalROWID: otherHandle)?.displayName;
+      // Keep the "someone" fallback if the handle isn't in the DB yet.
+      other = Handle.findOne(originalROWID: otherHandle)?.displayName ?? other;
     }
 
     if (itemType == 1) {
