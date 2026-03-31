@@ -156,7 +156,7 @@ class ChatSelectorViewState extends State<ChatSelectorView> with ThemeHelpers {
                                   child: InkWell(
                                     onTap: () {
                                       widget.onSelect(chat);
-                                      Navigator.of(context, rootNavigator: true).pop();
+                                      Navigator.of(context).pop();
                                     },
                                     child: ChatCreatorTile(
                                       key: ValueKey(chat.guid),

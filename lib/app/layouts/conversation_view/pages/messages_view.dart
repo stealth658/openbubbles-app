@@ -199,8 +199,11 @@ class MessagesViewState extends State<MessagesView> with MessagesServiceMixin, T
   @override
   void dispose() {
     if (!kIsWeb && !kIsDesktop) smartReply.close();
-    chat.lastReadMessageGuid = _messages.first.guid;
-    chat.saveAsync(updateLastReadMessageGuid: true);
+    if (_messages.isNotEmpty) {
+      chat.lastReadMessageGuid = _messages.first.guid;
+      chat.saveAsync(updateLastReadMessageGuid: true);
+    }
+
     // Don't force-delete customService (it may be reused), only force-delete regular singleton
     disposeMessagesService(force: widget.customService == null);
     // Controllers are now disposed by MessagesService.onClose()

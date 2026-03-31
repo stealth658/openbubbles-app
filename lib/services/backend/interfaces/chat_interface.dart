@@ -63,10 +63,12 @@ class ChatInterface {
   static Future<void> deleteChat({
     required int chatId,
     required List<int> messageIds,
+    List<int> handleIds = const [],
   }) async {
     final data = {
       'chatId': chatId,
       'messageIds': messageIds,
+      'handleIds': handleIds,
     };
 
     if (isIsolate) {

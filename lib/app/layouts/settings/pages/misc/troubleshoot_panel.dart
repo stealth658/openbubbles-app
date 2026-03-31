@@ -1,6 +1,8 @@
+import 'package:bluebubbles/app/layouts/chat_selector_view/chat_selector_view.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/misc/logging_panel.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/content/log_level_selector.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/content/next_button.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/helpers/backend/settings_helpers.dart';
 import 'package:bluebubbles/services/backend/sync/chat_sync_manager.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
@@ -268,6 +270,72 @@ class _TroubleshootPanelState extends State<TroubleshootPanel> with ThemeHelpers
                   ]),
                 SettingsHeader(iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Troubleshooting"),
                 SettingsSection(backgroundColor: tileColor, children: [
+                  SettingsTile(
+                      onTap: () async {
+                        NavigationSvc.push(
+                          context,
+                          ChatSelectorView(
+                            onSelect: (Chat chat) async {
+                              final bool? confirmed = await showDialog<bool>(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  backgroundColor: context.theme.colorScheme.surface,
+                                  title: Text(
+                                    "Delete Chat?",
+                                    style: context.theme.textTheme.titleLarge,
+                                  ),
+                                  content: Text(
+                                    "This will permanently delete the chat, all of its messages, and all of its participants (handles). This cannot be undone.",
+                                    style: context.theme.textTheme.bodyMedium,
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      child: Text(
+                                        "Cancel",
+                                        style: context.theme.textTheme.bodyLarge!.copyWith(
+                                          color: context.theme.colorScheme.primary,
+                                        ),
+                                      ),
+                                      onPressed: () => Navigator.of(context).pop(false),
+                                    ),
+                                    TextButton(
+                                      child: Text(
+                                        "Delete",
+                                        style: context.theme.textTheme.bodyLarge!.copyWith(
+                                          color: Colors.redAccent,
+                                        ),
+                                      ),
+                                      onPressed: () => Navigator.of(context).pop(true),
+                                    ),
+                                  ],
+                                ),
+                              );
+
+                              if (confirmed != true) return;
+
+                              try {
+                                await ChatsSvc.deleteChat(chat, deleteHandles: true);
+                                showSnackbar(
+                                  "Chat Deleted",
+                                  "Successfully deleted chat and all associated data.",
+                                );
+                              } catch (ex, stacktrace) {
+                                Logger.error("Failed to delete chat!", error: ex, trace: stacktrace);
+                                showSnackbar("Failed to Delete Chat", "Error: ${ex.toString()}");
+                              }
+                            },
+                          ),
+                        );
+                      },
+                      leading: const SettingsLeadingIcon(
+                        iosIcon: CupertinoIcons.chat_bubble_2,
+                        materialIcon: Icons.delete_forever,
+                        containerColor: Colors.redAccent,
+                      ),
+                      title: "Delete a Chat",
+                      subtitle:
+                          "Permanently deletes a selected chat, all its messages, and all its participants. Use this to simulate a brand-new chat arrival."),
+                  const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                   SettingsTile(
                       onTap: () async {
                         await PrefsSvc.i.remove("lastOpenedChat");

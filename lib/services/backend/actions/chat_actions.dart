@@ -113,14 +113,19 @@ class ChatActions {
   static Future<void> deleteChat(Map<String, dynamic> data) async {
     final chatId = data['chatId'] as int;
     final messageIds = (data['messageIds'] as List).cast<int>();
+    final handleIds = (data['handleIds'] as List? ?? []).cast<int>();
 
     Database.runInTransaction(TxMode.write, () {
       final chatBox = Database.chats;
       final messageBox = Database.messages;
+      final handleBox = Database.handles;
 
       /// Remove all references of chat and its messages
       chatBox.remove(chatId);
       messageBox.removeMany(messageIds);
+      if (handleIds.isNotEmpty) {
+        handleBox.removeMany(handleIds);
+      }
     });
   }
 

@@ -525,6 +525,7 @@ class ChatsService {
     if (headless) return;
     chatStates.remove(toRemove.guid);
     _sortedChats.removeWhere((c) => c.guid == toRemove.guid);
+    _scheduleListVersionUpdate(immediate: true);
   }
 
   void markAllAsRead() {
@@ -797,8 +798,9 @@ class ChatsService {
     return Database.chats.count();
   }
 
-  /// Delete a chat with full UI cleanup and service state management
-  Future<void> deleteChat(Chat chat) async {
+  /// Delete a chat with full UI cleanup and service state management.
+  /// Set [deleteHandles] to true to also remove the chat's participant handles.
+  Future<void> deleteChat(Chat chat, {bool deleteHandles = false}) async {
     if (kIsWeb) return;
 
     // Handle active chat cleanup
@@ -808,11 +810,17 @@ class ChatsService {
       await Future.delayed(const Duration(milliseconds: 500));
     }
 
+    // Collect handle IDs before deleting the chat (handles are lazy-loaded via ToMany)
+    final handleIds = deleteHandles
+        ? chat.handles.map((e) => e.id).whereType<int>().toList()
+        : <int>[];
+
     // Perform the actual DB deletion
     List<Message> messages = Chat.getMessages(chat);
     await ChatInterface.deleteChat(
       chatId: chat.id!,
       messageIds: messages.map((e) => e.id!).toList(),
+      handleIds: handleIds,
     );
 
     // Remove from service state
