@@ -192,11 +192,11 @@ class ContactTile extends StatelessWidget {
                         if (response.statusCode == 200 &&
                             response.data != null &&
                             response.data['data'] != null) {
-                          final chats = await ChatInterface.bulkSyncChats(
+                          final result = await ChatInterface.bulkSyncChats(
                             chatsData: [response.data['data'] as Map<String, dynamic>],
                           );
-                          if (chats.isNotEmpty) {
-                            ChatsSvc.updateChat(chats.first, override: true);
+                          if (result.chats.isNotEmpty) {
+                            ChatsSvc.updateChat(result.chats.first, override: true);
                           }
                         }
                         Logger.info("Removed participant ${handle.address}");

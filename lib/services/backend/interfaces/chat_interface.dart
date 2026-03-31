@@ -2,8 +2,8 @@ import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/env.dart';
 import 'package:bluebubbles/services/backend/actions/chat_actions.dart';
-import 'package:bluebubbles/services/backend/lifecycle/lifecycle_service.dart';
 import 'package:bluebubbles/models/models.dart' show MessageSaveResult;
+import 'package:bluebubbles/services/services.dart';
 import 'package:get_it/get_it.dart';
 import 'package:bluebubbles/services/isolates/global_isolate.dart';
 
@@ -171,20 +171,27 @@ class ChatInterface {
     return Database.chats.getMany(chatIds).whereType<Chat>().toList();
   }
 
-  static Future<List<Chat>> bulkSyncChats({required List<Map<String, dynamic>> chatsData}) async {
+  static Future<({List<Chat> chats, List<int> affectedHandleIds})> bulkSyncChats(
+      {required List<Map<String, dynamic>> chatsData}) async {
     final data = {
       'chatsData': chatsData,
     };
 
     late List<int> chatIds;
+    late List<int> affectedHandleIds;
     if (isIsolate) {
-      chatIds = await ChatActions.bulkSyncChats(data);
+      final result = await ChatActions.bulkSyncChats(data);
+      chatIds = (result['chatIds'] as List).cast<int>();
+      affectedHandleIds = (result['affectedHandleIds'] as List).cast<int>();
     } else {
-      chatIds = await GetIt.I<GlobalIsolate>().send<List<int>>(IsolateRequestType.bulkSyncChats, input: data);
+      final result =
+          await GetIt.I<GlobalIsolate>().send<Map<String, dynamic>>(IsolateRequestType.bulkSyncChats, input: data);
+      chatIds = (result['chatIds'] as List).cast<int>();
+      affectedHandleIds = (result['affectedHandleIds'] as List).cast<int>();
     }
 
-    // Fetch chats by ID using getMany for efficiency
-    return Database.chats.getMany(chatIds).whereType<Chat>().toList();
+    final chats = Database.chats.getMany(chatIds).whereType<Chat>().toList();
+    return (chats: chats, affectedHandleIds: affectedHandleIds);
   }
 
   static Future<List<Message>> getMessagesAsync({

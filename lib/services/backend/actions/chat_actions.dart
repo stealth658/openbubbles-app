@@ -1,6 +1,7 @@
 import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
+import 'package:bluebubbles/services/backend/interfaces/contact_v2_interface.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:collection/collection.dart';
@@ -435,9 +436,13 @@ class ChatActions {
     return didUpdate;
   }
 
-  static Future<List<int>> bulkSyncChats(Map<String, dynamic> data) async {
+  static Future<Map<String, dynamic>> bulkSyncChats(Map<String, dynamic> data) async {
     final chatsData = (data['chatsData'] as List).cast<Map<String, dynamic>>();
     final inputChats = chatsData.map((e) => Chat.fromMap(e)).toList();
+
+    // Tracks handles that did not exist in the DB before this sync.
+    // Contact matching is attempted for these after the main transaction.
+    final List<Handle> brandNewHandles = [];
 
     // 1. Extract all unique handles from the input chats
     final Map<String, Handle> inputHandlesMap = {};
@@ -474,7 +479,7 @@ class ChatActions {
       await handle.updateFormattedAddress();
     }
 
-    return Database.runInTransaction(TxMode.write, () {
+    final chatIds = Database.runInTransaction(TxMode.write, () {
       final chatBox = Database.chats;
       final handleBox = Database.handles;
 
@@ -499,6 +504,8 @@ class ChatActions {
           inputHandle.id = existing.id;
           handlesToSave.add(inputHandle);
         } else {
+          // Brand-new handle — track it so we can attempt contact matching after the transaction.
+          brandNewHandles.add(inputHandle);
           handlesToSave.add(inputHandle);
         }
       }
@@ -572,6 +579,31 @@ class ChatActions {
       // Return just the IDs for efficient transfer across isolates
       return chatsToSave.map((e) => e.id!).toList();
     });
+
+    // 5. For any brand-new handles, attempt to find and link a matching ContactV2.
+    //    This runs after the write transaction so we can open a separate write tx per match.
+    //    Guards against web (no ObjectBox) and against an empty contacts DB (desktop).
+    final List<int> affectedHandleIds = [];
+    if (brandNewHandles.isNotEmpty && !kIsWeb) {
+      for (final handle in brandNewHandles) {
+        if (handle.id == null) continue;
+        final contact = await ContactV2Interface.getContactByAddress(address: handle.address);
+        if (contact == null) continue;
+
+        Database.runInTransaction(TxMode.write, () {
+          contact.handles.add(handle);
+          Database.contactsV2.put(contact);
+        });
+
+        affectedHandleIds.add(handle.id!);
+        Logger.info(
+          'Linked new handle ${handle.address} to contact ${contact.computedDisplayName}',
+          tag: 'ChatActions',
+        );
+      }
+    }
+
+    return {'chatIds': chatIds, 'affectedHandleIds': affectedHandleIds};
   }
 
   static Future<List<int>> getMessagesAsync(Map<String, dynamic> data) async {

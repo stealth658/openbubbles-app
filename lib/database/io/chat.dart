@@ -405,7 +405,7 @@ class Chat {
       final response = await HttpSvc.singleChat(guid, withQuery: "participants");
       if (response.statusCode == 200 && response.data["data"] != null) {
         final chatData = response.data["data"];
-        final updatedChat = await ChatInterface.bulkSyncChats(chatsData: [chatData]);
+        final updatedChat = (await ChatInterface.bulkSyncChats(chatsData: [chatData])).chats;
         if (updatedChat.isNotEmpty) {
           await updatedChat.first.saveAsync();
         }
@@ -722,9 +722,9 @@ class Chat {
     if (kIsWeb) throw Exception("Web does not support saving chats!");
     if (chats.isEmpty) return [];
 
-    return await ChatInterface.bulkSyncChats(
+    return (await ChatInterface.bulkSyncChats(
       chatsData: chats.map((e) => e.toMap()).toList(),
-    );
+    )).chats;
   }
 
   static Future<List<Message>> bulkSyncMessages(Chat chat, List<Message> messages) async {

@@ -627,7 +627,7 @@ class ChatsService {
       Map<String, dynamic> chatData = response.data["data"];
 
       Logger.info("Got updated chat metadata from server. Saving.", tag: "Fetch-Chat");
-      return (await ChatInterface.bulkSyncChats(chatsData: [chatData])).first;
+      return (await ChatInterface.bulkSyncChats(chatsData: [chatData])).chats.first;
     }
 
     return null;

@@ -135,11 +135,11 @@ void showAddParticipant(BuildContext context, Chat chat) {
                   // Sync the updated chat (with the new participant) to the DB
                   // and propagate the changes to ChatState so the UI updates.
                   if (response.data != null && response.data['data'] != null) {
-                    final chats = await ChatInterface.bulkSyncChats(
+                    final result = await ChatInterface.bulkSyncChats(
                       chatsData: [response.data['data'] as Map<String, dynamic>],
                     );
-                    if (chats.isNotEmpty) {
-                      ChatsSvc.updateChat(chats.first, override: true);
+                    if (result.chats.isNotEmpty) {
+                      ChatsSvc.updateChat(result.chats.first, override: true);
                     }
                   }
                   Navigator.of(context, rootNavigator: true).pop();

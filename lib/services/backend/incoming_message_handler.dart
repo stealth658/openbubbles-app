@@ -340,7 +340,11 @@ class IncomingMessageHandler {
     }
 
     // 3. Chat hydration — ensures participants and DB ID are populated.
-    Chat c = await _hydrateChat(payload.chat, m);
+    final hydrated = await _hydrateChat(payload.chat, m);
+    Chat c = hydrated.chat;
+    if (!isIsolate && hydrated.affectedHandleIds.isNotEmpty) {
+      ContactsSvcV2.notifyHandlesUpdated(hydrated.affectedHandleIds);
+    }
 
     // 4. Persist to DB.
     //    Only suppress the "from me" notification clear for reactions so that a
@@ -425,7 +429,11 @@ class IncomingMessageHandler {
     }
 
     // 4. Chat hydration.
-    Chat c = await _hydrateChat(payload.chat, m);
+    final hydrated = await _hydrateChat(payload.chat, m);
+    Chat c = hydrated.chat;
+    if (!isIsolate && hydrated.affectedHandleIds.isNotEmpty) {
+      ContactsSvcV2.notifyHandlesUpdated(hydrated.affectedHandleIds);
+    }
 
     // 5. Persist the GUID swap / field update.
     final existingGuid = tempGuid ?? existing.guid!;
@@ -453,7 +461,8 @@ class IncomingMessageHandler {
 
   // ── Chat hydration ──────────────────────────────────────────────────────
 
-  /// Returns a fully-hydrated [Chat] object with handle/participant data.
+  /// Returns a fully-hydrated [Chat] object with handle/participant data, plus the IDs
+  /// of any handles that were brand-new and just got a [ContactV2] linked to them.
   ///
   /// Strategy (in priority order):
   /// 1. Participant-change events (e.g. add/remove member) always force a
@@ -463,10 +472,10 @@ class IncomingMessageHandler {
   /// 3. When the chat is in the DB but participants are missing, re-fetch
   ///    from the server to populate them.
   /// 4. When the chat isn't in the DB at all, sync it via [ChatInterface].
-  Future<Chat> _hydrateChat(Chat partial, Message m) async {
+  Future<({Chat chat, List<int> affectedHandleIds})> _hydrateChat(Chat partial, Message m) async {
     // Participant-change messages always need fresh server data.
     if (m.isParticipantEvent) {
-      return (await ChatsSvc.fetchChat(partial.guid)) ?? partial;
+      return (chat: (await ChatsSvc.fetchChat(partial.guid)) ?? partial, affectedHandleIds: <int>[]);
     }
 
     if (!kIsWeb) {
@@ -474,18 +483,19 @@ class IncomingMessageHandler {
       if (local != null) {
         if (local.id != null && local.participants.isEmpty && local.handles.isEmpty) {
           Logger.info('Chat ${partial.guid} is missing participants — re-fetching', tag: _tag);
-          return (await ChatsSvc.fetchChat(partial.guid)) ?? local;
+          return (chat: (await ChatsSvc.fetchChat(partial.guid)) ?? local, affectedHandleIds: <int>[]);
         }
-        return local;
+        return (chat: local, affectedHandleIds: <int>[]);
       }
     }
 
     // Chat isn't in the local DB yet — sync it from the server.
-    final synced = (await ChatInterface.bulkSyncChats(chatsData: [partial.toMap()])).firstOrNull ?? partial;
+    final result = await ChatInterface.bulkSyncChats(chatsData: [partial.toMap()]);
+    final synced = result.chats.firstOrNull ?? partial;
     if (synced.id == null) {
       Logger.warn('Failed to sync new chat ${partial.guid} for message ${m.guid}', tag: _tag);
     }
-    return synced;
+    return (chat: synced, affectedHandleIds: result.affectedHandleIds);
   }
 
   // ── DB helpers ──────────────────────────────────────────────────────────
