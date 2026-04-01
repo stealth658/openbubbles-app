@@ -378,9 +378,13 @@ class OutgoingMessageHandler {
     } else {
       m.generateTempGuid();
       final saved = (await c.addMessage(m, clearNotificationsIfFromMe: clearNotificationsIfFromMe)).message;
-      // Don't call addNewMessage for reactions — sendMessage already adds the
-      // temp reaction to the parent's associated messages list explicitly.
-      if (m.associatedMessageGuid == null && Get.isRegistered<MessagesService>(tag: c.guid)) {
+      final msgSvcRegistered = Get.isRegistered<MessagesService>(tag: c.guid);
+      if (r != null && m.associatedMessageGuid != null && msgSvcRegistered) {
+        // Add temp reaction to UI immediately during prep so it appears without
+        // waiting for the serial queue (fixes back-to-back text+reaction send delay).
+        final parentState = MessagesSvc(c.guid).getMessageStateIfExists(m.associatedMessageGuid!);
+        parentState?.addAssociatedMessageInternal(saved);
+      } else if (m.associatedMessageGuid == null && msgSvcRegistered) {
         await MessagesSvc(c.guid).addNewMessage(saved);
       }
       messages.add(m);
@@ -488,9 +492,6 @@ class OutgoingMessageHandler {
   // ── Send methods ─────────────────────────────────────────────────────────
 
   /// Sends a text message (or a reaction/tapback) to [c].
-  ///
-  /// For reactions ([r] != null), a temp reaction is added to the UI
-  /// immediately before the HTTP call so the user sees instant feedback.
   Future<void> sendMessage(Chat c, Message m, Message? selected, String? r) {
     ChatsSvc.updateChat(c);
     ChatsSvc.updateChatLatestMessage(c.guid, m);
@@ -500,12 +501,6 @@ class OutgoingMessageHandler {
       'isReaction=${r != null} selectedGuid=${selected?.guid}',
       tag: _tag,
     );
-
-    // Add temp reaction to UI immediately for instant feedback.
-    if (r != null && m.associatedMessageGuid != null) {
-      final parentState = MessagesSvc(c.guid).getMessageStateIfExists(m.associatedMessageGuid!);
-      parentState?.addAssociatedMessageInternal(m);
-    }
 
     return _sendWithRace(
       tempGuid: tempGuid,

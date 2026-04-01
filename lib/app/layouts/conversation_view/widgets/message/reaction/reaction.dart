@@ -201,7 +201,10 @@ class ReactionWidgetState extends State<ReactionWidget> with ThemeHelpers {
           ClipPath(
               clipper: ReactionClipper(isFromMe: messageIsFromMe),
               child: Obx(() {
-                final isSending = reactionController?.isSending.value ?? false;
+                // reactionController is null when no MessageState exists for the reaction (typical).
+                // Fall back to checking the GUID prefix so temp reactions always show as pending.
+                final isSending = reactionController?.isSending.value ??
+                    (reaction.guid?.startsWith('temp') == true && reaction.error == 0);
                 return Container(
                     width: iosSize,
                     height: iosSize,
