@@ -481,10 +481,12 @@ class IncomingMessageHandler {
     } else {
       // If we have a local copy and the local copy has participants, use it — no need to fetch.
       final local = Chat.findOne(guid: partial.guid);
-      if (local != null && local.participants.isNotEmpty) {
+      if (local != null && local.handles.isNotEmpty) {
         return (chat: local, affectedHandleIds: <int>[]);
-      // If we don't have a local copy or the local copy is missing participants, fetch from the server to hydrate.
-      } else if (local != null || partial.participants.isEmpty) {
+      // Cases to fetch from the server:
+      // * Local chat exists but has no participants (incomplete data).
+      // * Local chat doesn't exist at all (new chat).
+      } else if ((local != null && local.handles.isEmpty) || local == null) {
         Logger.debug(
           'Chat ${partial.guid} is missing participant data, forcing hydration via server fetch', tag: _tag);
         partial = (await ChatsSvc.fetchChat(partial.guid)) ?? partial;
