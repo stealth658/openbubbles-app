@@ -101,7 +101,7 @@ class FullSyncManager extends SyncManager {
                 if (contact != null) {
                   displayName = contact.computedDisplayName;
                 } else if (!addr.contains("@")) {
-                  displayName = await formatPhoneNumber(addr);
+                  displayName = formatPhoneNumber(addr);
                 } else {
                   displayName = addr;
                 }

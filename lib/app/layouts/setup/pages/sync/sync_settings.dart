@@ -109,14 +109,15 @@ class SyncSettings extends StatelessWidget {
             maximumSize: WidgetStateProperty.all(Size(context.width * 2 / 3, 36)),
             minimumSize: WidgetStateProperty.all(Size(context.width * 2 / 3, 36)),
           ),
-          onPressed: () {
+          onPressed: () async {
             final numberOfMessagesPerPage = controller.numberToDownload.clamp(1, double.infinity).toInt();
             final skipEmptyChats = controller.skipEmptyChats;
             final saveToDownloads = controller.saveToDownloads;
             final syncTimeFilter = controller.syncTimeFilter;
 
             // Init the full sync first so when we go to the next page,
-            // the manager is already created (since we don't await)
+            // the manager is already created.
+            // Don't await or else the page won't change.
             setup.startSetup(numberOfMessagesPerPage, skipEmptyChats, saveToDownloads, syncTimeFilter);
 
             controller.pageController.nextPage(

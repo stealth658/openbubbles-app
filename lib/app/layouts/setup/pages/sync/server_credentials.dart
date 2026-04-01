@@ -690,7 +690,7 @@ class _ServerCredentialsState extends State<ServerCredentials> with ThemeHelpers
     });
 
     Navigator.of(context, rootNavigator: true).pop();
-    SystemChannels.textInput.invokeMethod('TextInput.hide').catchError((_) {});
+    FocusManager.instance.primaryFocus?.unfocus();
 
     // Unauthorized request
     if (serverResponse?.statusCode == 401) {
