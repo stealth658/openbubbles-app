@@ -144,6 +144,7 @@ class _UrlPreviewState extends State<UrlPreview> with AutomaticKeepAliveClientMi
     final hasAppleImage =
         (effectiveImageUrl == null || (data.iconMetadata?.url == null && data.imageMetadata?.size == Size.zero));
     final _data = dataOverride ?? data;
+    final inReply = ReplyScope.maybeOf(context) != null;
     return InkWell(
       onTap: widget.file != null && _data.url != null
           ? () async {
@@ -154,7 +155,7 @@ class _UrlPreviewState extends State<UrlPreview> with AutomaticKeepAliveClientMi
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (effectiveImageUrl != null && ReplyScope.maybeOf(context) == null)
+          if (effectiveImageUrl != null && !inReply)
             Container(
               decoration: BoxDecoration(
                 image: DecorationImage(
@@ -183,7 +184,7 @@ class _UrlPreviewState extends State<UrlPreview> with AutomaticKeepAliveClientMi
                 ),
               ),
             ),
-          if (content is PlatformFile && hasAppleImage && content?.bytes != null && ReplyScope.maybeOf(context) == null)
+          if (content is PlatformFile && hasAppleImage && content?.bytes != null && !inReply)
             Container(
               decoration: BoxDecoration(
                 image: DecorationImage(
@@ -215,7 +216,7 @@ class _UrlPreviewState extends State<UrlPreview> with AutomaticKeepAliveClientMi
               content?.bytes == null &&
               content?.path != null &&
               file != null &&
-              ReplyScope.maybeOf(context) == null)
+              !inReply)
             Container(
               decoration: BoxDecoration(
                 image: DecorationImage(
@@ -287,7 +288,9 @@ class _UrlPreviewState extends State<UrlPreview> with AutomaticKeepAliveClientMi
               ),
             ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(15.0, 20, 15.0, 15.0),
+            padding: inReply
+                ? const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 12.0)
+                : const EdgeInsets.fromLTRB(15.0, 20, 15.0, 15.0),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -306,20 +309,29 @@ class _UrlPreviewState extends State<UrlPreview> with AutomaticKeepAliveClientMi
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    if (!isNullOrEmpty(_data.summary) || !isNullOrEmpty(_fetchedMetadata?.description))
+                    if ((!isNullOrEmpty(_data.summary) || !isNullOrEmpty(_fetchedMetadata?.description)) && !inReply)
                       const SizedBox(height: 5),
-                    if (!isNullOrEmpty(_data.summary) || !isNullOrEmpty(_fetchedMetadata?.description))
+                    if ((!isNullOrEmpty(_data.summary) || !isNullOrEmpty(_fetchedMetadata?.description)) && !inReply)
                       Text(_data.summary ?? _fetchedMetadata?.description ?? "",
-                          maxLines: ReplyScope.maybeOf(context) == null ? 3 : 1,
+                          maxLines: 3,
                           overflow: TextOverflow.ellipsis,
                           style: context.theme.textTheme.labelMedium!.copyWith(fontWeight: FontWeight.normal)),
-                    if (!isNullOrEmpty(siteText)) const SizedBox(height: 5),
-                    if (!isNullOrEmpty(siteText))
+                    if (!isNullOrEmpty(siteText) && !inReply) const SizedBox(height: 5),
+                    if (!isNullOrEmpty(siteText) && !inReply)
                       Text(
                         siteText!,
                         style: context.theme.textTheme.labelMedium!
                             .copyWith(fontWeight: FontWeight.normal, color: context.theme.colorScheme.outline),
                         overflow: TextOverflow.clip,
+                        maxLines: 1,
+                      ),
+                    if (!isNullOrEmpty(siteText) && inReply) const SizedBox(height: 5),
+                    if (!isNullOrEmpty(siteText) && inReply)
+                      Text(
+                        siteText!,
+                        style: context.theme.textTheme.labelMedium!
+                            .copyWith(fontWeight: FontWeight.normal, color: context.theme.colorScheme.outline),
+                        overflow: TextOverflow.ellipsis,
                         maxLines: 1,
                       ),
                   ]),
@@ -330,10 +342,13 @@ class _UrlPreviewState extends State<UrlPreview> with AutomaticKeepAliveClientMi
                     constraints: const BoxConstraints(
                       maxWidth: 45,
                     ),
-                    child: Image.network(
-                      _data.iconMetadata!.url!,
-                      gaplessPlayback: true,
-                      filterQuality: FilterQuality.none,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        _data.iconMetadata!.url!,
+                        gaplessPlayback: true,
+                        filterQuality: FilterQuality.none,
+                      ),
                     ),
                   ),
               ],

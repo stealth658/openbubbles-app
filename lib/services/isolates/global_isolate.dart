@@ -119,7 +119,10 @@ class GlobalIsolate {
 
       _isRunning = true;
       _lastActivityTime = DateTime.now();
-      _startCompleter.complete();
+
+      if (!_startCompleter.isCompleted) {
+        _startCompleter.complete();
+      }
     } catch (e) {
       if (!_startCompleter.isCompleted) {
         _startCompleter.completeError(e);
