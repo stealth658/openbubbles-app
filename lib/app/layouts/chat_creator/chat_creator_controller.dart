@@ -1,3 +1,4 @@
+import 'package:bluebubbles/services/network/backend_service.dart';
 import 'dart:async';
 
 import 'package:bluebubbles/app/components/custom_text_editing_controllers.dart';
@@ -56,7 +57,9 @@ class ChatCreatorController extends StatefulController {
   final RxString currentQuery = ''.obs;
   final RxBool isSending = false.obs;
 
-  bool get canCreateGroupChats => SettingsSvc.canCreateGroupChatSync();
+  // OpenBubbles: ask the backend, not the (possibly absent) BlueBubbles server.
+  // RustPushBackend always supports group chats.
+  bool get canCreateGroupChats => backend.canCreateGroupChats();
 
   @override
   void onInit() {
@@ -236,13 +239,10 @@ class ChatCreatorController extends StatefulController {
 
   Future<void> _fetchIMessageState(SelectedContact contact) async {
     try {
-      final response = await HttpSvc.handle.handleiMessageState(contact.address);
-      final available = response.data['data']['available'] as bool?;
-      contact.serviceType.value = available == true
-          ? ChatServiceType.iMessage
-          : available == false
-              ? ChatServiceType.sms
-              : null;
+      // OpenBubbles: route through the backend so rustpush answers this from
+      // Apple's IDS lookup rather than a (non-existent) BlueBubbles server.
+      final available = await backend.handleiMessageState(contact.address);
+      contact.serviceType.value = available ? ChatServiceType.iMessage : ChatServiceType.sms;
     } catch (e, s) {
       Logger.warn("Failed to check iMessage availability for contact",
           error: e, trace: s, tag: 'ChatCreatorController');
@@ -508,8 +508,13 @@ class ChatCreatorController extends StatefulController {
       _createCompleter = Completer();
       isSending.value = true;
 
-      final participants =
-          selectedContacts.map((c) => c.address.isEmail ? c.address : cleansePhoneNumber(c.address)).toList();
+      // OpenBubbles: rustpush needs E.164 addresses (it turns them straight into
+      // `tel:` IDS URIs), so normalise here rather than handing over a bare
+      // national number. normalizeToE164 falls back to the raw input, so the
+      // BlueBubbles-server path sees exactly what it saw before.
+      final participants = selectedContacts
+          .map((c) => c.address.isEmail ? c.address : normalizeToE164(cleansePhoneNumber(c.address)))
+          .toList();
       final method = selectedService.value.method;
 
       showDialog(
@@ -544,8 +549,11 @@ class ChatCreatorController extends StatefulController {
           // No existing chat found on the server — create one.
           // Message has already been validated above; it is delivered as part of
           // creation, so pendingSend must be skipped for this path.
-          final response = await HttpSvc.chat.create(participants, messageText, method);
-          serverChat = Chat.fromMap(response.data['data'] as Map<String, dynamic>);
+          //
+          // OpenBubbles: must go through `backend` — under rustpush there is no
+          // server to POST /chat/new to; RustPushBackend creates the chat locally
+          // and sends the first message over APNs itself.
+          serverChat = await backend.createChat(participants, textController.getFinalAnnotations(), method);
           messageSentWithChat = true;
         }
 
@@ -561,9 +569,12 @@ class ChatCreatorController extends StatefulController {
         // the server so MessagesView can display it immediately rather than
         // waiting for the socket echo (which has a built-in 500 ms delay for
         // isFromMe / no-tempGuid messages).
-        if (messageSentWithChat) {
+        // OpenBubbles: only the BlueBubbles server can be read back from. Under
+        // rustpush `backend.createChat` already reflected the sent message into
+        // the DB, so there is nothing to fetch and no remote service to ask.
+        if (messageSentWithChat && backend.getRemoteService() != null) {
           try {
-            final msgResponse = await HttpSvc.chat.getMessages(resolvedChat.guid, limit: 1);
+            final msgResponse = await backend.getRemoteService()!.chat.getMessages(resolvedChat.guid, limit: 1);
             final msgData = msgResponse.data['data'];
             if (msgData is List && msgData.isNotEmpty) {
               final rawMessages = msgData.cast<Map<String, dynamic>>();

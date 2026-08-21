@@ -1311,7 +1311,13 @@ class Chat {
     // Sync participants from server - delegates to service layer
     // Note: For full sync with service updates, this is called by ChatsSvc.addMessageToChat
     try {
-      final response = await HttpSvc.chat.fetchOne(guid, withQuery: "participants");
+      // OpenBubbles: pre-merge this went through cm.fetchChat (now
+      // ChatsSvc.fetchChat), which falls back to the local copy when there is no
+      // BlueBubbles server. Upstream replaced it with a raw HttpSvc call — under
+      // rustpush there is nothing to fetch, participants arrive over APNs.
+      final remote = backend.getRemoteService();
+      if (remote == null) return;
+      final response = await remote.chat.fetchOne(guid, withQuery: "participants");
       if (response.statusCode == 200 && response.data["data"] != null) {
         final chatData = response.data["data"];
         final updatedChat = (await ChatInterface.bulkSyncChats(chatsData: [chatData])).chats;

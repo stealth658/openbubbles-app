@@ -1,3 +1,4 @@
+import 'package:bluebubbles/services/network/backend_service.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/theming/avatar/avatar_crop.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
@@ -5,7 +6,6 @@ import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:universal_io/io.dart';
 
 /// Photo business logic for a chat's avatar, shared by the iOS (`ChatInfo`) and
 /// Material/Samsung (`ExpressiveChatHeader`) hero rows. Pure extraction — behavior is
@@ -49,52 +49,45 @@ Future<void> updatePhoto(BuildContext context, Chat chat) async {
   );
   if (result == null) return;
 
-  if (!usePrivateApi) {
-    await ChatsSvc.setChatCustomAvatarPath(chat, result);
+  // OpenBubbles: apply the avatar locally first, then (optionally) push it to
+  // everyone through [backend] — never a direct HttpSvc call. This mirrors
+  // `conversation_details/widgets/chat_info.dart` so the two skins agree.
+  await ChatsSvc.setChatCustomAvatarPath(chat, result);
+  if (!usePrivateApi || !SettingsSvc.settings.enablePrivateAPI.value) return;
+
+  // The capability gate lives on the backend: HttpBackend still requires
+  // isMinBigSur + supportsGroupChatManagement, rustpush always allows it.
+  if (!await backend.canUploadGroupPhotos()) {
+    showSnackbar("Error", "Failed to update group photo!");
     return;
   }
+  if (!context.mounted) return;
 
-  if (usePrivateApi &&
-      SettingsSvc.settings.enablePrivateAPI.value &&
-      SettingsSvc.serverDetails.isMinBigSur &&
-      SettingsSvc.serverDetails.supportsGroupChatManagement) {
-    if (!context.mounted) return;
-    showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
-            title: Text(
-              "Updating group photo...",
-              style: context.theme.textTheme.titleLarge,
-            ),
-            content: SizedBox(
-              height: 70,
-              child: Center(
-                child: CircularProgressIndicator(
-                  backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
-                  valueColor: AlwaysStoppedAnimation<Color>(context.theme.colorScheme.primary),
-                ),
+  showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+          title: Text(
+            "Updating group photo...",
+            style: context.theme.textTheme.titleLarge,
+          ),
+          content: SizedBox(
+            height: 70,
+            child: Center(
+              child: CircularProgressIndicator(
+                backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+                valueColor: AlwaysStoppedAnimation<Color>(context.theme.colorScheme.primary),
               ),
             ),
-          );
-        });
-    final response = await HttpSvc.chat.setIcon(chat.guid, result);
-    if (response.statusCode == 200) {
-      await ChatsSvc.setChatCustomAvatarPath(chat, result);
-      if (context.mounted) Navigator.of(context, rootNavigator: true).pop();
-      showSnackbar("Notice", "Updated group photo successfully!");
-    } else {
-      try {
-        await File(result).delete();
-      } catch (_) {}
-      if (context.mounted) Navigator.of(context, rootNavigator: true).pop();
-      showSnackbar("Error", "Failed to update group photo!");
-    }
-  } else if (usePrivateApi) {
-    try {
-      await File(result).delete();
-    } catch (_) {}
+          ),
+        );
+      });
+  final success = await backend.setChatIcon(chat, result);
+  if (context.mounted) Navigator.of(context, rootNavigator: true).pop();
+  if (success) {
+    showSnackbar("Notice", "Updated group photo successfully!");
+  } else {
     showSnackbar("Error", "Failed to update group photo!");
   }
 }
@@ -107,19 +100,15 @@ Future<void> deletePhoto(BuildContext context, Chat chat) async {
   if (papi == null) return;
   final usePrivateApi = papi;
 
-  if (usePrivateApi &&
-      SettingsSvc.settings.enablePrivateAPI.value &&
-      SettingsSvc.serverDetails.isMinBigSur &&
-      SettingsSvc.serverDetails.supportsGroupChatManagement) {
-    final response = await HttpSvc.chat.removeIcon(chat.guid);
-    if (response.statusCode == 200) {
-      await ChatsSvc.setChatCustomAvatarPath(chat, null);
-      showSnackbar("Notice", "Deleted group photo successfully!");
-    } else {
-      showSnackbar("Error", "Failed to delete group photo!");
-    }
-    return;
-  }
-
+  // OpenBubbles: see [updatePhoto] — clear locally, then push through [backend].
   await ChatsSvc.setChatCustomAvatarPath(chat, null);
+  if (!usePrivateApi || !SettingsSvc.settings.enablePrivateAPI.value) return;
+  if (!await backend.canUploadGroupPhotos()) return;
+
+  final success = await backend.deleteChatIcon(chat);
+  if (success) {
+    showSnackbar("Notice", "Deleted group photo successfully!");
+  } else {
+    showSnackbar("Error", "Failed to delete group photo!");
+  }
 }

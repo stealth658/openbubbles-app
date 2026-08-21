@@ -15,7 +15,6 @@ import 'package:bluebubbles/app/layouts/conversation_view/widgets/text_field/tex
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/main.dart';
-import 'package:bluebubbles/services/network/backend_service.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/services/ui/chat/send_data.dart';
@@ -325,7 +324,7 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
     localController.cancelAllTimers();
     Get.delete<ConversationTextFieldLocalController>();
     if (chat.autoSendTypingIndicators ?? SettingsSvc.settings.privateSendTypingIndicators.value) {
-      backend.stoppedTyping(chat);
+      TypingIndicatorSvc.stopTypingSilent(chat);
     }
 
     super.dispose();

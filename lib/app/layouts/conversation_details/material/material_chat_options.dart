@@ -1,3 +1,4 @@
+import 'package:bluebubbles/services/network/backend_service.dart';
 import 'package:bluebubbles/app/components/m3e/m3e.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/dialogs/chat_sync_dialog.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/pages/chat_stats/chat_stats_page.dart';
@@ -406,8 +407,10 @@ class ExpressiveChatOptions extends StatelessWidget {
           onTap: () => showBookmarksThread(cvc(chat), context),
         ),
       ),
+      // OpenBubbles: only meaningful when a BlueBubbles server backend is in use
+      // (matches the iOS skin in conversation_details/widgets/chat_options.dart).
       _OptionRow(
-        enabled: true,
+        enabled: backend.getRemoteService() != null,
         build: (context) => M3EListTile(
           icon: Icons.sms,
           title: "Fetch chat details",
@@ -424,8 +427,9 @@ class ExpressiveChatOptions extends StatelessWidget {
           },
         ),
       ),
+      // OpenBubbles: only meaningful when a BlueBubbles server backend is in use.
       _OptionRow(
-        enabled: true,
+        enabled: backend.getRemoteService() != null,
         build: (context) => M3EListTile(
           icon: Icons.replay,
           title: "Sync messages",
@@ -506,9 +510,10 @@ class ExpressiveChatOptions extends StatelessWidget {
         ),
       ),
       _OptionRow(
+        // OpenBubbles: leaving a chat is a backend capability, not a server version.
         enabled: chat.handles.length > 2 &&
             SettingsSvc.settings.enablePrivateAPI.value &&
-            SettingsSvc.serverDetails.supportsGroupChatManagement,
+            backend.canLeaveChat(),
         build: (context) => M3EListTile(
           destructive: true,
           icon: Icons.logout,
@@ -561,10 +566,12 @@ class ExpressiveChatOptions extends StatelessWidget {
           barrierDismissible: false,
           builder: (context) => const BBProgressDialog(title: "Leaving chat..."),
         );
-        final response = await HttpSvc.chat.leave(chat.guid);
+        // OpenBubbles: never call HttpSvc directly — rustpush leaves the chat by
+        // sending a ChangeParticipants message removing our own handle.
+        final response = await backend.leaveChat(chat);
         if (!context.mounted) return;
         Navigator.of(context, rootNavigator: true).pop();
-        if (response.statusCode == 200) {
+        if (response) {
           showSnackbar("Notice", "Left chat successfully!");
         } else {
           showSnackbar("Error", "Failed to leave chat!");

@@ -6,7 +6,6 @@ import 'dart:ui' as ui;
 import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:bluebubbles/app/components/custom_text_editing_controllers.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/profile/posterkit.dart';
-import 'package:bluebubbles/services/network/backend_service.dart';
 import 'package:bluebubbles/src/rust/api/api.dart' as api;
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:universal_io/io.dart';
@@ -298,10 +297,13 @@ class ConversationViewController extends StatefulController with GetSingleTicker
       final appData = pickedApp.value?.$2.appData?.firstOrNull;
       // Polls is the only non-builtin app right now. Built-in apps have a circle
       // icon, which does not work with typing indicators.
-      backend.startedTyping(chat, appData?.appId != null ? appData : null);
+      // Routed through TypingIndicatorSvc so the indicator is also cleared when
+      // the app backgrounds; it dispatches to `backend` under rustpush and to
+      // the GlobalIsolate/HTTP path when a BlueBubbles server is configured.
+      TypingIndicatorSvc.startTypingSilent(chat, appData?.appId != null ? appData : null);
     }
     _debounceTyping = Timer(const Duration(seconds: 5), () {
-      backend.stoppedTyping(chat);
+      TypingIndicatorSvc.stopTypingSilent(chat);
       _debounceTyping = null;
     });
   }

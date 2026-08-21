@@ -1032,6 +1032,29 @@ class RustPushBackend implements BackendService {
     return true;
   }
 
+  /// "Notify Anyway" — rustpush sends a NotifyAnyways message keyed to the
+  /// message guid that was delivered quietly. Restored from the pre-merge
+  /// implementation that lived inline in `messages_view.dart`; upstream's
+  /// replacement called `HttpSvc.message.notify` and would no-op here.
+  @override
+  Future<bool> notifyAnyway(Chat chat, Message message) async {
+    if (message.guid == null) return false;
+    var msg = await api.newMsg(
+      conversation: await chat.getConversationData(),
+      sender: await chat.ensureHandle(),
+      message: const api.Message.notifyAnyways(),
+    );
+    msg.id = message.guid!;
+    try {
+      await sendMsg(msg);
+    } catch (e, stack) {
+      Logger.error("Failed to send notify-anyways", error: e, trace: stack);
+      // APN errors are fatal for non-SMS messages.
+      if (!chat.isRpSms) return false;
+    }
+    return true;
+  }
+
   @override
   Future<bool> renameChat(Chat chat, String newName) async {
     var data = await chat.getConversationData();

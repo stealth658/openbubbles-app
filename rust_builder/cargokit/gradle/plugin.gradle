@@ -89,7 +89,11 @@ class CargoKitPlugin implements Plugin<Project> {
    private Plugin _findFlutterPlugin(Map projects) {
         for (project in projects) {
             for (plugin in project.value.getPlugins()) {
-                if (plugin.class.name == "FlutterPlugin") {
+                // Flutter's Gradle plugin used to be a Groovy class in the default
+                // package, so its fully-qualified name was exactly "FlutterPlugin".
+                // As of Flutter 3.3x it is Kotlin and lives in a package, so compare
+                // on the simple name instead.
+                if (plugin.class.simpleName == "FlutterPlugin") {
                     return plugin;
                 }
             }
@@ -99,6 +103,46 @@ class CargoKitPlugin implements Plugin<Project> {
             }
         }
         return null;
+    }
+
+    /**
+     * The Android application project. Older Flutter Gradle plugins exposed this as
+     * `plugin.project`; the Kotlin rewrite does not, so fall back to :app.
+     */
+    private Project findAppProject(Plugin plugin, Project rootProject) {
+        try {
+            def p = plugin.project
+            if (p != null) {
+                return p
+            }
+        } catch (Throwable ignored) {
+            // Kotlin FlutterPlugin has no `project` property.
+        }
+        def app = rootProject.findProject(":app")
+        if (app == null) {
+            throw new GradleException("CargoKit could not locate the Android application project (:app).")
+        }
+        return app
+    }
+
+    /**
+     * Older Flutter Gradle plugins exposed getTargetPlatforms(); the Kotlin rewrite
+     * moved it to an internal utility. Read the same Gradle property Flutter itself
+     * reads, with Flutter's own default list as the fallback.
+     */
+    private List<String> resolveTargetPlatforms(Plugin plugin, Project appProject) {
+        try {
+            def platforms = plugin.getTargetPlatforms()
+            if (platforms != null) {
+                return platforms.collect()
+            }
+        } catch (Throwable ignored) {
+            // Fall through to the property-based lookup.
+        }
+        if (appProject.hasProperty("target-platform")) {
+            return (appProject.property("target-platform") as String).split(",").collect()
+        }
+        return ["android-arm", "android-arm64", "android-x64"]
     }
 
     @Override
@@ -113,8 +157,9 @@ class CargoKitPlugin implements Plugin<Project> {
         }
 
         def cargoBuildDir = "${project.buildDir}/build"
+        def appProject = findAppProject(plugin, project.rootProject)
 
-        plugin.project.android.applicationVariants.all { variant ->
+        appProject.android.applicationVariants.all { variant ->
 
             final buildType = variant.buildType.name
 
@@ -122,7 +167,7 @@ class CargoKitPlugin implements Plugin<Project> {
             def jniLibs = project.android.sourceSets.maybeCreate(buildType).jniLibs;
             jniLibs.srcDir(new File(cargoOutputDir))
 
-            def platforms = plugin.getTargetPlatforms().collect()
+            def platforms = resolveTargetPlatforms(plugin, appProject)
 
             // Same thing addFlutterDependencies does in flutter.gradle
             if (buildType == "debug") {
@@ -139,7 +184,7 @@ class CargoKitPlugin implements Plugin<Project> {
                     return
                 }
 
-                if (plugin.project.android.ndkVersion == null) {
+                if (appProject.android.ndkVersion == null) {
                     throw new GradleException("Please set 'android.ndkVersion' in 'app/build.gradle'.")
                 }
 
@@ -147,10 +192,10 @@ class CargoKitPlugin implements Plugin<Project> {
                     buildMode = variant.buildType.name
                     buildDir = cargoBuildDir
                     outputDir = cargoOutputDir
-                    ndkVersion = plugin.project.android.ndkVersion
-                    sdkDirectory = plugin.project.android.sdkDirectory
-                    minSdkVersion = plugin.project.android.defaultConfig.minSdkVersion.apiLevel as int
-                    compileSdkVersion = plugin.project.android.compileSdkVersion.substring(8) as int
+                    ndkVersion = appProject.android.ndkVersion
+                    sdkDirectory = appProject.android.sdkDirectory
+                    minSdkVersion = appProject.android.defaultConfig.minSdkVersion.apiLevel as int
+                    compileSdkVersion = appProject.android.compileSdkVersion.substring(8) as int
                     targetPlatforms = platforms
                     pluginFile = CargoKitPlugin.file
                 }

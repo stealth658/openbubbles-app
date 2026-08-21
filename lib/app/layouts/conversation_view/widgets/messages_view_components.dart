@@ -1,3 +1,4 @@
+import 'package:bluebubbles/services/network/backend_service.dart';
 import 'package:bluebubbles/app/components/avatars/contact_avatar_widget.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/typing/typing_indicator.dart';
 import 'package:bluebubbles/app/state/chat_state_scope.dart';
@@ -90,7 +91,7 @@ class NotificationsSilencedBanner extends StatelessWidget {
                       ),
                     ],
                   ),
-                  _NotifyAnywayButton(latestMessage: latestMessage),
+                  _NotifyAnywayButton(chat: chat, latestMessage: latestMessage),
                 ],
               ),
             )
@@ -101,8 +102,9 @@ class NotificationsSilencedBanner extends StatelessWidget {
 
 /// Nested widget for "Notify Anyway" button to further isolate rebuilds
 class _NotifyAnywayButton extends StatelessWidget {
-  const _NotifyAnywayButton({required this.latestMessage});
+  const _NotifyAnywayButton({required this.chat, required this.latestMessage});
 
+  final Chat chat;
   final Message? latestMessage;
 
   @override
@@ -118,7 +120,20 @@ class _NotifyAnywayButton extends StatelessWidget {
           style: context.theme.textTheme.labelLarge!.copyWith(color: context.theme.colorScheme.tertiaryContainer),
         ),
         onPressed: () async {
-          await HttpSvc.message.notify(latestMessage!.guid!);
+          // OpenBubbles: rustpush sends a NotifyAnyways message over APNs; the
+          // BlueBubbles server path still POSTs /message/:guid/notify. Never
+          // call HttpSvc directly here — there may be no server.
+          final message = latestMessage!;
+          final ok = await backend.notifyAnyway(chat, message);
+          if (!ok) return;
+          // The BlueBubbles server echoes the update back over the socket, but
+          // rustpush has nothing to echo — apply the local bookkeeping here so
+          // the banner's button disappears either way.
+          message.wasDeliveredQuietly = false;
+          message.save();
+          EventDispatcherSvc.emit("message-updated-${message.guid}");
+          chat.dateNotifiedAnyways = DateTime.now();
+          chat.save(updateDateNotifiedAnyways: true);
         },
       );
     }

@@ -221,6 +221,10 @@ dependencies:
   cbor: ^6.3.5
   dpad: ^2.0.2
 dependency_overrides:
+  # 2.3.1 turned path_provider_android into a Dart-only (JNI) plugin and removed the
+  # native PathProviderPlugin class that the headless DartWorker engine registers.
+  # Upstream BlueBubbles locks 2.2.23; match it.
+  path_provider_android: 2.2.23
   googleapis: ^14.0.0
   # google_sign_in_all_platforms 2.x (needed for google_sign_in ^7 compat) wants
   # googleapis_auth ^2; firebase_dart's pinned ref still declares ^1.1.0 but only uses

@@ -1,3 +1,4 @@
+import 'package:bluebubbles/services/network/backend_service.dart';
 import 'package:bluebubbles/app/components/custom_text_editing_controllers.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -46,8 +47,11 @@ class KeyboardShortcutHandler {
     if (ev.logicalKey == LogicalKeyboardKey.arrowUp) {
       if (messageTextController.text.isEmpty &&
           SettingsSvc.settings.editLastSentMessageOnUpArrow.value &&
-          SettingsSvc.serverDetails.isMinVentura &&
-          SettingsSvc.serverDetails.supportsEditAndUnsend) {
+          // OpenBubbles: edit/unsend is a backend capability. The settings toggle
+          // for this is already shown behind backend.canEditUnsend(), so gating
+          // the shortcut on the server's macOS/version made it a dead switch
+          // under rustpush. HttpBackend.canEditUnsend() is exactly the old check.
+          backend.canEditUnsend()) {
         final chat = controller.chat;
         final service = maybeFindMessagesSvc(chat.guid);
         final message = service?.mostRecentSent;

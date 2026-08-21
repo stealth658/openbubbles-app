@@ -24,6 +24,9 @@ abstract class BackendService {
       Chat chat, Message old, PayloadData newData, PlatformFile? newImage, bool isMeta, String? notifText);
   Future<bool> markRead(Chat chat, bool notifyOthers);
   Future<bool> markUnread(Chat chat);
+  /// "Notify Anyway" — push through the recipient's Focus/DND for [message].
+  /// Returns true when the override was accepted.
+  Future<bool> notifyAnyway(Chat chat, Message message);
   HttpService? getRemoteService();
   bool canLeaveChat();
   bool canEditUnsend();

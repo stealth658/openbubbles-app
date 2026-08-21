@@ -11,7 +11,7 @@ import io.flutter.embedding.engine.loader.ApplicationInfoLoader
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.view.FlutterCallbackInformation
-import io.flutter.view.FlutterMain
+import io.flutter.embedding.engine.loader.FlutterLoader
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
@@ -42,8 +42,11 @@ class NativeSyncIsolateHandler : MethodCallHandlerImpl() {
             return
         }
 
-        FlutterMain.startInitialization(context)
-        FlutterMain.ensureInitializationComplete(context, null)
+        // io.flutter.view.FlutterMain was removed in newer Flutter; FlutterLoader is
+        // the supported entry point (see DartWorker, which upstream already migrated).
+        val flutterLoader = FlutterLoader()
+        flutterLoader.startInitialization(context)
+        flutterLoader.ensureInitializationComplete(context, null)
 
         Log.d(Constants.logTag, "Loading callback info")
         val info = ApplicationInfoLoader.load(context)
@@ -62,7 +65,15 @@ class NativeSyncIsolateHandler : MethodCallHandlerImpl() {
             }
         }
         }
-        val callbackInfo = FlutterCallbackInformation.lookupCallbackInformation(context.getSharedPreferences("FlutterSharedPreferences", 0).getLong("flutter.backgroundSyncIsolate", -1))
+        val callbackInfo = FlutterCallbackInformation.lookupCallbackInformation(run {
+            // Upstream dropped the "flutter." key prefix (SettingsHelper.PREFIX == ""),
+            // and the Dart side now writes this via PrefsSvc as "backgroundSyncIsolate".
+            // The prefixed key is still read as a fallback for installs upgraded from
+            // an older OpenBubbles build.
+            val prefs = context.getSharedPreferences("FlutterSharedPreferences", 0)
+            val handle = prefs.getLong("backgroundSyncIsolate", -1)
+            if (handle != -1L) handle else prefs.getLong("flutter.backgroundSyncIsolate", -1)
+        })
         val callback = DartExecutor.DartCallback(context.assets, info.flutterAssetsDir, callbackInfo)
 
         Log.d(Constants.logTag, "Executing Dart callback")

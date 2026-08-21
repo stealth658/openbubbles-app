@@ -1,3 +1,4 @@
+import 'package:bluebubbles/services/network/backend_service.dart';
 import '../../pages/misc/misc_panel.dart';
 import '../../pages/scheduling/message_reminders_panel.dart';
 import '../../pages/scheduling/scheduled_messages_panel.dart';
@@ -119,8 +120,10 @@ List<Widget> buildSettingItemList({
           // Optimized reactive tile for connection state
           ConnectionServerTile(tileColor: tileColor),
 
-          if (SettingsSvc.serverDetails.supportsScheduledMessages) const SettingsDivider(),
-          if (SettingsSvc.serverDetails.supportsScheduledMessages)
+          // OpenBubbles: scheduling is a backend capability (rustpush has no
+          // scheduled-message store), not a server version check.
+          if (backend.canSchedule()) const SettingsDivider(),
+          if (backend.canSchedule())
             SearchableSettingItem(
               title: "Scheduled Messages",
               searchTags: ["Scheduled Messages"],

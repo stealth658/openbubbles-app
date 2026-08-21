@@ -118,6 +118,12 @@ class HttpBackend implements BackendService {
     return (await HttpSvc.chat.markUnread(chat.guid)).statusCode == 200;
   }
 
+  @override
+  Future<bool> notifyAnyway(Chat chat, Message message) async {
+    if (message.guid == null) return false;
+    return (await HttpSvc.message.notify(message.guid!)).statusCode == 200;
+  }
+
   // ── Sending ───────────────────────────────────────────────────────────────
 
   String _sendMethod(Message m, {required bool attachment}) {
