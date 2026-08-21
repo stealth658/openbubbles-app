@@ -1,9 +1,9 @@
 package com.bluebubbles.messaging.services.firebase
 
 import android.content.Context
-import android.util.Log
 import com.bluebubbles.messaging.Constants
 import com.bluebubbles.messaging.models.MethodCallHandlerImpl
+import com.bluebubbles.messaging.utils.PersistentLog
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
 import com.google.firebase.FirebaseApp
@@ -24,31 +24,50 @@ class FirebaseAuthHandler: MethodCallHandlerImpl() {
         result: MethodChannel.Result,
         context: Context
     ) {
-        // Don't auth multiple times
+        // Fetch Firebase details directly from preferences
+        val prefs = context.getSharedPreferences("FlutterSharedPreferences", 0)
+        val projectId: String? = prefs.getString("projectID", null)
+        val storageBucket: String? = prefs.getString("storageBucket", null)
+        val apiKey: String = prefs.getString("apiKey", null)!!
+        val databaseUrl: String? = prefs.getString("firebaseURL", null)
+        val gcmSenderId: String? = prefs.getString("clientID", null)
+        val applicationId: String = prefs.getString("applicationID", null)!!
+
+        // Don't auth multiple times, unless the stored config no longer matches what the
+        // existing FirebaseApp was initialized with (e.g. the user pointed at a different
+        // server backed by a different Firebase project). FirebaseApp is a process-wide
+        // singleton that Firebase's own APIs never re-configure in place, so a stale
+        // instance has to be explicitly torn down before we can initialize a fresh one
+        // with the current config.
         try {
-            FirebaseApp.getInstance()
-            Log.d(Constants.logTag, "Firebase has already been initialized!")
-            result.success(null)
-            return
+            val existing = FirebaseApp.getInstance()
+            val options = existing.options
+            val unchanged = options.apiKey == apiKey &&
+                    options.applicationId == applicationId &&
+                    options.projectId == projectId &&
+                    options.storageBucket == storageBucket &&
+                    options.databaseUrl == databaseUrl &&
+                    options.gcmSenderId == gcmSenderId
+            if (unchanged) {
+                PersistentLog.d(context, Constants.logTag, "Firebase has already been initialized with the current config!")
+                FirebaseCloudMessagingTokenHandler().getToken(context, result)
+                return
+            }
+
+            PersistentLog.d(context, Constants.logTag, "Firebase config has changed since the last init, reinitializing...")
+            existing.delete()
+            firebaseApp = null
         } catch (_: IllegalStateException) {}
+
         // Make sure Google Services are available
         if (GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context) != ConnectionResult.SUCCESS) {
             val error = "Google Play Services is not available!"
-            Log.e(Constants.logTag, error)
+            PersistentLog.e(context, Constants.logTag, error)
             result.error("500", error, null)
             return
         }
 
-        // Fetch Firebase details directly from preferences
-        val prefs = context.getSharedPreferences("FlutterSharedPreferences", 0)
-        val projectId: String? = prefs.getString("flutter.projectID", null)
-        val storageBucket: String? = prefs.getString("flutter.storageBucket", null)
-        val apiKey: String = prefs.getString("flutter.apiKey", null)!!
-        val databaseUrl: String? = prefs.getString("flutter.firebaseURL", null)
-        val gcmSenderId: String? = prefs.getString("flutter.clientID", null)
-        val applicationId: String = prefs.getString("flutter.applicationID", null)!!
-
-        Log.d(Constants.logTag, "Authenticating client $applicationId with Firebase...")
+        PersistentLog.d(context, Constants.logTag, "Authenticating client $applicationId with Firebase...")
         // Get a FirebaseApp (manually provide config since we fetch it dynamically)
         firebaseApp = FirebaseApp.initializeApp(context, FirebaseOptions.Builder()
             .setApiKey(apiKey)
@@ -62,13 +81,13 @@ class FirebaseAuthHandler: MethodCallHandlerImpl() {
 
         // Set up Firestore / Realtime DB listeners for server URL changes
         // databaseUrl null indicates Cloud Firestore setup
-        Log.d(Constants.logTag, "Setting Firebase database listeners...")
+        PersistentLog.d(context, Constants.logTag, "Setting Firebase database listeners...")
         if (databaseUrl == null) {
             FirebaseFirestore.getInstance().collection("server").document("config").addSnapshotListener(FirestoreDatabaseListener())
         } else {
             FirebaseDatabase.getInstance().getReference("config").addValueEventListener(RealtimeDatabaseListener())
         }
 
-        FirebaseCloudMessagingTokenHandler().getToken(result)
+        FirebaseCloudMessagingTokenHandler().getToken(context, result)
     }
 }

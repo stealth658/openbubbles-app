@@ -10,14 +10,16 @@ import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/misc/t
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/app/state/message_state.dart';
 import 'package:bluebubbles/services/rustpush/rustpush_service.dart';
 import 'package:bluebubbles/services/services.dart';
+import 'package:bluebubbles/services/ui/chat/send_data.dart';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:get/get.dart';
 import 'package:mime_type/mime_type.dart';
 import 'package:simple_animations/simple_animations.dart';
-import 'package:tuple/tuple.dart';
 
 class SendAnimation extends CustomStateful<ConversationViewController> {
   const SendAnimation({super.key, required super.parentController});
@@ -26,116 +28,286 @@ class SendAnimation extends CustomStateful<ConversationViewController> {
   CustomState createState() => _SendAnimationState();
 }
 
-class _SendAnimationState
-    extends CustomState<SendAnimation, Tuple7<List<PlatformFile>, AttributedBody, String, String?, int?, String?, PayloadData?>, ConversationViewController> {
+class _SendAnimationState extends CustomState<SendAnimation, SendData, ConversationViewController> {
   Message? message;
   Tween<double> tween = Tween<double>(begin: 1, end: 0);
   Control control = Control.stop;
-  double textFieldSize = 0;
 
-  double get focusInfoSize => (controller.focusInfoKey.currentContext?.findRenderObject() as RenderBox?)?.size.height ?? 0;
+  // The padding applied to the ConversationTextField in its closed state
+  // (bottom: 10 + top: 10) plus
+  // the visual gap between the text field top edge and the bottom of the message list.
+  static const double _textFieldVerticalPadding = 17.5;
+
+  // Fallback typing-indicator height when the row hasn't been laid out yet.
+  static const double _typingIndicatorFallbackHeight = 50.0;
+
+  // Height of the text field component at its resting (empty, single-line) size,
+  // measured from the RenderBox once after the first frame. We avoid using a
+  // live getter because during a multi-line send the AnimatedSize is still
+  // shrinking the text field, which causes AnimatedPositioned to chase a moving
+  // target and overshoot. Using the frozen resting height keeps the target
+  // constant so the animated bubble always lands where the permanent message is.
+  double _textFieldSize = 0;
+
+  // Height of the focus-info widget (NotificationsSilencedBanner) above the text field.
+  double get focusInfoSize =>
+      (controller.focusInfoKey.currentContext?.findRenderObject() as RenderBox?)?.size.height ?? 0;
+
+  // Extra vertical offset that differs between the iOS skin and Material/Samsung skins.
+  double get _platformVerticalOffset => iOS ? -4.0 : 14.5;
+
+  // Offset for typing indicator when it is settled visible.
+  //
+  // Resolved from the observable rather than the RenderBox when the indicator is
+  // hidden, because the row does not collapse the instant the flag flips: on
+  // hide, TypingIndicator runs a 280ms ScaleTransition (paint-only, so the row
+  // keeps its full layout height throughout) before removing the bubble from the
+  // tree, and only then does its AnimatedSize collapse the height over 200ms.
+  // Measuring during that ~480ms tail returns the *old* height and would freeze
+  // the target ~55px too high. The flag is already the settled end state, so
+  // trust it and skip the measurement entirely.
+  double get _typingIndicatorOffset {
+    if (!controller.showTypingIndicator.value && controller.showTypingIndicatorFor.isEmpty) return 0;
+    final measured = (controller.typingInfoKey.currentContext?.findRenderObject() as RenderBox?)?.size.height;
+    if (measured != null && measured > 0) {
+      return measured;
+    }
+    return _typingIndicatorFallbackHeight;
+  }
+
+  // Offset for smart reply row when it is visible.
+  double get _smartReplyOffset => controller.showSmartReplyRow.value ? controller.smartReplyRowHeight.value : 0;
+
+  // Snapshot of _liveBottomOffset taken when a send animation starts, and cleared
+  // when the bubble is torn down. Null whenever no send is in flight.
+  //
+  // _textFieldSize already freezes the largest moving part of the offset, but the
+  // typing indicator and the focus-info banner are still measured live and both
+  // animate their height (AnimatedSize). The message list gate keeps *new* events
+  // from starting such a transition mid-flight, but it can't rewind one that was
+  // already running when the user hit send. Freezing the whole sum closes that
+  // window: once the flight begins the target is a constant, so AnimatedPositioned
+  // can never chase it regardless of what moves underneath.
+  double? _frozenBottomOffset;
+
+  // Total bottom offset for the AnimatedPositioned — how far above the bottom
+  // of the Stack the animation bubble should land at the end of its travel.
+  double get _animationBottomOffset => _frozenBottomOffset ?? _liveBottomOffset;
+
+  // Uses the stored resting text field height (_textFieldSize) so the target
+  // never changes during the animation, even while the field shrinks.
+  double get _liveBottomOffset =>
+      _textFieldSize +
+      focusInfoSize +
+      _textFieldVerticalPadding +
+      _typingIndicatorOffset +
+      _smartReplyOffset +
+      _platformVerticalOffset;
 
   @override
   void initState() {
     super.initState();
     controller.sendFunc = send;
-    updateObx(() {
+    // Capture the resting (empty, single-line) text field height from the
+    // RenderBox after the first layout pass. Must be deferred because the widget hasn't been laid
+    // out yet during initState.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       final box = controller.textFieldKey.currentContext?.findRenderObject() as RenderBox?;
-      textFieldSize = box?.size.height ?? 0;
+      final h = box?.size.height;
+      if (h != null && h > 0) _textFieldSize = h;
     });
+
+    // If ChatCreator pre-queued a send before navigating here, fire it now.
+    //
+    // We wait on messagesViewReady instead of a bare addPostFrameCallback so
+    // that the send only fires after MessagesView has *fully* initialised —
+    // handlers registered AND _listKey recreated (async loadChunk path).
+    // Without this wait the sendAnimation's addPostFrameCallback can fire
+    // between the _listKey recreation and the following setState flush, so
+    // handleNewMessage's insertItem call finds a null currentState and silently
+    // no-ops, causing the sent message to never appear in the list.
+    if (controller.pendingSend != null) {
+      final pendingData = controller.pendingSend!;
+      controller.pendingSend = null;
+      controller.messagesViewReady.then((_) {
+        if (!mounted) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
+          // Some extra time to ensure the list is fully ready and the insertItem
+          // call in handleNewMessage doesn't find a null currentState and no-op,
+          // causing the sent message to never appear in the list.
+          await Future.delayed(const Duration(milliseconds: 250));
+          if (!mounted) return;
+          await send(pendingData);
+
+          // Clear the text field and attachments now that the send has been queued,
+          // mirroring what ConversationTextField.sendMessage() does for normal sends.
+          controller.pickedAttachments.clear();
+          controller.textController.clear();
+          controller.subjectTextController.clear();
+          controller.replyToMessage = null;
+        });
+      });
+    }
   }
 
-  Future<void> send(Tuple7<List<PlatformFile>, AttributedBody, String, String?, int?, String?, PayloadData?> tuple, bool isAudioMessage, DateTime? schedule) async {
+  @override
+  void dispose() {
+    // The widget can be torn down mid-flight (user leaves the chat while the
+    // bubble is travelling), in which case onEnd never runs. Open the gate here
+    // so anything deferred behind this send still reaches the list.
+    controller.messageListGate.release();
+    super.dispose();
+  }
+
+  Future<void> send(SendData data) async {
     // do not add anything above this line, the attachments must be extracted first
-    final attachments = List<PlatformFile>.from(tuple.item1);
-    AttributedBody annotations = tuple.item2;
-    final subject = tuple.item3;
-    final replyGuid = tuple.item4;
-    final part = tuple.item5;
-    final effectId = tuple.item6;
-    final payload = tuple.item7;
-    if (ss.settings.scrollToBottomOnSend.value) {
-      await controller.scrollToTime(schedule ?? DateTime.now());
+    final attachments = List<PlatformFile>.from(data.attachments);
+    // text is mutable — reassigned during mention processing below
+    String text = data.text;
+    // Hide the smart reply row immediately, before the send animation's target
+    // is computed below. Otherwise the row disappears mid-flight (once the
+    // outgoing message is inserted and messages_view.dart clears the smart
+    // reply suggestions), shrinking _animationBottomOffset while
+    // AnimatedPositioned is still animating toward the old, taller target —
+    // which is what caused the bubble to land too high and snap back down.
+    if (controller.showSmartReplyRow.value) {
+      controller.updateSmartReplyLayout(visible: false, height: 0);
     }
-    if (ss.settings.sendSoundPath.value != null && !(isNullOrEmptyString(annotations.string) && isNullOrEmptyString(subject) && controller.pickedAttachments.isEmpty && controller.pickedApp.value == null)) {
+    // OpenBubbles: extras that ride alongside SendData - the staged iMessage app
+    // payload and the "Send Later" date, both owned by the controller.
+    final DateTime? schedule = controller.scheduledDate.value;
+    final PayloadData? payload = controller.pickedApp.value?.$2;
+    if (SettingsSvc.settings.scrollToBottomOnSend.value) {
+      if (schedule != null) {
+        await controller.scrollToTime(schedule);
+      } else {
+        await controller.scrollToBottom();
+      }
+    }
+    if (SettingsSvc.settings.sendSoundPath.value != null &&
+        !(isNullOrEmptyString(text) &&
+            isNullOrEmptyString(data.subject) &&
+            controller.pickedAttachments.isEmpty &&
+            payload == null)) {
       if (kIsDesktop) {
         Player player = Player();
-        await player.setVolume(ss.settings.soundVolume.value.toDouble());
-        await player.open(Media(ss.settings.sendSoundPath.value!));
+        await player.setVolume(SettingsSvc.settings.soundVolume.value.toDouble());
+        await player.open(Media(SettingsSvc.settings.sendSoundPath.value!));
         player.stream.completed
             .firstWhere((completed) => completed)
             .then((_) async => Future.delayed(const Duration(milliseconds: 450), () async => await player.dispose()));
       } else {
         PlayerController controller = PlayerController();
-        controller.preparePlayer(path: ss.settings.sendSoundPath.value!, volume: ss.settings.soundVolume.value / 100).then((_) => controller.startPlayer());
+        controller
+            .preparePlayer(
+                path: SettingsSvc.settings.sendSoundPath.value!, volume: SettingsSvc.settings.soundVolume.value / 100)
+            .then((_) => controller.startPlayer());
       }
     }
 
-    String? replyRun = part != null ? Message.findOne(guid: replyGuid)?.replyPart(part) : null;
+    // OpenBubbles: rustpush needs a real UTI per mime type, not a hardcoded one.
+    Map<String, dynamic> utiMap = const {};
+    if (attachments.isNotEmpty) {
+      try {
+        utiMap = jsonDecode(await rootBundle.loadString("assets/rustpush/uti-map.json"));
+      } catch (_) {
+        utiMap = const {};
+      }
+    }
     for (int i = 0; i < attachments.length; i++) {
       final file = attachments[i];
-      String data = await DefaultAssetBundle.of(Get.context!).loadString("assets/rustpush/uti-map.json");
-      final utiMap = jsonDecode(data);
+      final fileMime = mime(file.path) ?? mime(file.name);
+      final attachment = Attachment(
+        isOutgoing: true,
+        mimeType: fileMime,
+        uti: utiMap[fileMime] ?? "public.data",
+        transferName: file.name,
+        totalBytes: file.size,
+        // Store the original source path in metadata so prepAttachment can copy it.
+        // For bytes-only files (clipboard/GIF keyboard), store bytes in the transient field
+        // so prepAttachment can write them to disk.
+        metadata: file.path != null ? {'source_path': file.path} : null,
+        bytes: file.path == null ? file.bytes : null,
+      );
 
       final message = Message(
         text: "",
         dateCreated: DateTime.now(),
         dateScheduled: schedule,
         hasAttachments: true,
-        attachments: [
-          Attachment(
-            isOutgoing: true,
-            mimeType: mime(file.path ?? file.name),
-            uti: utiMap[mime(file.path ?? file.name)] ?? "public.data",
-            bytes: file.bytes,
-            transferName: file.name,
-            totalBytes: file.size,
-            sourcePath: file.path,
-          ),
-        ],
+        balloonBundleId: payload?.bundleId ?? file.balloonBundleId,
         isFromMe: true,
         handleId: 0,
-        threadOriginatorGuid: i == 0 ? replyGuid : null,
-        threadOriginatorPart: i == 0 ? replyRun : null,
-        expressiveSendStyleId: effectId,
+        threadOriginatorGuid: i == 0 ? data.replyGuid : null,
+        threadOriginatorPart: i == 0 ? "${data.replyPart ?? 0}:0:0" : null,
+        expressiveSendStyleId: data.effectId,
         payloadData: payload,
-        balloonBundleId: payload?.bundleId,
         stagingGuid: payload != null ? uuid.v4().toUpperCase() : null,
       );
       message.generateTempGuid();
-      message.attachments.first!.guid = message.guid;
-      await outq.queue(OutgoingItem(type: QueueType.sendAttachment, chat: controller.chat, message: message, customArgs: {"audio": isAudioMessage}));
+      attachment.guid = message.guid;
+      await OutgoingMsgHandler.queue(
+        OutgoingAttachment(
+          chat: controller.chat,
+          message: message,
+          attachment: attachment,
+          isAudioMessage: data.isAudioMessage,
+        ),
+      );
     }
 
+    // OpenBubbles: an iMessage-app payload with no attachment (poll, FindMy,
+    // shared password, ...) still needs a message of its own.
     if (attachments.isEmpty && payload != null) {
-      final message = Message(
+      final appMessage = Message(
         text: "",
         dateCreated: DateTime.now(),
         dateScheduled: schedule,
         hasAttachments: false,
-        attachments: [],
         isFromMe: true,
         handleId: 0,
-        threadOriginatorGuid: replyGuid,
-        threadOriginatorPart: replyRun,
-        expressiveSendStyleId: effectId,
+        threadOriginatorGuid: data.replyGuid,
+        threadOriginatorPart: data.replyGuid != null ? "${data.replyPart ?? 0}:0:0" : null,
+        expressiveSendStyleId: data.effectId,
         payloadData: payload,
         balloonBundleId: payload.bundleId,
         stagingGuid: uuid.v4().toUpperCase(),
         hasApplePayloadData: true,
       );
-      message.generateTempGuid();
-      await outq.queue(OutgoingItem(type: QueueType.sendMessage, chat: controller.chat, message: message, customArgs: {"audio": isAudioMessage}));
+      appMessage.generateTempGuid();
+      await OutgoingMsgHandler.queue(
+        OutgoingMessage(chat: controller.chat, message: appMessage),
+      );
     }
 
-    if (annotations.string.trim().isNotEmpty || subject.isNotEmpty) {
-      var text = annotations.string;
+    if (text.isNotEmpty || data.subject.isNotEmpty) {
+      final textSplit = MentionTextEditingController.splitText(text);
+      bool flag = false;
+      final newText = [];
+      if (textSplit.length > 1) {
+        for (String word in textSplit) {
+          if (word == MentionTextEditingController.escapingChar) flag = !flag;
+          int? index = flag ? int.tryParse(word) : null;
+          if (index != null) {
+            final mention = controller.textController.mentionables[index];
+            newText.add(mention);
+            continue;
+          }
+          if (word == MentionTextEditingController.escapingChar) {
+            continue;
+          }
+          newText.add(word.replaceAll(MentionTextEditingController.escapingChar, ""));
+        }
+        text = newText.join("");
+      }
+      int currentPos = 0;
       final _message = Message(
-        text: text.isEmpty && subject.isNotEmpty ? subject : text,
-        subject: text.isEmpty && subject.isNotEmpty ? null : subject,
-        threadOriginatorGuid: attachments.isEmpty ? replyGuid : null,
-        threadOriginatorPart: attachments.isEmpty ? replyRun : null,
-        expressiveSendStyleId: effectId,
+        text: text.isEmpty && data.subject.isNotEmpty ? data.subject : text,
+        subject: text.isEmpty && data.subject.isNotEmpty ? null : data.subject,
+        threadOriginatorGuid: attachments.isEmpty ? data.replyGuid : null,
+        threadOriginatorPart: attachments.isEmpty ? "${data.replyPart ?? 0}:0:0" : null,
+        expressiveSendStyleId: data.effectId,
         dateCreated: DateTime.now(),
         dateScheduled: schedule,
         hasAttachments: false,
@@ -143,17 +315,63 @@ class _SendAnimationState
         handleId: 0,
         hasDdResults: true,
         attributedBody: [
-          if (annotations.string.isNotEmpty)
-            annotations
+          if (textSplit.length > 1)
+            AttributedBody(
+              string: text,
+              runs: newText.whereType<Mentionable>().isEmpty
+                  ? []
+                  : newText.map((e) {
+                      if (e is Mentionable) {
+                        final run = Run(
+                            range: [currentPos, e.toString().length],
+                            attributes: Attributes(
+                              mention: e.address,
+                              messagePart: 0,
+                            ));
+                        currentPos += e.toString().length;
+                        return run;
+                      } else {
+                        final run = Run(
+                          range: [currentPos, e.length],
+                          attributes: Attributes(
+                            messagePart: 0,
+                          ),
+                        );
+                        currentPos += e.toString().length;
+                        return run;
+                      }
+                    }).toList(),
+            ),
         ],
       );
-      _message.generateTempGuid();
-      outq.queue(OutgoingItem(
-        type: QueueType.sendMessage,
-        chat: controller.chat,
-        message: _message,
-      ));
+      // Close the message list gate before the outgoing message is queued, so
+      // that a message arriving during the flight can't insert into the list or
+      // toggle the rows below it and move the landing target computed by
+      // _animationBottomOffset. Nothing waits on this — deferred work replays
+      // as soon as the bubble is torn down below (or on dispose, or via the
+      // gate's watchdog if this frame's onEnd never fires).
+      //
+      // The outgoing message this animation lands on is queued *after* the hold
+      // but bypasses the gate in MessagesView.handleNewMessage, so the send is
+      // never delayed by its own hold.
+      controller.messageListGate.hold();
+      OutgoingMsgHandler.queue(
+        (_message.attributedBody.isNotEmpty)
+            ? OutgoingMultipartMessage(
+                chat: controller.chat,
+                message: _message,
+              )
+            : OutgoingMessage(
+                chat: controller.chat,
+                message: _message,
+              ),
+      );
       setState(() {
+        // Freeze the landing target for the whole flight. Computed here rather
+        // than in build() so it reflects the layout at the moment of the send —
+        // notably after updateSmartReplyLayout() above has already zeroed the
+        // smart reply row.
+        _frozenBottomOffset = _liveBottomOffset;
         tween = Tween<double>(
           begin: 0.9,
           end: 0,
@@ -162,29 +380,38 @@ class _SendAnimationState
         message = _message;
       });
     }
-    super.updateWidget(tuple);
+    super.updateWidget(data);
   }
 
   @override
   Widget build(BuildContext context) {
-    final typicalWidth = message?.isBigEmoji ?? false ? ns.width(context) : ns.width(context) * MessageWidgetController.maxBubbleSizeFactor - 40;
-    const duration = 500;
+    final typicalWidth = message?.isBigEmoji ?? false
+        ? NavigationSvc.width(context)
+        : NavigationSvc.width(context) * MessageState.maxBubbleSizeFactor - 40;
+    const duration = 450;
     const curve = Curves.easeInOut;
-    const buttonSize = 44;
-    final messageBoxSize = ns.width(context) - buttonSize;
+    const buttonSize = 88;
+    final messageBoxSize = NavigationSvc.width(context) - buttonSize;
     return AnimatedPositioned(
       duration: Duration(milliseconds: message != null ? duration : 0),
-      bottom: message != null ? textFieldSize + focusInfoSize + 17.5 + (controller.showTypingIndicatorFor.isNotEmpty ? 50 : 0) + (!iOS ? 15 : 0) : 0,
-      right: samsung ? -37.5 : 5,
+      bottom: message != null ? _animationBottomOffset : 0,
+      right: samsung ? -38 : -5.0,
       curve: curve,
       onEnd: () async {
         if (message != null) {
-          await Future.delayed(const Duration(milliseconds: 100));
+          await Future.delayed(const Duration(milliseconds: 200));
+          // If we were disposed during the delay, dispose() has already opened
+          // the gate — bail before touching state.
+          if (!mounted) return;
           setState(() {
+            _frozenBottomOffset = null;
             tween = Tween<double>(begin: 1, end: 0);
             control = Control.stop;
             message = null;
           });
+          // Released only once the animated bubble is gone, not when it lands,
+          // so nothing shifts underneath it while it is still overlaid.
+          controller.messageListGate.release();
         }
       },
       child: Visibility(
@@ -196,57 +423,64 @@ class _SendAnimationState
           builder: (context, linear, child) {
             var value = curve.transform(linear);
             var exp = Curves.easeIn.transform(linear);
-            var child = ClipPath(
-                clipper: TailClipper(
-                  isFromMe: true,
-                  showTail: true,
-                  connectLower: false,
-                  connectUpper: false,
-                ),
-                child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                    child: Container(
+            final isScheduled = message?.dateScheduled != null;
+            final tailClipper = TailClipper(
+              isFromMe: true,
+              showTail: true,
+              connectLower: false,
+              connectUpper: false,
+            );
+            final bubble = ClipPath(
+                clipper: tailClipper,
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(
                       constraints: BoxConstraints(
-                        maxWidth: max(messageBoxSize * exp, typicalWidth) - (message?.dateScheduled != null ? 4 : 0),
-                        minWidth: max(messageBoxSize * exp - (message?.dateScheduled != null ? 4 : 0), 0),
-                        minHeight: 40 - (message?.dateScheduled != null ? 4 : 0),
+                        maxWidth: max(messageBoxSize * exp, typicalWidth),
+                        minWidth: messageBoxSize * exp,
+                        minHeight: 36,
                       ),
-                      color: !message!.isBigEmoji && message?.dateScheduled == null ? context.theme.colorScheme.primary.withAlpha(((1-value) * 255).toInt()) : null,
-                      padding: EdgeInsets.symmetric(vertical: 10 - (message?.dateScheduled != null ? 4 : 0), horizontal: 15 - (message?.dateScheduled != null ? 4 : 0)).add(EdgeInsets.only(
-                        left: message?.dateScheduled != null && message!.isBigEmoji ? -8 : message!.isFromMe! || message!.isBigEmoji ? 0 : 10, right: message!.isFromMe! && !message!.isBigEmoji ? 10 : 0)),
+                      color: !message!.isBigEmoji && !isScheduled
+                          ? context.theme.colorScheme.primary.darkenAmount(0.2)
+                          : null,
+                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 15).add(EdgeInsets.only(
+                          left: message!.isFromMe! || message!.isBigEmoji ? 0 : 10,
+                          right: message!.isFromMe! && !message!.isBigEmoji ? 10 : 0)),
                       child: Align(
                         alignment: Alignment.centerLeft,
                         widthFactor: 1,
                         child: Padding(
-                          padding: message!.fullText.length == 1 ? const EdgeInsets.only(left: 3, right: 3) : EdgeInsets.zero,
+                          padding: message!.fullText.length == 1
+                              ? const EdgeInsets.only(left: 3, right: 3)
+                              : EdgeInsets.zero,
                           child: RichText(
                             text: TextSpan(
-                              children: buildMessageSpans(
-                                context,
-                                message!.buildMessageParts().firstOrNull ?? MessagePart(part: 0, text: message!.text, subject: message!.subject),
-                                message!,
-                                colorOverride: Color.lerp(context.theme.colorScheme.properOnSurface, message?.dateScheduled != null ? context.theme.colorScheme.primary : context.theme.colorScheme.onPrimary, 1 - value)
-                              ),
+                              children: buildMessageSpans(context,
+                                  MessagePart(part: 0, text: message!.text, subject: message!.subject), message!,
+                                  colorOverride: Color.lerp(
+                                      context.theme.colorScheme.onSurfaceVariant,
+                                      isScheduled
+                                          ? context.theme.colorScheme.primary
+                                          : context.theme.colorScheme.onPrimary,
+                                      1 - value)),
                             ),
                           ),
                         ),
-                      )
-                    ),),
+                      )),
+                ),
               );
             return Transform.scale(
-              scale: (1-value) < .5 ? lerpDouble(1.1, .9, (1-value) / .5) : lerpDouble(.9, 1, (.5-value) / .5),
+              scale: (1 - value) < .5 ? lerpDouble(1.1, .9, (1 - value) / .5) : lerpDouble(.9, 1, (.5 - value) / .5),
               alignment: Alignment.centerRight,
-              child: message!.dateScheduled != null ? DottedBorder(
-                          customPath: (size) => TailClipper(
-                            isFromMe: true,
-                            showTail: true,
-                            connectLower: false,
-                            connectUpper: false,
-                          ).getClip(size),
-                          color: context.theme.colorScheme.primaryContainer,
-                          strokeWidth: 2,
-                          dashPattern: [7, 4],
-                          child: child,
-                        ) : child,
+              child: isScheduled
+                  ? DottedBorder(
+                      customPath: (size) => tailClipper.getClip(size),
+                      color: context.theme.colorScheme.primaryContainer,
+                      strokeWidth: 2,
+                      dashPattern: const [7, 4],
+                      child: bubble,
+                    )
+                  : bubble,
             );
           },
         ),

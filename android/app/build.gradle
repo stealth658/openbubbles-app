@@ -18,6 +18,21 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 }
 
+// Release builds use key.properties when it's present. Local checkouts and PR CI don't
+// have it, and without this they can't do a release build at all: signingConfigs.release
+// gets a null storeFile and gradle fails configuration with "Keystore file not set for
+// signing config release". Those fall back to debug signing, see buildTypes.release.
+def hasReleaseKeystore = keystorePropertiesFile.exists() && keystoreProperties['storeFile']
+
+// Set by the release workflows. A debug-signed build can't update a Play install and
+// shouldn't reach users, so if the artifact is going to be published a missing or
+// malformed key.properties needs to fail rather than quietly downgrade.
+if (System.getenv('BB_REQUIRE_RELEASE_SIGNING') == 'true' && !hasReleaseKeystore) {
+    throw new GradleException(
+        'BB_REQUIRE_RELEASE_SIGNING is set, but android/key.properties is missing or has no ' +
+        'storeFile entry. Refusing to fall back to debug signing for a release build.')
+}
+
 def flutterVersionCode = localProperties.getProperty('flutter.versionCode')
 if (flutterVersionCode == null) {
     flutterVersionCode = '1'
@@ -31,6 +46,7 @@ if (flutterVersionName == null) {
 android {
     namespace "com.bluebubbles.messaging"
     compileSdk 36
+    ndkVersion = "28.2.13676358"
 
     lintOptions {
         checkReleaseBuilds false
@@ -43,8 +59,12 @@ android {
 
     defaultConfig {
         applicationId "com.bluebubbles.messaging"
-        minSdkVersion 24
-        targetSdkVersion 36
+        // Upstream (BlueBubbles) raised the floor to 26; OpenBubbles was on 24.
+        minSdkVersion 26
+        // Upstream targets 35. OpenBubbles had moved to 36, but the merged UI is
+        // overwhelmingly upstream's and is only tested at 35 — flip back to 36 once
+        // edge-to-edge / Android 16 behaviour has been checked on device.
+        targetSdkVersion 35
         versionCode 20002000 + flutterVersionCode.toInteger()
         versionName flutterVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -56,12 +76,28 @@ android {
         targetCompatibility = JavaVersion.VERSION_21
     }
 
+    kotlinOptions {
+        jvmTarget = '21'
+    }
+
+    // Fix for META-INF/versions/9/OSGI-INF/MANIFEST.MF duplicate file error
+    // This is a known issue with the latest version of OkHttp.
+    packaging {
+        resources {
+            excludes += ['META-INF/versions/9/OSGI-INF/MANIFEST.MF']
+        }
+    }
+
     signingConfigs {
+        // Left empty when key.properties is absent, so that configuration succeeds and
+        // buildTypes.release below can point the shipping flavors at debug signing.
         release {
-            keyAlias keystoreProperties['keyAlias']
-            keyPassword keystoreProperties['keyPassword']
-            storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
-            storePassword keystoreProperties['storePassword']
+            if (hasReleaseKeystore) {
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+                storeFile file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+            }
         }
         debug {
 
@@ -107,6 +143,13 @@ android {
             resValue "string", "file_provider", "com.openbubbles.messaging.fileprovider"
             applicationId "com.openbubbles.messaging"
         }
+        prodNoAa {
+            dimension "app"
+            resValue "string", "app_name_en", "BlueBubbles"
+            resValue "color", "ic_launcher_background", "#4990de"
+            resValue "string", "file_provider", "com.bluebubbles.messaging.fileprovider"
+            applicationId "com.bluebubbles.messaging"
+        }
     }
 
     buildFeatures {
@@ -116,12 +159,16 @@ android {
 
     buildTypes {
         release {
+            // No keystore means the shipping flavors sign with the debug key, which is
+            // enough to prove the release build compiles. BB_REQUIRE_RELEASE_SIGNING
+            // stops anything publishable from taking this path.
+            def releaseSigning = hasReleaseKeystore ? signingConfigs.release : signingConfigs.debug
             productFlavors.joel.signingConfig signingConfigs.debug
             productFlavors.tanay.signingConfig signingConfigs.debug
-            productFlavors.alpha.signingConfig signingConfigs.debug
-            productFlavors.beta.signingConfig signingConfigs.release
-            productFlavors.prod.signingConfig signingConfigs.release
-            productFlavors.alpha.signingConfig signingConfigs.release
+            productFlavors.alpha.signingConfig releaseSigning
+            productFlavors.beta.signingConfig releaseSigning
+            productFlavors.prod.signingConfig releaseSigning
+            productFlavors.prodNoAa.signingConfig releaseSigning
             minifyEnabled false
             shrinkResources false
         }
@@ -137,14 +184,6 @@ android {
 
 flutter {
     source '../..'
-}
-
-// For Cloud Firestore okio error
-configurations.all {
-    resolutionStrategy {
-        force 'com.squareup.okhttp:okhttp:2.7.5'
-        force 'com.squareup.okio:okio:1.17.5'
-    }
 }
 
 dependencies {
@@ -180,8 +219,14 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.7.0'
     implementation 'com.google.android.material:material:1.12.0'
 
+    // HTTP Client (OkHttp + Retrofit)
+    implementation 'com.squareup.okhttp3:okhttp:5.3.2'
+    implementation 'com.squareup.okhttp3:logging-interceptor:5.3.2'
+    implementation 'com.squareup.retrofit2:retrofit:3.0.0'
+    implementation 'com.squareup.retrofit2:converter-gson:3.0.0'
+
     // For AGP 7.4+ desugaring
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 
     // Unified Push
     implementation 'org.unifiedpush.android:connector:2.5.0'

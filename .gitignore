@@ -8,6 +8,7 @@
 .buildlog/
 .history
 .svn/
+mise.toml
 
 # IntelliJ related
 *.iml
@@ -18,7 +19,7 @@
 # The .vscode folder contains launch configuration and tasks you configure in
 # VS Code which you may wish to be included in version control, so this line
 # is commented out by default.
-#.vscode/
+.vscode/settings.json
 
 # Flutter/Dart/Pub related
 **/doc/api/
@@ -39,22 +40,30 @@ pubspeck.lock
 **/android/key.properties
 **/android/.settings
 **/releases
+# Release keystores. These belong in CI secrets, never in the repo.
+*.jks
+*.keystore
+*.p12
 
 #objectbox
 .dart_tool/*
-!.dart_tool/build
-.dart_tool/build/entrypoint
-.dart_tool/build/*/error_cache/**
-.dart_tool/build/generated
-!.dart_tool/build/generated/*/*.info
 
 #private keys
 *.env
 .vscode/launch.json
 /lib/models/html/giphy.dart
+/lib/models/html/klipy.dart
 
 #native-lib
 native-lib/target/**
 
 /rust/src/api/hw_testing.plist
 /rust/src/api/id_testing.plist
+
+/android/app/.cxx/
+
+# FVM Version Cache
+.fvm/
+.fvmrc
+
+.claude/projects

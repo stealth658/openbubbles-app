@@ -1,10 +1,11 @@
+import 'package:bluebubbles/app/components/bb_switch.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/content/settings_leading_icon.dart';
-import 'package:bluebubbles/helpers/ui/theme_helpers.dart';
+import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class SettingsSwitch extends StatelessWidget {
-  SettingsSwitch({
+  const SettingsSwitch({
     super.key,
     required this.initialVal,
     required this.onChanged,
@@ -41,19 +42,24 @@ class SettingsSwitch extends StatelessWidget {
             title,
             style: context.theme.textTheme.bodyLarge,
           ),
-          leading: leading == null ? null : Padding(
-            padding: EdgeInsets.only(bottom: isThreeLine ? 10 : 0.0, right: 5, left: 5),
-            child: leading,
-          ),
-          trailing: Switch(
+          leading: leading == null
+              ? null
+              : Padding(
+                  padding: EdgeInsets.only(bottom: isThreeLine ? 10 : 0.0, right: 5, left: 5),
+                  child: leading,
+                ),
+          trailing: BBSwitch(
             value: initialVal,
             activeColor: context.theme.colorScheme.primary.lightenOrDarken(15),
             onChanged: onChanged,
           ),
-          subtitle: subtitle != null ? Text(
-            subtitle!,
-            style: context.theme.textTheme.bodySmall!.copyWith(color: context.theme.colorScheme.properOnSurface.withOpacity(0.75), height: 1.5),
-          ) : null,
+          subtitle: subtitle != null
+              ? Text(
+                  subtitle!,
+                  style: context.theme.textTheme.bodySmall!
+                      .copyWith(color: context.theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.75), height: 1.5),
+                )
+              : null,
           contentPadding: padding ? const EdgeInsets.symmetric(horizontal: 16.0) : EdgeInsets.zero,
         ),
       ),

@@ -1,23 +1,25 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:bluebubbles/app/layouts/conversation_details/dialogs/timeframe_picker.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/interactive/polls.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/database/global/payload_data.dart';
+import 'package:bluebubbles/helpers/types/constants.dart' as constants;
 import 'package:bluebubbles/services/rustpush/rustpush_service.dart';
+import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/utils/share.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/media_picker/attachment_picker_file.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/database/global/platform_file.dart';
 import 'package:bluebubbles/services/services.dart';
-import 'package:chunked_stream/chunked_stream.dart';
 import 'package:file_picker/file_picker.dart' hide PlatformFile;
 import 'package:file_picker/file_picker.dart' as pf;
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -25,370 +27,138 @@ import 'package:hand_signature/signature.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:photo_manager/photo_manager.dart';
-import 'package:collection/collection.dart';
-import 'package:bluebubbles/helpers/types/constants.dart' as constants;
+import 'package:universal_io/io.dart';
 
+/// Optimized attachment picker that avoids loading bytes until absolutely necessary
+/// This significantly improves performance and reduces memory usage
 class AttachmentPicker extends StatefulWidget {
-  AttachmentPicker({
+  const AttachmentPicker({
     super.key,
     required this.controller,
   });
+
   final ConversationViewController controller;
 
   @override
-  State<AttachmentPicker> createState() => AttachmentPickerState();
+  State<AttachmentPicker> createState() => _AttachmentPickerState();
 }
 
-class AttachmentPickerState extends OptimizedState<AttachmentPicker> {
+class _AttachmentPickerState extends State<AttachmentPicker> with ThemeHelpers {
   List<AssetEntity> _images = <AssetEntity>[];
 
-  ConversationViewController get controller => widget.controller;
-
-  List<Map<String, dynamic>> iconsList = [];
-
+  /// OpenBubbles: the installed iMessage app extension currently being hosted
+  /// in the picker (renders the app's own keyboard view instead of the grid).
   App? currentApp;
+  bool _isLoadingImages = false;
+  bool _permissionDenied = false;
 
-  void generateIcons() {
-    iconsList = [
-      {
-        "icon": Icons.how_to_vote,
-        "text": "Polls",
-        "handle": () async {
-          List<TextEditingController> participantController = [TextEditingController(), TextEditingController()];
-          showDialog(
-            context: context,
-            builder: (_) {
-              return AlertDialog(
-                actions: [
-                  TextButton(
-                    child: Text("Cancel", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
-                    onPressed: () => Get.back(),
-                  ),
-                  TextButton(
-                    child: Text("OK", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
-                    onPressed: () async {
-                      var handle = RustPushBBUtils.rustHandleToBB(await controller.chat.ensureHandle());
-                      var items = participantController.map((i) => i.text).toList();
-                      if (items.last == "") {
-                        items.removeLast();
-                      }
-                      if (items.length < 2) return;
-                      controller.pickedApp.value = (null, PayloadData(
-                        type: constants.PayloadType.app,
-                        appData: [
-                          iMessageAppData(
-                            appName: "Polls",
-                            url: "data:,${base64Encode(utf8.encode(pollMessageToJson(PollMessage(
-                              version: 1,
-                              item: Item(
-                                orderedPollOptions: items.map((i) => OrderedPollOption(
-                                  attributedText: i,
-                                  canBeEdited: false,
-                                  creatorHandle: handle.address,
-                                  optionIdentifier: uuid.v4().toUpperCase(),
-                                  text: i,
-                                )).toList(),
-                                creatorHandle: handle.address,
-                                title: "",
-                              ),
-                            ))))}?src=p&c=2",
-                            session: uuid.v4().toUpperCase(),
-                            ldText: items.map((i) => i).join(", "),
-                            userInfo: UserInfo(
-                              imageSubtitle: "",
-                              imageTitle: "",
-                              caption: "ENG: Update your device",
-                              secondarySubcaption: "",
-                              tertiarySubcaption: "",
-                              subcaption: "Learn about how to update your device to see this content.",
-                            ),
-                            isLive: true,
-                            appIcon: base64Encode((await rootBundle.load("assets/images/polls.jpg")).buffer.asUint8List()),
-                          )
-                        ]
-                      ));
-                      Get.back();
-                    },
-                  ),
-                ],
-                content: SingleChildScrollView(
-                  child: StatefulBuilder(builder: (context, state) => Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: participantController.mapIndexed((i, c) => [
-                      if (i == 0)
-                      const Text("Requires iOS 26 or above."),
-                      const SizedBox(height: 10),
-                      TextField(
-                        controller: c,
-                        decoration: InputDecoration(
-                          labelText: "Option ${i + 1}",
-                          border: const OutlineInputBorder(),
-                        ),
-                        autofocus: true,
-                        onChanged: (v) {
-                          if (participantController[participantController.length - 1].text != "") {
-                            participantController.add(TextEditingController());
-                            state(() {});
-                          }
-                          if (participantController.length > 2 && participantController[participantController.length - 2].text == "") {
-                            participantController.removeLast();
-                            state(() {});
-                          }
-                        },
-                      )
-                    ]).flattened.toList(),
-                  )),
-                ),
-                title: Text("New Poll", style: context.theme.textTheme.titleLarge),
-                backgroundColor: context.theme.colorScheme.properSurface,
-              );
-            }
-          );
-        }
-      },
-      {
-        "icon": iOS ? CupertinoIcons.folder_open : Icons.folder_open_outlined,
-        "text": "Files",
-        "handle": () async {
-          final res = await FilePicker.platform.pickFiles(withReadStream: true, allowMultiple: true);
-          if (res == null || res.files.isEmpty) return;
-
-          for (pf.PlatformFile file in res.files) {
-            if (file.size / 1024000 > 1000) {
-              showSnackbar("Error", "This file is over 1 GB! Please compress it before sending.");
-              continue;
-            }
-            controller.pickedAttachments.add(PlatformFile(
-                path: file.path,
-                name: file.name,
-                bytes: await readByteStream(file.readStream!),
-                size: file.size
-            ));
-          }
-        }
-      },
-      {
-        "icon": iOS ? CupertinoIcons.location : Icons.location_on_outlined,
-        "text": "Location",
-        "handle": () async {
-          await Share.location(cm.activeChat!.chat);
-        }
-      },
-      if(controller.chat.isIMessage)
-      {
-        "icon": iOS ? CupertinoIcons.clock_solid : Icons.lock_clock,
-        "text": "Send Later",
-        "handle": () async {
-          final date = await showTimeframePicker("Pick date and time", context, presetsAhead: true);
-          if (date != null && date.isAfter(DateTime.now())) {
-            controller.scheduledDate.value = date;
-          }
-        }
-      },
-      {
-        "icon": iOS ? CupertinoIcons.pencil_outline : Icons.draw,
-        "text": "Handwritten",
-        "handle": () async {
-          Color selectedColor = context.theme.colorScheme.bubble(context, controller.chat.isIMessage);
-          final result = (await ColorPicker(
-            color: selectedColor,
-            onColorChanged: (Color newColor) {
-              selectedColor = newColor;
-            },
-            title: Text(
-              "Select Color",
-              style: context.theme.textTheme.titleLarge,
-            ),
-            width: 40,
-            height: 40,
-            spacing: 0,
-            runSpacing: 0,
-            borderRadius: 0,
-            wheelDiameter: 165,
-            enableOpacity: false,
-            showColorCode: true,
-            colorCodeHasColor: true,
-            pickersEnabled: <ColorPickerType, bool>{
-              ColorPickerType.wheel: true,
-            },
-            copyPasteBehavior: const ColorPickerCopyPasteBehavior(
-              parseShortHexCode: true,
-            ),
-            actionButtons: const ColorPickerActionButtons(
-              dialogActionButtons: true,
-            ),
-          ).showPickerDialog(
-            context,
-            barrierDismissible: false,
-            constraints: BoxConstraints(
-                minHeight: 480, minWidth: ns.width(context) - 70, maxWidth: ns.width(context) - 70),
-          ));
-          if (result) {
-            final control = HandSignatureControl();
-            showDialog(
-              context: context,
-              builder: (BuildContext context) {
-                return AlertDialog(
-                  title: Text(
-                    "Draw Handwritten Message",
-                    style: context.theme.textTheme.titleLarge,
-                  ),
-                  content: AspectRatio(
-                    aspectRatio: 1,
-                    child: Container(
-                      constraints: const BoxConstraints.expand(),
-                      child: HandSignature(
-                        control: control,
-                        color: selectedColor,
-                        width: 1.0,
-                        maxWidth: 10.0,
-                        type: SignatureDrawType.shape,
-                      ),
-                    ),
-                  ),
-                  actions: [
-                    TextButton(
-                      child: Text("Cancel", style: context.theme.textTheme.bodyLarge!.copyWith(color: Get.context!.theme.colorScheme.primary)),
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
-                    ),
-                    TextButton(
-                      child: Text("OK", style: context.theme.textTheme.bodyLarge!.copyWith(color: Get.context!.theme.colorScheme.primary)),
-                      onPressed: () async {
-                        Navigator.of(context).pop();
-                        final bytes = await control.toImage(height: 512, fit: false);
-                        if (bytes != null) {
-                          final uint8 = bytes.buffer.asUint8List();
-                          controller.pickedAttachments.add(PlatformFile(
-                            path: null,
-                            name: "handwritten-${randomString(3)}.png",
-                            bytes: uint8,
-                            size: uint8.lengthInBytes,
-                          ));
-                        }
-                      },
-                    ),
-                  ],
-                  backgroundColor: context.theme.colorScheme.properSurface,
-                );
-              },
-            );
-          }
-        }
-      },
-    ];
-
-    if(!controller.chat.isIMessage) return;
-    for (var app in es.cachedStatus) {
-      if (app.available == null) return;
-      iconsList.insert(0, {
-        "logo": base64Decode(app.available!.icon),
-        "text": app.available!.name,
-        "handle": () {
-          setState(() {
-            currentApp = app;
-          });
-        }
-      });
-    }
-  }
+  ConversationViewController get controller => widget.controller;
 
   @override
   void initState() {
     super.initState();
     getAttachments();
-    generateIcons();
   }
 
   Future<void> getAttachments() async {
-    if (kIsDesktop || kIsWeb) return;
-    // wait for opening animation to complete
-    await Future.delayed(const Duration(milliseconds: 250));
-    final PermissionState ps = await PhotoManager.requestPermissionExtend();
-    if (!ps.hasAccess) {
-      showSnackbar("Error", "Storage permission not granted!");
-      return;
-    }
-    List<AssetPathEntity> list = await PhotoManager.getAssetPathList(onlyAll: true);
-    if (list.isNotEmpty) {
-      _images = await list.first.getAssetListRange(start: 0, end: 24);
-      // see if there is a recent attachment
-      if (DateTime.now().toLocal().isWithin(_images.first.modifiedDateTime, minutes: 2)) {
-        final file = await _images.first.file;
-        if (file != null) {
-          eventDispatcher.emit('add-custom-smartreply', PlatformFile(
-            path: file.path,
-            name: file.path.split('/').last,
-            size: await file.length(),
-            bytes: await file.readAsBytes(),
-          ));
+    if (kIsDesktop || kIsWeb || _isLoadingImages) return;
+
+    setState(() {
+      _isLoadingImages = true;
+    });
+
+    try {
+      // Wait for opening animation to complete
+      await Future.delayed(const Duration(milliseconds: 250));
+
+      final PermissionState ps = await PhotoManager.requestPermissionExtend();
+      if (!ps.hasAccess) {
+        if (mounted) setState(() => _permissionDenied = true);
+        return;
+      }
+      if (mounted && _permissionDenied) setState(() => _permissionDenied = false);
+
+      List<AssetPathEntity> list = await PhotoManager.getAssetPathList(
+        onlyAll: true,
+        filterOption: FilterOptionGroup(
+          orders: [
+            const OrderOption(
+              type: OrderOptionType.createDate,
+              asc: false, // false = descending, newest first
+            ),
+          ],
+        ),
+      );
+      if (list.isNotEmpty) {
+        _images = await list.first.getAssetListRange(start: 0, end: 24);
+
+        // See if there is a recent attachment
+        if (_images.isNotEmpty && DateTime.now().toLocal().isWithin(_images.first.modifiedDateTime, minutes: 2)) {
+          final file = await _images.first.file;
+          if (file != null) {
+            // Don't load bytes here - let the attachment service handle it when needed
+            EventDispatcherSvc.emit(
+                'add-custom-smartreply',
+                PlatformFile(
+                  path: file.path,
+                  name: file.path.split('/').last,
+                  size: await file.length(),
+                  bytes: null, // Don't preload bytes
+                ));
+          }
         }
       }
+    } catch (e, s) {
+      Logger.error("Failed to load attachments", error: e, trace: s);
+      showSnackbar("Error", "Failed to load attachments: $e");
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingImages = false;
+        });
+      }
     }
-    setState(() {});
   }
 
   Future<void> openFullCamera({String type = 'camera'}) async {
     bool granted = (await Permission.camera.request()).isGranted;
     if (!granted) {
-      showSnackbar(
-        "Error",
-        "Camera access was denied!"
-      );
+      showSnackbar("Error", "Camera access was denied!");
       return;
     }
 
-    late final XFile? file;
-    if (type == 'camera') {
-      file = await ImagePicker().pickImage(source: ImageSource.camera);
-    } else {
-      file = await ImagePicker().pickVideo(source: ImageSource.camera);
+    if (type == 'video') {
+      final micGranted = (await Permission.microphone.request()).isGranted;
+      if (!micGranted) {
+        showSnackbar("Error", "Microphone access was denied!");
+        return;
+      }
     }
+
+    final XFile? file;
+    if (type == 'video') {
+      file = await ImagePicker().pickVideo(source: ImageSource.camera);
+    } else {
+      file = await ImagePicker().pickImage(source: ImageSource.camera);
+    }
+
     if (file != null) {
+      // Don't preload bytes - only store the path
       controller.pickedAttachments.add(PlatformFile(
         path: file.path,
         name: file.path.split('/').last,
         size: await file.length(),
-        bytes: await file.readAsBytes(),
+        bytes: null, // Will be loaded when actually sending
       ));
     }
-  }
-
-  IconData getIcon(int index) {
-    if (iOS) {
-      switch (index) {
-        case 0:
-          return CupertinoIcons.camera;
-        case 1:
-          return CupertinoIcons.videocam;
-      }
-    } else {
-      switch (index) {
-        case 0:
-          return Icons.photo_camera_outlined;
-        case 1:
-          return Icons.videocam_outlined;
-      }
-    }
-    return Icons.abc;
-  }
-
-  String getText(int index) {
-    switch (index) {
-      case 0:
-        return "Photo";
-      case 1:
-        return "Video";
-    }
-    return "";
   }
 
   @override
   Widget build(BuildContext context) {
     if (currentApp != null) {
+      // OpenBubbles: render the installed iMessage app's own keyboard view.
       return SizedBox(
-        height: 300,
+        height: 340,
         child: AndroidView(
           viewType: "extension-keyboard",
           layoutDirection: TextDirection.ltr,
@@ -397,176 +167,588 @@ class AttachmentPickerState extends OptimizedState<AttachmentPicker> {
             "user-count": controller.chat.participants.length + 1,
           },
           creationParamsCodec: const StandardMessageCodec(),
-        )
+        ),
       );
     }
-    return SizedBox(
-      height: 300,
-      child: RefreshIndicator(
-        onRefresh: () async {
-          getAttachments();
-        },
-        child: NotificationListener<OverscrollIndicatorNotification>(
-          onNotification: (OverscrollIndicatorNotification overscroll) {
-            // prevent stretchy effect
-            overscroll.disallowIndicator();
-            return true;
+    return Container(
+      color: context.theme.colorScheme.surface,
+      child: SizedBox(
+        height: 340,
+        child: RefreshIndicator(
+          onRefresh: () async {
+            await getAttachments();
           },
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: SizedBox(
-              height: 300,
-              child: Padding(
-                padding: const EdgeInsets.all(10.0),
-                child: CustomScrollView(
-                  physics: ThemeSwitcher.getScrollPhysics(),
-                  scrollDirection: Axis.horizontal,
-                  slivers: <Widget>[
-                    SliverGrid(
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        childAspectRatio: 1.5,
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 10,
+          child: NotificationListener<OverscrollIndicatorNotification>(
+            onNotification: (OverscrollIndicatorNotification overscroll) {
+              // Prevent stretchy effect
+              overscroll.disallowIndicator();
+              return true;
+            },
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: SizedBox(
+                height: 340,
+                child: Padding(
+                  padding: const EdgeInsets.all(10.0),
+                  child: CustomScrollView(
+                    physics: ThemeSwitcher.getScrollPhysics(),
+                    scrollDirection: Axis.horizontal,
+                    slivers: <Widget>[
+                      // Quick action list
+                      SliverPadding(
+                        padding: const EdgeInsets.only(bottom: 5),
+                        sliver: _buildActionList(),
                       ),
-                      delegate: SliverChildBuilderDelegate((context, index) {
-                          return ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              backgroundColor: context.theme.colorScheme.properSurface,
-                            ),
-                            onPressed: () async {
-                              switch (index) {
-                                case 0:
-                                  openFullCamera();
-                                  return;
-                                case 1:
-                                  openFullCamera(type: "video");
-                                  return;
-                              }
-                            },
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: <Widget>[
-                                Icon(
-                                  getIcon(index),
-                                  color: context.theme.colorScheme.properOnSurface,
-                                ),
-                                const SizedBox(height: 8.0),
-                                Text(
-                                  getText(index),
-                                  style: context.theme.textTheme.labelLarge!.copyWith(color: context.theme.colorScheme.properOnSurface)
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                        childCount: 2,
+                      // Image grid
+                      const SliverPadding(padding: EdgeInsets.only(left: 5, right: 5)),
+                      // Image grid
+                      SliverPadding(
+                        padding: const EdgeInsets.only(bottom: 5),
+                        sliver: _buildImageGrid(),
                       ),
-                    ),
-                    const SliverPadding(padding: EdgeInsets.only(left: 5, right: 5)),
-                    SliverToBoxAdapter(
-                      child: SizedBox(
-                        width: 100,
-                        child: CustomScrollView(
-                        physics: ThemeSwitcher.getScrollPhysics(),
-                        scrollDirection: Axis.vertical,
-                        slivers: [
-                          SliverList(
-                            delegate: SliverChildBuilderDelegate((context, index) {
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 10),
-                                child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  padding: const EdgeInsets.only(top: 10, bottom: 7),
-                                  backgroundColor: context.theme.colorScheme.properSurface,
-                                ),
-                                onPressed: () async {
-                                  iconsList[index]["handle"]();
-                                },
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: <Widget>[
-                                    if (iconsList[index].containsKey("icon"))
-                                    Icon(
-                                      iconsList[index]["icon"],
-                                      color: context.theme.colorScheme.properOnSurface,
-                                    ),
-                                    if (iconsList[index].containsKey("logo"))
-                                    Padding(
-                                      padding: const EdgeInsets.only(bottom: 3),
-                                      child: ClipRRect(
-                                        child: Image.memory(
-                                          iconsList[index]["logo"],
-                                          height: 25,
-                                        ),
-                                        borderRadius: BorderRadius.circular(100),
-                                      ),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 5),
-                                      child: Text(
-                                        iconsList[index]["text"],
-                                        style: context.theme.textTheme.labelLarge!.copyWith(color: context.theme.colorScheme.properOnSurface),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    )
-                                  ],
-                                ),
-                              ),
-                              );
-                            },
-                            childCount: iconsList.length,
-                            ),
-                          ),
-                        ],
-                      ),
-                      )
-                    ),
-                    const SliverPadding(padding: EdgeInsets.only(left: 5, right: 5)),
-                    SliverGrid(
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 10,
-                      ),
-                      delegate: SliverChildBuilderDelegate((context, index) {
-                          final element = _images[index];
-                          return AttachmentPickerFile(
-                            key: Key("AttachmentPickerFile-${element.id}"),
-                            data: element,
-                            controller: controller,
-                            onTap: () async {
-                              final file = await element.file;
-                              if (file == null) return;
-                              if ((await file.length()) / 1024000 > 1000) {
-                                showSnackbar("Error", "This file is over 1 GB! Please compress it before sending.");
-                                return;
-                              }
-                              if (controller.pickedAttachments.firstWhereOrNull((e) => e.path == file.path) != null) {
-                                controller.pickedAttachments.removeWhere((e) => e.path == file.path);
-                              } else {
-                                controller.pickedAttachments.add(PlatformFile(
-                                  path: file.path,
-                                  name: file.path.split('/').last,
-                                  size: await file.length(),
-                                ));
-                              }
-                            },
-                          );
-                        },
-                        childCount: _images.length,
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            )
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionList() {
+    return SliverToBoxAdapter(
+      child: SizedBox(
+        width: 175,
+        child: ShaderMask(
+          shaderCallback: (Rect bounds) {
+            return const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Colors.white, Colors.white, Colors.transparent],
+              stops: [0.9, 0.95, 1.0],
+            ).createShader(bounds);
+          },
+          blendMode: BlendMode.dstIn,
+          child: ListView(
+            padding: EdgeInsets.zero,
+            physics: const BouncingScrollPhysics(),
+            children: [
+              _QuickActionItem(
+                icon: Icons.camera_alt_rounded,
+                label: 'Photo',
+                color: const Color(0xFF34C759),
+                onTap: () => openFullCamera(type: 'camera'),
+              ),
+              _QuickActionItem(
+                icon: Icons.videocam_rounded,
+                label: 'Video',
+                color: const Color(0xFFFF3B30),
+                onTap: () => openFullCamera(type: 'video'),
+              ),
+              _QuickActionItem(
+                icon: Icons.photo_library_rounded,
+                label: 'Gallery',
+                color: const Color(0xFF5856D6),
+                onTap: _handleGallery,
+              ),
+              _QuickActionItem(
+                icon: Icons.folder_rounded,
+                label: 'Files',
+                color: const Color(0xFF007AFF),
+                onTap: _handleFilePicker,
+              ),
+              _QuickActionItem(
+                icon: Icons.location_on_rounded,
+                label: 'Location',
+                color: const Color(0xFF32ADE6),
+                onTap: _handleLocation,
+              ),
+              if (controller.chat.isIMessage)
+                _QuickActionItem(
+                  icon: Icons.schedule_rounded,
+                  label: 'Schedule',
+                  color: const Color(0xFFFF9500),
+                  onTap: () => _handleSchedule(context),
+                ),
+              _QuickActionItem(
+                icon: Icons.draw_rounded,
+                label: 'Handwritten',
+                color: const Color(0xFFAF52DE),
+                onTap: () => _handleHandwritten(context),
+              ),
+              // OpenBubbles: rustpush-native iMessage apps.
+              if (controller.chat.isIMessage)
+                _QuickActionItem(
+                  icon: Icons.how_to_vote,
+                  label: 'Polls',
+                  color: const Color(0xFF30B0C7),
+                  onTap: () => _handlePolls(context),
+                ),
+              // OpenBubbles: installed third-party iMessage app extensions.
+              if (controller.chat.isIMessage)
+                ...es.cachedStatus.where((app) => app.available != null).map(
+                      (app) => _QuickActionItem(
+                        icon: Icons.extension_rounded,
+                        logo: base64Decode(app.available!.icon),
+                        label: app.available!.name,
+                        color: const Color(0xFF8E8E93),
+                        onTap: () => setState(() => currentApp = app),
+                      ),
+                    ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleGallery() async {
+    if (kIsDesktop || kIsWeb) return;
+    final List<XFile> files = await ImagePicker().pickMultiImage();
+    for (final file in files) {
+      final size = await file.length();
+      if (size / 1024000 > 1000) {
+        showSnackbar("Error", "This file is over 1 GB! Please compress it before sending.");
+        continue;
+      }
+      controller.pickedAttachments.add(PlatformFile(
+        path: file.path,
+        name: file.path.split('/').last,
+        size: size,
+        bytes: null,
+      ));
+    }
+  }
+
+  Future<void> _handleFilePicker() async {
+    final res = await FilePicker.pickFiles(
+      withReadStream: true,
+      allowMultiple: true,
+    );
+    if (res == null || res.files.isEmpty) return;
+
+    for (pf.PlatformFile file in res.files) {
+      if (file.size / 1024000 > 1000) {
+        showSnackbar("Error", "This file is over 1 GB! Please compress it before sending.");
+        continue;
+      }
+      controller.pickedAttachments.add(PlatformFile(
+        path: file.path,
+        name: file.name,
+        bytes: null,
+        size: file.size,
+      ));
+    }
+  }
+
+  Future<void> _handleLocation() async {
+    await Share.location(controller.chat);
+  }
+
+  Future<void> _handleSchedule(BuildContext context) async {
+    // OpenBubbles schedules natively through rustpush, so the BlueBubbles-server
+    // restrictions (no attachments / no Private API features) do not apply.
+    final date = await showTimeframePicker("Pick date and time", context, presetsAhead: true);
+    if (date != null && date.isAfter(DateTime.now())) {
+      controller.scheduledDate.value = date;
+    }
+  }
+
+  /// OpenBubbles: builds an iMessage poll payload and stages it for sending.
+  Future<void> _handlePolls(BuildContext context) async {
+    final List<TextEditingController> optionControllers = [TextEditingController(), TextEditingController()];
+    await showDialog(
+      context: context,
+      builder: (_) {
+        return AlertDialog(
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
+              child: Text("Cancel",
+                  style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+            ),
+            TextButton(
+              onPressed: () async {
+                final handle = RustPushBBUtils.rustHandleToBB(await controller.chat.ensureHandle());
+                final items = optionControllers.map((i) => i.text).toList();
+                if (items.isNotEmpty && items.last == "") {
+                  items.removeLast();
+                }
+                if (items.length < 2) return;
+                controller.pickedApp.value = (
+                  null,
+                  PayloadData(type: constants.PayloadType.app, appData: [
+                    iMessageAppData(
+                      appName: "Polls",
+                      url: "data:,${base64Encode(utf8.encode(pollMessageToJson(PollMessage(
+                            version: 1,
+                            item: Item(
+                              orderedPollOptions: items
+                                  .map((i) => OrderedPollOption(
+                                        attributedText: i,
+                                        canBeEdited: false,
+                                        creatorHandle: handle.address,
+                                        optionIdentifier: uuid.v4().toUpperCase(),
+                                        text: i,
+                                      ))
+                                  .toList(),
+                              creatorHandle: handle.address,
+                              title: "",
+                            ),
+                          ))))}?src=p&c=2",
+                      session: uuid.v4().toUpperCase(),
+                      ldText: items.join(", "),
+                      userInfo: UserInfo(
+                        imageSubtitle: "",
+                        imageTitle: "",
+                        caption: "ENG: Update your device",
+                        secondarySubcaption: "",
+                        tertiarySubcaption: "",
+                        subcaption: "Learn about how to update your device to see this content.",
+                      ),
+                      isLive: true,
+                      appIcon: base64Encode((await rootBundle.load("assets/images/polls.jpg")).buffer.asUint8List()),
+                    )
+                  ])
+                );
+                if (context.mounted) Navigator.of(context, rootNavigator: true).pop();
+              },
+              child: Text("OK",
+                  style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+            ),
+          ],
+          content: SingleChildScrollView(
+            child: StatefulBuilder(
+              builder: (context, state) => Column(
+                mainAxisSize: MainAxisSize.min,
+                children: optionControllers
+                    .mapIndexed((i, c) => [
+                          if (i == 0) const Text("Requires iOS 26 or above."),
+                          const SizedBox(height: 10),
+                          TextField(
+                            controller: c,
+                            decoration: InputDecoration(
+                              labelText: "Option ${i + 1}",
+                              border: const OutlineInputBorder(),
+                            ),
+                            autofocus: true,
+                            onChanged: (v) {
+                              if (optionControllers[optionControllers.length - 1].text != "") {
+                                optionControllers.add(TextEditingController());
+                                state(() {});
+                              }
+                              if (optionControllers.length > 2 &&
+                                  optionControllers[optionControllers.length - 2].text == "") {
+                                optionControllers.removeLast();
+                                state(() {});
+                              }
+                            },
+                          )
+                        ])
+                    .flattened
+                    .toList(),
+              ),
+            ),
+          ),
+          title: Text("New Poll", style: context.theme.textTheme.titleLarge),
+          backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+        );
+      },
+    );
+  }
+
+  Future<void> _handleHandwritten(BuildContext context) async {
+    Color selectedColor = context.theme.colorScheme.bubble(context, controller.chat.isIMessage);
+
+    final result = await ColorPicker(
+      color: selectedColor,
+      onColorChanged: (Color newColor) {
+        selectedColor = newColor;
+      },
+      title: Text(
+        "Select Color",
+        style: context.theme.textTheme.titleLarge,
+      ),
+      width: 40,
+      height: 40,
+      spacing: 0,
+      runSpacing: 0,
+      borderRadius: 0,
+      wheelDiameter: 165,
+      enableOpacity: false,
+      showColorCode: true,
+      colorCodeHasColor: true,
+      pickersEnabled: <ColorPickerType, bool>{
+        ColorPickerType.wheel: true,
+      },
+      copyPasteBehavior: const ColorPickerCopyPasteBehavior(
+        parseShortHexCode: true,
+      ),
+      actionButtons: const ColorPickerActionButtons(
+        dialogActionButtons: true,
+      ),
+    ).showPickerDialog(
+      context,
+      barrierDismissible: false,
+      constraints: BoxConstraints(
+        minHeight: 480,
+        minWidth: NavigationSvc.width(context) - 70,
+        maxWidth: NavigationSvc.width(context) - 70,
+      ),
+    );
+
+    if (result && context.mounted) {
+      final control = HandSignatureControl();
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text(
+              "Draw Handwriten Message",
+              style: context.theme.textTheme.titleLarge,
+            ),
+            content: AspectRatio(
+              aspectRatio: 1,
+              child: Container(
+                constraints: const BoxConstraints.expand(),
+                child: HandSignature(
+                  control: control,
+                  color: selectedColor,
+                  width: 1.0,
+                  maxWidth: 10.0,
+                  type: SignatureDrawType.shape,
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                child: Text(
+                  "Cancel",
+                  style: context.theme.textTheme.bodyLarge!.copyWith(color: Get.context!.theme.colorScheme.primary),
+                ),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+              TextButton(
+                child: Text(
+                  "OK",
+                  style: context.theme.textTheme.bodyLarge!.copyWith(color: Get.context!.theme.colorScheme.primary),
+                ),
+                onPressed: () async {
+                  Navigator.of(context).pop();
+                  final bytes = await control.toImage(height: 512, fit: false);
+                  if (bytes != null) {
+                    final uint8 = bytes.buffer.asUint8List();
+                    controller.pickedAttachments.add(PlatformFile(
+                      path: null,
+                      name: "handwriten-${controller.pickedAttachments.length + 1}.png",
+                      bytes: uint8,
+                      size: uint8.lengthInBytes,
+                      balloonBundleId: 'com.apple.Handwriting.HandwritingProvider',
+                    ));
+                  }
+                },
+              ),
+            ],
+            backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+          );
+        },
+      );
+    }
+  }
+
+  Widget _buildStatusSliver({
+    required IconData icon,
+    required String message,
+    required String buttonLabel,
+    required VoidCallback onPressed,
+  }) {
+    return SliverToBoxAdapter(
+      child: SizedBox(
+        width: 280,
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 36, color: context.theme.colorScheme.outline),
+                const SizedBox(height: 8),
+                Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: context.theme.textTheme.bodySmall!.copyWith(
+                    color: context.theme.colorScheme.outline,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    backgroundColor: context.theme.colorScheme.primary,
+                    foregroundColor: context.theme.colorScheme.onPrimary,
+                  ),
+                  onPressed: onPressed,
+                  child: Text(buttonLabel),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImageGrid() {
+    if (_isLoadingImages) {
+      return const SliverToBoxAdapter(
+        // Explicit width so the item occupies space in the horizontal CustomScrollView.
+        child: SizedBox(
+          width: 280,
+          child: Center(child: CupertinoActivityIndicator()),
+        ),
+      );
+    }
+
+    if (_permissionDenied) {
+      return _buildStatusSliver(
+        icon: Icons.photo_library_outlined,
+        message: "Photo access is required to browse your gallery.",
+        buttonLabel: "Grant Access",
+        onPressed: () async {
+          final ps = await PhotoManager.requestPermissionExtend();
+          if (ps.hasAccess) {
+            await getAttachments();
+          } else {
+            await openAppSettings();
+          }
+        },
+      );
+    }
+
+    // Access was granted but no photos came back. This reliably covers:
+    // - Limited access with no photos selected (photo_manager collapses
+    //   PermissionState back to 'authorized' after presentLimited(), so
+    //   ps.isLimited is not trustworthy post-flow)
+    // - Fully authorized but genuinely empty library
+    if (_images.isEmpty) {
+      // PhotoManager.presentLimited() is broken on Android — it silently does
+      // nothing on most devices (known upstream issue #1357). On Android, direct
+      // the user to App Settings where they can update their photo selection.
+      // On iOS, presentLimited() works correctly.
+      final isAndroid = !kIsWeb && Platform.isAndroid;
+      return _buildStatusSliver(
+        icon: Icons.photo_library_outlined,
+        message: isAndroid
+            ? "No photos are accessible. Tap below to open Settings and update your photo access."
+            : "No photos are accessible. Tap below to choose which photos this app can access.",
+        buttonLabel: isAndroid ? "Open Settings" : "Select Photos",
+        onPressed: () async {
+          if (isAndroid) {
+            await openAppSettings();
+          } else {
+            await PhotoManager.presentLimited();
+          }
+          await getAttachments();
+        },
+      );
+    }
+
+    return SliverGrid(
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+      ),
+      delegate: SliverChildBuilderDelegate(
+        (context, index) {
+          final element = _images[index];
+          return AttachmentPickerFile(
+            key: Key("AttachmentPickerFile-${element.id}"),
+            data: element,
+            controller: controller,
+            onTap: () async {
+              final file = await element.file;
+              if (file == null) return;
+
+              if ((await file.length()) / 1024000 > 1000) {
+                showSnackbar("Error", "This file is over 1 GB! Please compress it before sending.");
+                return;
+              }
+
+              if (controller.pickedAttachments.firstWhereOrNull((e) => e.path == file.path) != null) {
+                controller.pickedAttachments.removeWhere((e) => e.path == file.path);
+              } else {
+                // Don't preload bytes - only store the path
+                controller.pickedAttachments.add(PlatformFile(
+                  path: file.path,
+                  name: file.path.split('/').last,
+                  size: await file.length(),
+                  bytes: null, // Will be loaded when actually sending
+                ));
+              }
+            },
+          );
+        },
+        childCount: _images.length,
+      ),
+    );
+  }
+}
+
+class _QuickActionItem extends StatelessWidget {
+  const _QuickActionItem({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+    this.logo,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  /// OpenBubbles: raw icon bytes for an installed iMessage app extension,
+  /// drawn in place of [icon] when present.
+  final Uint8List? logo;
+
+  @override
+  Widget build(BuildContext context) {
+    final bgColor = color.withValues(alpha: 0.12);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Container(
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
+          child: Row(
+            children: [
+              if (logo != null)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(100),
+                  child: Image.memory(logo!, height: 26, width: 26),
+                )
+              else
+                Icon(icon, color: color, size: 26),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  label,
+                  style: context.theme.textTheme.bodyMedium,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
           ),
         ),
       ),

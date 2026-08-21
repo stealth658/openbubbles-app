@@ -25,7 +25,6 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge.dart';
 import 'package:google_sign_in_all_platforms/google_sign_in_all_platforms.dart';
 import 'package:in_app_purchase_android/billing_client_wrappers.dart';
 import 'package:get/get.dart';
-import 'package:bluebubbles/services/network/backend_service.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:supercharged/supercharged.dart';
 import 'package:telephony_plus/telephony_plus.dart';
@@ -34,14 +33,13 @@ import 'package:bluebubbles/src/rust/api/api.dart' as api;
 import 'package:url_launcher/url_launcher.dart';
 
 class ProfilePanel extends StatefulWidget {
-
-  ProfilePanel({super.key});
+  const ProfilePanel({super.key});
 
   @override
   State<ProfilePanel> createState() => _ProfilePanelState();
 }
 
-class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindingObserver {
+class _ProfilePanelState extends State<ProfilePanel> with WidgetsBindingObserver, ThemeHelpers {
   static const List<int> _syncHistoryOptions = [604800000, 2592000000, 15552000000, 31536000000, 0];
   static const Map<int, String> _syncHistoryLabels = {
     604800000: "7 days",
@@ -64,7 +62,7 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
   Rxn<GoogleSignInCredentials> googleCreds = Rxn(null);
 
   Future<void> handleSubscriptionToken(String subscription) async {
-    var activated = await http.dio.post("https://hw.openbubbles.app/ticket/${ticket!}/activate", data: {"purchase_token": subscription});
+    var activated = await HttpSvc.dio.post("https://hw.openbubbles.app/ticket/${ticket!}/activate", data: {"purchase_token": subscription});
     var useTicket = activated.data["ticket"];
     if (useTicket != ticket) {
       throw Exception("Ticket changed???");
@@ -89,7 +87,7 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: context.theme.colorScheme.properSurface,
+          backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
           title: Text(
             text,
             style: context.theme.textTheme.titleLarge,
@@ -98,7 +96,7 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
             height: 70,
             child: Center(
               child: CircularProgressIndicator(
-                backgroundColor: context.theme.colorScheme.properSurface,
+                backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
                 valueColor: AlwaysStoppedAnimation<Color>(context.theme.colorScheme.primary),
               ),
             ),
@@ -121,8 +119,8 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
   Future<bool> handlePurchases(PurchasesResultWrapper details) async {
     for (var detail in details.purchasesList) {
       if (detail.purchaseState != PurchaseStateWrapper.purchased) continue;
-      ss.settings.hostedToken.value = detail.purchaseToken;
-      ss.saveSettings();
+      SettingsSvc.settings.hostedToken.value = detail.purchaseToken;
+      SettingsSvc.settings.saveAsync();
       await wrapPromise(handleSubscriptionToken(detail.purchaseToken), "Validating subscription...");
       Logger.info("Purchased token ${detail.purchaseToken}");
       return true;
@@ -153,20 +151,20 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (profileDirty) {
         api.ShareProfileMessage? profile;
-        if (cloudKitRecordDirty && ss.settings.nameAndPhotoSharing.value) {
+        if (cloudKitRecordDirty && SettingsSvc.settings.nameAndPhotoSharing.value) {
           api.ShareProfileMessage? existing;
-          if (ss.settings.shareProfileMessage.value != null) {
-            existing = await api.decodeProfileMessage(s: ss.settings.shareProfileMessage.value!);
+          if (SettingsSvc.settings.shareProfileMessage.value != null) {
+            existing = await api.decodeProfileMessage(s: SettingsSvc.settings.shareProfileMessage.value!);
           }
           Uint8List? image;
-          if (ss.settings.userAvatarPath.value != null) {
-            image = await File(ss.settings.userAvatarPath.value!).readAsBytes();
+          if (SettingsSvc.settings.userAvatarPath.value != null) {
+            image = await File(SettingsSvc.settings.userAvatarPath.value!).readAsBytes();
           }
           showDialog(
             context: Get.context!,
             builder: (BuildContext context) {
               return AlertDialog(
-                backgroundColor: context.theme.colorScheme.properSurface,
+                backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
                 title: Text(
                   "Updating profile...",
                   style: context.theme.textTheme.titleLarge,
@@ -175,7 +173,7 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
                   height: 70,
                   child: Center(
                     child: CircularProgressIndicator(
-                      backgroundColor: context.theme.colorScheme.properSurface,
+                      backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
                       valueColor: AlwaysStoppedAnimation<Color>(context.theme.colorScheme.primary),
                     ),
                   ),
@@ -185,18 +183,18 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
           );
 
           api.SimplifiedIncomingCallPoster? poster;
-          if (ss.settings.userPosterPath.value != null && !kIsDesktop) {
-            var data = await File("${ss.settings.userPosterPath.value!}.jpg").readAsBytes();
+          if (SettingsSvc.settings.userPosterPath.value != null && !kIsDesktop) {
+            var data = await File("${SettingsSvc.settings.userPosterPath.value!}.jpg").readAsBytes();
             print("Parsing file");
             poster = await api.fromPosterSave(poster: data);
           }
 
-          await restorePoster(poster?.poster, ss.settings.userPosterPath.value!);
+          await restorePoster(poster?.poster, SettingsSvc.settings.userPosterPath.value!);
 
           api.ShareProfileMessage message;
           try {
             message = await api.setProfile(profiles: pushService.state!.icloudServices!.profilesClient, record: api.IMessageNicknameRecord(
-              name: api.IMessageNameRecord(name: ss.settings.userName.value, first: ss.settings.firstName.value!, last: ss.settings.lastName.value!),
+              name: api.IMessageNameRecord(name: SettingsSvc.settings.userName.value, first: SettingsSvc.settings.firstName.value!, last: SettingsSvc.settings.lastName.value!),
               image: image,
               poster: poster != null ? await api.fromPoster(poster: poster) : null,
             ), existing: existing);
@@ -207,10 +205,10 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
           }
           Get.back();
 
-          ss.settings.sharedContacts.clear();
-          ss.settings.dismissedContacts.clear();
-          ss.settings.shareProfileMessage.value = await api.encodeProfileMessage(p: message);
-          ss.saveSettings();
+          SettingsSvc.settings.sharedContacts.clear();
+          SettingsSvc.settings.dismissedContacts.clear();
+          SettingsSvc.settings.shareProfileMessage.value = await api.encodeProfileMessage(p: message);
+          SettingsSvc.settings.saveAsync();
           profile = message;
         }
 
@@ -220,7 +218,7 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
         var msg = await api.newMsg(
           conversation: api.ConversationData(participants: [handle]),
           sender: handle,
-          message: api.Message.updateProfile(api.UpdateProfileMessage(shareContacts: ss.settings.shareContactAutomatically.value, profile: profile)),
+          message: api.Message.updateProfile(api.UpdateProfileMessage(shareContacts: SettingsSvc.settings.shareContactAutomatically.value, profile: profile)),
         );
         await (backend as RustPushBackend).sendMsg(msg);
       }
@@ -239,41 +237,44 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
     }
     var myHandles = (await api.getMyPhoneHandles(state: pushService.state!.client));
     if (myHandles.isNotEmpty) {
-      List<api.PrivateDeviceInfo> pendingTargets = ss.settings.isSmsRouter.value ? await api.getSmsTargets(state: pushService.state!.client, handle: myHandles.first, refresh: true) : [];
-      ss.saveSettings();
+      List<api.PrivateDeviceInfo> pendingTargets = SettingsSvc.settings.isSmsRouter.value ? await api.getSmsTargets(state: pushService.state!.client, handle: myHandles.first, refresh: true) : [];
+      SettingsSvc.settings.saveAsync();
       forwardingTargets.value = pendingTargets;
     }
     setState(() {});
   }
 
   Future<void> updateName() async {
-    final firstName = TextEditingController(text: ss.settings.firstName.value);
-    final lastName = TextEditingController(text: ss.settings.lastName.value);
+    final firstName = TextEditingController(text: SettingsSvc.settings.firstName.value);
+    final lastName = TextEditingController(text: SettingsSvc.settings.lastName.value);
     done() async {
       if (firstName.text.isEmpty) {
         showSnackbar("Error", "Enter a name!");
         return;
       }
       Get.back();
-      ss.settings.firstName.value = firstName.text;
-      ss.settings.lastName.value = lastName.text;
-      ss.settings.userName.value = "${firstName.text} ${lastName.text}";
+      SettingsSvc.settings.firstName.value = firstName.text;
+      SettingsSvc.settings.lastName.value = lastName.text;
+      SettingsSvc.settings.userName.value = "${firstName.text} ${lastName.text}";
       cloudKitRecordDirty = true;
       profileDirty = true;
-      await ss.saveSettings();
+      await SettingsSvc.settings.saveAsync();
       setState(() {});
     }
+
     await showDialog(
         context: context,
         builder: (_) {
           return AlertDialog(
             actions: [
               TextButton(
-                child: Text("Cancel", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
-                onPressed: () => Get.back(),
+                child: Text("Cancel",
+                    style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+                onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
               ),
               TextButton(
-                child: Text("OK", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+                child: Text("OK",
+                    style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
                 onPressed: () async {
                   done.call();
                 },
@@ -303,10 +304,9 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
               ],
             ),
             title: Text("Change Name", style: context.theme.textTheme.titleLarge),
-            backgroundColor: context.theme.colorScheme.properSurface,
+            backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
           );
-        }
-    );
+        });
   }
 
   void updatePhoto() async {
@@ -324,10 +324,10 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
   bool profileDirty = false;
 
   void removePhoto() {
-    File file = File(ss.settings.userAvatarPath.value!);
+    File file = File(SettingsSvc.settings.userAvatarPath.value!);
     file.delete();
-    ss.settings.userAvatarPath.value = null;
-    ss.saveSettings();
+    SettingsSvc.settings.userAvatarPath.value = null;
+    SettingsSvc.settings.saveAsync();
     cloudKitRecordDirty = true;
     profileDirty = true;
   }
@@ -359,7 +359,7 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
                       color: Colors.transparent,
                       child: ListTile(
                         mouseCursor: MouseCursor.defer,
-                        leading: ContactAvatarWidget(
+                        leading: const ContactAvatarWidget(
                           handle: null,
                           borderThickness: 0.1,
                           editable: false,
@@ -367,24 +367,27 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
                           size: 50,
                         ),
                         onTap: () async {
-                          updateName();
+                          await updateName();
                         },
                         title: RichText(
                           text: TextSpan(
                             style: context.theme.textTheme.bodyLarge,
                             children: MessageHelper.buildEmojiText(
-                              ss.settings.redactedMode.value && ss.settings.hideContactInfo.value
-                                  ? "User Name" : ss.settings.userName.value,
+                              SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value
+                                  ? "User Name"
+                                  : SettingsSvc.settings.userName.value,
                               context.theme.textTheme.bodyLarge!,
                             ),
                           ),
                         ),
-                        subtitle: Text(ss.settings.redactedMode.value && ss.settings.hideContactInfo.value
-                            ? "User iCloud"
-                            : ss.settings.iCloudAccount.isEmpty
-                            ? "Unknown iCloud account"
-                            : ss.settings.iCloudAccount.value, style: context.theme.textTheme.bodyMedium!.apply(color: context.theme.colorScheme.outline)),
-                        trailing: Icon(Icons.edit_outlined, color: context.theme.colorScheme.onBackground),
+                        subtitle: Text(
+                            SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value
+                                ? "User iCloud"
+                                : SettingsSvc.settings.iCloudAccount.isEmpty
+                                    ? "Unknown iCloud account"
+                                    : SettingsSvc.settings.iCloudAccount.value,
+                            style: context.theme.textTheme.bodyMedium!.apply(color: context.theme.colorScheme.outline)),
+                        trailing: Icon(Icons.edit_outlined, color: context.theme.colorScheme.onSurface),
                       ),
                     ),
                   ),
@@ -398,24 +401,28 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
                           updatePhoto();
                         },
                         title: Text("Update your photo", style: context.theme.textTheme.bodyLarge!),
-                        trailing: Icon(Icons.edit_outlined, color: context.theme.colorScheme.onBackground),
+                        trailing: Icon(Icons.edit_outlined, color: context.theme.colorScheme.onSurface),
                       ),
                     ),
                   ),
-                  Obx(() => ss.settings.userAvatarPath.value != null ? Padding(
-                    padding: const EdgeInsets.only(bottom: 5.0),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: ListTile(
-                        mouseCursor: MouseCursor.defer,
-                        onTap: () async {
-                          removePhoto();
-                        },
-                        title: Text("Remove your photo", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.error)),
-                        trailing: Icon(Icons.close, color: context.theme.colorScheme.error),
-                      ),
-                    ),
-                  ) : const SizedBox.shrink()),
+                  Obx(() => SettingsSvc.settings.userAvatarPath.value != null
+                      ? Padding(
+                          padding: const EdgeInsets.only(bottom: 5.0),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: ListTile(
+                              mouseCursor: MouseCursor.defer,
+                              onTap: () async {
+                                removePhoto();
+                              },
+                              title: Text("Remove your photo",
+                                  style: context.theme.textTheme.bodyLarge!
+                                      .copyWith(color: context.theme.colorScheme.error)),
+                              trailing: Icon(Icons.close, color: context.theme.colorScheme.error),
+                            ),
+                          ),
+                        )
+                      : const SizedBox.shrink()),
                 ]),
                 SettingsHeader(
                     iosSubtitle: iosSubtitle,
@@ -430,23 +437,23 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
                             showSnackbar("Relog required!", "Relog required to use profile sharing! Relog in Settings -> Reconfigure");
                             return;
                           }
-                          if (ss.settings.firstName.value == null || ss.settings.lastName.value == null) {
+                          if (SettingsSvc.settings.firstName.value == null || SettingsSvc.settings.lastName.value == null) {
                             await updateName();
                           }
-                          if (ss.settings.firstName.value == null || ss.settings.lastName.value == null) {
+                          if (SettingsSvc.settings.firstName.value == null || SettingsSvc.settings.lastName.value == null) {
                             return;
                           }
-                          ss.settings.nameAndPhotoSharing.value = val;
+                          SettingsSvc.settings.nameAndPhotoSharing.value = val;
                           profileDirty = true;
-                          ss.saveSettings();
+                          SettingsSvc.settings.saveAsync();
                         },
-                        initialVal: ss.settings.nameAndPhotoSharing.value,
+                        initialVal: SettingsSvc.settings.nameAndPhotoSharing.value,
                         title: "Name and Photo Sharing",
                         backgroundColor: tileColor,
                       )),
-                      Obx(() => ss.settings.nameAndPhotoSharing.value ? SettingsOptions<String>(
+                      Obx(() => SettingsSvc.settings.nameAndPhotoSharing.value ? SettingsOptions<String>(
                         title: "Share Automatically",
-                        initial: ss.settings.shareContactAutomatically.value ? "Contacts Only" : "Always Ask",
+                        initial: SettingsSvc.settings.shareContactAutomatically.value ? "Contacts Only" : "Always Ask",
                         clampWidth: false,
                         options: ["Contacts Only", "Always Ask"],
                         secondaryColor: headerColor,
@@ -454,9 +461,9 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
                         capitalize: false,
                         textProcessing: (s) => s,
                         onChanged: (value) async {
-                          ss.settings.shareContactAutomatically.value = value == "Contacts Only";
+                          SettingsSvc.settings.shareContactAutomatically.value = value == "Contacts Only";
                           profileDirty = true;
-                          ss.saveSettings();
+                          SettingsSvc.settings.saveAsync();
                         },
                       ) : const SizedBox.shrink()),
                     ]
@@ -480,32 +487,32 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
                           }
 
                           Logger.info("Enabling messages in iCloud!");
-                          ss.settings.cloudSyncingEnabled.value = val;
-                          ss.saveSettings();
+                          SettingsSvc.settings.cloudSyncingEnabled.value = val;
+                          SettingsSvc.settings.saveAsync();
                           if (!val) {
                             await pushService.resetCloudKitSync();
                           } else {
                             pushService.doCloudKitSync();
                           }
                         },
-                        initialVal: ss.settings.cloudSyncingEnabled.value,
+                        initialVal: SettingsSvc.settings.cloudSyncingEnabled.value,
                         title: "Messages in iCloud (BETA)",
                         backgroundColor: tileColor,
                       ),
-                      if(ss.settings.cloudSyncingEnabled.value)
+                      if(SettingsSvc.settings.cloudSyncingEnabled.value)
                       SettingsSwitch(
                         onChanged: (bool val) async {
-                          ss.settings.attachmentSyncEnabled.value = val;
+                          SettingsSvc.settings.attachmentSyncEnabled.value = val;
                         },
-                        initialVal: ss.settings.attachmentSyncEnabled.value,
+                        initialVal: SettingsSvc.settings.attachmentSyncEnabled.value,
                         title: "Upload attachments",
                         subtitle: "Disable to reduce iCloud storage usage",
                         backgroundColor: tileColor,
                       ),
-                      if(ss.settings.cloudSyncingEnabled.value)
+                      if(SettingsSvc.settings.cloudSyncingEnabled.value)
                       SettingsOptions<int>(
                         title: "Sync history",
-                        initial: _syncHistoryOptions.contains(ss.settings.syncHistoryTime.value) ? ss.settings.syncHistoryTime.value : 0,
+                        initial: _syncHistoryOptions.contains(SettingsSvc.settings.syncHistoryTime.value) ? SettingsSvc.settings.syncHistoryTime.value : 0,
                         clampWidth: false,
                         options: _syncHistoryOptions,
                         secondaryColor: headerColor,
@@ -514,13 +521,13 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
                         textProcessing: (value) => _syncHistoryLabels[value] ?? "No limit",
                         onChanged: (value) async {
                           if (value == null) return;
-                          ss.settings.syncHistoryTime.value = value;
-                          ss.saveSettings();
+                          SettingsSvc.settings.syncHistoryTime.value = value;
+                          SettingsSvc.settings.saveAsync();
                           await pushService.resetCloudKitSync();
                           pushService.doCloudKitSync();
                         },
                       ),
-                      if (quotaInfo.value != null && ss.settings.cloudSyncingEnabled.value)
+                      if (quotaInfo.value != null && SettingsSvc.settings.cloudSyncingEnabled.value)
                       Container(
                           child: Padding(
                             padding: const EdgeInsets.only(bottom: 8.0, left: 15, top: 8.0, right: 15),
@@ -528,12 +535,12 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text("Used ${pushService.formatBytes(quotaInfo.value!.messagesBytes)}. ${pushService.formatBytes(quotaInfo.value!.availableBytes)} available in iCloud."),
-                                Text("Upgrade to iCloud+ on any Apple device or Windows PC for more storage space.", style: context.theme.textTheme.bodySmall!.copyWith(color: context.theme.colorScheme.properOnSurface.withOpacity(0.75), height: 1.5),)
+                                Text("Upgrade to iCloud+ on any Apple device or Windows PC for more storage space.", style: context.theme.textTheme.bodySmall!.copyWith(color: context.theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.75), height: 1.5),)
                               ]
                             ),
                           ),
                       ),
-                      if(ss.settings.cloudSyncingEnabled.value && pushService.isSyncing.value == null)
+                      if(SettingsSvc.settings.cloudSyncingEnabled.value && pushService.isSyncing.value == null)
                       SettingsTile(
                         title: "Sync Now",
                         onTap: () async {
@@ -541,13 +548,13 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
                         },
                         trailing: const NextButton(),
                       ),
-                      if(ss.settings.cloudSyncingEnabled.value)
+                      if(SettingsSvc.settings.cloudSyncingEnabled.value)
                       Container(
                           child: Padding(
                             padding: const EdgeInsets.only(bottom: 8.0, left: 15, top: 8.0, right: 15),
                             child: Text(
                               pushService.isSyncing.value ??
-                              ((ss.prefs.getInt("lastSynced") ?? 0) == 0 ? "Not Synced" : "Synced ${buildChatListDateMaterial(DateTime.fromMillisecondsSinceEpoch(ss.prefs.getInt("lastSynced")!))}")
+                              ((PrefsSvc.i.getInt("lastSynced") ?? 0) == 0 ? "Not Synced" : "Synced ${buildChatListDateMaterial(DateTime.fromMillisecondsSinceEpoch(PrefsSvc.i.getInt("lastSynced")!))}")
                             )
                           ),
                       ),
@@ -564,7 +571,7 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
                     children: [
                       SettingsOptions<String>(
                         title: "Sync contacts with",
-                        initial: ss.settings.contactSyncProvider.value,
+                        initial: SettingsSvc.settings.contactSyncProvider.value,
                         clampWidth: false,
                         options: ["iCloud", "Google", "CardDav"],
                         secondaryColor: headerColor,
@@ -572,14 +579,14 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
                         textProcessing: (str) => str,
                         capitalize: false,
                         onChanged: (value) async {
-                          ss.settings.ctags.clear();
-                          ss.settings.tokens.clear();
-                          ss.settings.contactSyncProvider.value = value ?? "iCloud";
-                          ss.saveSettings();
-                          cs.refreshContacts();
+                          SettingsSvc.settings.ctags.clear();
+                          SettingsSvc.settings.tokens.clear();
+                          SettingsSvc.settings.contactSyncProvider.value = value ?? "iCloud";
+                          SettingsSvc.settings.saveAsync();
+                          ContactsSvcV2.syncContactsToHandles();
                         },
                       ),
-                      if (ss.settings.contactSyncProvider.value == "Google" && googleCreds.value == null)
+                      if (SettingsSvc.settings.contactSyncProvider.value == "Google" && googleCreds.value == null)
                       SettingsTile(
                         title: "Sign In",
                         onTap: () async {
@@ -587,14 +594,14 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
                           if (credentials != null) {
                             print('Signed in successfully: ${credentials.accessToken}');
                             googleCreds.value = credentials;
-                            cs.refreshContacts();
+                            ContactsSvcV2.syncContactsToHandles();
                           } else {
                             print('Sign in failed');
                           }
                         },
                         trailing: const NextButton(),
                       ),
-                      if (ss.settings.contactSyncProvider.value == "Google" && googleCreds.value != null)
+                      if (SettingsSvc.settings.contactSyncProvider.value == "Google" && googleCreds.value != null)
                       SettingsTile(
                         title: "Sign Out",
                         onTap: () async {
@@ -603,7 +610,7 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
                         },
                         trailing: const NextButton(),
                       ),
-                      if (ss.settings.contactSyncProvider.value == "CardDav")
+                      if (SettingsSvc.settings.contactSyncProvider.value == "CardDav")
                       SettingsTile(
                         title: "Set CardDav Server Details",
                         onTap: () async {
@@ -623,8 +630,9 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
                     backgroundColor: tileColor,
                     children: [
                       Obx(() {
-                        bool redact = ss.settings.redactedMode.value;
-                        return Container(
+                        bool redact = SettingsSvc.settings.redactedMode.value;
+                        return SizedBox(
+                          width: double.infinity,
                           child: Padding(
                             padding: const EdgeInsets.only(bottom: 8.0, left: 15, top: 8.0, right: 15),
                             child: AnimatedOpacity(
@@ -662,7 +670,8 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
                                 },
                               ),
                             ),
-                          ));
+                          ),
+                        );
                       }),
                       if (accountInfo['login_status_message']?.startsWith("Deregistered") ?? false)
                         Container(
@@ -679,7 +688,7 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
                               if (ticket == null) {
                                 var isNotReserved = accountInfo['login_status_message']!.contains("Device not reserved!");
 
-                                final status = await http.dio.get("https://hw.openbubbles.app/status");
+                                final status = await HttpSvc.dio.get("https://hw.openbubbles.app/status");
                                 var hasCapacity = status.data["available"];
                                 var description = "When an OpenBubbles subscription becomes invalid, we reserve your device for a few days as a courtesy should you choose to restart your subscription. Unfortunately, however, we have already released your device to another user.";
                                 if (hasCapacity) {
@@ -696,7 +705,7 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
                                       "We're so sorry!",
                                       style: context.theme.textTheme.titleLarge,
                                     ),
-                                    backgroundColor: context.theme.colorScheme.properSurface,
+                                    backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
                                     content: Text(description, style: context.theme.textTheme.bodyLarge),
                                     actions: [
                                       TextButton(
@@ -791,7 +800,7 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
                                 "Get a different hosted device?",
                                 style: context.theme.textTheme.titleLarge,
                               ),
-                              backgroundColor: context.theme.colorScheme.properSurface,
+                              backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
                               content: Text("You will have to log in again with your Apple Account.", style: context.theme.textTheme.bodyLarge),
                               actions: [
                                 TextButton(
@@ -813,7 +822,7 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
                                       if (relay == null) {
                                         throw Exception("Failed to validate!");
                                       }
-                                      final status = await http.dio.post("https://hw.openbubbles.app/swap-token", options: Options(
+                                      final status = await HttpSvc.dio.post("https://hw.openbubbles.app/swap-token", options: Options(
                                         headers: {
                                           "Authorization": "Bearer $relay"
                                         }
@@ -833,12 +842,12 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
 
                                       await pushService.markFailedToLogin(hw: true, logout: true);
 
-                                      var list = ss.settings.cachedCodes.entries.toList();
+                                      var list = SettingsSvc.settings.cachedCodes.entries.toList();
                                       for (var items in list) {
                                         if (!items.key.startsWith("sms-auth-")) continue;
-                                        ss.settings.cachedCodes.remove(items.key);
+                                        SettingsSvc.settings.cachedCodes.remove(items.key);
                                       }
-                                      ss.saveSettings();
+                                      SettingsSvc.settings.saveAsync();
                                     })(), "Changing device...");
                                   },
                                 ),
@@ -886,14 +895,14 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
                                     ],
                                   ),
                                   title: Text("Verification code", style: context.theme.textTheme.titleLarge),
-                                  backgroundColor: context.theme.colorScheme.properSurface,
+                                  backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
                                 );
                               }
                           );
                           },
                           trailing: const NextButton(),
                         ),
-                      if (!(accountInfo['login_status_message']?.contains("Subscription not active!") ?? false) && ss.settings.deviceIsHosted.value)
+                      if (!(accountInfo['login_status_message']?.contains("Subscription not active!") ?? false) && SettingsSvc.settings.deviceIsHosted.value)
                         SettingsTile(
                         title: "Manage subscription",
                         onTap: () async {
@@ -906,10 +915,11 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
                           title: "Start Chats Using",
                           initial: accountInfo['active_alias'],
                           clampWidth: false,
-                          options: accountInfo['vetted_aliases'].map((e) => e['Alias'].toString()).toList().cast<String>(),
+                          options:
+                              accountInfo['vetted_aliases'].map((e) => e['Alias'].toString()).toList().cast<String>(),
                           secondaryColor: headerColor,
                           useCupertino: false,
-                          textProcessing: (str) => ss.settings.redactedMode.value ? (GetUtils.isEmail(str) ? "Redacted Email" : "Redacted Phone") : str,
+                          textProcessing: (str) => SettingsSvc.settings.redactedMode.value ? (GetUtils.isEmail(str) ? "Redacted Email" : "Redacted Phone") : str,
                           capitalize: false,
                           onChanged: (value) async {
                             if (value == null) return;
@@ -929,71 +939,76 @@ class _ProfilePanelState extends OptimizedState<ProfilePanel> with WidgetsBindin
                               }
                             }
                             var myHandles = (await api.getMyPhoneHandles(state: pushService.state!.client));
-                            ss.settings.isSmsRouter.value = val;
+                            SettingsSvc.settings.isSmsRouter.value = val;
 
                             List<api.PrivateDeviceInfo> pendingTargets = val ? await api.getSmsTargets(state: pushService.state!.client, handle: myHandles.first, refresh: true) : [];
                             if (!val) {
-                              await (backend as RustPushBackend).broadcastSmsForwardingState(false, ss.settings.smsRoutingTargets);
+                              await (backend as RustPushBackend).broadcastSmsForwardingState(false, SettingsSvc.settings.smsRoutingTargets);
                             }
-                            ss.settings.smsRoutingTargets.retainWhere((element) => pendingTargets.any((e) => e.uuid == element));
-                            ss.saveSettings();
+                            SettingsSvc.settings.smsRoutingTargets.retainWhere((element) => pendingTargets.any((e) => e.uuid == element));
+                            SettingsSvc.settings.saveAsync();
                             setState(() {
                               forwardingTargets.value = pendingTargets;
                             });
                           },
-                          initialVal: ss.settings.isSmsRouter.value,
+                          initialVal: SettingsSvc.settings.isSmsRouter.value,
                           title: "Text message forwarding (BETA)",
                           subtitle: "See your Android SMS messages on your other Apple devices",
                           backgroundColor: tileColor,
                           isThreeLine: true,
                         )),
-                      if (!ss.settings.redactedMode.value)
-                      ...(usingRustPush && Platform.isAndroid && ss.settings.isSmsRouter.value ? 
+                      if (!SettingsSvc.settings.redactedMode.value)
+                      ...(usingRustPush && Platform.isAndroid && SettingsSvc.settings.isSmsRouter.value ? 
                         forwardingTargets.filter((target) => target.uuid != null && target.deviceName != null).map((target) => SettingsSwitch(
                           onChanged: (bool val) async {
                             if (!target.isHsaTrusted) {
                               showSnackbar("Can't enable SMS forwarding!", "Re-log in with 2fa on the other device");
                               return;
                             }
-                            if (ss.settings.smsRoutingTargets.contains(target.uuid)) {
-                              ss.settings.smsRoutingTargets.remove(target.uuid);
+                            if (SettingsSvc.settings.smsRoutingTargets.contains(target.uuid)) {
+                              SettingsSvc.settings.smsRoutingTargets.remove(target.uuid);
                               setState(() { });
                               await (backend as RustPushBackend).broadcastSmsForwardingState(false, [target.uuid!]);
                             } else {
-                              ss.settings.smsRoutingTargets.add(target.uuid!);
+                              SettingsSvc.settings.smsRoutingTargets.add(target.uuid!);
                               setState(() { });                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
                               await (backend as RustPushBackend).broadcastSmsForwardingState(true, [target.uuid!]);
                             }
-                            ss.saveSettings();
+                            SettingsSvc.settings.saveAsync();
                           },
-                          initialVal: ss.settings.smsRoutingTargets.contains(target.uuid),
+                          initialVal: SettingsSvc.settings.smsRoutingTargets.contains(target.uuid),
                           title: target.deviceName!,
                           backgroundColor: tileColor,
                         ))
                        : [])
                     ],
                   )),
-                if (!isNullOrEmpty(accountContact['name']))
-                  SettingsHeader(
-                      iosSubtitle: iosSubtitle,
-                      materialSubtitle: materialSubtitle,
-                      text: "iMessage Contact Card"),
-                if (!isNullOrEmpty(accountContact['name']))
-                  SettingsSection(
-                    backgroundColor: tileColor,
-                    children: [
-                      SettingsTile(
-                        leading: (accountContact['avatar'] == null) ? const CircleAvatar() : ContactAvatarWidget(
-                          handle: null,
-                          contact: isNullOrEmpty(accountContact['avatar']) ? null : Contact(id: randomString(9), displayName: "", avatar: base64Decode(accountContact['avatar'])),
+              if (!isNullOrEmpty(accountContact['name']))
+                SettingsHeader(
+                    iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "iMessage Contact Card"),
+              if (!isNullOrEmpty(accountContact['name']))
+                SettingsSection(
+                  backgroundColor: tileColor,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SettingsTile(
+                          leading: !isNullOrEmpty(accountContact['avatar'])
+                              ? CircleAvatar(
+                                  backgroundImage: MemoryImage(base64Decode(accountContact['avatar'].toString())),
+                                  radius: 20,
+                                )
+                              : const CircleAvatar(),
+                          title: accountContact['name'],
+                          subtitle: "Your sharable iMessage contact card",
                         ),
-                        title: accountContact['name'],
-                        subtitle: "Your sharable iMessage contact card",
-                      ),
-                      const SettingsSubtitle(subtitle: "Visit iMessage settings on your Mac to update.")
-                    ],
-                  ),
-              ],
+                        const SettingsSubtitle(subtitle: "Visit iMessage settings on your Mac to update."),
+                      ],
+                    ),
+                  ],
+                ),
+            ],
           ),
         ),
         const SliverPadding(

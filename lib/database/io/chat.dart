@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
-import 'package:async_task/async_task.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/database.dart';
@@ -11,9 +10,11 @@ import 'package:bluebubbles/services/network/backend_service.dart';
 import 'package:bluebubbles/services/rustpush/rustpush_service.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
-import 'package:collection/collection.dart';
+import 'package:bluebubbles/services/backend/interfaces/chat_interface.dart';
 import 'package:dio/dio.dart';
+import 'package:faker/faker.dart';
 import 'package:flutter/foundation.dart';
+import 'package:bluebubbles/models/models.dart' show MessageSaveResult;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart' hide Response;
@@ -26,154 +27,13 @@ import 'package:supercharged/supercharged.dart';
 import 'package:tuple/tuple.dart';
 import 'package:universal_io/io.dart';
 
-/// Async method to get attachments from objectbox
-class GetChatAttachments extends AsyncTask<List<dynamic>, List<Attachment>> {
-  final List<dynamic> stuff;
-
-  GetChatAttachments(this.stuff);
-
-  @override
-  AsyncTask<List<dynamic>, List<Attachment>> instantiate(List<dynamic> parameters,
-      [Map<String, SharedData>? sharedData]) {
-    return GetChatAttachments(parameters);
-  }
-
-  @override
-  List<dynamic> parameters() {
-    return stuff;
-  }
-
-  @override
-  FutureOr<List<Attachment>> run() {
-    /// Pull args from input and create new instances of store and boxes
-    int chatId = stuff[0];
-    bool includeDeleted = stuff[1];
-    return Database.runInTransaction(TxMode.read, () {
-      /// Query the [Database.messageBox] for all the message IDs and order by date
-      /// descending
-      final query = (Database.messages.query(includeDeleted
-          ? Message_.dateCreated.notNull().and(Message_.dateDeleted.isNull().or(Message_.dateDeleted.notNull()))
-          : Message_.dateDeleted.isNull().and(Message_.dateCreated.notNull()))
-            ..link(Message_.chat, Chat_.id.equals(chatId))
-            ..order(Message_.dateCreated, flags: Order.descending))
-          .build();
-      final messages = query.find();
-      query.close();
-
-      final actualAttachments = <Attachment>[];
-
-      /// Match the attachments to their messages
-      for (Message m in messages) {
-        m.attachments = List<Attachment>.from(m.dbAttachments.where((element) => element.mimeType != null));
-        actualAttachments.addAll((m.attachments).map((e) => e!));
-      }
-
-      /// Remove duplicate attachments from the list, just in case
-      if (actualAttachments.isNotEmpty) {
-        final guids = actualAttachments.map((e) => e.guid).toSet();
-        actualAttachments.retainWhere((element) => guids.remove(element.guid));
-      }
-      return actualAttachments;
-    });
-  }
-}
-
-/// Async method to get messages from objectbox
-class GetMessages extends AsyncTask<List<dynamic>, List<Message>> {
-  final List<dynamic> stuff;
-
-  GetMessages(this.stuff);
-
-  @override
-  AsyncTask<List<dynamic>, List<Message>> instantiate(List<dynamic> parameters, [Map<String, SharedData>? sharedData]) {
-    return GetMessages(parameters);
-  }
-
-  @override
-  List<dynamic> parameters() {
-    return stuff;
-  }
-
-  @override
-  FutureOr<List<Message>> run() {
-    /// Pull args from input and create new instances of store and boxes
-    int chatId = stuff[0];
-    int offset = stuff[1];
-    int limit = stuff[2];
-    bool includeDeleted = stuff[3];
-    int? searchAround = stuff[4];
-    return Database.runInTransaction(TxMode.read, () {
-      /// Get the message IDs for the chat by querying the [cmJoinBox]
-      final messages = <Message>[];
-      if (searchAround == null) {
-        final query = (Database.messages.query(includeDeleted
-            ? Message_.dateCreated.notNull().and(Message_.dateDeleted.isNull().or(Message_.dateDeleted.notNull()))
-            : Message_.dateDeleted.isNull().and(Message_.dateCreated.notNull()))
-          ..link(Message_.chat, Chat_.id.equals(chatId))
-          ..order(Message_.dateCreated, flags: Order.descending))
-            .build();
-        query
-          ..limit = limit
-          ..offset = offset;
-        messages.addAll(query.find());
-        query.close();
-      } else {
-        final beforeQuery = (Database.messages.query(Message_.dateCreated.lessThan(searchAround).and(includeDeleted
-            ? Message_.dateCreated.notNull().and(Message_.dateDeleted.isNull().or(Message_.dateDeleted.notNull()))
-            : Message_.dateDeleted.isNull().and(Message_.dateCreated.notNull())))
-          ..link(Message_.chat, Chat_.id.equals(chatId))
-          ..order(Message_.dateCreated, flags: Order.descending))
-            .build();
-        beforeQuery.limit = limit;
-        final before = beforeQuery.find();
-        beforeQuery.close();
-        final afterQuery = (Database.messages.query(Message_.dateCreated.greaterThan(searchAround).and(includeDeleted
-            ? Message_.dateCreated.notNull().and(Message_.dateDeleted.isNull().or(Message_.dateDeleted.notNull()))
-            : Message_.dateDeleted.isNull().and(Message_.dateCreated.notNull())))
-          ..link(Message_.chat, Chat_.id.equals(chatId))
-          ..order(Message_.dateCreated))
-            .build();
-        afterQuery.limit = limit;
-        final after = afterQuery.find();
-        afterQuery.close();
-        messages..addAll(before)..addAll(after);
-      }
-
-      /// Fetch and match handles
-      final chat = Database.chats.get(chatId);
-      for (int i = 0; i < messages.length; i++) {
-        Message message = messages[i];
-        if (chat!.participants.isNotEmpty && !message.isFromMe! && message.handleId != null && message.handleId != 0) {
-          Handle? handle = chat.participants.firstWhereOrNull((e) => e.originalROWID == message.handleId) ?? message.getHandle();
-          if (handle == null && message.originalROWID != null) {
-            messages.remove(message);
-            i--;
-          } else {
-            message.handle = handle;
-          }
-        }
-      }
-      final messageGuids = messages.map((e) => e.guid!).toList();
-      final associatedMessagesQuery =
-          (Database.messages.query(Message_.associatedMessageGuid.oneOf(messageGuids))..order(Message_.originalROWID)).build();
-      List<Message> associatedMessages = associatedMessagesQuery.find();
-      associatedMessagesQuery.close();
-      associatedMessages = MessageHelper.normalizedAssociatedMessages(associatedMessages);
-      for (Message m in associatedMessages) {
-        if (m.associatedMessageType != "sticker") continue;
-        m.attachments = List<Attachment>.from(m.dbAttachments);
-      }
-      for (Message m in messages) {
-        m.attachments = List<Attachment>.from(m.dbAttachments);
-        m.associatedMessages = associatedMessages.where((e) => e.associatedMessageGuid == m.guid).toList();
-      }
-      return messages;
-    });
-  }
-}
+// NOTE: the GetChatAttachments / GetMessages / AddMessages / GetChats AsyncTask
+// classes that used to live here were removed upstream -- that work now happens
+// in lib/services/backend/actions/*_actions.dart behind the isolate interfaces.
+// The two rustpush "zen mode" helpers below are OpenBubbles-only and are kept.
 
 Future<String> getZenKey(String key) async {
-  return await mcs.invokeMethod("zen-mode-uuid", { "key": key });
+  return await MethodChannelSvc.invokeMethod("zen-mode-uuid", { "key": key });
 }
 
 Future<api.StatusKitPersonalConfig> configForMask(int mask) async {
@@ -191,116 +51,9 @@ Future<api.StatusKitPersonalConfig> configForMask(int mask) async {
   ]);
 }
 
-/// Async method to add messages to objectbox
-class AddMessages extends AsyncTask<List<dynamic>, List<Message>> {
-  final List<dynamic> stuff;
-
-  AddMessages(this.stuff);
-
-  @override
-  AsyncTask<List<dynamic>, List<Message>> instantiate(List<dynamic> parameters, [Map<String, SharedData>? sharedData]) {
-    return AddMessages(parameters);
-  }
-
-  @override
-  List<dynamic> parameters() {
-    return stuff;
-  }
-
-  @override
-  FutureOr<List<Message>> run() {
-    /// Pull args from input and create new instances of store and boxes
-    List<Message> messages = stuff[0].map((e) => Message.fromMap(e)).toList().cast<Message>();
-
-    /// Save the new messages and their attachments in a write transaction
-    final newMessages = Database.runInTransaction(TxMode.write, () {
-      List<Message> newMessages = Message.bulkSave(messages);
-      Attachment.bulkSave(
-          Map.fromIterables(newMessages, newMessages.map((e) => (e.attachments).map((e) => e!).toList())));
-      return newMessages;
-    });
-
-    /// fetch attachments and reactions in a read transaction
-    return Database.runInTransaction(TxMode.read, () {
-      final messageGuids = newMessages.map((e) => e.guid!).toList();
-
-      /// Query the [Database.messageBox] for associated messages (reactions) matching the
-      /// message IDs
-      final associatedMessagesQuery =
-          (Database.messages.query(Message_.associatedMessageGuid.oneOf(messageGuids))..order(Message_.originalROWID)).build();
-      List<Message> associatedMessages = associatedMessagesQuery.find();
-      associatedMessagesQuery.close();
-      associatedMessages = MessageHelper.normalizedAssociatedMessages(associatedMessages);
-
-      /// Assign the relevant attachments and associated messages to the original
-      /// messages
-      for (Message m in associatedMessages) {
-        if (m.associatedMessageType != "sticker") continue;
-        m.attachments = List<Attachment>.from(m.dbAttachments);
-      }
-      for (Message m in newMessages) {
-        m.attachments = List<Attachment>.from(m.dbAttachments);
-        m.associatedMessages = associatedMessages.where((e) => e.associatedMessageGuid == m.guid).toList();
-      }
-      return newMessages;
-    });
-  }
-}
-
-/// Async method to get chats from objectbox
-class GetChats extends AsyncTask<List<dynamic>, List<Chat>> {
-  final List<dynamic> stuff;
-
-  GetChats(this.stuff);
-
-  @override
-  AsyncTask<List<dynamic>, List<Chat>> instantiate(List<dynamic> parameters, [Map<String, SharedData>? sharedData]) {
-    return GetChats(parameters);
-  }
-
-  @override
-  List<dynamic> parameters() {
-    return stuff;
-  }
-
-  @override
-  FutureOr<List<Chat>> run() {
-    return Database.runInTransaction(TxMode.write, () {
-      late final QueryBuilder<Chat> queryBuilder;
-
-      // If the 3rd param is available, it's for an ID query.
-      // Otherwise, query without any criteria
-      if (stuff.length >= 3 && stuff[2] != null && stuff[2] is List) {
-        queryBuilder = Database.chats.query(Chat_.id.oneOf(stuff[2] as List<int>));
-      } else {
-        queryBuilder = Database.chats.query(Chat_.dateDeleted.isNull().and(Chat_.isRoutingStub.equals(false).or(Chat_.isRoutingStub.isNull())));
-      }
-
-      // Build the query, applying some sorting so we get data in the correct order.
-      // As well as some limit and offset parameters
-      Query<Chat> query = (queryBuilder
-            ..order(Chat_.isPinned, flags: Order.descending)
-            ..order(Chat_.dbOnlyLatestMessageDate, flags: Order.descending))
-          .build()
-        ..limit = stuff[0]
-        ..offset = stuff[1];
-
-      // Execute the query, then close the DB connection
-      final chats = query.find();
-      query.close();
-
-      /// Assign the handles to the chats, deduplicate, and get fake participants
-      /// for redacted mode
-      for (Chat c in chats) {
-        c._participants = List<Handle>.from(c.handles);
-        c._deduplicateParticipants();
-        c.title = c.getTitle();
-      }
-      return chats;
-    });
-  }
-}
-
+/// OpenBubbles-only: SharedPreferences key holding the CloudKit record ids of
+/// chats deleted locally but not yet deleted from iCloud by rustpush.
+const String kChatDeletionIdsKey = "chatDeletionIds-1";
 
 @Entity()
 class Chat {
@@ -316,52 +69,65 @@ class Chat {
   String? muteArgs;
   bool? isPinned;
   bool? hasUnreadMessage;
+  /// OpenBubbles-only: cached [getTitle] result.
   String? title;
+
+  /// OpenBubbles-only: the conversation name rustpush reports over APNs.
   String? apnTitle;
+
   String get properTitle {
-    if (ss.settings.redactedMode.value && ss.settings.hideContactInfo.value) {
+    if (SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value) {
       return getTitle();
     }
     title ??= getTitle();
     return title!;
   }
+
   String? displayName;
-  List<Handle> _participants = [];
-  List<Handle> get participants {
-    if (_participants.isEmpty) {
-      getParticipants();
-    }
-    return _participants;
-  }
   bool? autoSendReadReceipts;
   bool? autoSendTypingIndicators;
   String? textFieldText;
   String? textFieldAnnotations;
   List<String> textFieldAttachments = [];
-  Message? _latestMessage;
-  Message get latestMessage {
-    if (_latestMessage != null) return _latestMessage!;
-    _latestMessage = Chat.getMessages(this, limit: 1, getDetails: true).firstOrNull ?? Message(
-      dateCreated: DateTime.fromMillisecondsSinceEpoch(0),
-      guid: guid,
-    );
-    return _latestMessage!;
-  }
-  Message get dbLatestMessage {
-    _latestMessage = Chat.getMessages(this, limit: 1, getDetails: true).firstOrNull ?? Message(
-      dateCreated: DateTime.fromMillisecondsSinceEpoch(0),
-      guid: guid,
-    );
-    return _latestMessage!;
-  }
-  set latestMessage(Message m) => _latestMessage = m;
+
+  /// ObjectBox ToOne relation to the latest message for O(1) lookup.
+  /// Keep [dbOnlyLatestMessageDate] in sync via [setLatestMessage].
+  final dbLatestMessage = ToOne<Message>();
+
   @Property(uid: 526293286661780207)
   DateTime? dbOnlyLatestMessageDate;
+
+  /// Update the latest-message relation and its sort-key in one step.
+  /// Persists both fields to the DB asynchronously (fire-and-forget).
+  void setLatestMessage(Message m) {
+    dbLatestMessage.target = m;
+    dbOnlyLatestMessageDate = m.dateCreated;
+    unawaited(saveAsync(updateLatestMessage: true));
+  }
+
   DateTime? dateDeleted;
   int? style;
   bool lockChatName;
   bool lockChatIcon;
   String? lastReadMessageGuid;
+  String? customThemeLight;
+  String? customThemeDark;
+
+  /// [ChatWallpaperType.name] - "none" (default/absent), "image", or "dynamic".
+  /// Read via `ChatWallpaperType.fromName(chat.wallpaperType)`.
+  @Property(uid: 699362128358203439)
+  String? wallpaperType;
+
+  /// [DynamicWallpaperDefinition.id] of the selected dynamic wallpaper, when
+  /// [wallpaperType] is "dynamic". Null otherwise.
+  @Property(uid: 3728602269935984680)
+  String? dynamicWallpaperId;
+
+  /// JSON-encoded config map for [dynamicWallpaperId], via [WallpaperConfigCodec].
+  @Property(uid: 738307263391205523)
+  String? dynamicWallpaperConfig;
+
+  // ---- OpenBubbles (rustpush / iCloud sync) columns ----
   int? groupVersion;
 
   Uint8List? cloudData;
@@ -372,15 +138,22 @@ class Chat {
 
   Message get sendLastMessage {
     var messages = Chat.getMessages(this, limit: 10, getDetails: true);
-    return messages.firstWhereOrNull((msg) => msg.stagingGuid != null || (msg.guid != null && !msg.guid!.contains("temp") && !msg.guid!.contains("error"))) ?? Message(
-      dateCreated: DateTime.fromMillisecondsSinceEpoch(0),
-      guid: guid,
-    );
+    return messages.firstWhereOrNull((msg) =>
+            msg.stagingGuid != null ||
+            (msg.guid != null && !msg.guid!.contains("temp") && !msg.guid!.contains("error"))) ??
+        Message(
+          dateCreated: DateTime.fromMillisecondsSinceEpoch(0),
+          guid: guid,
+        );
   }
 
   final RxnString _customAvatarPath = RxnString();
   String? get customAvatarPath => _customAvatarPath.value;
   set customAvatarPath(String? s) => _customAvatarPath.value = s;
+
+  final RxnString _customBackgroundPath = RxnString();
+  String? get customBackgroundPath => _customBackgroundPath.value;
+  set customBackgroundPath(String? s) => _customBackgroundPath.value = s;
 
   final RxnInt _pinIndex = RxnInt();
   int? get pinIndex => _pinIndex.value;
@@ -392,7 +165,7 @@ class Chat {
   void handlesChanged() {
     var cachedChat = cvc(this).chat;
     cachedChat.handles = handles; // someone can't keep their objects in sync...
-    cachedChat._participants = [];
+    cachedChat.participants = [];
   }
 
   List<String> guidRefs = [];
@@ -412,8 +185,28 @@ class Chat {
   String? transcriptPosterPath;
   int transcriptBackgroundVersion = 1;
 
+  // Do not use this field directly, use the handles ToMany relation instead.
+  // This should only really be used for serialization/deserialization purposes.
+  @Transient()
+  List<Handle> participants = [];
+
   @Backlink('chat')
   final messages = ToMany<Message>();
+
+  @Backlink('chats')
+  final customGroups = ToMany<CustomGroup>();
+
+  @Transient()
+  String? _fakeName;
+
+  @Transient()
+  String get fakeName {
+    if (_fakeName != null) return _fakeName!;
+    final color = faker.color.color();
+    final animal = faker.animal.name();
+    _fakeName = "${color.capitalize} ${animal.capitalize}";
+    return _fakeName!;
+  }
 
   Chat({
     this.id,
@@ -426,9 +219,10 @@ class Chat {
     this.hasUnreadMessage = false,
     this.displayName,
     String? customAvatar,
+    String? customBackground,
     int? pinnedIndex,
-    List<Handle>? participants,
     Message? latestMessage,
+    this.participants = const [],
     this.autoSendReadReceipts,
     this.autoSendTypingIndicators,
     this.textFieldText,
@@ -439,6 +233,11 @@ class Chat {
     this.lockChatName = false,
     this.lockChatIcon = false,
     this.lastReadMessageGuid,
+    this.customThemeLight,
+    this.customThemeDark,
+    this.wallpaperType,
+    this.dynamicWallpaperId,
+    this.dynamicWallpaperConfig,
     this.usingHandle,
     this.isRpSms = false,
     this.telephonyId,
@@ -451,10 +250,10 @@ class Chat {
     List<String>? guidRefs,
   }) : guidRefs = guidRefs ?? [guid] {
     customAvatarPath = customAvatar;
+    customBackgroundPath = customBackground;
     pinIndex = pinnedIndex;
     if (textFieldAttachments.isEmpty) textFieldAttachments = [];
-    _participants = participants ?? [];
-    _latestMessage = latestMessage;
+    if (latestMessage != null) dbOnlyLatestMessageDate ??= latestMessage.dateCreated;
   }
 
   factory Chat.fromMap(Map<String, dynamic> json) {
@@ -463,6 +262,8 @@ class Chat {
       id: json["ROWID"] ?? json["id"],
       guid: json["guid"],
       chatIdentifier: json["chatIdentifier"],
+      participants:
+          (json['participants'] as List? ?? []).map((e) => Handle.fromMap(e!.cast<String, Object>())).toList(),
       isArchived: json['isArchived'] ?? false,
       muteType: json["muteType"],
       muteArgs: json["muteArgs"],
@@ -471,8 +272,8 @@ class Chat {
       latestMessage: message,
       displayName: json["displayName"],
       customAvatar: json['_customAvatarPath'],
+      customBackground: json['_customBackgroundPath'],
       pinnedIndex: json['_pinIndex'],
-      participants: (json['participants'] as List? ?? []).map((e) => Handle.fromMap(e!.cast<String, Object>())).toList(),
       autoSendReadReceipts: json["autoSendReadReceipts"],
       autoSendTypingIndicators: json["autoSendTypingIndicators"],
       dateDeleted: parseDate(json["dateDeleted"]),
@@ -480,6 +281,13 @@ class Chat {
       lockChatName: json["lockChatName"] ?? false,
       lockChatIcon: json["lockChatIcon"] ?? false,
       lastReadMessageGuid: json["lastReadMessageGuid"],
+      customThemeLight: json["customThemeLight"],
+      customThemeDark: json["customThemeDark"],
+      wallpaperType: json["wallpaperType"],
+      dynamicWallpaperId: json["dynamicWallpaperId"],
+      dynamicWallpaperConfig: json["dynamicWallpaperConfig"],
+      textFieldText: json["textFieldText"],
+      textFieldAttachments: (json["textFieldAttachments"] as List?)?.cast<String>() ?? const [],
       usingHandle: json["usingHandle"],
       isRpSms: json["isRpSms"] ?? false,
       guidRefs: json["guidRefs"]?.cast<String>() ?? [],
@@ -498,7 +306,7 @@ class Chat {
       if (isRoutingStub) {
         acceptableHandles = await api.getMyPhoneHandles(state: pushService.state!.client);
       } else {
-        acceptableHandles = ss.settings.smsForwardingTargets.keys.toList();
+        acceptableHandles = SettingsSvc.settings.smsForwardingTargets.keys.toList();
       }
       if (!acceptableHandles.contains(usingHandle)) {
         usingHandle = null;
@@ -509,7 +317,7 @@ class Chat {
         if (isRoutingStub) {
           usingHandle = (await api.getMyPhoneHandles(state: pushService.state!.client))[0];
         } else {
-          usingHandle = ss.settings.smsForwardingTargets.keys.firstOrNull!;
+          usingHandle = SettingsSvc.settings.smsForwardingTargets.keys.firstOrNull!;
         }
         save(updateUsingHandle: true);
       } else {
@@ -534,7 +342,14 @@ class Chat {
     customAvatarPath = null;
   }
 
-  /// Save a chat to the DB
+  /// Save a chat to the DB, synchronously, on the calling isolate.
+  ///
+  /// OpenBubbles keeps this alongside upstream's [saveAsync]: a lot of fork code
+  /// (rustpush service, SMS routing, zen mode, iCloud sync) needs a chat row
+  /// written and its `id` available immediately, and it has to persist the
+  /// rustpush-only columns that `ChatInterface.saveChat` knows nothing about.
+  ///
+  /// Prefer [saveAsync] for anything that only touches upstream fields.
   Chat save({
     bool updateMuteType = false,
     bool updateMuteArgs = false,
@@ -545,6 +360,7 @@ class Chat {
     bool updateAutoSendReadReceipts = false,
     bool updateAutoSendTypingIndicators = false,
     bool updateCustomAvatarPath = false,
+    bool updateCustomBackgroundPath = false,
     bool updateTextFieldText = false,
     bool updateTextFieldAnnotations = false,
     bool updateTextFieldAttachments = false,
@@ -553,6 +369,9 @@ class Chat {
     bool updateLockChatName = false,
     bool updateLockChatIcon = false,
     bool updateLastReadMessageGuid = false,
+    bool updateLatestMessage = false,
+    bool updateCustomThemes = false,
+    bool updateWallpaperSettings = false,
     bool updateGroupVersion = false,
     bool updateUsingHandle = false,
     bool updateIsSms = false,
@@ -676,13 +495,30 @@ class Chat {
       if (!updateTranscriptBackgroundVersion) {
         transcriptBackgroundVersion = existing?.transcriptBackgroundVersion ?? transcriptBackgroundVersion;
       }
+      if (!updateCustomBackgroundPath) {
+        customBackgroundPath = existing?.customBackgroundPath ?? customBackgroundPath;
+      }
+      if (!updateCustomThemes) {
+        customThemeLight = existing?.customThemeLight ?? customThemeLight;
+        customThemeDark = existing?.customThemeDark ?? customThemeDark;
+      }
+      if (!updateWallpaperSettings) {
+        wallpaperType = existing?.wallpaperType ?? wallpaperType;
+        dynamicWallpaperId = existing?.dynamicWallpaperId ?? dynamicWallpaperId;
+        dynamicWallpaperConfig = existing?.dynamicWallpaperConfig ?? dynamicWallpaperConfig;
+      }
+      if (!updateLatestMessage) {
+        if (!dbLatestMessage.hasValue && (existing?.dbLatestMessage.hasValue ?? false)) {
+          dbLatestMessage.targetId = existing!.dbLatestMessage.targetId;
+        }
+        dbOnlyLatestMessageDate = existing?.dbOnlyLatestMessageDate ?? dbOnlyLatestMessageDate;
+      }
+      dbOnlyLatestMessageDate ??= dbLatestMessage.target?.dateCreated;
 
       /// Save the chat and add the participants
       for (int i = 0; i < participants.length; i++) {
         participants[i] = participants[i].save();
-        _deduplicateParticipants();
       }
-      dbOnlyLatestMessageDate = dbLatestMessage.dateCreated!;
       try {
         id = Database.chats.put(this);
         // make sure to add participant relation if its a new chat
@@ -692,22 +528,83 @@ class Chat {
           toSave.handles.addAll(participants);
           toSave.handles.applyToDb();
         } else if (existing == null && participants.isEmpty) {
-          cm.fetchChat(guid);
+          unawaited(ChatsSvc.fetchChat(guid));
         }
       } on UniqueViolationException catch (_) {}
     });
     return this;
   }
 
+  /// Save a chat to the DB asynchronously (non-blocking)
+  Future<Chat> saveAsync({
+    bool updateMuteType = false,
+    bool updateMuteArgs = false,
+    bool updateIsPinned = false,
+    bool updatePinIndex = false,
+    bool updateIsArchived = false,
+    bool updateHasUnreadMessage = false,
+    bool updateAutoSendReadReceipts = false,
+    bool updateAutoSendTypingIndicators = false,
+    bool updateCustomAvatarPath = false,
+    bool updateCustomBackgroundPath = false,
+    bool updateTextFieldText = false,
+    bool updateTextFieldAnnotations = false,
+    bool updateTextFieldAttachments = false,
+    bool updateDisplayName = false,
+    bool updateDateDeleted = false,
+    bool updateLockChatName = false,
+    bool updateLockChatIcon = false,
+    bool updateLastReadMessageGuid = false,
+    bool updateLatestMessage = false,
+    bool updateCustomThemes = false,
+    bool updateWallpaperSettings = false,
+  }) async {
+    if (kIsWeb) return this;
+
+    await ChatInterface.saveChat(
+      guid: guid,
+      chatData: toMap(),
+      updateFlags: {
+        'updateMuteType': updateMuteType,
+        'updateMuteArgs': updateMuteArgs,
+        'updateIsPinned': updateIsPinned,
+        'updatePinIndex': updatePinIndex,
+        'updateIsArchived': updateIsArchived,
+        'updateHasUnreadMessage': updateHasUnreadMessage,
+        'updateAutoSendReadReceipts': updateAutoSendReadReceipts,
+        'updateAutoSendTypingIndicators': updateAutoSendTypingIndicators,
+        'updateCustomAvatarPath': updateCustomAvatarPath,
+        'updateCustomBackgroundPath': updateCustomBackgroundPath,
+        'updateTextFieldText': updateTextFieldText,
+        'updateTextFieldAttachments': updateTextFieldAttachments,
+        'updateDisplayName': updateDisplayName,
+        'updateDateDeleted': updateDateDeleted,
+        'updateLockChatName': updateLockChatName,
+        'updateLockChatIcon': updateLockChatIcon,
+        'updateLastReadMessageGuid': updateLastReadMessageGuid,
+        'updateLatestMessage': updateLatestMessage,
+        'updateCustomThemes': updateCustomThemes,
+        'updateWallpaperSettings': updateWallpaperSettings,
+      },
+    );
+
+    return this;
+  }
+
   Future<int> getPersonalConfig() async {
     if (participants.length > 1 || participants.isEmpty || !Platform.isAndroid) return 0;
 
-    bool isStarredContact = await mcs.invokeMethod("is-conversation-exempt", {
+    // Pre-merge this read `participants.first.contact!.id` off the old Contact
+    // model. ContactV2 stores the address-book id as `nativeContactId`.
+    final nativeContactId = participants.first.contactsV2.firstWhereOrNull((c) => c.isNative)?.nativeContactId;
+    if (nativeContactId == null) return 0;
+
+    bool isStarredContact = await MethodChannelSvc.invokeMethod("is-conversation-exempt", {
       "mode": "star",
-      "contactId": participants.first.contact!.id.toInt(),
+      "contactId": int.tryParse(nativeContactId) ?? 0,
     });
 
-    bool isPriority = await mcs.invokeMethod("is-conversation-exempt", {
+    bool isPriority = await MethodChannelSvc.invokeMethod("is-conversation-exempt", {
       "mode": "priority",
       "guid": guid
     });
@@ -720,8 +617,12 @@ class Chat {
   }
 
   void fixZenModeShared() async {
-    if (!ss.settings.enableShareZen.value) return;
-    bool wantsZenMode = (shareZenMode ?? true) && participants.firstOrNull?.contact?.isShared == false;
+    if (!SettingsSvc.settings.enableShareZen.value) return;
+    // `contact?.isShared == false` on the old Contact model meant "this is a
+    // real address-book contact, not an Apple contact-sharing suggestion".
+    // ContactV2's equivalent is `isNative`.
+    bool wantsZenMode =
+        (shareZenMode ?? true) && (participants.firstOrNull?.contactsV2.any((c) => c.isNative) ?? false);
     var config = wantsZenMode ? await getPersonalConfig() : null;
     if (config == zenModeIsShared) return;
     var statuskit = pushService.state?.icloudServices?.statuskitClient;
@@ -955,7 +856,7 @@ class Chat {
     if (result == null) {
       result = await backend.createChat(participants, null, "SMS");
       result.isRoutingStub = true;
-      chats.updateChat(result);
+      ChatsSvc.updateChat(result);
     }
     result.telephonyId = tid;
     result.save(updateTelephonyId: true);
@@ -963,7 +864,7 @@ class Chat {
   }
 
   Future<void> deliverSMS(String sender, bool fromMe, List<Map<String, dynamic>> parts) async {
-    if (!ss.settings.isSmsRouter.value) {
+    if (!SettingsSvc.settings.isSmsRouter.value) {
       return; // don't deliver if not enabled :)
     }
     if (sender.isEmail) return; // no one uses this feature anyway, and can't debug it due to TMO's MXRT AUP
@@ -1079,66 +980,59 @@ class Chat {
   }
 
   /// Change a chat's display name
-  Chat changeName(String? name) {
+  Future<Chat> changeNameAsync(String? name) async {
     if (kIsWeb) {
       displayName = name;
       return this;
     }
     displayName = name;
-    save(updateDisplayName: true);
+    await saveAsync(updateDisplayName: true);
     return this;
   }
 
   /// Get a chat's title
-  String getTitle() {
-    if (isNullOrEmpty(displayName)) {
-      title = getChatCreatorSubtitle();
-    } else {
-      title = displayName;
-    }
-    return title!;
-  }
+  String getTitle() => isNullOrEmpty(displayName) ? getChatCreatorSubtitle() : displayName!;
 
   /// Get a chat's title
   String getChatCreatorSubtitle() {
-    // generate names for group chats or DMs
-    List<String> titles = participants.map((e) => e.displayName.trim().split(isGroup && e.contact != null ? " " : String.fromCharCode(65532)).first).toList();
-    if (titles.isEmpty) {
-      if(chatIdentifier != null) {
-        if (chatIdentifier!.startsWith("urn:biz")) {
-          return "Business Chat";
-        }
-        return chatIdentifier!;
-      } else {
-        return "Unnamed chat";
+    final count = handles.length;
+    if (count == 0) {
+      if (chatIdentifier == null) return "Unnamed chat";
+      if (chatIdentifier!.startsWith("urn:biz")) {
+        return "Business Chat";
       }
-    } else if (titles.length == 1) {
-      return titles[0];
-    } else if (titles.length <= 4) {
-      final _title = titles.join(", ");
-      int pos = _title.lastIndexOf(", ");
-      if (pos != -1) {
-        return "${_title.substring(0, pos)} & ${_title.substring(pos + 2)}";
-      } else {
-        return _title;
+      return chatIdentifier!;
+    } else if (count == 1) {
+      return handles.first.displayName;
+    }
+
+    if (count <= 4) {
+      final buffer = StringBuffer();
+      for (int i = 0; i < count; i++) {
+        if (i > 0) buffer.write(i == count - 1 ? ' & ' : ', ');
+        buffer.write(handles[i].shortName);
       }
+      return buffer.toString();
     } else {
-      final _title = titles.take(3).join(", ");
-      return "$_title & ${titles.length - 3} others";
+      final buffer = StringBuffer();
+      for (int i = 0; i < 3; i++) {
+        if (i > 0) buffer.write(', ');
+        buffer.write(handles[i].shortName);
+      }
+      buffer.write(' & ${count - 3} others');
+      return buffer.toString();
     }
   }
 
   /// Return whether or not the notification should be muted
   bool shouldMuteNotification(Message? message) {
     /// Filter unknown senders & sender doesn't have a contact, then don't notify
-    if (ss.settings.filterUnknownSenders.value &&
-        participants.length == 1 &&
-        participants.first.contact == null) {
+    if (SettingsSvc.settings.filterUnknownSenders.value && handles.length == 1 && handles.first.contactsV2.isEmpty) {
       return true;
 
       /// Check if global text detection is on and notify accordingly
-    } else if (ss.settings.globalTextDetection.value.isNotEmpty) {
-      List<String> text = ss.settings.globalTextDetection.value.split(",");
+    } else if (SettingsSvc.settings.globalTextDetection.value.isNotEmpty) {
+      List<String> text = SettingsSvc.settings.globalTextDetection.value.split(",");
       for (String s in text) {
         if (message?.text?.toLowerCase().contains(s.toLowerCase()) ?? false) {
           return false;
@@ -1153,14 +1047,14 @@ class Chat {
       /// Check if the sender is muted
     } else if (muteType == "mute_individuals") {
       List<String> individuals = muteArgs!.split(",");
-      return individuals.contains(message?.handle?.address ?? "");
+      return individuals.contains(message?.handleRelation.target?.address ?? "");
 
       /// Check if the chat is temporarily muted
     } else if (muteType == "temporary_mute") {
       DateTime time = DateTime.parse(muteArgs!);
       bool shouldMute = DateTime.now().toLocal().difference(time).inSeconds.isNegative;
       if (!shouldMute) {
-        toggleMute(false);
+        toggleMuteAsync(false);
       }
       return shouldMute;
 
@@ -1176,153 +1070,175 @@ class Chat {
     }
 
     /// If reaction and notify reactions off, then don't notify, otherwise notify
-    return !ss.settings.notifyReactions.value &&
+    return !SettingsSvc.settings.notifyReactions.value &&
         ReactionTypes.toList().contains(message?.associatedMessageType ?? "");
   }
 
-  /// Delete a chat locally. Prefer using softDelete so the chat doesn't come back
-  static void deleteChat(Chat chat) async {
+  /// Delete a chat locally. Prefer using [softDelete] so the chat doesn't come back.
+  static Future<void> deleteChat(Chat chat) async {
     if (kIsWeb) return;
-    // close the convo view page if open and wait for it to be disposed before deleting
-    if (cm.activeChat?.chat.guid == chat.guid) {
-      ns.closeAllConversationView(Get.context!);
-      await cm.setAllInactive();
-      await Future.delayed(const Duration(milliseconds: 500));
+
+    // OpenBubbles-only: rustpush deletes the chat from iCloud on the next sync
+    // pass; record the CloudKit id before the row goes away.
+    if (chat.ckRecordId != null && !pushService.syncStopDelete) {
+      try {
+        // ignore: deprecated_member_use
+        final prefs = PrefsSvc.i;
+        final list = List<String>.from(prefs.getStringList(kChatDeletionIdsKey) ?? const <String>[]);
+        list.add(chat.ckRecordId!);
+        await prefs.setStringList(kChatDeletionIdsKey, list);
+      } catch (_) {}
     }
-    List<Message> messages = Chat.getMessages(chat);
-    List<Attachment> attachments = await chat.getAttachmentsAsync();
+
+    // OpenBubbles-only: also remove the attachment files from disk.
+    final attachments = await chat.getAttachmentsAsync();
     for (Attachment attachment in attachments) {
       try {
         File(attachment.getFile().path!).deleteSync();
-      } catch(e) {
+      } catch (e) {
         Logger.debug("Failed to rm attachment $e");
       }
     }
-    Database.runInTransaction(TxMode.write, () {
-      /// Remove all references of chat and its messages
-      Database.chats.remove(chat.id!);
-      Database.messages.removeMany(messages.map((e) => e.id!).toList());
-      Database.attachments.removeMany(attachments.map((e) => e.id!).toList());
-    });
-    if (chat.ckRecordId != null && !pushService.syncStopDelete) {
-      var list = ss.prefs.getStringList("chatDeletionIds-1") ?? [];
-      list.add(chat.ckRecordId!);
-      ss.prefs.setStringList("chatDeletionIds-1", list);
-    }
+
+    await ChatsSvc.deleteChat(chat);
   }
 
-  static void softDelete(Chat chat, {bool markDeleted = true}) async {
+  static Future<void> softDelete(Chat chat, {bool markDeleted = true}) async {
     if (kIsWeb) return;
-    // close the convo view page if open and wait for it to be disposed before deleting
-    if (cm.activeChat?.chat.guid == chat.guid) {
-      ns.closeAllConversationView(Get.context!);
-      await cm.setAllInactive();
-      await Future.delayed(const Duration(milliseconds: 500));
-    }
-    Database.runInTransaction(TxMode.write, () {
-      chat.dateDeleted = DateTime.now().toUtc();
-      chat.hasUnreadMessage = false;
-      chat.save(updateDateDeleted: true, updateHasUnreadMessage: true);
-      chat.clearTranscript();
-    });
+    // ChatsSvc.softDeleteChat closes the conversation view, soft-deletes the
+    // row and calls chat.clearTranscript() for us.
+    await ChatsSvc.softDeleteChat(chat);
     if (markDeleted) {
+      // OpenBubbles: tell rustpush about the deletion.
       await backend.moveToRecycleBin(chat, null);
     }
   }
 
-  static void unDelete(Chat chat) async {
+  static Future<void> unDelete(Chat chat) async {
     if (kIsWeb) return;
-    Database.runInTransaction(TxMode.write, () {
-      chat.dateDeleted = null;
-      chat.senderIsKnown = chat.handles.any((handle) => !(handle.contact?.isShared ?? true));
-      chat.save(updateDateDeleted: true, updateSenderIsKnown: true);
-    });
+    chat.dateDeleted = null;
+    // Pre-merge this was `!(handle.contact?.isShared ?? true)` on the old
+    // Contact model. ContactV2 has no `isShared`; a contact that came from the
+    // device's address book (isNative) is the equivalent of "really known".
+    chat.senderIsKnown = chat.handles.any((handle) => handle.contactsV2.any((c) => c.isNative));
+    chat.save(updateDateDeleted: true, updateSenderIsKnown: true);
+    await ChatsSvc.unDeleteChat(chat);
   }
 
-  Chat toggleHasUnread(bool hasUnread, {bool force = false, bool newOnMessage = false, bool clearLocalNotifications = true, bool privateMark = true}) {
+  /// OpenBubbles compatibility: synchronous, fire-and-forget wrapper around
+  /// [toggleHasUnreadAsync] for the fork's call sites.
+  Chat toggleHasUnread(bool hasUnread,
+      {bool force = false,
+      bool newOnMessage = false,
+      bool clearLocalNotifications = true,
+      bool privateMark = true}) {
+    unawaited(toggleHasUnreadAsync(hasUnread,
+        force: force,
+        newOnMessage: newOnMessage,
+        clearLocalNotifications: clearLocalNotifications,
+        privateMark: privateMark));
+    return this;
+  }
+
+  /// Toggle unread status - pure DB operation
+  /// Note: For full unread toggle with active chat awareness, use ChatsSvc.toggleChatHasUnread
+  Future<Chat> toggleHasUnreadAsync(bool hasUnread,
+      {bool force = false,
+      bool newOnMessage = false,
+      bool clearLocalNotifications = true,
+      bool privateMark = true}) async {
     if (kIsDesktop && !hasUnread) {
-      notif.clearDesktopNotificationsForChat(guid);
+      NotificationsSvc.clearDesktopNotificationsForChat(guid);
     }
 
     if (hasUnreadMessage == hasUnread && !force) return this;
+    // OpenBubbles: never flip a chat to unread while it is on screen, and only
+    // notify the other side when the read state actually changed.
     var changed = false;
-    if (!cm.isChatActive(guid) || !hasUnread || force) {
-      changed = Chat.findOne(guid: guid)!.hasUnreadMessage! != hasUnread || newOnMessage;
+    if (!ChatsSvc.isChatActive(guid) || !hasUnread || force) {
+      changed = (Chat.findOne(guid: guid)?.hasUnreadMessage ?? !hasUnread) != hasUnread || newOnMessage;
       hasUnreadMessage = hasUnread;
-      save(updateHasUnreadMessage: true);
+      await saveAsync(updateHasUnreadMessage: true);
     }
-    if (cm.isChatActive(guid) && hasUnread && !force) {
+    if (ChatsSvc.isChatActive(guid) && hasUnread && !force) {
       hasUnread = false;
       clearLocalNotifications = false;
     }
 
     try {
-      if (clearLocalNotifications && !hasUnread && !ls.isBubble) {
-        mcs.invokeMethod(
-          "delete-notification",
-          {
-            "notification_id": id,
-            "tag": NotificationsService.NEW_MESSAGE_TAG
-          }
+      if (clearLocalNotifications && !hasUnread) {
+        ChatInterface.clearNotificationForChat(
+          chatId: id!,
+          chatGuid: guid,
         );
       }
+      // OpenBubbles routes read/unread through the BackendService (rustpush)
+      // rather than ChatInterface/HttpSvc.
       if (privateMark && changed) {
         if (!hasUnread) {
-          backend.markRead(this, ss.settings.enablePrivateAPI.value && (autoSendReadReceipts ?? ss.settings.privateMarkChatAsRead.value));
-        } else if (hasUnread) {
+          backend.markRead(
+              this,
+              SettingsSvc.settings.enablePrivateAPI.value &&
+                  (autoSendReadReceipts ?? SettingsSvc.settings.privateMarkChatAsRead.value));
+        } else {
           backend.markUnread(this);
         }
       }
-    } catch (_) {}
+    } catch (e, s) {
+      Logger.warn("Failed to mark chat as read on message add", error: e, trace: s, tag: 'Chat');
+    }
 
     return this;
   }
 
-  Future<Chat> addMessage(Message message, {bool changeUnreadStatus = true, bool checkForMessageText = true, bool clearNotificationsIfFromMe = true}) async {
-    // If this is a message preview and we don't already have metadata for this, get it
-    if (message.fullText.replaceAll("\n", " ").hasUrl && !MetadataHelper.mapIsNotEmpty(message.metadata) && !message.hasApplePayloadData) {
-      MetadataHelper.fetchMetadata(message).then((Metadata? meta) async {
-        // If the metadata is empty, don't do anything
-        if (!MetadataHelper.isNotEmpty(meta)) return;
-
-        // Save the metadata to the object
-        message.metadata = meta!.toJson();
-      });
-    }
-
-    // Save the message
-    Message? latest = latestMessage;
+  /// Add message to chat - pure DB operation
+  /// Note: For full message add with service updates, use ChatsSvc.addMessageToChat
+  Future<MessageSaveResult> addMessage(Message message,
+      {bool changeUnreadStatus = true,
+      bool checkForMessageText = true,
+      bool clearNotificationsIfFromMe = true,
+      List<Attachment> attachments = const []}) async {
+    // Save the message using the interface
+    Message? latest = dbLatestMessage.target;
     Message? newMessage;
+    bool isNewer = false;
 
     try {
-      newMessage = message.save(chat: this);
+      final result = await ChatInterface.addMessageToChat(
+        messageData: message.toMap(),
+        attachmentsData: attachments.map((e) => e.toMap()).toList(),
+        chatData: toMap(),
+        latestMessageData: (latest ?? Message(dateCreated: DateTime.fromMillisecondsSinceEpoch(0), guid: guid)).toMap(),
+        checkForMessageText: checkForMessageText,
+      );
+
+      // Extract from MessageSaveResult
+      newMessage = result.message;
+      isNewer = result.isNewer;
     } catch (ex, stacktrace) {
       newMessage = Message.findOne(guid: message.guid);
       if (newMessage == null) {
-        Logger.error("Failed to add message (GUID: ${message.guid}) to chat (GUID: $guid)", error: ex, trace: stacktrace);
+        Logger.error("Failed to add message (GUID: ${message.guid}) to chat (GUID: $guid)",
+            error: ex, trace: stacktrace);
       }
     }
-    // Save any attachments
-    for (Attachment? attachment in message.attachments) {
-      attachment!.save(newMessage);
-    }
-    bool isNewer = false;
 
-    // If the message was saved correctly, update this chat's latestMessage info,
-    // but only if the incoming message's date is newer
-    if ((newMessage?.id != null || kIsWeb) && checkForMessageText) {
-      isNewer = message.dateCreated!.isAfter(latest.dateCreated!)
-          || (message.guid != latest.guid && message.dateCreated == latest.dateCreated);
-      if (isNewer) {
-        _latestMessage = message;
-        if (dateDeleted != null) {
-          dateDeleted = null;
-          save(updateDateDeleted: true);
-          await chats.addChat(this);
-        }
-        if (isArchived! && !_latestMessage!.isFromMe! && ss.settings.unarchiveOnNewMessage.value && !participants.first.isBlocked()) {
-          toggleArchived(false);
-        }
+    // Handle post-save operations on main thread
+    if (isNewer) {
+      // Link the saved (DB-hydrated) message so a freshly-added chat's tile is
+      // built with its subtitle populated on first paint.
+      setLatestMessage(newMessage ?? message);
+      if (dateDeleted != null) {
+        dateDeleted = null;
+        await saveAsync(updateDateDeleted: true);
+        await ChatsSvc.addChat(this);
+      }
+      // OpenBubbles: don't unarchive on a message from a blocked sender.
+      if (isArchived! &&
+          !message.isFromMe! &&
+          SettingsSvc.settings.unarchiveOnNewMessage.value &&
+          !(participants.firstOrNull?.isBlocked() ?? false)) {
+        await toggleArchivedAsync(false);
       }
     }
 
@@ -1335,59 +1251,101 @@ class Chat {
     // Save the chat.
     // This will update the latestMessage info as well as update some
     // other fields that we want to "mimic" from the server
-    save();
+    await saveAsync();
 
     // If the incoming message was newer than the "last" one, set the unread status accordingly
     if (checkForMessageText && changeUnreadStatus && isNewer) {
-      // If the message is from me, mark it unread
-      // If the message is not from the same chat as the current chat, mark unread
-      if (message.isFromMe! || cm.isChatActive(guid)) {
-        // force if the chat is active to ensure private api mark read
-        toggleHasUnread(
-          false,
-          clearLocalNotifications: clearNotificationsIfFromMe,
-          force: cm.isChatActive(guid),
-          // only private mark if the chat is active
-          privateMark: cm.isChatActive(guid),
-          newOnMessage: !message.isFromMe!
-        );
-      } else if (!cm.isChatActive(guid)) {
-        toggleHasUnread(true, privateMark: false);
+      // OpenBubbles: force a (private-API) mark-read while the chat is on screen.
+      final isActive = ChatsSvc.isChatActive(guid);
+      if (message.isFromMe! || isActive) {
+        await toggleHasUnreadAsync(false,
+            clearLocalNotifications: clearNotificationsIfFromMe,
+            force: isActive,
+            privateMark: isActive,
+            newOnMessage: !message.isFromMe!);
+      } else {
+        await toggleHasUnreadAsync(true, privateMark: false);
       }
     }
 
     // If the message is for adding or removing participants,
     // we need to ensure that all of the chat participants are correct by syncing with the server
     if (message.isParticipantEvent && checkForMessageText) {
-      serverSyncParticipants();
+      serverSyncParticipantsAsync();
     }
 
-    // Return the current chat instance (with updated vals)
-    return this;
+    // Return the saved message and isNewer flag
+    return MessageSaveResult(newMessage ?? message, isNewer);
   }
 
-  void serverSyncParticipants() async {
-    // Send message to server to get the participants
-    final chat = await cm.fetchChat(guid);
-    if (chat != null) {
-      chat.save();
+  Future<void> serverSyncParticipantsAsync() async {
+    // Sync participants from server - delegates to service layer
+    // Note: For full sync with service updates, this is called by ChatsSvc.addMessageToChat
+    try {
+      final response = await HttpSvc.chat.fetchOne(guid, withQuery: "participants");
+      if (response.statusCode == 200 && response.data["data"] != null) {
+        final chatData = response.data["data"];
+        final updatedChat = (await ChatInterface.bulkSyncChats(chatsData: [chatData])).chats;
+        if (updatedChat.isNotEmpty) {
+          await updatedChat.first.saveAsync();
+        }
+      }
+    } catch (ex, stacktrace) {
+      Logger.error("Failed to sync participants", error: ex, trace: stacktrace);
     }
   }
 
-  static int? count() {
-    return Database.chats.count();
-  }
+  // count() method moved to ChatsService
 
   Future<List<Attachment>> getAttachmentsAsync({bool fetchDeleted = false}) async {
     if (kIsWeb || id == null) return [];
 
-    final task = GetChatAttachments([id!, fetchDeleted]);
-    return (await createAsyncTask<List<Attachment>>(task)) ?? [];
+    final stopwatch = Stopwatch()..start();
+
+    /// Query the messages for this chat using ObjectBox's async API
+    final messageQuery = (Database.messages.query(fetchDeleted
+            ? Message_.dateCreated.notNull().and(Message_.dateDeleted.isNull().or(Message_.dateDeleted.notNull()))
+            : Message_.dateDeleted.isNull().and(Message_.dateCreated.notNull()))
+          ..link(Message_.chat, Chat_.id.equals(id!))
+          ..order(Message_.dateCreated, flags: Order.descending))
+        .build();
+
+    // Execute query in worker isolate
+    final messages = await messageQuery.findAsync();
+    messageQuery.close();
+
+    if (messages.isEmpty) {
+      stopwatch.stop();
+      Logger.debug("Fetched 0 messages for chat $guid in ${stopwatch.elapsedMilliseconds} ms");
+      return [];
+    }
+
+    // Get all message IDs to query attachments
+    final messageIds = messages.map((e) => e.id!).toList();
+
+    // Query attachments linked to these messages asynchronously
+    final attachmentQuery = (Database.attachments.query(Attachment_.mimeType.notNull())
+          ..link(Attachment_.message, Message_.id.oneOf(messageIds)))
+        .build();
+
+    final attachments = await attachmentQuery.findAsync();
+    attachmentQuery.close();
+
+    // Remove duplicate attachments from the list, just in case
+    if (attachments.isNotEmpty) {
+      final guids = attachments.map((e) => e.guid).toSet();
+      attachments.retainWhere((element) => guids.remove(element.guid));
+    }
+
+    stopwatch.stop();
+    Logger.debug("Fetched ${attachments.length} attachments for chat $guid in ${stopwatch.elapsedMilliseconds} ms");
+    return attachments;
   }
 
   /// Gets messages synchronously - DO NOT use in performance-sensitive areas,
   /// otherwise prefer [getMessagesAsync]
-  static List<Message> getMessages(Chat chat, {int offset = 0, int limit = 25, bool includeDeleted = false, bool getDetails = false}) {
+  static List<Message> getMessages(Chat chat,
+      {int offset = 0, int limit = 25, bool includeDeleted = false, bool getDetails = false}) {
     if (kIsWeb || chat.id == null) return [];
     return Database.runInTransaction(TxMode.read, () {
       final query = (Database.messages.query(includeDeleted
@@ -1403,13 +1361,12 @@ class Chat {
       query.close();
       for (int i = 0; i < messages.length; i++) {
         Message message = messages[i];
-        if (chat.participants.isNotEmpty && !message.isFromMe! && message.handleId != null && message.handleId != 0) {
-          Handle? handle = chat.participants.firstWhereOrNull((e) => e.originalROWID == message.handleId) ?? message.getHandle();
+        if (chat.handles.isNotEmpty && !message.isFromMe! && message.handleId != null && message.handleId != 0) {
+          Handle? handle = chat.handles.firstWhereOrNull((e) => e.originalROWID == message.handleId) ??
+              message.handleRelation.target;
           if (handle == null) {
             messages.remove(message);
             i--;
-          } else {
-            message.handle = handle;
           }
         }
       }
@@ -1423,7 +1380,6 @@ class Chat {
         associatedMessagesQuery.close();
         associatedMessages = MessageHelper.normalizedAssociatedMessages(associatedMessages);
         for (Message m in messages) {
-          m.attachments = List<Attachment>.from(m.dbAttachments);
           m.associatedMessages = associatedMessages.where((e) => e.associatedMessageGuid == m.guid).toList();
         }
       }
@@ -1431,75 +1387,138 @@ class Chat {
     });
   }
 
-  /// Fetch messages asynchronously
+  /// Fetch messages asynchronously with progressive loading
+  /// Returns messages with attachments, then loads reactions in background
   static Future<List<Message>> getMessagesAsync(Chat chat,
-      {int offset = 0, int limit = 25, bool includeDeleted = false, int? searchAround}) async {
+      {int offset = 0,
+      int limit = 25,
+      bool includeDeleted = false,
+      int? searchAround,
+      Function? onSupplementalDataLoaded}) async {
     if (kIsWeb || chat.id == null) return [];
 
-    final task = GetMessages([chat.id, offset, limit, includeDeleted, searchAround]);
-    return (await createAsyncTask<List<Message>>(task)) ?? [];
+    final totalStopwatch = Stopwatch()..start();
+
+    // PHASE 1: Query messages with attachments using interface/actions pattern
+    final messages = await ChatInterface.getMessagesAsync(
+      chatId: chat.id!,
+      chatGuid: chat.guid,
+      participantsData: chat.handles.map((e) => e.toMap()).toList(),
+      offset: offset,
+      limit: limit,
+      includeDeleted: includeDeleted,
+      searchAround: searchAround,
+    );
+
+    if (messages.isEmpty) {
+      return messages;
+    }
+
+    // PHASE 2: Load reactions in background (non-blocking)
+    final messageGuids = messages.map((e) => e.guid!).toList();
+
+    // Don't await - let this run in background and call callback when done
+    _loadSupplementalDataAsync(messages, messageGuids, totalStopwatch, onSupplementalDataLoaded);
+
+    totalStopwatch.stop();
+    Logger.debug("[getMessagesAsync] RETURNED (Phase 1 complete): ${totalStopwatch.elapsedMilliseconds}ms");
+
+    // Return messages immediately (reactions/attachments will be added later)
+    return messages;
   }
 
-  Chat getParticipants() {
-    if (kIsWeb || id == null) return this;
-    Database.runInTransaction(TxMode.read, () {
-      /// Find the handles themselves
-      _participants = List<Handle>.from(handles);
-    });
+  /// Load reactions in background and append to messages
+  static Future<void> _loadSupplementalDataAsync(
+    List<Message> messages,
+    List<String> messageGuids,
+    Stopwatch totalStopwatch,
+    Function? onComplete,
+  ) async {
+    final supplementalStopwatch = Stopwatch()..start();
 
-    _deduplicateParticipants();
-    return this;
+    try {
+      var associatedMessages = await ChatInterface.loadSupplementalData(
+        messageGuids: messageGuids,
+      );
+
+      Logger.debug("[getMessagesAsync] Phase 2 - Supplemental query: ${supplementalStopwatch.elapsedMilliseconds}ms");
+
+      // Normalize reactions
+      associatedMessages = MessageHelper.normalizedAssociatedMessages(associatedMessages);
+
+      // Append reactions to original messages
+      int messagesWithReactions = 0;
+      for (Message m in messages) {
+        final messageReactions = associatedMessages.where((e) => e.associatedMessageGuid == m.guid).toList();
+        m.associatedMessages = messageReactions;
+        if (messageReactions.isNotEmpty) {
+          messagesWithReactions++;
+          Logger.debug("[getMessagesAsync] Phase 2 - Added ${messageReactions.length} reactions to message ${m.guid}",
+              tag: "MessageReactivity");
+        }
+      }
+
+      supplementalStopwatch.stop();
+      Logger.debug(
+          "[getMessagesAsync] Phase 2 - COMPLETE: ${supplementalStopwatch.elapsedMilliseconds}ms (${associatedMessages.length} reactions on $messagesWithReactions messages)");
+
+      // Notify caller that supplemental data has been loaded
+      if (onComplete != null) {
+        Logger.debug("[getMessagesAsync] Phase 2 - Calling onComplete callback", tag: "MessageReactivity");
+        onComplete();
+      } else {
+        Logger.warn("[getMessagesAsync] Phase 2 - No onComplete callback provided!", tag: "MessageReactivity");
+      }
+    } catch (ex, stacktrace) {
+      Logger.error("Failed to load supplemental data for messages", error: ex, trace: stacktrace);
+    }
   }
 
   void webSyncParticipants() {}
 
-  void _deduplicateParticipants() {
-    if (_participants.isEmpty) return;
-    final ids = _participants.map((e) => e.uniqueAddressAndService).toSet();
-    _participants.retainWhere((element) => ids.remove(element.uniqueAddressAndService));
-  }
-
-  Chat togglePin(bool isPinned) {
+  /// Toggle pin status - pure DB operation
+  /// Note: For full pin toggle with service updates, use ChatsSvc.toggleChatPin
+  Future<Chat> togglePinAsync(bool isPinned) async {
     if (id == null) return this;
     this.isPinned = isPinned;
     _pinIndex.value = null;
-    save(updateIsPinned: true, updatePinIndex: true);
-    chats.updateChat(this);
-    chats.sort();
+    await saveAsync(updateIsPinned: true, updatePinIndex: true);
     return this;
   }
 
-  Chat toggleMute(bool isMuted) {
+  Future<Chat> toggleMuteAsync(bool isMuted) async {
     if (id == null) return this;
     muteType = isMuted ? "mute" : null;
     muteArgs = null;
-    save(updateMuteType: true, updateMuteArgs: true);
+    await saveAsync(updateMuteType: true, updateMuteArgs: true);
     return this;
   }
 
-  Chat toggleArchived(bool isArchived) {
+  /// Toggle archive status - pure DB operation
+  /// Note: For full archive toggle with service updates, use ChatsSvc.toggleChatArchive
+  Future<Chat> toggleArchivedAsync(bool isArchived) async {
     if (id == null) return this;
     isPinned = false;
     this.isArchived = isArchived;
-    save(updateIsPinned: true, updateIsArchived: true);
-    chats.updateChat(this);
-    chats.sort();
+    await saveAsync(updateIsPinned: true, updateIsArchived: true);
     return this;
   }
 
-  Chat toggleAutoRead(bool? autoSendReadReceipts) {
+  Future<Chat> toggleAutoReadAsync(bool? autoSendReadReceipts) async {
     if (id == null) return this;
     this.autoSendReadReceipts = autoSendReadReceipts;
-    save(updateAutoSendReadReceipts: true);
-    backend.markRead(this, autoSendReadReceipts ?? ss.settings.privateMarkChatAsRead.value);
+    await saveAsync(updateAutoSendReadReceipts: true);
+    // OpenBubbles routes this through the BackendService (rustpush).
+    backend.markRead(this, autoSendReadReceipts ?? SettingsSvc.settings.privateMarkChatAsRead.value);
     return this;
   }
 
-  Chat toggleAutoType(bool? autoSendTypingIndicators) {
+  Future<Chat> toggleAutoTypeAsync(bool? autoSendTypingIndicators) async {
     if (id == null) return this;
     this.autoSendTypingIndicators = autoSendTypingIndicators;
-    save(updateAutoSendTypingIndicators: true);
-    if (!(autoSendTypingIndicators ?? ss.settings.privateSendTypingIndicators.value)) {
+    await saveAsync(updateAutoSendTypingIndicators: true);
+    if (!(autoSendTypingIndicators ?? SettingsSvc.settings.privateSendTypingIndicators.value)) {
+      // OpenBubbles routes this through the BackendService (rustpush).
       backend.stoppedTyping(this);
     }
     return this;
@@ -1593,7 +1612,7 @@ class Chat {
       result.apnTitle = data.cvName;
       if (mine.isNotEmpty) result.usingHandle = mine[0];
       result = result.save();
-      chats.updateChat(result);
+      ChatsSvc.updateChat(result);
     }
     return result;
   }
@@ -1615,34 +1634,53 @@ class Chat {
     return null;
   }
 
-  static Future<List<Chat>> getChats({int limit = 15, int offset = 0, List<int> ids = const []}) async {
+  static Future<List<Chat>> getChatsAsync({int limit = 15, int offset = 0, List<int> ids = const []}) async {
     if (kIsWeb) throw Exception("Use socket to get chats on Web!");
 
-    final task = GetChats([limit, offset, ids.isEmpty ? null : ids]);
-    return (await createAsyncTask<List<Chat>>(task)) ?? [];
-  }
+    final chats = await ChatInterface.getChatsAsync(
+      limit: limit,
+      offset: offset,
+      ids: ids,
+    );
 
-  static Future<List<Chat>> syncLatestMessages(List<Chat> chats, bool toggleUnread) async {
-    if (kIsWeb) throw Exception("Use socket to sync the last message on Web!");
+    // Populate contact name cache on main thread for ALL chats in one transaction
+    // The cache populated in the isolate doesn't transfer through JSON serialization
+    // Database.runInTransaction(TxMode.read, () {
+    //   for (Chat c in chats) {
+    //     // Re-fetch handles from ObjectBox to get proper instances with relationships
+    //     if (c._participants.isNotEmpty) {
+    //       final handleIds = c._participants.map((h) => h.id).whereType<int>().where((id) => id != 0).toList();
+    //       if (handleIds.isNotEmpty) {
+    //         final handlesBox = Database.handles;
+    //         final fetchedHandles = handlesBox.getMany(handleIds).whereType<Handle>().toList();
+    //         c._participants = fetchedHandles;
 
-    final task = SyncLastMessages([chats, toggleUnread]);
-    return (await createAsyncTask<List<Chat>>(task)) ?? [];
+    //         // Cache contact names while in transaction
+    //         for (final handle in c._participants) {
+    //           Logger.debug('[TEST] Handle has formatted address: ${handle.formattedAddress}');
+    //           final contactCount = handle.contactsV2.length;
+    //           if (contactCount > 0) {
+    //             handle.cachedContactName = handle.contactsV2.first.displayName;
+    //           } else {
+    //             handle.cachedContactName = null;
+    //           }
+    //         }
+    //       }
+    //     }
+    //   }
+    // });
+
+    return chats;
   }
 
   static Future<List<Chat>> bulkSyncChats(List<Chat> chats) async {
     if (kIsWeb) throw Exception("Web does not support saving chats!");
     if (chats.isEmpty) return [];
 
-    final task = BulkSyncChats([chats]);
-    return (await createAsyncTask<List<Chat>>(task)) ?? [];
-  }
-
-  static Future<List<Message>> bulkSyncMessages(Chat chat, List<Message> messages) async {
-    if (kIsWeb) throw Exception("Web does not support saving messages!");
-    if (messages.isEmpty) return [];
-
-    final task = BulkSyncMessages([chat, messages]);
-    return (await createAsyncTask<List<Message>>(task)) ?? [];
+    return (await ChatInterface.bulkSyncChats(
+      chatsData: chats.map((e) => e.toMap()).toList(),
+    ))
+        .chats;
   }
 
   void clearTranscript() {
@@ -1656,28 +1694,44 @@ class Chat {
     });
   }
 
+  /// OpenBubbles-only: undo [clearTranscript].
   void restoreTranscript() {
     if (kIsWeb) return;
     Database.runInTransaction(TxMode.write, () {
-      final toDelete = List<Message>.from(messages);
-      for (Message element in toDelete) {
+      final toRestore = List<Message>.from(messages);
+      for (Message element in toRestore) {
         element.dateDeleted = null;
       }
-      Database.messages.putMany(toDelete);
+      Database.messages.putMany(toRestore);
     });
   }
 
-  bool get isTextForwarding => guid.startsWith("SMS") || isRpSms;
+  Future<void> clearTranscriptAsync() async {
+    if (kIsWeb || id == null) return;
 
-  bool get isSMS => false;
+    await ChatInterface.clearTranscriptAsync(
+      chatId: id!,
+      chatGuid: guid,
+    );
+  }
 
-  bool get isIMessage => !isTextForwarding && !isSMS;
+  /// The messaging service this chat belongs to, derived from the GUID prefix.
+  ChatServiceType get service => ChatServiceType.fromGuid(guid);
 
-  bool get isGroup => participants.length > 1 || style == 43;
+  /// OpenBubbles: rustpush SMS-relay chats count as text forwarding too.
+  bool get isTextForwarding => service == ChatServiceType.sms || isRpSms;
+
+  bool get isSMS => service == ChatServiceType.sms;
+
+  bool get isIMessage => service == ChatServiceType.iMessage;
+
+  // Check style first so handles isn't required to be evaluated, which will incur a DB lookup.
+  bool get isGroup => style == 43 || handles.length > 1;
 
   Chat merge(Chat other) {
     id ??= other.id;
     _customAvatarPath.value ??= other._customAvatarPath.value;
+    _customBackgroundPath.value ??= other._customBackgroundPath.value;
     _pinIndex.value ??= other._pinIndex.value;
     autoSendReadReceipts ??= other.autoSendReadReceipts;
     autoSendTypingIndicators ??= other.autoSendTypingIndicators;
@@ -1694,11 +1748,15 @@ class Chat {
     hasUnreadMessage ??= other.hasUnreadMessage;
     isArchived ??= other.isArchived;
     isPinned ??= other.isPinned;
-    _latestMessage ??= other.latestMessage;
+    if (dbLatestMessage.target == null && other.dbLatestMessage.target != null) {
+      setLatestMessage(other.dbLatestMessage.target!);
+    }
     muteArgs ??= other.muteArgs;
-    title ??= other.title;
     dateDeleted ??= other.dateDeleted;
     style ??= other.style;
+    wallpaperType ??= other.wallpaperType;
+    dynamicWallpaperId ??= other.dynamicWallpaperId;
+    dynamicWallpaperConfig ??= other.dynamicWallpaperConfig;
     return this;
   }
 
@@ -1709,23 +1767,34 @@ class Chat {
     }
 
     // If b is pinned & ordered, but a isn't either pinned or ordered, return accordingly
-    if (b!.isPinned! && b.pinIndex != null && (!a.isPinned! || a.pinIndex == null)) return 1;
+    if (b!.isPinned! && b.pinIndex != null && (!a.isPinned! || a.pinIndex == null)) {
+      return 1;
+    }
     // If a is pinned & ordered, but b isn't either pinned or ordered, return accordingly
-    if (a.isPinned! && a.pinIndex != null && (!b.isPinned! || b.pinIndex == null)) return -1;
+    if (a.isPinned! && a.pinIndex != null && (!b.isPinned! || b.pinIndex == null)) {
+      return -1;
+    }
 
     // Compare when one is pinned and the other isn't
-    if (!a.isPinned! && b.isPinned!) return 1;
-    if (a.isPinned! && !b.isPinned!) return -1;
+    if (!a.isPinned! && b.isPinned!) {
+      return 1;
+    }
+    if (a.isPinned! && !b.isPinned!) {
+      return -1;
+    }
 
-    // Compare the last message dates
-    return -(a.latestMessage.dateCreated)!.compareTo(b.latestMessage.dateCreated!);
+    // Compare the last message dates (negate to sort newest first)
+    final aDate = a.dbOnlyLatestMessageDate ?? DateTime.fromMillisecondsSinceEpoch(0);
+    final bDate = b.dbOnlyLatestMessageDate ?? DateTime.fromMillisecondsSinceEpoch(0);
+    return -aDate.compareTo(bDate);
   }
 
   String getIconPath(int responseLength) {
-    return "${fs.appDocDir.path}/avatars/${guid.characters.where((char) => char.isAlphabetOnly || char.isNumericOnly).join()}/avatar-$responseLength.jpg";
+    return "${FilesystemSvc.appDocDir.path}/avatars/${guid.characters.where((char) => char.isAlphabetOnly || char.isNumericOnly).join()}/avatar-$responseLength.jpg";
   }
 
   static Future<void> getIcon(Chat c, {bool force = false}) async {
+    // OpenBubbles: chat icons come from the BackendService, not HttpSvc directly.
     if ((!force && c.lockChatIcon) || backend.getRemoteService() == null) return;
     final response = await backend.getRemoteService()!.getChatIcon(c.guid).catchError((err, stack) async {
       Logger.error("Failed to get chat icon for chat ${c.getTitle()}", error: err, trace: stack);
@@ -1735,10 +1804,12 @@ class Chat {
       if (c.customAvatarPath != null) {
         await File(c.customAvatarPath!).delete(recursive: true);
         c.customAvatarPath = null;
-        c.save(updateCustomAvatarPath: true);
+        await c.saveAsync(updateCustomAvatarPath: true);
       }
     } else {
       Logger.debug("Got chat icon for chat ${c.getTitle()}");
+      // OpenBubbles names the file after the payload length so a changed icon
+      // lands on a new path and busts any image cache.
       File file = File(c.getIconPath(response.data.length));
       if (!(await file.exists())) {
         await file.create(recursive: true);
@@ -1748,40 +1819,53 @@ class Chat {
       }
       await file.writeAsBytes(response.data);
       c.customAvatarPath = file.path;
-      c.save(updateCustomAvatarPath: true);
+      await c.saveAsync(updateCustomAvatarPath: true);
     }
   }
 
-  Map<String, dynamic> toMap() => {
-    "ROWID": id,
-    "guid": guid,
-    "chatIdentifier": chatIdentifier,
-    "isArchived": isArchived!,
-    "muteType": muteType,
-    "muteArgs": muteArgs,
-    "isPinned": isPinned!,
-    "displayName": displayName,
-    "participants": participants.map((item) => item.toMap()).toList(),
-    "hasUnreadMessage": hasUnreadMessage!,
-    "_customAvatarPath": _customAvatarPath.value,
-    "_pinIndex": _pinIndex.value,
-    "autoSendReadReceipts": autoSendReadReceipts,
-    "autoSendTypingIndicators": autoSendTypingIndicators,
-    "dateDeleted": dateDeleted?.millisecondsSinceEpoch,
-    "style": style,
-    "lockChatName": lockChatName,
-    "lockChatIcon": lockChatIcon,
-    "lastReadMessageGuid": lastReadMessageGuid,
-    "isRpSms": isRpSms,
-    "guidRefs": guidRefs,
-    "telephonyId": telephonyId,
-    // intentionally not [from] for debugging,
-    "textFieldText": textFieldText,
-    "textFieldAnnotations": textFieldAnnotations,
-    "notifsSilenced": notifsSilenced,
-    "zenModeIsShared": zenModeIsShared,
-    "shareZenMode": shareZenMode,
-    "dateNotifiedAnyways": dateNotifiedAnyways?.millisecondsSinceEpoch,
-    "isRoutingStub": isRoutingStub,
-  };
+  Map<String, dynamic> toMap() {
+    final participants = handles.isEmpty ? this.participants : handles.toList();
+    return {
+      "ROWID": id,
+      "guid": guid,
+      "chatIdentifier": chatIdentifier,
+      "isArchived": isArchived!,
+      "muteType": muteType,
+      "muteArgs": muteArgs,
+      "isPinned": isPinned!,
+      "displayName": displayName,
+      "participants": participants.map((item) => item.toMap()).toList(),
+      "hasUnreadMessage": hasUnreadMessage!,
+      "_customAvatarPath": _customAvatarPath.value,
+      "_customBackgroundPath": _customBackgroundPath.value,
+      "_pinIndex": _pinIndex.value,
+      "autoSendReadReceipts": autoSendReadReceipts,
+      "autoSendTypingIndicators": autoSendTypingIndicators,
+      "dateDeleted": dateDeleted?.millisecondsSinceEpoch,
+      "style": style,
+      "lockChatName": lockChatName,
+      "lockChatIcon": lockChatIcon,
+      "lastReadMessageGuid": lastReadMessageGuid,
+      "customThemeLight": customThemeLight,
+      "customThemeDark": customThemeDark,
+      "wallpaperType": wallpaperType,
+      "dynamicWallpaperId": dynamicWallpaperId,
+      "dynamicWallpaperConfig": dynamicWallpaperConfig,
+      "textFieldText": textFieldText,
+      "textFieldAttachments": textFieldAttachments,
+      "dbOnlyLatestMessageDate": dbOnlyLatestMessageDate?.millisecondsSinceEpoch,
+      "dbLatestMessageId": dbLatestMessage.targetId,
+      // ---- OpenBubbles-only ----
+      "isRpSms": isRpSms,
+      "guidRefs": guidRefs,
+      "telephonyId": telephonyId,
+      "textFieldAnnotations": textFieldAnnotations,
+      "notifsSilenced": notifsSilenced,
+      "zenModeIsShared": zenModeIsShared,
+      "shareZenMode": shareZenMode,
+      "dateNotifiedAnyways": dateNotifiedAnyways?.millisecondsSinceEpoch,
+      "isRoutingStub": isRoutingStub,
+      "usingHandle": usingHandle,
+    };
+  }
 }

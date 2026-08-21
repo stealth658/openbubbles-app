@@ -7,7 +7,6 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.Person
 import androidx.core.app.RemoteInput
@@ -26,6 +25,7 @@ import io.flutter.plugin.common.MethodChannel
 class CreateIncomingMessageNotification: MethodCallHandlerImpl() {
     companion object {
         const val tag = "create-incoming-message-notification"
+        private val notificationLock = Any()
     }
 
     override fun handleMethodCall(
@@ -52,6 +52,9 @@ class CreateIncomingMessageNotification: MethodCallHandlerImpl() {
         val contactIcon: ByteArray? = call.argument("contact_avatar")
         val contactBitmap = if ((contactIcon?.size ?: 0) == 0) null else Utils.getAdaptiveIconFromByteArray(contactIcon!!)
         val chat_uri: String? = call.argument("contact_uri")
+        // reaction settings
+        val showReactionAction: Boolean = call.argument("show_reaction_action") ?: false
+        val reactionType: String = call.argument("reaction_type") ?: "like"
 
         val name = if (notifyAnyways) {
             "Notify Anyways: $chatTitle"
@@ -71,6 +74,9 @@ class CreateIncomingMessageNotification: MethodCallHandlerImpl() {
 
         PushShareTargetsHandler().pushShareTarget(context, chatTitle, chatGuid, chatIcon)
 
+        // OpenBubbles posts each chat into its own conversation channel (Android 11+) so a
+        // chat can be given a per-conversation importance, and so the "notify anyways"
+        // variant can bypass DND without changing the parent channel.
         val channelId = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             val channelId = if (notifyAnyways) {
                 "com.bluebubbles.new_messages.$chatGuid.notify_anyways"
@@ -92,12 +98,21 @@ class CreateIncomingMessageNotification: MethodCallHandlerImpl() {
             parentChannelId
         }
 
-        // check if the message has already been posted as a notification
-        val notificationPostedAlready = notificationManager.activeNotifications.firstOrNull { it.notification.extras.getString("chatGuid") == chatGuid && it.notification.extras.getString("messageGuid") == messageGuid } != null
+        // Synchronize to prevent duplicate notifications from concurrent calls.
+        // Skipped for "notify anyways" reposts: those deliberately re-post a message that
+        // was just cancelled above, and the cancelled notification may still be listed in
+        // activeNotifications when we get here.
+        if (!notifyAnyways) {
+            synchronized(notificationLock) {
+                // check if the message has already been posted as a notification
+                val notificationPostedAlready = notificationManager.activeNotifications.firstOrNull { it.notification.extras.getString("chatGuid") == chatGuid && it.notification.extras.getString("messageGuid") == messageGuid } != null
+                // don't double post a notification
+                if (notificationPostedAlready) return result.success(null)
+            }
+        }
+
         // this is used to copy the style, since the notification already exists
         val chatNotification = notificationManager.activeNotifications.lastOrNull { it.notification.extras.getString("chatGuid") == chatGuid && it.notification.extras.getString("channelId") == channelId }
-        // don't double post a notification
-        if (notificationPostedAlready) return result.success(null)
 
         // build the sender object and push the share target again
         val sender = Person.Builder()
@@ -114,7 +129,12 @@ class CreateIncomingMessageNotification: MethodCallHandlerImpl() {
             .build()
 
         // get or create a messaging style
-        val style = if (chatNotification != null) NotificationCompat.MessagingStyle.extractMessagingStyleFromNotification(chatNotification.notification)!! else NotificationCompat.MessagingStyle(Person.Builder().setName("You").build())
+        val style = if (chatNotification != null) {
+            NotificationCompat.MessagingStyle.extractMessagingStyleFromNotification(chatNotification.notification)
+                ?: NotificationCompat.MessagingStyle(Person.Builder().setName("You").build())
+        } else {
+            NotificationCompat.MessagingStyle(Person.Builder().setName("You").build())
+        }
         if (chatIsGroup) {
             style.isGroupConversation = true
             style.conversationTitle = chatTitle
@@ -132,6 +152,7 @@ class CreateIncomingMessageNotification: MethodCallHandlerImpl() {
         extras.putString("messageGuid", messageGuid)
         extras.putString("channelId", channelId)
         extras.putString("tag", Constants.newMessageNotificationTag)
+        extras.putBoolean("reactionSent", false) // Track if reaction has been sent
 
         // intent to open the conversation in-app
         val openConversationIntent = PendingIntent.getActivity(
@@ -189,7 +210,25 @@ class CreateIncomingMessageNotification: MethodCallHandlerImpl() {
             .addRemoteInput(RemoteInput.Builder("text_reply").setLabel("Reply").build())
             .build()
 
-        // intent and metadata for bubbling
+        // intent and action for 'like'
+        val likeIntent = PendingIntent.getBroadcast(
+            context,
+            notificationId + 1, // offset by 1 to avoid conflicts
+            Intent(context, InternalIntentReceiver::class.java)
+                .putExtras(extras)
+                .putExtra("notificationId", notificationId)
+                .putExtra("messageText", messageText)
+                .putExtra("reactionType", reactionType)
+                .setType("LikeMessage"),
+            PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+        val likeActionTitle = if (reactionType == "love") "Love" else "Like"
+        val likeAction = NotificationCompat.Action.Builder(0, likeActionTitle, likeIntent)
+            .setSemanticAction(NotificationCompat.Action.SEMANTIC_ACTION_THUMBS_UP)
+            .setShowsUserInterface(false)
+            .build()
+
+        // intent for bubbling (create it even if not used, for future compatibility)
         val bubbleIntent = PendingIntent.getActivity(
             context,
             notificationId + Constants.pendingIntentOpenBubbleOffset,
@@ -200,11 +239,8 @@ class CreateIncomingMessageNotification: MethodCallHandlerImpl() {
                 .setType("OpenChat"),
             PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
-        val bubbleMetadata = NotificationCompat.BubbleMetadata.Builder(bubbleIntent, chatBitmap ?: IconCompat.createWithResource(context, R.mipmap.ic_stat_icon))
-            .setDesiredHeight(600)
-            .setDeleteIntent(deleteNotificationIntent)
-            .build()
 
+        // Build the notification
         val notificationBuilder = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(R.mipmap.ic_stat_icon)
             .setGroup(Constants.notificationGroupKey)
@@ -218,19 +254,40 @@ class CreateIncomingMessageNotification: MethodCallHandlerImpl() {
             .setStyle(style)
             .setAllowSystemGeneratedContextualActions(true)
             .setColor(4888294)
-            .setBubbleMetadata(bubbleMetadata)
-            .let {
-                if (notifyAnyways) {
-                    it // do not set shortcut, so it notifys anyways
-                } else {
-                    it.setShortcutId(chatGuid)
-                }
-            }
             .addAction(markAsReadAction)
             .addAction(replyAction)
             .addPerson(sender)
             .addExtras(extras)
-            .extend(NotificationCompat.WearableExtender().addAction(markAsReadAction).addAction(replyAction))
+
+        // Conditionally add reaction action if enabled
+        if (showReactionAction) {
+            notificationBuilder.addAction(likeAction)
+        }
+
+        // Build wearable extender
+        val wearableExtender = NotificationCompat.WearableExtender()
+            .addAction(markAsReadAction)
+            .addAction(replyAction)
+        if (showReactionAction) {
+            wearableExtender.addAction(likeAction)
+        }
+        notificationBuilder.extend(wearableExtender)
+
+        // Only set bubble metadata on Android 11+ (API 29+) where it's supported
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val bubbleMetadata = NotificationCompat.BubbleMetadata.Builder(bubbleIntent, chatBitmap ?: IconCompat.createWithResource(context, R.mipmap.ic_stat_icon))
+                .setDesiredHeight(600)
+                .setDeleteIntent(deleteNotificationIntent)
+                .build()
+            notificationBuilder.setBubbleMetadata(bubbleMetadata)
+        }
+        
+        // Only set shortcut ID on API 29+ where dynamic shortcuts are better supported.
+        // A "notify anyways" repost deliberately leaves the shortcut off so the system
+        // does not treat it as a conversation that DND/priority settings can suppress.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !notifyAnyways) {
+            notificationBuilder.setShortcutId(chatGuid)
+        }
 
         // intent to open the main app
         val openSummaryIntent = PendingIntent.getActivity(

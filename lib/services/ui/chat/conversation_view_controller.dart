@@ -1,79 +1,118 @@
 import 'dart:async';
-import 'dart:isolate';
+
+import 'dart:ui' as ui;
 
 import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:bluebubbles/app/components/custom_text_editing_controllers.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/profile/posterkit.dart';
+import 'package:bluebubbles/services/network/backend_service.dart';
+import 'package:bluebubbles/src/rust/api/api.dart' as api;
+import 'package:bluebubbles/utils/logger/logger.dart';
+import 'package:universal_io/io.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/database/models.dart';
-import 'package:bluebubbles/services/network/backend_service.dart';
+import 'package:bluebubbles/services/backend/interfaces/prefs_interface.dart';
 import 'package:bluebubbles/services/services.dart';
-import 'package:emojis/emoji.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:get/get.dart';
-import 'package:google_ml_kit/google_ml_kit.dart' hide Message;
-import 'package:metadata_fetch/metadata_fetch.dart';
+import 'package:google_mlkit_entity_extraction/google_mlkit_entity_extraction.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
-import 'package:tuple/tuple.dart';
-import 'package:universal_io/io.dart';
-import 'package:bluebubbles/src/rust/api/api.dart' as api;
-import 'dart:ui' as ui;
+import 'package:bluebubbles/services/ui/chat/send_data.dart';
+import 'package:bluebubbles/models/models.dart' show MessageReplyContext;
+import 'package:unicode_emojis/unicode_emojis.dart';
 
-ConversationViewController cvc(Chat chat, {String? tag}) => Get.isRegistered<ConversationViewController>(tag: tag ?? chat.guid)
-? Get.find<ConversationViewController>(tag: tag ?? chat.guid) : Get.put(ConversationViewController(chat, tag_: tag), tag: tag ?? chat.guid);
+class MessageEditEntry {
+  final Message message;
+  final MessagePart part;
+  final SpellCheckTextEditingController controller;
+  const MessageEditEntry({required this.message, required this.part, required this.controller});
+}
+
+ConversationViewController cvc(Chat chat, {String? tag}) =>
+    Get.isRegistered<ConversationViewController>(tag: tag ?? chat.guid)
+        ? Get.find<ConversationViewController>(tag: tag ?? chat.guid)
+        : Get.put(ConversationViewController(chat, tag_: tag), tag: tag ?? chat.guid);
 
 class ConversationViewController extends StatefulController with GetSingleTickerProviderStateMixin {
   final Chat chat;
   late final String tag;
   bool fromChatCreator = false;
+  bool fromSearchResult = false;
   bool addedRecentPhotoReply = false;
   final AutoScrollController scrollController = AutoScrollController();
 
   ConversationViewController(this.chat, {String? tag_}) {
     tag = tag_ ?? chat.guid;
+    // OpenBubbles: seed the per-chat state rustpush keeps on the controller.
     recipientNotifsSilenced.value = chat.notifsSilenced;
     reportJunkAvailable.value = !(chat.senderIsKnown ?? true);
   }
 
   // caching items
+  /// OpenBubbles: decoded attachment bytes keyed by attachment GUID.
   final Map<String, Uint8List> imageData = {};
-  final List<Tuple4<Attachment, PlatformFile, BuildContext, Completer<Uint8List>>> imageCacheQueue = [];
+
+  /// OpenBubbles: decoded sticker bytes (+ their placement data) per message part.
   final Map<String, Map<String, (Uint8List, StickerData?)>> stickerData = {};
-  final Map<String, Metadata> legacyUrlPreviews = {};
   final Map<String, VideoController> videoPlayers = {};
   final Map<String, PlayerController> audioPlayers = {};
   final Map<String, Player> audioPlayersDesktop = {};
   final Map<String, List<EntityAnnotation>> mlKitParsedText = {};
 
   // message view items
+  final RxBool showTypingIndicator = false.obs;
+
+  /// OpenBubbles: rustpush reports typing per participant (with an optional app
+  /// icon), so the indicator row needs the handles rather than a single bool.
   final RxList<Handle> showTypingIndicatorFor = <Handle>[].obs;
+  final Map<String, (StreamSubscription<dynamic>, Uint8List?)> typingIndicatorData = {};
   final RxBool showScrollDown = false.obs;
   final RxDouble timestampOffset = 0.0.obs;
   final RxBool inSelectMode = false.obs;
   final RxList<Message> selected = <Message>[].obs;
-  final RxList<Tuple3<Message, MessagePart, MentionTextEditingController>> editing = <Tuple3<Message, MessagePart, MentionTextEditingController>>[].obs;
+  final RxList<MessageEditEntry> editing = <MessageEditEntry>[].obs;
   final GlobalKey focusInfoKey = GlobalKey();
+  final GlobalKey typingInfoKey = GlobalKey();
   final RxBool recipientNotifsSilenced = false.obs;
+
+  /// OpenBubbles: whether the "Report Junk" affordance applies to this chat
+  /// (i.e. the sender is not a known contact).
+  final RxBool reportJunkAvailable = false.obs;
+  final RxBool showSmartReplyRow = false.obs;
+  final RxDouble smartReplyRowHeight = 0.0.obs;
   bool showingOverlays = false;
+
+  /// True while a pointer is actively dragging a [MessageImageGallery] fan of
+  /// cards, so the list-wide timestamp-reveal swipe in [MessagesView] can
+  /// ignore that drag instead of fighting the gallery for the same gesture.
+  bool isGalleryDragging = false;
+
+  /// True while any route is pushed on top of the conversation view route (e.g.
+  /// ConversationDetails). Used by onAppResume to skip keyboard auto-focus on mobile.
+  bool showingSubRoute = false;
   bool _subjectWasLastFocused = false; // If this is false, then message field was last focused (default)
-  final Map<String, (StreamSubscription<dynamic>, Uint8List?)> typingIndicatorData = {};
 
   FocusNode get lastFocusedNode => _subjectWasLastFocused ? subjectFocusNode : focusNode;
-  SpellCheckTextEditingController get lastFocusedTextController => _subjectWasLastFocused ? subjectTextController : textController;
+  SpellCheckTextEditingController get lastFocusedTextController =>
+      _subjectWasLastFocused ? subjectTextController : textController;
 
   // text field items
-  bool showAttachmentPicker = false;
+  final RxBool showAttachmentPicker = false.obs;
   RxBool showEmojiPicker = false.obs;
   final GlobalKey textFieldKey = GlobalKey();
   final RxList<PlatformFile> pickedAttachments = <PlatformFile>[].obs;
   final focusNode = FocusNode();
   final subjectFocusNode = FocusNode();
+  // OpenBubbles: focus targets used by the keyboard-navigation shortcuts.
   final headerBackFocusNode = FocusNode();
   FocusNode? bottomMessageFocusNode;
+  // OpenBubbles: only iMessage chats support rich text, SMS/RCS do not.
   late final textController = MentionTextEditingController(focusNode: focusNode, supportsFormatting: chat.isIMessage);
   late final subjectTextController = SpellCheckTextEditingController(focusNode: subjectFocusNode);
+
+  /// OpenBubbles: the iMessage app payload staged for the next send
+  /// (poll, handwriting, digital touch, ...) along with its preview file.
   final Rx<(PlatformFile?, PayloadData)?> pickedApp = Rx<(PlatformFile?, PayloadData)?>(null);
   final RxBool showRecording = false.obs;
   final RxList<Emoji> emojiMatches = <Emoji>[].obs;
@@ -82,94 +121,97 @@ class ConversationViewController extends StatefulController with GetSingleTicker
   final RxInt mentionSelectedIndex = 0.obs;
   final ScrollController emojiScrollController = ScrollController();
   final Rxn<DateTime> scheduledDate = Rxn<DateTime>(null);
-  final Rxn<Tuple2<Message, int>> _replyToMessage = Rxn<Tuple2<Message, int>>(null);
-  Tuple2<Message, int>? get replyToMessage => _replyToMessage.value;
-  set replyToMessage(Tuple2<Message, int>? m) {
+  final Rxn<MessageReplyContext> _replyToMessage = Rxn<MessageReplyContext>(null);
+  MessageReplyContext? get replyToMessage => _replyToMessage.value;
+  set replyToMessage(MessageReplyContext? m) {
     _replyToMessage.value = m;
     if (m != null) {
       lastFocusedNode.requestFocus();
     }
   }
-  late final mentionables = chat.participants.map((e) => Mentionable(
-    handle: e,
-  )).toList();
 
-  final Rxn<Contact> suggestedContact = Rxn<Contact>(null);
+  late final mentionables = chat.handles
+      .map((e) => Mentionable(
+            handle: e,
+          ))
+      .toList();
+
+  // OpenBubbles: Apple name-and-photo sharing prompts shown in the chat header.
+  final Rxn<ContactV2> suggestedContact = Rxn<ContactV2>(null);
   final RxBool suggestShare = false.obs;
-  bool keyboardOpen = false;
-  double _keyboardOffset = 0;
-  Timer? _scrollDownDebounce;
-  Future<void> Function(Tuple7<List<PlatformFile>, AttributedBody, String, String?, int?, String?, PayloadData?>, bool, DateTime?)? sendFunc;
-  bool isProcessingImage = false;
+  StreamSubscription<int>? shareSubscription;
 
+  /// OpenBubbles: the contact poster rendered behind the transcript, if any.
   final Rxn<api.SimplifiedTranscriptPoster> backgroundPoster = Rxn<api.SimplifiedTranscriptPoster>(null);
   Map<String, ui.Image> images = {};
 
-  final RxBool reportJunkAvailable = false.obs;
   Timer? _debounceTyping;
 
-  void clearTypingState() {
-    _debounceTyping = null;
-  }
+  bool keyboardOpen = false;
+  double _keyboardOffset = 0;
+  Timer? _scrollDownDebounce;
+  Future<void> Function(SendData)? sendFunc;
 
-  void triggerTypingIndicator() {
-    // don't send a bunch of duplicate events for every typing change
-    if (!ss.settings.enablePrivateAPI.value || !(chat.autoSendTypingIndicators ?? ss.settings.privateSendTypingIndicators.value)) return;
-    _debounceTyping?.cancel();
-    if (_debounceTyping == null) {
-      var a = pickedApp.value?.$2.appData?.firstOrNull;
-      // only other app is Polls atm. Built-in apps have a circle icon which does not work with typing indicators.
-      backend.startedTyping(chat, a?.appId != null ? a : null);
-    }
-    _debounceTyping = Timer(const Duration(seconds: 5), () {
-      backend.stoppedTyping(chat);
-      _debounceTyping = null;
-    });
-  }
+  /// When set, [_SendAnimationState] will auto-fire this send as soon as it
+  /// registers [sendFunc] (i.e. immediately after the widget is built).
+  /// Used by ChatCreator to pre-queue a send before navigating to ConversationView.
+  SendData? pendingSend;
 
-  void updateContactInfo() {
-    if (chat.participants.length == 1) {
-      Contact? sharedContact;
-      if ((chat.participants.first.contact?.isShared ?? false)) {
-        sharedContact = chat.participants.firstOrNull!.contact!;
-      } else {
-        sharedContact = Contact.findOne(address: chat.participants.firstOrNull!.address, wantShared: true);
-      }
-      if (sharedContact != null && !sharedContact.isDismissed) {
-        suggestedContact.value = sharedContact;
-      }
+  /// Completer that resolves once [MessagesView] has finished setting up its
+  /// handlers AND its list key (both sync and async loadChunk paths).
+  ///
+  /// [SendAnimation] waits on this before firing a [pendingSend] so that
+  /// [handleNewMessage] → [_listKey.currentState?.insertItem] is guaranteed
+  /// to find a mounted [SliverAnimatedList], preventing the silent no-op race.
+  Completer<void> _messagesViewReady = Completer<void>();
 
-      // (not in our contacts or contact sharing disabled) and not shared
-      suggestShare.value = ((chat.participants.first.contact?.isShared ?? true) || !ss.settings.shareContactAutomatically.value) 
-          && !ss.settings.sharedContacts.contains(chat.participants.first.address)
-          && !ss.settings.dismissedContacts.contains(chat.participants.first.address)
-          && ss.settings.nameAndPhotoSharing.value && chat.isIMessage;
+  /// Called by [MessagesView] once its handlers and list key are fully set up.
+  void markMessagesViewReady() {
+    if (!_messagesViewReady.isCompleted) {
+      _messagesViewReady.complete();
     }
   }
 
-  StreamSubscription<int>? shareSubscription;
+  /// Called by [MessagesView.dispose] so that the next visit starts fresh.
+  void resetMessagesViewReady() {
+    if (_messagesViewReady.isCompleted) {
+      _messagesViewReady = Completer<void>();
+    }
+  }
+
+  /// Future that resolves once [MessagesView] has fully initialized.
+  Future<void> get messagesViewReady => _messagesViewReady.future;
+
+  /// Coordinates message list mutations against the in-flight send animation.
+  ///
+  /// [SendAnimation] holds this for the duration of its flight so that a
+  /// message arriving at the same moment can't insert into the list (or toggle
+  /// the smart reply / typing indicator rows) and move the animation's landing
+  /// target out from under it. Held work replays as soon as the gate opens.
+  /// The send itself is never gated — see [MessageListGate].
+  final MessageListGate messageListGate = MessageListGate();
 
   @override
   void onInit() {
     super.onInit();
 
-    shareSubscription = ss.settings.shareVersion.listen((s) => updateContactInfo());
-
+    // OpenBubbles: keep the header's contact-sharing prompts in sync.
+    shareSubscription = SettingsSvc.settings.shareVersion.listen((_) => updateContactInfo());
     updateContactInfo();
 
     textController.mentionables = mentionables;
     KeyboardVisibilityController().onChange.listen((bool visible) async {
       keyboardOpen = visible;
-      if (scrollController.hasClients) {
+      if (scrollController.hasClients && scrollController.positions.length == 1) {
         _keyboardOffset = scrollController.offset;
       }
     });
 
     scrollController.addListener(() {
-      if (!scrollController.hasClients) return;
-      if (keyboardOpen
-          && ss.settings.hideKeyboardOnScroll.value
-          && scrollController.offset > _keyboardOffset + 100) {
+      if (!scrollController.hasClients || scrollController.positions.length != 1) return;
+      if (keyboardOpen &&
+          SettingsSvc.settings.hideKeyboardOnScroll.value &&
+          scrollController.offset > _keyboardOffset + 100) {
         focusNode.unfocus();
         subjectFocusNode.unfocus();
       }
@@ -199,22 +241,74 @@ class ConversationViewController extends StatefulController with GetSingleTicker
         _subjectWasLastFocused = true;
       }
     });
+
     updatePoster();
   }
 
-  void updatePoster() async {
-    if (chat.transcriptPosterPath == null) {
+  /// OpenBubbles: (re)loads the contact poster used as the transcript background.
+  Future<void> updatePoster() async {
+    final posterPath = chat.transcriptPosterPath;
+    if (posterPath == null) {
       backgroundPoster.value = null;
       return;
     }
-    var data = await File("${chat.transcriptPosterPath}.jpg").readAsBytes();
-    var poster = await api.fromTranscriptPosterSave(poster: data);
-    images = await loadPosterImages(chat.transcriptPosterPath!, poster.poster);
-    backgroundPoster.value = poster;
+    try {
+      final data = await File("$posterPath.jpg").readAsBytes();
+      final poster = await api.fromTranscriptPosterSave(poster: data);
+      images = await loadPosterImages(posterPath, poster.poster);
+      backgroundPoster.value = poster;
+    } catch (e, stack) {
+      Logger.warn("Failed to load transcript poster", error: e, trace: stack, tag: "ConversationViewController");
+      backgroundPoster.value = null;
+    }
+  }
+
+  /// OpenBubbles: recomputes the "share your name and photo" prompt for 1:1 chats.
+  ///
+  /// NOTE: the incoming half of this (Apple's "Maybe: <name>" shared-contact
+  /// suggestion) relied on `Contact.isShared` / `Contact.isDismissed`, which the
+  /// upstream ContactV2 model does not carry. [suggestedContact] therefore stays
+  /// null until those flags exist on ContactV2 again.
+  void updateContactInfo() {
+    if (chat.participants.length != 1) return;
+    final address = chat.participants.first.address;
+    suggestShare.value = SettingsSvc.settings.nameAndPhotoSharing.value &&
+        chat.isIMessage &&
+        !SettingsSvc.settings.sharedContacts.contains(address) &&
+        !SettingsSvc.settings.dismissedContacts.contains(address);
+  }
+
+  /// OpenBubbles: clears the typing debounce without emitting a "stopped" event
+  /// (used right after a send, which implicitly ends typing).
+  void clearTypingState() {
+    _debounceTyping?.cancel();
+    _debounceTyping = null;
+  }
+
+  /// OpenBubbles: routes typing indicators through the active backend, throttled
+  /// so a burst of keystrokes doesn't produce a burst of events.
+  void triggerTypingIndicator() {
+    if (!SettingsSvc.settings.enablePrivateAPI.value ||
+        !(chat.autoSendTypingIndicators ?? SettingsSvc.settings.privateSendTypingIndicators.value)) {
+      return;
+    }
+    _debounceTyping?.cancel();
+    if (_debounceTyping == null) {
+      final appData = pickedApp.value?.$2.appData?.firstOrNull;
+      // Polls is the only non-builtin app right now. Built-in apps have a circle
+      // icon, which does not work with typing indicators.
+      backend.startedTyping(chat, appData?.appId != null ? appData : null);
+    }
+    _debounceTyping = Timer(const Duration(seconds: 5), () {
+      backend.stoppedTyping(chat);
+      _debounceTyping = null;
+    });
   }
 
   @override
   void onClose() {
+    messageListGate.dispose();
+    updateSmartReplyLayout(visible: false, height: 0);
     for (PlayerController a in audioPlayers.values) {
       a.pausePlayer();
       a.dispose();
@@ -227,9 +321,25 @@ class ConversationViewController extends StatefulController with GetSingleTicker
       a.player.dispose();
     }
     scrollController.dispose();
+    // OpenBubbles
     headerBackFocusNode.dispose();
     shareSubscription?.cancel();
+    _debounceTyping?.cancel();
+    for (final entry in typingIndicatorData.values) {
+      entry.$1.cancel();
+    }
+    typingIndicatorData.clear();
     super.onClose();
+  }
+
+  /// Disposes and evicts the cached [VideoController] for [attachmentGuid] -- call before a
+  /// redownload replaces the underlying file, since the cached controller/aspect ratio is from
+  /// the old decode and would otherwise get reused as-is.
+  void invalidateVideoPlayer(String attachmentGuid) {
+    final controller = videoPlayers.remove(attachmentGuid);
+    if (controller == null) return;
+    controller.player.pause();
+    controller.player.dispose();
   }
 
   Future<void> scrollToBottom() async {
@@ -241,72 +351,30 @@ class ConversationViewController extends StatefulController with GetSingleTicker
       );
     }
 
-    if (ss.settings.openKeyboardOnSTB.value) {
+    if (SettingsSvc.settings.openKeyboardOnSTB.value) {
       focusNode.requestFocus();
     }
   }
 
+  /// OpenBubbles: jumps the transcript to the first message at or before [time].
+  /// Used after scheduling a send so the user sees where it landed.
   Future<void> scrollToTime(DateTime time) async {
-    var messages = ms(chat.guid).struct.messages;
-    messages.sort(Message.sort);
-    if (scrollController.positions.isNotEmpty) {
-      var test = messages.indexWhere((element) => element.chatViewDate?.isBefore(time) ?? false);
-      await scrollController.scrollToIndex(test, preferPosition: AutoScrollPosition.begin);
+    final service = maybeFindMessagesSvc(chat.guid);
+    if (service != null && scrollController.positions.isNotEmpty) {
+      final messages = service.struct.messages.toList()..sort(Message.sort);
+      final index = messages.indexWhere((element) => element.chatViewDate?.isBefore(time) ?? false);
+      if (index >= 0) {
+        await scrollController.scrollToIndex(index, preferPosition: AutoScrollPosition.begin);
+      }
     }
 
-    if (ss.settings.openKeyboardOnSTB.value) {
+    if (SettingsSvc.settings.openKeyboardOnSTB.value) {
       focusNode.requestFocus();
     }
   }
 
-  Future<void> send(List<PlatformFile> attachments, AttributedBody text, String subject, String? replyGuid, int? replyPart, String? effectId, PayloadData? payload, bool isAudioMessage, DateTime? scheduledDate) async {
-    sendFunc?.call(Tuple7(attachments, text, subject, replyGuid, replyPart, effectId, payload), isAudioMessage, scheduledDate);
-  }
-
-  void queueImage(Tuple4<Attachment, PlatformFile, BuildContext, Completer<Uint8List>> item) {
-    imageCacheQueue.add(item);
-    if (!isProcessingImage) _processNextImage();
-  }
-
-  Future<void> _processNextImage() async {
-    if (imageCacheQueue.isEmpty) {
-      isProcessingImage = false;
-      return;
-    }
-
-    isProcessingImage = true;
-    final queued = imageCacheQueue.removeAt(0);
-    final attachment = queued.item1;
-    final file = queued.item2;
-    Uint8List? tmpData;
-    // If it's an image, compress the image when loading it
-    if (kIsWeb || file.path == null) {
-      if (attachment.mimeType?.contains("image/tif") ?? false) {
-        final receivePort = ReceivePort();
-        await Isolate.spawn(unsupportedToPngIsolate, IsolateData(file, receivePort.sendPort));
-        // Get the processed image from the isolate.
-        final image = await receivePort.first as Uint8List?;
-        tmpData = image;
-      } else {
-        tmpData = file.bytes;
-      }
-    } else if (attachment.canCompress) {
-      tmpData = await as.loadAndGetProperties(attachment, actualPath: file.path!);
-      // All other attachments can be held in memory as bytes
-    } else {
-      tmpData = await File(file.path!).readAsBytes();
-    }
-    if (tmpData == null) {
-      queued.item4.complete(Uint8List.fromList([]));
-      return;
-    }
-    imageData[attachment.guid!] = tmpData;
-    try {
-      await precacheImage(MemoryImage(tmpData), queued.item3);
-    } catch (_) {}
-    queued.item4.complete(tmpData);
-
-    await _processNextImage();
+  Future<void> send(SendData data) async {
+    await sendFunc?.call(data);
   }
 
   bool isSelected(String guid) {
@@ -314,32 +382,42 @@ class ConversationViewController extends StatefulController with GetSingleTicker
   }
 
   bool isEditing(String guid, int part) {
-    return editing.firstWhereOrNull((e) => e.item1.guid == guid && e.item2.part == part) != null;
+    return editing.firstWhereOrNull((e) => e.message.guid == guid && e.part.part == part) != null;
+  }
+
+  void updateSmartReplyLayout({required bool visible, required double height}) {
+    if (showSmartReplyRow.value != visible) {
+      showSmartReplyRow.value = visible;
+    }
+
+    final nextHeight = visible ? height : 0.0;
+    if (smartReplyRowHeight.value != nextHeight) {
+      smartReplyRowHeight.value = nextHeight;
+    }
   }
 
   void close() {
-    eventDispatcher.emit("update-highlight", null);
-    cm.setAllInactiveSync();
+    updateSmartReplyLayout(visible: false, height: 0);
+    ChatsSvc.setAllInactiveSync();
     Get.delete<ConversationViewController>(tag: tag);
   }
 
   Future<void> saveReplyToMessageState() async {
-    if (replyToMessage != null) {
-      await ss.prefs.setString('replyToMessage_${chat.guid}', replyToMessage!.item1.guid!);
-      await ss.prefs.setInt('replyToMessagePart_${chat.guid}', replyToMessage!.item2);
-    } else {
-      await ss.prefs.remove('replyToMessage_${chat.guid}');
-      await ss.prefs.remove('replyToMessagePart_${chat.guid}');
-    }
+    await PrefsInterface.saveReplyToMessageState(
+      chat.guid,
+      replyToMessage?.message.guid,
+      replyToMessage?.partIndex,
+    );
   }
 
   Future<void> loadReplyToMessageState() async {
-    final replyToMessageGuid = ss.prefs.getString('replyToMessage_${chat.guid}');
-    final replyToMessagePart = ss.prefs.getInt('replyToMessagePart_${chat.guid}');
-    if (replyToMessageGuid != null && replyToMessagePart != null) {
-      final message = Message.findOne(guid: replyToMessageGuid);
+    final data = await PrefsInterface.loadReplyToMessageState(chat.guid);
+    if (data != null) {
+      final messageGuid = data['messageGuid'] as String;
+      final messagePart = data['messagePart'] as int;
+      final message = Message.findOne(guid: messageGuid);
       if (message != null) {
-        replyToMessage = Tuple2(message, replyToMessagePart);
+        replyToMessage = MessageReplyContext(message, messagePart);
       }
     }
   }

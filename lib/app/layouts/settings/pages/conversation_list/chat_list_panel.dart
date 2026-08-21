@@ -4,8 +4,6 @@ import 'package:bluebubbles/app/layouts/settings/widgets/content/next_button.dar
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/conversation_list/pinned_order_panel.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
-import 'package:bluebubbles/main.dart';
 import 'package:bluebubbles/services/network/backend_service.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
@@ -14,11 +12,13 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class ChatListPanel extends StatefulWidget {
+  const ChatListPanel({super.key});
+
   @override
   State<StatefulWidget> createState() => _ChatListPanelState();
 }
 
-class _ChatListPanelState extends OptimizedState<ChatListPanel> {
+class _ChatListPanelState extends State<ChatListPanel> with ThemeHelpers {
   @override
   Widget build(BuildContext context) {
     return SettingsScaffold(
@@ -35,40 +35,27 @@ class _ChatListPanelState extends OptimizedState<ChatListPanel> {
                 SettingsSection(
                   backgroundColor: tileColor,
                   children: [
-                    if (!usingRustPush)
-                    Obx(() => SettingsSwitch(
-                          onChanged: (bool val) {
-                            ss.settings.showConnectionIndicator.value = val;
-                            saveSettings();
-                          },
-                          initialVal: ss.settings.showConnectionIndicator.value,
-                          title: "Show Connection Indicator",
-                          subtitle: "Show a visual status indicator when the app is not connected to the server",
-                          backgroundColor: tileColor,
-                        )),
-                    if (backend.getRemoteService() != null)
-                    const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     if (backend.getRemoteService() != null)
                     Obx(() => SettingsSwitch(
-                          onChanged: (bool val) {
-                            ss.settings.showSyncIndicator.value = val;
-                            saveSettings();
+                          onChanged: (bool val) async {
+                            SettingsSvc.settings.showSyncIndicator.value = val;
+                            await SettingsSvc.settings.saveOneAsync('showSyncIndicator');
                           },
-                          initialVal: ss.settings.showSyncIndicator.value,
+                          initialVal: SettingsSvc.settings.showSyncIndicator.value,
                           title: "Show Sync Indicator in Chat List",
                           subtitle:
                               "Enables a small indicator at the top left to show when the app is syncing messages",
                           backgroundColor: tileColor,
                           isThreeLine: true,
                         )),
-                    if (!usingRustPush)
+                    if (backend.getRemoteService() != null)
                     const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     Obx(() => SettingsSwitch(
-                          onChanged: (bool val) {
-                            ss.settings.statusIndicatorsOnChats.value = val;
-                            saveSettings();
+                          onChanged: (bool val) async {
+                            SettingsSvc.settings.statusIndicatorsOnChats.value = val;
+                            await SettingsSvc.settings.saveOneAsync('statusIndicatorsOnChats');
                           },
-                          initialVal: ss.settings.statusIndicatorsOnChats.value,
+                          initialVal: SettingsSvc.settings.statusIndicatorsOnChats.value,
                           title: "Message Status Indicators",
                           subtitle:
                               "Adds status indicators to the chat list for the sent / delivered / read status of your most recent message",
@@ -82,11 +69,11 @@ class _ChatListPanelState extends OptimizedState<ChatListPanel> {
                   backgroundColor: tileColor,
                   children: [
                     Obx(() => SettingsSwitch(
-                          onChanged: (bool val) {
-                            ss.settings.filteredChatList.value = val;
-                            saveSettings();
+                          onChanged: (bool val) async {
+                            SettingsSvc.settings.filteredChatList.value = val;
+                            await SettingsSvc.settings.saveOneAsync('filteredChatList');
                           },
-                          initialVal: ss.settings.filteredChatList.value,
+                          initialVal: SettingsSvc.settings.filteredChatList.value,
                           title: "Filtered Chat List",
                           subtitle:
                               "Filters the chat list based on parameters set in iMessage (usually this removes old, inactive chats)",
@@ -95,26 +82,25 @@ class _ChatListPanelState extends OptimizedState<ChatListPanel> {
                         )),
                     const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     Obx(() => SettingsSwitch(
-                          onChanged: (bool val) {
-                            ss.settings.filterUnknownSenders.value = val;
-                            saveSettings();
+                          onChanged: (bool val) async {
+                            SettingsSvc.settings.filterUnknownSenders.value = val;
+                            await SettingsSvc.settings.saveOneAsync('filterUnknownSenders');
                           },
-                          initialVal: ss.settings.filterUnknownSenders.value,
+                          initialVal: SettingsSvc.settings.filterUnknownSenders.value,
                           title: "Filter Unknown Senders",
                           subtitle:
                               "Turn off notifications for senders who aren't in your contacts and sort them into a separate chat list",
                           backgroundColor: tileColor,
                           isThreeLine: true,
                         )),
-                    if (!kIsWeb)
-                      const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
+                    if (!kIsWeb) const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     if (!kIsWeb)
                       Obx(() => SettingsSwitch(
-                            onChanged: (bool val) {
-                              ss.settings.unarchiveOnNewMessage.value = val;
-                              saveSettings();
+                            onChanged: (bool val) async {
+                              SettingsSvc.settings.unarchiveOnNewMessage.value = val;
+                              await SettingsSvc.settings.saveOneAsync('unarchiveOnNewMessage');
                             },
-                            initialVal: ss.settings.unarchiveOnNewMessage.value,
+                            initialVal: SettingsSvc.settings.unarchiveOnNewMessage.value,
                             title: "Unarchive Chats On New Message",
                             subtitle: "Automatically unarchive chats when a new message is received",
                             backgroundColor: tileColor,
@@ -123,162 +109,129 @@ class _ChatListPanelState extends OptimizedState<ChatListPanel> {
                   ],
                 ),
                 SettingsHeader(iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Appearance"),
-                SettingsSection(
+                Obx(() => SettingsSection(
                   backgroundColor: tileColor,
                   children: [
                     Obx(() => SettingsSwitch(
-                          onChanged: (bool val) {
-                            ss.settings.hideDividers.value = val;
-                            saveSettings();
+                          onChanged: (bool val) async {
+                            SettingsSvc.settings.hideDividers.value = val;
+                            await SettingsSvc.settings.saveOneAsync('hideDividers');
                           },
-                          initialVal: ss.settings.hideDividers.value,
+                          initialVal: SettingsSvc.settings.hideDividers.value,
                           title: "Hide Dividers",
                           backgroundColor: tileColor,
                           subtitle: "Hides dividers between tiles",
                         )),
                     const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     Obx(() => SettingsSwitch(
-                          onChanged: (bool val) {
-                            ss.settings.denseChatTiles.value = val;
-                            saveSettings();
+                          onChanged: (bool val) async {
+                            SettingsSvc.settings.denseChatTiles.value = val;
+                            await SettingsSvc.settings.saveOneAsync('denseChatTiles');
                           },
-                          initialVal: ss.settings.denseChatTiles.value,
+                          initialVal: SettingsSvc.settings.denseChatTiles.value,
                           title: "Dense Conversation Tiles",
                           backgroundColor: tileColor,
                           subtitle: "Compresses chat tile size on the conversation list page",
                           isThreeLine: true,
                         )),
                     const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
-                    if (!kIsDesktop && !kIsWeb)
-                      Obx(() {
-                        if (iOS) {
-                          return const SettingsTile(
-                            title: "Pin Configuration",
-                            subtitle: "The row and column count of the pin grid. ",
-                            isThreeLine: true,
-                          );
-                        } else {
-                          return const SizedBox.shrink();
-                        }
-                      }),
-                    if (!kIsDesktop && !kIsWeb)
-                      Obx(() {
-                        if (iOS) {
-                          return Row(
-                            children: <Widget>[
-                              const Padding(
-                                padding: EdgeInsets.only(left: 48),
-                                child: SizedBox(
-                                  width: 100,
-                                  child: Text("Row Count in Portrait"),
-                                ),
-                              ),
-                              Flexible(
-                                child: SettingsOptions<int>(
-                                  onChanged: (int? val) {
-                                    if (val == null) return;
-                                    ss.settings.pinRowsPortrait.value = val.toInt();
-                                    saveSettings();
-                                  },
-                                  options: List.generate(4, (index) => index + 1),
-                                  initial: ss.settings.pinRowsPortrait.value,
-                                  title: '',
-                                  secondaryColor: context.theme.colorScheme.secondary,
-                                  textProcessing: (val) => val.toString(),
-                                ),
-                              ),
-                              const SizedBox(width: 20),
-                            ],
-                          );
-                        } else {
-                          return const SizedBox.shrink();
-                        }
-                      }),
-                    if (!kIsDesktop && !kIsWeb)
-                      Obx(() {
-                        if (iOS) {
-                          return Row(
-                            children: <Widget>[
-                              const Padding(
-                                padding: EdgeInsets.only(left: 48),
-                                child: SizedBox(
-                                  width: 100,
-                                  child: Text("Row Count in Landscape"),
-                                ),
-                              ),
-                              Flexible(
-                                child: SettingsOptions<int>(
-                                  onChanged: (int? val) {
-                                    if (val == null) return;
-                                    ss.settings.pinRowsLandscape.value = val.toInt();
-                                    saveSettings();
-                                  },
-                                  options: List.generate(4, (index) => index + 1),
-                                  initial: ss.settings.pinRowsLandscape.value,
-                                  title: '',
-                                  secondaryColor: context.theme.colorScheme.secondary,
-                                  textProcessing: (val) => val.toString(),
-                                ),
-                              ),
-                              const SizedBox(width: 20),
-                            ],
-                          );
-                        } else {
-                          return const SizedBox.shrink();
-                        }
-                      }),
-                    if (!kIsDesktop && !kIsWeb)
-                      Obx(() {
-                        if (iOS) {
-                          return Row(
-                            children: <Widget>[
-                              const Padding(
-                                padding: EdgeInsets.only(left: 48),
-                                child: SizedBox(
-                                  width: 100,
-                                  child: Text("Column Count"),
-                                ),
-                              ),
-                              Flexible(
-                                child: SettingsOptions<int>(
-                                  onChanged: (int? val) {
-                                    if (val == null) return;
-                                    ss.settings.pinColumnsPortrait.value = val.toInt();
-                                    saveSettings();
-                                  },
-                                  options: List.generate(4, (index) => index + 1),
-                                  initial: ss.settings.pinColumnsPortrait.value,
-                                  title: '',
-                                  secondaryColor: context.theme.colorScheme.secondary,
-                                  textProcessing: (val) => val.toString(),
-                                ),
-                              ),
-                              const SizedBox(width: 20),
-                            ],
-                          );
-                        } else {
-                          return const SizedBox.shrink();
-                        }
-                      }),
-                    if (!kIsWeb)
-                      const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
-                    if (kIsDesktop)
-                      Obx(() {
-                        if (iOS) {
-                          return SettingsTile(
-                            title:
-                                "Pinned Chat Configuration (${ss.settings.pinRowsPortrait.value} row${ss.settings.pinRowsPortrait.value > 1 ? "s" : ""} of ${ss.settings.pinColumnsLandscape})",
-                            subtitle:
-                                "Pinned chats will overflow onto multiple pages if they do not fit in this configuration.",
-                          );
-                        } else {
-                          return const SizedBox.shrink();
-                        }
-                      }),
-                    if (kIsDesktop)
-                      Obx(() {
-                        if (iOS) {
-                          return Row(
+                    if (!kIsDesktop && !kIsWeb && iOS)
+                      const SettingsTile(
+                        title: "Pin Configuration",
+                        subtitle: "The row and column count of the pin grid. ",
+                        isThreeLine: true,
+                      ),
+                    if (!kIsDesktop && !kIsWeb && iOS)
+                      Row(
+                        children: <Widget>[
+                          const Padding(
+                            padding: EdgeInsets.only(left: 48),
+                            child: SizedBox(
+                              width: 100,
+                              child: Text("Row Count in Portrait"),
+                            ),
+                          ),
+                          Flexible(
+                            child: SettingsOptions<int>(
+                              onChanged: (int? val) async {
+                                if (val == null) return;
+                                SettingsSvc.settings.pinRowsPortrait.value = val.toInt();
+                                await SettingsSvc.settings.saveOneAsync('pinRowsPortrait');
+                              },
+                              options: List.generate(4, (index) => index + 1),
+                              initial: SettingsSvc.settings.pinRowsPortrait.value,
+                              title: '',
+                              secondaryColor: context.theme.colorScheme.secondary,
+                              textProcessing: (val) => val.toString(),
+                            ),
+                          ),
+                          const SizedBox(width: 20),
+                        ],
+                      ),
+                    if (!kIsDesktop && !kIsWeb && iOS)
+                      Row(
+                        children: <Widget>[
+                          const Padding(
+                            padding: EdgeInsets.only(left: 48),
+                            child: SizedBox(
+                              width: 100,
+                              child: Text("Row Count in Landscape"),
+                            ),
+                          ),
+                          Flexible(
+                            child: SettingsOptions<int>(
+                              onChanged: (int? val) async {
+                                if (val == null) return;
+                                SettingsSvc.settings.pinRowsLandscape.value = val.toInt();
+                                await SettingsSvc.settings.saveOneAsync('pinRowsLandscape');
+                              },
+                              options: List.generate(4, (index) => index + 1),
+                              initial: SettingsSvc.settings.pinRowsLandscape.value,
+                              title: '',
+                              secondaryColor: context.theme.colorScheme.secondary,
+                              textProcessing: (val) => val.toString(),
+                            ),
+                          ),
+                          const SizedBox(width: 20),
+                        ],
+                      ),
+                    if (!kIsDesktop && !kIsWeb && iOS)
+                      Row(
+                        children: <Widget>[
+                          const Padding(
+                            padding: EdgeInsets.only(left: 48),
+                            child: SizedBox(
+                              width: 100,
+                              child: Text("Column Count"),
+                            ),
+                          ),
+                          Flexible(
+                            child: SettingsOptions<int>(
+                              onChanged: (int? val) async {
+                                if (val == null) return;
+                                SettingsSvc.settings.pinColumnsPortrait.value = val.toInt();
+                                await SettingsSvc.settings.saveOneAsync('pinColumnsPortrait');
+                              },
+                              options: List.generate(4, (index) => index + 1),
+                              initial: SettingsSvc.settings.pinColumnsPortrait.value,
+                              title: '',
+                              secondaryColor: context.theme.colorScheme.secondary,
+                              textProcessing: (val) => val.toString(),
+                            ),
+                          ),
+                          const SizedBox(width: 20),
+                        ],
+                      ),
+                    if (!kIsWeb) const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
+                    if (kIsDesktop && iOS)
+                      SettingsTile(
+                        title:
+                            "Pinned Chat Configuration (${SettingsSvc.settings.pinRowsPortrait.value} row${SettingsSvc.settings.pinRowsPortrait.value > 1 ? "s" : ""} of ${SettingsSvc.settings.pinColumnsLandscape})",
+                        subtitle:
+                            "Pinned chats will overflow onto multiple pages if they do not fit in this configuration.",
+                      ),
+                    if (kIsDesktop && iOS)
+                      Row(
                             children: <Widget>[
                               Flexible(
                                 child: Column(
@@ -294,12 +247,12 @@ class _ChatListPanelState extends OptimizedState<ChatListPanel> {
                                         ),
                                         Flexible(
                                           child: SettingsOptions<int>(
-                                            initial: ss.settings.pinRowsPortrait.value,
+                                            initial: SettingsSvc.settings.pinRowsPortrait.value,
                                             options: List.generate(4, (index) => index + 1),
-                                            onChanged: (int? val) {
+                                            onChanged: (int? val) async {
                                               if (val == null) return;
-                                              ss.settings.pinRowsPortrait.value = val;
-                                              saveSettings();
+                                              SettingsSvc.settings.pinRowsPortrait.value = val;
+                                              await SettingsSvc.settings.saveOneAsync('pinRowsPortrait');
                                             },
                                             title: "Pin Rows",
                                             secondaryColor: context.theme.colorScheme.secondary,
@@ -319,12 +272,12 @@ class _ChatListPanelState extends OptimizedState<ChatListPanel> {
                                         ),
                                         Flexible(
                                           child: SettingsOptions<int>(
-                                            initial: ss.settings.pinColumnsLandscape.value,
+                                            initial: SettingsSvc.settings.pinColumnsLandscape.value,
                                             options: List.generate(5, (index) => index + 2),
-                                            onChanged: (int? val) {
+                                            onChanged: (int? val) async {
                                               if (val == null) return;
-                                              ss.settings.pinColumnsLandscape.value = val;
-                                              saveSettings();
+                                              SettingsSvc.settings.pinColumnsLandscape.value = val;
+                                              await SettingsSvc.settings.saveOneAsync('pinColumnsLandscape');
                                             },
                                             title: "Pins Per Row",
                                             secondaryColor: context.theme.colorScheme.secondary,
@@ -337,9 +290,9 @@ class _ChatListPanelState extends OptimizedState<ChatListPanel> {
                                 ),
                               ),
                               Obx(() {
-                                ns.listener.value;
+                                NavigationSvc.listener.value;
                                 double width = 108 * context.width / context.height;
-                                if (ns.width(context) != context.width) {
+                                if (NavigationSvc.width(context) != context.width) {
                                   return Container(
                                     width: width,
                                     height: 108,
@@ -369,59 +322,63 @@ class _ChatListPanelState extends OptimizedState<ChatListPanel> {
                                                         )),
                                                     Obx(
                                                       () => Expanded(
-                                                        flex: ss.settings.pinRowsPortrait.value *
-                                                            (width - ns.width(context) / context.width * width) ~/
-                                                            ss.settings.pinColumnsLandscape.value,
+                                                        flex: SettingsSvc.settings.pinRowsPortrait.value *
+                                                            (width -
+                                                                NavigationSvc.width(context) / context.width * width) ~/
+                                                            SettingsSvc.settings.pinColumnsLandscape.value,
                                                         child: GridView.custom(
                                                           shrinkWrap: true,
                                                           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                                            crossAxisCount: ss.settings.pinColumnsLandscape.value,
+                                                            crossAxisCount:
+                                                                SettingsSvc.settings.pinColumnsLandscape.value,
                                                           ),
                                                           physics: const NeverScrollableScrollPhysics(),
                                                           childrenDelegate: SliverChildBuilderDelegate(
                                                             (context, index) => Container(
                                                               margin: EdgeInsets.all(2 /
-                                                                  max(ss.settings.pinRowsPortrait.value,
-                                                                      ss.settings.pinColumnsLandscape.value)),
+                                                                  max(SettingsSvc.settings.pinRowsPortrait.value,
+                                                                      SettingsSvc.settings.pinColumnsLandscape.value)),
                                                               decoration: BoxDecoration(
                                                                   borderRadius: BorderRadius.circular(50 /
-                                                                      max(ss.settings.pinRowsPortrait.value,
-                                                                          ss.settings.pinColumnsLandscape.value)),
+                                                                      max(
+                                                                          SettingsSvc.settings.pinRowsPortrait.value,
+                                                                          SettingsSvc
+                                                                              .settings.pinColumnsLandscape.value)),
                                                                   color: context.theme.colorScheme.secondary
                                                                       .lightenOrDarken(10)),
                                                             ),
-                                                            childCount: ss.settings.pinColumnsLandscape.value *
-                                                                ss.settings.pinRowsPortrait.value,
+                                                            childCount: SettingsSvc.settings.pinColumnsLandscape.value *
+                                                                SettingsSvc.settings.pinRowsPortrait.value,
                                                           ),
                                                         ),
                                                       ),
                                                     ),
-                                                    if (ss.settings.pinRowsPortrait.value *
-                                                            (width - ns.width(context) / context.width * width) /
-                                                            ss.settings.pinColumnsLandscape.value <
+                                                    if (SettingsSvc.settings.pinRowsPortrait.value *
+                                                            (width -
+                                                                NavigationSvc.width(context) / context.width * width) /
+                                                            SettingsSvc.settings.pinColumnsLandscape.value <
                                                         96)
                                                       Expanded(
                                                         flex: 96 -
-                                                            ss.settings.pinRowsPortrait.value *
-                                                                (width - ns.width(context) / context.width * width) ~/
-                                                                ss.settings.pinColumnsLandscape.value,
+                                                            SettingsSvc.settings.pinRowsPortrait.value *
+                                                                (width -
+                                                                    NavigationSvc.width(context) /
+                                                                        context.width *
+                                                                        width) ~/
+                                                                SettingsSvc.settings.pinColumnsLandscape.value,
                                                         child: ListView.builder(
-                                                            padding: const EdgeInsets.only(top: 2),
-                                                            physics: const NeverScrollableScrollPhysics(),
-                                                            shrinkWrap: true,
-                                                            findChildIndexCallback: (key) {
-                                                              final index = 8 - ss.settings.pinRowsPortrait.value;
-                                                              return index == -1 ? null : index;
-                                                            },
-                                                            itemBuilder: (context, index) => Container(
-                                                                key: ValueKey(index),
-                                                                height: 12,
-                                                                margin: const EdgeInsets.symmetric(vertical: 1),
-                                                                decoration: BoxDecoration(
-                                                                    color: context.theme.colorScheme.secondary
-                                                                        .lightenOrDarken(10),
-                                                                    borderRadius: BorderRadius.circular(3))),
-                                                            itemCount: 8),
+                                                          padding: const EdgeInsets.only(top: 2),
+                                                          physics: const NeverScrollableScrollPhysics(),
+                                                          shrinkWrap: true,
+                                                          itemBuilder: (context, index) => Container(
+                                                              height: 12,
+                                                              margin: const EdgeInsets.symmetric(vertical: 1),
+                                                              decoration: BoxDecoration(
+                                                                  color: context.theme.colorScheme.secondary
+                                                                      .lightenOrDarken(10),
+                                                                  borderRadius: BorderRadius.circular(3))),
+                                                          itemCount: 8,
+                                                        ),
                                                       ),
                                                   ],
                                                 ),
@@ -434,7 +391,7 @@ class _ChatListPanelState extends OptimizedState<ChatListPanel> {
                                             height: 108,
                                             color: context.theme.colorScheme.secondary.oppositeLightenOrDarken(40)),
                                         Container(
-                                            width: ns.width(context) / context.width * width - 1,
+                                            width: NavigationSvc.width(context) / context.width * width - 1,
                                             height: 108,
                                             color: context.theme.colorScheme.secondary),
                                       ],
@@ -444,128 +401,144 @@ class _ChatListPanelState extends OptimizedState<ChatListPanel> {
                                 return const SizedBox.shrink();
                               }),
                             ],
-                          );
-                        } else {
-                          return const SizedBox.shrink();
-                        }
-                      }),
+                          ),
                     if (kIsDesktop && iOS) const SizedBox(height: 24),
-                    if (!kIsWeb)
-                      const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
+                    if (!kIsWeb) const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     if (!kIsWeb)
                       SettingsTile(
                         title: "Pinned Order",
                         subtitle: "Set the order for your pinned chats",
                         onTap: () {
-                          ns.pushSettings(
+                          NavigationSvc.pushSettings(
                             context,
-                            PinnedOrderPanel(),
+                            const PinnedOrderPanel(),
                           );
                         },
                         trailing: const NextButton(),
                       ),
                   ],
-                ),
+                )),
                 if (!kIsWeb && !kIsDesktop && !iOS)
                   SettingsHeader(iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Swipe Actions"),
                 if (!kIsWeb && !kIsDesktop && !iOS)
-                  SettingsSection(
+                  Obx(() => SettingsSection(
                     backgroundColor: tileColor,
                     children: [
-                      Obx(() => SettingsSwitch(
-                            onChanged: (bool val) {
-                              ss.settings.swipableConversationTiles.value = val;
-                              saveSettings();
-                            },
-                            initialVal: ss.settings.swipableConversationTiles.value,
-                            title: "Swipe Actions for Conversation Tiles",
-                            subtitle: "Enables swipe actions for conversation tiles when using Material theme",
-                            backgroundColor: tileColor,
-                          )),
-                      Obx(() {
-                        if (ss.settings.swipableConversationTiles.value) {
-                          return Container(
-                            color: tileColor,
-                            child: Column(
-                              children: [
-                                SettingsOptions<MaterialSwipeAction>(
-                                  initial: ss.settings.materialRightAction.value,
-                                  onChanged: (val) {
-                                    if (val != null) {
-                                      ss.settings.materialRightAction.value = val;
-                                      saveSettings();
-                                    }
-                                  },
-                                  options: MaterialSwipeAction.values,
-                                  textProcessing: (val) =>
-                                      val.toString().split(".")[1].replaceAll("_", " ").capitalizeFirst!,
-                                  title: "Swipe Right Action",
-                                  secondaryColor: headerColor,
-                                ),
-                                SettingsOptions<MaterialSwipeAction>(
-                                  initial: ss.settings.materialLeftAction.value,
-                                  onChanged: (val) {
-                                    if (val != null) {
-                                      ss.settings.materialLeftAction.value = val;
-                                      saveSettings();
-                                    }
-                                  },
-                                  options: MaterialSwipeAction.values,
-                                  textProcessing: (val) =>
-                                      val.toString().split(".")[1].replaceAll("_", " ").capitalizeFirst!,
-                                  title: "Swipe Left Action",
-                                  secondaryColor: headerColor,
-                                ),
-                              ],
-                            ),
-                          );
-                        } else {
-                          return const SizedBox.shrink();
-                        }
-                      }),
+                      SettingsSwitch(
+                        onChanged: (bool val) async {
+                          SettingsSvc.settings.swipableConversationTiles.value = val;
+                          await SettingsSvc.settings.saveOneAsync('swipableConversationTiles');
+                        },
+                        initialVal: SettingsSvc.settings.swipableConversationTiles.value,
+                        title: "Swipe Actions for Conversation Tiles",
+                        subtitle: "Enables swipe actions for conversation tiles when using Material theme",
+                        backgroundColor: tileColor,
+                      ),
+                      if (SettingsSvc.settings.swipableConversationTiles.value)
+                        Container(
+                          color: tileColor,
+                          child: Column(
+                            children: [
+                              SettingsOptions<MaterialSwipeAction>(
+                                initial: SettingsSvc.settings.materialRightAction.value,
+                                onChanged: (val) async {
+                                  if (val != null) {
+                                    SettingsSvc.settings.materialRightAction.value = val;
+                                    await SettingsSvc.settings.saveOneAsync('materialRightAction');
+                                  }
+                                },
+                                options: MaterialSwipeAction.values,
+                                textProcessing: (val) =>
+                                    val.toString().split(".")[1].replaceAll("_", " ").capitalizeFirst!,
+                                title: "Swipe Right Action",
+                                secondaryColor: headerColor,
+                                useModernMenu: true,
+                              ),
+                              SettingsOptions<MaterialSwipeAction>(
+                                initial: SettingsSvc.settings.materialLeftAction.value,
+                                onChanged: (val) async {
+                                  if (val != null) {
+                                    SettingsSvc.settings.materialLeftAction.value = val;
+                                    await SettingsSvc.settings.saveOneAsync('materialLeftAction');
+                                  }
+                                },
+                                options: MaterialSwipeAction.values,
+                                textProcessing: (val) =>
+                                    val.toString().split(".")[1].replaceAll("_", " ").capitalizeFirst!,
+                                title: "Swipe Left Action",
+                                secondaryColor: headerColor,
+                                useModernMenu: true,
+                              ),
+                            ],
+                          ),
+                        ),
                     ],
-                  ),
+                  )),
                 SettingsHeader(iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Misc"),
                 Obx(() => SettingsSection(
-                  backgroundColor: tileColor,
-                  children: [
-                    if (ss.settings.skin.value == Skins.iOS)
-                      SettingsSwitch(
-                          onChanged: (bool val) {
-                            ss.settings.moveChatCreatorToHeader.value = val;
-                            saveSettings();
+                      backgroundColor: tileColor,
+                      children: [
+                        if (SettingsSvc.settings.skin.value == Skins.iOS)
+                          SettingsSwitch(
+                            onChanged: (bool val) async {
+                              SettingsSvc.settings.moveChatCreatorToHeader.value = val;
+                              await SettingsSvc.settings.saveOneAsync('moveChatCreatorToHeader');
+                            },
+                            initialVal: SettingsSvc.settings.moveChatCreatorToHeader.value,
+                            title: "Move Chat Creator Button to Header",
+                            subtitle: "Replaces the floating button at the bottom to a fixed button at the top",
+                            backgroundColor: tileColor,
+                            isThreeLine: true,
+                          ),
+                        if (SettingsSvc.settings.skin.value == Skins.iOS)
+                          const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
+                        SettingsSwitch(
+                          onChanged: (bool val) async {
+                            SettingsSvc.settings.showFiltersInHeader.value = val;
+                            await SettingsSvc.settings.saveOneAsync('showFiltersInHeader');
                           },
-                          initialVal: ss.settings.moveChatCreatorToHeader.value,
-                          title: "Move Chat Creator Button to Header",
-                          subtitle: "Replaces the floating button at the bottom to a fixed button at the top",
+                          initialVal: SettingsSvc.settings.showFiltersInHeader.value,
+                          title: "Show Filters in Header",
+                          subtitle:
+                              "Adds a shortcut button next to search to quickly open the chat list filters, highlighted when a filter is active",
                           backgroundColor: tileColor,
                           isThreeLine: true,
                         ),
-                    if (ss.settings.skin.value == Skins.iOS && !kIsWeb && !kIsDesktop)
-                      const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
-                    if (!kIsWeb && !kIsDesktop)
-                      SettingsSwitch(
-                            onChanged: (bool val) {
-                              ss.settings.cameraFAB.value = val;
-                              saveSettings();
+                        const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
+                        SettingsSwitch(
+                          onChanged: (bool val) async {
+                            SettingsSvc.settings.showCustomGroupFilterChips.value = val;
+                            await SettingsSvc.settings.saveOneAsync('showCustomGroupFilterChips');
+                          },
+                          initialVal: SettingsSvc.settings.showCustomGroupFilterChips.value,
+                          title: "Show Custom Group Filters",
+                          subtitle: "Adds quick-filter chips for your custom groups above the chat list",
+                          backgroundColor: tileColor,
+                          isThreeLine: true,
+                        ),
+                        if (!kIsWeb && !kIsDesktop)
+                          const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
+                        if (!kIsWeb && !kIsDesktop)
+                          SettingsSwitch(
+                            onChanged: (bool val) async {
+                              SettingsSvc.settings.cameraFAB.value = val;
+                              await SettingsSvc.settings.saveOneAsync('cameraFAB');
                             },
-                            initialVal: ss.settings.cameraFAB.value,
-                            title: ss.settings.skin.value != Skins.iOS ? "Long Press for Camera" : "Add Camera Button",
-                            subtitle: ss.settings.skin.value != Skins.iOS
+                            initialVal: SettingsSvc.settings.cameraFAB.value,
+                            title: SettingsSvc.settings.skin.value != Skins.iOS
+                                ? "Long Press for Camera"
+                                : "Add Camera Button",
+                            subtitle: SettingsSvc.settings.skin.value != Skins.iOS
                                 ? "Long press the start chat button to easily send a picture to a chat"
                                 : "Adds a dedicated camera button near the new chat creator button to easily send pictures",
                             backgroundColor: tileColor,
                             isThreeLine: true,
                           ),
-                  ],
-                )),
+                      ],
+                    )),
               ],
             ),
           ),
         ]);
-  }
-
-  void saveSettings() {
-    ss.saveSettings(ss.settings);
   }
 }

@@ -11,25 +11,122 @@ import 'package:get/get.dart' hide Response;
 import 'package:path/path.dart';
 import 'package:universal_io/io.dart';
 
+/// Download state for attachments
+enum AttachmentDownloadState {
+  /// Waiting in queue to start downloading
+  queued,
+
+  /// Currently downloading from server
+  downloading,
+
+  /// Download complete, now processing (EXIF extraction, format conversion, etc.)
+  processing,
+
+  /// Download and processing complete
+  complete,
+
+  /// Download or processing failed
+  error,
+}
+
 /// Get an instance of our [AttachmentDownloadService]
-AttachmentDownloadService attachmentDownloader = Get.isRegistered<AttachmentDownloadService>()
-    ? Get.find<AttachmentDownloadService>() : Get.put(AttachmentDownloadService());
+// ignore: non_constant_identifier_names
+AttachmentDownloadService AttachmentDownloader = Get.isRegistered<AttachmentDownloadService>()
+    ? Get.find<AttachmentDownloadService>()
+    : Get.put(AttachmentDownloadService());
 
 class AttachmentDownloadService extends GetxService {
-  int maxDownloads = 2;
   final RxList<String> downloaders = <String>[].obs;
   final Map<String, List<AttachmentDownloadController>> _downloaders = {};
 
-  AttachmentDownloadController? getController(String? guid) {
-    return _downloaders.values.flattened.firstWhereOrNull((element) => element.attachment.guid == guid);
+  bool _isActiveState(AttachmentDownloadState state) {
+    return state == AttachmentDownloadState.queued ||
+        state == AttachmentDownloadState.downloading ||
+        state == AttachmentDownloadState.processing;
   }
 
-  AttachmentDownloadController startDownload(Attachment a, {Function(PlatformFile)? onComplete, Function? onError}) {
-    return Get.put(AttachmentDownloadController(
-      attachment: a,
-      onComplete: onComplete,
-      onError: onError,
-    ), tag: a.guid!);
+  void _removeGuidFromQueueMap(String guid) {
+    downloaders.remove(guid);
+    final emptyKeys = <String>[];
+    for (final entry in _downloaders.entries) {
+      entry.value.removeWhere((e) => e.attachment.guid == guid);
+      if (entry.value.isEmpty) {
+        emptyKeys.add(entry.key);
+      }
+    }
+
+    for (final key in emptyKeys) {
+      _downloaders.remove(key);
+    }
+  }
+
+  AttachmentDownloadController? getController(String? guid) {
+    if (guid == null) return null;
+
+    // Drop stale queued references first so callers only ever get live work.
+    _removeGuidFromQueueMap(guid);
+
+    final registered = Get.isRegistered<AttachmentDownloadController>(tag: guid)
+        ? Get.find<AttachmentDownloadController>(tag: guid)
+        : null;
+    if (registered == null || !_isActiveState(registered.state.value)) {
+      if (registered != null && Get.isRegistered<AttachmentDownloadController>(tag: guid)) {
+        Get.delete<AttachmentDownloadController>(tag: guid);
+      }
+      return null;
+    }
+
+    // Ensure queue map reflects the currently active controller instance.
+    final chatGuid = registered.attachment.message.target?.chat.target?.guid ?? "unknown";
+    _downloaders.putIfAbsent(chatGuid, () => []);
+    if (!_downloaders[chatGuid]!.contains(registered)) {
+      _downloaders[chatGuid]!.add(registered);
+    }
+    if (!downloaders.contains(guid)) {
+      downloaders.add(guid);
+    }
+
+    return registered;
+  }
+
+  void clearControllerForGuid(String guid, {bool deleteRegistered = true}) {
+    _removeGuidFromQueueMap(guid);
+    if (Get.isRegistered<AttachmentDownloadController>(tag: guid)) {
+      // Abort any in-flight request before dropping the registration -- otherwise
+      // a still-running fetchAttachment() keeps writing to the same deterministic
+      // `.part` path a freshly-started controller (or a redownload's file wipe)
+      // will also touch, and whichever one loses the race hits a rename/delete on
+      // a file the other side already moved out from under it.
+      Get.find<AttachmentDownloadController>(tag: guid).cancel();
+      if (deleteRegistered) {
+        Get.delete<AttachmentDownloadController>(tag: guid);
+      }
+    }
+  }
+
+  AttachmentDownloadController startDownload(Attachment a,
+      {Function(PlatformFile)? onComplete, Function? onError, bool forceFresh = false}) {
+    final guid = a.guid;
+    if (guid != null && forceFresh) {
+      clearControllerForGuid(guid);
+    }
+
+    if (guid != null) {
+      final existing = getController(guid);
+      if (existing != null) {
+        if (onComplete != null) existing.completeFuncs.add(onComplete);
+        if (onError != null) existing.errorFuncs.add(onError);
+        return existing;
+      }
+    }
+
+    return Get.put(
+        AttachmentDownloadController(
+          attachment: a,
+          onComplete: onComplete,
+          onError: onError,
+        ),
+        tag: a.guid!);
   }
 
   void _addToQueue(AttachmentDownloadController downloader) {
@@ -46,23 +143,28 @@ class AttachmentDownloadService extends GetxService {
   void _removeFromQueue(AttachmentDownloadController downloader) {
     downloaders.remove(downloader.attachment.guid!);
     final chatGuid = downloader.attachment.message.target?.chat.target?.guid ?? "unknown";
-    _downloaders[chatGuid]!.removeWhere((e) => e.attachment.guid == downloader.attachment.guid);
-    if (_downloaders[chatGuid]!.isEmpty) _downloaders.remove(chatGuid);
+    _downloaders[chatGuid]?.removeWhere((e) => e.attachment.guid == downloader.attachment.guid);
+    if (_downloaders[chatGuid]?.isEmpty ?? false) _downloaders.remove(chatGuid);
     Get.delete<AttachmentDownloadController>(tag: downloader.attachment.guid!);
     _fetchNext();
   }
 
   void _fetchNext() {
-    if (_downloaders.values.flattened.where((e) => e.isFetching).length < maxDownloads) {
+    final maxDownloads = SettingsSvc.settings.maxConcurrentDownloads.value;
+    if (_downloaders.values.flattened.where((e) => e.state.value == AttachmentDownloadState.downloading).length <
+        maxDownloads) {
       AttachmentDownloadController? activeChatDownloader;
       // first check if we have an active chat that needs downloads, if so prioritize that chat
-      if (cm.activeChat != null && _downloaders.containsKey(cm.activeChat!.chat.guid)) {
-        activeChatDownloader = _downloaders[cm.activeChat!.chat.guid]!.firstWhereOrNull((e) => !e.isFetching);
+      if (ChatsSvc.activeChat != null && _downloaders.containsKey(ChatsSvc.activeChat!.chat.guid)) {
+        activeChatDownloader = _downloaders[ChatsSvc.activeChat!.chat.guid]!
+            .firstWhereOrNull((e) => e.state.value == AttachmentDownloadState.queued);
         activeChatDownloader?.fetchAttachment();
       }
       // otherwise just grab a random attachment that needs fetching
       if (activeChatDownloader == null) {
-        _downloaders.values.flattened.firstWhereOrNull((e) => !e.isFetching)?.fetchAttachment();
+        _downloaders.values.flattened
+            .firstWhereOrNull((e) => e.state.value == AttachmentDownloadState.queued)
+            ?.fetchAttachment();
       }
     }
   }
@@ -74,9 +176,21 @@ class AttachmentDownloadController extends GetxController {
   final List<Function> errorFuncs = [];
   final RxnNum progress = RxnNum();
   final Rxn<PlatformFile> file = Rxn<PlatformFile>();
-  final RxBool error = RxBool(false);
+  final Rx<AttachmentDownloadState> state = Rx<AttachmentDownloadState>(AttachmentDownloadState.queued);
   Stopwatch stopwatch = Stopwatch();
-  bool isFetching = false;
+  CancelToken? _cancelToken;
+
+  /// Guards against [fetchAttachment] running twice for this instance. Every
+  /// caller (both branches of [AttachmentDownloadService._fetchNext]) already
+  /// checks `state.value == queued` before calling, but that check and the
+  /// synchronous `state.value = downloading` assignment below aren't the same
+  /// operation -- if two call sites both observe `queued` in the same tick,
+  /// they'd otherwise both proceed to issue their own GET for the same file.
+  bool _fetchStarted = false;
+
+  /// Set once this download has been failed, so the request-level `catchError`
+  /// and the checks that follow it can't run the error path twice.
+  bool _failed = false;
 
   AttachmentDownloadController({
     required this.attachment,
@@ -89,77 +203,214 @@ class AttachmentDownloadController extends GetxController {
 
   @override
   void onInit() {
-    attachmentDownloader._addToQueue(this);
+    AttachmentDownloader._addToQueue(this);
     super.onInit();
+  }
+
+  /// Aborts an in-flight request. Called when a newer controller for the same
+  /// attachment is about to reuse this one's deterministic `.part` path (see
+  /// [AttachmentDownloadService.clearControllerForGuid]).
+  void cancel() {
+    if (_cancelToken?.isCancelled == false) _cancelToken?.cancel('superseded');
+  }
+
+  /// Fails this download: drops any partial file, notifies the error callbacks,
+  /// moves to [AttachmentDownloadState.error], and frees the queue slot.
+  ///
+  /// Every abnormal exit from [fetchAttachment] must come through here. A path
+  /// that returns without it leaves the controller parked in a non-terminal
+  /// state forever: the UI keeps rendering the downloading widget, the tap
+  /// handler refuses to retry (it only retries from `error`), and — because
+  /// [AttachmentDownloadService._fetchNext] counts `downloading` controllers
+  /// against `maxConcurrentDownloads` (default 2) — the slot is never released,
+  /// so two stranded downloads deadlock the queue for the whole session.
+  Future<void> _failDownload(String? tempPath, String reason, {Object? error, StackTrace? trace}) async {
+    if (_failed) return;
+    _failed = true;
+
+    Logger.error(
+      "Attachment download failed for ${attachment.guid} ($reason)",
+      error: error,
+      trace: trace,
+    );
+
+    if (!kIsWeb && tempPath != null) {
+      try {
+        final tempFile = File(tempPath);
+        if (await tempFile.exists()) await tempFile.delete();
+      } catch (_) {}
+    }
+
+    for (Function f in errorFuncs) {
+      try {
+        f.call();
+      } catch (e, s) {
+        Logger.error("Attachment download error callback threw", error: e, trace: s);
+      }
+    }
+
+    state.value = AttachmentDownloadState.error;
+    AttachmentDownloader._removeFromQueue(this);
   }
 
   Future<void> fetchAttachment() async {
     if (attachment.guid == null || attachment.guid!.contains("temp")) return;
-    isFetching = true;
+    if (_fetchStarted) return;
+    _fetchStarted = true;
+    state.value = AttachmentDownloadState.downloading;
     stopwatch.start();
-    PlatformFile response;
-    try {
-        response = await backend.downloadAttachment(attachment,
-          onReceiveProgress: (count, total) => setProgress(kIsWeb ? (count / total) : (count / attachment.totalBytes!)));
-    } catch (e, stack) {
-      Logger.error("Attachment fetch error", error: e, trace: stack);
-      if (!kIsWeb) {
-        File file = File(attachment.path);
-        if (await file.exists()) {
-          await file.delete();
-        }
-      }
-      for (Function f in errorFuncs) {
-        f.call();
-      }
+    _cancelToken = CancelToken();
 
-      error.value = true;
-      attachmentDownloader._removeFromQueue(this);
+    // Mark as not downloaded while downloading (handles re-downloads)
+    attachment.isDownloaded = false;
+
+    // OpenBubbles: the download itself belongs to the active BackendService —
+    // rustpush streams straight from iCloud/MMCS, HttpBackend goes to the
+    // BlueBubbles server. Either way it owns the destination (attachment.path)
+    // and returns the finished PlatformFile, so the `.part` staging upstream
+    // does inside the HTTP call lives behind BackendService.downloadAttachment
+    // rather than here.
+    // Backends that stage their download (HttpBackend) use this deterministic
+    // `.part` path; passing it to _failDownload makes sure a partial file is
+    // cleaned up. Harmless for backends that write straight to attachment.path.
+    final String? tempPath = kIsWeb ? null : "${attachment.path}.part";
+
+    PlatformFile downloaded;
+    try {
+      downloaded = await backend.downloadAttachment(
+        attachment,
+        cancelToken: _cancelToken,
+        onReceiveProgress: (count, total) {
+          // `attachment.totalBytes` is preferred on native because dio reports
+          // -1 for `total` when the server omits Content-Length. Either can be
+          // missing, so fall back to whichever is usable rather than asserting
+          // one with `!` -- a throw here fails an otherwise fine download.
+          final int denominator = kIsWeb ? total : (attachment.totalBytes ?? total);
+          setProgress(denominator > 0 ? count / denominator : 0);
+        },
+      );
+    } catch (err, stack) {
+      await _failDownload(tempPath, "request failed", error: err, trace: stack);
       return;
     }
-    if (!kIsWeb && !kIsDesktop && response.path == null) {
-      File _file = await File(attachment.path).create(recursive: true);
-      await _file.writeAsBytes(response.bytes!);
-      response.path = attachment.path;
+
+    if (_failed) return;
+
+    Logger.info("Finished downloading attachment");
+
+    try {
+      await _processDownloadedFile(downloaded);
+    } catch (e, s) {
+      await _failDownload(tempPath, "post-processing failed", error: e, trace: s);
+      return;
     }
-    Logger.info("Finished fetching attachment");
+
+    if (_failed) return;
+
+    // The download is complete and the state machine has said so. Everything
+    // past this point is best-effort -- a failure here must not walk that back.
+    for (Function f in completeFuncs) {
+      try {
+        f.call(file.value);
+      } catch (e, s) {
+        Logger.error("Attachment download completion callback threw", error: e, trace: s);
+      }
+    }
+
+    // Finally, remove the downloader from queue
+    AttachmentDownloader._removeFromQueue(this);
+
+    try {
+      await _runPostCompletionHandling();
+    } catch (e, s) {
+      Logger.error("Post-download handling failed for ${attachment.guid}", error: e, trace: s);
+    }
+  }
+
+  /// Converts the finished response into the on-disk (or in-memory) file and
+  /// marks this controller complete.
+  ///
+  /// Everything in here runs while the UI is showing "Processing...", so any
+  /// throw that escapes it strands the controller in that state — hence the
+  /// caller wrapping this in a try/catch that routes to [_failDownload].
+  Future<void> _processDownloadedFile(PlatformFile downloaded) async {
     stopwatch.stop();
     Logger.info("Attachment downloaded in ${stopwatch.elapsedMilliseconds} ms");
 
-    try {
-      // Compress the attachment
-      if (!kIsWeb) {
-        await as.loadAndGetProperties(attachment, actualPath: attachment.path);
-        attachment.save(null);
+    // Set processing state to show indeterminate spinner
+    progress.value = 1.0;
+    state.value = AttachmentDownloadState.processing;
+
+    // Handle web-specific processing (bytes in memory)
+    Uint8List? bytes = downloaded.bytes;
+    if (kIsWeb) {
+      if (attachment.mimeType == "image/gif" && bytes != null) {
+        bytes = await fixSpeedyGifs(bytes);
       }
-    } catch (ex) {
-      // So what if it crashes here.... I don't care...
+      attachment.bytes = bytes;
+    } else {
+      // A backend may hand back bytes without having written them anywhere
+      // (web-style responses). Make sure attachment.path is populated before
+      // anything below reads from it.
+      if (downloaded.path == null && bytes != null) {
+        final target = await File(attachment.path).create(recursive: true);
+        await target.writeAsBytes(bytes);
+      }
+
+      // Handle GIF optimization in place.
+      if (attachment.mimeType == "image/gif") {
+        final gifFile = File(attachment.path);
+        if (await gifFile.exists()) {
+          final optimizedBytes = await fixSpeedyGifs(await gifFile.readAsBytes());
+          await gifFile.writeAsBytes(optimizedBytes);
+        }
+      }
     }
 
-    // Finish the downloader
-    attachmentDownloader._removeFromQueue(this);
-    // Add attachment to sink based on if we got data
-
-    file.value = response;
-    for (Function f in completeFuncs) {
-      f.call(file.value);
-    }
-    if (kIsDesktop) {
-      if (attachment.bytes != null) {
-        File _file = await File(attachment.path).create(recursive: true);
-        await _file.writeAsBytes(attachment.bytes!.toList());
+    // Load image properties before displaying (so UI shows correct dimensions immediately)
+    if (!kIsWeb && attachment.mimeStart == "image") {
+      try {
+        await AttachmentsSvc.loadImageProperties(attachment, actualPath: attachment.path);
+      } catch (ex) {
+        Logger.warn("Failed to load image properties", error: ex);
       }
     }
-    if (ss.settings.autoSave.value
-        && !kIsWeb
-        && !kIsDesktop
-        && !(attachment.isOutgoing ?? false)
-        && !(attachment.message.target?.isInteractive ?? false)) {
-      String filePath = "/storage/emulated/0/Download/";
+
+    // Create the PlatformFile
+    file.value = PlatformFile(
+      name: attachment.transferName ?? downloaded.name,
+      path: kIsWeb ? null : attachment.path,
+      size: kIsWeb ? (bytes?.length ?? 0) : await File(attachment.path).length(),
+      bytes: kIsWeb ? bytes : null,
+    );
+
+    // Mark attachment as downloaded and save to database
+    attachment.isDownloaded = true;
+    await attachment.saveAsync(attachment.message.target);
+
+    // Mark as complete
+    state.value = AttachmentDownloadState.complete;
+  }
+
+  /// Optional work that runs after the download has already been marked
+  /// complete: mirroring bytes to disk on desktop, and the auto-save setting.
+  Future<void> _runPostCompletionHandling() async {
+    // Desktop-specific handling
+    if (kIsDesktop && attachment.bytes != null) {
+      File _file = await File(attachment.path).create(recursive: true);
+      await _file.writeAsBytes(attachment.bytes!.toList());
+    }
+
+    // Auto-save handling
+    if (SettingsSvc.settings.autoSave.value &&
+        !kIsWeb &&
+        !kIsDesktop &&
+        !(attachment.isOutgoing ?? false) &&
+        !(attachment.message.target?.isInteractive ?? false)) {
       if (attachment.mimeType?.startsWith("image") ?? false) {
-        await as.saveToDisk(file.value!, isAutoDownload: true);
+        await AttachmentsSvc.saveToDisk(file.value!, isAutoDownload: true);
       } else if (file.value?.bytes != null) {
-        await File(join(filePath, file.value!.name)).writeAsBytes(file.value!.bytes!);
+        await File(join(await FilesystemSvc.downloadsDirectory, file.value!.name)).writeAsBytes(file.value!.bytes!);
       }
     }
   }

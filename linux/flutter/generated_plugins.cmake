@@ -4,14 +4,15 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   bitsdojo_window_linux
+  desktop_drop
   desktop_webview_auth
   dynamic_color
   emoji_picker_flutter
+  ffmpeg_kit_flutter_new_min
   file_selector_linux
   flutter_acrylic
+  flutter_timezone
   gtk
-  irondash_engine_context
-  local_notifier
   maps_launcher
   media_kit_libs_linux
   media_kit_video
@@ -19,16 +20,15 @@ list(APPEND FLUTTER_PLUGIN_LIST
   pasteboard
   printing
   record_linux
-  screen_retriever
-  super_native_extensions
-  system_tray
+  screen_retriever_linux
+  sqlite3_flutter_libs
   tray_manager
   url_launcher_linux
   window_manager
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
-  media_kit_native_event_loop
+  jni
   rust_lib_bluebubbles
 )
 

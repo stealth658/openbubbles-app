@@ -1,41 +1,43 @@
-import 'dart:convert';
-import 'dart:ui';
-
+import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/interactive/cupertino_url_preview.dart';
+import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/interactive/expressive_url_preview.dart';
+import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/interactive/url_preview_controller.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/reply/reply_bubble.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
-import 'package:bluebubbles/helpers/helpers.dart';
+import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/shared/message_clone_scope.dart';
+import 'package:bluebubbles/app/state/message_state_scope.dart';
 import 'package:bluebubbles/database/models.dart';
-import 'package:bluebubbles/services/services.dart';
-import 'package:collection/collection.dart';
-import 'package:flutter/foundation.dart';
+import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:html/parser.dart' as parser;
-import 'package:metadata_fetch/metadata_fetch.dart';
-import 'package:universal_io/io.dart';
-import 'package:url_launcher/url_launcher.dart';
 
+/// Link preview card.
+///
+/// Owns the [UrlPreviewController] — all fetch, cache and policy wiring — and
+/// dispatches rendering to a skin.
+///
+/// The dispatch is a plain branch rather than a `ThemeSwitcher`. `ThemeSwitcher`
+/// takes already-constructed widgets for every skin, so it would allocate both
+/// variants on each build and throw one away — acceptable for a settings page
+/// built once, wasteful for a widget that exists per message in a scrolling
+/// list. Its `Obx` is also redundant here: changing the app skin runs
+/// `ChatsSvc.setAllInactive()` first, which tears down open conversation views
+/// so they rebuild against the new skin. That is why nothing else under
+/// `widgets/message/` uses `ThemeSwitcher` either.
 class UrlPreview extends StatefulWidget {
   final UrlPreviewData data;
-  final Message message;
   final PlatformFile? file;
 
-  UrlPreview({
+  const UrlPreview({
     super.key,
     required this.data,
-    required this.message,
     this.file,
   });
 
   @override
-  OptimizedState createState() => _UrlPreviewState();
+  State<StatefulWidget> createState() => _UrlPreviewState();
 }
 
-class _UrlPreviewState extends OptimizedState<UrlPreview> with AutomaticKeepAliveClientMixin {
-  UrlPreviewData get data => widget.data;
-  UrlPreviewData? dataOverride;
-  dynamic get file => File(content.path!);
-  dynamic content;
+class _UrlPreviewState extends State<UrlPreview>
+    with AutomaticKeepAliveClientMixin, TickerProviderStateMixin, ThemeHelpers {
+  late final UrlPreviewController controller;
 
   @override
   bool get wantKeepAlive => true;
@@ -43,225 +45,53 @@ class _UrlPreviewState extends OptimizedState<UrlPreview> with AutomaticKeepAliv
   @override
   void initState() {
     super.initState();
-    updateObx(() async {
-      // refers to a location widget
-      if (widget.file != null) {
-        String? _location;
-        if (kIsWeb || widget.file!.path == null) {
-          _location = utf8.decode(widget.file!.bytes!);
-        } else {
-          _location = await File(widget.file!.path!).readAsString();
-        }
-        dataOverride = UrlPreviewData(
-          title: data.title,
-          siteName: data.siteName,
-        );
-        dataOverride!.url = as.parseAppleLocationUrl(_location)?.replaceAll("\\", "").replaceAll("http:", "https:").replaceAll("/?", "/place?").replaceAll(",", "%2C");
-        if (dataOverride!.url == null) return;
-        final response = await http.dio.get(dataOverride!.url!);
-        final document = parser.parse(response.data);
-        final link = document.getElementsByClassName("sc-platter-cell").firstOrNull?.children.firstWhereOrNull((e) => e.localName == "a");
-        final url = link?.attributes["href"];
-        if (url != null) {
-          MetadataFetch.extract(dataOverride!.url!).then((metadata) {
-            if (metadata?.image != null) {
-              dataOverride!.imageMetadata = MediaMetadata(size: const Size.square(1), url: metadata!.image);
-              dataOverride!.summary = metadata.description ?? metadata.title;
-              dataOverride!.url = url;
-              setState(() {});
-            }
-          });
-        }
-      } else if (data.imageMetadata?.url == null && data.iconMetadata?.url == null) {
-        final attachment = widget.message.attachments
-            .firstWhereOrNull((e) => e?.transferName?.contains("pluginPayloadAttachment") ?? false);
-        if (attachment != null) {
-          content = as.getContent(attachment, autoDownload: true, onComplete: (file) {
-            setState(() {
-              content = file;
-            });
-          });
-          if (content is PlatformFile) {
-            setState(() {});
-          }
-        } else {
-          MetadataFetch.extract((data.url ?? data.originalUrl)!).then((metadata) async {
-            if (metadata?.image != null) {
-              data.imageMetadata = MediaMetadata(size: const Size.square(1), url: metadata!.image);
-              widget.message.save();
-              setState(() {});
-            } else {
-              final response = await http.dio.get((data.url ?? data.originalUrl)!);
-              if (response.headers.value('content-type')?.startsWith("image/") ?? false) {
-                data.imageMetadata = MediaMetadata(size: const Size.square(1), url: (data.url ?? data.originalUrl)!);
-                widget.message.save();
-                setState(() {});
-              }
-            }
-          });
-        }
-      }
-    });
+    controller = UrlPreviewController(data: widget.data, file: widget.file, vsync: this);
+
+    // UrlPreview is also used outside a message context (the links and
+    // locations sections of conversation details), so both scopes are looked up
+    // defensively rather than asserted.
+    //
+    // getInheritedWidgetOfExactType throughout: dependOnInheritedWidgetOfExactType
+    // is illegal in initState, and neither scope changes for a given subtree so
+    // there is no dependency worth registering. Both of these are inherited
+    // widgets, so this is also an O(1) lookup — findAncestorWidgetOfExactType
+    // would walk the ancestor chain once per message bubble for the same answer.
+    controller.attach(
+      messageState: context.getInheritedWidgetOfExactType<MessageStateScope>()?.messageState,
+      inReply: context.getInheritedWidgetOfExactType<ReplyScope>() != null,
+      isClone: MessageCloneScope.of(context),
+    );
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final siteText = widget.file != null ? (dataOverride?.siteName ?? "") : Uri.tryParse(data.url ?? data.originalUrl ?? "")?.host ?? data.siteName;
-    final hasAppleImage = (data.imageMetadata?.url == null || (data.iconMetadata?.url == null && data.imageMetadata?.size == Size.zero));
-    final _data = dataOverride ?? data;
-    return InkWell(
-      onTap: widget.file != null && _data.url != null ? () async {
-        await launchUrl(
-          Uri.parse(_data.url!),
-          mode: LaunchMode.externalApplication
-        );
-      } : null,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (_data.imageMetadata?.url != null && ReplyScope.maybeOf(context) == null)
-            Container(
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: NetworkImage(_data.imageMetadata!.url!),
-                  fit: BoxFit.cover,
-                ),
-              ),
-              child: ClipRect(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
-                  child: Center(
-                    heightFactor: 1,
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(maxHeight: context.height * 0.4),
-                      child: Image.network(
-                        _data.imageMetadata!.url!,
-                        gaplessPlayback: true,
-                        filterQuality: FilterQuality.none,
-                        errorBuilder: (context, object, stacktrace) => Center(
-                          heightFactor: 1,
-                          child: Text("Failed to display image", style: context.theme.textTheme.bodyLarge),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          if (content is PlatformFile && hasAppleImage && content.bytes != null && ReplyScope.maybeOf(context) == null)
-           Container(
-             decoration: BoxDecoration(
-               image: DecorationImage(
-                 image: MemoryImage(content.bytes!),
-                 fit: BoxFit.cover,
-               ),
-             ),
-             child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
-                child: Center(
-                  heightFactor: 1,
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(maxHeight: context.height * 0.4),
-                    child: Image.memory(
-                      content.bytes!,
-                      gaplessPlayback: true,
-                      filterQuality: FilterQuality.none,
-                      errorBuilder: (context, object, stacktrace) => Center(
-                        heightFactor: 1,
-                        child: Text("Failed to display image", style: context.theme.textTheme.bodyLarge),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-           ),
-          if (content is PlatformFile && hasAppleImage && content.bytes == null && content.path != null && ReplyScope.maybeOf(context) == null)
-            Container(
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: FileImage(file),
-                  fit: BoxFit.cover,
-                ),
-              ),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
-                child: Center(
-                  heightFactor: 1,
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(maxHeight: context.height * 0.4),
-                    child: Image.file(
-                      file,
-                      gaplessPlayback: true,
-                      filterQuality: FilterQuality.none,
-                      errorBuilder: (context, object, stacktrace) => Center(
-                        heightFactor: 1,
-                        child: Text("Failed to display image", style: context.theme.textTheme.bodyLarge),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          Padding(
-            padding: const EdgeInsets.all(15.0),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Flexible(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        !isNullOrEmpty(_data.title)
-                            ? _data.title!
-                            : !isNullOrEmpty(siteText)
-                            ? siteText! : widget.message.text!,
-                        style: context.theme.textTheme.bodyMedium!.apply(fontWeightDelta: 2),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      if (!isNullOrEmpty(_data.summary))
-                        const SizedBox(height: 5),
-                      if (!isNullOrEmpty(_data.summary))
-                        Text(
-                          _data.summary ?? "",
-                          maxLines: ReplyScope.maybeOf(context) == null ? 3 : 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: context.theme.textTheme.labelMedium!.copyWith(fontWeight: FontWeight.normal)
-                        ),
-                      if (!isNullOrEmpty(siteText))
-                        const SizedBox(height: 5),
-                      if (!isNullOrEmpty(siteText))
-                        Text(
-                          siteText!,
-                          style: context.theme.textTheme.labelMedium!.copyWith(fontWeight: FontWeight.normal, color: context.theme.colorScheme.outline),
-                          overflow: TextOverflow.clip,
-                          maxLines: 1,
-                        ),
-                    ]
-                  ),
-                ),
-                if (_data.iconMetadata?.url != null)
-                  const SizedBox(width: 10),
-                if (_data.iconMetadata?.url != null)
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(
-                      maxWidth: 45,
-                    ),
-                    child: Image.network(
-                      _data.iconMetadata!.url!,
-                      gaplessPlayback: true,
-                      filterQuality: FilterQuality.none,
-                    ),
-                  ),
-              ],
-            ),
-          )
-        ],
-      ),
+    final card = iOS ? CupertinoUrlPreview(controller: controller) : ExpressiveUrlPreview(controller: controller);
+
+    // Reply bubbles are laid out compactly and carry no image or affordance, so
+    // they keep shrink-wrapping.
+    if (controller.inReply) return card;
+
+    // Take the full width offered, rather than the width the current content
+    // happens to want. Without this the card is sized by whatever it holds at
+    // the moment: it starts narrow around a bare title, widens when the
+    // tap-to-load affordance appears, changes again when the label switches to
+    // "Loading Preview…", and jumps to full width when the image lands. Fixing
+    // the width up front leaves height — the image growing in — as the only
+    // thing that animates.
+    //
+    // Via LayoutBuilder rather than `width: double.infinity` because this widget
+    // is also rendered in the conversation-details link and location lists,
+    // where an unbounded width is possible and infinity would throw.
+    return LayoutBuilder(
+      builder: (context, constraints) =>
+          constraints.hasBoundedWidth ? SizedBox(width: constraints.maxWidth, child: card) : card,
     );
   }
 }

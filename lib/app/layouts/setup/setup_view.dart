@@ -11,16 +11,17 @@ import 'package:bluebubbles/app/layouts/setup/pages/rustpush/finalize.dart';
 import 'package:bluebubbles/app/layouts/setup/pages/rustpush/hw_inp.dart';
 import 'package:bluebubbles/app/layouts/setup/pages/rustpush/phone_number.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
+import 'package:bluebubbles/app/layouts/setup/pages/permissions/request_permissions.dart';
 import 'package:bluebubbles/app/layouts/setup/pages/setup_checks/battery_optimization.dart';
 import 'package:bluebubbles/app/layouts/setup/dialogs/failed_to_connect_dialog.dart';
 import 'package:bluebubbles/app/layouts/setup/pages/sync/sync_settings.dart';
 import 'package:bluebubbles/app/layouts/setup/pages/sync/server_credentials.dart';
-import 'package:bluebubbles/app/layouts/setup/pages/contacts/request_contacts.dart';
 import 'package:bluebubbles/app/layouts/setup/pages/bluetooth/request_bluetooth.dart';
 import 'package:bluebubbles/app/layouts/setup/pages/setup_checks/mac_setup_check.dart';
 import 'package:bluebubbles/app/layouts/setup/pages/sync/sync_progress.dart';
 import 'package:bluebubbles/app/layouts/setup/pages/welcome/welcome_page.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
+import 'package:bluebubbles/helpers/backend/settings_helpers.dart';
 import 'package:bluebubbles/main.dart';
 import 'package:bluebubbles/services/rustpush/rustpush_service.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -31,7 +32,6 @@ import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:crypto/crypto.dart';
 import 'package:file_picker/file_picker.dart' as picker;
 import 'package:dio/dio.dart';
-import 'package:disable_battery_optimization/disable_battery_optimization.dart';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -40,7 +40,6 @@ import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge.dart';
 import 'package:get/get.dart' hide FormData, MultipartFile;
-import 'package:permission_handler/permission_handler.dart';
 import 'package:bluebubbles/src/rust/api/api.dart' as api;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:convert/convert.dart';
@@ -54,6 +53,8 @@ class SetupViewController extends StatefulController {
   int numberToDownload = 25;
   bool skipEmptyChats = true;
   bool saveToDownloads = false;
+  bool syncGroupChatIcons = false;
+  int? syncTimeFilter = 15552000000; // 6 months in milliseconds (default)
   String error = "";
   bool obscurePass = true;
   RxBool isSms = false.obs;
@@ -100,7 +101,7 @@ class SetupViewController extends StatefulController {
   RxString noCapErrorMsg = "Currently full. If you got an invite, enter your code from your email. Otherwise, sign up to get notified!".obs;
 
   bool errorIsProblem() {
-    return error.isNotEmpty && !error.contains("Enter the correct password") && !error.contains("Your account information was entered incorrectly") && !error.contains("Sorry, your hosted device is currently offline!") && (!error.contains("Relay device offline") || !ss.settings.deviceIsHosted.value);
+    return error.isNotEmpty && !error.contains("Enter the correct password") && !error.contains("Your account information was entered incorrectly") && !error.contains("Sorry, your hosted device is currently offline!") && (!error.contains("Relay device offline") || !SettingsSvc.settings.deviceIsHosted.value);
   }
 
   bool hasValidToken() {
@@ -114,7 +115,7 @@ class SetupViewController extends StatefulController {
         headers["X-OpenBubbles-Waitlist"] = currentWaitlist;
       }
       // we need to refresh tokens
-      final response2 = await http.dio.post(
+      final response2 = await HttpSvc.dio.post(
         "https://hw.openbubbles.app/ticket",
         options: Options(headers: headers)
       );
@@ -155,9 +156,9 @@ class SetupViewController extends StatefulController {
 
     if (!hasValidToken()) {
       var details = (await pushService.getPurchaseDetails())?.purchaseToken;
-      details ??= ss.settings.hostedToken.value;
+      details ??= SettingsSvc.settings.hostedToken.value;
       if (details != null) {
-        final status = await http.dio.post("https://hw.openbubbles.app/restore", data: {"purchase_token": details});
+        final status = await HttpSvc.dio.post("https://hw.openbubbles.app/restore", data: {"purchase_token": details});
         if (status.statusCode == 200) {
           var ticket = status.data["code"];
           await restoreTicket(ticket, const Duration(days: 7));
@@ -172,7 +173,7 @@ class SetupViewController extends StatefulController {
       if (currentWaitlist != null) {
         headers["X-OpenBubbles-Waitlist"] = currentWaitlist;
       }
-      final status = await http.dio.get("https://hw.openbubbles.app/status", options: Options(headers: headers));   
+      final status = await HttpSvc.dio.get("https://hw.openbubbles.app/status", options: Options(headers: headers));   
       var hasCapacity = status.data["available"];
       if (!hasCapacity) {
         availableIAP.value = null;
@@ -197,7 +198,7 @@ class SetupViewController extends StatefulController {
     updateConnectError('');
     try {
       currentAppleUser = await api.doLogin(path: pushService.statePath, account: currentAppleAccount!, osConfig: config!, finish: updateFinish);
-      ss.settings.userName.value = await api.getUserName(state: currentAppleAccount!);
+      SettingsSvc.settings.userName.value = await api.getUserName(state: currentAppleAccount!);
       await doRegister();
     } catch (e) {
       if (e is AnyhowException) {
@@ -306,7 +307,7 @@ class SetupViewController extends StatefulController {
       await ensureWatcher();
       var (provider, rett, sid) = await api.send2FaToDevices(state: currentAppleAccount!, conn: connection!);
       if (sid != null) {
-        mcs.invokeMethod("circle-proximity-session", {
+        MethodChannelSvc.invokeMethod("circle-proximity-session", {
           'sid': sid
         });
       }
@@ -315,7 +316,7 @@ class SetupViewController extends StatefulController {
       circleSession = provider;
     }
     if (ret is api.LoginState_NeedsSMS2FA) {
-      mcs.invokeMethod("circle-proximity-session", {
+      MethodChannelSvc.invokeMethod("circle-proximity-session", {
         'sid': null
       });
       var options = await api.get2FaSmsOpts(state: currentAppleAccount!);
@@ -372,10 +373,10 @@ class SetupViewController extends StatefulController {
     }
     state = ret;
     if (ret is api.LoginState_LoggedIn) {
-      mcs.invokeMethod("circle-proximity-session", {
+      MethodChannelSvc.invokeMethod("circle-proximity-session", {
         'sid': null
       });
-      ss.settings.userName.value = await api.getUserName(state: currentAppleAccount!);
+      SettingsSvc.settings.userName.value = await api.getUserName(state: currentAppleAccount!);
       await doRegister();
     }
     return ret;
@@ -386,7 +387,7 @@ class SetupViewController extends StatefulController {
       context: Get.context!,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: context.theme.colorScheme.properSurface,
+          backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
           title: Text(
             text,
             style: context.theme.textTheme.titleLarge,
@@ -395,7 +396,7 @@ class SetupViewController extends StatefulController {
             height: 70,
             child: Center(
               child: CircularProgressIndicator(
-                backgroundColor: context.theme.colorScheme.properSurface,
+                backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
                 valueColor: AlwaysStoppedAnimation<Color>(context.theme.colorScheme.primary),
               ),
             ),
@@ -442,7 +443,7 @@ class SetupViewController extends StatefulController {
         await showDialog(
           context: Get.context!,
           builder: (context) => AlertDialog(
-                backgroundColor: Get.theme.colorScheme.properSurface,
+                backgroundColor: Get.theme.colorScheme.surfaceContainerHighest,
                 title: Text(
                   response.title,
                   style: Get.textTheme.titleLarge,
@@ -523,7 +524,7 @@ class SetupViewController extends StatefulController {
       if (Platform.isAndroid) {
         var (daemon, pushState) = api.sendDaemon(state: stagingPushState, watcher: watcher.$3);
         pushService.state = pushState;
-        mcs.invokeMethod("provision-native", {"native": daemon});
+        MethodChannelSvc.invokeMethod("provision-native", {"native": daemon});
       } else {
         var (pollState, deskState) = api.dupDaemonDesk(state: stagingPushState);
         pushService.state = deskState;
@@ -532,9 +533,9 @@ class SetupViewController extends StatefulController {
 
       success = true;
       // persisting SMS auth certs is actually really useful
-      // ss.settings.cachedCodes.clear();
+      // SettingsSvc.settings.cachedCodes.clear();
       Logger.debug("Success registered!");
-      if (ss.settings.deviceIsHosted.value) {
+      if (SettingsSvc.settings.deviceIsHosted.value) {
         pushService.mixpanel?.track("hosted-setup-success");
       }
       await pushService.configured();
@@ -542,15 +543,15 @@ class SetupViewController extends StatefulController {
       var handles = await api.getHandles(state: pushService.state!.client);
       var phone = handles.firstWhereOrNull((h) => h.startsWith("tel:"));
       if (phone != null) {
-        ss.settings.defaultHandle.value = phone;
-        ss.saveSettings();
+        SettingsSvc.settings.defaultHandle.value = phone;
+        SettingsSvc.settings.saveAsync();
       }
 
       var keychain = pushService.state?.icloudServices?.keychain;
       if (keychain != null && circleSession != null) {
         var defaultPassword = Random.secure().nextInt(1000000).toString().padLeft(6, '0');
-        ss.settings.keychainDefaultPassword.value = defaultPassword;
-        ss.saveSettings();
+        SettingsSvc.settings.keychainDefaultPassword.value = defaultPassword;
+        SettingsSvc.settings.saveAsync();
 
         await api.circleSetupClique(client: pushService.state!.clientSession, keychain: keychain, devicePassword: defaultPassword);
       }
@@ -560,13 +561,13 @@ class SetupViewController extends StatefulController {
   }
 
   Future<void> cacheCode(String code) async {
-    if (ss.settings.cachedCodes.containsKey(code)) {
+    if (SettingsSvc.settings.cachedCodes.containsKey(code)) {
       return;
     }
 
     String hash = hex.encode(sha256.convert(code.codeUnits).bytes);
 
-    final response = await http.dio.get(
+    final response = await HttpSvc.dio.get(
       "$rpApiRoot/$hash",
       options: Options(
         headers: {
@@ -583,8 +584,8 @@ class SetupViewController extends StatefulController {
     
      var myData = Uint8List.fromList(decryptAESCryptoJS(data, code));
     Logger.debug("cached code");
-    ss.settings.cachedCodes[code] = base64Encode(myData);
-    ss.saveSettings();
+    SettingsSvc.settings.cachedCodes[code] = base64Encode(myData);
+    SettingsSvc.settings.saveAsync();
   }
 
   Future<void> ensureWatcher() async {
@@ -663,12 +664,12 @@ class SetupViewController extends StatefulController {
 
 
       currentPhoneUsers = {}; // reset validated phone numbers as we have a new token now
-      var list = ss.settings.cachedCodes.entries.toList();
+      var list = SettingsSvc.settings.cachedCodes.entries.toList();
       for (var items in list) {
         if (!items.key.startsWith("sms-auth-")) continue;
-        ss.settings.cachedCodes.remove(items.key);
+        SettingsSvc.settings.cachedCodes.remove(items.key);
       }
-      ss.saveSettings();
+      SettingsSvc.settings.saveAsync();
 
       await setupConnection();
   }
@@ -706,7 +707,7 @@ class SetupViewController extends StatefulController {
             "Sorry, your hosted device is currently offline!",
             style: context.theme.textTheme.titleLarge,
           ),
-          backgroundColor: context.theme.colorScheme.properSurface,
+          backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
           content: Text("You can wait for it to come back, or change your device.", style: context.theme.textTheme.bodyLarge),
           actions: [
             TextButton(
@@ -728,7 +729,7 @@ class SetupViewController extends StatefulController {
                   if (relay == null) {
                     throw Exception("Failed to validate!");
                   }
-                  final status = await http.dio.post("https://hw.openbubbles.app/swap-token", options: Options(
+                  final status = await HttpSvc.dio.post("https://hw.openbubbles.app/swap-token", options: Options(
                     headers: {
                       "Authorization": "Bearer $relay"
                     }
@@ -761,8 +762,8 @@ class SetupViewController extends StatefulController {
     handleOfflineError(newError, null);
     if (newError.contains("6005") && currentPhoneUsers.isNotEmpty) {
       for (var user in currentPhoneUsers.keys) {
-        ss.settings.cachedCodes.remove("sms-auth-$user");
-        ss.saveSettings();
+        SettingsSvc.settings.cachedCodes.remove("sms-auth-$user");
+        SettingsSvc.settings.saveAsync();
       }
 
       currentPhoneUsers.clear();
@@ -773,7 +774,7 @@ class SetupViewController extends StatefulController {
       return;
     }
     error = newError;
-    if (ss.settings.deviceIsHosted.value && errorIsProblem()) {
+    if (SettingsSvc.settings.deviceIsHosted.value && errorIsProblem()) {
       pushService.mixpanel?.track("hosted-setup-error");
     }
     updateWidgets<ErrorText>(newError);
@@ -789,7 +790,7 @@ class SetupView extends StatefulWidget {
   State<SetupView> createState() => _SetupViewState();
 }
 
-class _SetupViewState extends OptimizedState<SetupView> {
+class _SetupViewState extends State<SetupView> {
   final controller = Get.put(SetupViewController(), permanent: true);
 
   @override
@@ -797,10 +798,10 @@ class _SetupViewState extends OptimizedState<SetupView> {
     super.initState();
 
     (() async {
-      if (ss.settings.cachedCodes.containsKey("sms-auth")) {
-        ss.settings.cachedCodes["sms-auth-1"] = ss.settings.cachedCodes["sms-auth"]!;
-        ss.settings.cachedCodes.remove("sms-auth");
-        ss.saveSettings();
+      if (SettingsSvc.settings.cachedCodes.containsKey("sms-auth")) {
+        SettingsSvc.settings.cachedCodes["sms-auth-1"] = SettingsSvc.settings.cachedCodes["sms-auth"]!;
+        SettingsSvc.settings.cachedCodes.remove("sms-auth");
+        SettingsSvc.settings.saveAsync();
         Logger.debug("Migrated sms auth");
       }
       await pushService.initFuture; // wait for ready
@@ -824,9 +825,9 @@ class _SetupViewState extends OptimizedState<SetupView> {
 
       var dumb = File("${pushService.statePath}/dumb");
       if (restored == null && dumb.existsSync()) {
-        ss.settings.isDumb.value = true;
-        ss.settings.macIsMine.value = false;
-        await ss.saveSettings();
+        SettingsSvc.settings.isDumb.value = true;
+        SettingsSvc.settings.macIsMine.value = false;
+        await SettingsSvc.settings.saveAsync();
         try {
           var list = base64Decode(dumb.readAsStringSync()).toList();
           list.removeRange(0, 5);
@@ -839,7 +840,7 @@ class _SetupViewState extends OptimizedState<SetupView> {
         }
       }
 
-      var list = ss.settings.cachedCodes.entries.toList();
+      var list = SettingsSvc.settings.cachedCodes.entries.toList();
       for (var items in list) {
         if (!items.key.startsWith("sms-auth-")) continue;
 
@@ -852,8 +853,8 @@ class _SetupViewState extends OptimizedState<SetupView> {
           controller.currentPhoneUsers[int.parse(items.key.replaceFirst("sms-auth-", ""))] = user;
         } catch (e) {
           Logger.info("restore resetting! $e");
-          ss.settings.cachedCodes.remove(items.key);
-          ss.saveSettings();
+          SettingsSvc.settings.cachedCodes.remove(items.key);
+          SettingsSvc.settings.saveAsync();
           continue;
         } finally {
           Logger.info("restore done!");
@@ -916,9 +917,9 @@ class _SetupViewState extends OptimizedState<SetupView> {
       }
     })();
 
-    ever(socket.state, (event) {
+    ever(SocketSvc.state, (event) {
       if (event == SocketState.error
-          && !ss.settings.finishedSetup.value
+          && !SettingsSvc.settings.finishedSetup.value
           && controller.pageController.hasClients
           && controller.currentPage > controller.pageOfNoReturn) {
         showDialog(
@@ -944,7 +945,9 @@ class _SetupViewState extends OptimizedState<SetupView> {
     return PopScope(
       canPop: false,
       child: Scaffold(
-        backgroundColor: ss.settings.windowEffect.value != WindowEffect.disabled ? Colors.transparent : context.theme.colorScheme.background,
+        backgroundColor: SettingsSvc.settings.windowEffect.value != WindowEffect.disabled
+            ? Colors.transparent
+            : context.theme.colorScheme.surface,
         body: SafeArea(
           child: Column(
             children: <Widget>[
@@ -962,6 +965,8 @@ class _SetupViewState extends OptimizedState<SetupView> {
 class SetupHeader extends StatelessWidget {
   final SetupViewController controller = Get.find<SetupViewController>();
 
+  SetupHeader({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -972,10 +977,7 @@ class SetupHeader extends StatelessWidget {
         children: [
           Row(
             children: [
-              Hero(
-                tag: "setup-icon",
-                child: Image.asset("assets/icon/icon.png", width: 30, fit: BoxFit.contain)
-              ),
+              Hero(tag: "setup-icon", child: Image.asset("assets/icon/icon.png", width: 30, fit: BoxFit.contain)),
               const SizedBox(width: 10),
               Text(
                 "OpenBubbles",
@@ -991,14 +993,13 @@ class SetupHeader extends StatelessWidget {
 }
 
 class PageNumber extends CustomStateful<SetupViewController> {
-  PageNumber({required super.parentController});
+  const PageNumber({super.key, required super.parentController});
 
   @override
   State<StatefulWidget> createState() => _PageNumberState();
 }
 
 class _PageNumberState extends CustomState<PageNumber, int, SetupViewController> {
-
   @override
   void updateWidget(int newVal) {
     controller.currentPage = newVal;
@@ -1039,15 +1040,17 @@ class _PageNumberState extends CustomState<PageNumber, int, SetupViewController>
 class SetupPages extends StatelessWidget {
   final SetupViewController controller = Get.find<SetupViewController>();
 
+  SetupPages({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Expanded(
       child: Obx(() => PageView(
         onPageChanged: (page) {
           // skip pages if the things required are already complete
-          if (!kIsWeb && !kIsDesktop && page == 1 && controller.currentPage == 1 && !ss.settings.isDumb.value) {
-            Permission.contacts.status.then((status) {
-              if (status.isGranted) {
+          if (!kIsWeb && !kIsDesktop && page == 2 && controller.currentPage == 2 && !SettingsSvc.settings.isDumb.value) {
+            isBatteryOptimizationDisabled().then((isDisabled) {
+              if (isDisabled) {
                 controller.pageController.nextPage(
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.easeInOut,
@@ -1055,18 +1058,8 @@ class SetupPages extends StatelessWidget {
               }
             });
           }
-          if (!kIsWeb && !kIsDesktop && page == 2 && controller.currentPage == 2 && !ss.settings.isDumb.value) {
-            DisableBatteryOptimization.isAllBatteryOptimizationDisabled.then((isDisabled) {
-              if (isDisabled ?? false) {
-                controller.pageController.nextPage(
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeInOut,
-                );
-              }
-            });
-          }
-          if (!kIsWeb && !kIsDesktop && page == 3 && controller.currentPage == 3 && !ss.settings.isDumb.value) {
-            mcs.invokeMethod("enable-bt").then((isEnabled) {
+          if (!kIsWeb && !kIsDesktop && page == 3 && controller.currentPage == 3 && !SettingsSvc.settings.isDumb.value) {
+            MethodChannelSvc.invokeMethod("enable-bt").then((isEnabled) {
               if (isEnabled ?? false) {
                 controller.pageController.nextPage(
                   duration: const Duration(milliseconds: 300),
@@ -1080,29 +1073,20 @@ class SetupPages extends StatelessWidget {
         physics: const NeverScrollableScrollPhysics(),
         controller: controller.pageController,
         children: <Widget>[
-          if (!ss.settings.isDumb.value)
-          WelcomePage(),
-          if (!kIsWeb && !kIsDesktop && !ss.settings.isDumb.value) RequestContacts(),
-          if (!kIsWeb && !kIsDesktop && !ss.settings.isDumb.value) BatteryOptimizationCheck(),
-          if (!kIsWeb && !kIsDesktop && !ss.settings.isDumb.value) RequestBluetooth(),
-          if (!usingRustPush)
-            MacSetupCheck(),
-          if (!usingRustPush)
-            ServerCredentials(),
-          if (!kIsWeb && !usingRustPush)
-            SyncSettings(),
-          if (!usingRustPush)
-            SyncProgress(),
-          if (usingRustPush && !ss.settings.isDumb.value)
-            HwInp(key: controller._childKey),
-          if (usingRustPush && controller.supportsPhoneReg.value && !kIsDesktop)
-            const PhoneNumber(),
-          if (usingRustPush)
-            AppleIdLogin(),
-          if (usingRustPush)
-            AppleId2FA(),
-          if (usingRustPush)
-            FinalizePage(),
+          if (!SettingsSvc.settings.isDumb.value)
+            const WelcomePage(),
+          if (!kIsWeb && !kIsDesktop && !SettingsSvc.settings.isDumb.value) const RequestPermissions(),
+          if (!kIsWeb && !kIsDesktop && !SettingsSvc.settings.isDumb.value) const BatteryOptimizationCheck(),
+          if (!kIsWeb && !kIsDesktop && !SettingsSvc.settings.isDumb.value) RequestBluetooth(),
+          if (!usingRustPush) const MacSetupCheck(),
+          if (!usingRustPush) const ServerCredentials(),
+          if (!kIsWeb && !usingRustPush) SyncSettings(),
+          if (!usingRustPush) const SyncProgress(),
+          if (usingRustPush && !SettingsSvc.settings.isDumb.value) HwInp(key: controller._childKey),
+          if (usingRustPush && controller.supportsPhoneReg.value && !kIsDesktop) const PhoneNumber(),
+          if (usingRustPush) AppleIdLogin(),
+          if (usingRustPush) AppleId2FA(),
+          if (usingRustPush) FinalizePage(),
           //ThemeSelector(),
         ],
       ),)
@@ -1176,7 +1160,7 @@ class _ErrorTextState extends CustomState<ErrorText, String, SetupViewController
                           context: context,
                           builder: (BuildContext context) {
                             return AlertDialog(
-                              backgroundColor: context.theme.colorScheme.properSurface,
+                              backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
                               title: Text(
                                 "Uploading log...",
                                 style: context.theme.textTheme.titleLarge,
@@ -1185,7 +1169,7 @@ class _ErrorTextState extends CustomState<ErrorText, String, SetupViewController
                                 height: 70,
                                 child: Center(
                                   child: CircularProgressIndicator(
-                                    backgroundColor: context.theme.colorScheme.properSurface,
+                                    backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
                                     valueColor: AlwaysStoppedAnimation<Color>(context.theme.colorScheme.primary),
                                   ),
                                 ),
@@ -1195,7 +1179,7 @@ class _ErrorTextState extends CustomState<ErrorText, String, SetupViewController
                         );
                         
                         // 
-                        var file = Directory(Platform.isAndroid ? "${fs.appDocDir.path}/../files/logs" : "${fs.appDocDir.path}/logs");
+                        var file = Directory(Platform.isAndroid ? "${FilesystemSvc.appDocDir.path}/../files/logs" : "${FilesystemSvc.appDocDir.path}/logs");
                         final List<FileSystemEntity> entities = await file.list().toList();
                         var current = entities.indexWhere((element) => element.path.endsWith("CURRENT.log"));
                         var item = entities.removeAt(current);
@@ -1225,10 +1209,10 @@ class _ErrorTextState extends CustomState<ErrorText, String, SetupViewController
                         var url = dotenv.get('REPORT_ISSUE_WEBHOOK');
 
                         try {
-                          final response = await http.dio.post(
+                          final response = await HttpSvc.dio.post(
                               url,
                               data: FormData.fromMap({
-                                "content": "Desc: ${details.text}\nEmail: ${participantController.text}\nError: ${controller.error}\nHosted: ${ss.settings.deviceIsHosted.value}",
+                                "content": "Desc: ${details.text}\nEmail: ${participantController.text}\nError: ${controller.error}\nHosted: ${SettingsSvc.settings.deviceIsHosted.value}",
                                 "username": "Onboarding",
                                 "files[0]": MultipartFile.fromBytes(total, filename: "rustpush-logs.log"),
                                 "files[1]": MultipartFile.fromString(jsonEncode(deviceInfo), filename: "hardware.json"),
@@ -1279,7 +1263,7 @@ class _ErrorTextState extends CustomState<ErrorText, String, SetupViewController
                   ],
                   mainAxisSize: MainAxisSize.min,),
                   title: Text("Report issue", style: context.theme.textTheme.titleLarge),
-                  backgroundColor: context.theme.colorScheme.properSurface,
+                  backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
                 );
               }
             );

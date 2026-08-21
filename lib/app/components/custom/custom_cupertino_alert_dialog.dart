@@ -16,19 +16,17 @@ import 'package:flutter/rendering.dart';
 // Apple Design Resources(https://developer.apple.com/design/resources/).
 // However the values are not exactly the same as native, so eyeballing is needed.
 const TextStyle _kCupertinoDialogTitleStyle = TextStyle(
-  fontFamily: '.SF UI Display',
   inherit: false,
-  fontSize: 17.0,
-  fontWeight: FontWeight.w600,
+  fontSize: 18.0,
+  fontWeight: FontWeight.w400,
   height: 1.3,
   letterSpacing: -0.5,
   textBaseline: TextBaseline.alphabetic,
 );
 
 const TextStyle _kCupertinoDialogContentStyle = TextStyle(
-  fontFamily: '.SF UI Text',
   inherit: false,
-  fontSize: 13.0,
+  fontSize: 12.0,
   fontWeight: FontWeight.w400,
   height: 1.35,
   letterSpacing: -0.2,
@@ -36,9 +34,8 @@ const TextStyle _kCupertinoDialogContentStyle = TextStyle(
 );
 
 const TextStyle _kCupertinoDialogActionStyle = TextStyle(
-  fontFamily: '.SF UI Text',
   inherit: false,
-  fontSize: 16.8,
+  fontSize: 16.0,
   fontWeight: FontWeight.w400,
   textBaseline: TextBaseline.alphabetic,
 );
@@ -51,6 +48,9 @@ const double _kAccessibilityCupertinoDialogWidth = 310.0;
 
 const double _kBlurAmount = 20.0;
 const double _kEdgePadding = 5.0;
+// Padding inside the content section (title + body text). Larger than _kEdgePadding
+// to match real iOS alert spacing (~16dp horizontal inset).
+const double _kContentPadding = 16.0;
 const double _kMinButtonHeight = 45.0;
 const double _kMinButtonFontSize = 10.0;
 const double _kDialogCornerRadius = 14.0;
@@ -62,14 +62,6 @@ const double _kDividerThickness = 1.0;
 const Color _kDialogColor = CupertinoDynamicColor.withBrightness(
   color: Color(0xCCF2F2F2),
   darkColor: Color(0xBF1E1E1E),
-);
-
-// Translucent light gray that is painted on top of the blurred backdrop as the
-// background color of a pressed button.
-// Eyeballed from iOS 13 beta simulator.
-const Color _kDialogPressedColor = CupertinoDynamicColor.withBrightness(
-  color: Color(0xFFE1E1E1),
-  darkColor: Color(0xFF2E2E2E),
 );
 
 // The alert dialog layout policy changes depending on whether the user is using
@@ -199,7 +191,7 @@ class CupertinoAlertDialog extends StatelessWidget {
     return BackdropFilter(
       filter: ImageFilter.blur(sigmaX: _kBlurAmount * 2, sigmaY: _kBlurAmount * 2),
       child: Container(
-        color: CupertinoDynamicColor.resolve(backgroundColor.withOpacity(0.5), context),
+        color: CupertinoDynamicColor.resolve(backgroundColor, context),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -209,14 +201,15 @@ class CupertinoAlertDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildActions() {
+  Widget _buildActions(BuildContext context) {
     Widget actionSection = Container(
       height: 0.0,
     );
     if (actions.isNotEmpty) {
       actionSection = _CupertinoAlertActionSection(
-        children: actions,
         scrollController: actionScrollController,
+        backgroundColor: CupertinoDynamicColor.resolve(backgroundColor, context),
+        children: actions,
       );
     }
 
@@ -260,7 +253,7 @@ class CupertinoAlertDialog extends StatelessWidget {
                         label: localizations.alertDialogLabel,
                         child: _CupertinoDialogRenderWidget(
                           contentSection: _buildContent(context),
-                          actionsSection: _buildActions(),
+                          actionsSection: _buildActions(context),
                         ),
                       ),
                     ),
@@ -464,16 +457,10 @@ class _CupertinoDialogRenderElement extends RenderObjectElement {
 // section is given whatever height remains.
 class _RenderCupertinoDialog extends RenderBox {
   _RenderCupertinoDialog({
-    RenderBox? contentSection,
-    RenderBox? actionsSection,
-    double dividerThickness = 0.0,
-    bool isInAccessibilityMode = false,
+    this._dividerThickness = 0.0,
+    this._isInAccessibilityMode = false,
     required Color dividerColor,
-  })  : _contentSection = contentSection,
-        _actionsSection = actionsSection,
-        _dividerThickness = dividerThickness,
-        _isInAccessibilityMode = isInAccessibilityMode,
-        _dividerPaint = Paint()
+  })  : _contentSection = null, _actionsSection = null, _dividerPaint = Paint()
           ..color = dividerColor
           ..style = PaintingStyle.fill;
 
@@ -844,10 +831,10 @@ class _CupertinoAlertContentSection extends StatelessWidget {
       if (title != null)
         Padding(
           padding: EdgeInsets.only(
-            left: _kEdgePadding,
-            right: _kEdgePadding,
-            bottom: content == null ? _kEdgePadding : 1.0,
-            top: MediaQuery.of(context).textScaler.scale(_kEdgePadding),
+            left: _kContentPadding,
+            right: _kContentPadding,
+            bottom: content == null ? _kContentPadding : 6.0,
+            top: MediaQuery.of(context).textScaler.scale(_kContentPadding),
           ),
           child: DefaultTextStyle(
             style: _kCupertinoDialogTitleStyle.copyWith(
@@ -860,10 +847,10 @@ class _CupertinoAlertContentSection extends StatelessWidget {
       if (content != null)
         Padding(
           padding: EdgeInsets.only(
-            left: _kEdgePadding,
-            right: _kEdgePadding,
-            bottom: MediaQuery.of(context).textScaler.scale(_kEdgePadding),
-            top: title == null ? _kEdgePadding : 1.0,
+            left: _kContentPadding,
+            right: _kContentPadding,
+            bottom: MediaQuery.of(context).textScaler.scale(_kContentPadding),
+            top: title == null ? _kContentPadding : 6.0,
           ),
           child: DefaultTextStyle(
             style: _kCupertinoDialogContentStyle.copyWith(
@@ -896,6 +883,7 @@ class _CupertinoAlertActionSection extends StatefulWidget {
   const _CupertinoAlertActionSection({
     required this.children,
     this.scrollController,
+    required this.backgroundColor,
   });
 
   final List<Widget> children;
@@ -906,6 +894,9 @@ class _CupertinoAlertActionSection extends StatefulWidget {
   // Defaults to null, and is typically not needed, since most alert dialogs
   // don't have many actions.
   final ScrollController? scrollController;
+
+  // The resolved background color for the action button area.
+  final Color backgroundColor;
 
   @override
   _CupertinoAlertActionSectionState createState() => _CupertinoAlertActionSectionState();
@@ -931,6 +922,13 @@ class _CupertinoAlertActionSectionState extends State<_CupertinoAlertActionSecti
         child: _CupertinoDialogActionsRenderWidget(
           actionButtons: interactiveButtons,
           dividerThickness: _kDividerThickness / devicePixelRatio,
+          dialogColor: widget.backgroundColor,
+          // Pressed state: slightly darken or lighten relative to the background.
+          pressedDialogColor: Color.lerp(
+            widget.backgroundColor,
+            widget.backgroundColor.computeLuminance() > 0.5 ? const Color(0xFF000000) : const Color(0xFFFFFFFF),
+            0.08,
+          )!,
         ),
       ),
     );
@@ -1159,7 +1157,7 @@ class CupertinoDialogAction extends StatelessWidget {
     }
 
     if (!enabled) {
-      style = style.copyWith(color: style.color!.withOpacity(0.5));
+      style = style.copyWith(color: style.color!.withValues(alpha: 0.5));
     }
 
     // Apply a sizing policy to the action button's content based on whether or
@@ -1205,21 +1203,24 @@ class CupertinoDialogAction extends StatelessWidget {
 //
 // See [_RenderCupertinoDialogActions] for specific layout policy details.
 class _CupertinoDialogActionsRenderWidget extends MultiChildRenderObjectWidget {
-  _CupertinoDialogActionsRenderWidget({
+  const _CupertinoDialogActionsRenderWidget({
     required List<Widget> actionButtons,
-    double dividerThickness = 0.0,
-  })  : _dividerThickness = dividerThickness,
-        super(children: actionButtons);
+    this._dividerThickness = 0.0,
+    required this.dialogColor,
+    required this.pressedDialogColor,
+  })  : super(children: actionButtons);
 
   final double _dividerThickness;
+  final Color dialogColor;
+  final Color pressedDialogColor;
 
   @override
   RenderObject createRenderObject(BuildContext context) {
     return _RenderCupertinoDialogActions(
       dialogWidth: _isInAccessibilityMode(context) ? _kAccessibilityCupertinoDialogWidth : _kCupertinoDialogWidth,
       dividerThickness: _dividerThickness,
-      dialogColor: CupertinoDynamicColor.resolve(_kDialogColor, context),
-      dialogPressedColor: CupertinoDynamicColor.resolve(_kDialogPressedColor, context),
+      dialogColor: dialogColor,
+      dialogPressedColor: pressedDialogColor,
       dividerColor: CupertinoDynamicColor.resolve(CupertinoColors.separator, context),
     );
   }
@@ -1229,8 +1230,8 @@ class _CupertinoDialogActionsRenderWidget extends MultiChildRenderObjectWidget {
     renderObject
       ..dialogWidth = _isInAccessibilityMode(context) ? _kAccessibilityCupertinoDialogWidth : _kCupertinoDialogWidth
       ..dividerThickness = _dividerThickness
-      ..dialogColor = CupertinoDynamicColor.resolve(_kDialogColor, context)
-      ..dialogPressedColor = CupertinoDynamicColor.resolve(_kDialogPressedColor, context)
+      ..dialogColor = dialogColor
+      ..dialogPressedColor = pressedDialogColor
       ..dividerColor = CupertinoDynamicColor.resolve(CupertinoColors.separator, context);
   }
 }
@@ -1275,13 +1276,12 @@ class _RenderCupertinoDialogActions extends RenderBox
         RenderBoxContainerDefaultsMixin<RenderBox, MultiChildLayoutParentData> {
   _RenderCupertinoDialogActions({
     List<RenderBox>? children,
-    required double dialogWidth,
-    double dividerThickness = 0.0,
+    required this._dialogWidth,
+    this._dividerThickness = 0.0,
     required Color dialogColor,
     required Color dialogPressedColor,
     required Color dividerColor,
-  })  : _dialogWidth = dialogWidth,
-        _buttonBackgroundPaint = Paint()
+  })  : _buttonBackgroundPaint = Paint()
           ..color = dialogColor
           ..style = PaintingStyle.fill,
         _pressedButtonBackgroundPaint = Paint()
@@ -1289,8 +1289,7 @@ class _RenderCupertinoDialogActions extends RenderBox
           ..style = PaintingStyle.fill,
         _dividerPaint = Paint()
           ..color = dividerColor
-          ..style = PaintingStyle.fill,
-        _dividerThickness = dividerThickness {
+          ..style = PaintingStyle.fill {
     addAll(children);
   }
 

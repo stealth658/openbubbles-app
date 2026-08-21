@@ -2,22 +2,22 @@ import 'package:bluebubbles/app/components/sliver_decoration.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/pages/conversation_list.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/conversation_list_fab.dart';
+import 'package:bluebubbles/app/layouts/conversation_list/widgets/filters/custom_group_filter_chip_row.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/footer/samsung_footer.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/header/samsung_header.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/tile/list_item.dart';
-import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/app/wrappers/scrollbar_wrapper.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:get/get.dart';
-import 'package:bluebubbles/database/models.dart';
 
 class SamsungConversationList extends StatefulWidget {
-  const SamsungConversationList({Key? key, required this.parentController});
+  const SamsungConversationList({super.key, required this.parentController});
 
   final ConversationListController parentController;
 
@@ -25,15 +25,19 @@ class SamsungConversationList extends StatefulWidget {
   State<SamsungConversationList> createState() => _SamsungConversationListState();
 }
 
-class _SamsungConversationListState extends OptimizedState<SamsungConversationList> {
+class _SamsungConversationListState extends State<SamsungConversationList> with ThemeHelpers {
   bool get showArchived => widget.parentController.showArchivedChats;
   bool get showUnknown => widget.parentController.showUnknownSenders;
+
+  /// OpenBubbles: "Recently Deleted" mode.
   bool get showDeleted => widget.parentController.showDeletedMessages;
 
   RxList<Chat> get deletedChats => widget.parentController.deletedChats;
+
   Color get backgroundColor =>
-      ss.settings.windowEffect.value == WindowEffect.disabled ? headerColor : Colors.transparent;
-  Color get _tileColor => ss.settings.windowEffect.value == WindowEffect.disabled ? tileColor : Colors.transparent;
+      SettingsSvc.settings.windowEffect.value == WindowEffect.disabled ? headerColor : Colors.transparent;
+  Color get _tileColor =>
+      SettingsSvc.settings.windowEffect.value == WindowEffect.disabled ? tileColor : Colors.transparent;
   ConversationListController get controller => widget.parentController;
 
   @override
@@ -41,8 +45,10 @@ class _SamsungConversationListState extends OptimizedState<SamsungConversationLi
     super.initState();
     // update widget when background color changes
     if (kIsDesktop) {
-      ss.settings.windowEffect.listen((WindowEffect effect) {
-        setState(() {});
+      SettingsSvc.settings.windowEffect.listen((WindowEffect effect) {
+        if (mounted) {
+          setState(() {});
+        }
       });
     }
   }
@@ -66,9 +72,8 @@ class _SamsungConversationListState extends OptimizedState<SamsungConversationLi
       },
       child: Scaffold(
         backgroundColor: backgroundColor,
-        floatingActionButton: !showArchived && !showUnknown && !showDeleted
-            ? ConversationListFAB(parentController: controller)
-            : const SizedBox.shrink(),
+        floatingActionButton:
+            !showArchived && !showUnknown && !showDeleted ? ConversationListFAB(parentController: controller) : const SizedBox.shrink(),
         body: SafeArea(
           child: NotificationListener<ScrollEndNotification>(
             onNotification: (_) {
@@ -90,45 +95,62 @@ class _SamsungConversationListState extends OptimizedState<SamsungConversationLi
               showScrollbar: true,
               controller: controller.samsungScrollController,
               child: Obx(() {
-                final _chats = showDeleted ? deletedChats : chats.chats
-                    .archivedHelper(controller.showArchivedChats)
-                    .unknownSendersHelper(controller.showUnknownSenders);
+                // Force reactivity by accessing observable values first
+                final loaded = showDeleted || ChatsSvc.loadedFirstChatBatch.value;
+                // Observe chat list version to trigger rebuild when order changes
+                final _ = ChatsSvc.chatListVersion.value;
+                final List<Chat> _chats = showDeleted
+                    ? deletedChats
+                    : ChatsSvc.getFilteredChats(
+                        showArchived: controller.showArchivedChats,
+                        showUnknown: controller.showUnknownSenders,
+                        filters: ChatsSvc.chatListFilters.value,
+                      );
+                final _pinnedChats = _chats.where((e) => e.isPinned ?? false).toList();
+                final _unpinnedChats = _chats.where((e) => !(e.isPinned ?? false)).toList();
 
                 return CustomScrollView(
                   physics: ThemeSwitcher.getScrollPhysics(),
                   controller: controller.samsungScrollController,
                   slivers: [
                     SamsungHeader(parentController: controller),
-                    if (!chats.loadedChatBatch.value || _chats.isEmpty)
+                    if (!showArchived && !showUnknown && !showDeleted)
+                      const SliverToBoxAdapter(
+                        child: CustomGroupFilterChipRow(
+                          padding: EdgeInsets.only(left: 12, right: 12, top: 4, bottom: 16),
+                        ),
+                      ),
+                    if (!loaded || _unpinnedChats.isEmpty)
                       SliverToBoxAdapter(
                         child: Center(
                           child: Padding(
                             padding: const EdgeInsets.only(top: 50),
-                            child: Column(
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Text(
-                                    !chats.loadedChatBatch.value
-                                        ? "Loading chats..."
-                                        : showArchived
-                                            ? "You have no archived chats"
-                                            : showUnknown
-                                                ? "You have no messages from unknown senders :)"
-                                                : showDeleted 
-                                                  ? "You have no deleted chats" 
-                                                  : "Future chats will show here",
+                            child: showDeleted
+                                ? Text(
+                                    "You have no deleted chats",
                                     style: context.theme.textTheme.labelLarge,
                                     textAlign: TextAlign.center,
+                                  )
+                                : loaded
+                                ? buildEmptyChatListState(context,
+                                    showArchived: showArchived, showUnknown: showUnknown, filters: ChatsSvc.chatListFilters.value)
+                                : Column(
+                                    children: [
+                                      Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Text(
+                                          "Loading chats...",
+                                          style: context.theme.textTheme.labelLarge,
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ),
+                                      buildProgressIndicator(context, size: 15),
+                                    ],
                                   ),
-                                ),
-                                if (!chats.loadedChatBatch.value) buildProgressIndicator(context, size: 15),
-                              ],
-                            ),
                           ),
                         ),
                       ),
-                    if (_chats.bigPinHelper(true).isNotEmpty)
+                    if (_pinnedChats.isNotEmpty)
                       SliverPadding(
                         padding: const EdgeInsets.only(bottom: 15),
                         sliver: SliverDecoration(
@@ -137,7 +159,7 @@ class _SamsungConversationListState extends OptimizedState<SamsungConversationLi
                           sliver: SliverList(
                               delegate: SliverChildBuilderDelegate(
                             (context, index) {
-                              final chat = _chats.bigPinHelper(true)[index];
+                              final chat = _pinnedChats[index];
                               return ListItem(
                                   chat: chat,
                                   controller: controller,
@@ -147,7 +169,7 @@ class _SamsungConversationListState extends OptimizedState<SamsungConversationLi
                                     setState(() {});
                                   });
                             },
-                            childCount: _chats.bigPinHelper(true).length,
+                            childCount: _pinnedChats.length,
                           )),
                         ),
                       ),
@@ -159,17 +181,17 @@ class _SamsungConversationListState extends OptimizedState<SamsungConversationLi
                         sliver: SliverList(
                           delegate: SliverChildBuilderDelegate(
                             (context, index) {
-                              final chat = _chats.bigPinHelper(false)[index];
+                              final chat = _unpinnedChats[index];
                               return ListItem(
                                   chat: chat,
                                   controller: controller,
                                   showDeleted: showDeleted,
-                                  autofocus: _chats.bigPinHelper(true).isEmpty && index == 0,
+                                  autofocus: _pinnedChats.isEmpty && index == 0,
                                   update: () {
                                     setState(() {});
                                   });
                             },
-                            childCount: _chats.bigPinHelper(false).length,
+                            childCount: _unpinnedChats.length,
                           ),
                         ),
                       ),

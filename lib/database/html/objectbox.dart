@@ -79,7 +79,6 @@ class Box<T> {
 }
 
 class ToOne<EntityT> {
-
   /// Get target object. If it's the first access, this reads from DB.
   EntityT? get target => null;
 
@@ -99,10 +98,9 @@ class Store {
 
   dynamic get reference => throw Exception('Unsupported Platform');
 
-  Store.fromReference(dynamic _, dynamic __);
+  Store.fromReference(dynamic _, dynamic _);
 
-  Store.attach(dynamic _, String? directoryPath,
-      {bool queriesCaseSensitiveDefault = true});
+  Store.attach(dynamic _, String? directoryPath, {bool queriesCaseSensitiveDefault = true});
 }
 
 class Query<T> {
