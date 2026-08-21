@@ -128,7 +128,7 @@ class HwInpState extends OptimizedState<HwInp> {
         FocusManager.instance.primaryFocus?.unfocus();
       }
       showSnackbar("Fetching validation data", "This might take a minute");
-      final response2 = await http.dio.post(
+      final response2 = await HttpSvc.dio.post(
         "$relayHost/api/v1/bridge/get-version-info",
         data: {},
         options: Options(
@@ -146,7 +146,7 @@ class HwInpState extends OptimizedState<HwInp> {
         parsed = await api.configFromRelay(code: code, host: relayHost, token: "5c175851953ecaf5209185d897591badb6c3e712");
         usingBeeper = false;
       } else {
-        final response = await http.dio.post(
+        final response = await HttpSvc.dio.post(
           "$relayHost/api/v1/bridge/get-validation-data",
           data: {},
           options: Options(
@@ -198,8 +198,8 @@ class HwInpState extends OptimizedState<HwInp> {
     if (code == lastCheckedCode) return;
     lastCheckedCode = code;
 
-    if (ss.settings.cachedCodes.containsKey(code)) {
-      return handleCode(base64Decode(ss.settings.cachedCodes[code]!));
+    if (SettingsSvc.settings.cachedCodes.containsKey(code)) {
+      return handleCode(base64Decode(SettingsSvc.settings.cachedCodes[code]!));
     }
 
     
@@ -209,7 +209,7 @@ class HwInpState extends OptimizedState<HwInp> {
       var timer = Timer(const Duration(milliseconds: 500), () {
         showSnackbar("Fetching data", "This might take a minute");
       });
-      final response = await http.dio.get(
+      final response = await HttpSvc.dio.get(
         "$rpApiRoot/$hash",
         options: Options(
           headers: {
@@ -227,8 +227,8 @@ class HwInpState extends OptimizedState<HwInp> {
       var data = response.data["data"];
       
       var myData = Uint8List.fromList(decryptAESCryptoJS(data, code));
-      ss.settings.cachedCodes[code] = base64Encode(myData);
-      ss.saveSettings();
+      SettingsSvc.settings.cachedCodes[code] = base64Encode(myData);
+      await SettingsSvc.settings.saveOneAsync('cachedCodes');
 
       handleCode(myData);
     } catch (e) {
@@ -254,16 +254,16 @@ class HwInpState extends OptimizedState<HwInp> {
         if (Platform.isAndroid) {
           var (daemon, pushState) = api.sendDaemon(state: data.$1, watcher: data.$2);
           pushService.state = pushState;
-          mcs.invokeMethod("provision-native", {"native": daemon});
+          MethodChannelSvc.invokeMethod("provision-native", {"native": daemon});
         } else {
           var (pollState, deskState) = api.dupDaemonDesk(state: data.$1);
           pushService.state = deskState;
           pushService.doPoll(data.$2, pollState);
         }
 
-        ss.settings.cachedCodes.clear();
-        ss.settings.isTester.value = true;
-        ss.saveSettings();
+        SettingsSvc.settings.cachedCodes.clear();
+        SettingsSvc.settings.isTester.value = true;
+        await SettingsSvc.settings.saveManyAsync(['cachedCodes', 'isTester']);
         await pushService.configured();
         await setup.finishSetup();
         Get.offAll(() => ConversationList(
@@ -343,7 +343,7 @@ class HwInpState extends OptimizedState<HwInp> {
         // restore
         stagingNonInp = true;
         alreadyActivated = true;
-        select(controller.config!, ss.settings.macIsMine.value);
+        select(controller.config!, SettingsSvc.settings.macIsMine.value);
       }
     }
   }
@@ -423,7 +423,7 @@ class HwInpState extends OptimizedState<HwInp> {
       return;
     }
     
-    var activated = await http.dio.post("https://hw.openbubbles.app/ticket/$token/activate", data: {"purchase_token": subscription});
+    var activated = await HttpSvc.dio.post("https://hw.openbubbles.app/ticket/$token/activate", data: {"purchase_token": subscription});
     currentTicket = activated.data["ticket"];
     var parsed = await api.configFromRelay(code: currentTicket!, host: "https://hw.openbubbles.app");
     usingBeeper = false;
@@ -439,8 +439,8 @@ class HwInpState extends OptimizedState<HwInp> {
   Future<bool> handlePurchases(PurchasesResultWrapper details) async {
     for (var detail in details.purchasesList) {
       if (detail.purchaseState != PurchaseStateWrapper.purchased) continue;
-      ss.settings.hostedToken.value = detail.purchaseToken;
-      ss.saveSettings();
+      SettingsSvc.settings.hostedToken.value = detail.purchaseToken;
+      await SettingsSvc.settings.saveOneAsync('hostedToken');
       await wrapSubscriptionPromise(handleSubscriptionToken(detail.purchaseToken));
       Logger.info("Purchased token ${detail.purchaseToken}");
       return true;
@@ -465,7 +465,7 @@ class HwInpState extends OptimizedState<HwInp> {
       }
     });
 
-    if (ss.settings.cachedCodes.containsKey("restore")) {
+    if (SettingsSvc.settings.cachedCodes.containsKey("restore")) {
       handleOpenAbsinthe("restore");
     }
 
@@ -517,7 +517,7 @@ class HwInpState extends OptimizedState<HwInp> {
   @override
   Widget build(BuildContext context) {
     return SetupPageTemplate(
-      title: staging == null ? "Activation" : ss.settings.deviceIsHosted.value ? "Hosted Device" : stagingMine ? "My Device" : "Shared Device",
+      title: staging == null ? "Activation" : SettingsSvc.settings.deviceIsHosted.value ? "Hosted Device" : stagingMine ? "My Device" : "Shared Device",
       customSubtitle: Padding(
         padding: const EdgeInsets.all(8.0),
         child: Align(
@@ -938,8 +938,8 @@ class HwInpState extends OptimizedState<HwInp> {
                                   minimumSize: MaterialStateProperty.all(const Size(30, 30)),
                                 ),
                                 onPressed: loading || (kIsDesktop && staging == null) ? null : () async {
-                                  ss.settings.customHeaders.value = {};
-                                  http.onInit();
+                                  SettingsSvc.settings.customHeaders.value = {};
+                                  HttpSvc.updateHeaders();
                                   connect(staging!);
                                 },
                                 child: Stack(
@@ -988,12 +988,12 @@ class HwInpState extends OptimizedState<HwInp> {
     controller.updateConnectError("");
     try {
       if (!alreadyActivated) {
-        ss.settings.macIsMine.value = stagingMine;
-        ss.settings.deviceIsHosted.value = isHosted;
+        SettingsSvc.settings.macIsMine.value = stagingMine;
+        SettingsSvc.settings.deviceIsHosted.value = isHosted;
         if (!isHosted) {
-          ss.settings.hostedToken.value = null;
+          SettingsSvc.settings.hostedToken.value = null;
         }
-        ss.settings.save();
+        SettingsSvc.settings.save();
 
         controller.identity = api.newNgmIdentity();
         controller.config = config;
@@ -1006,12 +1006,12 @@ class HwInpState extends OptimizedState<HwInp> {
 
 
         controller.currentPhoneUsers = {}; // reset validated phone numbers as we have a new token now
-        var list = ss.settings.cachedCodes.entries.toList();
+        var list = SettingsSvc.settings.cachedCodes.entries.toList();
         for (var items in list) {
           if (!items.key.startsWith("sms-auth-")) continue;
-          ss.settings.cachedCodes.remove(items.key);
+          SettingsSvc.settings.cachedCodes.remove(items.key);
         }
-        ss.saveSettings();
+        await SettingsSvc.settings.saveOneAsync('cachedCodes');
         if (isHosted) {
           pushService.mixpanel?.track("hosted-device-configured");
         }

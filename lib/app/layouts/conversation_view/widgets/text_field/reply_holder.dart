@@ -38,7 +38,7 @@ class _ReplyHolderState extends State<ReplyHolder> with ThemeHelpers {
               text: resolvedReply.text,
               subject: resolvedReply.subject,
               attachments: resolvedReply.attachments.where((a) => a.guid == attachmentGuid).toList(),
-              mentions: resolvedReply.mentions,
+              annotations: resolvedReply.annotations,
               edits: resolvedReply.edits,
               isUnsent: resolvedReply.isUnsent,
               shouldRedact: resolvedReply.shouldRedact,

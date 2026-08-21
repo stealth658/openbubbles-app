@@ -355,6 +355,8 @@ class MetadataHttpClient {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:
+      // dio 5.11 added transformTimeout; the fork pins a newer dio than upstream.
+      case DioExceptionType.transformTimeout:
         return MetadataFetchStatus.timeout;
       case DioExceptionType.cancel:
         return MetadataFetchStatus.cancelled;

@@ -29,9 +29,9 @@ class _SharedPasswordsState extends OptimizedState<SharedPasswords>
   bool get wantKeepAlive => true;
 
   Future<void> _openPasswords() async {
-    final currentChat = cm.activeChat?.chat;
-    ns.closeAllConversationView(context);
-    await cm.setAllInactive();
+    final currentChat = ChatsSvc.activeChat?.chat;
+    NavigationSvc.closeAllConversationView(context);
+    await ChatsSvc.setAllInactive();
     await Navigator.of(Get.context!).push(
       ThemeSwitcher.buildPageRoute(
         builder: (BuildContext context) {
@@ -40,9 +40,9 @@ class _SharedPasswordsState extends OptimizedState<SharedPasswords>
       ),
     );
     if (currentChat != null) {
-      await cm.setActiveChat(currentChat);
-      if (ss.settings.tabletMode.value) {
-        ns.pushAndRemoveUntil(
+      await ChatsSvc.setActiveChat(currentChat);
+      if (SettingsSvc.settings.tabletMode.value) {
+        NavigationSvc.pushAndRemoveUntil(
           context,
           ConversationView(
             chat: currentChat,

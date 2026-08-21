@@ -199,7 +199,7 @@ class _MessageHolderState extends State<MessageHolder> with AutomaticKeepAliveCl
           // still resolve correctly against controller.parts.length.
           part: lastPart,
           shouldRedact: current.shouldRedact,
-          mentions: const [],
+          annotations: const [],
           edits: const [],
           isUnsent: current.isUnsent,
           attachmentPartIndices: groupedPartIndices,

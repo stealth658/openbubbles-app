@@ -14,17 +14,15 @@ import 'package:bluebubbles/services/backend/interfaces/chat_interface.dart';
 import 'package:dio/dio.dart';
 import 'package:faker/faker.dart';
 import 'package:flutter/foundation.dart';
-import 'package:bluebubbles/models/models.dart' show MessageSaveResult;
+import 'package:bluebubbles/models/models.dart' show HandleLookupKey, MessageSaveResult;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart' hide Response;
-import 'package:metadata_fetch/metadata_fetch.dart';
 import 'package:mime_type/mime_type.dart';
 // (needed when generating objectbox model code)
 // ignore: unnecessary_import
 import 'package:objectbox/objectbox.dart';
 import 'package:supercharged/supercharged.dart';
-import 'package:tuple/tuple.dart';
 import 'package:universal_io/io.dart';
 
 // NOTE: the GetChatAttachments / GetMessages / AddMessages / GetChats AsyncTask
@@ -185,10 +183,34 @@ class Chat {
   String? transcriptPosterPath;
   int transcriptBackgroundVersion = 1;
 
-  // Do not use this field directly, use the handles ToMany relation instead.
-  // This should only really be used for serialization/deserialization purposes.
+  // Do not use this field directly, use the `participants` getter (or the
+  // `handles` ToMany relation) instead. This backing list is only ever
+  // populated explicitly, for serialization/deserialization purposes.
   @Transient()
-  List<Handle> participants = [];
+  List<Handle> _participants = [];
+
+  /// Upstream replaced the fork's lazy `_participants` getter with a plain
+  /// transient list that nothing populates when a chat is read back out of the
+  /// database. The fork reads this on every rustpush send, read receipt,
+  /// rename and typing indicator, so fall back to the `handles` relation
+  /// whenever the transient list has not been filled in explicitly.
+  List<Handle> get participants {
+    if (_participants.isEmpty) {
+      final fromRelation = _deduplicateHandles(handles.toList());
+      // Don't cache an empty result - `handles` may simply not be loaded yet.
+      if (fromRelation.isNotEmpty) _participants = fromRelation;
+    }
+    return _participants;
+  }
+
+  /// Kept so `createChat` / `Chat.fromMap` / `Chat.save()` can still push an
+  /// explicit participant list onto a (possibly refetched) chat object.
+  set participants(List<Handle> value) => _participants = _deduplicateHandles(value);
+
+  static List<Handle> _deduplicateHandles(List<Handle> input) {
+    final seen = <String>{};
+    return List<Handle>.from(input).where((e) => seen.add(e.uniqueAddressAndService)).toList();
+  }
 
   @Backlink('chat')
   final messages = ToMany<Message>();
@@ -222,7 +244,7 @@ class Chat {
     String? customBackground,
     int? pinnedIndex,
     Message? latestMessage,
-    this.participants = const [],
+    List<Handle> participants = const [],
     this.autoSendReadReceipts,
     this.autoSendTypingIndicators,
     this.textFieldText,
@@ -249,6 +271,7 @@ class Chat {
     this.isRoutingStub = false,
     List<String>? guidRefs,
   }) : guidRefs = guidRefs ?? [guid] {
+    this.participants = participants;
     customAvatarPath = customAvatar;
     customBackgroundPath = customBackground;
     pinIndex = pinnedIndex;
@@ -667,15 +690,18 @@ class Chat {
     }
   }
 
-  void updateAttachmentGuid(String guid) {
+  /// Upstream moved the Attachment DB writes onto the isolate (`deleteAsync` /
+  /// `saveAsync`), so this is async now — callers should await it before
+  /// persisting the chat row.
+  Future<void> updateAttachmentGuid(String guid) async {
     if (customAvatarPath == null) {
       if (photoAttachmentGuid != null) {
-        Attachment.delete(photoAttachmentGuid!);
+        await Attachment.deleteAsync(photoAttachmentGuid!);
       }
       photoAttachmentGuid = null;
     } else {
       if (photoAttachmentGuid != null) {
-        Attachment.delete(photoAttachmentGuid!);
+        await Attachment.deleteAsync(photoAttachmentGuid!);
       }
       photoAttachmentGuid = "${guid}_0";
       var data = Attachment(
@@ -690,7 +716,7 @@ class Chat {
         directory.createSync(recursive: true);
       }
       File(customAvatarPath!).copySync(data.path);
-      data.save(null);
+      await data.saveAsync(null);
     }
   }
 
@@ -875,7 +901,7 @@ class Chat {
       save(updateUsingHandle: true);
     }
 
-    var handle = Handle.findOne(addressAndService: Tuple2(sender, "iMessage"));
+    var handle = Handle.findOne(addressAndService: HandleLookupKey(sender, "iMessage"));
     if (handle == null) {
       handle = Handle(
         address: sender
@@ -940,19 +966,22 @@ class Chat {
               messagePart: 0
             )
           )])],
-          attachments: [
-            Attachment(
-              guid: myUuid,
-              uti: utiMap[part["contentType"] as String] ?? "public.data",
-              mimeType: part["contentType"] as String,
-              isOutgoing: false,
-              bytes: partContent,
-              totalBytes: partContent.length,
-              transferName: "${part["id"]}.${extensionFromMime(part["contentType"] as String) ?? "bin"}"
-            )
-          ],
           temp: true,
         );
+        // Upstream dropped the `attachments` constructor argument in favour of
+        // the `dbAttachments` backlink; the fork's transient setter is the
+        // equivalent write path.
+        _message.attachments = [
+          Attachment(
+            guid: myUuid,
+            uti: utiMap[part["contentType"] as String] ?? "public.data",
+            mimeType: part["contentType"] as String,
+            isOutgoing: false,
+            bytes: partContent,
+            totalBytes: partContent.length,
+            transferName: "${part["id"]}.${extensionFromMime(part["contentType"] as String) ?? "bin"}"
+          )
+        ];
         await _message.attachments.first!.writeToDisk();
         await (backend as RustPushBackend).forwardMMSAttachment(this, _message, _message.attachments.first!);
         File(_message.attachments.first!.path).deleteSync();
@@ -1796,7 +1825,7 @@ class Chat {
   static Future<void> getIcon(Chat c, {bool force = false}) async {
     // OpenBubbles: chat icons come from the BackendService, not HttpSvc directly.
     if ((!force && c.lockChatIcon) || backend.getRemoteService() == null) return;
-    final response = await backend.getRemoteService()!.getChatIcon(c.guid).catchError((err, stack) async {
+    final response = await backend.getRemoteService()!.chat.getIcon(c.guid).catchError((err, stack) async {
       Logger.error("Failed to get chat icon for chat ${c.getTitle()}", error: err, trace: stack);
       return Response(statusCode: 500, requestOptions: RequestOptions(path: ""));
     });

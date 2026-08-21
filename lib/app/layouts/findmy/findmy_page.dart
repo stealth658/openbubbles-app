@@ -89,7 +89,7 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
 
     myTimer = Timer.periodic(const Duration(seconds: 5), (timer) => getLocations());
 
-    SocketSvc.socket.on("new-findmy-location", (data) {
+    SocketSvc.socket?.on("new-findmy-location", (data) {
       try {
         final friend = FindMyFriend.fromJson(data);
         Logger.info("Received new location for ${friend.handle?.address}");
@@ -183,6 +183,7 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
               title: null, 
               subtitle: null, 
               handle: Handle.findOne(addressAndService: HandleLookupKey(e.invitationAcceptedHandles.first, "iMessage")) ?? Handle(address: e.invitationAcceptedHandles.first), 
+              handleAddress: e.invitationAcceptedHandles.first, 
               lastUpdated: e.lastLocation?.timestamp != null ? DateTime.fromMillisecondsSinceEpoch(e.lastLocation!.timestamp) : null,
               status: null, 
               locatingInProgress: false,
@@ -292,7 +293,7 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
               lostDevice: null, 
               lostModeEnabled: e.lostModeEnabled, 
               deviceDisplayName: e.deviceDisplayName, 
-              safeLocations: null, 
+              safeLocations: const [], 
               name: e.name, 
               canWipeAfterLock: e.canWipeAfterLock, 
               isMac: e.isMac, 
@@ -409,7 +410,7 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
           lostDevice: null, 
           lostModeEnabled: false, 
           deviceDisplayName: e.naming.name, 
-          safeLocations: null, 
+          safeLocations: const [], 
           name: e.naming.name, 
           canWipeAfterLock: false, 
           isMac: false, 
@@ -601,7 +602,7 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
     tabController.dispose();
     myTimer?.cancel();
     // TODO
-    SocketSvc.socket.off("new-findmy-location");
+    SocketSvc.socket?.off("new-findmy-location");
     super.dispose();
   }
 

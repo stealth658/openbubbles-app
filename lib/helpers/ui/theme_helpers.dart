@@ -201,6 +201,14 @@ extension BuildContextThemeHelpers on BuildContext {
 }
 
 extension ColorSchemeHelpers on ColorScheme {
+  // OpenBubbles compat: upstream dropped `properSurface`/`properOnSurface`, but a
+  // lot of fork-only UI still uses them. The original definition compared
+  // `surface` against the now-removed `background` and fell back to
+  // `surfaceVariant`; under Material 3 those collapse to the mapping below.
+  Color get properSurface => surfaceContainerHighest;
+
+  Color get properOnSurface => onSurfaceVariant;
+
   Color get iMessageBubble =>
       HSLColor.fromColor(primary).colorfulness < HSLColor.fromColor(primaryContainer).colorfulness
           ? primary

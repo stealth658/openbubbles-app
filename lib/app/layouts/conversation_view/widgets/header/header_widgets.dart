@@ -284,7 +284,7 @@ class ShareProfileBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isMaterial = material ?? !iOS;
+    final isMaterial = material ?? !context.iOS;
     return Obx(() {
       if (!controller.suggestShare.value) return const SizedBox.shrink();
       return Container(

@@ -421,7 +421,7 @@ class _ChatOptionsState extends State<ChatOptions> with ThemeHelpers {
           onChanged: (value) {
             if (!value) {
               chat.handles.first.setBlocked(false);
-              chat.toggleArchived(false);
+              ChatsSvc.setChatArchived(chatState?.chat ?? chat, false);
               if (mounted) setState(() {});
               return;
             }
@@ -459,7 +459,7 @@ class _ChatOptionsState extends State<ChatOptions> with ThemeHelpers {
                       onPressed: () async {
                         Navigator.of(context).pop();
                         chat.handles.first.setBlocked(true);
-                        chat.toggleArchived(true);
+                        ChatsSvc.setChatArchived(chatState?.chat ?? chat, true);
                         if (mounted) setState(() {});
                       },
                     ),

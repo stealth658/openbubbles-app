@@ -84,8 +84,8 @@ class _DevicePanelState extends CustomState<DevicePanel, void, DevicePanelContro
               onPressed: () async {
                 Get.back();
                 await wrapPromise(api.changeEscrowPassword(keychain: pushService.state!.icloudServices!.keychain!, devicePassword: codeController.text), "Changing password...");
-                ss.settings.keychainDefaultPassword.value = null;
-                ss.saveSettings();
+                SettingsSvc.settings.keychainDefaultPassword.value = null;
+                await SettingsSvc.settings.saveOneAsync('keychainDefaultPassword');
               },
             ),
           ],
@@ -172,15 +172,15 @@ class _DevicePanelState extends CustomState<DevicePanel, void, DevicePanelContro
 
   @override
   Widget build(BuildContext context) {
-    Widget nextIcon = Obx(() => ss.settings.skin.value != Skins.Material ? Icon(
-      ss.settings.skin.value != Skins.Material ? CupertinoIcons.chevron_right : Icons.arrow_forward,
+    Widget nextIcon = Obx(() => SettingsSvc.settings.skin.value != Skins.Material ? Icon(
+      SettingsSvc.settings.skin.value != Skins.Material ? CupertinoIcons.chevron_right : Icons.arrow_forward,
       color: context.theme.colorScheme.outline,
       size: iOS ? 18 : 24,
     ) : const SizedBox.shrink());
 
     return Obx(
       () => SettingsScaffold(
-        title: "${ss.settings.deviceIsHosted.value ? "Hosted" : ss.settings.macIsMine.value ? 'My' : 'Shared'} Device",
+        title: "${SettingsSvc.settings.deviceIsHosted.value ? "Hosted" : SettingsSvc.settings.macIsMine.value ? 'My' : 'Shared'} Device",
         initialHeader: null,
         iosSubtitle: iosSubtitle,
         materialSubtitle: materialSubtitle,
@@ -206,14 +206,14 @@ class _DevicePanelState extends CustomState<DevicePanel, void, DevicePanelContro
                           ),
                           Text(deviceName, style: context.theme.textTheme.titleLarge),
                           const SizedBox(height: 10),
-                          Text(ss.settings.redactedMode.value ? "Serial Number" : deviceInfo?.serial ?? ""),
+                          Text(SettingsSvc.settings.redactedMode.value ? "Serial Number" : deviceInfo?.serial ?? ""),
                           const SizedBox(height: 10),
                           Text(deviceInfo?.osVersion ?? ""),
                           const SizedBox(height: 25),
                         ],
                       )
                     ),
-                    if (ss.settings.deviceIsHosted.value)
+                    if (SettingsSvc.settings.deviceIsHosted.value)
                       SettingsTile(
                       title: "Manage subscription",
                       onTap: () async {
@@ -246,7 +246,7 @@ class _DevicePanelState extends CustomState<DevicePanel, void, DevicePanelContro
                                 ),
                               ],
                               title: Text("Keychain Password", style: context.theme.textTheme.titleLarge),
-                              content: Text(ss.settings.keychainDefaultPassword.value != null ? "This device's default keychain passcode is ${ss.settings.keychainDefaultPassword.value}." : "You have set a custom keychain password.", style: context.theme.textTheme.bodyLarge),
+                              content: Text(SettingsSvc.settings.keychainDefaultPassword.value != null ? "This device's default keychain passcode is ${SettingsSvc.settings.keychainDefaultPassword.value}." : "You have set a custom keychain password.", style: context.theme.textTheme.bodyLarge),
                               backgroundColor: context.theme.colorScheme.properSurface,
                             );
                           }
@@ -256,12 +256,12 @@ class _DevicePanelState extends CustomState<DevicePanel, void, DevicePanelContro
                       ),
                   ],
                 ),
-                if (ss.settings.macIsMine.value && deviceInfo?.encodedData != null && !ss.settings.redactedMode.value)
+                if (SettingsSvc.settings.macIsMine.value && deviceInfo?.encodedData != null && !SettingsSvc.settings.redactedMode.value)
                 SettingsHeader(
                     iosSubtitle: iosSubtitle,
                     materialSubtitle: materialSubtitle,
                     text: "Share Mac"),
-                if (ss.settings.macIsMine.value && deviceInfo?.encodedData != null && !ss.settings.redactedMode.value)
+                if (SettingsSvc.settings.macIsMine.value && deviceInfo?.encodedData != null && !SettingsSvc.settings.redactedMode.value)
                 SettingsSection(
                   backgroundColor: tileColor,
                   children: [
@@ -297,14 +297,14 @@ class _DevicePanelState extends CustomState<DevicePanel, void, DevicePanelContro
                       onTap: () async {
                         var code = await pushService.uploadCode(controller.allowSharing.value, deviceInfo!);
                         if (code.length > 50) {
-                          Share.text("OpenBubbles", code);
+                          Share.text(code, subject: "OpenBubbles");
                         } else {
-                          Share.text("OpenBubbles", "$rpApiRoot/$code");
+                          Share.text("$rpApiRoot/$code", subject: "OpenBubbles");
                         }
                       },
                       subtitle: controller.allowSharing.value ? null : "Code can only be used once",
                       trailing: Icon(
-                        ss.settings.skin.value == Skins.iOS ? CupertinoIcons.share : Icons.share
+                        SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.share : Icons.share
                       ),
                     ),
                     SettingsTile(
@@ -314,7 +314,7 @@ class _DevicePanelState extends CustomState<DevicePanel, void, DevicePanelContro
                         Clipboard.setData(ClipboardData(text: await pushService.uploadCode(controller.allowSharing.value, deviceInfo!)));
                       },
                       trailing: Icon(
-                        ss.settings.skin.value == Skins.iOS ? CupertinoIcons.doc_on_clipboard : Icons.copy
+                        SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.doc_on_clipboard : Icons.copy
                       ),
                       subtitle: controller.allowSharing.value ? null : "Code can only be used once",
                     ),
@@ -328,7 +328,7 @@ class _DevicePanelState extends CustomState<DevicePanel, void, DevicePanelContro
     );
   }
 
-  void saveSettings() {
-    ss.saveSettings();
+  Future<void> saveSettings() async {
+    await SettingsSvc.settings.saveAsync();
   }
 }

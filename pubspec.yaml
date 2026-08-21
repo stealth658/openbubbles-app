@@ -21,7 +21,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  adaptive_theme: ^3.7.1+2
+  # 3.8.0 retyped its ThemeData onto package:material_ui; upstream BlueBubbles
+  # locks 3.7.2. Pinned below 3.8.0 so the theming code can stay upstream's shape.
+  adaptive_theme: ">=3.7.1+2 <3.8.0"
   animated_size_and_fade: ^5.1.1
   animations: ^2.0.11
   app_install_date: ^0.1.5
@@ -196,6 +198,8 @@ dependencies:
   uuid: any
 
   # ── OpenBubbles (rustpush) additions ────────────────────────────────────────
+  # upstream dropped `tuple`, but fork code still uses Tuple2/Tuple3
+  tuple: ^2.0.2
   ffi: ^2.1.0
   flutter_rust_bridge: 2.3.0
   rust_lib_bluebubbles:
@@ -269,6 +273,8 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   peanut: ^6.0.0
   objectbox_generator: any
+  integration_test:
+    sdk: flutter
   # freezed (generator) intentionally omitted: lib/src/rust/api/api.freezed.dart is
   # committed, and freezed 2.x cannot coexist with build_runner ^2.7. Re-add a
   # matching freezed version temporarily if you regenerate flutter_rust_bridge output.

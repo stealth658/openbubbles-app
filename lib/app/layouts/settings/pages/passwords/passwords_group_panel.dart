@@ -296,20 +296,20 @@ class _PasswordsGroupPanelState extends OptimizedState<PasswordsGroupPanel> {
   }
 
   EdgeInsets get _sectionPadding {
-    if (ss.settings.skin.value == Skins.iOS) {
+    if (SettingsSvc.settings.skin.value == Skins.iOS) {
       return const EdgeInsets.symmetric(horizontal: 20);
     }
-    if (ss.settings.skin.value == Skins.Samsung) {
+    if (SettingsSvc.settings.skin.value == Skins.Samsung) {
       return const EdgeInsets.symmetric(vertical: 5);
     }
     return EdgeInsets.zero;
   }
 
   double get _sectionRadius {
-    if (ss.settings.skin.value == Skins.Samsung) {
+    if (SettingsSvc.settings.skin.value == Skins.Samsung) {
       return 25;
     }
-    if (ss.settings.skin.value == Skins.iOS) {
+    if (SettingsSvc.settings.skin.value == Skins.iOS) {
       return 10;
     }
     return 0;
@@ -394,7 +394,7 @@ class _PasswordsGroupPanelState extends OptimizedState<PasswordsGroupPanel> {
 
   Widget _buildCredentialTile(CredentialEntry entry) {
     Future<void> openDetails() async {
-      final result = await ns.pushSettings(
+      final result = await NavigationSvc.pushSettings(
         context,
         CredentialDetailPanel(
           credential: entry,
@@ -461,7 +461,7 @@ class _PasswordsGroupPanelState extends OptimizedState<PasswordsGroupPanel> {
         size: 22,
       ),
       onPressed: () async {
-        final result = await ns.pushSettings(
+        final result = await NavigationSvc.pushSettings(
           context,
           PasswordEditorPanel(
             provider: widget.provider,

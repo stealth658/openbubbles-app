@@ -91,7 +91,7 @@ class _SharedStreamsPanelState extends OptimizedState<SharedStreamsPanel> {
           SlidableAction(
             label: 'Remove',
             backgroundColor: Colors.red,
-            icon: ss.settings.skin.value == Skins.iOS ? CupertinoIcons.trash : Icons.delete_outlined,
+            icon: SettingsSvc.settings.skin.value == Skins.iOS ? CupertinoIcons.trash : Icons.delete_outlined,
             onPressed: (_) async {
               showDialog(
                 context: context,
@@ -265,7 +265,7 @@ class _SharedStreamsPanelState extends OptimizedState<SharedStreamsPanel> {
           if (val) {
             String? path;
             if (kIsDesktop) {
-              path = await FilePicker.platform.getDirectoryPath(dialogTitle: "Folder for ${album.name}");
+              path = await FilePicker.getDirectoryPath(dialogTitle: "Folder for ${album.name}");
             } else {
               final PermissionState ps = await PhotoManager.requestPermissionExtend();
               if (!ps.hasAccess) {
@@ -396,7 +396,7 @@ class _SharedStreamsPanelState extends OptimizedState<SharedStreamsPanel> {
         ]);
   }
 
-  void saveSettings() {
-    ss.saveSettings();
+  Future<void> saveSettings() async {
+    await SettingsSvc.settings.saveAsync();
   }
 }

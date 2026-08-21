@@ -273,6 +273,18 @@ class NotificationsService {
       }
       return;
     }
+    // OpenBubbles: the deleted `MessageHelper.handleNotification` refused to
+    // notify for a blocked sender. Re-applied here.
+    final sender = message.handleRelation.target ?? message.getHandle();
+    if (sender?.isBlocked() ?? false) return;
+    // OpenBubbles: a live iMessage-app extension session can ask us to suppress
+    // notifications for the messages it is driving (ExtensionService.setSuppress).
+    // Without this guard those sessions raise duplicate notifications.
+    final session = message.payloadData?.appData?.firstOrNull?.session;
+    if (session != null && es.suppressingSessions.contains(session)) {
+      Logger.info("Suppressing incoming message notification for session $session per extension request");
+      return;
+    }
     if (message.isKeptAudio) return;
     // OpenBubbles: a rustpush CloudKit restore writes a large backlog of
     // messages; none of them should raise a notification.

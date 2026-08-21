@@ -77,7 +77,8 @@ class _FindMyState extends OptimizedState<FindMy> with AutomaticKeepAliveClientM
       latitude: decoded["initialLocation"]["latitude"],
       longitude: decoded["initialLocation"]["longitude"],
       handle: widget.message.getHandle()!,
-      title: null, 
+      handleAddress: widget.message.getHandle()!.address,
+      title: null,
       subtitle: null, 
       longAddress: null,
       shortAddress: null,
@@ -142,7 +143,8 @@ class _FindMyState extends OptimizedState<FindMy> with AutomaticKeepAliveClientM
         shortAddress: e.lastLocation?.address != null ? "${e.lastLocation?.address?.locality}, ${e.lastLocation?.address?.stateCode ?? e.lastLocation?.address?.countryCode}" : null,
         title: null, 
         subtitle: null, 
-        handle: Handle(address: e.invitationAcceptedHandles.first), 
+        handle: Handle(address: e.invitationAcceptedHandles.first),
+        handleAddress: e.invitationAcceptedHandles.first,
         lastUpdated: e.lastLocation?.timestamp != null ? DateTime.fromMillisecondsSinceEpoch(e.lastLocation!.timestamp) : null,
         status: null, 
         locatingInProgress: false,
@@ -336,7 +338,7 @@ class _FindMyState extends OptimizedState<FindMy> with AutomaticKeepAliveClientM
     }
 
     var child = Container(
-      height: ns.width(context) / 1.5,
+      height: NavigationSvc.width(context) / 1.5,
       child:Stack(
       children: [
         IgnorePointer(
@@ -386,7 +388,7 @@ class _FindMyState extends OptimizedState<FindMy> with AutomaticKeepAliveClientM
                             children: [
                               Text(item.handle?.displayName ?? item.title ?? "Unknown Friend",
                                   style: context.theme.textTheme.labelLarge),
-                              Text(ss.settings.redactedMode.value ? "Location" : (item.longAddress ?? "Initial location"), style: context.theme.textTheme.bodySmall),
+                              Text(SettingsSvc.settings.redactedMode.value ? "Location" : (item.longAddress ?? "Initial location"), style: context.theme.textTheme.bodySmall),
                               if (item.lastUpdated != null && item.status != LocationStatus.live)
                                 Text("Last updated ${buildDate(item.lastUpdated)}", style: context.theme.textTheme.bodySmall),
                               if (item.status != null)

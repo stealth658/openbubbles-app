@@ -6,6 +6,7 @@ import 'package:bluebubbles/app/state/message_state.dart';
 import 'package:bluebubbles/helpers/types/extensions/extensions.dart';
 import 'package:bluebubbles/helpers/types/constants.dart';
 import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/services/network/backend_service.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/services/backend/interfaces/sync_interface.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
@@ -1350,15 +1351,14 @@ class MessagesService extends GetxController {
     }
 
     try {
-      final response = await HttpSvc.message.edit(
-        messageGuid,
-        newText,
-        "Edited to: '$newText'",
-        partIndex: partIndex,
-      );
-      // response is always HTTP 200 here — returnSuccessOrError converts
-      // non-200 into Future.error, which is caught below.
-      final updatedMessage = Message.fromMap(response.data['data']);
+      // OpenBubbles: edits must go through the `backend` abstraction so rustpush
+      // edits natively instead of hitting a BlueBubbles server. `HttpBackend`
+      // raises on a non-200, which is caught below; a null return means the
+      // active backend could not confirm the edit.
+      final updatedMessage = await backend.edit(message, AttributedBody.raw(newText), partIndex);
+      if (updatedMessage == null) {
+        throw Exception("Backend did not confirm the edit");
+      }
       IncomingMsgHandler.handle(IncomingPayload(
         type: MessageEventType.updatedMessage,
         source: MessageSource.apiResponse,
@@ -1432,8 +1432,15 @@ class MessagesService extends GetxController {
     }
 
     try {
-      final response = await HttpSvc.message.unsend(messageGuid, partIndex: partIndex);
-      final updatedMessage = Message.fromMap(response.data['data']);
+      // OpenBubbles: unsends must go through the `backend` abstraction so
+      // rustpush retracts natively instead of hitting a BlueBubbles server.
+      final updatedMessage = await backend.unsend(
+        message,
+        preState != null && partIdx >= 0 ? preState.parts[partIdx] : MessagePart(part: partIndex),
+      );
+      if (updatedMessage == null) {
+        throw Exception("Backend did not confirm the unsend");
+      }
       // Await the handler — it processes on an async FIFO queue, so firing and
       // forgetting would let the buildMessageParts below run against a message
       // whose messageSummaryInfo hasn't been updated yet, wiping the optimistic

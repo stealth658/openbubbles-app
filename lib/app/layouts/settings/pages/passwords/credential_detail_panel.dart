@@ -78,7 +78,7 @@ class _CredentialDetailPanelState
                 size: 22,
               ),
               onPressed: () async {
-                final result = await ns.pushSettings(
+                final result = await NavigationSvc.pushSettings(
                   context,
                   PasswordEditorPanel(
                     provider: widget.provider,

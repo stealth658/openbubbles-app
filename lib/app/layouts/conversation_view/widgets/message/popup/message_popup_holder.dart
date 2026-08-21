@@ -72,7 +72,7 @@ class _MessagePopupHolderState extends State<MessagePopupHolder> with ThemeHelpe
             part: widget.part.partIndexForAttachment(galleryIdx),
             attachments: [widget.part.attachments[galleryIdx]],
             shouldRedact: widget.part.shouldRedact,
-            mentions: const [],
+            annotations: const [],
             edits: const [],
             isUnsent: widget.part.isUnsent,
           )

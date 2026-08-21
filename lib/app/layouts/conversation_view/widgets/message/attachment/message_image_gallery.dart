@@ -260,7 +260,7 @@ class _MessageImageGalleryState extends State<MessageImageGallery> with ThemeHel
       shouldRedact: false,
       text: null,
       subject: null,
-      mentions: const [],
+      annotations: const [],
       edits: const [],
       isUnsent: false,
     );

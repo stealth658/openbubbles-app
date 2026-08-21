@@ -617,7 +617,7 @@ void logout(BuildContext context) {
             lightTheme: "Bright White",
           );
           Get.offAll(
-              () => const PopScope(
+              () => PopScope(
                     canPop: false,
                     child: TitleBarWrapper(child: SetupView()),
                   ),

@@ -38,8 +38,10 @@ class _AppleId2FAState extends OptimizedState<AppleId2FA> {
 
   void handleSignIn() {
     if (loading) return;
-    ss.settings.customHeaders.value = {};
-    http.onInit();
+    SettingsSvc.settings.customHeaders.value = {};
+    // Upstream replaced HttpService.onInit() (full Dio rebuild) with
+    // updateHeaders(), which is what this call site actually wanted.
+    HttpSvc.updateHeaders();
     connect(codeController.text);
   }
 

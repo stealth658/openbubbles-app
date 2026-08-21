@@ -58,7 +58,7 @@ class PhoneNumberState extends OptimizedState<PhoneNumber> {
 
   void subscribe() async {
     try {
-      await mcs.invokeMethod("sim-info-query", {"subscribe": true});
+      await MethodChannelSvc.invokeMethod("sim-info-query", {"subscribe": true});
       failed.value = false;
     } catch (e) {
       failed.value = true;
@@ -69,8 +69,8 @@ class PhoneNumberState extends OptimizedState<PhoneNumber> {
   RxBool failedSms = false.obs;
 
   Future<void> subscribeSubscription(int subscription, {bool trySmsLess = true}) async {
-    if (ss.settings.cachedCodes.containsKey("sms-auth-$subscription")) {
-      controller.currentPhoneUsers[subscription] = await api.restoreUser(user: ss.settings.cachedCodes["sms-auth-$subscription"]!);
+    if (SettingsSvc.settings.cachedCodes.containsKey("sms-auth-$subscription")) {
+      controller.currentPhoneUsers[subscription] = await api.restoreUser(user: SettingsSvc.settings.cachedCodes["sms-auth-$subscription"]!);
       controller.updateConnectError("");
       setState(() { });
       return;
@@ -80,7 +80,7 @@ class PhoneNumberState extends OptimizedState<PhoneNumber> {
 
     if (trySmsLess) {
       try {
-        String resp = await mcs.invokeMethod("sms-less-auth-gateway", {'subscription': subscription});
+        String resp = await MethodChannelSvc.invokeMethod("sms-less-auth-gateway", {'subscription': subscription});
         Map<dynamic, dynamic> parsed = json.decode(resp);
 
         var user = await api.getEntitlements(
@@ -90,13 +90,13 @@ class PhoneNumberState extends OptimizedState<PhoneNumber> {
           subscriber: parsed["subscriber"], 
           imei: parsed["imei"], 
           processChallenge: (challenge) async {
-            return await mcs.invokeMethod("eap-aka-gateway", {'subscription': subscription, 'challenge': challenge});
+            return await MethodChannelSvc.invokeMethod("eap-aka-gateway", {'subscription': subscription, 'challenge': challenge});
           }
         );
 
         controller.currentPhoneUsers[subscription] = user;
-        ss.settings.cachedCodes["sms-auth-$subscription"] = await api.saveUser(user: user);
-        ss.saveSettings();
+        SettingsSvc.settings.cachedCodes["sms-auth-$subscription"] = await api.saveUser(user: user);
+        await SettingsSvc.settings.saveOneAsync('cachedCodes');
         controller.updateConnectError("");
         setState(() { });
         controller.phoneValidating.value = false;
@@ -143,10 +143,10 @@ class PhoneNumberState extends OptimizedState<PhoneNumber> {
       }
       var token = await api.getToken(state: controller.connection!);
 
-      String resp = await mcs.invokeMethod("sms-auth-gateway", {'token': hex.encode(token).toUpperCase(), 'subscription': subscription});
+      String resp = await MethodChannelSvc.invokeMethod("sms-auth-gateway", {'token': hex.encode(token).toUpperCase(), 'subscription': subscription});
       controller.currentPhoneUsers[subscription] = await api.authPhone(conn: controller.connection!, config: controller.config!, number: resp.split("|").first, sig: hex.decode(resp.split("|").last));
-      ss.settings.cachedCodes["sms-auth-$subscription"] = await api.saveUser(user: controller.currentPhoneUsers[subscription]!);
-      ss.saveSettings();
+      SettingsSvc.settings.cachedCodes["sms-auth-$subscription"] = await api.saveUser(user: controller.currentPhoneUsers[subscription]!);
+      await SettingsSvc.settings.saveOneAsync('cachedCodes');
       controller.updateConnectError("");
       setState(() { });
     } catch(e) {
@@ -171,7 +171,7 @@ class PhoneNumberState extends OptimizedState<PhoneNumber> {
   void dispose() {
     super.dispose();
     
-    mcs.invokeMethod("sim-info-query", {"subscribe": false});
+    MethodChannelSvc.invokeMethod("sim-info-query", {"subscribe": false});
   }
 
   @override
@@ -264,7 +264,7 @@ class PhoneNumberState extends OptimizedState<PhoneNumber> {
                                           ),
                                           onTap: () {
                                             Clipboard.setData(const ClipboardData(text: "appops set --uid com.openbubbles.messaging USE_ICC_AUTH_WITH_DEVICE_IDENTIFIER allow"));
-                                            if (!Platform.isAndroid || (fs.androidInfo?.version.sdkInt ?? 0) < 33) {
+                                            if (!Platform.isAndroid || (FilesystemSvc.androidInfo?.version.sdkInt ?? 0) < 33) {
                                               showSnackbar("Copied", "Command copied to clipboard!");
                                             }
                                           },
@@ -278,7 +278,7 @@ class PhoneNumberState extends OptimizedState<PhoneNumber> {
                                       TextButton(
                                               onPressed: () async {
                                                 try {
-                                                  await mcs.invokeMethod("shizuku-grant-permission");
+                                                  await MethodChannelSvc.invokeMethod("shizuku-grant-permission");
                                                 } catch (e) {
                                                   if (e is PlatformException) {
                                                     showSnackbar("Error", e.code);
@@ -299,7 +299,7 @@ class PhoneNumberState extends OptimizedState<PhoneNumber> {
                               )
                             ),
                         if (!failed.value)
-                        ...mcs.simInfo.map((sim) => SettingsSwitch(
+                        ...MethodChannelSvc.simInfo.map((sim) => SettingsSwitch(
                             padding: false,
                             onChanged: (bool val) async {
                               if (controller.phoneValidating.value) return;
@@ -391,7 +391,7 @@ class PhoneNumberState extends OptimizedState<PhoneNumber> {
                                       rethrow;
                                     }
                                     subscribe();
-                                    var info = await mcs.simInfo.asFuture;
+                                    var info = await MethodChannelSvc.simInfo.asFuture;
                                     if (info.length == 1) {
                                       await subscribeSubscription(info[0]["subscription"]);
                                       // stay here if it failed

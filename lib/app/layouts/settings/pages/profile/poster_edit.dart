@@ -105,7 +105,7 @@ class PosterEditState
     if (ownedPosterPath != null) {
       await pushService.deletePoster(ownedPosterPath!);
     }
-    String appDocPath = fs.appDocDir.path;
+    String appDocPath = FilesystemSvc.appDocDir.path;
     int number = Random().nextInt(9999999);
     ownedPosterPath = "$appDocPath/avatars/you/poster-$number";
     var f = Directory(ownedPosterPath!);
@@ -115,7 +115,7 @@ class PosterEditState
   }
 
   Color get backgroundColor =>
-      ss.settings.windowEffect.value == WindowEffect.disabled
+      SettingsSvc.settings.windowEffect.value == WindowEffect.disabled
           ? context.theme.colorScheme.background
           : Colors.transparent;
 
@@ -124,9 +124,9 @@ class PosterEditState
   void dispose() {
     _drawerAnimationController.dispose();
     super.dispose();
-    if (!ss.settings.immersiveMode.value) {
+    if (!SettingsSvc.settings.immersiveMode.value) {
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: [SystemUiOverlay.bottom, SystemUiOverlay.top]);
-      eventDispatcher.emit('theme-update', null);
+      EventDispatcherSvc.emit('theme-update', null);
     }
     stopEditing();
     if (ownedPosterPath != null) {
@@ -157,7 +157,7 @@ class PosterEditState
     super.initState();
     // update widget when background color changes
     if (kIsDesktop) {
-      ss.settings.windowEffect.listen((WindowEffect effect) {
+      SettingsSvc.settings.windowEffect.listen((WindowEffect effect) {
         setState(() {});
       });
     }
@@ -175,9 +175,9 @@ class PosterEditState
       curve: Curves.easeOut,
     ));
 
-    if (!ss.settings.immersiveMode.value) {
+    if (!SettingsSvc.settings.immersiveMode.value) {
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-      eventDispatcher.emit('theme-update', null);
+      EventDispatcherSvc.emit('theme-update', null);
     }
 
     if (widget.activePath == null) {
@@ -388,7 +388,7 @@ class PosterEditState
       context,
       barrierDismissible: false,
       constraints: BoxConstraints(
-          minHeight: 480, minWidth: ns.width(context) - 70, maxWidth: ns.width(context) - 70),
+          minHeight: 480, minWidth: NavigationSvc.width(context) - 70, maxWidth: NavigationSvc.width(context) - 70),
     );
   }
 
@@ -426,7 +426,7 @@ class PosterEditState
   }
 
   void changePhoto() async {
-    final res = await fp.FilePicker.platform.pickFiles(withData: true, type: fp.FileType.custom, allowedExtensions: ['png', 'jpg', 'jpeg']);
+    final res = await fp.FilePicker.pickFiles(withData: true, type: fp.FileType.custom, allowedExtensions: ['png', 'jpg', 'jpeg']);
     if (res == null) return;
 
     showDialog(
@@ -589,7 +589,7 @@ class PosterEditState
     var file = pushService.fileForAsset(posterPath, asset, "portrait-layer_background-backfill.HEIC");
     await file.writeAsBytes(paddedJpgBytes);
 
-    await mcs.invokeMethod("encode-heif", {
+    await MethodChannelSvc.invokeMethod("encode-heif", {
       "file": file.path,
       "output": file.path
     });
@@ -653,7 +653,7 @@ class PosterEditState
         statusBarIconBrightness: context.theme.colorScheme.brightness.opposite,
       ),
       child: Scaffold(
-      backgroundColor: ss.settings.windowEffect.value != WindowEffect.disabled
+      backgroundColor: SettingsSvc.settings.windowEffect.value != WindowEffect.disabled
           ? Colors.transparent
           : context.theme.colorScheme.background,
       extendBodyBehindAppBar: true,
@@ -717,7 +717,7 @@ class PosterEditState
                       borderRadius: BorderRadius.circular(16.0),
                     ),
                     padding: const EdgeInsets.all(3),
-                    child: posterText(poster, 80, widget.handle != null ? widget.handle!.displayName.split(" ").first : ss.settings.firstName.value ?? "You"),
+                    child: posterText(poster, 80, widget.handle != null ? widget.handle!.displayName.split(" ").first : SettingsSvc.settings.firstName.value ?? "You"),
                   ),
                 )
               ),
@@ -786,7 +786,7 @@ class PosterEditState
                                   await makeNewPoster();
 
                                   var randomColor = Color((math.Random().nextDouble() * 0xFFFFFF).toInt()).withOpacity(1.0);
-                                  var initials = widget.handle != null ? widget.handle!.initials ?? 'A' : "${ss.settings.firstName.value?.substring(0, 1) ?? 'A'}${ss.settings.lastName.value?.substring(0, 1) ?? ''}".toUpperCase();
+                                  var initials = widget.handle != null ? widget.handle!.initials ?? 'A' : "${SettingsSvc.settings.firstName.value?.substring(0, 1) ?? 'A'}${SettingsSvc.settings.lastName.value?.substring(0, 1) ?? ''}".toUpperCase();
                                   var newPoster = api.SimplifiedPoster(
                                     titleConfiguration: api.PRPosterTitleStyleConfiguration(
                                       alternateDateEnabled: false, 
@@ -965,7 +965,7 @@ class PosterEditState
                         File("${file.path}.png").deleteSync();
                       }
 
-                      await mcs.invokeMethod("encode-heif", {
+                      await MethodChannelSvc.invokeMethod("encode-heif", {
                         "file": file.path,
                         "output": file.path,
                       });
@@ -1006,7 +1006,7 @@ class PosterEditState
                       }
 
                       var profile = await drawMonogramProfile(type);
-                      if ((widget.handle == null || widget.handle!.contact != null) && transcriptPoster == null) {
+                      if ((widget.handle == null || widget.handle!.contactsV2.isNotEmpty) && transcriptPoster == null) {
                         await showDialog(
                         context: Get.context!,
                         builder: (BuildContext context) {
@@ -1037,16 +1037,30 @@ class PosterEditState
                                   Navigator.of(context).pop();
 
                                   if (widget.handle != null) {
-                                    widget.handle!.contact!.avatar = profile;
+                                    // TODO(merge): ContactV2 keeps avatars on disk (avatarPath)
+                                    // rather than as in-memory bytes, so write the generated
+                                    // image into the contact avatar cache. Naming must match
+                                    // ContactV2Actions._saveContactAvatar.
+                                    final contact = widget.handle!.contactsV2.firstOrNull;
+                                    if (contact != null) {
+                                      try {
+                                        final avatarsDir = Directory(FilesystemSvc.contactAvatarsPath);
+                                        if (!avatarsDir.existsSync()) avatarsDir.createSync(recursive: true);
+                                        final avatarFile = File(
+                                            "${avatarsDir.path}/${sanitizeFileName(contact.nativeContactId)}.jpg");
+                                        await avatarFile.writeAsBytes(profile);
+                                        contact.avatarPath = avatarFile.path;
+                                      } catch (_) {}
+                                    }
                                   } else {
-                                    String appDocPath = fs.appDocDir.path;
+                                    String appDocPath = FilesystemSvc.appDocDir.path;
                                     File file = File("$appDocPath/avatars/you/avatar-${profile.length}.jpg");
                                     if (!(await file.exists())) {
                                       await file.create(recursive: true);
                                     }
                                     await file.writeAsBytes(profile);
-                                    ss.settings.userAvatarPath.value = file.path;
-                                    await ss.settings.saveOne("userAvatarPath");
+                                    SettingsSvc.settings.userAvatarPath.value = file.path;
+                                    await SettingsSvc.settings.saveOneAsync("userAvatarPath");
                                   }
                                 },
                               ),

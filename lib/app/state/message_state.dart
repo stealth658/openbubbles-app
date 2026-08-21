@@ -778,13 +778,18 @@ class MessageState extends StatefulController {
         final newText = mainString.substring(e.range.first, e.range.first + e.range.last);
         final currentLength = existingPart.text?.length ?? 0;
         existingPart.text = (existingPart.text ?? "") + newText;
-        if (e.hasMention) {
-          existingPart.mentions.add(Mention(
-            mentionedAddress: e.attributes?.mention,
-            range: [currentLength, currentLength + e.range.last],
-          ));
-          existingPart.mentions.sort((a, b) => a.range.first.compareTo(b.range.first));
-        }
+        // OpenBubbles: the fork stores a richer `Annotation` (mentions *and*
+        // text styling / effects) where upstream only tracked mentions.
+        existingPart.annotations.add(Annotation(
+          mentionedAddress: e.attributes?.mention,
+          range: [currentLength, currentLength + e.range.last],
+          bold: e.attributes?.bold,
+          italic: e.attributes?.italic,
+          underline: e.attributes?.underline,
+          strikethrough: e.attributes?.strikethrough,
+          textEffect: e.attributes?.textEffect,
+        ));
+        existingPart.annotations.sort((a, b) => a.range.first.compareTo(b.range.first));
       } else {
         Attachment? foundAttachment;
         if (e.isAttachment && (cvController?.chat != null || ChatsSvc.activeChat != null)) {
@@ -802,14 +807,17 @@ class MessageState extends StatefulController {
           subject: i == 0 ? message.subject : null,
           text: e.isAttachment ? null : mainString.substring(e.range.first, e.range.first + e.range.last),
           attachments: foundAttachment != null ? [foundAttachment] : [],
-          mentions: !e.hasMention
-              ? []
-              : [
-                  Mention(
-                    mentionedAddress: e.attributes?.mention,
-                    range: [0, e.range.last],
-                  )
-                ],
+          annotations: [
+            Annotation(
+              mentionedAddress: e.attributes?.mention,
+              bold: e.attributes?.bold,
+              italic: e.attributes?.italic,
+              underline: e.attributes?.underline,
+              strikethrough: e.attributes?.strikethrough,
+              textEffect: e.attributes?.textEffect,
+              range: [0, e.range.last],
+            )
+          ],
           part: e.attributes!.messagePart!,
         ));
       }

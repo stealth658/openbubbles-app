@@ -31,7 +31,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(1, 2065429213543838585),
     name: 'Attachment',
-    lastPropertyId: const obx_int.IdUid(23, 7107471023966534193),
+    lastPropertyId: const obx_int.IdUid(24, 1843794876016831244),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -140,6 +140,12 @@ final _entities = <obx_int.ModelEntity>[
         type: 13,
         flags: 0,
       ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(24, 1843794876016831244),
+        name: 'ckRecordId',
+        type: 9,
+        flags: 0,
+      ),
     ],
     relations: <obx_int.ModelRelation>[],
     backlinks: <obx_int.ModelBacklink>[],
@@ -147,7 +153,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(3, 9017250848141753702),
     name: 'Chat',
-    lastPropertyId: const obx_int.IdUid(39, 738307263391205523),
+    lastPropertyId: const obx_int.IdUid(60, 9046678586607934919),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -322,6 +328,132 @@ final _entities = <obx_int.ModelEntity>[
         type: 9,
         flags: 0,
       ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(40, 1996399496642664964),
+        name: 'title',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(41, 4543249530334815749),
+        name: 'apnTitle',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(42, 4541783355303738339),
+        name: 'textFieldAnnotations',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(43, 4289793306990531268),
+        name: 'groupVersion',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(44, 8040775012937494725),
+        name: 'cloudData',
+        type: 23,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(45, 6680079924528171939),
+        name: 'ckRecordId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(46, 809137754162129362),
+        name: 'cloudGuid',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(47, 3194783785638063279),
+        name: 'ckSyncState',
+        type: 1,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(48, 3257336780204252789),
+        name: 'photoAttachmentGuid',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(49, 8457399363782984105),
+        name: 'guidRefs',
+        type: 30,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(50, 8494156400895079858),
+        name: 'usingHandle',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(51, 918070273491302197),
+        name: 'isRpSms',
+        type: 1,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(52, 4032751469986301269),
+        name: 'telephonyId',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(53, 9022122944799913679),
+        name: 'shareZenMode',
+        type: 1,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(54, 436484071977888622),
+        name: 'notifsSilenced',
+        type: 1,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(55, 7587086153162668463),
+        name: 'zenModeIsShared',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(56, 1412781999334541550),
+        name: 'dateNotifiedAnyways',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(57, 4669212270750983713),
+        name: 'senderIsKnown',
+        type: 1,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(58, 9094082089263832904),
+        name: 'isRoutingStub',
+        type: 1,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(59, 2872821119838569759),
+        name: 'transcriptPosterPath',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(60, 9046678586607934919),
+        name: 'transcriptBackgroundVersion',
+        type: 6,
+        flags: 0,
+      ),
     ],
     relations: <obx_int.ModelRelation>[
       obx_int.ModelRelation(
@@ -398,7 +530,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(7, 1716592500251888002),
     name: 'Handle',
-    lastPropertyId: const obx_int.IdUid(13, 2987973275926761435),
+    lastPropertyId: const obx_int.IdUid(15, 8388523160753754046),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -460,6 +592,18 @@ final _entities = <obx_int.ModelEntity>[
         id: const obx_int.IdUid(13, 2987973275926761435),
         name: 'service',
         type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(14, 8360138275672901270),
+        name: 'posterPath',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(15, 8388523160753754046),
+        name: 'blocked',
+        type: 1,
         flags: 0,
       ),
     ],
@@ -536,7 +680,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(13, 4148278195232901830),
     name: 'Message',
-    lastPropertyId: const obx_int.IdUid(54, 3645372489156688543),
+    lastPropertyId: const obx_int.IdUid(63, 6322734948367648994),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -809,6 +953,60 @@ final _entities = <obx_int.ModelEntity>[
         id: const obx_int.IdUid(54, 3645372489156688543),
         name: 'metadata',
         type: 13,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(55, 1528276562712237729),
+        name: 'associatedMessageEmoji',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(56, 2702093656957709432),
+        name: 'verificationFailed',
+        type: 1,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(57, 7862256409578493026),
+        name: 'dateScheduled',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(58, 165911887365578801),
+        name: 'sendingServiceId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(59, 2214397237289404530),
+        name: 'amkSessionId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(60, 8717788214077307208),
+        name: 'hasBeenForwarded',
+        type: 1,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(61, 7068729701289834607),
+        name: 'stagingGuid',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(62, 8862803545802984378),
+        name: 'ckRecordId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(63, 6322734948367648994),
+        name: 'ckSyncState',
+        type: 1,
         flags: 0,
       ),
     ],
@@ -1288,7 +1486,10 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final exifOffset = object.exif == null
             ? null
             : fbb.writeListInt8(obx_int.toFlexBuffer(object.exif!));
-        fbb.startTable(24);
+        final ckRecordIdOffset = object.ckRecordId == null
+            ? null
+            : fbb.writeString(object.ckRecordId!);
+        fbb.startTable(25);
         fbb.addInt64(0, object.id ?? 0);
         fbb.addInt64(1, object.originalROWID);
         fbb.addOffset(2, guidOffset);
@@ -1306,6 +1507,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
         fbb.addBool(19, object.isDownloaded);
         fbb.addOffset(20, metadataOffset);
         fbb.addOffset(22, exifOffset);
+        fbb.addOffset(23, ckRecordIdOffset);
         fbb.finish(fbb.endTable());
         return object.id ?? 0;
       },
@@ -1391,7 +1593,10 @@ obx_int.ModelDefinition getObjectBoxModel() {
               )
               ..dbMetadata = const fb.StringReader(
                 asciiOptimization: true,
-              ).vTableGetNullable(buffer, rootOffset, 38);
+              ).vTableGetNullable(buffer, rootOffset, 38)
+              ..ckRecordId = const fb.StringReader(
+                asciiOptimization: true,
+              ).vTableGetNullable(buffer, rootOffset, 50);
         object.message.targetId = const fb.Int64Reader().vTableGet(
           buffer,
           rootOffset,
@@ -1466,7 +1671,37 @@ obx_int.ModelDefinition getObjectBoxModel() {
             object.dynamicWallpaperConfig == null
             ? null
             : fbb.writeString(object.dynamicWallpaperConfig!);
-        fbb.startTable(40);
+        final titleOffset = object.title == null
+            ? null
+            : fbb.writeString(object.title!);
+        final apnTitleOffset = object.apnTitle == null
+            ? null
+            : fbb.writeString(object.apnTitle!);
+        final textFieldAnnotationsOffset = object.textFieldAnnotations == null
+            ? null
+            : fbb.writeString(object.textFieldAnnotations!);
+        final cloudDataOffset = object.cloudData == null
+            ? null
+            : fbb.writeListInt8(object.cloudData!);
+        final ckRecordIdOffset = object.ckRecordId == null
+            ? null
+            : fbb.writeString(object.ckRecordId!);
+        final cloudGuidOffset = object.cloudGuid == null
+            ? null
+            : fbb.writeString(object.cloudGuid!);
+        final photoAttachmentGuidOffset = object.photoAttachmentGuid == null
+            ? null
+            : fbb.writeString(object.photoAttachmentGuid!);
+        final guidRefsOffset = fbb.writeList(
+          object.guidRefs.map(fbb.writeString).toList(growable: false),
+        );
+        final usingHandleOffset = object.usingHandle == null
+            ? null
+            : fbb.writeString(object.usingHandle!);
+        final transcriptPosterPathOffset = object.transcriptPosterPath == null
+            ? null
+            : fbb.writeString(object.transcriptPosterPath!);
+        fbb.startTable(61);
         fbb.addInt64(0, object.id ?? 0);
         fbb.addOffset(2, guidOffset);
         fbb.addOffset(4, chatIdentifierOffset);
@@ -1498,6 +1733,27 @@ obx_int.ModelDefinition getObjectBoxModel() {
         fbb.addOffset(36, wallpaperTypeOffset);
         fbb.addOffset(37, dynamicWallpaperIdOffset);
         fbb.addOffset(38, dynamicWallpaperConfigOffset);
+        fbb.addOffset(39, titleOffset);
+        fbb.addOffset(40, apnTitleOffset);
+        fbb.addOffset(41, textFieldAnnotationsOffset);
+        fbb.addInt64(42, object.groupVersion);
+        fbb.addOffset(43, cloudDataOffset);
+        fbb.addOffset(44, ckRecordIdOffset);
+        fbb.addOffset(45, cloudGuidOffset);
+        fbb.addBool(46, object.ckSyncState);
+        fbb.addOffset(47, photoAttachmentGuidOffset);
+        fbb.addOffset(48, guidRefsOffset);
+        fbb.addOffset(49, usingHandleOffset);
+        fbb.addBool(50, object.isRpSms);
+        fbb.addInt64(51, object.telephonyId);
+        fbb.addBool(52, object.shareZenMode);
+        fbb.addBool(53, object.notifsSilenced);
+        fbb.addInt64(54, object.zenModeIsShared);
+        fbb.addInt64(55, object.dateNotifiedAnyways?.millisecondsSinceEpoch);
+        fbb.addBool(56, object.senderIsKnown);
+        fbb.addBool(57, object.isRoutingStub);
+        fbb.addOffset(58, transcriptPosterPathOffset);
+        fbb.addInt64(59, object.transcriptBackgroundVersion);
         fbb.finish(fbb.endTable());
         return object.id ?? 0;
       },
@@ -1511,6 +1767,8 @@ obx_int.ModelDefinition getObjectBoxModel() {
           rootOffset,
           50,
         );
+        final dateNotifiedAnywaysValue = const fb.Int64Reader()
+            .vTableGetNullable(buffer, rootOffset, 114);
         final idParam = const fb.Int64Reader().vTableGetNullable(
           buffer,
           rootOffset,
@@ -1553,6 +1811,9 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final textFieldTextParam = const fb.StringReader(
           asciiOptimization: true,
         ).vTableGetNullable(buffer, rootOffset, 46);
+        final textFieldAnnotationsParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 86);
         final textFieldAttachmentsParam = const fb.ListReader<String>(
           fb.StringReader(asciiOptimization: true),
           lazy: false,
@@ -1595,6 +1856,54 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final dynamicWallpaperConfigParam = const fb.StringReader(
           asciiOptimization: true,
         ).vTableGetNullable(buffer, rootOffset, 80);
+        final usingHandleParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 102);
+        final isRpSmsParam = const fb.BoolReader().vTableGet(
+          buffer,
+          rootOffset,
+          104,
+          false,
+        );
+        final telephonyIdParam = const fb.Int64Reader().vTableGetNullable(
+          buffer,
+          rootOffset,
+          106,
+        );
+        final shareZenModeParam = const fb.BoolReader().vTableGetNullable(
+          buffer,
+          rootOffset,
+          108,
+        );
+        final notifsSilencedParam = const fb.BoolReader().vTableGet(
+          buffer,
+          rootOffset,
+          110,
+          false,
+        );
+        final dateNotifiedAnywaysParam = dateNotifiedAnywaysValue == null
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(dateNotifiedAnywaysValue);
+        final zenModeIsSharedParam = const fb.Int64Reader().vTableGetNullable(
+          buffer,
+          rootOffset,
+          112,
+        );
+        final senderIsKnownParam = const fb.BoolReader().vTableGetNullable(
+          buffer,
+          rootOffset,
+          116,
+        );
+        final isRoutingStubParam = const fb.BoolReader().vTableGet(
+          buffer,
+          rootOffset,
+          118,
+          false,
+        );
+        final guidRefsParam = const fb.ListReader<String>(
+          fb.StringReader(asciiOptimization: true),
+          lazy: false,
+        ).vTableGet(buffer, rootOffset, 100, []);
         final object =
             Chat(
                 id: idParam,
@@ -1609,6 +1918,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
                 autoSendReadReceipts: autoSendReadReceiptsParam,
                 autoSendTypingIndicators: autoSendTypingIndicatorsParam,
                 textFieldText: textFieldTextParam,
+                textFieldAnnotations: textFieldAnnotationsParam,
                 textFieldAttachments: textFieldAttachmentsParam,
                 dateDeleted: dateDeletedParam,
                 style: styleParam,
@@ -1620,6 +1930,16 @@ obx_int.ModelDefinition getObjectBoxModel() {
                 wallpaperType: wallpaperTypeParam,
                 dynamicWallpaperId: dynamicWallpaperIdParam,
                 dynamicWallpaperConfig: dynamicWallpaperConfigParam,
+                usingHandle: usingHandleParam,
+                isRpSms: isRpSmsParam,
+                telephonyId: telephonyIdParam,
+                shareZenMode: shareZenModeParam,
+                notifsSilenced: notifsSilencedParam,
+                dateNotifiedAnyways: dateNotifiedAnywaysParam,
+                zenModeIsShared: zenModeIsSharedParam,
+                senderIsKnown: senderIsKnownParam,
+                isRoutingStub: isRoutingStubParam,
+                guidRefs: guidRefsParam,
               )
               ..dbOnlyLatestMessageDate = dbOnlyLatestMessageDateValue == null
                   ? null
@@ -1636,7 +1956,47 @@ obx_int.ModelDefinition getObjectBoxModel() {
               )
               ..customBackgroundPath = const fb.StringReader(
                 asciiOptimization: true,
-              ).vTableGetNullable(buffer, rootOffset, 60);
+              ).vTableGetNullable(buffer, rootOffset, 60)
+              ..title = const fb.StringReader(
+                asciiOptimization: true,
+              ).vTableGetNullable(buffer, rootOffset, 82)
+              ..apnTitle = const fb.StringReader(
+                asciiOptimization: true,
+              ).vTableGetNullable(buffer, rootOffset, 84)
+              ..groupVersion = const fb.Int64Reader().vTableGetNullable(
+                buffer,
+                rootOffset,
+                88,
+              )
+              ..cloudData =
+                  const fb.Uint8ListReader(
+                        lazy: false,
+                      ).vTableGetNullable(buffer, rootOffset, 90)
+                      as Uint8List?
+              ..ckRecordId = const fb.StringReader(
+                asciiOptimization: true,
+              ).vTableGetNullable(buffer, rootOffset, 92)
+              ..cloudGuid = const fb.StringReader(
+                asciiOptimization: true,
+              ).vTableGetNullable(buffer, rootOffset, 94)
+              ..ckSyncState = const fb.BoolReader().vTableGet(
+                buffer,
+                rootOffset,
+                96,
+                false,
+              )
+              ..photoAttachmentGuid = const fb.StringReader(
+                asciiOptimization: true,
+              ).vTableGetNullable(buffer, rootOffset, 98)
+              ..transcriptPosterPath = const fb.StringReader(
+                asciiOptimization: true,
+              ).vTableGetNullable(buffer, rootOffset, 120)
+              ..transcriptBackgroundVersion = const fb.Int64Reader().vTableGet(
+                buffer,
+                rootOffset,
+                122,
+                0,
+              );
         object.dbLatestMessage.targetId = const fb.Int64Reader().vTableGet(
           buffer,
           rootOffset,
@@ -1775,7 +2135,10 @@ obx_int.ModelDefinition getObjectBoxModel() {
           object.uniqueAddressAndService,
         );
         final serviceOffset = fbb.writeString(object.service);
-        fbb.startTable(14);
+        final posterPathOffset = object.posterPath == null
+            ? null
+            : fbb.writeString(object.posterPath!);
+        fbb.startTable(16);
         fbb.addInt64(0, object.id ?? 0);
         fbb.addInt64(1, object.originalROWID);
         fbb.addOffset(2, addressOffset);
@@ -1786,6 +2149,8 @@ obx_int.ModelDefinition getObjectBoxModel() {
         fbb.addOffset(8, formattedAddressOffset);
         fbb.addOffset(11, uniqueAddressAndServiceOffset);
         fbb.addOffset(12, serviceOffset);
+        fbb.addOffset(13, posterPathOffset);
+        fbb.addBool(14, object.blocked);
         fbb.finish(fbb.endTable());
         return object.id ?? 0;
       },
@@ -1826,18 +2191,29 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final defaultPhoneParam = const fb.StringReader(
           asciiOptimization: true,
         ).vTableGetNullable(buffer, rootOffset, 14);
-        final object = Handle(
-          id: idParam,
-          originalROWID: originalROWIDParam,
-          address: addressParam,
-          formattedAddress: formattedAddressParam,
-          service: serviceParam,
-          uniqueAddressAndService: uniqueAddressAndServiceParam,
-          country: countryParam,
-          color: colorParam,
-          defaultEmail: defaultEmailParam,
-          defaultPhone: defaultPhoneParam,
+        final blockedParam = const fb.BoolReader().vTableGet(
+          buffer,
+          rootOffset,
+          32,
+          false,
         );
+        final object =
+            Handle(
+                id: idParam,
+                originalROWID: originalROWIDParam,
+                address: addressParam,
+                formattedAddress: formattedAddressParam,
+                service: serviceParam,
+                uniqueAddressAndService: uniqueAddressAndServiceParam,
+                country: countryParam,
+                color: colorParam,
+                defaultEmail: defaultEmailParam,
+                defaultPhone: defaultPhoneParam,
+                blocked: blockedParam,
+              )
+              ..posterPath = const fb.StringReader(
+                asciiOptimization: true,
+              ).vTableGetNullable(buffer, rootOffset, 30);
         obx_int.InternalToManyAccess.setRelInfo<Handle>(
           object.contactsV2,
           store,
@@ -1992,7 +2368,23 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final metadataOffset = object.metadata == null
             ? null
             : fbb.writeListInt8(obx_int.toFlexBuffer(object.metadata!));
-        fbb.startTable(55);
+        final associatedMessageEmojiOffset =
+            object.associatedMessageEmoji == null
+            ? null
+            : fbb.writeString(object.associatedMessageEmoji!);
+        final sendingServiceIdOffset = object.sendingServiceId == null
+            ? null
+            : fbb.writeString(object.sendingServiceId!);
+        final amkSessionIdOffset = object.amkSessionId == null
+            ? null
+            : fbb.writeString(object.amkSessionId!);
+        final stagingGuidOffset = object.stagingGuid == null
+            ? null
+            : fbb.writeString(object.stagingGuid!);
+        final ckRecordIdOffset = object.ckRecordId == null
+            ? null
+            : fbb.writeString(object.ckRecordId!);
+        fbb.startTable(64);
         fbb.addInt64(0, object.id ?? 0);
         fbb.addInt64(1, object.originalROWID);
         fbb.addOffset(2, guidOffset);
@@ -2037,6 +2429,15 @@ obx_int.ModelDefinition getObjectBoxModel() {
         fbb.addOffset(51, errorMessageOffset);
         fbb.addBool(52, object.hasEffectPlayed);
         fbb.addOffset(53, metadataOffset);
+        fbb.addOffset(54, associatedMessageEmojiOffset);
+        fbb.addBool(55, object.verificationFailed);
+        fbb.addInt64(56, object.dateScheduled?.millisecondsSinceEpoch);
+        fbb.addOffset(57, sendingServiceIdOffset);
+        fbb.addOffset(58, amkSessionIdOffset);
+        fbb.addBool(59, object.hasBeenForwarded);
+        fbb.addOffset(60, stagingGuidOffset);
+        fbb.addOffset(61, ckRecordIdOffset);
+        fbb.addBool(62, object.ckSyncState);
         fbb.finish(fbb.endTable());
         return object.id ?? 0;
       },
@@ -2072,6 +2473,11 @@ obx_int.ModelDefinition getObjectBoxModel() {
           buffer,
           rootOffset,
           88,
+        );
+        final dateScheduledValue = const fb.Int64Reader().vTableGetNullable(
+          buffer,
+          rootOffset,
+          116,
         );
         final idParam = const fb.Int64Reader().vTableGetNullable(
           buffer,
@@ -2218,6 +2624,36 @@ obx_int.ModelDefinition getObjectBoxModel() {
           100,
           false,
         );
+        final hasBeenForwardedParam = const fb.BoolReader().vTableGet(
+          buffer,
+          rootOffset,
+          122,
+          false,
+        );
+        final stagingGuidParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 124);
+        final amkSessionIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 120);
+        final verificationFailedParam = const fb.BoolReader().vTableGet(
+          buffer,
+          rootOffset,
+          114,
+          false,
+        );
+        final sendingServiceIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 118);
+        final associatedMessageEmojiParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 112);
+        final dateScheduledParam = dateScheduledValue == null
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(dateScheduledValue);
+        final ckRecordIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 126);
         final object =
             Message(
                 id: idParam,
@@ -2256,6 +2692,14 @@ obx_int.ModelDefinition getObjectBoxModel() {
                 wasDeliveredQuietly: wasDeliveredQuietlyParam,
                 didNotifyRecipient: didNotifyRecipientParam,
                 isBookmarked: isBookmarkedParam,
+                hasBeenForwarded: hasBeenForwardedParam,
+                stagingGuid: stagingGuidParam,
+                amkSessionId: amkSessionIdParam,
+                verificationFailed: verificationFailedParam,
+                sendingServiceId: sendingServiceIdParam,
+                associatedMessageEmoji: associatedMessageEmojiParam,
+                dateScheduled: dateScheduledParam,
+                ckRecordId: ckRecordIdParam,
               )
               ..bigEmoji = const fb.BoolReader().vTableGetNullable(
                 buffer,
@@ -2278,6 +2722,12 @@ obx_int.ModelDefinition getObjectBoxModel() {
                 buffer,
                 rootOffset,
                 102,
+                false,
+              )
+              ..ckSyncState = const fb.BoolReader().vTableGet(
+                buffer,
+                rootOffset,
+                128,
                 false,
               );
         object.chat.targetId = const fb.Int64Reader().vTableGet(
@@ -2734,6 +3184,11 @@ class Attachment_ {
   static final isDownloaded = obx.QueryBooleanProperty<Attachment>(
     _entities[0].properties[14],
   );
+
+  /// See [Attachment.ckRecordId].
+  static final ckRecordId = obx.QueryStringProperty<Attachment>(
+    _entities[0].properties[17],
+  );
 }
 
 /// [Chat] entity fields to define ObjectBox queries.
@@ -2874,6 +3329,111 @@ class Chat_ {
     _entities[1].properties[27],
   );
 
+  /// See [Chat.title].
+  static final title = obx.QueryStringProperty<Chat>(
+    _entities[1].properties[28],
+  );
+
+  /// See [Chat.apnTitle].
+  static final apnTitle = obx.QueryStringProperty<Chat>(
+    _entities[1].properties[29],
+  );
+
+  /// See [Chat.textFieldAnnotations].
+  static final textFieldAnnotations = obx.QueryStringProperty<Chat>(
+    _entities[1].properties[30],
+  );
+
+  /// See [Chat.groupVersion].
+  static final groupVersion = obx.QueryIntegerProperty<Chat>(
+    _entities[1].properties[31],
+  );
+
+  /// See [Chat.cloudData].
+  static final cloudData = obx.QueryByteVectorProperty<Chat>(
+    _entities[1].properties[32],
+  );
+
+  /// See [Chat.ckRecordId].
+  static final ckRecordId = obx.QueryStringProperty<Chat>(
+    _entities[1].properties[33],
+  );
+
+  /// See [Chat.cloudGuid].
+  static final cloudGuid = obx.QueryStringProperty<Chat>(
+    _entities[1].properties[34],
+  );
+
+  /// See [Chat.ckSyncState].
+  static final ckSyncState = obx.QueryBooleanProperty<Chat>(
+    _entities[1].properties[35],
+  );
+
+  /// See [Chat.photoAttachmentGuid].
+  static final photoAttachmentGuid = obx.QueryStringProperty<Chat>(
+    _entities[1].properties[36],
+  );
+
+  /// See [Chat.guidRefs].
+  static final guidRefs = obx.QueryStringVectorProperty<Chat>(
+    _entities[1].properties[37],
+  );
+
+  /// See [Chat.usingHandle].
+  static final usingHandle = obx.QueryStringProperty<Chat>(
+    _entities[1].properties[38],
+  );
+
+  /// See [Chat.isRpSms].
+  static final isRpSms = obx.QueryBooleanProperty<Chat>(
+    _entities[1].properties[39],
+  );
+
+  /// See [Chat.telephonyId].
+  static final telephonyId = obx.QueryIntegerProperty<Chat>(
+    _entities[1].properties[40],
+  );
+
+  /// See [Chat.shareZenMode].
+  static final shareZenMode = obx.QueryBooleanProperty<Chat>(
+    _entities[1].properties[41],
+  );
+
+  /// See [Chat.notifsSilenced].
+  static final notifsSilenced = obx.QueryBooleanProperty<Chat>(
+    _entities[1].properties[42],
+  );
+
+  /// See [Chat.zenModeIsShared].
+  static final zenModeIsShared = obx.QueryIntegerProperty<Chat>(
+    _entities[1].properties[43],
+  );
+
+  /// See [Chat.dateNotifiedAnyways].
+  static final dateNotifiedAnyways = obx.QueryDateProperty<Chat>(
+    _entities[1].properties[44],
+  );
+
+  /// See [Chat.senderIsKnown].
+  static final senderIsKnown = obx.QueryBooleanProperty<Chat>(
+    _entities[1].properties[45],
+  );
+
+  /// See [Chat.isRoutingStub].
+  static final isRoutingStub = obx.QueryBooleanProperty<Chat>(
+    _entities[1].properties[46],
+  );
+
+  /// See [Chat.transcriptPosterPath].
+  static final transcriptPosterPath = obx.QueryStringProperty<Chat>(
+    _entities[1].properties[47],
+  );
+
+  /// See [Chat.transcriptBackgroundVersion].
+  static final transcriptBackgroundVersion = obx.QueryIntegerProperty<Chat>(
+    _entities[1].properties[48],
+  );
+
   /// see [Chat.handles]
   static final handles = obx.QueryRelationToMany<Chat, Handle>(
     _entities[1].relations[0],
@@ -2971,6 +3531,16 @@ class Handle_ {
   /// See [Handle.service].
   static final service = obx.QueryStringProperty<Handle>(
     _entities[3].properties[9],
+  );
+
+  /// See [Handle.posterPath].
+  static final posterPath = obx.QueryStringProperty<Handle>(
+    _entities[3].properties[10],
+  );
+
+  /// See [Handle.blocked].
+  static final blocked = obx.QueryBooleanProperty<Handle>(
+    _entities[3].properties[11],
   );
 }
 
@@ -3232,6 +3802,51 @@ class Message_ {
   /// See [Message.hasEffectPlayed].
   static final hasEffectPlayed = obx.QueryBooleanProperty<Message>(
     _entities[5].properties[42],
+  );
+
+  /// See [Message.associatedMessageEmoji].
+  static final associatedMessageEmoji = obx.QueryStringProperty<Message>(
+    _entities[5].properties[44],
+  );
+
+  /// See [Message.verificationFailed].
+  static final verificationFailed = obx.QueryBooleanProperty<Message>(
+    _entities[5].properties[45],
+  );
+
+  /// See [Message.dateScheduled].
+  static final dateScheduled = obx.QueryDateProperty<Message>(
+    _entities[5].properties[46],
+  );
+
+  /// See [Message.sendingServiceId].
+  static final sendingServiceId = obx.QueryStringProperty<Message>(
+    _entities[5].properties[47],
+  );
+
+  /// See [Message.amkSessionId].
+  static final amkSessionId = obx.QueryStringProperty<Message>(
+    _entities[5].properties[48],
+  );
+
+  /// See [Message.hasBeenForwarded].
+  static final hasBeenForwarded = obx.QueryBooleanProperty<Message>(
+    _entities[5].properties[49],
+  );
+
+  /// See [Message.stagingGuid].
+  static final stagingGuid = obx.QueryStringProperty<Message>(
+    _entities[5].properties[50],
+  );
+
+  /// See [Message.ckRecordId].
+  static final ckRecordId = obx.QueryStringProperty<Message>(
+    _entities[5].properties[51],
+  );
+
+  /// See [Message.ckSyncState].
+  static final ckSyncState = obx.QueryBooleanProperty<Message>(
+    _entities[5].properties[52],
   );
 
   /// see [Message.dbAttachments]

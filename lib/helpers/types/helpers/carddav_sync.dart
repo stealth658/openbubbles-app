@@ -6,8 +6,10 @@ import 'package:dio/dio.dart';
 import 'package:xml/xml.dart';
 import 'package:dio/io.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
-import 'package:bluebubbles/database/io/contact.dart' as contacts;
-import 'package:bluebubbles/database/global/structured_name.dart' as structured;
+// Upstream replaced `database/io/contact.dart` (and its StructuredName) with
+// ContactV2, which carries the name components as plain fields.
+import 'package:bluebubbles/database/io/contact_v2.dart' as contacts;
+import 'package:bluebubbles/helpers/types/helpers/string_helpers.dart';
 
 // 690 lines of beautiful AI slop. It works great!
 
@@ -44,7 +46,7 @@ enum ChangeType { upsert, deleted }
 class ContactChange {
   final ChangeType type;
   final Uri href;
-  final contacts.Contact? contact; // present for upsert
+  final contacts.ContactV2? contact; // present for upsert
   final String? vcard; // present for upsert
   final String? etag;
 
@@ -76,21 +78,21 @@ class MemoryStateStore implements CardDavStateStore {
   String _k(Uri u) => u.toString();
 
   @override
-  Future<String?> getCtag(Uri addressBookUrl) async => ss.settings.ctags[_k(addressBookUrl)];
+  Future<String?> getCtag(Uri addressBookUrl) async => SettingsSvc.settings.ctags[_k(addressBookUrl)];
 
   @override
   Future<void> setCtag(Uri addressBookUrl, String? ctag) async {
-    ss.settings.ctags[_k(addressBookUrl)] = ctag;
-    ss.saveSettings();
+    SettingsSvc.settings.ctags[_k(addressBookUrl)] = ctag;
+    await SettingsSvc.settings.saveOneAsync('ctags');
   }
 
   @override
-  Future<String?> getSyncToken(Uri addressBookUrl) async => ss.settings.tokens[_k(addressBookUrl)];
+  Future<String?> getSyncToken(Uri addressBookUrl) async => SettingsSvc.settings.tokens[_k(addressBookUrl)];
 
   @override
   Future<void> setSyncToken(Uri addressBookUrl, String? syncToken) async {
-    ss.settings.tokens[_k(addressBookUrl)] = syncToken;
-    ss.saveSettings();
+    SettingsSvc.settings.tokens[_k(addressBookUrl)] = syncToken;
+    await SettingsSvc.settings.saveOneAsync('tokens');
   }
 }
 
@@ -534,21 +536,27 @@ class CardDavClient {
     return null;
   }
 
-  Future<contacts.Contact> _myContactFromVCard(String vcard, Uri href) async {
-    final contact = Contact.fromVCard(vcard);
-    final inlinePhoto = _extractInlinePhotoBytes(vcard);
-    if (inlinePhoto != null && inlinePhoto.isNotEmpty) {
-      contact.photo = inlinePhoto;
-      return _toMyContact(contact);
+  Future<contacts.ContactV2> _myContactFromVCard(String vcard, Uri href) async {
+    // flutter_contacts 2.x dropped `Contact.fromVCard` in favour of the vCard
+    // API, and `Contact.photo` is now an immutable `Photo` object, so the photo
+    // bytes are carried alongside instead of being written back onto the model.
+    final parsed = FlutterContacts.vCard.import(vcard);
+    final contact = parsed.isEmpty ? const Contact() : parsed.first;
+
+    Uint8List? photo = _extractInlinePhotoBytes(vcard);
+    if (photo == null || photo.isEmpty) {
+      photo = contact.photo?.fullSize ?? contact.photo?.thumbnail;
     }
-    final photoUri = _extractPhotoUri(vcard, href);
-    if (photoUri != null && (contact.photo == null || contact.photo!.isEmpty)) {
-      final photoBytes = await _downloadPhoto(photoUri);
-      if (photoBytes != null && photoBytes.isNotEmpty) {
-        contact.photo = photoBytes;
+    if (photo == null || photo.isEmpty) {
+      final photoUri = _extractPhotoUri(vcard, href);
+      if (photoUri != null) {
+        final photoBytes = await _downloadPhoto(photoUri);
+        if (photoBytes != null && photoBytes.isNotEmpty) {
+          photo = photoBytes;
+        }
       }
     }
-    return _toMyContact(contact);
+    return _toMyContact(contact, href: href, photoBytes: photo);
   }
 
   Uint8List? _extractInlinePhotoBytes(String vcard) {
@@ -638,30 +646,72 @@ class CardDavClient {
     return results.whereType<T>().toList();
   }
 
-  contacts.Contact _toMyContact(Contact contact) {
+  /// Maps a parsed vCard onto the fork's DB entity.
+  ///
+  /// Upstream's [contacts.ContactV2] flattened the old `StructuredName` into
+  /// plain fields and stores the avatar as a file path rather than bytes, so
+  /// any photo is written to the contact-avatar cache here.
+  Future<contacts.ContactV2> _toMyContact(Contact contact, {required Uri href, Uint8List? photoBytes}) async {
     final name = contact.name;
     final phones = contact.phones
-        .map((p) => p.number.trim())
-        .where((p) => p.isNotEmpty)
+        .map((p) => contacts.ContactPhone(
+              number: p.number.trim(),
+              label: p.label.label == PhoneLabel.custom ? p.label.customLabel ?? '' : p.label.label.name,
+            ))
+        .where((p) => p.number.isNotEmpty)
         .toList();
     final emails = contact.emails
-        .map((e) => e.address.trim())
-        .where((e) => e.isNotEmpty)
+        .map((e) => contacts.ContactEmail(
+              address: e.address.trim(),
+              label: e.label.label == EmailLabel.custom ? e.label.customLabel ?? '' : e.label.label.name,
+            ))
+        .where((e) => e.address.isNotEmpty)
         .toList();
-    return contacts.Contact(
-      id: contact.id,
-      displayName: contact.displayName,
-      phones: phones,
-      emails: emails,
-      structuredName: structured.StructuredName(
-        namePrefix: name.prefix,
-        givenName: name.first,
-        middleName: name.middle,
-        familyName: name.last,
-        nameSuffix: name.suffix,
-      ),
-      avatar: contact.photoOrThumbnail,
+
+    // ContactV2.displayName is non-null; vCard-parsed contacts have no
+    // system-generated display name, so rebuild it from the name components.
+    final composedName = [name?.prefix, name?.first, name?.middle, name?.last, name?.suffix]
+        .map((e) => e?.trim() ?? '')
+        .where((e) => e.isNotEmpty)
+        .join(' ');
+    final displayName = (contact.displayName?.trim().isNotEmpty ?? false)
+        ? contact.displayName!.trim()
+        : composedName.isNotEmpty
+            ? composedName
+            : (phones.firstOrNull?.number ?? emails.firstOrNull?.address ?? href.toString());
+
+    final nativeContactId = contact.id ?? href.toString();
+
+    final result = contacts.ContactV2(
+      nativeContactId: nativeContactId,
+      displayName: displayName,
+      namePrefix: name?.prefix,
+      firstName: name?.first,
+      middleName: name?.middle,
+      lastName: name?.last,
+      nameSuffix: name?.suffix,
+      nickname: name?.nickname,
+      company: contact.organizations.firstOrNull?.name,
+      addresses: [
+        ...phones.map((p) => contacts.ContactV2.normalizePhoneNumber(p.number)),
+        ...emails.map((e) => contacts.ContactV2.normalizeEmail(e.address)),
+      ].where((e) => e.isNotEmpty).toList(),
     );
+    result.phoneNumbers = phones;
+    result.emailAddresses = emails;
+
+    if (photoBytes != null && photoBytes.isNotEmpty) {
+      try {
+        final avatarsDir = Directory(FilesystemSvc.contactAvatarsPath);
+        if (!avatarsDir.existsSync()) avatarsDir.createSync(recursive: true);
+        // Must match the naming used by ContactV2Actions when it caches avatars.
+        final file = File('${avatarsDir.path}/${sanitizeFileName(nativeContactId)}.jpg');
+        await file.writeAsBytes(photoBytes);
+        result.avatarPath = file.path;
+      } catch (_) {}
+    }
+
+    return result;
   }
 
   /// ===== HTTP/XML helpers =====

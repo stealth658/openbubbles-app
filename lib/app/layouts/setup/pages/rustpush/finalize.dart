@@ -12,8 +12,8 @@ import 'package:bluebubbles/app/layouts/setup/pages/page_template.dart';
 import 'package:bluebubbles/app/layouts/setup/setup_view.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/services/backend/settings/settings_service.dart';
+import 'package:bluebubbles/services/ui/contact_service_v2.dart';
 import 'package:bluebubbles/services/network/backend_service.dart';
-import 'package:bluebubbles/services/ui/contact_service.dart';
 import 'package:bluebubbles/src/rust/api/api.dart' as api;
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/rustpush/rustpush_service.dart';
@@ -73,7 +73,7 @@ class _FinalizePageState extends OptimizedState<FinalizePage> {
   @override
   Widget build(BuildContext context) {
     var handlesMapped = handles.map((handle) => handle.replaceFirst("tel:", "").replaceAll("mailto:", "")).toList();
-    var handle = ss.settings.defaultHandle.value.replaceFirst("tel:", "").replaceAll("mailto:", "");
+    var handle = SettingsSvc.settings.defaultHandle.value.replaceFirst("tel:", "").replaceAll("mailto:", "");
     var initHandle = handlesMapped.contains(handle) ? handle : handlesMapped.firstOrNull;
     return SetupPageTemplate(
       title: "Done!",
@@ -124,7 +124,7 @@ class _FinalizePageState extends OptimizedState<FinalizePage> {
               options: handlesMapped,
               secondaryColor: headerColor,
               useCupertino: false,
-              textProcessing: (str) => ss.settings.redactedMode.value ? (GetUtils.isEmail(str) ? "Redacted Email" : "Redacted Phone") : str,
+              textProcessing: (str) => SettingsSvc.settings.redactedMode.value ? (GetUtils.isEmail(str) ? "Redacted Email" : "Redacted Phone") : str,
               capitalize: false,
               onChanged: (value) async {
                 if (value == null) return;
@@ -135,7 +135,7 @@ class _FinalizePageState extends OptimizedState<FinalizePage> {
             if (kIsDesktop)
             SettingsOptions<String>(
               title: "Sync contacts with",
-              initial: ss.settings.contactSyncProvider.value,
+              initial: SettingsSvc.settings.contactSyncProvider.value,
               clampWidth: false,
               options: ["iCloud", "Google", "CardDav"],
               secondaryColor: headerColor,
@@ -143,14 +143,14 @@ class _FinalizePageState extends OptimizedState<FinalizePage> {
               textProcessing: (str) => str,
               capitalize: false,
               onChanged: (value) async {
-                ss.settings.ctags.clear();
-                ss.settings.tokens.clear();
-                ss.settings.contactSyncProvider.value = value ?? "iCloud";
-                ss.saveSettings();
-                cs.refreshContacts();
+                SettingsSvc.settings.ctags.clear();
+                SettingsSvc.settings.tokens.clear();
+                SettingsSvc.settings.contactSyncProvider.value = value ?? "iCloud";
+                await SettingsSvc.settings.saveManyAsync(['ctags', 'tokens', 'contactSyncProvider']);
+                ContactsSvcV2.syncContactsToHandles();
               },
             ),
-            if (kIsDesktop && ss.settings.contactSyncProvider.value == "Google" && googleCreds.value == null)
+            if (kIsDesktop && SettingsSvc.settings.contactSyncProvider.value == "Google" && googleCreds.value == null)
             SettingsTile(
               title: "Sign In",
               onTap: () async {
@@ -158,14 +158,14 @@ class _FinalizePageState extends OptimizedState<FinalizePage> {
                 if (credentials != null) {
                   print('Signed in successfully: ${credentials.accessToken}');
                   googleCreds.value = credentials;
-                  cs.refreshContacts();
+                  ContactsSvcV2.syncContactsToHandles();
                 } else {
                   print('Sign in failed');
                 }
               },
               trailing: const NextButton(),
             ),
-            if (kIsDesktop && ss.settings.contactSyncProvider.value == "Google" && googleCreds.value != null)
+            if (kIsDesktop && SettingsSvc.settings.contactSyncProvider.value == "Google" && googleCreds.value != null)
             SettingsTile(
               title: "Sign Out",
               onTap: () async {
@@ -174,7 +174,7 @@ class _FinalizePageState extends OptimizedState<FinalizePage> {
               },
               trailing: const NextButton(),
             ),
-            if (kIsDesktop && ss.settings.contactSyncProvider.value == "CardDav")
+            if (kIsDesktop && SettingsSvc.settings.contactSyncProvider.value == "CardDav")
             SettingsTile(
               title: "Set CardDav Server Details",
               onTap: () async {
@@ -198,7 +198,7 @@ class _FinalizePageState extends OptimizedState<FinalizePage> {
                     ),
                     child: Column(
                       children: [
-                        if (ss.settings.macIsMine.value && !controller.supportsPhoneReg.value)
+                        if (SettingsSvc.settings.macIsMine.value && !controller.supportsPhoneReg.value)
                           const Padding(padding: EdgeInsets.symmetric(vertical: 5),
                             child: Text(
                               "Share your Mac with up to 20 friends in settings!",
@@ -221,7 +221,7 @@ class _FinalizePageState extends OptimizedState<FinalizePage> {
                               child: Container(
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(25),
-                                border: ss.settings.isDumb.value && doneFocusNode.hasFocus
+                                border: SettingsSvc.settings.isDumb.value && doneFocusNode.hasFocus
                                     ? Border.all(
                                         color: context.theme.brightness == Brightness.dark ? Colors.white : Colors.black,
                                         width: 2,

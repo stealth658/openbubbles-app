@@ -6,10 +6,9 @@ import 'package:bluebubbles/app/components/custom_text_editing_controllers.dart'
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/effects/send_effect_picker.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/database/models.dart';
-import 'package:bluebubbles/services/backend/queue/incoming_queue.dart';
+import 'package:bluebubbles/services/backend/incoming_message_handler.dart';
 import 'package:bluebubbles/services/network/backend_service.dart';
 import 'package:bluebubbles/services/rustpush/rustpush_service.dart';
-import 'package:bluebubbles/services/ui/message/message_widget_controller.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -206,10 +205,11 @@ class _PollsState extends OptimizedState<Polls> with AutomaticKeepAliveClientMix
         )
       ]
     ), null, false, null);
-    inq.queue(IncomingItem(
+    await IncomingMsgHandler.handle(IncomingPayload(
+      type: MessageEventType.newMessage,
+      source: MessageSource.apiResponse,
       chat: widget.message!.chat.target!,
       message: message,
-      type: QueueType.newMessage
     ));
   }
 
@@ -284,10 +284,11 @@ class _PollsState extends OptimizedState<Polls> with AutomaticKeepAliveClientMix
                               )
                             ]
                           ), null, true, "1 Polls Message");
-                          inq.queue(IncomingItem(
+                          await IncomingMsgHandler.handle(IncomingPayload(
+                            type: MessageEventType.newMessage,
+                            source: MessageSource.apiResponse,
                             chat: widget.message!.chat.target!,
                             message: message,
-                            type: QueueType.newMessage
                           ));
                         },
                         child: Container(

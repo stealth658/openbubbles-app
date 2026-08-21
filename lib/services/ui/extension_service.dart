@@ -3,8 +3,6 @@
 import 'dart:convert';
 
 import 'package:bluebubbles/database/database.dart';
-import 'package:bluebubbles/helpers/types/constants.dart';
-import 'package:bluebubbles/main.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/network/backend_service.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -121,17 +119,17 @@ class ExtensionService extends GetxService {
     var myMap = payload.toNative(null);
     myMap["messageGuid"] = data.guid;
     myMap["userCount"] = data.chat.target!.participants.length + 1;
-    await mcs.invokeMethod("extension-template-tap", myMap);
+    await MethodChannelSvc.invokeMethod("extension-template-tap", myMap);
   }
 
   Future<void> refreshCache() async {
     Logger.debug("Refreshing extension state");
-    if (ss.settings.developerEnabled.value) {
-      for (var item in ss.settings.developerMode) {
+    if (SettingsSvc.settings.developerEnabled.value) {
+      for (var item in SettingsSvc.settings.developerMode) {
         await addDevExtension(item);
       }
     }
-    var result = await mcs.invokeMethod("extension-status");
+    var result = await MethodChannelSvc.invokeMethod("extension-status");
     if (result == null) return;
     List<dynamic> parsed = json.decode(result);
     cachedStatus = parsed.map((item) => App.fromMap(item)).toList();
@@ -139,7 +137,7 @@ class ExtensionService extends GetxService {
   }
 
   Future<void> addDevExtension(String package) async {
-     await mcs.invokeMethod("dev-extension-handler", {
+     await MethodChannelSvc.invokeMethod("dev-extension-handler", {
       "serviceName": package
      });
   }
@@ -178,10 +176,11 @@ class ExtensionService extends GetxService {
     }
 
     var message = await backend.updateMessage(old.chat.target!, old, payload, file, false, null);
-    inq.queue(IncomingItem(
+    await IncomingMsgHandler.handle(IncomingPayload(
+      type: MessageEventType.newMessage,
+      source: MessageSource.methodChannel,
       chat: old.chat.target!,
       message: message,
-      type: QueueType.newMessage
     ));
   }
 
@@ -189,7 +188,7 @@ class ExtensionService extends GetxService {
     var payload = message.payloadData!.appData![0];
     var myMap = payload.toNative(null);
     myMap["messageGuid"] = message.guid;
-    await mcs.invokeMethod("message-update-handler", myMap);
+    await MethodChannelSvc.invokeMethod("message-update-handler", myMap);
   }
 
   void addMessage(Map<String, dynamic> args) {
@@ -212,8 +211,8 @@ class ExtensionService extends GetxService {
       );
     }
 
-    cm.activeChat!.controller!.pickedApp.value = (file, payload);
-    cm.activeChat!.controller!.triggerTypingIndicator();
+    ChatsSvc.activeChat!.controller!.pickedApp.value = (file, payload);
+    ChatsSvc.activeChat!.controller!.triggerTypingIndicator();
     Logger.debug("set");
   }
 }

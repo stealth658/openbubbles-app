@@ -516,17 +516,21 @@ class Message {
         ));
         existingPart.annotations.sort((a, b) => a.range.first.compareTo(b.range.first));
       } else {
+        // Upstream dropped the synchronous `Attachment.findOne`; this builder is
+        // sync, so resolve from the rows already attached to this message and
+        // from the chat's in-memory struct instead of hitting the DB.
+        Attachment? foundAttachment;
+        if (e.isAttachment && (chat.target != null || ChatsSvc.activeChat != null)) {
+          final attachmentGuid = e.attributes!.attachmentGuid!;
+          foundAttachment = dbAttachments.firstWhereOrNull((a) => a.guid == attachmentGuid) ??
+              maybeFindMessagesSvc(chat.target?.guid ?? ChatsSvc.activeChat!.chat.guid)
+                  ?.struct
+                  .getAttachment(attachmentGuid);
+        }
         list.add(MessagePart(
           subject: i == 0 ? subject : null,
           text: e.isAttachment ? null : mainString.substring(e.range.first, e.range.first + e.range.last),
-          attachments: e.isAttachment && (chat.target != null || ChatsSvc.activeChat != null)
-              ? [
-                  MessagesSvc(chat.target?.guid ?? ChatsSvc.activeChat!.chat.guid)
-                          .struct
-                          .getAttachment(e.attributes!.attachmentGuid!) ??
-                      Attachment.findOne(e.attributes!.attachmentGuid!)
-                ].where((e) => e != null).map((e) => e!).toList()
-              : [],
+          attachments: foundAttachment != null ? [foundAttachment] : [],
           annotations: [
                   Annotation(
                     mentionedAddress: e.attributes?.mention,
@@ -737,10 +741,14 @@ class Message {
     return replaced;
   }
 
-  Message updateMetadata(Metadata? metadata) {
+  /// Upstream replaced the `metadata_fetch` package with
+  /// `helpers/network/metadata/`; [MessageMetadataStore] is the canonical way
+  /// to persist a preview now (it also stamps the attempt/TTL keys). This
+  /// remains only as the old whole-map overwrite the fork exposed.
+  Message updateMetadata(UrlMetadata? metadata) {
     if (kIsWeb || id == null) return this;
-    this.metadata = metadata!.toJson();
-    save();
+    if (metadata == null) return this;
+    MessageMetadataStore.write(this, metadata);
     return this;
   }
 

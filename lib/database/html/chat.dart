@@ -291,11 +291,13 @@ class Chat {
       // applies before calling HttpSvc.
       if (!hasUnread && autoSendReadReceipts!) {
         backend.markRead(
+            // ignore: argument_type_not_assignable
             this,
             privateMark &&
                 SettingsSvc.settings.enablePrivateAPI.value &&
                 SettingsSvc.settings.privateMarkChatAsRead.value);
       } else if (hasUnread) {
+        // ignore: argument_type_not_assignable
         backend.markUnread(this);
       }
     } catch (_) {}
@@ -455,6 +457,7 @@ class Chat {
     this.autoSendReadReceipts = autoSendReadReceipts;
     save(updateAutoSendReadReceipts: true);
     if (autoSendReadReceipts ?? SettingsSvc.settings.privateMarkChatAsRead.value) {
+      // ignore: argument_type_not_assignable
       backend.markRead(this, SettingsSvc.settings.privateMarkChatAsRead.value);
     }
     return this;
@@ -465,6 +468,7 @@ class Chat {
     this.autoSendTypingIndicators = autoSendTypingIndicators;
     save(updateAutoSendTypingIndicators: true);
     if (!(autoSendTypingIndicators ?? SettingsSvc.settings.privateSendTypingIndicators.value)) {
+      // ignore: argument_type_not_assignable
       backend.stoppedTyping(this);
     }
     return this;

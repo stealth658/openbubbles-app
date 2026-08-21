@@ -105,7 +105,7 @@ class _FaceTimePanelState extends OptimizedState<FaceTimePanel> {
         });
 
         if (Platform.isAndroid) {
-          await mcs.invokeMethod("launch-facetime", {'link': link, 'desc': desc, 'callUuid': session.groupId});
+          await MethodChannelSvc.invokeMethod("launch-facetime", {'link': link, 'desc': desc, 'callUuid': session.groupId});
         } else {
           await launchUrl(
               Uri.parse(link),
@@ -170,7 +170,7 @@ class _FaceTimePanelState extends OptimizedState<FaceTimePanel> {
       );
   }
 
-  void saveSettings() {
-    ss.saveSettings();
+  Future<void> saveSettings() async {
+    await SettingsSvc.settings.saveAsync();
   }
 }

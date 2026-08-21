@@ -15,7 +15,7 @@ class RequestBluetooth extends StatelessWidget {
       title: "Nearby Devices",
       subtitle: "Apple uses proximity detection to securely transfer account data during login.",
       onNextPressed: () async {
-        if ((fs.androidInfo?.version.sdkInt ?? 0) >= 31) {
+        if ((FilesystemSvc.androidInfo?.version.sdkInt ?? 0) >= 31) {
           final statuses = await [
             Permission.bluetoothAdvertise,
             Permission.bluetoothConnect,
@@ -28,7 +28,7 @@ class RequestBluetooth extends StatelessWidget {
         }
 
         try {
-          await mcs.invokeMethod("enable-bt", {"request": true});
+          await MethodChannelSvc.invokeMethod("enable-bt", {"request": true});
         } catch (e, s) {
           Logger.error("Failed to enable bt", error: e, trace: s);
           return false;

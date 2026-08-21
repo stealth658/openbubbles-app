@@ -5,7 +5,7 @@
   "entities": [
     {
       "id": "1:2065429213543838585",
-      "lastPropertyId": "23:7107471023966534193",
+      "lastPropertyId": "24:1843794876016831244",
       "name": "Attachment",
       "properties": [
         {
@@ -98,13 +98,18 @@
           "id": "23:7107471023966534193",
           "name": "exif",
           "type": 13
+        },
+        {
+          "id": "24:1843794876016831244",
+          "name": "ckRecordId",
+          "type": 9
         }
       ],
       "relations": []
     },
     {
       "id": "3:9017250848141753702",
-      "lastPropertyId": "39:738307263391205523",
+      "lastPropertyId": "60:9046678586607934919",
       "name": "Chat",
       "properties": [
         {
@@ -252,6 +257,111 @@
           "id": "39:738307263391205523",
           "name": "dynamicWallpaperConfig",
           "type": 9
+        },
+        {
+          "id": "40:1996399496642664964",
+          "name": "title",
+          "type": 9
+        },
+        {
+          "id": "41:4543249530334815749",
+          "name": "apnTitle",
+          "type": 9
+        },
+        {
+          "id": "42:4541783355303738339",
+          "name": "textFieldAnnotations",
+          "type": 9
+        },
+        {
+          "id": "43:4289793306990531268",
+          "name": "groupVersion",
+          "type": 6
+        },
+        {
+          "id": "44:8040775012937494725",
+          "name": "cloudData",
+          "type": 23
+        },
+        {
+          "id": "45:6680079924528171939",
+          "name": "ckRecordId",
+          "type": 9
+        },
+        {
+          "id": "46:809137754162129362",
+          "name": "cloudGuid",
+          "type": 9
+        },
+        {
+          "id": "47:3194783785638063279",
+          "name": "ckSyncState",
+          "type": 1
+        },
+        {
+          "id": "48:3257336780204252789",
+          "name": "photoAttachmentGuid",
+          "type": 9
+        },
+        {
+          "id": "49:8457399363782984105",
+          "name": "guidRefs",
+          "type": 30
+        },
+        {
+          "id": "50:8494156400895079858",
+          "name": "usingHandle",
+          "type": 9
+        },
+        {
+          "id": "51:918070273491302197",
+          "name": "isRpSms",
+          "type": 1
+        },
+        {
+          "id": "52:4032751469986301269",
+          "name": "telephonyId",
+          "type": 6
+        },
+        {
+          "id": "53:9022122944799913679",
+          "name": "shareZenMode",
+          "type": 1
+        },
+        {
+          "id": "54:436484071977888622",
+          "name": "notifsSilenced",
+          "type": 1
+        },
+        {
+          "id": "55:7587086153162668463",
+          "name": "zenModeIsShared",
+          "type": 6
+        },
+        {
+          "id": "56:1412781999334541550",
+          "name": "dateNotifiedAnyways",
+          "type": 10
+        },
+        {
+          "id": "57:4669212270750983713",
+          "name": "senderIsKnown",
+          "type": 1
+        },
+        {
+          "id": "58:9094082089263832904",
+          "name": "isRoutingStub",
+          "type": 1
+        },
+        {
+          "id": "59:2872821119838569759",
+          "name": "transcriptPosterPath",
+          "type": 9
+        },
+        {
+          "id": "60:9046678586607934919",
+          "name": "transcriptBackgroundVersion",
+          "type": 6
         }
       ],
       "relations": [
@@ -308,7 +418,7 @@
     },
     {
       "id": "7:1716592500251888002",
-      "lastPropertyId": "13:2987973275926761435",
+      "lastPropertyId": "15:8388523160753754046",
       "name": "Handle",
       "properties": [
         {
@@ -363,6 +473,16 @@
           "id": "13:2987973275926761435",
           "name": "service",
           "type": 9
+        },
+        {
+          "id": "14:8360138275672901270",
+          "name": "posterPath",
+          "type": 9
+        },
+        {
+          "id": "15:8388523160753754046",
+          "name": "blocked",
+          "type": 1
         }
       ],
       "relations": []
@@ -421,7 +541,7 @@
     },
     {
       "id": "13:4148278195232901830",
-      "lastPropertyId": "54:3645372489156688543",
+      "lastPropertyId": "63:6322734948367648994",
       "name": "Message",
       "properties": [
         {
@@ -654,6 +774,51 @@
           "id": "54:3645372489156688543",
           "name": "metadata",
           "type": 13
+        },
+        {
+          "id": "55:1528276562712237729",
+          "name": "associatedMessageEmoji",
+          "type": 9
+        },
+        {
+          "id": "56:2702093656957709432",
+          "name": "verificationFailed",
+          "type": 1
+        },
+        {
+          "id": "57:7862256409578493026",
+          "name": "dateScheduled",
+          "type": 10
+        },
+        {
+          "id": "58:165911887365578801",
+          "name": "sendingServiceId",
+          "type": 9
+        },
+        {
+          "id": "59:2214397237289404530",
+          "name": "amkSessionId",
+          "type": 9
+        },
+        {
+          "id": "60:8717788214077307208",
+          "name": "hasBeenForwarded",
+          "type": 1
+        },
+        {
+          "id": "61:7068729701289834607",
+          "name": "stagingGuid",
+          "type": 9
+        },
+        {
+          "id": "62:8862803545802984378",
+          "name": "ckRecordId",
+          "type": 9
+        },
+        {
+          "id": "63:6322734948367648994",
+          "name": "ckSyncState",
+          "type": 1
         }
       ],
       "relations": []

@@ -3,7 +3,7 @@ import 'dart:async';
 import 'dart:collection';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/services/backend/interfaces/send_message_interface.dart';
+import 'package:bluebubbles/services/network/backend_service.dart';
 import 'package:bluebubbles/services/isolates/global_isolate.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/utils/file_utils.dart';
@@ -453,9 +453,11 @@ class OutgoingMessageHandler {
   /// (GUID replacement, error marking, etc.) still runs to completion
   /// afterwards in the background.
   ///
-  /// [onSuccess] receives the decoded server response body (the full response
-  /// map, i.e. `response.data`). Callers extract a [Message] via
-  /// `Message.fromMap(data['data'])`.
+  /// [sendCall] must go through the [backend] abstraction so that both the
+  /// BlueBubbles-server (`HttpBackend`) and rustpush (`RustPushBackend`)
+  /// transports are supported — see `services/network/backend_service.dart`.
+  /// [onSuccess] receives the server-confirmed [Message] that [sendCall]
+  /// resolved to.
   /// [onError] receives the original error and stack-trace so the caller can
   /// mark the message as failed and persist the error state.
   /// Both callbacks are wrapped in a try/catch so an internal failure (e.g.,
@@ -463,14 +465,14 @@ class OutgoingMessageHandler {
   Future<void> _sendWithRace({
     required String tempGuid,
     required Chat chat,
-    required Future<Map<String, dynamic>> Function() httpCall,
-    required Future<void> Function(Map<String, dynamic> data) onSuccess,
+    required Future<Message> Function() sendCall,
+    required Future<void> Function(Message confirmed) onSuccess,
     required Future<void> Function(Object error, StackTrace stack) onError,
   }) {
     final race = Completer<void>();
     registerSendProgressTracker(tempGuid, chat, race);
 
-    httpCall().then((data) async {
+    sendCall().then((data) async {
       completeSendProgressIfExists(tempGuid, Origin.outgoingMessageHandler);
       try {
         await onSuccess(data);
@@ -713,26 +715,6 @@ class OutgoingMessageHandler {
 
   // ── Send methods ─────────────────────────────────────────────────────────
 
-  /// Returns `'private-api'` if [m] must be sent via the Private API,
-  /// `'apple-script'` otherwise.
-  ///
-  /// Private API is required when:
-  /// - the user has it globally enabled AND the per-type setting is on, OR
-  /// - the message uses a feature only pAPI supports (subject, thread
-  ///   originator, or expressive effect).
-  String _resolveMethod(Message m, {bool forAttachment = false}) {
-    final papiEnabled = SettingsSvc.settings.enablePrivateAPI.value;
-    final papiSend =
-        forAttachment ? SettingsSvc.settings.privateAPIAttachmentSend.value : SettingsSvc.settings.privateAPISend.value;
-    if ((papiEnabled && papiSend) ||
-        (m.subject?.isNotEmpty ?? false) ||
-        m.threadOriginatorGuid != null ||
-        m.expressiveSendStyleId != null) {
-      return 'private-api';
-    }
-    return 'apple-script';
-  }
-
   /// Sends a text message (or a reaction/tapback) to [c].
   Future<void> sendMessage(Chat c, Message m, Message? selected, String? r) {
     ChatsSvc.updateChat(c);
@@ -748,25 +730,13 @@ class OutgoingMessageHandler {
     return _sendWithRace(
       tempGuid: tempGuid,
       chat: c,
-      httpCall: () => r == null
-          ? SendMessageInterface.sendTextMessage(
-              chatGuid: c.guid,
-              tempGuid: tempGuid,
-              message: m.text!,
-              method: _resolveMethod(m),
-              selectedMessageGuid: m.threadOriginatorGuid,
-              effectId: m.expressiveSendStyleId,
-              subject: m.subject,
-              partIndex: int.tryParse(m.threadOriginatorPart?.split(':').firstOrNull ?? ''),
-              ddScan: !SettingsSvc.serverDetails.isMinSonoma && m.text!.hasUrl,
-            )
-          : SendMessageInterface.sendTapback(
-              chatGuid: c.guid,
-              selectedMessageText: selected!.text ?? '',
-              selectedMessageGuid: selected.guid!,
-              reaction: r,
-              partIndex: m.associatedMessagePart,
-            ),
+      // OpenBubbles: sends must go through the `backend` abstraction so rustpush
+      // is used when it is the active transport. `HttpBackend` re-applies the
+      // per-message send method, ddScan and reply-part handling that used to be
+      // computed here, and still dispatches through the GlobalIsolate.
+      sendCall: () => r == null
+          ? backend.sendMessage(c, m)
+          : backend.sendTapback(c, selected!, r, m.associatedMessagePart),
       onSuccess: (data) => _finalizeOutgoingSuccess(
         c, tempGuid, data,
         // Reactions live in the parent's associatedMessages list, not as
@@ -820,27 +790,14 @@ class OutgoingMessageHandler {
     }
 
     final tempGuid = m.guid!;
-    final parts = m.attributedBody.first.runs
-        .map((e) => {
-              'text': m.attributedBody.first.string.substring(e.range.first, e.range.first + e.range.last),
-              'mention': e.attributes!.mention,
-              'partIndex': e.attributes!.messagePart,
-            })
-        .toList();
 
     return _sendWithRace(
       tempGuid: tempGuid,
       chat: c,
-      httpCall: () => SendMessageInterface.sendMultipartMessage(
-        chatGuid: c.guid,
-        tempGuid: tempGuid,
-        parts: parts,
-        subject: m.subject,
-        selectedMessageGuid: m.threadOriginatorGuid,
-        effectId: m.expressiveSendStyleId,
-        partIndex: int.tryParse(m.threadOriginatorPart?.split(':').firstOrNull ?? ''),
-        ddScan: !SettingsSvc.serverDetails.isMinSonoma && parts.any((e) => e['text'].toString().hasUrl),
-      ),
+      // OpenBubbles: routed through `backend` — `HttpBackend.sendMessage` takes
+      // the multipart branch for any message with a non-empty attributedBody,
+      // which is exactly the condition that queued this item.
+      sendCall: () => backend.sendMessage(c, m),
       onSuccess: (data) => _finalizeOutgoingSuccess(c, tempGuid, data),
       onError: (error, stack) => _finalizeOutgoingFailure(
         c,
@@ -883,24 +840,18 @@ class OutgoingMessageHandler {
     return _sendWithRace(
       tempGuid: tempGuid,
       chat: c,
-      httpCall: () => SendMessageInterface.sendAttachmentMessage(
-        chatGuid: c.guid,
-        tempGuid: attachment.guid!,
-        filePath: attachment.path,
-        fileName: attachment.transferName!,
-        fileSize: attachment.totalBytes ?? 0,
-        method: _resolveMethod(m, forAttachment: true),
-        selectedMessageGuid: m.threadOriginatorGuid,
-        effectId: m.expressiveSendStyleId,
-        partIndex: int.tryParse(m.threadOriginatorPart?.split(':').firstOrNull ?? ''),
-        isAudioMessage: isAudioMessage,
-      ),
-      onSuccess: (Map<String, dynamic> data) async {
-        final newMessage = Message.fromMap(data['data']);
-        final responseAttachments = ((data['data']?['attachments'] as List?) ?? <dynamic>[])
-            .whereType<Map>()
-            .map((e) => Attachment.fromMap(e.cast<String, Object>()))
-            .toList();
+      // OpenBubbles: routed through `backend` so rustpush uploads work too.
+      sendCall: () => backend.sendAttachment(c, m, isAudioMessage, attachment),
+      onSuccess: (Message newMessage) async {
+        // The BlueBubbles server hands back the real attachment records on the
+        // confirmed message; rustpush reuses the local Attachment (no GUID
+        // swap needed) and leaves this empty.
+        final responseAttachments = newMessage.attachments.whereType<Attachment>().toList();
+        // Detach them again before the message is persisted below: these
+        // Attachment objects have no DB id yet, and Message.save() calls
+        // applyToDb() on a non-empty dbAttachments, which would insert
+        // duplicate rows. The swap below is what links the real records.
+        newMessage.attachments = <Attachment?>[];
         // Swap attachment GUIDs first, then swap the message GUID.
         for (final a in responseAttachments) {
           try {
@@ -958,10 +909,9 @@ class OutgoingMessageHandler {
   Future<void> _finalizeOutgoingSuccess(
     Chat c,
     String tempGuid,
-    Map<String, dynamic> data, {
+    Message serverMessage, {
     Future<void> Function(Message confirmed)? onExtra,
   }) async {
-    final serverMessage = Message.fromMap(data['data']);
     await _matchMessageWithExisting(c, tempGuid, serverMessage);
     await onExtra?.call(serverMessage);
   }

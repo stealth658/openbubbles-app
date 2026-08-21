@@ -59,8 +59,10 @@ class _AppleIdLoginState extends OptimizedState<AppleIdLogin> {
 
   void handleSignIn() {
     if (loading) return;
-    ss.settings.customHeaders.value = {};
-    http.onInit();
+    SettingsSvc.settings.customHeaders.value = {};
+    // Upstream replaced HttpService.onInit() (full Dio rebuild) with
+    // updateHeaders(), which is what this call site actually wanted.
+    HttpSvc.updateHeaders();
     connect(appleIdController.text, passwordController.text);
   }
 
@@ -105,11 +107,11 @@ class _AppleIdLoginState extends OptimizedState<AppleIdLogin> {
       loading = true;
     });
     try {
-      ss.settings.iCloudAccount.value = "";
-      ss.settings.userName.value = "You";
-      ss.settings.customHeaders.value = {};
-      await ss.settings.saveAsync();
-      http.onInit();
+      SettingsSvc.settings.iCloudAccount.value = "";
+      SettingsSvc.settings.userName.value = "You";
+      SettingsSvc.settings.customHeaders.value = {};
+      await SettingsSvc.settings.saveAsync();
+      HttpSvc.updateHeaders();
       await controller.doRegister();
       if (!controller.success) {
         return;
@@ -346,13 +348,13 @@ class _AppleIdLoginState extends OptimizedState<AppleIdLogin> {
                                 text: TextSpan(
                                   style: context.theme.textTheme.bodyLarge,
                                   children: MessageHelper.buildEmojiText(
-                                    ss.settings.redactedMode.value && ss.settings.hideContactInfo.value
-                                        ? "User Name" : ss.settings.userName.value,
+                                    SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value
+                                        ? "User Name" : SettingsSvc.settings.userName.value,
                                     context.theme.textTheme.bodyLarge!,
                                   ),
                                 ),
                               ),
-                              subtitle: Text(ss.settings.redactedMode.value && ss.settings.hideContactInfo.value
+                              subtitle: Text(SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value
                                   ? "User iCloud"
                                   : availableUser!, style: context.theme.textTheme.bodyMedium!.apply(color: context.theme.colorScheme.outline)),
                               trailing: loading ? buildProgressIndicator(context, brightness: Brightness.dark) : Icon(Icons.arrow_forward, color: context.theme.colorScheme.onBackground, size: 20),
@@ -577,7 +579,7 @@ class _AppleIdLoginState extends OptimizedState<AppleIdLogin> {
       //   result = const api.LoginState.needs2FaVerification();
       // }
 
-      ss.settings.iCloudAccount.value = appleId;
+      SettingsSvc.settings.iCloudAccount.value = appleId;
       if (result is api.LoginState_Needs2FAVerification || result is api.LoginState_NeedsSMS2FAVerification) {
         // we need 2fa
         controller.goingTo2fa = true;

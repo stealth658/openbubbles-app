@@ -10,6 +10,7 @@ import 'package:bluebubbles/services/backend/interfaces/attachment_interface.dar
 import 'package:bluebubbles/services/network/backend_service.dart';
 import 'package:bluebubbles/services/rustpush/rustpush_service.dart';
 import 'package:bluebubbles/services/services.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:mime_type/mime_type.dart';
 // (needed when generating objectbox model code)

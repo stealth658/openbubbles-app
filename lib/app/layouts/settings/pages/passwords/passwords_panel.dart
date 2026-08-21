@@ -331,7 +331,7 @@ class _PasswordsPanelState extends OptimizedState<PasswordsPanel> {
                         containerColor: Colors.indigo,
                       ),
                       onTap: () async {
-                        await mcs
+                        await MethodChannelSvc
                             .invokeMethod("open-autofill-provider-settings");
                       },
                       trailing: const NextButton(),
@@ -443,7 +443,7 @@ class _PasswordsPanelState extends OptimizedState<PasswordsPanel> {
       subtitle: subtitle,
       onTap: () {
         if (manager == null) return;
-        ns.pushSettings(
+        NavigationSvc.pushSettings(
           context,
           PasswordsGroupPanel(
             title: title,
@@ -486,7 +486,7 @@ class _PasswordsPanelState extends OptimizedState<PasswordsPanel> {
           title: groupName,
           onTap: () async {
             if (manager == null) return;
-            final result = await ns.pushSettings(
+            final result = await NavigationSvc.pushSettings(
               context,
               GroupCredentialsPanel(
                 groupId: groupId,
@@ -581,7 +581,7 @@ class _PasswordsPanelState extends OptimizedState<PasswordsPanel> {
       delegate: _PasswordSearchDelegate(items: items),
     );
     if (selected == null || !mounted) return;
-    final result = await ns.pushSettings(
+    final result = await NavigationSvc.pushSettings(
       context,
       CredentialDetailPanel(
         credential: selected.entry,

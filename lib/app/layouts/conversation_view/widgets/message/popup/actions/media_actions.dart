@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/popup/message_popup_action_context.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
+import 'package:bluebubbles/services/network/backend_service.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/utils/share.dart';
@@ -157,17 +158,14 @@ Future<void> downloadOriginalAttachments(MessagePopupActionContext ctx) async {
   try {
     for (final Attachment? element in toDownload) {
       attachmentObs.value = element;
-      final response = await HttpSvc.attachment.download(
-        element!.guid!,
+      // OpenBubbles: go through the backend abstraction - under rustpush there
+      // is no BlueBubbles server, so a direct HttpSvc call fails outright.
+      final file = await backend.downloadAttachment(
+        element!,
         original: true,
         onReceiveProgress: (count, total) {
           progress.value = kIsWeb ? (count / total) : (count / element.totalBytes!);
         },
-      );
-      final file = PlatformFile(
-        name: element.transferName!,
-        size: response.data.length,
-        bytes: response.data,
       );
 
       await AttachmentsSvc.saveToDisk(file, isDocument: element.mimeStart != "image" && element.mimeStart != "video");
@@ -234,15 +232,14 @@ Future<void> downloadLivePhoto(MessagePopupActionContext ctx) async {
   try {
     for (final Attachment? element in toDownload) {
       attachmentObs.value = element;
-      final response = await HttpSvc.attachment
-          .downloadLivePhoto(element!.guid!, onReceiveProgress: (count, total) => progress.value = count);
-      final nameSplit = element.transferName!.split(".");
-      final file = PlatformFile(
-        name: "${nameSplit.take(nameSplit.length - 1).join(".")}.mov",
-        size: response.data.length,
-        bytes: response.data,
+      // OpenBubbles: go through the backend abstraction (it does the
+      // saveToDisk itself); rustpush has no server to hit directly.
+      final nameSplit = element!.transferName!.split(".");
+      await backend.downloadLivePhoto(
+        element,
+        "${nameSplit.take(nameSplit.length - 1).join(".")}.mov",
+        onReceiveProgress: (count, total) => progress.value = count,
       );
-      await AttachmentsSvc.saveToDisk(file, isDocument: true);
     }
     downloadingAttachments.value = false;
   } catch (ex, trace) {

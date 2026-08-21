@@ -34,8 +34,11 @@ class Share {
   }
 
   /// Share text with other apps.
-  static void text(String text) async {
-    await SharePlus.instance.share(ShareParams(text: text));
+  ///
+  /// [subject] is an OpenBubbles addition (the fork's `Share.text` took one);
+  /// `ShareParams` still supports it, so pass it through.
+  static void text(String text, {String? subject}) async {
+    await SharePlus.instance.share(ShareParams(text: text, subject: subject));
   }
 
   static Future<void> location(Chat chat) async {

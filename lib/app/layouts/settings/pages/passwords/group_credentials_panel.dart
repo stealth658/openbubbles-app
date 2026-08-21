@@ -249,7 +249,7 @@ class _GroupCredentialsPanelState
       fab: FloatingActionButton(
         backgroundColor: context.theme.colorScheme.primary,
         onPressed: () async {
-          final result = await ns.pushSettings(
+          final result = await NavigationSvc.pushSettings(
             context,
             PasswordEditorPanel(
               provider: widget.provider,
@@ -334,7 +334,7 @@ class _GroupCredentialsPanelState
 
   Widget _buildCredentialTile(CredentialEntry entry) {
     Future<void> openDetails() async {
-      final result = await ns.pushSettings(
+      final result = await NavigationSvc.pushSettings(
         context,
         CredentialDetailPanel(
           credential: entry,
@@ -359,7 +359,7 @@ class _GroupCredentialsPanelState
   }
 
   Future<void> _openGroupParticipants() async {
-    final result = await ns.pushSettings(
+    final result = await NavigationSvc.pushSettings(
       context,
       GroupEditorPanel(
         provider: widget.provider,

@@ -712,7 +712,7 @@ class _HomeState extends State<Home> with WidgetsBindingObserver, TrayListener {
                   return PopScope(
                     canPop: false,
                     child: TitleBarWrapper(
-                        child: kIsWeb || kIsDesktop ? const SetupView() : SplashScreen(shouldNavigate: fullyLoaded)),
+                        child: kIsWeb || kIsDesktop ? SetupView() : SplashScreen(shouldNavigate: fullyLoaded)),
                   );
                 }
               },

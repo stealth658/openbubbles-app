@@ -2,6 +2,7 @@ import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/models/models.dart' show ServerDetails;
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/helpers/ui/ui_helpers.dart';
+import 'package:bluebubbles/services/backend/interfaces/send_message_interface.dart';
 import 'package:bluebubbles/services/network/backend_service.dart';
 import 'package:bluebubbles/utils/file_utils.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
@@ -25,7 +26,6 @@ import 'package:dio/io.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart' hide Response, FormData, MultipartFile;
 import 'package:universal_io/io.dart';
 import 'package:get_it/get_it.dart';
@@ -133,72 +133,91 @@ class HttpBackend implements BackendService {
 
   int? _replyPartIndex(Message m) => int.tryParse(m.threadOriginatorPart?.split(":").firstOrNull ?? "");
 
+  /// Sends go through [SendMessageInterface] rather than [HttpSvc] directly, so
+  /// they are dispatched on the [GlobalIsolate] and survive the app being
+  /// backgrounded — the behaviour upstream's [OutgoingMessageHandler] relies on.
+  ///
+  /// TODO(merge): [SendMessageInterface] has no cancellation hook, so
+  /// [cancelToken] is ignored on this path. No current caller passes one.
   @override
   Future<Message> sendMessage(Chat c, Message m, {CancelToken? cancelToken}) async {
     if (m.attributedBody.isNotEmpty) {
       final body = m.attributedBody.first;
-      final response = await HttpSvc.message.sendMultipart(
-        c.guid,
-        m.guid!,
-        body.runs
-            .map((e) => {
-                  "text": body.string.substring(e.range.first, e.range.first + e.range.last),
-                  "mention": e.attributes!.mention,
-                  "partIndex": e.attributes!.messagePart,
-                })
-            .toList(),
+      final parts = body.runs
+          .map((e) => {
+                "text": body.string.substring(e.range.first, e.range.first + e.range.last),
+                "mention": e.attributes!.mention,
+                "partIndex": e.attributes!.messagePart,
+              })
+          .toList();
+      final data = await SendMessageInterface.sendMultipartMessage(
+        chatGuid: c.guid,
+        tempGuid: m.guid!,
+        parts: parts,
         subject: m.subject,
         selectedMessageGuid: m.threadOriginatorGuid,
         effectId: m.expressiveSendStyleId,
         partIndex: _replyPartIndex(m),
-        ddScan: !_details.isMinSonoma && (m.text?.hasUrl ?? false),
-        cancelToken: cancelToken,
+        ddScan: !_details.isMinSonoma && parts.any((e) => e["text"].toString().hasUrl),
       );
-      return Message.fromMap(response.data["data"]);
+      return Message.fromMap(data["data"]);
     }
 
-    final response = await HttpSvc.message.sendText(
-      c.guid,
-      m.guid!,
-      m.text!,
+    final data = await SendMessageInterface.sendTextMessage(
+      chatGuid: c.guid,
+      tempGuid: m.guid!,
+      message: m.text!,
       subject: m.subject,
       method: _sendMethod(m, attachment: false),
       selectedMessageGuid: m.threadOriginatorGuid,
       effectId: m.expressiveSendStyleId,
       partIndex: _replyPartIndex(m),
       ddScan: !_details.isMinSonoma && m.text!.hasUrl,
-      cancelToken: cancelToken,
     );
-    return Message.fromMap(response.data["data"]);
+    return Message.fromMap(data["data"]);
   }
 
+  /// TODO(merge): the isolate send path reports upload progress via
+  /// [IsolateEvent.attachmentUploadProgress] rather than the [onSendProgress]
+  /// callback, and has no cancellation hook — both parameters are ignored here.
+  /// No current caller passes either.
   @override
   Future<Message> sendAttachment(Chat c, Message m, bool isAudioMessage, Attachment attachment,
       {void Function(int, int)? onSendProgress, CancelToken? cancelToken}) async {
-    final response = await HttpSvc.message.sendAttachment(
-      c.guid,
-      attachment.guid!,
-      attachment.getFile(),
-      onSendProgress: onSendProgress,
+    final data = await SendMessageInterface.sendAttachmentMessage(
+      chatGuid: c.guid,
+      tempGuid: attachment.guid!,
+      filePath: attachment.path,
+      fileName: attachment.transferName!,
+      fileSize: attachment.totalBytes ?? 0,
       method: _sendMethod(m, attachment: true),
       selectedMessageGuid: m.threadOriginatorGuid,
       effectId: m.expressiveSendStyleId,
       subject: m.subject,
       partIndex: _replyPartIndex(m),
       isAudioMessage: isAudioMessage,
-      cancelToken: cancelToken,
     );
-    if (response.statusCode != 200) {
-      throw Exception("Failed to upload attachment!");
-    }
-    return Message.fromMap(response.data['data']);
+    final message = Message.fromMap(data['data']);
+    // Carry the server's attachment records through on the returned Message so
+    // OutgoingMessageHandler can swap the temp attachment GUIDs. Message.fromMap
+    // only sets `hasAttachments`, so populate them explicitly.
+    message.attachments = ((data['data']?['attachments'] as List?) ?? const <dynamic>[])
+        .whereType<Map>()
+        .map((e) => Attachment.fromMap(e.cast<String, Object>()))
+        .toList();
+    return message;
   }
 
   @override
   Future<Message> sendTapback(Chat chat, Message selected, String reaction, int? repPart) async {
-    final response =
-        await HttpSvc.message.sendTapback(chat.guid, selected.text ?? "", selected.guid!, reaction, partIndex: repPart);
-    return Message.fromMap(response.data['data']);
+    final data = await SendMessageInterface.sendTapback(
+      chatGuid: chat.guid,
+      selectedMessageText: selected.text ?? "",
+      selectedMessageGuid: selected.guid!,
+      reaction: reaction,
+      partIndex: repPart,
+    );
+    return Message.fromMap(data['data']);
   }
 
   @override
@@ -567,130 +586,52 @@ class HttpService implements BaseApi {
     fontDownloadTotalSize.value = null;
   }
 
-  /// Test most API GET requests (the ones that don't have required parameters)
-  void testAPI() {
-    Stopwatch s = Stopwatch();
-    group("API Service Test", () {
-      test("Ping", () async {
-        s.start();
-        var res = await server.ping();
-        expect(res.data['message'], "pong");
+  /// Test most API GET requests (the ones that don't have required parameters).
+  ///
+  /// OpenBubbles: upstream wrote this with `group`/`test`/`expect` from
+  /// `package:flutter_test`, which does not resolve in this project (it is not a
+  /// dev_dependency and nothing pulls it in transitively). Rewritten as a plain
+  /// sequential probe that logs each result — same coverage, no test-framework
+  /// dependency, and still safe to call from app code.
+  Future<void> testAPI() async {
+    Future<void> probe(
+      String name,
+      Future<Response> Function() request, [
+      bool Function(Response res)? ok,
+    ]) async {
+      final s = Stopwatch()..start();
+      try {
+        final res = await request();
         s.stop();
-        Logger.info("Request took ${s.elapsedMilliseconds} ms");
-      });
-      test("Server Info", () async {
-        s.start();
-        var res = await server.info();
-        expect(res.data['status'], 200);
+        final passed = (ok ?? (r) => r.data['status'] == 200)(res);
+        if (passed) {
+          Logger.info("[API Test] $name passed in ${s.elapsedMilliseconds} ms");
+        } else {
+          Logger.error("[API Test] $name FAILED in ${s.elapsedMilliseconds} ms (${res.statusCode}: ${res.data})");
+        }
+      } catch (e, stack) {
         s.stop();
-        Logger.info("Request took ${s.elapsedMilliseconds} ms");
-      });
-      test("Server Stat Totals", () async {
-        s.start();
-        var res = await server.getTotalStats();
-        expect(res.data['status'], 200);
-        s.stop();
-        Logger.info("Request took ${s.elapsedMilliseconds} ms");
-      });
-      test("Server Stat Media", () async {
-        s.start();
-        var res = await server.getMediaStats();
-        expect(res.data['status'], 200);
-        s.stop();
-        Logger.info("Request took ${s.elapsedMilliseconds} ms");
-      });
-      test("Server Logs", () async {
-        s.start();
-        var res = await server.getLogs();
-        expect(res.data['status'], 200);
-        s.stop();
-        Logger.info("Request took ${s.elapsedMilliseconds} ms");
-      });
-      test("FCM Client", () async {
-        s.start();
-        var res = await fcm.getServiceAccount();
-        expect(res.data['status'], 200);
-        s.stop();
-        Logger.info("Request took ${s.elapsedMilliseconds} ms");
-      });
-      test("Attachment Count", () async {
-        s.start();
-        var res = await attachment.getCount();
-        expect(res.data['status'], 200);
-        s.stop();
-        Logger.info("Request took ${s.elapsedMilliseconds} ms");
-      });
-      test("Chats", () async {
-        s.start();
-        var res = await chat.query();
-        expect(res.data['status'], 200);
-        s.stop();
-        Logger.info("Request took ${s.elapsedMilliseconds} ms");
-      });
-      test("Chat Count", () async {
-        s.start();
-        var res = await chat.getCount();
-        expect(res.data['status'], 200);
-        s.stop();
-        Logger.info("Request took ${s.elapsedMilliseconds} ms");
-      });
-      test("Message Count", () async {
-        s.start();
-        var res = await message.getCount();
-        expect(res.data['status'], 200);
-        s.stop();
-        Logger.info("Request took ${s.elapsedMilliseconds} ms");
-      });
-      test("My Message Count", () async {
-        s.start();
-        var res = await message.getCount(onlyMe: true);
-        expect(res.data['status'], 200);
-        s.stop();
-        Logger.info("Request took ${s.elapsedMilliseconds} ms");
-      });
-      test("Messages", () async {
-        s.start();
-        var res = await message.query();
-        expect(res.data['status'], 200);
-        s.stop();
-        Logger.info("Request took ${s.elapsedMilliseconds} ms");
-      });
-      test("Handle Count", () async {
-        s.start();
-        var res = await handle.handleCount();
-        expect(res.data['status'], 200);
-        s.stop();
-        Logger.info("Request took ${s.elapsedMilliseconds} ms");
-      });
-      test("iCloud Contacts", () async {
-        s.start();
-        var res = await contact.fetchAll();
-        expect(res.data['status'], 200);
-        s.stop();
-        Logger.info("Request took ${s.elapsedMilliseconds} ms");
-      });
-      test("Theme Backup", () async {
-        s.start();
-        var res = await backup.getTheme();
-        expect(res.data['status'], 200);
-        s.stop();
-        Logger.info("Request took ${s.elapsedMilliseconds} ms");
-      });
-      test("Settings Backup", () async {
-        s.start();
-        var res = await backup.getSettings();
-        expect(res.data['status'], 200);
-        s.stop();
-        Logger.info("Request took ${s.elapsedMilliseconds} ms");
-      });
-      test("Landing Page", () async {
-        s.start();
-        var res = await server.landingPage();
-        expect(res.statusCode, 200);
-        s.stop();
-        Logger.info("Request took ${s.elapsedMilliseconds} ms");
-      });
-    });
+        Logger.error("[API Test] $name THREW after ${s.elapsedMilliseconds} ms", error: e, trace: stack);
+      }
+    }
+
+    await probe("Ping", () => server.ping(), (res) => res.data['message'] == "pong");
+    await probe("Server Info", () => server.info());
+    await probe("Server Stat Totals", () => server.getTotalStats());
+    await probe("Server Stat Media", () => server.getMediaStats());
+    await probe("Server Logs", () => server.getLogs());
+    await probe("FCM Client", () => fcm.getServiceAccount());
+    await probe("Attachment Count", () => attachment.getCount());
+    await probe("Chats", () => chat.query());
+    await probe("Chat Count", () => chat.getCount());
+    await probe("Message Count", () => message.getCount());
+    await probe("My Message Count", () => message.getCount(onlyMe: true));
+    await probe("Messages", () => message.query());
+    await probe("Handle Count", () => handle.handleCount());
+    await probe("iCloud Contacts", () => contact.fetchAll());
+    await probe("Theme Backup", () => backup.getTheme());
+    await probe("Settings Backup", () => backup.getSettings());
+    await probe("Landing Page", () => server.landingPage(), (res) => res.statusCode == 200);
   }
 }
 

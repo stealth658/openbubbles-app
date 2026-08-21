@@ -59,7 +59,7 @@ class ProfileScaffoldState
   Color profileBackground = Colors.transparent;
 
   Color get backgroundColor =>
-      ss.settings.windowEffect.value == WindowEffect.disabled
+      SettingsSvc.settings.windowEffect.value == WindowEffect.disabled
           ? context.theme.colorScheme.background
           : Colors.transparent;
 
@@ -82,11 +82,11 @@ class ProfileScaffoldState
     super.initState();
     // update widget when background color changes
     if (kIsDesktop) {
-      ss.settings.windowEffect.listen((WindowEffect effect) {
+      SettingsSvc.settings.windowEffect.listen((WindowEffect effect) {
         setState(() {});
       });
     }
-    registration = ss.settings.userAvatarPath.listen((event) {
+    registration = SettingsSvc.settings.userAvatarPath.listen((event) {
       updatePoster();
       setState(() {});
     });
@@ -118,14 +118,21 @@ class ProfileScaffoldState
     })();
   }
 
-  String? get posterPath => widget.handle != null ? widget.handle!.getPoster() : ss.settings.userPosterPath.value;
-  bool get hasAvatar => (ss.settings.userAvatarPath.value != null && widget.handle == null) || (widget.handle != null && widget.handle!.contact?.avatar != null);
+  String? get posterPath => widget.handle != null ? widget.handle!.getPoster() : SettingsSvc.settings.userPosterPath.value;
+  ContactV2? get handleContact => widget.handle?.contactsV2.firstOrNull;
+  bool get hasAvatar => (SettingsSvc.settings.userAvatarPath.value != null && widget.handle == null) || (widget.handle != null && handleContact?.avatarPath != null);
 
   void updatePoster() async {
     if (posterPath == null || kIsDesktop) {
       if (hasAvatar) {
-        var palette = await PaletteGenerator.fromImageProvider(widget.handle == null ? FileImage(File(ss.settings.userAvatarPath.value!)) : MemoryImage(widget.handle!.contact!.avatar!) as ImageProvider<Object>);
-        profileBackground = darken(palette.dominantColor?.color ?? Colors.transparent, 0.2);
+        // ContactV2 avatars live on disk (avatarPath) rather than as in-memory
+        // bytes, so the file can be missing — don't let that strand `loaded`.
+        try {
+          var palette = await PaletteGenerator.fromImageProvider(widget.handle == null ? FileImage(File(SettingsSvc.settings.userAvatarPath.value!)) : FileImage(File(handleContact!.avatarPath!)) as ImageProvider<Object>);
+          profileBackground = darken(palette.dominantColor?.color ?? Colors.transparent, 0.2);
+        } catch (_) {
+          profileBackground = Get.context!.theme.colorScheme.outline;
+        }
       } else {
         profileBackground = Get.context!.theme.colorScheme.outline;
       }
@@ -143,12 +150,12 @@ class ProfileScaffoldState
   Widget build(BuildContext context) {
     var wasVisible = appBarVisible;
     return Scaffold(
-      backgroundColor: ss.settings.windowEffect.value != WindowEffect.disabled
+      backgroundColor: SettingsSvc.settings.windowEffect.value != WindowEffect.disabled
           ? Colors.transparent
           : context.theme.colorScheme.background,
       extendBodyBehindAppBar: true,
       appBar: PreferredSize(
-          preferredSize: Size(ns.width(context), 50),
+          preferredSize: Size(NavigationSvc.width(context), 50),
           child: !_shouldDisplay ? const SizedBox.shrink() : AnimatedOpacity(
             opacity: wasVisible ? 1 : 0,
             duration: const Duration(milliseconds: 200),
@@ -169,7 +176,7 @@ class ProfileScaffoldState
               surfaceTintColor: context.theme.colorScheme.primary,
               leading: buildBackButton(context),
               backgroundColor: headerColor,
-              centerTitle: ss.settings.skin.value == Skins.iOS,
+              centerTitle: SettingsSvc.settings.skin.value == Skins.iOS,
               title: Text(
                 widget.handle?.displayName ?? "Profile",
                 style: context.theme.textTheme.titleLarge,
@@ -185,7 +192,7 @@ class ProfileScaffoldState
                 controller: iosScrollController,
                 child: CustomScrollView(
                       controller: iosScrollController,
-                      physics: ts.scrollPhysics,
+                      physics: ThemeSvc.scrollPhysics,
                       slivers: <Widget>[
                         SliverToBoxAdapter(
                           child: Stack(children: [
@@ -246,7 +253,7 @@ class ProfileScaffoldState
                                     usePoster = api.clonePoster(poster: poster!);
                                   } else {
                                     var randomColor = Color((math.Random().nextDouble() * 0xFFFFFF).toInt()).withOpacity(1.0);
-                                    var initials = widget.handle != null ? widget.handle!.initials ?? 'A' : "${ss.settings.firstName.value?.substring(0, 1) ?? 'A'}${ss.settings.lastName.value?.substring(0, 1) ?? ''}".toUpperCase();
+                                    var initials = widget.handle != null ? widget.handle!.initials ?? 'A' : "${SettingsSvc.settings.firstName.value?.substring(0, 1) ?? 'A'}${SettingsSvc.settings.lastName.value?.substring(0, 1) ?? ''}".toUpperCase();
                                     usePoster = api.SimplifiedIncomingCallPoster(
                                       textMetadata: api.WallpaperMetadata(
                                         fontColorKey: const api.PosterColor(alpha: 0.5, blue: 1, green: 1, red: 1), 
@@ -268,7 +275,7 @@ class ProfileScaffoldState
                                       lowRes: Uint8List(0),
                                     );
                                   }
-                                  var activePath = widget.handle != null ? widget.handle!.getPoster() : ss.settings.userPosterPath.value;
+                                  var activePath = widget.handle != null ? widget.handle!.getPoster() : SettingsSvc.settings.userPosterPath.value;
                                   Navigator.of(context).push(
                                     ThemeSwitcher.buildPageRoute(
                                       builder: (context) => PosterEdit(poster: usePoster, handle: widget.handle, 
@@ -281,8 +288,8 @@ class ProfileScaffoldState
                                           if (widget.handle != null) {
                                             widget.handle!.setPoster(newPath);
                                           } else {
-                                            ss.settings.userPosterPath.value = newPath;
-                                            await ss.saveSettings();
+                                            SettingsSvc.settings.userPosterPath.value = newPath;
+                                            await SettingsSvc.settings.saveOneAsync('userPosterPath');
                                           }
                                           updatePoster(); (widget.posterEdited ?? () {})();
                                         },),
@@ -323,9 +330,9 @@ class ProfileScaffoldState
                                       child: Padding(
                                         padding: const EdgeInsets.symmetric(horizontal: 10),
                                         child: Center(
-                                          child: poster != null ? posterText(poster!.poster, 40, widget.handle?.displayName ?? ss.settings.userName.value, color: false) : 
+                                          child: poster != null ? posterText(poster!.poster, 40, widget.handle?.displayName ?? SettingsSvc.settings.userName.value, color: false) : 
                                           Text(
-                                            widget.handle?.displayName ?? ss.settings.userName.value, 
+                                            widget.handle?.displayName ?? SettingsSvc.settings.userName.value, 
                                             textAlign: TextAlign.center,
                                             style: context.theme.textTheme.displaySmall?.copyWith(
                                               fontSize: 40,
@@ -337,7 +344,7 @@ class ProfileScaffoldState
                                           )
                                         ),),
                                       onTap: () {
-                                        Clipboard.setData(ClipboardData(text: widget.handle?.displayName ?? ss.settings.userName.value));
+                                        Clipboard.setData(ClipboardData(text: widget.handle?.displayName ?? SettingsSvc.settings.userName.value));
                                       },
                                     ),
                                     if (widget.chatOptions != null)

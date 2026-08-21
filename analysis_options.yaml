@@ -9,6 +9,15 @@
 # packages, and plugins designed to encourage good coding practices.
 include: package:flutter_lints/flutter.yaml
 
+analyzer:
+  exclude:
+    # Vendored / submodule trees that are not part of the app's own sources.
+    - rust_builder/**
+    - telephony_plus/**
+    - rustpush/**
+    - lib/generated/**
+    - lib/src/rust/**
+
 formatter:  
   page_width: 120
 

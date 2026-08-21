@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
-import 'package:bluebubbles/services/network/http_service.dart';
+import 'package:bluebubbles/services/network/backend_service.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -146,23 +146,38 @@ mixin LivePhotoMixin<T extends StatefulWidget> on State<T> {
     livePhotoProgress.value = 0.0;
 
     try {
-      final response = await HttpSvc.attachment.downloadLivePhoto(
-        livePhotoAttachment.guid!,
-        onReceiveProgress: (count, total) {
-          if (mounted) {
-            livePhotoProgress.value = total > 0 ? count / total : 0.0;
-          }
-        },
-      );
-
       // Save to persistent location alongside attachment
       // Create directory if it doesn't exist
       await livePhotoFileOnDisk.parent.create(recursive: true);
-      await livePhotoFileOnDisk.writeAsBytes(response.data);
+
+      void onProgress(int count, int total) {
+        if (mounted) {
+          livePhotoProgress.value = total > 0 ? count / total : 0.0;
+        }
+      }
+
+      // OpenBubbles: under rustpush there is no BlueBubbles server to hit, so
+      // the download has to go through the backend abstraction. The rustpush
+      // implementation writes the .mov to `${livePhotoAttachment.directory}/<name>`,
+      // which is exactly [livePhotoPath], so the playback path below is unchanged.
+      final remote = backend.getRemoteService();
+      if (remote != null) {
+        final response = await remote.attachment.downloadLivePhoto(
+          livePhotoAttachment.guid!,
+          onReceiveProgress: onProgress,
+        );
+        await livePhotoFileOnDisk.writeAsBytes(response.data);
+      } else {
+        await backend.downloadLivePhoto(
+          livePhotoAttachment,
+          p.basename(livePhotoPath),
+          onReceiveProgress: onProgress,
+        );
+      }
 
       livePhotoFile = PlatformFile(
         name: p.basename(livePhotoPath),
-        size: response.data.length,
+        size: await livePhotoFileOnDisk.length(),
         path: livePhotoPath,
       );
 

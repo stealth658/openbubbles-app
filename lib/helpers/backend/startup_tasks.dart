@@ -361,6 +361,14 @@ class StartupTasks {
     await _initHttpService();
     await _waitForInterop(methodChannel: true);
 
+    // The fork's CloudKit sync path can reach incoming message handling from
+    // this isolate, and IncomingMsgHandler hard-throws if it isn't registered.
+    Logger.info("Registering IncomingMessageHandler...");
+    GetIt.I.registerSingleton<IncomingMessageHandler>(
+      IncomingMessageHandler(),
+      dispose: (svc) => svc.dispose(),
+    );
+
     Logger.info("Global isolate services initialization complete");
   }
 
@@ -391,6 +399,14 @@ class StartupTasks {
     await _initContactHandleChats(headless: true);
     await _initHttpService();
     Logger.info("HttpService ready");
+
+    // The fork's CloudKit sync path can reach incoming message handling from
+    // this isolate, and IncomingMsgHandler hard-throws if it isn't registered.
+    Logger.info("Registering IncomingMessageHandler...");
+    GetIt.I.registerSingleton<IncomingMessageHandler>(
+      IncomingMessageHandler(),
+      dispose: (svc) => svc.dispose(),
+    );
 
     Logger.info("Sync isolate services initialization complete");
   }

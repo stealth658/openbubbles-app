@@ -430,7 +430,7 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
                                             children: ReactionTypes.toList()
                                                 .slice(narrowScreen && index == 1 ? 3 : 0,
                                                     narrowScreen && index == 0 ? 3 : null)
-                                                .map((e) {
+                                                .map<Widget>((e) {
                                               return Padding(
                                                 padding: iOS
                                                     ? const EdgeInsets.all(5.0)

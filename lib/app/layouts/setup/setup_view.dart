@@ -1146,7 +1146,7 @@ class _ErrorTextState extends CustomState<ErrorText, String, SetupViewController
                     TextButton(
                       child: Text("Screenshot", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
                       onPressed: () async {
-                        final res = await picker.FilePicker.platform.pickFiles(withData: true, type: picker.FileType.custom, allowedExtensions: ['png', 'jpg', 'jpeg']);
+                        final res = await picker.FilePicker.pickFiles(withData: true, type: picker.FileType.custom, allowedExtensions: ['png', 'jpg', 'jpeg']);
                         if (res == null || res.count == 0) return;
                         attachment = await File(res.files[0].path!).readAsBytes();
                         showSnackbar("Notice", "Screenshot added");
