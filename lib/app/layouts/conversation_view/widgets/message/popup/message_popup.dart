@@ -71,6 +71,22 @@ class MessagePopup extends StatefulWidget {
 }
 
 class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderStateMixin, ThemeHelpers {
+  /// Drive the whole menu's layout off the iOS-style flag, so the Material
+  /// skin can opt into the iOS presentation.
+  @override
+  bool get iOS => iosStyleMessagePopup;
+
+  /// Genuinely on the iOS skin. Used only where the value should track the
+  /// real skin rather than the chosen menu style, such as the heavy backdrop
+  /// blur, which looks wrong over Material surfaces.
+  bool get _trueIOS => SettingsSvc.settings.skin.value == Skins.iOS;
+
+  /// The tapback glyphs the picker can actually draw. `ReactionTypes.toList()`
+  /// also carries EMOJI and STICKERBACK, which have no entry in
+  /// reactionToEmoji and rendered as a literal "X" in the row.
+  List<String> get _pickerReactions =>
+      ReactionTypes.toList().where((i) => ReactionTypes.reactionToEmoji.containsKey(i)).toList();
+
   late final AnimationController controller = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 150),
@@ -254,9 +270,22 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
         ? screenWidth - reactionPickerEdgeMargin - reactionPickerEdgeMargin
         : screenWidth - (widget.childPosition.dx + 10) - reactionPickerEdgeMargin;
     final double reactionItemWidth = iOS ? 47.0 : 44.0; // icon/emoji + its fixed padding, see item build below
+    // Count what is actually rendered: the drawable glyphs plus the trailing
+    // "more" smiley. Counting ReactionTypes.toList() (8) instead of the 6 + 1
+    // on screen over-estimated the row and wrapped it to two lines for no
+    // reason.
+    final int reactionItemCount = _pickerReactions.length + 1;
     // + container padding
-    final double reactionRowContentWidth = reactionItemWidth * ReactionTypes.toList().length + 10;
-    bool narrowScreen = reactionRowContentWidth > reactionPickerAvailableWidth;
+    final double reactionRowContentWidth = reactionItemWidth * reactionItemCount + 10;
+    // The picker is anchored at the bubble's left edge, which in a group chat
+    // sits past the avatar and can push the row off screen. Allow it to slide
+    // left to the screen margin before deciding it has to wrap.
+    final double reactionPickerLeft = !message.isFromMe!
+        ? min(widget.childPosition.dx + 10, screenWidth - reactionPickerEdgeMargin - reactionRowContentWidth)
+            .clamp(reactionPickerEdgeMargin, double.infinity)
+        : reactionPickerEdgeMargin;
+    final double shiftedAvailableWidth = screenWidth - reactionPickerLeft - reactionPickerEdgeMargin;
+    bool narrowScreen = reactionRowContentWidth > max(reactionPickerAvailableWidth, shiftedAvailableWidth);
 
     return Theme(
       data: context.theme.copyWith(
@@ -314,17 +343,23 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
                         ? (SettingsSvc.settings.highPerfMode.value
                             ? Container(color: context.theme.colorScheme.surface.withValues(alpha: 0.5))
                             : BackdropFilter(
+                                // The iOS skin's heavy 30px blur washes out
+                                // Material surfaces, so the opt-in Material
+                                // menu gets a light blur plus a scrim instead,
+                                // which keeps the message readable behind it.
                                 filter: ImageFilter.blur(
                                     sigmaX:
                                         kIsDesktop && SettingsSvc.settings.windowEffect.value != WindowEffect.disabled
                                             ? 10
-                                            : 30,
+                                            : (_trueIOS ? 30 : 6),
                                     sigmaY:
                                         kIsDesktop && SettingsSvc.settings.windowEffect.value != WindowEffect.disabled
                                             ? 10
-                                            : 30),
+                                            : (_trueIOS ? 30 : 6)),
                                 child: Container(
-                                  color: Colors.transparent.withValues(alpha: 0.1),
+                                  color: _trueIOS
+                                      ? Colors.transparent.withValues(alpha: 0.1)
+                                      : context.theme.colorScheme.scrim.withValues(alpha: 0.35),
                                 ),
                               ))
                         : null,
@@ -393,7 +428,7 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
                               : context.height - materialOffset)
                           .clamp(0, context.height - (narrowScreen ? 200 : 125)),
                       right: message.isFromMe! ? 15 : null,
-                      left: !message.isFromMe! ? widget.childPosition.dx + 10 : null,
+                      left: !message.isFromMe! ? reactionPickerLeft : null,
                       child: AnimatedSize(
                         curve: Curves.easeInOut,
                         alignment: message.isFromMe! ? Alignment.centerRight : Alignment.centerLeft,
@@ -427,7 +462,7 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
                                           return Row(
                                             mainAxisSize: MainAxisSize.min,
                                             mainAxisAlignment: MainAxisAlignment.start,
-                                            children: ReactionTypes.toList()
+                                            children: _pickerReactions
                                                 .slice(narrowScreen && index == 1 ? 3 : 0,
                                                     narrowScreen && index == 0 ? 3 : null)
                                                 .map<Widget>((e) {

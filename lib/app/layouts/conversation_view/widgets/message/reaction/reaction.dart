@@ -214,7 +214,7 @@ class ReactionWidgetState extends State<ReactionWidget> with ThemeHelpers {
       // Guard: if the reaction type is unknown we cannot render the SVG asset safely.
       if (reactionType.isEmpty) return const SizedBox.shrink();
 
-      if (SettingsSvc.settings.skin.value != Skins.iOS) {
+      if (!useIosTapbacks) {
         return Container(
             width: 30,
             height: 30,
@@ -355,7 +355,7 @@ class ReactionWidgetState extends State<ReactionWidget> with ThemeHelpers {
                 return DeferPointer(
                   child: GestureDetector(
                     child: Icon(
-                      SettingsSvc.settings.skin.value == Skins.iOS
+                      useIosTapbacks
                           ? CupertinoIcons.exclamationmark_circle
                           : Icons.error_outline,
                       color: context.theme.colorScheme.error,
@@ -410,7 +410,7 @@ class ReactionWidgetState extends State<ReactionWidget> with ThemeHelpers {
 
     if (rType.isEmpty) return const SizedBox.shrink();
 
-    if (SettingsSvc.settings.skin.value != Skins.iOS) {
+    if (!useIosTapbacks) {
       return Container(
         width: 30,
         height: 30,

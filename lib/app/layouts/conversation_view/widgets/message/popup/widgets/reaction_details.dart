@@ -31,7 +31,7 @@ class ReactionDetails extends StatelessWidget {
             alignment: Alignment.center,
             height: 120,
             color: context.theme.colorScheme.surfaceContainerHighest
-                .withAlpha(SettingsSvc.settings.skin.value == Skins.iOS ? 150 : 255),
+                .withAlpha(useIosTapbacks ? 150 : 255),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 10.0),
               child: ListView.separated(
@@ -91,11 +91,11 @@ class ReactionDetails extends StatelessWidget {
                           ],
                         ),
                         child: Padding(
-                          padding: SettingsSvc.settings.skin.value == Skins.iOS
+                          padding: useIosTapbacks
                               ? const EdgeInsets.only(top: 8.0, left: 7.0, right: 7.0, bottom: 7.0)
                                   .add(EdgeInsets.only(right: message.associatedMessageType == "emphasize" ? 1 : 0))
                               : EdgeInsets.zero,
-                          child: SettingsSvc.settings.skin.value == Skins.iOS
+                          child: useIosTapbacks
                               ? SvgPicture.asset(
                                   'assets/reactions/${message.associatedMessageType}-black.svg',
                                   colorFilter: ColorFilter.mode(

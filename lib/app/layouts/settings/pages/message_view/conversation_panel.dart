@@ -83,6 +83,20 @@ class _ConversationPanelState extends State<ConversationPanel> with ThemeHelpers
                         backgroundColor: tileColor,
                       )),
                   const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
+                  // Only meaningful off the iOS skin, which always uses this menu.
+                  if (SettingsSvc.settings.skin.value != Skins.iOS) ...[
+                    Obx(() => SettingsSwitch(
+                          onChanged: (bool val) async {
+                            SettingsSvc.settings.materialIosMessageMenu.value = val;
+                            await SettingsSvc.settings.saveOneAsync('materialIosMessageMenu');
+                          },
+                          initialVal: SettingsSvc.settings.materialIosMessageMenu.value,
+                          title: "iOS-Style Message Menu",
+                          subtitle: "Long-press a message for the iOS tapback glyphs and options list",
+                          backgroundColor: tileColor,
+                        )),
+                    const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
+                  ],
                   Obx(() => SettingsSwitch(
                         onChanged: (bool val) async {
                           SettingsSvc.settings.recipientAsPlaceholder.value = val;

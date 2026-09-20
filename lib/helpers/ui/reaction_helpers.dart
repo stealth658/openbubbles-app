@@ -1,4 +1,6 @@
 import 'package:bluebubbles/database/models.dart' hide Entity;
+import 'package:bluebubbles/helpers/types/constants.dart';
+import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/foundation.dart';
 
 class ReactionTypes {
@@ -93,3 +95,12 @@ List<Message> getUniqueReactionMessages(List<Message> messages) {
 
   return output;
 }
+
+/// OpenBubbles: whether tapbacks render as iOS glyphs rather than emoji.
+///
+/// The picker and the bubbles have to agree. When the Material skin opts into
+/// the iOS-style message menu the picker shows iOS glyphs, so the reactions
+/// drawn on the bubbles and in the details sheet must follow, otherwise you
+/// pick a glyph and a plain emoji appears on the message.
+bool get useIosTapbacks =>
+    SettingsSvc.settings.skin.value == Skins.iOS || SettingsSvc.settings.materialIosMessageMenu.value;

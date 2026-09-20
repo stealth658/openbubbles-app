@@ -162,6 +162,13 @@ mixin ThemeHelpers<T extends StatefulWidget> on State<T> {
   Brightness get brightness => context.theme.colorScheme.brightness;
 }
 
+/// OpenBubbles: whether the long-press message menu should be drawn iOS-style
+/// (glyph tapbacks over a blurred backdrop plus an options list). True on the
+/// iOS skin, and on Material when the user has opted in. Deliberately a
+/// free-standing getter so widgets that are not ThemeHelpers can use it too.
+bool get iosStyleMessagePopup =>
+    SettingsSvc.settings.skin.value == Skins.iOS || SettingsSvc.settings.materialIosMessageMenu.value;
+
 /// Extension to provide BuildContext with easy access to commonly used theme helper values
 extension BuildContextThemeHelpers on BuildContext {
   bool get iOS => SettingsSvc.settings.skin.value == Skins.iOS;

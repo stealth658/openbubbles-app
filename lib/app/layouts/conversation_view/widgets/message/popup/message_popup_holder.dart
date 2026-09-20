@@ -41,6 +41,12 @@ class MessagePopupHolder extends StatefulWidget {
 }
 
 class _MessagePopupHolderState extends State<MessagePopupHolder> with ThemeHelpers {
+  /// Must agree with MessagePopup: this side decides how the popup is opened
+  /// and measured, so if the menu is drawn iOS-style it has to be presented
+  /// iOS-style too.
+  @override
+  bool get iOS => iosStyleMessagePopup;
+
   final GlobalKey globalKey = GlobalKey();
 
   Message get message => widget.controller.message;
