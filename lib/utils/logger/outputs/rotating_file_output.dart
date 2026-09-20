@@ -50,6 +50,9 @@ class RotatingFileOutput extends LogOutput {
   @override
   Future<void> init() async {
     _openFile();
+    // Clear out any NUL-filled shells left behind by the stale-position bug
+    // described in [output], so they stop crowding out real history.
+    _pruneOldFiles();
   }
 
   void _openFile() {
@@ -69,9 +72,22 @@ class RotatingFileOutput extends LogOutput {
     final raf = _raf;
     if (raf == null || event.lines.isEmpty) return;
     try {
+      // OpenBubbles: Dart's FileMode.append is NOT O_APPEND. It seeks to the end
+      // once at open and then every handle tracks its own position, so with one
+      // handle per isolate (main, GlobalIsolate, DartWorker) each writer clobbers
+      // the others' lines, and after any isolate truncates the file for rotation
+      // the rest keep writing at their old ~5 MB offsets. That produced sparse
+      // files of NUL bytes that instantly looked oversized again, a rotation
+      // storm, and an export with no history at all (2026-09-16). Re-seeking to
+      // the real end before every write is the closest dart:io gets to append
+      // semantics; two isolates logging in the same microsecond can still race,
+      // which loses a line rather than the whole log.
+      final bytes = encoding.encode('${event.lines.join('\n')}\n');
+      final end = raf.lengthSync();
+      raf.setPositionSync(end);
       // One write per event — never one per line. See the class doc.
-      raf.writeFromSync(encoding.encode('${event.lines.join('\n')}\n'));
-      if (raf.lengthSync() >= _maxBytes) _rotate(raf);
+      raf.writeFromSync(bytes);
+      if (end + bytes.length >= _maxBytes) _rotate(raf);
     } catch (_) {}
   }
 
@@ -82,6 +98,9 @@ class RotatingFileOutput extends LogOutput {
 
       _file!.copySync(join(dirPath, fileNameFormatter(DateTime.now())));
       raf.truncateSync(0);
+      // truncate does not move the position; without this the next write
+      // from this handle would recreate the sparse file.
+      raf.setPositionSync(0);
       _pruneOldFiles();
     } catch (_) {
       // Rotation must never crash the logger. The file stays oversized and we
@@ -100,6 +119,26 @@ class RotatingFileOutput extends LogOutput {
           .where((f) => f.path.endsWith('.log') && !f.path.endsWith(latestFileName))
           .toList()
         ..sort((a, b) => a.statSync().modified.compareTo(b.statSync().modified));
+
+      // Shells from the stale-position bug: a rotated log whose leading bytes
+      // are NUL holds no usable history, only padding. Drop them regardless of
+      // count so they don't push real logs out of the retention window.
+      rotated.removeWhere((f) {
+        try {
+          final raf = f.openSync();
+          try {
+            final head = raf.readSync(64);
+            if (head.isNotEmpty && head.every((b) => b == 0)) {
+              raf.closeSync();
+              f.deleteSync();
+              return true;
+            }
+          } finally {
+            try { raf.closeSync(); } catch (_) {}
+          }
+        } catch (_) {}
+        return false;
+      });
 
       while (rotated.length > maxRotatedFilesCount) {
         try {
