@@ -1,5 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
+
+import 'package:path/path.dart' show join;
 
 import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/database/models.dart';
@@ -37,6 +40,7 @@ class MethodChannelHandlers {
       MethodChannelInboundMethods.scheduledMessageError: _handleScheduledMessageError,
       MethodChannelInboundMethods.replyChat: _handleReplyChat,
       MethodChannelInboundMethods.markChatRead: _handleMarkChatRead,
+      MethodChannelInboundMethods.getCarConversations: _handleGetCarConversations,
       MethodChannelInboundMethods.chatReadStatusChanged: _handleChatReadStatusChanged,
       MethodChannelInboundMethods.mediaColors: _handleMediaColors,
       MethodChannelInboundMethods.incomingFacetime: _handleIncomingFacetime,
@@ -329,6 +333,85 @@ class MethodChannelHandlers {
     }
 
     return _retry();
+  }
+
+  /// Writes the snapshot the Android Auto conversation list renders from.
+  ///
+  /// The car screen is Kotlin and cannot read ObjectBox, so it asks for this
+  /// on every session start. Writes JSON atomically (temp file then rename) so
+  /// the Kotlin side never reads a half-written file, and renders each chat's
+  /// avatar to a PNG beside it because the car needs real bitmaps.
+  Future<bool> _handleGetCarConversations(MethodCall _, Map<String, dynamic>? arguments) async {
+    await Database.waitForInit();
+    try {
+      final String outputPath = arguments!['outputPath'];
+      final String avatarDirPath = arguments['avatarDir'];
+      final int limit = arguments['limit'] ?? 10;
+      final int messagesPerChat = arguments['messagesPerChat'] ?? 5;
+
+      final query = (Database.chats
+              .query(Chat_.dateDeleted.isNull().and(Chat_.isArchived.equals(false)))
+            ..order(Chat_.dbOnlyLatestMessageDate, flags: Order.descending))
+          .build();
+      query.limit = limit;
+      final chats = query.find();
+      query.close();
+
+      final avatarDir = Directory(avatarDirPath);
+      if (!avatarDir.existsSync()) avatarDir.createSync(recursive: true);
+
+      final conversations = <Map<String, dynamic>>[];
+      for (final chat in chats) {
+        final mq = (Database.messages.query(Message_.dateDeleted.isNull()
+                .and(Message_.itemType.equals(0))
+                .and(Message_.associatedMessageGuid.isNull()))
+              ..order(Message_.dateCreated, flags: Order.descending)
+              ..link(Message_.chat, Chat_.id.equals(chat.id!)))
+            .build();
+        mq.limit = messagesPerChat;
+        final recent = mq.find().reversed.toList(); // oldest -> newest
+        mq.close();
+        if (recent.isEmpty) continue;
+
+        String? avatarPath;
+        try {
+          final bytes = await avatarAsBytes(chat: chat, quality: 128);
+          final file = File(join(avatarDirPath, '${chat.guid.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_')}.png'));
+          await file.writeAsBytes(bytes);
+          avatarPath = file.path;
+        } catch (_) {
+          // An avatar we cannot render just means the car draws initials.
+        }
+
+        conversations.add({
+          'guid': chat.guid,
+          'title': chat.getTitle() ?? 'Unknown',
+          'isGroup': chat.isGroup,
+          'hasUnread': chat.hasUnreadMessage ?? false,
+          'avatarPath': avatarPath,
+          'messages': recent
+              .map((m) => {
+                    'guid': m.guid,
+                    'text': m.text ?? '',
+                    'date': (m.dateCreated ?? DateTime.now()).millisecondsSinceEpoch,
+                    'isFromMe': m.isFromMe ?? false,
+                    'sender': m.isFromMe ?? false ? 'You' : (m.handle?.displayName ?? chat.getTitle() ?? 'Unknown'),
+                    'senderKey': m.isFromMe ?? false ? 'self' : (m.handle?.address ?? chat.guid),
+                  })
+              .toList(),
+        });
+      }
+
+      final payload = {'generatedAt': DateTime.now().millisecondsSinceEpoch, 'conversations': conversations};
+      final tmp = File('$outputPath.tmp');
+      await tmp.writeAsString(jsonEncode(payload));
+      await tmp.rename(outputPath);
+      Logger.info('Wrote ${conversations.length} conversations for Android Auto to $outputPath');
+      return _ok();
+    } catch (e, s) {
+      Logger.error('Failed to build the Android Auto conversation snapshot', error: e, trace: s);
+      return Future.error(e, s);
+    }
   }
 
   Future<bool> _handleChatReadStatusChanged(MethodCall _, Map<String, dynamic>? arguments) async {

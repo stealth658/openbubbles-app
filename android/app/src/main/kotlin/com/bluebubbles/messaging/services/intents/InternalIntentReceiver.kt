@@ -14,6 +14,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.RemoteInput
 import com.bluebubbles.messaging.Constants
 import com.bluebubbles.messaging.services.backend_ui_interop.DartWorkManager
+import com.bluebubbles.messaging.services.car.CarConversationStore
 import com.bluebubbles.messaging.services.facetime.FaceTimeActivity
 import com.bluebubbles.messaging.services.network.HttpService
 import com.bluebubbles.messaging.services.notifications.DeleteNotificationHandler
@@ -44,6 +45,7 @@ class InternalIntentReceiver: BroadcastReceiver() {
                 val chatGuid: String? = intent.getStringExtra("chatGuid")
                 val tag: String? = intent.getStringExtra("tag")
                 DeleteNotificationHandler().deleteNotification(context, notificationId, tag)
+                chatGuid?.let { CarConversationStore.markRead(context, it) }
                 DartWorkManager.createWorker(context, intent.type!!, hashMapOf("chatGuid" to chatGuid)) {}
             }
             "DeclineFaceTime" -> {
@@ -66,6 +68,10 @@ class InternalIntentReceiver: BroadcastReceiver() {
                 val replyText = RemoteInput.getResultsFromIntent(intent)?.getString("text_reply") ?: return
 
                 DartWorkManager.createWorker(context, intent.type!!, hashMapOf("chatGuid" to chatGuid, "messageGuid" to messageGuid, "text" to replyText)) { succeeded ->
+                    // Echo the reply into the car list so it shows there too.
+                    if (succeeded && chatGuid != null) {
+                        CarConversationStore.recordOutgoing(context, chatGuid, replyText)
+                    }
                     val notificationManager = context.getSystemService(NotificationManager::class.java)
                     // this is used to copy the style, since the notification already exists
                     PersistentLog.d(context, Constants.logTag, "Fetching existing notification values")

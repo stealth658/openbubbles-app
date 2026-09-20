@@ -148,6 +148,17 @@
             android:name="com.bluebubbles.telephony_plus.send.MySentReceiver"
             android:taskAffinity="com.bluebubbles.messaging.SMS_SENT1" />
 
+        <!-- OpenBubbles: Android Auto templated messaging. Exported so the Android Auto
+             host can bind; the host validator in CarMessagingService decides who may. -->
+        <service
+            android:name=".services.car.CarMessagingService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="androidx.car.app.CarAppService" />
+                <category android:name="androidx.car.app.category.MESSAGING" />
+            </intent-filter>
+        </service>
+
         <service
             android:name=".services.facetime.FaceTimeInCallService"
             android:foregroundServiceType="camera|microphone"
@@ -477,6 +488,11 @@
 <meta-data
             android:name="com.google.android.gms.car.application"
             android:resource="@xml/automotive_app_desc" />
+        <!-- Car App Library API level this app is built against. ConversationItem
+             (templated messaging) requires 7. -->
+        <meta-data
+            android:name="androidx.car.app.minCarApiLevel"
+            android:value="7" />
         <meta-data
             android:name="WindowManagerPreference:SuppressWindowControlNavigationButton"
             android:value="true" />

@@ -16,6 +16,7 @@ import com.bluebubbles.messaging.Constants
 import com.bluebubbles.messaging.MainActivity
 import com.bluebubbles.messaging.R
 import com.bluebubbles.messaging.models.MethodCallHandlerImpl
+import com.bluebubbles.messaging.services.car.CarConversationStore
 import com.bluebubbles.messaging.services.intents.InternalIntentReceiver
 import com.bluebubbles.messaging.services.system.PushShareTargetsHandler
 import com.bluebubbles.messaging.utils.Utils
@@ -73,6 +74,23 @@ class CreateIncomingMessageNotification: MethodCallHandlerImpl() {
         }
 
         PushShareTargetsHandler().pushShareTarget(context, chatTitle, chatGuid, chatIcon)
+
+        // Keep the Android Auto conversation list current between Dart snapshots.
+        // This runs for every message that gets a notification, which is exactly
+        // the set the car cares about.
+        CarConversationStore.recordIncoming(
+            context,
+            chatGuid = chatGuid,
+            chatTitle = chatTitle,
+            isGroup = chatIsGroup,
+            senderName = contactName,
+            senderKey = chat_uri ?: contactName,
+            messageGuid = messageGuid,
+            text = messageText,
+            dateMillis = messageDate,
+            isFromMe = messageIsFromMe,
+            chatIcon = chatIcon,
+        )
 
         // OpenBubbles posts each chat into its own conversation channel (Android 11+) so a
         // chat can be given a per-conversation importance, and so the "notify anyways"

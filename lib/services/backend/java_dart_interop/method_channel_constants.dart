@@ -10,6 +10,8 @@ abstract class MethodChannelInboundMethods {
   static const String scheduledMessageError = 'scheduled-message-error';
   static const String replyChat = 'ReplyChat';
   static const String markChatRead = 'MarkChatRead';
+  /// Android Auto asking Dart to write a snapshot of the recent conversations.
+  static const String getCarConversations = 'GetCarConversations';
   static const String chatReadStatusChanged = 'chat-read-status-changed';
   static const String mediaColors = 'MediaColors';
   static const String incomingFacetime = 'incoming-facetime';

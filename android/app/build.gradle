@@ -195,6 +195,10 @@ dependencies {
     implementation "androidx.work:work-runtime:2.9.0"
     implementation "androidx.concurrent:concurrent-futures-ktx:1.2.0"
 
+    // Android Auto templated messaging (CarAppService + ConversationItem).
+    implementation "androidx.car.app:app:1.7.0"
+    implementation "androidx.car.app:app-projected:1.7.0"
+
     // Firebase items
     implementation 'com.google.firebase:firebase-messaging:24.0.0'
     implementation 'com.google.firebase:firebase-database:21.0.0'
