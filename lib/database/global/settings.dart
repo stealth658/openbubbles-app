@@ -139,6 +139,13 @@ class Settings {
   final RxBool replaceEmoticonsWithEmoji = true.obs;
   final RxnString lastLocation = RxnString();
 
+  /// OpenBubbles: draw the Material skin's long-press message menu in the
+  /// iOS style (glyph tapbacks + options list). Material-only setting.
+  final RxBool materialIosMessageMenu = true.obs;
+
+  /// OpenBubbles: which basemap the Find My screen draws. See FindMyMapStyle.
+  final RxString findMyMapStyle = "esriStreets".obs;
+
   final RxBool nameAndPhotoSharing = false.obs;
   final RxBool shareContactAutomatically = true.obs;
   final RxnString shareProfileMessage = RxnString();
@@ -509,6 +516,8 @@ class Settings {
       'logLevel': logLevel.value.index,
       'hideNamesForReactions': hideNamesForReactions.value,
       'replaceEmoticonsWithEmoji': replaceEmoticonsWithEmoji.value,
+      'materialIosMessageMenu': materialIosMessageMenu.value,
+      'findMyMapStyle': findMyMapStyle.value,
       'lastReviewRequestTimestamp': lastReviewRequestTimestamp.value,
       'defaultHandle': defaultHandle.value,
       'cardDavServer': cardDavServer.value,
@@ -523,7 +532,10 @@ class Settings {
       'vpnWarned': vpnWarned.value,
       'smsForwardingTargets': smsRoutingTargets,
       'developerMode': developerMode,
-      'lastLocation': lastLocation,
+      // `.value`, not the Rx itself: toMap feeds JSON encoding and the settings
+      // sync, and an RxnString serialises to its toString() rather than the
+      // string it holds, so what came back out was not the saved value.
+      'lastLocation': lastLocation.value,
       'enableShareZen': enableShareZen.value,
       'warnedTextChats': warnedTextChats.value,
       'nonIMessageWarning': nonIMessageWarning.value,
@@ -820,6 +832,10 @@ class Settings {
         map['hideNamesForReactions'] ?? SettingsSvc.settings.hideNamesForReactions.value;
     SettingsSvc.settings.replaceEmoticonsWithEmoji.value =
         map['replaceEmoticonsWithEmoji'] ?? SettingsSvc.settings.replaceEmoticonsWithEmoji.value;
+    SettingsSvc.settings.materialIosMessageMenu.value =
+        map['materialIosMessageMenu'] ?? SettingsSvc.settings.materialIosMessageMenu.value;
+    SettingsSvc.settings.findMyMapStyle.value =
+        map['findMyMapStyle'] ?? SettingsSvc.settings.findMyMapStyle.value;
     SettingsSvc.settings.lastReviewRequestTimestamp.value =
         map['lastReviewRequestTimestamp'] ?? SettingsSvc.settings.lastReviewRequestTimestamp.value;
 
@@ -1059,6 +1075,8 @@ class Settings {
     s.logLevel.value = map['logLevel'] != null ? Level.values[map['logLevel']] : Level.info;
     s.hideNamesForReactions.value = map['hideNamesForReactions'] ?? false;
     s.replaceEmoticonsWithEmoji.value = map['replaceEmoticonsWithEmoji'] ?? false;
+    s.materialIosMessageMenu.value = map['materialIosMessageMenu'] ?? true;
+    s.findMyMapStyle.value = map['findMyMapStyle'] ?? "esriStreets";
     s.lastReviewRequestTimestamp.value = map['lastReviewRequestTimestamp'] ?? 0;
     s.defaultHandle.value = map['defaultHandle'] ?? "";
     s.cardDavServer.value = map['cardDavServer'] ?? "";

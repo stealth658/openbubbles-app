@@ -1232,10 +1232,16 @@ class Chat {
     Message? newMessage;
     bool isNewer = false;
 
+    // Callers on the rustpush path hand the attachments to us on the Message
+    // rather than in `attachments`. Sending an empty list across to the isolate
+    // meant the rows were never written and the bubble came out blank.
+    final effectiveAttachments =
+        attachments.isNotEmpty ? attachments : message.dbAttachments.toList();
+
     try {
       final result = await ChatInterface.addMessageToChat(
         messageData: message.toMap(),
-        attachmentsData: attachments.map((e) => e.toMap()).toList(),
+        attachmentsData: effectiveAttachments.map((e) => e.toMap()).toList(),
         chatData: toMap(),
         latestMessageData: (latest ?? Message(dateCreated: DateTime.fromMillisecondsSinceEpoch(0), guid: guid)).toMap(),
         checkForMessageText: checkForMessageText,

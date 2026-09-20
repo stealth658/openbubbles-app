@@ -145,6 +145,72 @@ class RustPushBBUtils {
     return mHandle;
   }
 
+  /// Dart mirror of rustpush's `normalize_sms_handle` (rustpush 8ad0b72,
+  /// 2026-08-20), which the official .so we ship predates.
+  ///
+  /// SMS/MMS forwarded from the iPhone carry participant numbers the way the
+  /// carrier wrote them. Plain SMS come as "+1516...", but MMS (pictures, and
+  /// the long marketing texts that carriers upgrade to MMS) list every
+  /// recipient as bare digits: "15550100100". The old .so prefixed "tel:" and
+  /// nothing else, so the message arrived with participants
+  /// [tel:15550100200, tel:15550100100]. Neither matched our own handle
+  /// (tel:+15550100100), so the "remove us" step failed, the chat was created
+  /// with both handles and rendered as a two-person group, and a sender that
+  /// also texts by plain SMS got a second, separate chat.
+  ///
+  /// Long all-digit strings get a "+"; short codes (24528) and alphanumeric
+  /// senders are left alone, exactly as upstream does.
+  static String normalizeSmsHandle(String handle) {
+    if (!handle.startsWith("tel:")) return handle;
+    final number = handle.substring(4);
+    if (number.startsWith("+")) return handle;
+    if (number.length >= 8 && RegExp(r'^[0-9]+$').hasMatch(number)) {
+      return "tel:+$number";
+    }
+    return handle;
+  }
+
+  /// Applies [normalizeSmsHandle] to every handle on an incoming SMS/MMS
+  /// message before chat matching. Rebuilds the freezed `service` value since
+  /// its fields are final; everything else on the message is left untouched.
+  static void normalizeSmsMessage(api.MessageInst myMsg) {
+    final message = myMsg.message;
+    if (message is! api.Message_Message) return;
+    final inner = message.field0;
+    final service = inner.service;
+    if (service is! api.MessageType_SMS) return;
+
+    final conv = myMsg.conversation;
+    if (conv != null) {
+      final normalized = conv.participants.map(normalizeSmsHandle).toSet().toList();
+      if (normalized.length != conv.participants.length ||
+          !normalized.every((p) => conv.participants.contains(p))) {
+        Logger.info("Normalized SMS participants ${conv.participants} -> $normalized");
+      }
+      conv.participants = normalized;
+    }
+    if (myMsg.sender != null) {
+      myMsg.sender = normalizeSmsHandle(myMsg.sender!);
+    }
+
+    final usingNumber = normalizeSmsHandle(service.usingNumber);
+    final fromHandle = service.fromHandle == null ? null : normalizeSmsHandle(service.fromHandle!);
+    if (usingNumber == service.usingNumber && fromHandle == service.fromHandle) return;
+    myMsg.message = api.Message_Message(api.NormalMessage(
+      parts: inner.parts,
+      effect: inner.effect,
+      replyGuid: inner.replyGuid,
+      replyPart: inner.replyPart,
+      service: api.MessageType_SMS(isPhone: service.isPhone, usingNumber: usingNumber, fromHandle: fromHandle),
+      subject: inner.subject,
+      app: inner.app,
+      linkMeta: inner.linkMeta,
+      voice: inner.voice,
+      scheduled: inner.scheduled,
+      embeddedProfile: inner.embeddedProfile,
+    ));
+  }
+
   static String formatAddress(String e) {
     if (e.isEmail) {
       return e;
@@ -3507,6 +3573,8 @@ class RustPushService extends GetxService {
 
     var myMsg = (push as api.PushMessage_IMessage).field0;
     Logger.info("starting ${myMsg.id}");
+    // Bare-digit MMS participants from the old .so; see normalizeSmsHandle.
+    RustPushBBUtils.normalizeSmsMessage(myMsg);
     if (myMsg.message is api.Message_EnableSmsActivation) {
       if (myMsg.verificationFailed) return;
       var message = myMsg.message as api.Message_EnableSmsActivation;
@@ -4586,6 +4654,9 @@ class RustPushService extends GetxService {
     }
   }
 
+  /// Upper bound on how long an ack waits for the incoming queue to drain.
+  static const _markHandledTimeout = Duration(seconds: 30);
+
   Future<void> markAsHandledAfter(String ptr) async {
     // Upstream's IncomingMessageHandler has no single `isProcessing` flag; the
     // equivalent "queue is idle" condition is nothing queued and no slot active.
@@ -4593,10 +4664,19 @@ class RustPushService extends GetxService {
         IncomingMsgHandler.queueDepth.value > 0 || IncomingMsgHandler.activeConcurrency.value > 0;
     if (incomingBusy()) {
       Logger.info("Marking as handled processing wait $ptr");
-      // activeConcurrency ticks on every slot acquire/release, so it fires again
-      // once the last in-flight payload finishes.
-      await for (final _ in IncomingMsgHandler.activeConcurrency.stream) {
-        if (!incomingBusy()) break;
+      // Poll rather than waiting on activeConcurrency's stream. That stream is
+      // edge-triggered (a GetX RxInt only emits on change), so if the last slot
+      // was released between the incomingBusy() check and the subscription, no
+      // event ever arrived and this awaited forever -- which stopped every
+      // later pointer from being acked and silently killed incoming messages
+      // until the app was restarted. The bounded wait also means a genuinely
+      // stuck queue costs one delayed ack, not all of them.
+      final deadline = DateTime.now().add(_markHandledTimeout);
+      while (incomingBusy() && DateTime.now().isBefore(deadline)) {
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+      if (incomingBusy()) {
+        Logger.warn("Incoming queue still busy after ${_markHandledTimeout.inSeconds}s; acking $ptr anyway");
       }
     }
     Logger.info("Marking as handled commit $ptr");
@@ -4610,7 +4690,21 @@ class RustPushService extends GetxService {
       return;
     }
     Logger.info("waitingForInit $pointer $retry");
-    await initFuture;
+    // Never let a hung initFuture hold incoming messages hostage. `state` is
+    // assigned early in the init body, so if it is set we have everything
+    // message handling needs; the DB and services are initialised before
+    // RustPushService.onInit even runs. Only a *completed* init is strictly
+    // better; a hung one must not win by default. (The observed hang was
+    // isInClique -> sync_trust blocking on a keychain read lock inside rustpush.)
+    try {
+      await initFuture.timeout(const Duration(seconds: 30));
+    } catch (e) {
+      if (state == null) {
+        Logger.error("initFuture unresolved and no rustpush state; cannot handle $pointer yet: $e");
+        rethrow;
+      }
+      Logger.warn("initFuture unresolved after 30s; handling $pointer with live state anyway");
+    }
     var isFinal = (int.tryParse(retry) ?? 3) >= 3;
     try {
       Logger.info("Handling $pointer $retry");
@@ -4918,7 +5012,11 @@ class RustPushService extends GetxService {
   @override
   Future<void> onInit() async {
     super.onInit();
-    api.doFirstTimeInit(path: FilesystemSvc.appDocDir.path);
+    // Fire-and-forget, but never as a bare un-awaited future: an error here
+    // would otherwise surface as an unhandled async exception with no context.
+    unawaited(api.doFirstTimeInit(path: FilesystemSvc.appDocDir.path).catchError((e, s) {
+      Logger.error("doFirstTimeInit failed", error: e, trace: s);
+    }));
     initFuture = (() async {
       statePath = (await getApplicationSupportDirectory()).path;
       final vpnDetector = VpnConnectionDetector();
@@ -4992,7 +5090,16 @@ class RustPushService extends GetxService {
         }
         var keychain = pushService.state?.icloudServices?.keychain;
         if (keychain != null) {
-          cachedInClique = await api.isInClique(keychain: keychain);
+          // Bounded: is_in_clique calls sync_trust and then takes a read lock on
+          // the keychain state, and that read has been observed to block forever
+          // inside rustpush. It sits at the tail of initFuture, so a hang here
+          // used to stall every incoming message behind an init that never
+          // completed. The clique flag is a cache; losing it costs nothing.
+          try {
+            cachedInClique = await api.isInClique(keychain: keychain).timeout(const Duration(seconds: 20));
+          } catch (e) {
+            Logger.warn("isInClique did not return in 20s; continuing without the clique cache: $e");
+          }
         }
       }
     })();

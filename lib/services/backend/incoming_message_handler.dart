@@ -305,7 +305,13 @@ class IncomingMessageHandler {
   Future<void> _processNewMessage(IncomingPayload payload) async {
     final m = payload.message;
     final tempGuid = payload.tempGuid;
-    final incomingAttachments = payload.attachments;
+    // The payload's attachment list is empty when the message arrived over the
+    // rustpush path (it carries them on the Message itself), and upstream's
+    // pipeline only ever looked at the payload. That left the attachment rows
+    // unsaved and the bubble rendered blank. Fall back to what the message
+    // itself carries.
+    final incomingAttachments =
+        payload.attachments.isNotEmpty ? payload.attachments : m.dbAttachments.toList();
 
     Logger.debug(
       '[new-message] START guid=${m.guid} tempGuid=$tempGuid '
@@ -444,7 +450,10 @@ class IncomingMessageHandler {
   Future<void> _processUpdatedMessage(IncomingPayload payload) async {
     final m = payload.message;
     final tempGuid = payload.tempGuid;
-    final replacementAttachments = List<Attachment?>.from(payload.attachments);
+    // Same fallback as _processNewMessage: rustpush carries attachments on the
+    // message, not on the payload.
+    final replacementAttachments = List<Attachment?>.from(
+        payload.attachments.isNotEmpty ? payload.attachments : m.dbAttachments.toList());
 
     Logger.debug(
       '[updated-message] START guid=${m.guid} tempGuid=$tempGuid '
