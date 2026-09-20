@@ -6,6 +6,7 @@ import 'dart:ui';
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:bluebubbles/app/components/avatars/contact_avatar_widget.dart';
 import 'package:bluebubbles/app/layouts/findmy/findmy_location_clipper.dart';
+import 'package:bluebubbles/app/layouts/findmy/findmy_tiles.dart';
 import 'package:bluebubbles/app/layouts/findmy/findmy_pin_clipper.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/content/next_button.dart';
 import 'package:bluebubbles/app/wrappers/scrollbar_wrapper.dart';
@@ -125,6 +126,48 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
   /// however, the refresh friends endpoint does. The way this was coded assumes that the server
   /// will return the data for both endpoints. A server update will fix this, but for now,
   /// we will "patch" it by only "refreshing" devices when the user manually refreshes the data.
+  /// Map style picker and "centre on me", top-right over the map.
+  ///
+  /// Upstream's only control here is the refresh button, and that is gated on
+  /// `canRefresh`, which this fork never sets true, so the map had no buttons
+  /// at all on either layout.
+  Widget _mapControls(BuildContext context) {
+    Widget circle(Widget child) => Container(
+          width: 48,
+          height: 48,
+          margin: const EdgeInsets.only(bottom: 8),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.9),
+          ),
+          child: child,
+        );
+
+    return Positioned(
+      top: 10 + (kIsDesktop ? appWindow.titleBarHeight : MediaQuery.of(context).padding.top),
+      right: 20,
+      child: Column(
+        children: [
+          circle(findMyStyleButton(context, () => setState(() {}))),
+          circle(IconButton(
+            iconSize: 22,
+            tooltip: 'My location',
+            icon: Icon(iOS ? CupertinoIcons.location_fill : Icons.my_location,
+                color: context.theme.colorScheme.onSurface, size: 22),
+            onPressed: () {
+              final loc = location;
+              if (loc != null) {
+                mapController.move(LatLng(loc.latitude, loc.longitude), 15);
+              } else {
+                showSnackbar("Location", "Your location isn't available yet");
+              }
+            },
+          )),
+        ],
+      ),
+    );
+  }
+
   void getLocations({bool refreshFriends = true, bool refreshDevices = true}) async {
     if (!(Platform.isLinux && !kIsWeb)) {
       LocationPermission granted = await Geolocator.checkPermission();
@@ -153,6 +196,12 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
           if (!refreshFriends) {
             mapController.move(LatLng(location!.latitude, location!.longitude), 10);
           }
+        }).catchError((e, s) {
+          // A 30s fix timeout (indoors, location off, emulator) rejects this
+          // future. Un-caught it became an unhandled async error that aborted
+          // the rest of getLocations, so devices and friends never loaded.
+          Logger.warn("Could not get our own location: $e");
+          return null;
         });
       }
     }
@@ -767,11 +816,14 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
                     physics: const NeverScrollableScrollPhysics(),
                     shrinkWrap: true,
                     padding: EdgeInsets.zero,
-                    findChildIndexCallback: (key) => findChildIndexByKey(itemsWithLocation, key, (item) => item.id ?? randomString(6)),
+                    // Keys must be stable across rebuilds. randomString() gave a
+                    // fresh key every build, so findChildIndexCallback never
+                    // matched and the list rendered empty.
+                    findChildIndexCallback: (key) => findChildIndexByKey(itemsWithLocation, key, (item) => item.id ?? item.name ?? ''),
                     itemBuilder: (context, i) {
                       final item = itemsWithLocation[i];
                       var tile = ListTile(
-                        key: ValueKey(item.id ?? randomString(6)),
+                        key: ValueKey(item.id ?? item.name ?? i),
                         title: Text(SettingsSvc.settings.redactedMode.value ? "Item" : (item.name ?? "Unknown Item")),
                         subtitle: item.role?["sharingActive"] == 0 ? Column(
                           children: [
@@ -1200,9 +1252,10 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
                   child: Stack(
                     children: [
                       buildMap(),
+                      _mapControls(context),
                       if (!samsung && canRefresh)
                         Positioned(
-                          top: 10 + (kIsDesktop ? appWindow.titleBarHeight : MediaQuery.of(context).padding.top),
+                          top: 120 + (kIsDesktop ? appWindow.titleBarHeight : MediaQuery.of(context).padding.top),
                           right: 20,
                           child: Container(
                             width: 48,
@@ -1555,9 +1608,10 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
                       color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.9),
                     ),
                   )),
+            _mapControls(context),
             if (!samsung && canRefresh)
               Positioned(
-                top: 10 + (kIsDesktop ? appWindow.titleBarHeight : MediaQuery.of(context).padding.top),
+                top: 120 + (kIsDesktop ? appWindow.titleBarHeight : MediaQuery.of(context).padding.top),
                 right: 20,
                 child: Container(
                   width: 48,
@@ -1764,10 +1818,7 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
         },
       ),
       children: [
-        TileLayer(
-          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-          userAgentPackageName: 'com.bluebubbles.app',
-        ),
+        findMyTileLayer(context),
         PopupMarkerLayer(
           options: PopupMarkerLayerOptions(
             onPopupEvent: (ev, m) async {
@@ -1856,6 +1907,8 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
             ),
           ),
         ),
+        // Attribution is a licence condition for every one of these providers.
+        findMyAttribution(context),
       ],
     );
   }
