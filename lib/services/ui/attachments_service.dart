@@ -20,7 +20,6 @@ import 'package:path/path.dart';
 import 'package:bluebubbles/models/models.dart' show AttachmentUploadProgress;
 import 'package:bluebubbles/utils/file_utils.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:saver_gallery/saver_gallery.dart';
 import 'package:universal_html/html.dart' as html;
 import 'package:universal_io/io.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -316,32 +315,28 @@ class AttachmentsService extends GetxService {
           lockParentWindow: true,
         );
       } else {
-        if (file.name.toLowerCase().endsWith(".mov")) {
-          savePath = join(FilesystemService.androidDownloadsPath, SettingsSvc.settings.autoSavePicsLocation.value);
-        } else {
-          if (!isDocument) {
-            try {
-              if (file.path == null && file.bytes != null) {
-                await SaverGallery.saveImage(
-                  file.bytes!,
-                  quality: 100,
-                  fileName: file.name,
-                  androidRelativePath: SettingsSvc.settings.autoSavePicsLocation.value,
-                  skipIfExists: false,
-                );
-              } else {
-                await SaverGallery.saveFile(
-                  filePath: file.path!,
-                  fileName: file.name,
-                  androidRelativePath: SettingsSvc.settings.autoSavePicsLocation.value,
-                  skipIfExists: false,
-                );
-              }
-              return showSnackbar('Success', 'Saved attachment to gallery!');
-            } catch (_) {}
+        if (!isDocument) {
+          // Images, videos, and audio go into the gallery via MediaStore. This runs through our
+          // own native handler rather than a plugin so that a MediaProvider rejection comes back
+          // as an error we can fall back from, instead of an uncaught native exception.
+          try {
+            await MethodChannelSvc.actions.saveToGallery(
+              filePath: file.path,
+              bytes: file.path == null ? file.bytes : null,
+              fileName: file.name,
+              relativePath: SettingsSvc.settings.autoSavePicsLocation.value,
+            );
+            return showSnackbar('Success', 'Saved attachment to gallery!');
+          } catch (ex, stack) {
+            Logger.warn(
+              'Could not save ${file.name} to the gallery, falling back to the documents folder',
+              error: ex,
+              trace: stack,
+              tag: 'AttachmentsService',
+            );
           }
-          savePath = SettingsSvc.settings.autoSaveDocsLocation.value;
         }
+        savePath = SettingsSvc.settings.autoSaveDocsLocation.value;
       }
 
       if (savePath != null) {
