@@ -434,8 +434,23 @@ class GlobalIsolate {
         }
       }
 
-      // Otherwise, treat it as a response
-      final isolateResponse = IsolateResponse.fromMap(message);
+      // Otherwise, treat it as a response. Parsing has to be guarded: a
+      // malformed reply used to throw straight out of the port listener, which
+      // kills the subscription and leaves every later request hanging until
+      // its timeout. Reply with the raw uuid so the caller fails fast instead.
+      late final IsolateResponse isolateResponse;
+      try {
+        isolateResponse = IsolateResponse.fromMap(message);
+      } catch (e, s) {
+        Logger.error('Failed to parse isolate response: $e', trace: s);
+        final rawUuid = message['uuid'];
+        if (rawUuid is String && _pendingRequests.containsKey(rawUuid)) {
+          final requestInfo = _pendingRequests.remove(rawUuid)!;
+          requestInfo.timer?.cancel();
+          requestInfo.completer.completeError('Malformed isolate response: $e');
+        }
+        return;
+      }
       final uuid = isolateResponse.uuid;
 
       if (uuid.isNotEmpty && _pendingRequests.containsKey(uuid)) {
@@ -461,7 +476,10 @@ class GlobalIsolate {
         _controller.add(isolateResponse.data);
       }
     } else {
-      // Direct message from isolate (not wrapped in IsolateResponse)
+      // Direct message from isolate (not wrapped in IsolateResponse). Log it:
+      // anything arriving here that is not a Map is either a plain broadcast or
+      // a bug, and silently swallowing it made the latter impossible to see.
+      Logger.debug('$isolateDebugName received a non-Map message: ${message.runtimeType}');
       _controller.add(message);
     }
   }

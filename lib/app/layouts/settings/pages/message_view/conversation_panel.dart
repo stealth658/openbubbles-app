@@ -284,6 +284,22 @@ class _ConversationPanelState extends State<ConversationPanel> with ThemeHelpers
                         title: "Download Sounds",
                         subtitle: "Downloads the official send/receive sounds",
                         onTap: () async {
+                          // Capture the navigator that owns the dialog up front.
+                          // Get.back() consults Get.isSnackbarOpen first and, when
+                          // one is showing, closes the snackbar instead of popping
+                          // the route, which left this dialog on screen forever.
+                          // Closing through the captured navigator in a finally
+                          // block makes the dismissal unconditional, and it runs
+                          // before the settings save so a slow or hung write can
+                          // no longer hold the dialog open either.
+                          final NavigatorState dialogNav = Navigator.of(context, rootNavigator: true);
+                          bool dialogClosed = false;
+                          void closeDialog() {
+                            if (dialogClosed) return;
+                            dialogClosed = true;
+                            if (dialogNav.canPop()) dialogNav.pop();
+                          }
+
                           showDialog(
                             context: context,
                             barrierDismissible: false,
@@ -318,12 +334,16 @@ class _ConversationPanelState extends State<ConversationPanel> with ThemeHelpers
                             await File(path2).create(recursive: true);
                             await File(path2).writeAsBytes(recvmsgaudio.data!);
                             SettingsSvc.settings.receiveSoundPath.value = path2;
+                            // Both files are on disk and the paths are set; the
+                            // dialog has nothing left to wait for, so drop it
+                            // before the save rather than after it.
+                            closeDialog();
                             await SettingsSvc.settings.saveManyAsync(["sendSoundPath", "receiveSoundPath"]);
-                            Get.back();
                           } catch (e, s) {
-                            Get.back();
                             Logger.error("Failed to fetch message sounds", error: e, trace: s);
                             showSnackbar("Error", "Failed to fetch audio");
+                          } finally {
+                            closeDialog();
                           }
                         },
                       ),

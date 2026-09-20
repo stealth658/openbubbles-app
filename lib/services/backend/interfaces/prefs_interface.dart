@@ -32,6 +32,13 @@ class PrefsInterface {
     }
   }
 
+  /// The isolate's default taskTimeout is Duration.zero, i.e. no timeout at
+  /// all. A settings save that never comes back therefore hangs whatever is
+  /// awaiting it forever, which is how a settings dialog ended up stuck on
+  /// screen with nothing left to wait for. Settings writes are small and local,
+  /// so a short bound is safe and a failed save is recoverable.
+  static const _settingsSyncTimeout = Duration(seconds: 10);
+
   static Future<void> syncAllSettings({Map<String, dynamic>? settings}) async {
     final data = {
       'settings': settings ?? SettingsSvc.settings.toMap(),
@@ -40,7 +47,8 @@ class PrefsInterface {
     if (isIsolate) {
       return await PrefsActions.syncAllSettings(data);
     } else {
-      return await GetIt.I<GlobalIsolate>().send<void>(IsolateRequestType.syncAllSettings, input: data);
+      return await GetIt.I<GlobalIsolate>()
+          .send<void>(IsolateRequestType.syncAllSettings, input: data, customTimeout: _settingsSyncTimeout);
     }
   }
 
@@ -48,7 +56,8 @@ class PrefsInterface {
     if (isIsolate) {
       return await PrefsActions.syncSettings(settings);
     } else {
-      return await GetIt.I<GlobalIsolate>().send<void>(IsolateRequestType.syncSettings, input: settings);
+      return await GetIt.I<GlobalIsolate>()
+          .send<void>(IsolateRequestType.syncSettings, input: settings, customTimeout: _settingsSyncTimeout);
     }
   }
 }

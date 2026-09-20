@@ -122,14 +122,14 @@ class TextFieldIconBar extends StatelessWidget {
                               bytes: e.bytes!,
                             ));
                           }
-                          Get.back();
+                          popRoute();
                         },
                       ),
                       ListTile(
                         title: Text("Send location", style: Theme.of(context).textTheme.bodyLarge),
                         onTap: () async {
                           Share.location(_chat);
-                          Get.back();
+                          popRoute();
                         },
                       ),
                     ],

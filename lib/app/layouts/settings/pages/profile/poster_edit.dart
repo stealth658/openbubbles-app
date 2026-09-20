@@ -619,12 +619,12 @@ class PosterEditState
       updatePoster(newPoster);
     });
     } catch(e, s) {
-      Get.back();
+      popRoute();
       showSnackbar("Error", "Failed to update profile! $e");
       rethrow;
     }
 
-    Get.back();
+    popRoute();
   }
 
   void updatePoster(api.SimplifiedPoster newPoster) {
@@ -735,7 +735,7 @@ class PosterEditState
                     minimumSize: Size.zero,
                   ),
                   onPressed: () async {
-                    Get.back();
+                    popRoute();
                   },
                   child: const Icon(CupertinoIcons.back, color: Colors.white),
                 ),
@@ -1076,14 +1076,14 @@ class PosterEditState
                     widget.posterEdited(posterPath);
                     ownedPosterPath = null;
                     } catch(e, s) {
-                      Get.back();
+                      popRoute();
                       showSnackbar("Error", "Failed to update profile! $e");
                       rethrow;
                     }
 
-                    Get.back();
+                    popRoute();
 
-                    Get.back();
+                    popRoute();
                   },
                   child: const Icon(Icons.check, color: Colors.white,),
                 ),

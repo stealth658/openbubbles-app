@@ -974,3 +974,21 @@ int? findChildIndexByKey<T>(List<T> input, Key key, Function(T) getField) {
 
   return index == -1 ? null : index;
 }
+
+/// Close the top route without GetX's snackbar detour.
+///
+/// `Get.back()` checks `Get.isSnackbarOpen` first and, when a snackbar is
+/// showing, closes the snackbar and returns instead of popping the route
+/// (get 4.7.3, extension_navigation.dart:825). Anything that shows a snackbar
+/// and then tries to dismiss its own dialog therefore leaves the dialog on
+/// screen, which is how the message-sounds dialog got stuck. Clear any
+/// snackbars, then pop the real navigator.
+void popRoute<T>({T? result}) {
+  if (Get.isSnackbarOpen) {
+    Get.closeAllSnackbars();
+  }
+  final nav = Get.key.currentState;
+  if (nav?.canPop() ?? false) {
+    nav!.pop<T>(result);
+  }
+}

@@ -564,6 +564,7 @@ class HttpService implements BaseApi {
       return Response(requestOptions: RequestOptions(path: ''));
     });
 
+    bool loaded = false;
     if (response.statusCode == 200) {
       try {
         final Uint8List data = response.data;
@@ -577,6 +578,7 @@ class HttpService implements BaseApi {
           Future<ByteData>.value(cachedFontBytes),
         );
         await fontLoader.load();
+        loaded = true;
         showSnackbar("Notice", "Font loaded");
       } catch (e, stack) {
         Logger.error("Failed to load font!", error: e, trace: stack);
@@ -588,8 +590,11 @@ class HttpService implements BaseApi {
     // This keeps downloadingFont = true during file write, preventing the user from
     // re-tapping the tile and starting a duplicate download.
     downloadingFont.value = false;
-    fontDownloadProgress.value = null;
-    fontDownloadTotalSize.value = null;
+    // On success hold the bar at 100% rather than clearing it. Nulling the
+    // progress made a finished download render as "/ 0.00 KB (0%)", which read
+    // as a stuck download even though the font was already installed.
+    fontDownloadProgress.value = loaded ? 1 : null;
+    fontDownloadTotalSize.value = loaded ? fontDownloadTotalSize.value : null;
   }
 
   /// Test most API GET requests (the ones that don't have required parameters).

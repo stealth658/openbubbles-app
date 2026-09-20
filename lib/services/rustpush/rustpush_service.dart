@@ -3359,8 +3359,9 @@ class RustPushService extends GetxService {
 
     if (push is api.PushMessage_TwoFaAuthEvent) {
       if (push.field0 && authing) {
-        // Success
-        Get.back();
+        // Success. popRoute, not Get.back: a snackbar showing at this moment
+        // would otherwise eat the pop and strand the 2FA dialog.
+        popRoute();
       }
       return;
     }

@@ -250,7 +250,7 @@ class FaceTimeCreatorState extends OptimizedState<FaceTimeCreator> {
               showSnackbar("Error", "At least one selected user doesn't have FaceTime!");
               return;
             }
-            Get.back();
+            popRoute();
             var handle = await (backend as RustPushBackend).getDefaultHandle();
             List<String> targets = [];
             for (var user in selectedContacts) {

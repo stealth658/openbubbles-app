@@ -108,11 +108,11 @@ class _ProfilePanelState extends State<ProfilePanel> with WidgetsBindingObserver
     try {
       result = await inner;
     } catch (e, s) {
-      Get.back();
+      popRoute();
       showSnackbar("Failure! Please try again", e.toString());
       rethrow;
     }
-    Get.back();
+    popRoute();
     return result;
   }
 
@@ -199,11 +199,11 @@ class _ProfilePanelState extends State<ProfilePanel> with WidgetsBindingObserver
               poster: poster != null ? await api.fromPoster(poster: poster) : null,
             ), existing: existing);
           } catch(e, s) {
-            Get.back();
+            popRoute();
             showSnackbar("Error", "Failed to update profile! $e");
             rethrow;
           }
-          Get.back();
+          popRoute();
 
           SettingsSvc.settings.sharedContacts.clear();
           SettingsSvc.settings.dismissedContacts.clear();
@@ -252,7 +252,7 @@ class _ProfilePanelState extends State<ProfilePanel> with WidgetsBindingObserver
         showSnackbar("Error", "Enter a name!");
         return;
       }
-      Get.back();
+      popRoute();
       SettingsSvc.settings.firstName.value = firstName.text;
       SettingsSvc.settings.lastName.value = lastName.text;
       SettingsSvc.settings.userName.value = "${firstName.text} ${lastName.text}";
@@ -880,7 +880,7 @@ class _ProfilePanelState extends State<ProfilePanel> with WidgetsBindingObserver
                                     TextButton(
                                       child: Text("OK", style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
                                       onPressed: () async {
-                                        Get.back();
+                                        popRoute();
                                       },
                                     ),
                                   ],
