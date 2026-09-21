@@ -19,11 +19,16 @@ class ChatInterface {
       'chatGuid': chatGuid,
     };
 
-    if (isIsolate) {
-      return await ChatActions.clearNotificationForChat(data);
-    } else if (!LifecycleSvc.isBubble) {
-      return await GetIt.I<GlobalIsolate>().send<void>(IsolateRequestType.clearNotificationForChat, input: data);
-    }
+    // Call straight through rather than hopping to the GlobalIsolate. This
+    // action touches no database -- it is only a `delete-notification` platform
+    // call -- so the hop bought nothing and added a way to fail silently: the
+    // isolate can be shut down (it idles out after 300s), its send() has no
+    // timeout by default, and this call site does not await the result, so a
+    // dropped request left the notification on screen with nothing logged.
+    // Reading a message on another device is exactly the case where the app is
+    // backgrounded and that is most likely.
+    if (LifecycleSvc.isBubble) return;
+    return await ChatActions.clearNotificationForChat(data);
   }
 
   static Future<void> markAllChatsRead({

@@ -1196,7 +1196,8 @@ class Chat {
 
     try {
       if (clearLocalNotifications && !hasUnread) {
-        ChatInterface.clearNotificationForChat(
+        Logger.debug("Clearing notification for chat $guid (id $id)", tag: 'Chat');
+        await ChatInterface.clearNotificationForChat(
           chatId: id!,
           chatGuid: guid,
         );

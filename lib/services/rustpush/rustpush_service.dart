@@ -3874,7 +3874,16 @@ class RustPushService extends GetxService {
       if (myHandles.contains(myMsg.sender) && message.chat.target!.isIMessage) {
         if (myMsg.message is api.Message_Read) {
           var chat = message.chat.target!;
-          chat.toggleHasUnread(false, privateMark: false);
+          Logger.info("Read on another device: clearing unread + notification for ${chat.guid} "
+              "(was hasUnread=${chat.hasUnreadMessage})");
+          // force: true because toggleHasUnreadAsync returns early when the
+          // chat is already flagged read, and that early return also skips the
+          // notification clear. The notification and the unread flag are set by
+          // different paths, so they can disagree -- when they did, the message
+          // read as read in the app while its notification stayed in the shade.
+          // privateMark stays false: we are reacting to our own read, not
+          // reporting a new one.
+          chat.toggleHasUnread(false, force: true, privateMark: false);
         }
         return; // delivered to other devices is not
       }
