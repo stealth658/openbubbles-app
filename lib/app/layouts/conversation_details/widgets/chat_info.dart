@@ -1,5 +1,6 @@
 import 'dart:ui' show ImageFilter;
 
+import 'package:bluebubbles/app/components/copy_address_button.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/dialogs/address_picker.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/dialogs/change_name.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/theming/avatar/avatar_crop.dart';
@@ -229,16 +230,27 @@ class _ChatInfoState extends State<ChatInfo> with ThemeHelpers {
             padding: const EdgeInsets.only(top: 4.0, left: 20.0, right: 20.0),
             child: Center(
               child: Obx(() {
-                final address = chatState.participants.first.formattedAddress.value;
+                final participant = chatState.participants.first;
+                final address = participant.formattedAddress.value;
                 if (address == null) return const SizedBox.shrink();
-                return Text(
-                  address,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                  style: context.theme.textTheme.bodyMedium!.copyWith(
-                    color: context.theme.colorScheme.outline,
-                  ),
+                return Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        address,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: context.theme.textTheme.bodyMedium!.copyWith(
+                          color: context.theme.colorScheme.outline,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    // Copies the raw handle, not the formatted display string.
+                    CopyAddressButton(address: participant.handle.address),
+                  ],
                 );
               }),
             ),
