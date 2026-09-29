@@ -555,11 +555,13 @@ class _BackupRestorePanelState extends State<BackupRestorePanel> with ThemeHelpe
             ),
           );
         }
-        // Only the cloud list is server-backed; a local save has nothing to re-fetch.
-        if (destination.isCloud) refresh();
-      } catch (e, s) {
-        Logger.error("Failed to create settings backup!", error: e, trace: s);
-        showSnackbar("Error", "Failed to create settings backup! Error: ${e.toString()}", durationMs: 6000);
+        showSnackbar(
+          "Success",
+          "Settings exported successfully to ${kIsDesktop ? filePath : "downloads folder"}",
+          durationMs: kIsDesktop ? 4000 : 2000,
+          actionLabel: kIsDesktop ? "OPEN FOLDER" : "SHARE",
+          onAction: () => kIsDesktop ? revealInFileManager(filePath) : Share.files([filePath]),
+        );
       }
     }
 
@@ -806,6 +808,13 @@ class _BackupRestorePanelState extends State<BackupRestorePanel> with ThemeHelpe
         Logger.error("Failed to create theme backup!", error: e, trace: s);
         showSnackbar("Error", "Failed to create theme backup! Error: ${e.toString()}", durationMs: 6000);
       }
+      showSnackbar(
+        "Success",
+        "Theming exported successfully to ${kIsDesktop ? filePath : "downloads folder"}",
+        durationMs: kIsDesktop ? 4000 : 2000,
+        actionLabel: kIsDesktop ? "OPEN FOLDER" : "SHARE",
+        onAction: () => kIsDesktop ? revealInFileManager(filePath) : Share.files([filePath]),
+      );
     }
     if (destination.isCloud) refresh();
   }
