@@ -338,6 +338,10 @@ class ConversationViewController extends StatefulController with GetSingleTicker
       entry.$1.cancel();
     }
     typingIndicatorData.clear();
+    focusNode.dispose();
+    subjectFocusNode.dispose();
+    textController.dispose();
+    subjectTextController.dispose();
     super.onClose();
   }
 
