@@ -321,7 +321,9 @@ class AttachmentsService extends GetxService {
               fileName: file.name,
               relativePath: SettingsSvc.settings.autoSavePicsLocation.value,
             );
-            return showSnackbar('Success', 'Saved attachment to gallery!');
+            // Auto-download saves every incoming attachment, so only confirm saves the user asked for.
+            if (!isAutoDownload) showSnackbar('Success', 'Saved attachment to gallery!');
+            return;
           } catch (ex, stack) {
             Logger.warn(
               'Could not save ${file.name} to the gallery, falling back to the documents folder',
@@ -343,7 +345,9 @@ class AttachmentsService extends GetxService {
           } else {
             await File(file.path!).copy(join(savePath, file.name));
           }
-          showSnackbar('Success', 'Saved attachment to ${FilesystemSvc.toDisplayPath(savePath)} folder!');
+          if (!isAutoDownload) {
+            showSnackbar('Success', 'Saved attachment to ${FilesystemSvc.toDisplayPath(savePath)} folder!');
+          }
         } catch (e, stack) {
           // OpenBubbles: scoped storage can refuse the direct write — fall back
           // to the system document picker.
