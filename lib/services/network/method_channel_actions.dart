@@ -93,6 +93,12 @@ class MethodChannelActions {
     return await service.invokeMethod('genai', {'op': 'prompt', 'prompt': prompt}) as String;
   }
 
+  /// Asks the engine to drop its GPU, Skia/Impeller and VM caches, as it would on
+  /// a system low-memory signal. Android only; a no-op elsewhere.
+  Future<void> trimMemory() async {
+    await service.invokeMethod('trim-memory');
+  }
+
   Future<void> deleteNotification({required int notificationId, String? tag}) async {
     await service.invokeMethod('delete-notification', {
       'notification_id': notificationId,
