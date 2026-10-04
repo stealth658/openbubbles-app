@@ -130,9 +130,26 @@ class _ConversationPanelState extends State<ConversationPanel> with ThemeHelpers
                           initialVal: SettingsSvc.settings.smartReply.value,
                           title: "Smart Suggestions",
                           subtitle:
-                              "Shows smart reply suggestions above the message text field and detects various interactive content in message text",
+                              "Shows reply suggestions in the composer and detects various interactive content in message text",
                           backgroundColor: tileColor,
                           isThreeLine: true,
+                        )),
+                  if (!kIsWeb && !kIsDesktop) const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
+                  if (!kIsWeb && !kIsDesktop)
+                    Obx(() => AnimatedSizeAndFade.showHide(
+                          show: SettingsSvc.settings.smartReply.value,
+                          child: SettingsSwitch(
+                            onChanged: (bool val) async {
+                              SettingsSvc.settings.inlineReplySuggestions.value = val;
+                              await SettingsSvc.settings.saveOneAsync('inlineReplySuggestions');
+                            },
+                            initialVal: SettingsSvc.settings.inlineReplySuggestions.value,
+                            title: "Suggestions Inside the Text Field",
+                            subtitle:
+                                "Shows one suggestion as faint text in the box instead of a row of chips. Tap it to use it, swipe it to see the next one.",
+                            backgroundColor: tileColor,
+                            isThreeLine: true,
+                          ),
                         )),
                   const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                   // OpenBubbles: on-device generative AI (Gemini Nano).

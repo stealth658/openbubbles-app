@@ -1,3 +1,4 @@
+import 'package:bluebubbles/app/layouts/conversation_view/widgets/text_field/inline_suggestion_ghost.dart';
 import 'dart:async';
 import 'dart:math';
 
@@ -268,10 +269,20 @@ class TextFieldComponentState extends State<TextFieldComponent> {
                         indent: 10,
                         color: context.theme.colorScheme.surfaceContainerHighest,
                       ),
-                    Obx(() {
+                    ValueListenableBuilder<TextEditingValue>(
+                        valueListenable: txtController,
+                        builder: (context, draft, _) => Obx(() {
                       final chatTitle =
                           chat == null ? null : (ChatsSvc.getChatState(chat!.guid)?.title.value ?? chat!.getTitle());
-                      return TextField(
+                      // OpenBubbles: optional ghost-text suggestion in place of the hint.
+                      final bool ghost = !isChatCreator && inlineSuggestionShouldShow(controller, draft, isRecording);
+                      final String serviceLabel = isChatCreator || chat == null
+                          ? ""
+                          : chat!.isTextForwarding
+                              ? "SMS"
+                              : "iMessage";
+                      final double fieldPadding = iOS && !kIsDesktop && !kIsWeb ? 10 : 12.5;
+                      final textField = TextField(
                         textCapitalization: TextCapitalization.sentences,
                         focusNode: controller?.focusNode ?? focusNode,
                         autocorrect: true,
@@ -292,7 +303,9 @@ class TextFieldComponentState extends State<TextFieldComponent> {
                           contentPadding: EdgeInsets.all(iOS && !kIsDesktop && !kIsWeb ? 10 : 12.5),
                           isDense: true,
                           isCollapsed: true,
-                          hintText: isChatCreator
+                          hintText: ghost
+                              ? ""
+                              : isChatCreator
                               ? "New Message"
                               : SettingsSvc.settings.recipientAsPlaceholder.value == true
                                   ? isRecording
@@ -429,7 +442,28 @@ class TextFieldComponentState extends State<TextFieldComponent> {
                         contentInsertionConfiguration:
                             ContentInsertionConfiguration(onContentInserted: onContentCommit),
                       );
-                    }),
+                      if (!ghost) return textField;
+                      // The ghost sits over the field's own padding area and stops short of
+                      // the suffix (mic / send) so those keep their taps. Tapping the ghost
+                      // fills the field; the field itself still gets focus through the ghost.
+                      return Stack(
+                        children: [
+                          textField,
+                          Positioned(
+                            left: fieldPadding,
+                            right: fieldPadding + 44,
+                            top: 0,
+                            bottom: 0,
+                            child: InlineSuggestionGhost(
+                              controller: controller!,
+                              textController: txtController,
+                              serviceLabel: serviceLabel,
+                              style: context.theme.extension<BubbleText>()!.bubbleText,
+                            ),
+                          ),
+                        ],
+                      );
+                    })),
                   ],
                 ),
               ),

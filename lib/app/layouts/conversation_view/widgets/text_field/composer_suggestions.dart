@@ -93,7 +93,10 @@ class ComposerSuggestions extends StatelessWidget {
       builder: (context, draft, _) => ValueListenableBuilder<TextEditingValue>(
         valueListenable: controller.subjectTextController,
         builder: (context, subject, _) => Obx(() {
-          final replies = controller.suggestedReplies;
+          // In inline mode the replies are drawn inside the text field; only the
+          // quick actions stay in the strip.
+          final bool inline = SettingsSvc.settings.inlineReplySuggestions.value;
+          final List<String> replies = inline ? const [] : controller.suggestedReplies;
           final actions = controller.suggestedActions;
           final bool typing = draft.text.trim().isNotEmpty || subject.text.trim().isNotEmpty;
           final bool visible = !typing &&

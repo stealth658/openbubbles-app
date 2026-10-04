@@ -78,6 +78,9 @@ class Settings {
   final RxBool doubleTapForDetails = false.obs;
   final RxBool denseChatTiles = false.obs;
   final RxBool smartReply = false.obs;
+  /// OpenBubbles: show one reply suggestion as ghost text inside the text field
+  /// instead of the chip strip above it.
+  final RxBool inlineReplySuggestions = false.obs;
   final RxBool showSyncIndicator = true.obs;
   final RxInt sendDelay = 0.obs;
   final RxBool recipientAsPlaceholder = false.obs;
@@ -412,6 +415,7 @@ class Settings {
       'doubleTapForDetails': doubleTapForDetails.value,
       'denseChatTiles': denseChatTiles.value,
       'smartReply': smartReply.value,
+      'inlineReplySuggestions': inlineReplySuggestions.value,
       'showSyncIndicator': showSyncIndicator.value,
       'sendDelay': sendDelay.value,
       'recipientAsPlaceholder': recipientAsPlaceholder.value,
@@ -633,6 +637,8 @@ class Settings {
         map['doubleTapForDetails'] ?? SettingsSvc.settings.doubleTapForDetails.value;
     SettingsSvc.settings.denseChatTiles.value = map['denseChatTiles'] ?? SettingsSvc.settings.denseChatTiles.value;
     SettingsSvc.settings.smartReply.value = map['smartReply'] ?? SettingsSvc.settings.smartReply.value;
+    SettingsSvc.settings.inlineReplySuggestions.value =
+        map['inlineReplySuggestions'] ?? SettingsSvc.settings.inlineReplySuggestions.value;
     SettingsSvc.settings.showSyncIndicator.value =
         map['showSyncIndicator'] ?? SettingsSvc.settings.showSyncIndicator.value;
     SettingsSvc.settings.sendDelay.value = map['sendDelay'] ?? SettingsSvc.settings.sendDelay.value;
@@ -948,6 +954,7 @@ class Settings {
     s.doubleTapForDetails.value = map['doubleTapForDetails'] ?? false;
     s.denseChatTiles.value = map['denseChatTiles'] ?? false;
     s.smartReply.value = map['smartReply'] ?? false;
+    s.inlineReplySuggestions.value = map['inlineReplySuggestions'] ?? false;
     s.showSyncIndicator.value = map['showSyncIndicator'] ?? true;
     s.sendDelay.value = map['sendDelay'] ?? 0;
     s.recipientAsPlaceholder.value = map['recipientAsPlaceholder'] ?? false;
