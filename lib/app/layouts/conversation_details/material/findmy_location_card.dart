@@ -142,7 +142,7 @@ class _LocationTile extends StatelessWidget {
                         Padding(
                           padding: const EdgeInsets.only(top: 2),
                           child: Text(
-                            friend.locatingInProgress ? "Locating…" : "Updated $updated",
+                            "Updated $updated",
                             style: context.theme.textTheme.bodySmall!.copyWith(color: scheme.outline),
                           ),
                         ),

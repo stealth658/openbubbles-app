@@ -18,8 +18,40 @@ import 'package:get/get.dart';
 class FindMyFriendsCache {
   FindMyFriendsCache._();
 
-  /// Keyed by [FindMyFriend.normalizeAddress] of the friend's address.
+  /// Keyed by [matchKey] of the friend's own address and of every address on
+  /// the contact matched to them, so a friend who shares location from their
+  /// Apple ID email still shows up in the chat you have with their phone number.
   static final RxMap<String, FindMyFriend> byAddress = <String, FindMyFriend>{}.obs;
+
+  /// "e:<lower email>" or "p:<last ten digits>" (shorter numbers kept whole),
+  /// so "+1 555-010-4242" in Contacts and "+15550104242" on a handle agree.
+  static String matchKey(String address) {
+    final a = FindMyFriend.normalizeAddress(address);
+    if (a.contains("@")) return "e:$a";
+    final digits = a.replaceAll(RegExp(r'\D'), "");
+    return "p:${digits.length > 10 ? digits.substring(digits.length - 10) : digits}";
+  }
+
+  static Iterable<String> _keysFor(FindMyFriend f) sync* {
+    if (f.handleAddress != null && f.handleAddress!.isNotEmpty) yield matchKey(f.handleAddress!);
+    final contact = f.contact ?? f.handle?.contactsV2.firstOrNull;
+    if (contact == null) return;
+    for (final a in contact.addresses) {
+      if (a.trim().isNotEmpty) yield matchKey(a);
+    }
+    for (final e in contact.emailAddresses) {
+      if (e.address.trim().isNotEmpty) yield matchKey(e.address);
+    }
+    for (final ph in contact.phoneNumbers) {
+      if (ph.number.trim().isNotEmpty) yield matchKey(ph.number);
+    }
+  }
+
+  static void _index(FindMyFriend f) {
+    for (final k in _keysFor(f).toSet()) {
+      byAddress[k] = f;
+    }
+  }
 
   static DateTime? _lastRefresh;
   static Future<void>? _inflight;
@@ -35,10 +67,31 @@ class FindMyFriendsCache {
 
   static FindMyFriend? forAddress(String? address) {
     if (address == null || address.isEmpty) return null;
-    return byAddress[FindMyFriend.normalizeAddress(address)];
+    return byAddress[matchKey(address)];
   }
 
-  static FindMyFriend? forHandle(Handle? handle) => handle == null ? null : forAddress(handle.address);
+  /// By the handle's own address first, then by any address of its contact
+  /// (the chat may be on a phone number while Find My knows the email).
+  static FindMyFriend? forHandle(Handle? handle) {
+    if (handle == null) return null;
+    final direct = forAddress(handle.address);
+    if (direct != null) return direct;
+    final contact = handle.contactsV2.firstOrNull;
+    if (contact == null) return null;
+    for (final a in contact.addresses) {
+      final f = forAddress(a);
+      if (f != null) return f;
+    }
+    for (final e in contact.emailAddresses) {
+      final f = forAddress(e.address);
+      if (f != null) return f;
+    }
+    for (final ph in contact.phoneNumbers) {
+      final f = forAddress(ph.number);
+      if (f != null) return f;
+    }
+    return null;
+  }
 
   /// The friend record for a 1:1 chat's other party, or null for groups and
   /// people who do not share with you.
@@ -52,9 +105,7 @@ class FindMyFriendsCache {
   /// never disagree. Keeps records for friends the page did not return.
   static void publish(Iterable<FindMyFriend> friends) {
     for (final f in friends) {
-      final key = f.normalizedAddress;
-      if (key == null || key.isEmpty) continue;
-      byAddress[key] = f;
+      _index(f);
     }
     _lastRefresh = DateTime.now();
   }
@@ -93,9 +144,7 @@ class FindMyFriendsCache {
     final friends = follows.where((f) => f.invitationAcceptedHandles.isNotEmpty).map(FindMyFriend.fromFollow).toList();
     await Future.wait(friends.map((f) => f.resolveContact()));
     for (final f in friends) {
-      final key = f.normalizedAddress;
-      if (key == null || key.isEmpty) continue;
-      byAddress[key] = f;
+      _index(f);
     }
   }
 }
