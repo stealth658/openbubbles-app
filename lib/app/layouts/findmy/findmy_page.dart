@@ -227,7 +227,7 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
           .where((e) => e.invitationAcceptedHandles.isNotEmpty)
           .map(FindMyFriend.fromFollow)
           .toList();
-      await Future.wait(friends.map((f) => f.resolveContact()));
+      FindMyFriend.resolveContacts(friends);
       FindMyFriendsCache.publish(friends);
 
       friendsWithLocation = friends.where((item) => (item.latitude ?? 0) != 0 && (item.longitude ?? 0) != 0).toList();
@@ -257,7 +257,7 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
             final marker = markers.values.firstWhere(
                 (e) => (e.key as ValueKey?)?.value == "friend-${friend.handle?.uniqueAddressAndService}");
             popupController.showPopupsOnlyFor([marker]);
-            mapController.move(LatLng(friend.latitude!, friend.longitude!), 10);
+            mapController.move(LatLng(friend.latitude!, friend.longitude!), 12);
 
           }
         }
@@ -713,7 +713,7 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
                                     e.point.latitude == item.location?.latitude &&
                                     e.point.longitude == item.location?.longitude);
                                 popupController.showPopupsOnlyFor([marker]);
-                                mapController.move(LatLng(item.location!.latitude!, item.location!.longitude!), 10);
+                                mapController.move(LatLng(item.location!.latitude!, item.location!.longitude!), 12);
                               }
                             : null,
                         trailing: item.location?.latitude != null && item.location?.longitude != null ? ButtonTheme(
@@ -881,7 +881,7 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
                                       e.point.latitude == item.location?.latitude &&
                                       e.point.longitude == item.location?.longitude);
                                   popupController.showPopupsOnlyFor([marker]);
-                                mapController.move(LatLng(item.location!.latitude!, item.location!.longitude!), 10);
+                                mapController.move(LatLng(item.location!.latitude!, item.location!.longitude!), 12);
                               }
                             : null,
                         onLongPress: () async {
@@ -960,7 +960,7 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
                                             e.point.longitude == item.location?.longitude);
                                         popupController.showPopupsOnlyFor([marker]);
                                         mapController.move(
-                                            LatLng(item.location!.latitude!, item.location!.longitude!), 10);
+                                            LatLng(item.location!.latitude!, item.location!.longitude!), 12);
                                       }
                                     : null,
                                 onLongPress: () async {
@@ -1093,7 +1093,7 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
                           final marker = markers.values.firstWhere(
                               (e) => e.point.latitude == item.latitude && e.point.longitude == item.longitude);
                           popupController.showPopupsOnlyFor([marker]);
-                          mapController.move(LatLng(item.latitude!, item.longitude!), 10);
+                          mapController.move(LatLng(item.latitude!, item.longitude!), 12);
                         },
                         onLongPress: () async {
                           const encoder = JsonEncoder.withIndent("     ");

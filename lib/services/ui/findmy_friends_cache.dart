@@ -182,7 +182,7 @@ class FindMyFriendsCache {
 
   static Future<void> _ingest(List<api.Follow> follows) async {
     final friends = follows.where((f) => f.invitationAcceptedHandles.isNotEmpty).map(FindMyFriend.fromFollow).toList();
-    await Future.wait(friends.map((f) => f.resolveContact()));
+    FindMyFriend.resolveContacts(friends);
     for (final f in friends) {
       _index(f);
     }

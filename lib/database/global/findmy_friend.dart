@@ -1,3 +1,4 @@
+import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/models/models.dart' show HandleLookupKey;
@@ -120,16 +121,40 @@ class FindMyFriend {
     );
   }
 
-  /// Fills [contact] when the handle has no linked contact. Cheap when it does.
-  Future<void> resolveContact() async {
+  /// Fills [contact] when the handle has no linked contact.
+  ///
+  /// Done on this isolate against [allContacts] (one `getAll` shared by the
+  /// caller for the whole list). The first version went through
+  /// ContactsSvcV2.getContact, which hops to the GlobalIsolate; that hop can
+  /// hang once the isolate idles out, and when it did the Find My page's
+  /// refresh never completed, so positions froze at the first load.
+  void resolveContact(List<ContactV2> allContacts) {
     if (contact != null) return;
     final h = handle;
-    if (h != null && h.contactsV2.isNotEmpty) return;
+    if (h != null && h.id != null && h.contactsV2.isNotEmpty) return;
     final addr = normalizedAddress;
     if (addr == null || addr.isEmpty) return;
+    for (final c in allContacts) {
+      if (c.hasMatchingAddress(addr)) {
+        contact = c;
+        return;
+      }
+    }
+  }
+
+  /// Resolves contacts for a whole list with a single contacts read.
+  static void resolveContacts(Iterable<FindMyFriend> friends) {
+    final pending = friends.where((f) => f.contact == null).toList();
+    if (pending.isEmpty) return;
+    List<ContactV2> all;
     try {
-      contact = await ContactsSvcV2.getContact(addr);
-    } catch (_) {}
+      all = Database.contactsV2.getAll();
+    } catch (_) {
+      return;
+    }
+    for (final f in pending) {
+      f.resolveContact(all);
+    }
   }
 
   factory FindMyFriend.fromJson(Map<String, dynamic> json) => FindMyFriend(
