@@ -250,8 +250,7 @@ Future<List<InlineSpan>> buildEnrichedMessageSpans(BuildContext context, Message
                   final TrackingCarrier c = data!.first;
                   final String number = data.last;
                   Clipboard.setData(ClipboardData(text: number));
-                  await launchUrl(Uri.parse("https://www.google.com/search?q=${c.name} $number"),
-                      mode: LaunchMode.externalApplication);
+                  await launchUrl(trackingUrl(c, number), mode: LaunchMode.externalApplication);
                 } else if (type == "flight") {
                   final String c = data!.first;
                   final String number = data.last;
@@ -277,4 +276,41 @@ Future<List<InlineSpan>> buildEnrichedMessageSpans(BuildContext context, Message
   }
 
   return textSpans;
+}
+
+
+/// OpenBubbles: the carrier's own tracking page for a detected tracking number.
+///
+/// ML Kit already identifies the carrier, so send the user straight to the
+/// shipment instead of a web search for "FEDEX 1234…". Carriers without a
+/// known URL fall back to that search. The number is also copied to the
+/// clipboard by the caller, so a carrier page that ignores the query parameter
+/// still only costs a paste.
+Uri trackingUrl(TrackingCarrier carrier, String number) {
+  final n = Uri.encodeComponent(number);
+  switch (carrier) {
+    case TrackingCarrier.fedex:
+      return Uri.parse("https://www.fedex.com/fedextrack/?trknbr=$n");
+    case TrackingCarrier.ups:
+      return Uri.parse("https://www.ups.com/track?tracknum=$n");
+    case TrackingCarrier.usps:
+      return Uri.parse("https://tools.usps.com/go/TrackConfirmAction?tLabels=$n");
+    case TrackingCarrier.dhl:
+      return Uri.parse("https://www.dhl.com/us-en/home/tracking.html?tracking-id=$n");
+    case TrackingCarrier.ontrac:
+      return Uri.parse("https://www.ontrac.com/tracking/?number=$n");
+    case TrackingCarrier.lasership:
+      return Uri.parse("https://www.lasership.com/track/$n");
+    case TrackingCarrier.amazon:
+      return Uri.parse("https://track.amazon.com/tracking/$n");
+    case TrackingCarrier.israelPost:
+      return Uri.parse("https://mypost.israelpost.co.il/itemtrace?itemcode=$n");
+    case TrackingCarrier.swissPost:
+      return Uri.parse("https://service.post.ch/ekp-web/ui/entry/search/$n");
+    case TrackingCarrier.iParcel:
+      return Uri.parse("https://tracking.i-parcel.com/?trackingnumber=$n");
+    case TrackingCarrier.mcs:
+    case TrackingCarrier.unknown:
+      return Uri.parse("https://www.google.com/search?q=${Uri.encodeComponent("track package $number")}");
+  }
 }
