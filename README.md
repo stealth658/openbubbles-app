@@ -88,6 +88,8 @@ Features and fixes:
   results update as you type, grouped into Conversations and Messages,
   filters in a bottom sheet.
 - Log export includes the rustpush log.
+- Contact photos keep their aspect ratio (the avatar decode squashed
+  non-square photos into a square).
 
 ### Building
 
