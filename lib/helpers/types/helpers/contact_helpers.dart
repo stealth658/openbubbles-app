@@ -21,6 +21,10 @@ String formatPhoneNumber(dynamic item) {
   if (isNullOrEmpty(address) || address!.isEmail || address.contains("urn:biz")) return address ?? "Unknown";
   address = address.trim();
 
+  // SMS short codes (e.g. "62438", "248487") are not phone numbers; libphonenumber
+  // would render them as "+1 62438". Show them as they are.
+  if (!address.startsWith("+") && RegExp(r'^\d{3,7}$').hasMatch(address)) return address;
+
   String? formatted;
   try {
     final parsed = PhoneNumberUtil.instance.parse(address, address.startsWith("+") ? null : cc);

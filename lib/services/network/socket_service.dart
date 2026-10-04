@@ -7,6 +7,7 @@ import 'package:bluebubbles/helpers/backend/settings_helpers.dart';
 import 'package:bluebubbles/utils/crypto_utils.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
+import 'package:bluebubbles/main.dart' show usingRustPush;
 import 'package:bluebubbles/services/services.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
@@ -235,6 +236,14 @@ class SocketService {
 
     // Validate server address before attempting to connect
     if (isNullOrEmpty(serverAddress)) {
+      if (usingRustPush) {
+        // OpenBubbles without a BlueBubbles server: there is nothing to connect
+        // to and nothing to rediscover. Flagging this as an error lit the red
+        // connection bar on every screen and put "Error" on the settings tile.
+        Logger.debug(tag: _tag, "No server configured; socket stays idle");
+        state.value = SocketState.disconnected;
+        return;
+      }
       _failToStart("Server address not configured");
       return;
     }

@@ -1,3 +1,4 @@
+import 'package:bluebubbles/main.dart' show usingRustPush;
 import 'package:bluebubbles/services/network/backend_service.dart';
 import '../../pages/misc/misc_panel.dart';
 import '../../pages/scheduling/message_reminders_panel.dart';
@@ -49,6 +50,11 @@ List<Widget> buildSettingItemList({
   required TextStyle materialSubtitle,
   required NavigatorService ns,
 }) {
+  // OpenBubbles: with no BlueBubbles server configured, the server tile and its
+  // socket status have nothing to report, and Private API is always on (its
+  // toggles live under Conversation Settings). Official OpenBubbles hides both.
+  final bool hasServer = backend.getRemoteService() != null;
+
   // return searchable items, headers, tiles, or sections
   return [
     SearchableSettingItem(
@@ -84,19 +90,20 @@ List<Widget> buildSettingItemList({
         ],
       ),
     ),
-    if (!kIsWeb)
+    if (!kIsWeb && (hasServer || backend.canSchedule() || Platform.isAndroid))
       SearchableSettingItem(
-        title: "Server & Message Management",
+        title: hasServer ? "Server & Message Management" : "Message Management",
         child: SettingsHeader(
           height: 40,
           iosSubtitle: iosSubtitle,
           materialSubtitle: materialSubtitle,
-          text: "Server & Message Management",
+          text: hasServer ? "Server & Message Management" : "Message Management",
         ),
       ),
+    if (hasServer || backend.canSchedule() || Platform.isAndroid)
     SearchableSettingItem(
-      title: "Connection & Server",
-      searchTags: [
+      title: hasServer ? "Connection & Server" : "Message Reminders",
+      searchTags: hasServer ? [
         "Re-configure with BlueBubbles Server",
         "Manually Sync Messages",
         "Configure Custom Headers",
@@ -109,20 +116,24 @@ List<Widget> buildSettingItemList({
         "Restart Private API & Services",
         "Restart BlueBubbles Server",
         "Check for Server Updates",
-      ],
+      ] : ["Message Reminders"],
       onTap: () {
-        ns.pushAndRemoveSettingsUntil(context, ServerManagementPanel(), (Route route) => route.isFirst);
+        if (hasServer) {
+          ns.pushAndRemoveSettingsUntil(context, ServerManagementPanel(), (Route route) => route.isFirst);
+        } else {
+          ns.pushAndRemoveSettingsUntil(context, const MessageRemindersPanel(), (Route route) => route.isFirst);
+        }
       },
       // Helps search
       child: SettingsSection(
         backgroundColor: tileColor,
         children: [
           // Optimized reactive tile for connection state
-          ConnectionServerTile(tileColor: tileColor),
+          if (hasServer) ConnectionServerTile(tileColor: tileColor),
 
           // OpenBubbles: scheduling is a backend capability (rustpush has no
           // scheduled-message store), not a server version check.
-          if (backend.canSchedule()) const SettingsDivider(),
+          if (hasServer && backend.canSchedule()) const SettingsDivider(),
           if (backend.canSchedule())
             SearchableSettingItem(
               title: "Scheduled Messages",
@@ -147,7 +158,7 @@ List<Widget> buildSettingItemList({
               ),
             ),
 
-          if (Platform.isAndroid) const SettingsDivider(),
+          if (Platform.isAndroid && (hasServer || backend.canSchedule())) const SettingsDivider(),
           if (Platform.isAndroid)
             SearchableSettingItem(
               title: "Message Reminders",
@@ -488,7 +499,8 @@ List<Widget> buildSettingItemList({
     SettingsSection(
       backgroundColor: tileColor,
       searchableSettingsItems: [
-        // Private API Features Tile
+        // Private API Features Tile (BlueBubbles server only; see hasServer above)
+        if (!usingRustPush)
         SearchableSettingItem(
           title: "Private API Features", // Title to search
           searchTags: [

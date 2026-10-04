@@ -532,17 +532,21 @@ class HttpService implements BaseApi {
     dio.options.headers = headers;
   }
 
+  /// Fetches an arbitrary (non-server) URL: the Apple emoji font, the iMessage
+  /// sounds, GIF picker results. These do not need a BlueBubbles server, so the
+  /// origin check is skipped; with it on, every one of these failed instantly
+  /// with "No server URL!" on OpenBubbles. The server-specific headers (custom
+  /// headers, tunnel bypass) are not sent to third parties either.
   Future<Response> downloadFromUrl(String url, {Function(int, int)? progress, CancelToken? cancelToken}) async {
     return runApiGuarded(() async {
       final response = await dio.get(
         url,
-        options: Options(
-            responseType: ResponseType.bytes, receiveTimeout: dio.options.receiveTimeout! * 12, headers: headers),
+        options: Options(responseType: ResponseType.bytes, receiveTimeout: dio.options.receiveTimeout! * 12),
         cancelToken: cancelToken,
         onReceiveProgress: progress,
       );
       return returnSuccessOrError(response);
-    });
+    }, checkOrigin: false);
   }
 
   Future<void> downloadAppleEmojiFont() async {
@@ -560,6 +564,8 @@ class HttpService implements BaseApi {
       downloadingFont.value = false;
       fontDownloadProgress.value = null;
       fontDownloadTotalSize.value = null;
+      Logger.error("Emoji font download failed", error: error);
+      showSnackbar("Error", "Font download failed: ${error is Response ? "HTTP ${error.statusCode}" : error.toString()}");
 
       return Response(requestOptions: RequestOptions(path: ''));
     });

@@ -3883,7 +3883,13 @@ class RustPushService extends GetxService {
           // read as read in the app while its notification stayed in the shade.
           // privateMark stays false: we are reacting to our own read, not
           // reporting a new one.
-          chat.toggleHasUnread(false, force: true, privateMark: false);
+          //
+          // Go through ChatsSvc rather than the Chat row: the conversation list
+          // renders from ChatState.hasUnreadMessage, which only this path
+          // updates. Writing the row alone left the unread dot in the list
+          // until the state was rebuilt (same bug upstream fixed in eb99646c4
+          // for the server's chat-read-status-changed event).
+          await ChatsSvc.setChatHasUnread(chat, false, force: true, privateMark: false);
         }
         return; // delivered to other devices is not
       }

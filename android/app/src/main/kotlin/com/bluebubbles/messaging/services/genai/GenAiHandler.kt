@@ -105,7 +105,7 @@ class GenAiHandler : MethodCallHandlerImpl() {
         }
 
         private fun prompt(): GenerativeModelFutures = promptModel ?: synchronized(this) {
-            promptModel ?: GenerativeModelFutures.from(Generation.INSTANCE.getClient()).also { promptModel = it }
+            promptModel ?: GenerativeModelFutures.from(Generation.getClient()).also { promptModel = it }
         }
 
         private fun statusName(code: Int): String = when (code) {
