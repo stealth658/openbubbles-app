@@ -785,7 +785,7 @@ List<Widget> buildSettingItemList({
                   context: context,
                   title: "Are you sure?",
                   body:
-                      "This will delete all app data, including your settings, messages, attachments, and more. This action cannot be undone. It is recommended that you take a backup of your settings before proceeding. This will also close the app once the process is complete.",
+                      "This signs this device out of iMessage (deregistering it from your Apple Account), then deletes all app data, including your settings, messages, attachments, and more. This action cannot be undone. It is recommended that you take a backup of your settings and messages before proceeding. This will also close the app once the process is complete.",
                   actions: [
                     BBDialogAction(text: "No", onPressed: () => Navigator.of(context, rootNavigator: true).pop()),
                     BBDialogAction(

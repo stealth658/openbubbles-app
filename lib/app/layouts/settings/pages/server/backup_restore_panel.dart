@@ -6,6 +6,7 @@ import 'package:bluebubbles/app/layouts/settings/pages/server/backup_restore_act
 import 'package:bluebubbles/app/layouts/settings/pages/server/backup_restore_dialogs.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/server/backup_restore_types.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/server/custom_groups_backup.dart';
+import 'package:bluebubbles/app/layouts/settings/pages/server/messages_backup_restorer.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/server/pinned_chats_backup.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/settings_widgets.dart';
@@ -927,7 +928,7 @@ class _BackupRestorePanelState extends State<BackupRestorePanel> with ThemeHelpe
     );
   }
 
-  void _showBlockingProgress(String title) {
+  void _showBlockingProgress(String title, {RxString? status}) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -935,8 +936,19 @@ class _BackupRestorePanelState extends State<BackupRestorePanel> with ThemeHelpe
         backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
         title: Text(title, style: context.theme.textTheme.titleLarge),
         content: SizedBox(
-          height: 70,
-          child: Center(child: buildProgressIndicator(context)),
+          height: status == null ? 70 : 100,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Expanded(child: Center(child: buildProgressIndicator(context))),
+              if (status != null)
+                Obx(() => Text(
+                      status.value,
+                      style: context.theme.textTheme.bodyMedium,
+                      textAlign: TextAlign.center,
+                    )),
+            ],
+          ),
         ),
       ),
     );
@@ -1066,7 +1078,8 @@ class _BackupRestorePanelState extends State<BackupRestorePanel> with ThemeHelpe
           "Are you sure you want to restore this backup? All existing messages will be replaced."),
       onYes: () async {
         Navigator.of(context, rootNavigator: true).pop();
-        _showBlockingProgress("Restoring backup...");
+        final status = "Reading backup file".obs;
+        _showBlockingProgress("Restoring backup...", status: status);
         try {
           ChatsSvc.restoring = true;
           final chunked = ChunkedStreamReader(readStream);
@@ -1082,40 +1095,34 @@ class _BackupRestorePanelState extends State<BackupRestorePanel> with ThemeHelpe
             await file.create(recursive: true);
             files.add(file);
             await file.writeAsBytes(data);
+            if (i % 20 == 0) status.value = "Unpacking attachments (${i + 1})";
           }
 
           final Map<dynamic, dynamic> json = jsonDecode(jsonString);
-          Database.chats.removeAll();
-          Database.handles.removeAll();
-          Database.messages.removeAll();
-          Database.attachments.removeAll();
-          for (final usedChat in json["chats"]) {
-            final chat = Chat.fromMap(usedChat);
-            chat.id = null;
-            chat.save();
-            await ChatsSvc.addChat(chat);
-          }
-          for (final usedMessage in json["messages"]) {
-            final msg = Message.fromMap(usedMessage);
-            msg.id = null;
-            msg.save(chat: Chat.findOne(guid: usedMessage["chat"]));
-          }
-          for (final myAtt in json["atts"]) {
-            final att = Attachment.fromMap(myAtt);
-            att.id = null;
-            if (myAtt.containsKey("bytes_id")) {
-              final file = File(att.path);
-              await file.create(recursive: true);
-              await files[myAtt["bytes_id"]].rename(att.path);
-            }
-            await att.saveAsync(null);
-          }
+          final report = await MessagesBackupRestorer.restore(
+            json,
+            files,
+            onProgress: (s) => status.value = s,
+          );
           _dismissBlockingProgress();
-          showSnackbar("Success", "Chats restored successfully");
+          if (report.hadErrors) {
+            showSnackbar(
+              "Restored with errors",
+              "${report.chats} chats, ${report.messages} messages, ${report.attachments} attachments restored; "
+                  "${report.chatErrors + report.messageErrors + report.attachmentErrors} records failed (see logs)",
+              durationMs: 8000,
+            );
+          } else {
+            showSnackbar(
+              "Success",
+              "${report.chats} chats, ${report.messages} messages and ${report.attachments} attachments restored",
+              durationMs: 5000,
+            );
+          }
         } catch (e, s) {
           _dismissBlockingProgress();
           Logger.error("Chat restore error", error: e, trace: s);
-          showSnackbar("Error", "Something went wrong");
+          showSnackbar("Error", "Restore failed: ${e.toString()}", durationMs: 8000);
         } finally {
           ChatsSvc.restoring = false;
         }

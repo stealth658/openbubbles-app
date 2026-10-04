@@ -3,6 +3,7 @@ import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/database/global/settings.dart';
 import 'package:bluebubbles/database/io/fcm_data.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
+import 'package:bluebubbles/services/rustpush/rustpush_service.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:dio/dio.dart';
@@ -110,6 +111,21 @@ class SettingsItemsActions {
   /// `PrefsSvc.*` category, so running it after would silently discard the
   /// freshly-written defaults (including `finishedSetup`).
   static Future<void> resetApp() async {
+    // OpenBubbles: sign the device out of iMessage first. This re-registers the
+    // device with no handles (so Apple's IDS stops routing to it), logs the Apple
+    // Account session out, and deletes id.plist / hw_info.plist from the rustpush
+    // state directory. BlueBubbles' version of this action only wiped the local
+    // database, which left the phone registered and the identity on disk; the
+    // only way to clean it up afterwards was the Apple Account device list.
+    // Best effort: a dead network must not stop the wipe.
+    if (pushService.state != null) {
+      try {
+        await pushService.markFailedToLogin(hw: true, logout: true, ui: true).timeout(const Duration(seconds: 45));
+      } catch (e, s) {
+        Logger.error("Reset App: iMessage deregistration failed, wiping local data anyway", error: e, trace: s);
+      }
+    }
+
     Database.reset();
     await FilesystemSvc.deleteCacheDirectories();
     SocketSvc.forgetConnection();
