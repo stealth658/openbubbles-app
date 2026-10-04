@@ -21,6 +21,7 @@ import 'package:bluebubbles/src/rust/api/api.dart' as api;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:path/path.dart' as p;
 import 'package:pdf/widgets.dart' as pw;
@@ -272,10 +273,65 @@ class _ChatOptionsState extends State<ChatOptions> with ThemeHelpers {
     return _group(context, "Appearance", rows);
   }
 
+  Future<void> _summarize(BuildContext context) async {
+    final NavigatorState nav = Navigator.of(context, rootNavigator: true);
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+        title: Text("Summarizing…", style: context.theme.textTheme.titleLarge),
+        content: SizedBox(height: 70, child: Center(child: buildProgressIndicator(context))),
+      ),
+    );
+    String? summary;
+    String? error;
+    try {
+      summary = await GenAi.summarizeChat(chat);
+    } catch (e) {
+      error = e.toString().replaceFirst("Exception: ", "");
+    } finally {
+      if (nav.canPop()) nav.pop();
+    }
+    if (!context.mounted) return;
+    showBBDialog(
+      context: context,
+      title: error == null ? "Summary" : "Couldn't summarize",
+      content: SelectableText(error ?? summary ?? "", style: context.theme.textTheme.bodyLarge),
+      actions: [
+        if (summary != null)
+          BBDialogAction(
+            text: "Copy",
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: summary!));
+              showSnackbar("Copied", "Summary copied to clipboard");
+            },
+          ),
+        BBDialogAction(text: "Done", isDefault: true, onPressed: () => Navigator.of(context, rootNavigator: true).pop()),
+      ],
+    );
+  }
+
   Widget _buildConversationGroup(BuildContext context) {
     final chatState = ChatsSvc.getChatState(chat.guid);
 
     final rows = <_OptionRow>[
+      // OpenBubbles: on-device conversation summary (Gemini Nano).
+      _OptionRow(
+        enabled: GenAi.enabled,
+        build: (context) => SettingsTile(
+          title: "Summarize Recent Messages",
+          subtitle: "Three bullets from the last 40 messages, generated on this phone",
+          leading: const SettingsLeadingIcon(
+            iosIcon: CupertinoIcons.sparkles,
+            materialIcon: Icons.auto_awesome,
+            containerColor: Colors.indigo,
+          ),
+          trailing: const NextButton(),
+          isThreeLine: true,
+          onTap: () => _summarize(context),
+        ),
+      ),
       _OptionRow(
         enabled: !kIsWeb && !kIsDesktop && (FilesystemSvc.androidInfo?.version.sdkInt ?? 0) >= 30,
         build: (context) => SettingsTile(

@@ -1,3 +1,4 @@
+export 'backend/genai_helpers.dart';
 export 'backend/sync/sync_helpers.dart';
 export 'network/metadata_helper.dart';
 export 'network/network_error_handler.dart';

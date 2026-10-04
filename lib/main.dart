@@ -174,6 +174,12 @@ Future<Null> initApp(bool bubble, List<String> arguments) async {
             EntityExtractorModelManager().downloadModel(EntityExtractorLanguage.english.name, isWifiRequired: false);
           }
         });
+        // OpenBubbles: learn which Gemini Nano features this device offers so the
+        // compose button and reply suggestions can gate on it without a round
+        // trip at the moment of use. Cheap local query; only when enabled.
+        if (SettingsSvc.settings.onDeviceAi.value) {
+          Future.microtask(GenAi.refreshStatus);
+        }
       }
 
       /* ----- DESKTOP SPECIFIC INITIALIZATION ----- */

@@ -1,3 +1,4 @@
+import 'package:bluebubbles/app/layouts/conversation_view/widgets/text_field/ai_compose_sheet.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/text_field/buttons/text_field_button.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/text_field/conversation_text_field_local_controller.dart';
 import 'package:bluebubbles/database/io/klipy.dart';
@@ -48,6 +49,7 @@ class TextFieldIconBar extends StatelessWidget {
           children: [
             _attachmentButton(context),
             ...SettingsSvc.settings.textFieldButtons.platformSupportedButtons.map((b) => _build(context, b)),
+            if (GenAi.enabled) _aiButton(context),
           ],
         ));
   }
@@ -146,6 +148,14 @@ class TextFieldIconBar extends StatelessWidget {
           ),
         );
   }
+
+  /// OpenBubbles: on-device compose assistant (proofread / rewrite via Gemini Nano).
+  Widget _aiButton(BuildContext context) => IconButton(
+        tooltip: "Rewrite with Gemini Nano",
+        icon: Icon(Icons.auto_awesome, color: context.theme.colorScheme.outline, size: 24),
+        visualDensity: Platform.isAndroid ? VisualDensity.compact : null,
+        onPressed: () => AiComposeSheet.show(context, controller),
+      );
 
   Widget _gifButton(BuildContext context) => IconButton(
               icon: Icon(Icons.gif, color: context.theme.colorScheme.outline, size: 28),

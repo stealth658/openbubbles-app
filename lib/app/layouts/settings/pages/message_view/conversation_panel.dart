@@ -135,6 +135,59 @@ class _ConversationPanelState extends State<ConversationPanel> with ThemeHelpers
                           isThreeLine: true,
                         )),
                   const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
+                  // OpenBubbles: on-device generative AI (Gemini Nano).
+                  if (GenAi.supported) ...[
+                    Obx(() => SettingsSwitch(
+                          onChanged: (bool val) async {
+                            SettingsSvc.settings.onDeviceAi.value = val;
+                            await SettingsSvc.settings.saveOneAsync('onDeviceAi');
+                            if (val) await GenAi.refreshStatus();
+                          },
+                          initialVal: SettingsSvc.settings.onDeviceAi.value,
+                          title: "On-device AI (Gemini Nano)",
+                          subtitle:
+                              "Rewrite and proofread drafts, summarize a conversation, and get Gemini reply suggestions. Runs entirely on this phone; nothing is sent anywhere.",
+                          backgroundColor: tileColor,
+                          isThreeLine: true,
+                        )),
+                    Obx(() {
+                      if (!SettingsSvc.settings.onDeviceAi.value) return const SizedBox.shrink();
+                      final st = GenAi.status;
+                      String label(String f) => switch (st[f]) {
+                            'available' => 'ready',
+                            'downloadable' => 'not downloaded',
+                            'downloading' => 'downloading…',
+                            null => 'checking…',
+                            _ => 'not supported on this device',
+                          };
+                      final needs = GenAi.features.where((f) => st[f] == 'downloadable' || st[f] == 'downloading').toList();
+                      return SettingsTile(
+                        title: "AI models",
+                        subtitle: "Summaries: ${label('summarize')} · Proofread: ${label('proofread')} · "
+                            "Rewrite: ${label('rewrite')} · Reply suggestions: ${label('prompt')}",
+                        backgroundColor: tileColor,
+                        isThreeLine: true,
+                        trailing: needs.isEmpty
+                            ? IconButton(icon: const Icon(Icons.refresh), onPressed: GenAi.refreshStatus)
+                            : TextButton(
+                                child: const Text("Download"),
+                                onPressed: () async {
+                                  showSnackbar("Downloading", "Fetching ${needs.length} model${needs.length == 1 ? '' : 's'} in the background…");
+                                  for (final f in needs) {
+                                    try {
+                                      await GenAi.download(f);
+                                    } catch (e) {
+                                      Logger.warn("GenAI download of $f failed: $e", tag: 'GenAI');
+                                    }
+                                  }
+                                  await GenAi.refreshStatus();
+                                },
+                              ),
+                        onTap: GenAi.refreshStatus,
+                      );
+                    }),
+                    const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
+                  ],
                   Obx(() => SettingsSwitch(
                         onChanged: (bool val) async {
                           SettingsSvc.settings.repliesToPrevious.value = val;

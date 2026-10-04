@@ -199,6 +199,13 @@ dependencies {
     implementation "androidx.car.app:app:1.7.0"
     implementation "androidx.car.app:app-projected:1.7.0"
 
+    // On-device generative AI (Gemini Nano through AICore). Summaries, proofreading,
+    // rewriting and the Prompt API; nothing leaves the device. See services/genai.
+    implementation "com.google.mlkit:genai-summarization:1.0.0-beta1"
+    implementation "com.google.mlkit:genai-proofreading:1.0.0-beta1"
+    implementation "com.google.mlkit:genai-rewriting:1.0.0-beta1"
+    implementation "com.google.mlkit:genai-prompt:1.0.0-beta4"
+
     // Firebase items
     implementation 'com.google.firebase:firebase-messaging:24.0.0'
     implementation 'com.google.firebase:firebase-database:21.0.0'

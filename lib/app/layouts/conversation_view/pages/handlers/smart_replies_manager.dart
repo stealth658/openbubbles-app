@@ -1,5 +1,6 @@
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
+import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:google_mlkit_smart_reply/google_mlkit_smart_reply.dart' hide Message;
@@ -59,9 +60,45 @@ class SmartRepliesManager {
     }
   }
 
+  /// Serialises Gemini requests: a burst of incoming messages must not fan out
+  /// into several concurrent on-device inferences for the same chat.
+  Future<void>? _geminiInFlight;
+
   /// Generate smart reply suggestions based on current conversation context.
   /// Call this after adding messages or when new context arrives.
-  Future<void> generateSuggestions() async {
+  ///
+  /// OpenBubbles: when on-device AI is enabled and the Prompt API is usable,
+  /// suggestions come from Gemini Nano, which reads the actual conversation and
+  /// writes replies in its tone, instead of ML Kit's small canned-reply model.
+  /// ML Kit stays as the fallback for anything Gemini declines or garbles.
+  Future<void> generateSuggestions({Chat? chat}) async {
+    if (chat != null && GenAi.enabled && GenAi.available('prompt')) {
+      final pending = _geminiInFlight;
+      if (pending != null) return pending;
+      final run = () async {
+        try {
+          final replies = await GenAi.suggestReplies(chat);
+          if (replies.isNotEmpty) {
+            smartReplies.value = replies;
+            return;
+          }
+        } catch (e) {
+          Logger.warn("Gemini reply suggestions failed, falling back to ML Kit: $e", tag: 'GenAI');
+        }
+        await _mlKitSuggestions();
+      }();
+      _geminiInFlight = run;
+      try {
+        await run;
+      } finally {
+        _geminiInFlight = null;
+      }
+      return;
+    }
+    await _mlKitSuggestions();
+  }
+
+  Future<void> _mlKitSuggestions() async {
     try {
       SmartReplySuggestionResult results = await smartReply.suggestReplies();
 

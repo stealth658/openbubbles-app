@@ -146,6 +146,11 @@ class Settings {
   /// OpenBubbles: which basemap the Find My screen draws. See FindMyMapStyle.
   final RxString findMyMapStyle = "esriStreets".obs;
 
+  /// OpenBubbles: on-device generative AI (Gemini Nano via ML Kit GenAI).
+  /// Drives the compose assistant, conversation summaries and Gemini reply
+  /// suggestions. Off by default; models download on first use.
+  final RxBool onDeviceAi = false.obs;
+
   final RxBool nameAndPhotoSharing = false.obs;
   final RxBool shareContactAutomatically = true.obs;
   final RxnString shareProfileMessage = RxnString();
@@ -518,6 +523,7 @@ class Settings {
       'replaceEmoticonsWithEmoji': replaceEmoticonsWithEmoji.value,
       'materialIosMessageMenu': materialIosMessageMenu.value,
       'findMyMapStyle': findMyMapStyle.value,
+      'onDeviceAi': onDeviceAi.value,
       'lastReviewRequestTimestamp': lastReviewRequestTimestamp.value,
       'defaultHandle': defaultHandle.value,
       'cardDavServer': cardDavServer.value,
@@ -836,6 +842,7 @@ class Settings {
         map['materialIosMessageMenu'] ?? SettingsSvc.settings.materialIosMessageMenu.value;
     SettingsSvc.settings.findMyMapStyle.value =
         map['findMyMapStyle'] ?? SettingsSvc.settings.findMyMapStyle.value;
+    SettingsSvc.settings.onDeviceAi.value = map['onDeviceAi'] ?? SettingsSvc.settings.onDeviceAi.value;
     SettingsSvc.settings.lastReviewRequestTimestamp.value =
         map['lastReviewRequestTimestamp'] ?? SettingsSvc.settings.lastReviewRequestTimestamp.value;
 
@@ -1077,6 +1084,7 @@ class Settings {
     s.replaceEmoticonsWithEmoji.value = map['replaceEmoticonsWithEmoji'] ?? false;
     s.materialIosMessageMenu.value = map['materialIosMessageMenu'] ?? true;
     s.findMyMapStyle.value = map['findMyMapStyle'] ?? "esriStreets";
+    s.onDeviceAi.value = map['onDeviceAi'] ?? false;
     s.lastReviewRequestTimestamp.value = map['lastReviewRequestTimestamp'] ?? 0;
     s.defaultHandle.value = map['defaultHandle'] ?? "";
     s.cardDavServer.value = map['cardDavServer'] ?? "";

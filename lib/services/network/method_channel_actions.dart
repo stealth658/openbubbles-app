@@ -64,6 +64,35 @@ class MethodChannelActions {
     await service.invokeMethod('stop-foreground-service');
   }
 
+  /// On-device GenAI (Gemini Nano). See android services/genai/GenAiHandler.kt.
+  /// Every call is a single `genai` method with an `op`; errors come back as
+  /// PlatformException with code GENAI and a short description.
+  Future<Map<String, String>> genAiStatus() async {
+    final res = await service.invokeMethod('genai', {'op': 'status'});
+    return Map<String, String>.from(res as Map);
+  }
+
+  Future<void> genAiDownload(String feature) async {
+    await service.invokeMethod('genai', {'op': 'download', 'feature': feature});
+  }
+
+  Future<String> genAiSummarize(String text, {int bullets = 3}) async {
+    return await service.invokeMethod('genai', {'op': 'summarize', 'text': text, 'bullets': bullets}) as String;
+  }
+
+  Future<String> genAiProofread(String text) async {
+    return await service.invokeMethod('genai', {'op': 'proofread', 'text': text}) as String;
+  }
+
+  Future<List<String>> genAiRewrite(String text, String style) async {
+    final res = await service.invokeMethod('genai', {'op': 'rewrite', 'text': text, 'style': style});
+    return List<String>.from(res as List);
+  }
+
+  Future<String> genAiPrompt(String prompt) async {
+    return await service.invokeMethod('genai', {'op': 'prompt', 'prompt': prompt}) as String;
+  }
+
   Future<void> deleteNotification({required int notificationId, String? tag}) async {
     await service.invokeMethod('delete-notification', {
       'notification_id': notificationId,

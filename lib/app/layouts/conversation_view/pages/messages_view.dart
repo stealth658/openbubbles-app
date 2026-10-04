@@ -404,7 +404,7 @@ class MessagesViewState extends State<MessagesView> with MessagesServiceMixin, T
       });
     }
     Logger.info("Getting smart replies...");
-    await smartRepliesManager.generateSuggestions();
+    await smartRepliesManager.generateSuggestions(chat: chat);
     if (mounted) {
       // Update observable if smart replies changed
       if (smartRepliesManager.smartReplies.isNotEmpty) {
