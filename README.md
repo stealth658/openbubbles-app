@@ -89,6 +89,9 @@ Features and fixes:
   results update as you type, grouped into Conversations and Messages,
   filters in a bottom sheet.
 - Log export includes the rustpush log.
+- Samsung skin: chat list blocks inset with One UI's 26dp radius (the custom
+  sliver decoration was not painting the long block); details page under a
+  bare toolbar with round labelled action buttons.
 - Contact photos keep their aspect ratio (the avatar decode squashed
   non-square photos into a square).
 
