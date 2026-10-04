@@ -48,7 +48,7 @@ Features and fixes:
 
 - Android Auto: templated messaging conversation list (CarAppService).
   Known open item: binding to the car session is not reliable yet.
-- iOS-style message menu as an opt-in on Material.
+- iOS-style tapback menu as an opt-in on Material.
 - Find My: selectable basemaps, map controls, friend/device zoom on tap, a
   visible refresh button (long-press for diagnostics), plain map credit.
 - Find My in chats: friends matched to contacts by any address on the

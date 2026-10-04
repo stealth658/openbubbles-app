@@ -91,7 +91,7 @@ class _ConversationPanelState extends State<ConversationPanel> with ThemeHelpers
                             await SettingsSvc.settings.saveOneAsync('materialIosMessageMenu');
                           },
                           initialVal: SettingsSvc.settings.materialIosMessageMenu.value,
-                          title: "iOS-Style Message Menu",
+                          title: "iOS-Style Tapback Menu",
                           subtitle: "Long-press a message for the iOS tapback glyphs and options list",
                           backgroundColor: tileColor,
                         )),

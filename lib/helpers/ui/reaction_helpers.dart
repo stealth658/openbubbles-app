@@ -99,7 +99,7 @@ List<Message> getUniqueReactionMessages(List<Message> messages) {
 /// OpenBubbles: whether tapbacks render as iOS glyphs rather than emoji.
 ///
 /// The picker and the bubbles have to agree. When the Material skin opts into
-/// the iOS-style message menu the picker shows iOS glyphs, so the reactions
+/// the iOS-style tapback menu the picker shows iOS glyphs, so the reactions
 /// drawn on the bubbles and in the details sheet must follow, otherwise you
 /// pick a glyph and a plain emoji appears on the message.
 bool get useIosTapbacks =>
