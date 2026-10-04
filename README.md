@@ -57,9 +57,11 @@ Features and fixes:
   contact (email or phone), case-insensitive handle lookup, city line under
   the name in the 1:1 chat header, a Location card in conversation details,
   throttled background refresh via `FindMyFriendsCache`.
-- Conversation details (Material): redesigned 1:1 page (expressive header,
-  participants, location, media, links, documents, then options); tapping the
-  name in the chat header opens it.
+- Conversation details: redesigned page on all skins (header with the
+  action row, participants, location, media, links, documents); the chat's
+  settings moved unchanged to a "Conversation Settings" page behind a gear in
+  the app bar; tapping the name in the chat header opens details. iOS keeps
+  its profile poster.
 - Tracking numbers open the carrier's own tracking page.
 - "Read on another device" clears the notification and the unread dot.
 - Backup and restore: local backups are written through MediaStore and land
@@ -76,9 +78,10 @@ Features and fixes:
 - On-device AI via ML Kit GenAI (Gemini Nano), off by default: compose
   assistant, summarise recent messages, reply suggestions when the Prompt API
   is available.
-- Conversation list search (Material): the header expands into a Material 3
-  search bar, results update as you type, grouped into Conversations and
-  Messages, filters in a bottom sheet.
+- Conversation list search on all skins: the header turns into a search bar
+  (Material 3 bar on Material and Samsung, rounded field with Cancel on iOS),
+  results update as you type, grouped into Conversations and Messages,
+  filters in a bottom sheet.
 - Log export includes the rustpush log.
 
 ### Known limitations
