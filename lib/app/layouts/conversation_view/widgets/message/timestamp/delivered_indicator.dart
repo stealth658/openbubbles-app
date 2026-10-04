@@ -6,6 +6,7 @@ import 'package:bluebubbles/app/state/chat_state_scope.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -56,11 +57,31 @@ class _DeliveredIndicatorState extends State<DeliveredIndicator> with ThemeHelpe
     }
   }
 
+  /// Tap on "Edited" shows or hides the edit history above the bubble.
+  late final TapGestureRecognizer _editedTap = TapGestureRecognizer()..onTap = () => controller.showEdits.toggle();
+
   @override
   void dispose() {
     _isSendingWorker?.dispose();
     _sendingTimer?.cancel();
+    _editedTap.dispose();
     super.dispose();
+  }
+
+  /// "Edited" rides on the receipt line the way iMessage does it
+  /// ("Delivered • Edited"), in the accent colour, and stands alone under
+  /// the bubble when there is no receipt line to join.
+  List<InlineSpan> _editedSpans(bool afterReceipt) {
+    final style = context.theme.textTheme.labelSmall!;
+    return [
+      if (afterReceipt)
+        TextSpan(text: "• ", style: style.copyWith(fontWeight: FontWeight.w600, color: context.theme.colorScheme.outline)),
+      TextSpan(
+        text: "Edited",
+        style: style.copyWith(fontWeight: FontWeight.w600, color: context.theme.colorScheme.primary),
+        recognizer: _editedTap,
+      ),
+    ];
   }
 
   bool get shouldShow {
@@ -83,7 +104,8 @@ class _DeliveredIndicatorState extends State<DeliveredIndicator> with ThemeHelpe
       ),
       if (date != null)
         TextSpan(
-            text: date,
+            // Trailing space so an appended "• Edited" is spaced the same way.
+            text: "$date ",
             style: context.theme.textTheme.labelSmall!
                 .copyWith(color: context.theme.colorScheme.outline, fontWeight: FontWeight.normal))
     ];
@@ -137,15 +159,19 @@ class _DeliveredIndicatorState extends State<DeliveredIndicator> with ThemeHelpe
         controller.audioWasKept.value;
         controller.dateDelivered.value;
         controller.dateRead.value;
-        return shouldShow && getText().isNotEmpty
-            ? Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 15).add(EdgeInsets.only(
-                    top: 2, bottom: 2, left: showAvatar || SettingsSvc.settings.alwaysShowAvatars.value ? 35 : 0)),
-                child: Text.rich(TextSpan(
-                  children: getText(),
-                )),
-              )
-            : const SizedBox.shrink();
+        final edited = controller.parts.any((p) => p.isEdited);
+        final receipt = shouldShow ? getText() : const <InlineSpan>[];
+        if (receipt.isEmpty && !edited) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 15).add(EdgeInsets.only(
+              top: 2, bottom: 2, left: showAvatar || SettingsSvc.settings.alwaysShowAvatars.value ? 35 : 0)),
+          child: Text.rich(TextSpan(
+            children: [
+              ...receipt,
+              if (edited) ..._editedSpans(receipt.isNotEmpty),
+            ],
+          )),
+        );
       }),
     );
   }

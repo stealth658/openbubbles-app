@@ -642,7 +642,7 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
     );
   }
 
-  List<DetailsMenuActionWidget> get _allActions {
+  List<DetailsMenuActionWidget> get _allActionsInUserOrder {
     final canEdit = (message.dateCreated?.toUtc().isWithin(DateTime.now().toUtc(), minutes: 15) ?? false);
     final canUnsend = (message.dateCreated?.toUtc().isWithin(DateTime.now().toUtc(), minutes: 2) ?? false);
     return [
@@ -737,14 +737,16 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
           onTap: () => popup_message_actions.createContact(_buildActionContext(DetailsMenuAction.CreateContact)),
           action: DetailsMenuAction.CreateContact,
         ),
+      // Undo Send is only offered while Apple still allows it (two minutes);
+      // a greyed "too old" entry was noise.
       if (backend.canEditUnsend() &&
           message.isFromMe! &&
           !widget.controller.isSending.value &&
-          message.dateScheduled == null)
+          message.dateScheduled == null &&
+          canUnsend)
         DetailsMenuActionWidget(
           onTap: () => popup_message_actions.unsend(_buildActionContext(DetailsMenuAction.UndoSend)),
-          customTitle: canUnsend ? 'Undo Send' : 'Undo Send (too old)',
-          shouldDisableBtn: !canUnsend,
+          customTitle: 'Undo Send',
           action: DetailsMenuAction.UndoSend,
         ),
       if (message.isFromMe! && widget.controller.isSending.value && OutgoingMsgHandler.hasPendingMessage(message.guid!))
@@ -812,6 +814,23 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
     ].sorted((a, b) => SettingsSvc.settings.detailsMenuActions
         .indexOf(a.action)
         .compareTo(SettingsSvc.settings.detailsMenuActions.indexOf(b.action)));
+  }
+
+  /// The user's order, with iMessage's priorities applied on top: Reply,
+  /// then Undo Send and Edit while they are still possible, lead the menu;
+  /// Remind Later and anything disabled go to the end, under "More".
+  List<DetailsMenuActionWidget> get _allActions {
+    final actions = _allActionsInUserOrder;
+    bool leads(DetailsMenuActionWidget a) =>
+        (a.action == DetailsMenuAction.Reply || a.action == DetailsMenuAction.UndoSend || a.action == DetailsMenuAction.Edit) &&
+        !(a.shouldDisableBtn ?? false);
+    bool trails(DetailsMenuActionWidget a) => a.action == DetailsMenuAction.RemindLater || (a.shouldDisableBtn ?? false);
+    const leadOrder = [DetailsMenuAction.Reply, DetailsMenuAction.UndoSend, DetailsMenuAction.Edit];
+    final lead = actions.where(leads).toList()
+      ..sort((a, b) => leadOrder.indexOf(a.action).compareTo(leadOrder.indexOf(b.action)));
+    final middle = actions.where((a) => !leads(a) && !trails(a)).toList();
+    final trail = actions.where(trails).toList();
+    return [...lead, ...middle, ...trail];
   }
 
   Widget buildDetailsMenu(BuildContext context) {
