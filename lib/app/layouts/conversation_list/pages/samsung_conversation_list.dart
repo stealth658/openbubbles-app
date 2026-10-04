@@ -1,4 +1,3 @@
-import 'package:bluebubbles/app/components/sliver_decoration.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/pages/conversation_list.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/pages/search/inline_search.dart';
@@ -165,10 +164,9 @@ class _SamsungConversationListState extends State<SamsungConversationList> with 
                       ),
                     if (_pinnedChats.isNotEmpty)
                       SliverPadding(
-                        padding: const EdgeInsets.only(bottom: 15),
-                        sliver: SliverDecoration(
-                          color: _tileColor,
-                          borderRadius: BorderRadius.circular(25),
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                        sliver: DecoratedSliver(
+                          decoration: BoxDecoration(color: _tileColor, borderRadius: BorderRadius.circular(26)),
                           sliver: SliverList(
                               delegate: SliverChildBuilderDelegate(
                             (context, index) {
@@ -187,10 +185,9 @@ class _SamsungConversationListState extends State<SamsungConversationList> with 
                         ),
                       ),
                     SliverPadding(
-                      padding: const EdgeInsets.only(bottom: 15),
-                      sliver: SliverDecoration(
-                        color: _tileColor,
-                        borderRadius: BorderRadius.circular(25),
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      sliver: DecoratedSliver(
+                        decoration: BoxDecoration(color: _tileColor, borderRadius: BorderRadius.circular(26)),
                         sliver: SliverList(
                           delegate: SliverChildBuilderDelegate(
                             (context, index) {

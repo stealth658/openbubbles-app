@@ -142,7 +142,9 @@ class ExpressiveChatHeader extends StatelessWidget {
             const SizedBox(height: 20),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: M3EButtonGroup(items: _buildActions(context, chatState)),
+              child: SettingsSvc.settings.skin.value == Skins.Samsung
+                  ? _OneUiActionRow(items: _buildActions(context, chatState))
+                  : M3EButtonGroup(items: _buildActions(context, chatState)),
             ),
           ],
         ),
@@ -316,6 +318,48 @@ class ExpressiveChatHeader extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// One UI's contact actions: an icon in a round tonal button with its label
+/// underneath, evenly spaced, instead of Material's connected pill group.
+class _OneUiActionRow extends StatelessWidget {
+  const _OneUiActionRow({required this.items});
+
+  final List<M3EButtonGroupItem> items;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = context.theme.colorScheme;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: items
+          .map((item) => Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Material(
+                    color: scheme.secondaryContainer,
+                    shape: const CircleBorder(),
+                    clipBehavior: Clip.antiAlias,
+                    child: InkWell(
+                      onTap: item.onPressed,
+                      onLongPress: item.onLongPress,
+                      child: SizedBox(
+                        width: 52,
+                        height: 52,
+                        child: Icon(item.icon, size: 24, color: scheme.onSecondaryContainer),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    item.label,
+                    style: context.theme.textTheme.labelMedium!.copyWith(color: scheme.onSurfaceVariant),
+                  ),
+                ],
+              ))
+          .toList(),
     );
   }
 }

@@ -50,6 +50,10 @@ class SettingsScaffold extends StatelessWidget {
 
   bool get _expressiveSamsung => SettingsSvc.settings.skin.value == Skins.Samsung;
 
+  /// One UI puts a person's details straight under a bare toolbar (photo, name,
+  /// round actions), not under the expandable large-title header.
+  bool get _minimalSamsung => _expressiveSamsung && minimalAppBar;
+
   bool get extend => actions.isNotEmpty && kIsDesktop;
 
   @override
@@ -104,7 +108,7 @@ class SettingsScaffold extends StatelessWidget {
                       shrinkWrap: true,
                       physics: ThemeSwitcher.getScrollPhysics(),
                       slivers: <Widget>[
-                        if (_minimalMaterial)
+                        if (_minimalMaterial || _minimalSamsung)
                           SliverToBoxAdapter(
                             child: Padding(
                               padding: const EdgeInsets.only(left: 4, top: 4, right: 4),
@@ -131,7 +135,7 @@ class SettingsScaffold extends StatelessWidget {
                             pinned: true,
                             automaticallyImplyLeading: false,
                           ),
-                        if (SettingsSvc.settings.skin.value == Skins.Samsung)
+                        if (_expressiveSamsung && !minimalAppBar)
                           SliverAppBar(
                             backgroundColor: headerColor,
                             pinned: true,
