@@ -43,6 +43,11 @@ Merge integrity (regressions found after the merge):
   `popRoute()` helper swept over the non-setup dismissals.
 - Logger: Dart's `FileMode.append` is not `O_APPEND`; re-seek before every
   write and after rotation, prune NUL-filled shells at startup.
+- Running on rustpush with no BlueBubbles server: the merged socket code
+  showed a permanent red connection bar and Connection & Server / Private
+  API tiles, and routed external downloads (emoji font, sounds, GIFs) through
+  the server API guard, so they failed instantly. Both restored to the
+  no-server behaviour.
 - Gradle tuned for memory-capped CI containers.
 
 Upstream BlueBubbles cherry-picks taken after the merge point: restore
@@ -73,10 +78,6 @@ Features and fixes:
   in Downloads; messages restore works on a fresh install (handles, chats,
   messages and attachments re-created with fresh IDs); Reset App deregisters
   the device first.
-- No-server mode: no red connection bar and no Connection & Server / Private
-  API tiles when running on rustpush without a BlueBubbles server; external
-  downloads (emoji font, sounds, GIFs) no longer go through the server API
-  guard.
 - Short codes shown as-is instead of "+1 62438".
 - Reply suggestions moved into the composer (sparkle plus compact pills,
   hidden while typing); optional ghost-text suggestion inside the text field.
