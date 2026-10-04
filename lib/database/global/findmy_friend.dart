@@ -114,9 +114,10 @@ class FindMyFriend {
       handleAddress: addr,
       lastUpdated: loc?.timestamp != null ? DateTime.fromMillisecondsSinceEpoch(loc!.timestamp) : null,
       status: null,
-      // Apple leaves locateInProgress set for long stretches; the page never
-      // surfaced it before and a permanent spinner would be a regression.
-      locatingInProgress: false,
+      // Apple's "locate in progress" flag: the page shows a small spinner next
+      // to the friend while it is set. It is the one visible sign that Apple
+      // is asking that person's device for a position.
+      locatingInProgress: e.locateInProgress,
       id: e.id,
     );
   }

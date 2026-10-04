@@ -96,9 +96,85 @@ class FindMyFriendsCache {
     return "${follows.length} total, $located located, $locating locating, newest $age; ${per.join(" ")}";
   }
 
+  /// Asks Apple through both identities and keeps, per friend, whichever
+  /// answer carries the newer position.
+  ///
+  /// Secure-location friends deliver their position by sending our device a
+  /// token over iMessage, which the daemon ("fmfd") identity imports into
+  /// Apple's session. Since the daemon identity first spoke to Apple (v30),
+  /// the foreground identity's refreshes have come back with every friend
+  /// stuck in "locate in progress" and no new positions, which fits the
+  /// imports now landing on the daemon's session. Reading both and merging
+  /// covers either arrangement.
+  static Future<List<api.Follow>> fetchMerged({
+    api.FindMyFriendsClientDefaultAnisetteProvider? foreground,
+    bool refreshForeground = true,
+    String source = "merge",
+  }) async {
+    final config = pushService.state!.osConfig;
+    List<api.Follow> fg = const [];
+    if (foreground != null) {
+      fg = refreshForeground
+          ? await api.refreshFollowing(config: config, client: foreground)
+          : await api.getFollowing(client: foreground);
+      logFollows("$source foreground", fg);
+    }
+    List<api.Follow> bg = const [];
+    final fmfd = pushService.state?.icloudServices?.fmfd;
+    if (fmfd != null) {
+      try {
+        bg = await api.refreshBackgroundFollowing(state: fmfd, config: config);
+        logFollows("$source daemon", bg);
+      } catch (e, s) {
+        Logger.warn("FindMy daemon refresh failed: $e", tag: "FindMy", trace: s);
+      }
+    }
+    return mergeFollows(fg, bg);
+  }
+
+  /// Per friend id, the record whose location is newer; the other side's
+  /// locate flag is kept if either reports one.
+  static List<api.Follow> mergeFollows(List<api.Follow> a, List<api.Follow> b) {
+    if (a.isEmpty) return b;
+    if (b.isEmpty) return a;
+    final byId = <String, api.Follow>{for (final f in a) f.id: f};
+    for (final f in b) {
+      final cur = byId[f.id];
+      if (cur == null) {
+        byId[f.id] = f;
+        continue;
+      }
+      final tCur = cur.lastLocation?.timestamp ?? 0;
+      final tNew = f.lastLocation?.timestamp ?? 0;
+      final best = tNew > tCur ? f : cur;
+      final other = identical(best, f) ? cur : f;
+      byId[f.id] = api.Follow(
+        createTimestamp: best.createTimestamp,
+        expires: best.expires,
+        id: best.id,
+        invitationAcceptedHandles: best.invitationAcceptedHandles,
+        invitationFromHandles: best.invitationFromHandles,
+        isFromMessages: best.isFromMessages,
+        offerId: best.offerId,
+        onlyInEvent: best.onlyInEvent,
+        personIdHash: best.personIdHash,
+        secureLocationsCapable: best.secureLocationsCapable,
+        shallowOrLiveSecureLocationsCapable: best.shallowOrLiveSecureLocationsCapable,
+        source: best.source,
+        tkPermission: best.tkPermission,
+        updateTimestamp: best.updateTimestamp,
+        fallbackToLegacyAllowed: best.fallbackToLegacyAllowed,
+        optedNotToShare: best.optedNotToShare,
+        lastLocation: best.lastLocation ?? other.lastLocation,
+        locateInProgress: best.locateInProgress || other.locateInProgress,
+      );
+    }
+    return byId.values.toList();
+  }
+
   /// Periodic refresh while the app process is alive (the rustpush foreground
   /// service keeps it alive), so positions are reasonably current when a chat
-  /// is opened. Two light HTTPS calls per interval.
+  /// is opened. A few light HTTPS calls per interval.
   static void startBackgroundRefresh() {
     _backgroundTimer?.cancel();
     _backgroundTimer = Timer.periodic(_backgroundEvery, (_) {
@@ -177,12 +253,7 @@ class FindMyFriendsCache {
         provider: pushService.state!.icloudServices!.tokenProvider,
       );
       try {
-        var follows = await api.getFollowing(client: c);
-        logFollows("cache init", follows);
-        await _ingest(follows);
-        follows = await api.refreshFollowing(config: pushService.state!.osConfig, client: c);
-        logFollows("cache refresh", follows);
-        await _ingest(follows);
+        await _ingest(await fetchMerged(foreground: c, source: "cache"));
       } finally {
         c.dispose();
       }

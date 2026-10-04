@@ -169,9 +169,10 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
               ? buildProgressIndicator(context)
               : GestureDetector(
                   onLongPress: () => _runDiagnostics(context),
+                  // No tooltip: IconButton's tooltip claims long-press and the
+                  // diagnostics never fired.
                   child: IconButton(
                     iconSize: 22,
-                    tooltip: 'Refresh (long-press: diagnostics)',
                     icon: Icon(iOS ? CupertinoIcons.arrow_counterclockwise : Icons.refresh,
                         color: context.theme.colorScheme.onSurface, size: 22),
                     onPressed: () {
@@ -241,13 +242,13 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
     if (!mounted) return;
 
     try {
-      if (refreshFriends && !isNew) {
-        await api.refreshFollowing(config: pushService.state!.osConfig, client: fmfClient!);
-      }
-
-      var following = await api.getFollowing(client: fmfClient!);
+      // Both identities, newest position per friend (see fetchMerged).
+      var following = await FindMyFriendsCache.fetchMerged(
+        foreground: fmfClient,
+        refreshForeground: refreshFriends && !isNew,
+        source: isNew ? "page init" : "page",
+      );
       if (!mounted) return;
-      FindMyFriendsCache.logFollows(isNew ? "page init" : (refreshFriends ? "page refresh" : "page cached"), following);
     
       // Shared mapping (case-insensitive handle match, locality-safe short
       // address). Contacts are matched by address for friends who have no
