@@ -162,6 +162,27 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
               }
             },
           )),
+          // Refresh (tap) and diagnostics (long-press). The old refresh button
+          // was gated on `canRefresh`, which this fork never sets, so the page
+          // had no visible refresh at all.
+          circle(refreshing || refreshing2
+              ? buildProgressIndicator(context)
+              : GestureDetector(
+                  onLongPress: () => _runDiagnostics(context),
+                  child: IconButton(
+                    iconSize: 22,
+                    tooltip: 'Refresh (long-press: diagnostics)',
+                    icon: Icon(iOS ? CupertinoIcons.arrow_counterclockwise : Icons.refresh,
+                        color: context.theme.colorScheme.onSurface, size: 22),
+                    onPressed: () {
+                      setState(() {
+                        refreshing = true;
+                        refreshing2 = true;
+                      });
+                      getLocations();
+                    },
+                  ),
+                )),
         ],
       ),
     );
@@ -1305,39 +1326,6 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
                     children: [
                       buildMap(),
                       _mapControls(context),
-                      if (!samsung && canRefresh)
-                        Positioned(
-                          top: 120 + (kIsDesktop ? appWindow.titleBarHeight : MediaQuery.of(context).padding.top),
-                          right: 20,
-                          child: Container(
-                            width: 48,
-                            height: 48,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.9),
-                            ),
-                            child: Container(
-                              width: 48,
-                              child: refreshing || refreshing2
-                                  ? buildProgressIndicator(context)
-                                  : GestureDetector(
-                                      onLongPress: () => _runDiagnostics(context),
-                                      child: IconButton(
-                                        iconSize: 22,
-                                        icon: Icon(iOS ? CupertinoIcons.arrow_counterclockwise : Icons.refresh,
-                                            color: context.theme.colorScheme.onSurface, size: 22),
-                                        onPressed: () {
-                                          setState(() {
-                                            refreshing = true;
-                                            refreshing2 = true;
-                                          });
-                                          getLocations();
-                                        },
-                                      ),
-                                    ),
-                            ),
-                          ),
-                        ),
                       if (kIsDesktop)
                         SizedBox(
                           height: appWindow.titleBarHeight,
@@ -1664,36 +1652,6 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
                     ),
                   )),
             _mapControls(context),
-            if (!samsung && canRefresh)
-              Positioned(
-                top: 120 + (kIsDesktop ? appWindow.titleBarHeight : MediaQuery.of(context).padding.top),
-                right: 20,
-                child: Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.9),
-                  ),
-                  child: Container(
-                    width: 48,
-                    child: refreshing || refreshing2
-                        ? buildProgressIndicator(context)
-                        : IconButton(
-                            iconSize: 22,
-                            icon: Icon(iOS ? CupertinoIcons.arrow_counterclockwise : Icons.refresh,
-                                color: context.theme.colorScheme.onSurface, size: 22),
-                            onPressed: () {
-                              setState(() {
-                                refreshing = true;
-                                refreshing2 = true;
-                              });
-                              getLocations(refreshDevices: true);
-                            },
-                          ),
-                  ),
-                ),
-              ),
             if (kIsDesktop)
               SizedBox(
                 height: appWindow.titleBarHeight,
