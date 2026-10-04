@@ -81,6 +81,12 @@ class ConversationViewController extends StatefulController with GetSingleTicker
   final RxBool reportJunkAvailable = false.obs;
   final RxBool showSmartReplyRow = false.obs;
   final RxDouble smartReplyRowHeight = 0.0.obs;
+
+  /// Reply suggestions (ML Kit / Gemini Nano) and internal quick actions such as
+  /// "Attach recent photo". MessagesView fills these; the composer's
+  /// [ComposerSuggestions] strip renders them while the draft is empty.
+  final RxList<String> suggestedReplies = <String>[].obs;
+  final RxMap<String, Widget> suggestedActions = <String, Widget>{}.obs;
   bool showingOverlays = false;
 
   /// True while a pointer is actively dragging a [MessageImageGallery] fan of

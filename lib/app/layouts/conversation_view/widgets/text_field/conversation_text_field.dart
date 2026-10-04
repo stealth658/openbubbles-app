@@ -1,3 +1,4 @@
+import 'package:bluebubbles/app/layouts/conversation_view/widgets/text_field/composer_suggestions.dart';
 import 'dart:async';
 import 'dart:math';
 
@@ -437,6 +438,7 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              ComposerSuggestions(controller: controller),
               Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
                 TextFieldIconBar(controller: controller, localController: localController),
                 Expanded(

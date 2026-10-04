@@ -1,3 +1,4 @@
+import 'package:bluebubbles/app/layouts/conversation_view/widgets/text_field/composer_suggestions.dart';
 import 'dart:async';
 import 'dart:math';
 
@@ -71,7 +72,7 @@ class MessagesViewState extends State<MessagesView> with MessagesServiceMixin, T
   late final DropZoneManager dropZoneManager;
   late final MessageAnimationOrchestrator animationOrchestrator;
 
-  RxMap<String, Widget> internalSmartReplies = <String, Widget>{}.obs;
+  RxMap<String, Widget> get internalSmartReplies => controller.suggestedActions;
   final RxBool latestMessageDeliveredState = false.obs;
   final RxBool jumpingToOldestUnread = false.obs;
 
@@ -152,7 +153,7 @@ class MessagesViewState extends State<MessagesView> with MessagesServiceMixin, T
   @override
   void initState() {
     super.initState();
-    smartRepliesManager = SmartRepliesManager();
+    smartRepliesManager = SmartRepliesManager(sink: controller.suggestedReplies);
     dropZoneManager = DropZoneManager(controller: controller);
     animationOrchestrator = MessageAnimationOrchestrator();
 
@@ -637,59 +638,13 @@ class MessagesViewState extends State<MessagesView> with MessagesServiceMixin, T
     }
   }
 
-  Widget _buildReply(String text, {Function()? onTap}) => Builder(
-        builder: (replyContext) {
-          final theme = Theme.of(replyContext);
-          final hasBackground =
-              ChatsSvc.getChatState(controller.chat.guid)?.hasCustomWallpaper ?? false;
-          return Container(
-            margin: const EdgeInsets.all(5),
-            decoration: hasBackground
-                ? BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(19),
-                  )
-                : BoxDecoration(
-                    border: Border.all(
-                      width: 2,
-                      style: BorderStyle.solid,
-                      color: theme.colorScheme.surfaceContainerHighest,
-                    ),
-                    borderRadius: BorderRadius.circular(19),
-                  ),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(19),
-              onTap: onTap ??
-                  () {
-                    OutgoingMsgHandler.queue(OutgoingMessage(
-                      chat: controller.chat,
-                      message: Message(
-                        text: text,
-                        dateCreated: DateTime.now(),
-                        hasAttachments: false,
-                        isFromMe: true,
-                        handleId: 0,
-                      ),
-                    ));
-                  },
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 1.5, left: 13.0, right: 13.0),
-                  child: Obx(() => RichText(
-                        text: TextSpan(
-                          children: MessageHelper.buildEmojiText(
-                            jumpingToOldestUnread.value && text == "Jump to oldest unread"
-                                ? "Jumping to oldest unread..."
-                                : text,
-                            theme.extension<BubbleText>()!.bubbleText,
-                          ),
-                        ),
-                      )),
-                ),
-              ),
-            ),
-          );
-        },
+  Widget _buildReply(String text, {Function()? onTap}) => SuggestionChip(
+        controller: controller,
+        text: text,
+        onTap: onTap,
+        label: text == "Jump to oldest unread"
+            ? () => jumpingToOldestUnread.value ? "Jumping to oldest unread..." : text
+            : null,
       );
 
   @override
@@ -743,13 +698,6 @@ class MessagesViewState extends State<MessagesView> with MessagesServiceMixin, T
                         // for minor smoothing of local scroll gestures.
                         scrollCacheExtent: const ScrollCacheExtent.pixels(500),
                         slivers: <Widget>[
-                          SliverToBoxAdapter(
-                            child: SmartRepliesRow(
-                              controller: controller,
-                              smartReplies: smartRepliesManager.smartReplies,
-                              internalSmartReplies: internalSmartReplies,
-                            ),
-                          ),
                           if (!chat.isGroup && chat.isIMessage)
                             SliverToBoxAdapter(
                               child: NotificationsSilencedBanner(

@@ -21,11 +21,13 @@ class SmartRepliesManager {
 
   late final SmartReply smartReply;
 
-  final RxList<String> smartReplies = <String>[].obs;
+  /// Where suggestions are published. The composer's suggestion strip reads the
+  /// controller's list, so MessagesView hands that list in here.
+  final RxList<String> smartReplies;
 
   final List<Message> _context = [];
 
-  SmartRepliesManager() {
+  SmartRepliesManager({RxList<String>? sink}) : smartReplies = sink ?? <String>[].obs {
     smartReply = SmartReply();
   }
 
