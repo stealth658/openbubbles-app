@@ -107,10 +107,13 @@ class SettingsScaffold extends StatelessWidget {
                         if (_minimalMaterial)
                           SliverToBoxAdapter(
                             child: Padding(
-                              padding: const EdgeInsets.only(left: 4, top: 4),
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: leading ?? buildBackButton(context),
+                              padding: const EdgeInsets.only(left: 4, top: 4, right: 4),
+                              child: Row(
+                                children: [
+                                  leading ?? buildBackButton(context),
+                                  const Spacer(),
+                                  ...actions,
+                                ],
                               ),
                             ),
                           ),

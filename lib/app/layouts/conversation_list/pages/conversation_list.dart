@@ -238,7 +238,6 @@ class _ConversationListState extends CustomState<ConversationList, void, Convers
   /// ContactAvatarWidget passes to Image.file, or the warmed entries are never hit.
   void _precacheAvatars() {
     if (!mounted) return;
-    const decodeSize = ContactAvatarWidget.avatarDecodeSize;
     for (final chat in ChatsSvc.allChats.take(30)) {
       final state = ChatsSvc.getChatState(chat.guid);
       if (state == null) continue;
@@ -251,10 +250,7 @@ class _ConversationListState extends CustomState<ConversationList, void, Convers
       for (final hs in state.participants) {
         final path = hs.avatarPath.value;
         if (path == null) continue;
-        unawaited(precacheImage(
-          ResizeImage(FileImage(File(path)), width: decodeSize, height: decodeSize),
-          context,
-        ));
+        unawaited(precacheImage(ContactAvatarWidget.avatarImage(path), context));
       }
     }
   }
