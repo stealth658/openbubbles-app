@@ -70,16 +70,30 @@ class FindMyFriendsCache {
   /// Diagnostics: how many follows came back and how fresh the newest
   /// location is, so a log export shows whether Apple is returning new data.
   static void logFollows(String source, List<api.Follow> follows) {
+    Logger.info("FindMy follows ($source): ${summarizeFollows(follows)}", tag: "FindMy");
+  }
+
+  /// One line: counts plus per-friend ages, locate flags and capabilities.
+  static String summarizeFollows(List<api.Follow> follows) {
     int? newest;
     int located = 0;
+    int locating = 0;
+    final per = <String>[];
     for (final f in follows) {
       final t = f.lastLocation?.timestamp;
-      if (t == null) continue;
-      located++;
-      if (newest == null || t > newest) newest = t;
+      if (f.locateInProgress) locating++;
+      String age = "none";
+      if (t != null) {
+        located++;
+        if (newest == null || t > newest) newest = t;
+        age = "${DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(t)).inMinutes}m";
+      }
+      final who = f.invitationAcceptedHandles.firstOrNull ?? f.id;
+      final short = who.contains("@") ? who.split("@").first : who.length > 4 ? who.substring(who.length - 4) : who;
+      per.add("$short:$age${f.locateInProgress ? "*" : ""}${f.secureLocationsCapable ? "S" : ""}${f.shallowOrLiveSecureLocationsCapable ? "L" : ""}/${f.source}");
     }
     final age = newest == null ? "n/a" : "${DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(newest)).inMinutes} min";
-    Logger.info("FindMy follows ($source): ${follows.length} total, $located located, newest location age $age", tag: "FindMy");
+    return "${follows.length} total, $located located, $locating locating, newest $age; ${per.join(" ")}";
   }
 
   /// Periodic refresh while the app process is alive (the rustpush foreground

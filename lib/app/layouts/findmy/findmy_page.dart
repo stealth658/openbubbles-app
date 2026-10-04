@@ -627,6 +627,53 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
     );
   }
 
+  /// Long-press on the refresh button. Asks Apple through both client
+  /// identities and shows what each returns, so a stale-position problem can
+  /// be pinned to one of them without another build. The daemon call is the
+  /// one the in-chat location bubble has always used.
+  Future<void> _runDiagnostics(BuildContext context) async {
+    final buf = StringBuffer();
+    try {
+      if (fmfClient != null) {
+        final fg = await api.refreshFollowing(config: pushService.state!.osConfig, client: fmfClient!);
+        FindMyFriendsCache.logFollows("diag foreground", fg);
+        buf.writeln("Foreground client (page):\n${FindMyFriendsCache.summarizeFollows(fg)}\n");
+      }
+      final fmfd = pushService.state?.icloudServices?.fmfd;
+      if (fmfd != null) {
+        final cached = await api.getBackgroundFollowing(fmfd: fmfd);
+        FindMyFriendsCache.logFollows("diag daemon cached", cached);
+        buf.writeln("Daemon client (cached):\n${FindMyFriendsCache.summarizeFollows(cached)}\n");
+        final fresh = await api.refreshBackgroundFollowing(state: fmfd, config: pushService.state!.osConfig);
+        FindMyFriendsCache.logFollows("diag daemon refresh", fresh);
+        buf.writeln("Daemon client (refreshed):\n${FindMyFriendsCache.summarizeFollows(fresh)}\n");
+      } else {
+        buf.writeln("Daemon client: not available");
+      }
+    } catch (e, s) {
+      Logger.error("FindMy diagnostics failed", error: e, trace: s);
+      buf.writeln("Error: $e");
+    }
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Find My diagnostics"),
+        backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+        content: SizedBox(
+          width: NavigationSvc.width(context) * 4 / 5,
+          child: SingleChildScrollView(child: SelectableText(buf.toString(), style: context.theme.textTheme.bodySmall)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text("Close"),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> deleteShared(FindMyDevice item) async {
     await api.deleteBeaconShare(items: pushService.state!.icloudServices!.fmfd!, share: item.role!['sharingId']!);
     setState(() {
@@ -1273,17 +1320,20 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
                               width: 48,
                               child: refreshing || refreshing2
                                   ? buildProgressIndicator(context)
-                                  : IconButton(
-                                      iconSize: 22,
-                                      icon: Icon(iOS ? CupertinoIcons.arrow_counterclockwise : Icons.refresh,
-                                          color: context.theme.colorScheme.onSurface, size: 22),
-                                      onPressed: () {
-                                        setState(() {
-                                          refreshing = true;
-                                          refreshing2 = true;
-                                        });
-                                        getLocations();
-                                      },
+                                  : GestureDetector(
+                                      onLongPress: () => _runDiagnostics(context),
+                                      child: IconButton(
+                                        iconSize: 22,
+                                        icon: Icon(iOS ? CupertinoIcons.arrow_counterclockwise : Icons.refresh,
+                                            color: context.theme.colorScheme.onSurface, size: 22),
+                                        onPressed: () {
+                                          setState(() {
+                                            refreshing = true;
+                                            refreshing2 = true;
+                                          });
+                                          getLocations();
+                                        },
+                                      ),
                                     ),
                             ),
                           ),
