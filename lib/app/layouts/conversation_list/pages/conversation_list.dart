@@ -25,6 +25,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/pages/cupertino_conversation_list.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/pages/material_conversation_list.dart';
+import 'package:bluebubbles/app/layouts/conversation_list/pages/search/inline_search_controller.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/pages/samsung_conversation_list.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:flutter/cupertino.dart';
@@ -51,6 +52,9 @@ class ConversationListController extends StatefulController {
   /// OpenBubbles: chats surfaced in "Recently Deleted" mode.
   final RxList<Chat> deletedChats = <Chat>[].obs;
 
+  /// Search that expands in place inside the header (Material skin).
+  final InlineSearchController search = InlineSearchController();
+
   StreamSubscription? sub;
 
   ConversationListController({
@@ -72,6 +76,7 @@ class ConversationListController extends StatefulController {
   void dispose() {
     if (!kIsWeb) sub?.cancel();
     newMessageFocusNode.dispose();
+    search.dispose();
     super.dispose();
   }
 

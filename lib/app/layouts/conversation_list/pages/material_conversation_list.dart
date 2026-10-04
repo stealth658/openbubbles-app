@@ -1,5 +1,6 @@
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/pages/conversation_list.dart';
+import 'package:bluebubbles/app/layouts/conversation_list/pages/search/inline_search.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/conversation_list_fab.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/filters/custom_group_filter_chip_row.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/header/material_header.dart';
@@ -55,6 +56,10 @@ class _MaterialConversationListState extends State<MaterialConversationList> {
       canPop: false,
       onPopInvokedWithResult: <T>(bool didPop, T? other) {
         if (didPop) return;
+        if (controller.search.active.value) {
+          controller.search.close();
+          return;
+        }
         if (controller.selectedChats.isNotEmpty) {
           controller.clearSelectedChats();
           return;
@@ -79,9 +84,9 @@ class _MaterialConversationListState extends State<MaterialConversationList> {
               : Colors.transparent,
           extendBodyBehindAppBar: false,
           floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-          floatingActionButton: !showArchived && !showUnknown && !showDeleted
+          floatingActionButton: Obx(() => !showArchived && !showUnknown && !showDeleted && !controller.search.active.value
               ? ConversationListFAB(parentController: controller)
-              : const SizedBox.shrink(),
+              : const SizedBox.shrink()),
           body: ClipRRect(
             borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(26),
@@ -90,6 +95,9 @@ class _MaterialConversationListState extends State<MaterialConversationList> {
             child: Container(
               color: backgroundColor,
               child: Obx(() {
+                if (controller.search.active.value) {
+                  return InlineSearchResults(search: controller.search);
+                }
                 // Force reactivity by accessing observable values first
                 final loaded = showDeleted || ChatsSvc.loadedFirstChatBatch.value;
                 // Observe chat list version to trigger rebuild when order changes

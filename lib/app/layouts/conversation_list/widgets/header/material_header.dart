@@ -1,6 +1,6 @@
 import 'package:bluebubbles/app/layouts/conversation_list/pages/conversation_list.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/header/header_widgets.dart';
-import 'package:bluebubbles/app/layouts/conversation_list/pages/search/search_view.dart';
+import 'package:bluebubbles/app/layouts/conversation_list/pages/search/inline_search.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -35,9 +35,17 @@ class _MaterialHeaderState extends CustomState<MaterialHeader, void, Conversatio
                   ? context.theme.colorScheme.surfaceContainerHighest
                   : Colors.transparent,
             )),
-        AnimatedSwitcher(
+        Obx(() => AnimatedSwitcher(
           duration: const Duration(milliseconds: 500),
-          child: controller.selectedChats.isEmpty
+          child: controller.search.active.value
+              ? SafeArea(
+                  key: const ValueKey("inline-search"),
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: InlineSearchBar(search: controller.search),
+                  ),
+                )
+              : controller.selectedChats.isEmpty
               ? SafeArea(
                   child: Obx(() {
                     NavigationSvc.listener.value;
@@ -99,12 +107,7 @@ class _MaterialHeaderState extends CustomState<MaterialHeader, void, Conversatio
                                     Padding(
                                         padding: const EdgeInsets.only(left: 2),
                                         child: IconButton(
-                                          onPressed: () async {
-                                            NavigationSvc.pushLeft(
-                                              context,
-                                              const SearchView(),
-                                            );
-                                          },
+                                          onPressed: () => controller.search.open(),
                                           icon: Icon(
                                             Icons.search_rounded,
                                             color: context.theme.colorScheme.onSurfaceVariant,
@@ -253,7 +256,7 @@ class _MaterialHeaderState extends CustomState<MaterialHeader, void, Conversatio
                     ),
                   ),
                 ),
-        ),
+        )),
       ],
     );
   }
