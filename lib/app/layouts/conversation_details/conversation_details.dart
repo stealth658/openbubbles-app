@@ -1,4 +1,5 @@
 import 'package:bluebubbles/app/layouts/conversation_details/material/chat_detail_theme.dart';
+import 'package:bluebubbles/app/layouts/conversation_details/material/findmy_location_card.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/material/material_chat_header.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/material/material_chat_options.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/material/material_participants_section.dart';
@@ -114,11 +115,13 @@ class _ConversationDetailsState extends State<ConversationDetails> with WidgetsB
         final chatDetailTheme = ChatDetailTheme.resolve(context, chat);
         final iosSkin = SettingsSvc.settings.skin.value == Skins.iOS;
 
-        // OpenBubbles: 1:1 chats always use ChatInfo — it carries the fork's action
-        // row (call / FaceTime / mail / info / invite) which ProfileScaffold hosts.
-        final header = iosSkin || !chat.isGroup
+        // iOS skin keeps ChatInfo (1:1 inside ProfileScaffold's poster). Material
+        // and Samsung use the expressive header for every chat; for 1:1 it carries
+        // the fork's action row (call / FaceTime / mail / info / invite).
+        final header = iosSkin
             ? ChatInfo(chat: chat, ftSupportedParticipants: ftSupportedParticipants)
-            : ExpressiveChatHeader(chat: chat);
+            : ExpressiveChatHeader(chat: chat, ftSupportedParticipants: ftSupportedParticipants);
+        final materialLayout = !iosSkin;
 
         final actions = <Widget>[
               Obx(() {
@@ -157,32 +160,32 @@ class _ConversationDetailsState extends State<ConversationDetails> with WidgetsB
         ];
 
         final slivers = <Widget>[
-              // OpenBubbles: for 1:1 chats the header is rendered by ProfileScaffold
-              // (Apple profile poster), so it isn't repeated in the body.
-              if (chat.isGroup)
+              // iOS: for 1:1 chats the header is rendered by ProfileScaffold (Apple
+              // profile poster), so it isn't repeated in the body.
+              if (chat.isGroup || materialLayout)
                 SliverToBoxAdapter(
                   child: header,
                 ),
-              SettingsSvc.settings.skin.value == Skins.iOS
-                  ? ParticipantsList(chat: chat)
-                  : ExpressiveParticipantsSection(chat: chat),
+              iosSkin ? ParticipantsList(chat: chat) : ExpressiveParticipantsSection(chat: chat),
               // Hidden widget that loads attachments in the background
               SliverToBoxAdapter(
                 child: AttachmentsLoader(chat: chat, onAttachmentsLoaded: onAttachmentsLoaded),
               ),
-              SliverPadding(padding: EdgeInsets.symmetric(vertical: SettingsSvc.settings.skin.value == Skins.iOS ? 0 : 5)),
-              SettingsSvc.settings.skin.value == Skins.iOS
-                  ? ChatOptions(chat: chat)
-                  : ExpressiveChatOptions(chat: chat),
+              SliverPadding(padding: EdgeInsets.symmetric(vertical: iosSkin ? 0 : 5)),
+              // Material: what you came for first (where they are, photos, links,
+              // files), the chat's settings after. iOS keeps upstream's order.
+              if (materialLayout) FindMyLocationCard(chat: chat, tileColor: chatDetailTheme.tileColor),
+              if (!materialLayout) ChatOptions(chat: chat),
               MediaGridSection(chat: chat, media: media, selected: selected, isLoading: isLoadingAttachments),
               LinksSection(chat: chat),
               LocationsSection(chat: chat, locations: locations, isLoading: isLoadingAttachments),
               DocumentsSection(chat: chat, docs: docs, isLoading: isLoadingAttachments),
+              if (materialLayout) ExpressiveChatOptions(chat: chat),
               const SliverPadding(padding: EdgeInsets.only(top: 50)),
         ];
 
-        // OpenBubbles-only: 1:1 chats get the Apple profile/poster scaffold.
-        if (!chat.isGroup && chat.participants.isNotEmpty) {
+        // iOS skin only: 1:1 chats get the Apple profile/poster scaffold.
+        if (iosSkin && !chat.isGroup && chat.participants.isNotEmpty) {
           return Theme(
             data: chatDetailTheme.theme,
             child: ProfileScaffold(

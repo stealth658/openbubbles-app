@@ -30,6 +30,7 @@ export 'ui/chat/message_list_gate.dart';
 // GlobalChatService merged into ChatsService
 // MessageUpdateCoordinator removed - replaced by MessageState
 // MessageWidgetController merged into MessageState
+export 'ui/findmy_friends_cache.dart';
 export 'ui/handle_service.dart';
 export 'ui/message/messages_service.dart';
 export 'ui/navigator/navigator_service.dart';

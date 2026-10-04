@@ -5,6 +5,7 @@ import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/reply/
 import 'package:bluebubbles/app/state/chat_state_scope.dart';
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/material.dart' hide BackButton;
@@ -64,32 +65,18 @@ class MaterialHeader extends StatelessWidget implements PreferredSizeWidget {
               padding: EdgeInsets.only(top: kIsDesktop ? 20 : 0),
               child: InkWell(
                 borderRadius: BorderRadius.circular(10),
-                onTap: controller.chat.isGroup
-                    ? () {
-                        Navigator.of(context).push(
-                          ThemeSwitcher.buildPageRoute(
-                            builder: (context) => ConversationDetails(
-                              chat: controller.chat,
-                            ),
-                          ),
-                        );
-                      }
-                    : () async {
-                        final handle = controller.chat.handles.first;
-                        final contact = handle.contactsV2.firstOrNull;
-                        if (contact == null || !contact.isNative) {
-                          await MethodChannelSvc.actions.openContactForm(
-                            address: handle.address,
-                            isEmail: handle.address.isEmail,
-                          );
-                        } else {
-                          try {
-                            await MethodChannelSvc.actions.viewContactForm(nativeContactId: contact.nativeContactId);
-                          } catch (_) {
-                            showSnackbar("Error", "Failed to find contact on device!");
-                          }
-                        }
-                      },
+                // Tapping the name opens the conversation details for every chat.
+                // The native contact card is one tap further (the Info button in
+                // the details header), the way iOS does it.
+                onTap: () {
+                  Navigator.of(context).push(
+                    ThemeSwitcher.buildPageRoute(
+                      builder: (context) => ConversationDetails(
+                        chat: controller.chat,
+                      ),
+                    ),
+                  );
+                },
                 child: Padding(
                   padding: const EdgeInsets.all(5.0),
                   child: _ChatIconAndTitle(parentController: controller),
@@ -286,13 +273,18 @@ class _ChatIconAndTitleState extends CustomState<_ChatIconAndTitle, void, Conver
                   overflow: TextOverflow.fade,
                 );
               }),
-              if (samsung &&
-                  (controller.chat.isGroup ||
-                      (!controller.chat.getTitle().isPhoneNumber && !controller.chat.getTitle().isEmail)))
+              // Find My: a quiet city line under the name for people who share
+              // their location with you (1:1 chats only). Falls back to the
+              // Samsung address line where that applied before.
+              if (!controller.chat.isGroup && !controller.inSelectMode.value)
+                _FriendPlaceLine(chat: controller.chat, fallbackAddress: samsung &&
+                        !controller.chat.getTitle().isPhoneNumber &&
+                        !controller.chat.getTitle().isEmail
+                    ? controller.chat.handles[0].address
+                    : null)
+              else if (samsung && controller.chat.isGroup)
                 Text(
-                  controller.chat.isGroup
-                      ? "${controller.chat.handles.length} recipients"
-                      : controller.chat.handles[0].address,
+                  "${controller.chat.handles.length} recipients",
                   style: context.theme.textTheme.labelLarge!.apply(color: context.theme.colorScheme.outline),
                   maxLines: 1,
                   overflow: TextOverflow.fade,
@@ -302,5 +294,51 @@ class _ChatIconAndTitleState extends CustomState<_ChatIconAndTitle, void, Conver
         ),
       ],
     );
+  }
+}
+
+
+/// "Old Westbury, NY" under the contact's name when they share their location.
+/// Reads the shared Find My cache and asks it for a refresh on first build;
+/// shows nothing (or the Samsung address line) until there is something to show.
+class _FriendPlaceLine extends StatefulWidget {
+  const _FriendPlaceLine({required this.chat, this.fallbackAddress});
+
+  final Chat chat;
+  final String? fallbackAddress;
+
+  @override
+  State<_FriendPlaceLine> createState() => _FriendPlaceLineState();
+}
+
+class _FriendPlaceLineState extends State<_FriendPlaceLine> {
+  @override
+  void initState() {
+    super.initState();
+    if (FindMyFriendsCache.available) {
+      // Fire and forget; the Obx below repaints when the cache fills.
+      FindMyFriendsCache.refresh();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final style = context.theme.textTheme.labelLarge!.apply(color: context.theme.colorScheme.outline);
+    return Obx(() {
+      final friend = FindMyFriendsCache.forChat(widget.chat);
+      final place = SettingsSvc.settings.redactedMode.value ? null : friend?.placeName;
+      if (place == null || !(friend?.hasLocation ?? false)) {
+        if (widget.fallbackAddress == null) return const SizedBox.shrink();
+        return Text(widget.fallbackAddress!, style: style, maxLines: 1, overflow: TextOverflow.fade);
+      }
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.location_on_outlined, size: 12, color: context.theme.colorScheme.outline),
+          const SizedBox(width: 2),
+          Flexible(child: Text(place, style: style, maxLines: 1, overflow: TextOverflow.fade)),
+        ],
+      );
+    });
   }
 }

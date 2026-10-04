@@ -389,6 +389,22 @@ class Handle {
     return this;
   }
 
+  /// Case-insensitive lookup by address across services, preferring iMessage.
+  /// [findOne] is exact-match, which misses "Jane@example.com" vs
+  /// "jane@example.com"; Find My and other Apple-side sources are not
+  /// consistent about case.
+  static Handle? findOneLoose(String address) {
+    if (kIsWeb || address.isEmpty) return null;
+    final query = Database.handles.query(Handle_.address.equals(address, caseSensitive: false)).build();
+    final results = query.find();
+    query.close();
+    if (results.isEmpty) return null;
+    return results.firstWhereOrNull((h) => h.service == "iMessage" && h.contactsV2.isNotEmpty) ??
+        results.firstWhereOrNull((h) => h.contactsV2.isNotEmpty) ??
+        results.firstWhereOrNull((h) => h.service == "iMessage") ??
+        results.first;
+  }
+
   static Handle? findOne({int? id, int? originalROWID, HandleLookupKey? addressAndService}) {
     if (kIsWeb || id == 0) return null;
     if (id != null) {

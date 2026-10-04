@@ -136,20 +136,9 @@ class _FindMyState extends OptimizedState<FindMy> with AutomaticKeepAliveClientM
         isLive = true;
       }
       
-      userPosition[handle] = FindMyFriend(
-        latitude: e!.lastLocation?.latitude,
-        longitude: e.lastLocation?.longitude,
-        longAddress: e.lastLocation?.address?.formattedAddressLines?.join("\n"), 
-        shortAddress: e.lastLocation?.address != null ? "${e.lastLocation?.address?.locality}, ${e.lastLocation?.address?.stateCode ?? e.lastLocation?.address?.countryCode}" : null,
-        title: null, 
-        subtitle: null, 
-        handle: Handle(address: e.invitationAcceptedHandles.first),
-        handleAddress: e.invitationAcceptedHandles.first,
-        lastUpdated: e.lastLocation?.timestamp != null ? DateTime.fromMillisecondsSinceEpoch(e.lastLocation!.timestamp) : null,
-        status: null, 
-        locatingInProgress: false,
-        id: e.id,
-      );
+      // Shared mapping; the chat participant is the handle we already have, so
+      // the name and avatar come from its contact.
+      userPosition[handle] = FindMyFriend.fromFollow(e!, handle: participant);
     }
 
     updatePositions();

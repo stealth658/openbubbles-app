@@ -31,7 +31,6 @@ import 'package:get/get.dart' hide Response;
 import 'package:latlong2/latlong.dart';
 import 'package:maps_launcher/maps_launcher.dart';
 import 'package:sliding_up_panel2/sliding_up_panel2.dart';
-import 'package:bluebubbles/models/models.dart' show HandleLookupKey;
 import 'package:universal_io/io.dart';
 import 'package:bluebubbles/src/rust/api/api.dart' as api;
 import 'package:url_launcher/url_launcher.dart';
@@ -222,25 +221,16 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
 
       var following = await api.getFollowing(client: fmfClient!);
     
+      // Shared mapping (case-insensitive handle match, locality-safe short
+      // address). Contacts are matched by address for friends who have no
+      // handle with a linked contact, so they show a name and avatar instead
+      // of a bare email.
       friends = following
-          .map((e) => 
-            FindMyFriend(
-              latitude: e.lastLocation?.latitude,
-              longitude: e.lastLocation?.longitude,
-              longAddress: e.lastLocation?.address?.formattedAddressLines?.join("\n"), 
-              shortAddress: e.lastLocation?.address != null ? "${e.lastLocation?.address?.locality}, ${e.lastLocation?.address?.stateCode ?? e.lastLocation?.address?.countryCode}" : null,
-              title: null, 
-              subtitle: null, 
-              handle: Handle.findOne(addressAndService: HandleLookupKey(e.invitationAcceptedHandles.first, "iMessage")) ?? Handle(address: e.invitationAcceptedHandles.first), 
-              handleAddress: e.invitationAcceptedHandles.first, 
-              lastUpdated: e.lastLocation?.timestamp != null ? DateTime.fromMillisecondsSinceEpoch(e.lastLocation!.timestamp) : null,
-              status: null, 
-              locatingInProgress: false,
-              id: e.id,
-            )
-          )
-          .toList()
-          .cast<FindMyFriend>();
+          .where((e) => e.invitationAcceptedHandles.isNotEmpty)
+          .map(FindMyFriend.fromFollow)
+          .toList();
+      await Future.wait(friends.map((f) => f.resolveContact()));
+      FindMyFriendsCache.publish(friends);
 
       friendsWithLocation = friends.where((item) => (item.latitude ?? 0) != 0 && (item.longitude ?? 0) != 0).toList();
       friendsWithoutLocation = friends.where((item) => (item.latitude ?? 0) == 0 && (item.longitude ?? 0) == 0).toList();
@@ -570,7 +560,7 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
           child: Padding(
             padding: const EdgeInsets.all(3),
             child:
-            ContactAvatarWidget(editable: false, handle: friend.handle ?? Handle(address: friend.title ?? "Unknown")),
+            ContactAvatarWidget(editable: false, handle: friend.handle ?? Handle(address: friend.title ?? "Unknown"), contact: friend.contact),
           ),
         ),
       ),
@@ -704,11 +694,15 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
                     physics: const NeverScrollableScrollPhysics(),
                     shrinkWrap: true,
                     padding: EdgeInsets.zero,
-                    findChildIndexCallback: (key) => findChildIndexByKey(devicesWithLocation, key, (item) => item.address?.uniqueValue),
+                    // Keyed by the device id. `address` is null for every rustpush
+                    // device, which gave every tile the same null key: the index
+                    // callback mapped them all to 0 and the list came up blank. The
+                    // Items list hit the same thing (see its key below).
+                    findChildIndexCallback: (key) => findChildIndexByKey(devicesWithLocation, key, (item) => item.id ?? item.name),
                     itemBuilder: (context, i) {
                       final item = devicesWithLocation[i];
                       return ListTile(
-                        key: ValueKey(item.address?.uniqueValue),
+                        key: ValueKey(item.id ?? item.name ?? i),
                         mouseCursor: MouseCursor.defer,
                         title: Text(SettingsSvc.settings.redactedMode.value ? "Device" : (item.name ?? "Unknown Device")),
                         onTap: item.location?.latitude != null && item.location?.longitude != null
@@ -1065,8 +1059,8 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
                       final item = friendsWithLocation[i];
                       return ListTile(
                         key: ValueKey(item.handle?.uniqueAddressAndService),
-                        leading: ContactAvatarWidget(handle: item.handle),
-                        title: Text(item.handle?.displayName ?? item.title ?? "Unknown Friend"),
+                        leading: ContactAvatarWidget(handle: item.handle, contact: item.contact),
+                        title: Text(item.displayName),
                         subtitle: Text(SettingsSvc.settings.redactedMode.value ? "Location" : ("${item.shortAddress ?? "No location found"}${item.lastUpdated == null || item.status == LocationStatus.live ? "" : "\nLast updated ${buildDate(item.lastUpdated)}"}")),
                         trailing: item.latitude != null && item.longitude != null ? Row(
                           mainAxisSize: MainAxisSize.min,
@@ -1162,8 +1156,8 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
                       children: friendsWithoutLocation
                           .map((item) => ListTile(
                                 mouseCursor: MouseCursor.defer,
-                                leading: ContactAvatarWidget(handle: item.handle),
-                                title: Text(item.handle?.displayName ?? item.title ?? "Unknown Friend"),
+                                leading: ContactAvatarWidget(handle: item.handle, contact: item.contact),
+                                title: Text(item.displayName),
                                 subtitle: Text(SettingsSvc.settings.redactedMode.value ? "Location" : (item.longAddress ?? "No location found")),
                                 onTap: () async {
                                   await api.selectFriend(config: pushService.state!.osConfig, client: fmfClient!, friend: item.id);
@@ -1891,7 +1885,7 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(item.handle?.displayName ?? item.title ?? "Unknown Friend",
+                          Text(item.displayName,
                               style: context.theme.textTheme.labelLarge),
                           Text(SettingsSvc.settings.redactedMode.value ? "Location" : (item.longAddress ?? "No location found"), style: context.theme.textTheme.bodySmall),
                           if (item.lastUpdated != null && item.status != LocationStatus.live)

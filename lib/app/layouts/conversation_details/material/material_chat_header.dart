@@ -9,7 +9,9 @@ import 'package:bluebubbles/app/layouts/conversation_list/pages/search/search_vi
 import 'package:bluebubbles/app/state/chat_state.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
+import 'package:bluebubbles/services/rustpush/rustpush_service.dart';
 import 'package:bluebubbles/services/services.dart';
+import 'package:bluebubbles/src/rust/api/api.dart' as api;
 import 'package:defer_pointer/defer_pointer.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -21,7 +23,14 @@ import 'package:get/get.dart';
 class ExpressiveChatHeader extends StatelessWidget {
   final Chat chat;
 
-  const ExpressiveChatHeader({super.key, required this.chat});
+  /// OpenBubbles: handles rustpush confirmed as FaceTime-capable (see
+  /// ConversationDetails). FaceTime is offered only when everyone, us
+  /// included, is on the list.
+  final List<String> ftSupportedParticipants;
+
+  const ExpressiveChatHeader({super.key, required this.chat, this.ftSupportedParticipants = const []});
+
+  bool get _facetimeSupported => ftSupportedParticipants.length == (chat.handles.length + 1 /* my handle */);
 
   bool get _canCall =>
       !kIsWeb &&
@@ -150,7 +159,7 @@ class ExpressiveChatHeader extends StatelessWidget {
           final address = chatState.participants.first.formattedAddress.value;
           if (address == null) return const SizedBox.shrink();
           return Text(
-            address,
+            "$address · ${chat.isIMessage ? "iMessage" : "SMS"}",
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
@@ -222,11 +231,6 @@ class ExpressiveChatHeader extends StatelessWidget {
     final hasContact = contact != null && contact.isNative;
 
     return [
-      M3EButtonGroupItem(
-        icon: Icons.message_outlined,
-        label: "Message",
-        onPressed: () => Navigator.of(context).pop(),
-      ),
       if (_canCall)
         M3EButtonGroupItem(
           icon: Icons.call_outlined,
@@ -234,11 +238,19 @@ class ExpressiveChatHeader extends StatelessWidget {
           onPressed: () => showAddressPicker(contact, chat.handles.first, context),
           onLongPress: () => showAddressPicker(contact, chat.handles.first, context, isLongPressed: true),
         ),
-      if (!kIsWeb && !kIsDesktop)
+      // OpenBubbles: a real FaceTime call through rustpush, offered only when
+      // the targets were validated. (Upstream's "Video" was a video intent.)
+      if (_facetimeSupported)
         M3EButtonGroupItem(
           icon: Icons.video_call_outlined,
-          label: "Video",
-          onPressed: () => showAddressPicker(contact, chat.handles.first, context, video: true),
+          label: "FaceTime",
+          onPressed: () async {
+            final data = await chat.getConversationData();
+            final handle = await chat.ensureHandle();
+            final handles = data.participants;
+            handles.remove(handle);
+            await pushService.placeOutgoingCall(handle, handles);
+          },
         ),
       if (chat.handles.isNotEmpty &&
           ((contact?.emailAddresses.isNotEmpty ?? false) || chat.handles.first.address.contains("@")))
@@ -266,6 +278,44 @@ class ExpressiveChatHeader extends StatelessWidget {
             }
           },
         ),
+      // OpenBubbles-only: invite an SMS contact to OpenBubbles relaying.
+      if (SettingsSvc.settings.macIsMine.value && chat.isRpSms)
+        M3EButtonGroupItem(
+          icon: Icons.ios_share,
+          label: "Invite",
+          onPressed: () => _invite(context),
+        ),
     ];
+  }
+
+  void _invite(BuildContext ctx) {
+    showDialog(
+      context: ctx,
+      builder: (context) => AlertDialog(
+        backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+        title: const Text('Choose your friends wisely'),
+        content: Text(
+          "Apple may block devices due to spam or exceeding 20 users.",
+          style: context.theme.textTheme.bodyLarge,
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text("Cancel",
+                style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              final code = await pushService.uploadCode(false, await api.getDeviceInfo(config: pushService.state!.osConfig));
+              cvc(chat).textController.text = "$rpApiRoot/$code";
+              if (ctx.mounted) Navigator.of(ctx).pop();
+            },
+            child: Text("Invite",
+                style: context.theme.textTheme.bodyLarge!.copyWith(color: context.theme.colorScheme.primary)),
+          ),
+        ],
+      ),
+    );
   }
 }
