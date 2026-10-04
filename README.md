@@ -57,8 +57,9 @@ saves crashing on Android 16.
 
 Features and fixes:
 
-- Android Auto: templated messaging conversation list (CarAppService).
-  Known open item: binding to the car session is not reliable yet.
+- Android Auto: templated messaging conversation list (`CarAppService`,
+  `ConversationItem`, Car API level 7+). Complete and working on the
+  development head unit; see Known limitations for real cars.
 - iOS-style tapback menu as an opt-in on Material and Samsung (Theming & Styles,
   under App Skin).
 - Find My: selectable basemaps, map controls, friend/device zoom on tap, a
@@ -134,7 +135,20 @@ you can raise those values again.
   branch and looks like a registration capability issue in the prebuilt
   library rather than something in the Dart code; the Dart side has been left
   on the foreground identity only.
-- Android Auto car binding, see above.
+- Android Auto, templated messaging in a real car. The implementation is
+  finished: on the development head unit (head unit server on the phone) the
+  host binds, validates, creates the session and renders the conversation
+  list within a fraction of a second. In a real car the same host never binds
+  to the service at all (the service logs the instant it is created; a full
+  day of car sessions logged nothing), and Android Auto falls back to the
+  notification-based messaging screen. With "Unknown sources" on, the app
+  does appear in the car and messages and notifications work there; only the
+  templated conversation list is withheld. Google documents templated
+  messaging as a beta available to apps on Play internal or closed testing
+  tracks and early-access partners, with production rollout "at a later
+  date", so this looks like that distribution gate rather than anything in
+  the code. A Play-distributed build, or the end of the beta, should light
+  it up without changes.
 - Only Android arm64 tested.
 
 ---
