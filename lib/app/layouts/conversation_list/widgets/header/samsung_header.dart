@@ -1,7 +1,6 @@
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/pages/conversation_list.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/header/header_widgets.dart';
-import 'package:bluebubbles/app/layouts/conversation_list/pages/search/search_view.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/material.dart';
@@ -126,12 +125,7 @@ class _SamsungHeaderState extends CustomState<SamsungHeader, void, ConversationL
                                     )),
                               if (!showArchived && !showUnknown && !showDeleted)
                                 IconButton(
-                                    onPressed: () async {
-                                      NavigationSvc.pushLeft(
-                                        context,
-                                        const SearchView(),
-                                      );
-                                    },
+                                    onPressed: () => controller.search.open(),
                                     icon: Icon(
                                       Icons.search,
                                       color: context.theme.colorScheme.onSurfaceVariant,

@@ -1,12 +1,11 @@
+import 'package:bluebubbles/app/layouts/conversation_details/conversation_settings.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/material/chat_detail_theme.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/material/findmy_location_card.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/material/material_chat_header.dart';
-import 'package:bluebubbles/app/layouts/conversation_details/material/material_chat_options.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/material/material_participants_section.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/widgets/attachments_loader.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/widgets/chat_info.dart';
 import 'package:bluebubbles/app/state/chat_state_scope.dart';
-import 'package:bluebubbles/app/layouts/conversation_details/widgets/chat_options.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/widgets/sections/documents/documents_section.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/widgets/sections/links/links_section.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/widgets/sections/locations/locations_section.dart';
@@ -124,6 +123,8 @@ class _ConversationDetailsState extends State<ConversationDetails> with WidgetsB
         final materialLayout = !iosSkin;
 
         final actions = <Widget>[
+              // Chat settings live on their own page now; the gear is always there.
+              ConversationSettingsButton(chat: chat),
               Obx(() {
                 if (selected.isNotEmpty) {
                   return IconButton(
@@ -172,15 +173,13 @@ class _ConversationDetailsState extends State<ConversationDetails> with WidgetsB
                 child: AttachmentsLoader(chat: chat, onAttachmentsLoaded: onAttachmentsLoaded),
               ),
               SliverPadding(padding: EdgeInsets.symmetric(vertical: iosSkin ? 0 : 5)),
-              // Material: what you came for first (where they are, photos, links,
-              // files), the chat's settings after. iOS keeps upstream's order.
-              if (materialLayout) FindMyLocationCard(chat: chat, tileColor: chatDetailTheme.tileColor),
-              if (!materialLayout) ChatOptions(chat: chat),
+              // What you came for: where they are, photos, links, files. The
+              // chat's settings are behind the gear (ConversationSettings).
+              FindMyLocationCard(chat: chat, tileColor: chatDetailTheme.tileColor),
               MediaGridSection(chat: chat, media: media, selected: selected, isLoading: isLoadingAttachments),
               LinksSection(chat: chat),
               LocationsSection(chat: chat, locations: locations, isLoading: isLoadingAttachments),
               DocumentsSection(chat: chat, docs: docs, isLoading: isLoadingAttachments),
-              if (materialLayout) ExpressiveChatOptions(chat: chat),
               const SliverPadding(padding: EdgeInsets.only(top: 50)),
         ];
 
