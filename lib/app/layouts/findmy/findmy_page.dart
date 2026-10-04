@@ -205,19 +205,28 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
       }
     }
 
-    // One client for the whole app (see FindMyFriendsCache). "New" means no
-    // refresh has gone to Apple through it yet, so the first pass still uses
-    // the cached list and the refresh follows on the next tick as before.
-    var isNew = fmfClient == null && !FindMyFriendsCache.everRefreshed;
-    fmfClient ??= await FindMyFriendsCache.getClient();
+    // The page owns its own client, created fresh each time the page opens
+    // (first/initClient), exactly as before v30. Sharing a long-lived client
+    // with the chat views (v32) did not help the stale-position problem and
+    // removed the "app just opened" signal Apple seems to key off.
+    var isNew = fmfClient == null;
+    fmfClient ??= await api.makeFindMyFriends(
+      path: pushService.statePath,
+      config: pushService.state!.osConfig,
+      aps: pushService.state!.conn,
+      anisette: pushService.state!.anisette,
+      provider: pushService.state!.icloudServices!.tokenProvider,
+    );
+    if (!mounted) return;
 
     try {
       if (refreshFriends && !isNew) {
         await api.refreshFollowing(config: pushService.state!.osConfig, client: fmfClient!);
-        FindMyFriendsCache.everRefreshed = true;
       }
 
       var following = await api.getFollowing(client: fmfClient!);
+      if (!mounted) return;
+      FindMyFriendsCache.logFollows(isNew ? "page init" : (refreshFriends ? "page refresh" : "page cached"), following);
     
       // Shared mapping (case-insensitive handle match, locality-safe short
       // address). Contacts are matched by address for friends who have no
@@ -236,6 +245,7 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
       for (FindMyFriend e in friendsWithLocation) {
         buildFriendMarker(e);
       }
+      if (!mounted) return;
       setState(() {
         fetching2 = false;
         refreshing2 = false;
@@ -257,12 +267,13 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
             final marker = markers.values.firstWhere(
                 (e) => (e.key as ValueKey?)?.value == "friend-${friend.handle?.uniqueAddressAndService}");
             popupController.showPopupsOnlyFor([marker]);
-            mapController.move(LatLng(friend.latitude!, friend.longitude!), 12);
+            mapController.move(LatLng(friend.latitude!, friend.longitude!), 14);
 
           }
         }
       }
     } catch (e, s) {
+      if (!mounted) return; // page closed mid-fetch; nothing to report
       Logger.error("Failed to parse FindMy Friends location data!", error: e, trace: s);
       setState(() {
         fetching2 = null;
@@ -514,11 +525,13 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
             alignment: Alignment.topCenter,
           );
         }
+      if (!mounted) return;
       setState(() {
         fetching = false;
         refreshing = false;
       });
     } catch (e, s) {
+      if (!mounted) return;
       Logger.error("Failed to parse FindMy Devices location data!", error: e, trace: s);
       setState(() {
         fetching = null;
@@ -713,7 +726,7 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
                                     e.point.latitude == item.location?.latitude &&
                                     e.point.longitude == item.location?.longitude);
                                 popupController.showPopupsOnlyFor([marker]);
-                                mapController.move(LatLng(item.location!.latitude!, item.location!.longitude!), 12);
+                                mapController.move(LatLng(item.location!.latitude!, item.location!.longitude!), 14);
                               }
                             : null,
                         trailing: item.location?.latitude != null && item.location?.longitude != null ? ButtonTheme(
@@ -881,7 +894,7 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
                                       e.point.latitude == item.location?.latitude &&
                                       e.point.longitude == item.location?.longitude);
                                   popupController.showPopupsOnlyFor([marker]);
-                                mapController.move(LatLng(item.location!.latitude!, item.location!.longitude!), 12);
+                                mapController.move(LatLng(item.location!.latitude!, item.location!.longitude!), 14);
                               }
                             : null,
                         onLongPress: () async {
@@ -960,7 +973,7 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
                                             e.point.longitude == item.location?.longitude);
                                         popupController.showPopupsOnlyFor([marker]);
                                         mapController.move(
-                                            LatLng(item.location!.latitude!, item.location!.longitude!), 12);
+                                            LatLng(item.location!.latitude!, item.location!.longitude!), 14);
                                       }
                                     : null,
                                 onLongPress: () async {
@@ -1093,7 +1106,7 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
                           final marker = markers.values.firstWhere(
                               (e) => e.point.latitude == item.latitude && e.point.longitude == item.longitude);
                           popupController.showPopupsOnlyFor([marker]);
-                          mapController.move(LatLng(item.latitude!, item.longitude!), 12);
+                          mapController.move(LatLng(item.latitude!, item.longitude!), 14);
                         },
                         onLongPress: () async {
                           const encoder = JsonEncoder.withIndent("     ");

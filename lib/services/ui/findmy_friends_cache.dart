@@ -13,8 +13,8 @@ import 'package:get/get.dart';
 /// The Find My page owns its own client and refresh loop and is left alone; it
 /// publishes what it loads here through [publish]. Everywhere else (the chat
 /// header's city line, the location card in conversation details) reads from
-/// this cache and asks for a cheap refresh through the daemon-side Find My
-/// client (`fmfd`), the same path the in-chat location bubble already uses.
+/// this cache and asks for a throttled refresh, which opens a short-lived
+/// foreground client the same way the page does.
 class FindMyFriendsCache {
   FindMyFriendsCache._();
 
@@ -59,16 +59,6 @@ class FindMyFriendsCache {
   static const Duration _backgroundEvery = Duration(minutes: 15);
   static Timer? _backgroundTimer;
 
-  /// The one foreground Find My Friends client for the whole app. The page used
-  /// to build its own and the chat views used the daemon-side client; two
-  /// sessions polling Apple at once left the page with stale positions. Now
-  /// everything refreshes through this client, with the page's exact calls.
-  static api.FindMyFriendsClientDefaultAnisetteProvider? client;
-  static Future<api.FindMyFriendsClientDefaultAnisetteProvider>? _clientFuture;
-
-  /// True once any refresh has gone to Apple through [client].
-  static bool everRefreshed = false;
-
   static bool get available {
     try {
       return backend.supportsFindMy() && pushService.state?.icloudServices != null;
@@ -77,28 +67,24 @@ class FindMyFriendsCache {
     }
   }
 
-  static Future<api.FindMyFriendsClientDefaultAnisetteProvider> getClient() {
-    if (client != null) return Future.value(client);
-    return _clientFuture ??= (() async {
-      try {
-        final c = await api.makeFindMyFriends(
-          path: pushService.statePath,
-          config: pushService.state!.osConfig,
-          aps: pushService.state!.conn,
-          anisette: pushService.state!.anisette,
-          provider: pushService.state!.icloudServices!.tokenProvider,
-        );
-        client = c;
-        return c;
-      } finally {
-        _clientFuture = null;
-      }
-    })();
+  /// Diagnostics: how many follows came back and how fresh the newest
+  /// location is, so a log export shows whether Apple is returning new data.
+  static void logFollows(String source, List<api.Follow> follows) {
+    int? newest;
+    int located = 0;
+    for (final f in follows) {
+      final t = f.lastLocation?.timestamp;
+      if (t == null) continue;
+      located++;
+      if (newest == null || t > newest) newest = t;
+    }
+    final age = newest == null ? "n/a" : "${DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(newest)).inMinutes} min";
+    Logger.info("FindMy follows ($source): ${follows.length} total, $located located, newest location age $age", tag: "FindMy");
   }
 
   /// Periodic refresh while the app process is alive (the rustpush foreground
   /// service keeps it alive), so positions are reasonably current when a chat
-  /// is opened. One light HTTPS call per interval.
+  /// is opened. Two light HTTPS calls per interval.
   static void startBackgroundRefresh() {
     _backgroundTimer?.cancel();
     _backgroundTimer = Timer.periodic(_backgroundEvery, (_) {
@@ -165,15 +151,27 @@ class FindMyFriendsCache {
 
   static Future<void> _doRefresh() async {
     try {
-      final c = await getClient();
-      // Whatever the client already holds first, so the UI has something
-      // immediately, then the same refresh call the Find My page makes.
-      if (byAddress.isEmpty) {
-        await _ingest(await api.getFollowing(client: c));
+      // A fresh client each time: its first/initClient is what the Find My
+      // page does on open, and that is the only path that has produced fresh
+      // positions so far. One refreshClient on top for good measure, then the
+      // client is dropped.
+      final c = await api.makeFindMyFriends(
+        path: pushService.statePath,
+        config: pushService.state!.osConfig,
+        aps: pushService.state!.conn,
+        anisette: pushService.state!.anisette,
+        provider: pushService.state!.icloudServices!.tokenProvider,
+      );
+      try {
+        var follows = await api.getFollowing(client: c);
+        logFollows("cache init", follows);
+        await _ingest(follows);
+        follows = await api.refreshFollowing(config: pushService.state!.osConfig, client: c);
+        logFollows("cache refresh", follows);
+        await _ingest(follows);
+      } finally {
+        c.dispose();
       }
-      final follows = await api.refreshFollowing(config: pushService.state!.osConfig, client: c);
-      everRefreshed = true;
-      await _ingest(follows);
       _lastRefresh = DateTime.now();
     } catch (e, s) {
       Logger.warn("FindMyFriendsCache refresh failed: $e", trace: s);
