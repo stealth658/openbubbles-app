@@ -56,13 +56,54 @@ class FindMyFriendsCache {
   static DateTime? _lastRefresh;
   static Future<void>? _inflight;
   static const Duration _staleAfter = Duration(minutes: 2);
+  static const Duration _backgroundEvery = Duration(minutes: 15);
+  static Timer? _backgroundTimer;
+
+  /// The one foreground Find My Friends client for the whole app. The page used
+  /// to build its own and the chat views used the daemon-side client; two
+  /// sessions polling Apple at once left the page with stale positions. Now
+  /// everything refreshes through this client, with the page's exact calls.
+  static api.FindMyFriendsClientDefaultAnisetteProvider? client;
+  static Future<api.FindMyFriendsClientDefaultAnisetteProvider>? _clientFuture;
+
+  /// True once any refresh has gone to Apple through [client].
+  static bool everRefreshed = false;
 
   static bool get available {
     try {
-      return backend.supportsFindMy() && pushService.state?.icloudServices?.fmfd != null;
+      return backend.supportsFindMy() && pushService.state?.icloudServices != null;
     } catch (_) {
       return false;
     }
+  }
+
+  static Future<api.FindMyFriendsClientDefaultAnisetteProvider> getClient() {
+    if (client != null) return Future.value(client);
+    return _clientFuture ??= (() async {
+      try {
+        final c = await api.makeFindMyFriends(
+          path: pushService.statePath,
+          config: pushService.state!.osConfig,
+          aps: pushService.state!.conn,
+          anisette: pushService.state!.anisette,
+          provider: pushService.state!.icloudServices!.tokenProvider,
+        );
+        client = c;
+        return c;
+      } finally {
+        _clientFuture = null;
+      }
+    })();
+  }
+
+  /// Periodic refresh while the app process is alive (the rustpush foreground
+  /// service keeps it alive), so positions are reasonably current when a chat
+  /// is opened. One light HTTPS call per interval.
+  static void startBackgroundRefresh() {
+    _backgroundTimer?.cancel();
+    _backgroundTimer = Timer.periodic(_backgroundEvery, (_) {
+      if (available) refresh(force: true);
+    });
   }
 
   static FindMyFriend? forAddress(String? address) {
@@ -124,15 +165,14 @@ class FindMyFriendsCache {
 
   static Future<void> _doRefresh() async {
     try {
-      final fmfd = pushService.state!.icloudServices!.fmfd!;
-      List<api.Follow> follows;
-      // Cached data first so the UI has something immediately, then a network
-      // refresh for current positions.
+      final c = await getClient();
+      // Whatever the client already holds first, so the UI has something
+      // immediately, then the same refresh call the Find My page makes.
       if (byAddress.isEmpty) {
-        follows = await api.getBackgroundFollowing(fmfd: fmfd);
-        await _ingest(follows);
+        await _ingest(await api.getFollowing(client: c));
       }
-      follows = await api.refreshBackgroundFollowing(state: fmfd, config: pushService.state!.osConfig);
+      final follows = await api.refreshFollowing(config: pushService.state!.osConfig, client: c);
+      everRefreshed = true;
       await _ingest(follows);
       _lastRefresh = DateTime.now();
     } catch (e, s) {

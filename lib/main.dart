@@ -180,6 +180,9 @@ Future<Null> initApp(bool bubble, List<String> arguments) async {
         if (SettingsSvc.settings.onDeviceAi.value) {
           Future.microtask(GenAi.refreshStatus);
         }
+        // OpenBubbles: keep shared locations reasonably fresh for the chat
+        // header / details even when the Find My page is not open.
+        FindMyFriendsCache.startBackgroundRefresh();
       }
 
       /* ----- DESKTOP SPECIFIC INITIALIZATION ----- */

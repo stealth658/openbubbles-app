@@ -84,12 +84,31 @@ TileLayer findMyTileLayer(BuildContext context) {
   );
 }
 
+/// Data credit for the basemap, kept small. flutter_map's own
+/// SimpleAttributionWidget hard-codes a "flutter_map | © " prefix (which
+/// doubled the © with our strings); this is the same thing without it.
 Widget findMyAttribution(BuildContext context) {
   final style = FindMyMapStyle.current;
-  return SimpleAttributionWidget(
-    source: Text(style.attribution),
-    onTap: () => launchUrl(Uri.parse(style.attributionUrl)),
-    backgroundColor: Theme.of(context).colorScheme.surface.withValues(alpha: 0.6),
+  final scheme = Theme.of(context).colorScheme;
+  return Align(
+    alignment: Alignment.bottomRight,
+    child: Padding(
+      padding: const EdgeInsets.all(4),
+      child: GestureDetector(
+        onTap: () => launchUrl(Uri.parse(style.attributionUrl)),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          decoration: BoxDecoration(
+            color: scheme.surface.withValues(alpha: 0.6),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Text(
+            style.attribution,
+            style: Theme.of(context).textTheme.labelSmall!.copyWith(color: scheme.onSurfaceVariant, fontSize: 9),
+          ),
+        ),
+      ),
+    ),
   );
 }
 

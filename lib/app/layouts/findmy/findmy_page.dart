@@ -205,18 +205,16 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
       }
     }
 
-    var isNew = fmfClient == null;
-    fmfClient ??= await api.makeFindMyFriends(
-      path: pushService.statePath,
-      config: pushService.state!.osConfig,
-      aps: pushService.state!.conn,
-      anisette: pushService.state!.anisette,
-      provider: pushService.state!.icloudServices!.tokenProvider,
-    );
+    // One client for the whole app (see FindMyFriendsCache). "New" means no
+    // refresh has gone to Apple through it yet, so the first pass still uses
+    // the cached list and the refresh follows on the next tick as before.
+    var isNew = fmfClient == null && !FindMyFriendsCache.everRefreshed;
+    fmfClient ??= await FindMyFriendsCache.getClient();
 
     try {
       if (refreshFriends && !isNew) {
         await api.refreshFollowing(config: pushService.state!.osConfig, client: fmfClient!);
+        FindMyFriendsCache.everRefreshed = true;
       }
 
       var following = await api.getFollowing(client: fmfClient!);
