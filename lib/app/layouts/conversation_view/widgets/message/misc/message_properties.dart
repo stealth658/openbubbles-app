@@ -106,14 +106,7 @@ class _MessagePropertiesState extends State<MessageProperties> with ThemeHelpers
               showReplyThread(context, message, widget.part, service, controller.cvController!);
             }));
     }
-    if (widget.part.isEdited) {
-      properties.add(TextSpan(
-          text: "Edited",
-          recognizer: TapGestureRecognizer()
-            ..onTap = () {
-              controller.showEdits.toggle();
-            }));
-    }
+    // "Edited" is drawn on the receipt line (DeliveredIndicator), iMessage style.
     // OpenBubbles: rustpush verifies the signature on incoming iMessages.
     if (message.verificationFailed) {
       properties.add(TextSpan(
