@@ -26,7 +26,19 @@ class ContactAvatarWidget extends StatefulWidget {
   /// ImageCache entry per file regardless of on-screen size — one decode per
   /// contact and a much higher cache-hit rate. The conversation list warm-up
   /// must use identical ResizeImage params for its precached entry to be hit.
-  static const int avatarDecodeSize = 256;
+  static const int avatarDecodeSize = 384;
+
+  /// The one provider every avatar use and the list warm-up share for a
+  /// contact photo. `ResizeImagePolicy.fit` bounds the longer side and keeps
+  /// the aspect ratio; the default (exact) policy squashes a non-square photo
+  /// into a square before BoxFit.cover ever sees it, which is why portrait
+  /// contact photos looked stretched.
+  static ImageProvider avatarImage(String path) => ResizeImage(
+        FileImage(File(path)),
+        width: avatarDecodeSize,
+        height: avatarDecodeSize,
+        policy: ResizeImagePolicy.fit,
+      );
 
   final Handle? handle;
   final ContactV2? contact;
@@ -261,12 +273,10 @@ class _ContactAvatarWidgetState extends State<ContactAvatarWidget> with ThemeHel
                 final initials = cachedInitials?.substring(0, iOS ? null : 1);
                 // Use ContactV2 avatar (from file path)
                 return SizedBox.expand(
-                  child: Image.file(
-                    File(contactV2Avatar),
-                    cacheHeight: ContactAvatarWidget.avatarDecodeSize,
-                    cacheWidth: ContactAvatarWidget.avatarDecodeSize,
-                    // Bilinear so the canonical 256px decode downscales cleanly
-                    // to the small on-screen sizes (nearest-neighbor aliases).
+                  child: Image(
+                    image: ContactAvatarWidget.avatarImage(contactV2Avatar),
+                    // Bilinear so the canonical decode downscales cleanly to
+                    // the small on-screen sizes (nearest-neighbor aliases).
                     filterQuality: FilterQuality.low,
                     fit: BoxFit.cover,
                     gaplessPlayback: true,

@@ -235,6 +235,30 @@ class ProfileScaffoldState
                                 )
                               ),
                             ),
+                            // The page's own actions (details: the settings gear) sit to
+                            // the left of Edit while the poster is showing; the fading app
+                            // bar carries them once the user scrolls.
+                            if (widget.actions.isNotEmpty)
+                            Positioned(
+                              right: kIsDesktop ? 10 : 70,
+                              top: kIsDesktop ? 30 : MediaQuery.of(context).viewPadding.top,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: widget.actions
+                                    .map((a) => Container(
+                                          margin: const EdgeInsets.only(left: 6),
+                                          decoration: BoxDecoration(
+                                            color: context.theme.colorScheme.outline.withAlpha(96),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: IconTheme.merge(
+                                            data: const IconThemeData(color: Colors.white, size: 20),
+                                            child: SizedBox(width: 36, height: 36, child: a),
+                                          ),
+                                        ))
+                                    .toList(),
+                              ),
+                            ),
                             if (!kIsDesktop)
                             Positioned(
                               right: 10,

@@ -66,7 +66,10 @@ class ConversationSettingsButton extends StatelessWidget {
     final iosSkin = SettingsSvc.settings.skin.value == Skins.iOS;
     return IconButton(
       tooltip: "Conversation settings",
-      icon: Icon(iosSkin ? CupertinoIcons.gear : Icons.settings_outlined, color: context.theme.colorScheme.onSurface),
+      // No explicit colour: inherits onSurface normally, white when the iOS
+      // profile poster paints its overlay buttons.
+      icon: Icon(iosSkin ? CupertinoIcons.gear : Icons.settings_outlined),
+      padding: EdgeInsets.zero,
       onPressed: () => NavigationSvc.pushLeft(context, ConversationSettings(chat: chat)),
     );
   }
