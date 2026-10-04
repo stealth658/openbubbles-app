@@ -4,6 +4,7 @@ import 'dart:isolate';
 
 import 'package:archive/archive_io.dart';
 import 'package:bluebubbles/env.dart';
+import 'package:bluebubbles/services/rustpush/rustpush_service.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/utils/logger/outputs/log_stream_output.dart';
 import 'package:flutter/foundation.dart';
@@ -231,6 +232,24 @@ class BaseLogger {
       encoder.create(zippedLogFile.path);
       for (final logPath in logPaths) {
         await encoder.addFile(File(logPath));
+      }
+
+      // OpenBubbles: rustpush writes its own log (flexi_logger) under
+      // <app support>/logs. It carries the Apple-side detail (IDS deliveries,
+      // Find My imports, registration) that the Dart log never sees.
+      try {
+        final String statePath = pushService.statePath;
+        if (statePath.isNotEmpty) {
+          final rustDir = Directory(join(statePath, "logs"));
+          if (rustDir.existsSync()) {
+            for (final f in rustDir.listSync().whereType<File>()) {
+              if (!f.path.endsWith(".log")) continue;
+              await encoder.addFile(f, "rust-${basename(f.path)}");
+            }
+          }
+        }
+      } catch (e) {
+        warn("Could not include rustpush logs in export: $e");
       }
       await encoder.close();
 
