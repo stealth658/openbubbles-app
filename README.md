@@ -5,9 +5,8 @@
 This branch is OpenBubbles `rustpush` (at `eed1b6332`) with BlueBubbles
 `master` (at `78ab8fc3b`, about 1,100 upstream commits) merged in, followed by
 a series of fixes and features developed while using the result daily on an
-Android phone. It is offered as a reference for the OpenBubbles maintainers:
-the fixes depend on the merged tree and do not apply to `rustpush` on their
-own.
+Android phone. The fixes depend on the merged tree and do not apply to
+`rustpush` on their own.
 
 Everything here is Apache 2.0, the same as both upstreams. Nothing proprietary
 was added.
