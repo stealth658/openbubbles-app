@@ -661,14 +661,13 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
         FindMyFriendsCache.logFollows("diag foreground", fg);
         buf.writeln("Foreground client (page):\n${FindMyFriendsCache.summarizeFollows(fg)}\n");
       }
+      // Daemon identity: read what it already holds, no network call (see
+      // FindMyFriendsCache.fetchMerged for why it must not refresh).
       final fmfd = pushService.state?.icloudServices?.fmfd;
       if (fmfd != null) {
         final cached = await api.getBackgroundFollowing(fmfd: fmfd);
         FindMyFriendsCache.logFollows("diag daemon cached", cached);
-        buf.writeln("Daemon client (cached):\n${FindMyFriendsCache.summarizeFollows(cached)}\n");
-        final fresh = await api.refreshBackgroundFollowing(state: fmfd, config: pushService.state!.osConfig);
-        FindMyFriendsCache.logFollows("diag daemon refresh", fresh);
-        buf.writeln("Daemon client (refreshed):\n${FindMyFriendsCache.summarizeFollows(fresh)}\n");
+        buf.writeln("Daemon client (cached, no request made):\n${FindMyFriendsCache.summarizeFollows(cached)}\n");
       } else {
         buf.writeln("Daemon client: not available");
       }

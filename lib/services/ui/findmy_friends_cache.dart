@@ -96,40 +96,29 @@ class FindMyFriendsCache {
     return "${follows.length} total, $located located, $locating locating, newest $age; ${per.join(" ")}";
   }
 
-  /// Asks Apple through both identities and keeps, per friend, whichever
-  /// answer carries the newer position.
+  /// Foreground identity only.
   ///
-  /// Secure-location friends deliver their position by sending our device a
-  /// token over iMessage, which the daemon ("fmfd") identity imports into
-  /// Apple's session. Since the daemon identity first spoke to Apple (v30),
-  /// the foreground identity's refreshes have come back with every friend
-  /// stuck in "locate in progress" and no new positions, which fits the
-  /// imports now landing on the daemon's session. Reading both and merging
-  /// covers either arrangement.
+  /// History, so nobody re-adds the daemon call: the daemon ("fmfd") identity
+  /// was tried for friends in v30/31 and v37/38. Each time it spoke to Apple,
+  /// the positions this device received stopped advancing, and in v37 even
+  /// the cached ones disappeared ("0 located, 9 locating" from both
+  /// identities). The Rust log shows no Find My IDS message ever reaching
+  /// this device, so the only positions we can show are the ones Apple's
+  /// server already holds, and the daemon identity appears to make the server
+  /// withhold those. The daemon stays reserved for the in-chat location
+  /// bubble, which is upstream behaviour.
   static Future<List<api.Follow>> fetchMerged({
     api.FindMyFriendsClientDefaultAnisetteProvider? foreground,
     bool refreshForeground = true,
     String source = "merge",
   }) async {
     final config = pushService.state!.osConfig;
-    List<api.Follow> fg = const [];
-    if (foreground != null) {
-      fg = refreshForeground
-          ? await api.refreshFollowing(config: config, client: foreground)
-          : await api.getFollowing(client: foreground);
-      logFollows("$source foreground", fg);
-    }
-    List<api.Follow> bg = const [];
-    final fmfd = pushService.state?.icloudServices?.fmfd;
-    if (fmfd != null) {
-      try {
-        bg = await api.refreshBackgroundFollowing(state: fmfd, config: config);
-        logFollows("$source daemon", bg);
-      } catch (e, s) {
-        Logger.warn("FindMy daemon refresh failed: $e", tag: "FindMy", trace: s);
-      }
-    }
-    return mergeFollows(fg, bg);
+    if (foreground == null) return const [];
+    final fg = refreshForeground
+        ? await api.refreshFollowing(config: config, client: foreground)
+        : await api.getFollowing(client: foreground);
+    logFollows("$source foreground", fg);
+    return fg;
   }
 
   /// Per friend id, the record whose location is newer; the other side's
