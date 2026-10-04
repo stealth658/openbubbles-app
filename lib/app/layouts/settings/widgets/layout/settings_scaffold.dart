@@ -76,10 +76,11 @@ class SettingsScaffold extends StatelessWidget {
             ),
       floatingActionButton: fab,
       extendBodyBehindAppBar: false,
-      safeAreaTop: _minimalMaterial,
+      safeAreaTop: _minimalMaterial || _minimalSamsung,
       body: NotificationListener<ScrollEndNotification>(
         onNotification: (_) {
-          if (SettingsSvc.settings.skin.value != Skins.Samsung || kIsWeb || kIsDesktop) return false;
+          // Snap only applies to Samsung's expandable large-title header.
+          if (SettingsSvc.settings.skin.value != Skins.Samsung || _minimalSamsung || kIsWeb || kIsDesktop) return false;
           final scrollDistance = context.height / 3 - 57;
           if (controller.offset > 0 &&
               controller.offset < scrollDistance &&
