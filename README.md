@@ -11,10 +11,7 @@ Android phone. The fixes depend on the merged tree and do not apply to
 Everything here is Apache 2.0, the same as both upstreams. Nothing proprietary
 was added.
 
-The merge and the changes on top of it were written with Claude (Anthropic's
-AI model) doing the implementation under direction and daily testing on a
-real device. Treat the code with the same scrutiny you would give any
-contribution; the notes below say what was verified and what was not.
+The merge and the changes on top of it were written with Claude.
 
 ### How it was built and tested
 
