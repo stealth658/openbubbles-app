@@ -89,6 +89,9 @@ Features and fixes:
   results update as you type, grouped into Conversations and Messages,
   filters in a bottom sheet.
 - Log export includes the rustpush log.
+- "Edited" shown on the receipt line ("Delivered • Edited") on all skins;
+  Undo Send and Edit lead the long-press menu while still possible, Remind
+  Later moves under More.
 - Samsung skin: chat list blocks inset with One UI's 26dp radius (the custom
   sliver decoration was not painting the long block); details page under a
   bare toolbar with round labelled action buttons.
