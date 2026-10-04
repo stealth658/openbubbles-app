@@ -61,7 +61,10 @@ bool get isSideloadMsix => isMsix && !isStoreMsix;
 String get appVersion {
   final info = FilesystemSvc.packageInfo;
   final code = info.buildNumber;
-  final build = Platform.isAndroid ? "+${code.length > 4 ? code.substring(code.length - 4) : code}" : "";
+  // A build stamped with its date and time (1.15.0-2026.10.04.1512) already
+  // identifies itself; the trailing build-number digits add nothing then.
+  final stamped = RegExp(r"-\d{4}\.\d{2}\.\d{2}\.\d{4}$").hasMatch(info.version);
+  final build = Platform.isAndroid && !stamped ? "+${code.length > 4 ? code.substring(code.length - 4) : code}" : "";
   final distribution = isSnap
       ? "_Snap"
       : isFlatpak
