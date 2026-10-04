@@ -412,6 +412,52 @@ class _BackupRestorePanelState extends State<BackupRestorePanel> with ThemeHelpe
     );
   }
 
+  /// Puts [bytes] into the user's Downloads folder as [fileName] and returns a path
+  /// that can be handed to the share sheet.
+  ///
+  /// On Android the file is written to the app's private temp directory first and
+  /// then inserted through MediaStore.Downloads (FilesystemSvc.saveToDownloads). That
+  /// is the route the log export already uses and the one that works under scoped
+  /// storage; it also makes the file visible in the Files app right away. Writing
+  /// straight to /storage/emulated/0/Download with the File API, as this panel used
+  /// to do, produced no file on recent Android builds.
+  ///
+  /// If MediaStore refuses the file the share sheet is opened instead so the user can
+  /// still get the backup off the device, and the error is rethrown for the caller's
+  /// snackbar.
+  Future<String> _writeToDownloads(String fileName, List<int> bytes, {String mimeType = 'application/json'}) async {
+    if (kIsDesktop) {
+      final path = join(await FilesystemSvc.downloadsDirectory, fileName);
+      await File(path).writeAsBytes(bytes, flush: true);
+      return path;
+    }
+    final tmp = await _tempBackupFile(fileName);
+    await tmp.writeAsBytes(bytes, flush: true);
+    await _publishToDownloads(tmp, mimeType: mimeType);
+    return tmp.path;
+  }
+
+  Future<File> _tempBackupFile(String fileName) async {
+    final dir = Directory(join(FilesystemSvc.appTempPath, 'backups'));
+    if (!await dir.exists()) await dir.create(recursive: true);
+    final file = File(join(dir.path, fileName));
+    if (await file.exists()) await file.delete();
+    return file;
+  }
+
+  /// Copies an already-written [file] into Downloads via MediaStore. On failure the
+  /// share sheet is offered as a way out before the error is rethrown.
+  Future<void> _publishToDownloads(File file, {String mimeType = 'application/json'}) async {
+    try {
+      await FilesystemSvc.saveToDownloads(file, mimeType: mimeType);
+      Logger.info("Backup saved to Downloads: ${basename(file.path)} (${await file.length()} bytes)");
+    } catch (e, s) {
+      Logger.error("Saving backup to Downloads failed, offering share sheet instead", error: e, trace: s);
+      Share.files([file.path], mimeType: mimeType);
+      rethrow;
+    }
+  }
+
   Future<void> _createSettingsBackup() async {
     final destination = await showMethodDialog();
     if (destination == null || !context.mounted) return;
@@ -445,69 +491,75 @@ class _BackupRestorePanelState extends State<BackupRestorePanel> with ThemeHelpe
       // performing the backup. Using the non-root navigator here would pop
       // the settings page instead, leaving the dialog stuck open.
       Navigator.of(_context, rootNavigator: true).pop();
-      Map<String, dynamic> json = SettingsSvc.settings.toMap(includeAll: false);
-      _stripPerRegistrationKeys(json);
-      if (desc.isNotEmpty) {
-        json["description"] = desc;
-      }
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      json["timestamp"] = timestamp;
-      json["pinnedChats"] = PinnedChatsBackup.exportList();
-      json["customGroups"] = await CustomGroupsBackup.exportList();
-      if (destination.isCloud) {
-        var response = await HttpSvc.backup.setSettings(name, json);
-        if (response.statusCode != 200) {
-          showSnackbar("Error", "Somthing went wrong");
-        } else {
-          showSnackbar("Success", "Settings exported successfully to server");
+      // Everything below used to run without a try/catch in an async void, so any
+      // failure (the write, the custom-groups export) vanished without a snackbar
+      // and the user was left with "it asked for a name and then nothing".
+      try {
+        Map<String, dynamic> json = SettingsSvc.settings.toMap(includeAll: false);
+        _stripPerRegistrationKeys(json);
+        if (desc.isNotEmpty) {
+          json["description"] = desc;
         }
-      } else {
-        if (kIsWeb) {
-          final bytes = utf8.encode(jsonEncode(json));
-          final content = base64.encode(bytes);
-          html.AnchorElement(href: "data:application/octet-stream;charset=utf-16le;base64,$content")
-            ..setAttribute("download", "BB-Settings-$name.json")
-            ..click();
-          return;
-        }
-        final downloadsDir = await FilesystemSvc.downloadsDirectory;
-        String filePath = join(downloadsDir, "BB-Settings-$name.json");
-        final String jsonString = jsonEncode(json);
-        if (kIsDesktop) {
-          String? _filePath = await saveFileAs(
-            fileName: "BB-Settings-$name.json",
-            initialDirectory: downloadsDir,
-            bytes: utf8.encode(jsonString),
-            allowedExtensions: ["json"],
-          );
-          if (_filePath == null) {
-            return showSnackbar('Failed', 'You didn\'t select a file path!');
+        final timestamp = DateTime.now().millisecondsSinceEpoch;
+        json["timestamp"] = timestamp;
+        json["pinnedChats"] = PinnedChatsBackup.exportList();
+        json["customGroups"] = await CustomGroupsBackup.exportList();
+        if (destination.isCloud) {
+          var response = await HttpSvc.backup.setSettings(name, json);
+          if (response.statusCode != 200) {
+            showSnackbar("Error", "Somthing went wrong");
+          } else {
+            showSnackbar("Success", "Settings exported successfully to server");
           }
-          filePath = _filePath;
         } else {
-          File file = File(filePath);
-          await file.create(recursive: true);
-          await file.writeAsString(jsonString);
+          final String fileName = "BB-Settings-$name.json";
+          final String jsonString = jsonEncode(json);
+          if (kIsWeb) {
+            final bytes = utf8.encode(jsonString);
+            final content = base64.encode(bytes);
+            html.AnchorElement(href: "data:application/octet-stream;charset=utf-16le;base64,$content")
+              ..setAttribute("download", fileName)
+              ..click();
+            return;
+          }
+          String filePath;
+          if (kIsDesktop) {
+            String? _filePath = await saveFileAs(
+              fileName: fileName,
+              initialDirectory: await FilesystemSvc.downloadsDirectory,
+              bytes: utf8.encode(jsonString),
+              allowedExtensions: ["json"],
+            );
+            if (_filePath == null) {
+              return showSnackbar('Failed', 'You didn\'t select a file path!');
+            }
+            filePath = _filePath;
+          } else {
+            filePath = await _writeToDownloads(fileName, utf8.encode(jsonString));
+          }
+          showSnackbar(
+            "Success",
+            "Settings exported to ${kIsDesktop ? filePath : "Downloads/$fileName"}",
+            durationMs: 5000,
+            button: TextButton(
+              style: TextButton.styleFrom(backgroundColor: Get.theme.colorScheme.secondary),
+              onPressed: () {
+                if (kIsDesktop) {
+                  revealInFileManager(filePath);
+                }
+                Share.files([filePath], mimeType: 'application/json');
+              },
+              child: Text(kIsDesktop ? "OPEN FOLDER" : "SHARE",
+                  style: TextStyle(color: context.theme.colorScheme.onSecondary)),
+            ),
+          );
         }
-        showSnackbar(
-          "Success",
-          "Settings exported successfully to ${kIsDesktop ? filePath : "downloads folder"}",
-          durationMs: kIsDesktop ? 4000 : 2000,
-          button: TextButton(
-            style: TextButton.styleFrom(backgroundColor: Get.theme.colorScheme.secondary),
-            onPressed: () {
-              if (kIsDesktop) {
-                revealInFileManager(filePath);
-              }
-              Share.files([filePath]);
-            },
-            child: Text(kIsDesktop ? "OPEN FOLDER" : "SHARE",
-                style: TextStyle(color: context.theme.colorScheme.onSecondary)),
-          ),
-        );
+        // Only the cloud list is server-backed; a local save has nothing to re-fetch.
+        if (destination.isCloud) refresh();
+      } catch (e, s) {
+        Logger.error("Failed to create settings backup!", error: e, trace: s);
+        showSnackbar("Error", "Failed to create settings backup! Error: ${e.toString()}", durationMs: 6000);
       }
-      // Only the cloud list is server-backed; a local save has nothing to re-fetch.
-      if (destination.isCloud) refresh();
     }
 
     if (!context.mounted) return;
@@ -716,41 +768,43 @@ class _BackupRestorePanelState extends State<BackupRestorePanel> with ThemeHelpe
         refresh();
         return;
       }
-      final downloadsDir = await FilesystemSvc.downloadsDirectory;
-      String filePath = join(downloadsDir, themeFilename);
-      if (kIsDesktop) {
-        String? _filePath = await saveFileAs(
-          fileName: themeFilename,
-          initialDirectory: downloadsDir,
-          bytes: utf8.encode(jsonStr),
-          allowedExtensions: ["json"],
-        );
-        if (_filePath == null) {
-          return showSnackbar('Failed', 'You didn\'t select a file path!');
+      try {
+        String filePath;
+        if (kIsDesktop) {
+          String? _filePath = await saveFileAs(
+            fileName: themeFilename,
+            initialDirectory: await FilesystemSvc.downloadsDirectory,
+            bytes: utf8.encode(jsonStr),
+            allowedExtensions: ["json"],
+          );
+          if (_filePath == null) {
+            return showSnackbar('Failed', 'You didn\'t select a file path!');
+          }
+          filePath = _filePath;
+        } else {
+          filePath = await _writeToDownloads(themeFilename, utf8.encode(jsonStr));
         }
-        filePath = _filePath;
-      } else {
-        File file = File(filePath);
-        await file.create(recursive: true);
-        await file.writeAsString(jsonStr);
+        showSnackbar(
+          "Success",
+          "Theming exported to ${kIsDesktop ? filePath : "Downloads/$themeFilename"}",
+          durationMs: 5000,
+          button: TextButton(
+            style: TextButton.styleFrom(backgroundColor: Get.theme.colorScheme.secondary),
+            onPressed: () {
+              if (kIsDesktop) {
+                revealInFileManager(filePath);
+                return;
+              }
+              Share.files([filePath], mimeType: 'application/json');
+            },
+            child: Text(kIsDesktop ? "OPEN FOLDER" : "SHARE",
+                style: TextStyle(color: context.theme.colorScheme.onSecondary)),
+          ),
+        );
+      } catch (e, s) {
+        Logger.error("Failed to create theme backup!", error: e, trace: s);
+        showSnackbar("Error", "Failed to create theme backup! Error: ${e.toString()}", durationMs: 6000);
       }
-      showSnackbar(
-        "Success",
-        "Theming exported successfully to ${kIsDesktop ? filePath : "downloads folder"}",
-        durationMs: kIsDesktop ? 4000 : 2000,
-        button: TextButton(
-          style: TextButton.styleFrom(backgroundColor: Get.theme.colorScheme.secondary),
-          onPressed: () {
-            if (kIsDesktop) {
-              revealInFileManager(filePath);
-              return;
-            }
-            Share.files([filePath]);
-          },
-          child: Text(kIsDesktop ? "OPEN FOLDER" : "SHARE",
-              style: TextStyle(color: context.theme.colorScheme.onSecondary)),
-        ),
-      );
     }
     if (destination.isCloud) refresh();
   }
@@ -932,11 +986,10 @@ class _BackupRestorePanelState extends State<BackupRestorePanel> with ThemeHelpe
       final DateTime now = DateTime.now().toLocal();
       final String fileName =
           "OpenBubbles-chats-${now.year}${now.month}${now.day}_${now.hour}${now.minute}${now.second}.json";
-      final downloadsDir = await FilesystemSvc.downloadsDirectory;
-      String filePath = join(downloadsDir, fileName);
+      final File file;
       if (kIsDesktop) {
         final String? chosen = await FilePicker.saveFile(
-          initialDirectory: downloadsDir,
+          initialDirectory: await FilesystemSvc.downloadsDirectory,
           dialogTitle: 'Choose a location to save this file',
           fileName: fileName,
           lockParentWindow: true,
@@ -947,26 +1000,40 @@ class _BackupRestorePanelState extends State<BackupRestorePanel> with ThemeHelpe
           _dismissBlockingProgress();
           return showSnackbar('Failed', 'You didn\'t select a file path!');
         }
-        filePath = chosen;
+        file = File(chosen);
+        if (await file.exists()) await file.delete();
+        await file.create(recursive: true);
+      } else {
+        // Build the file privately, then hand it to MediaStore (see _writeToDownloads
+        // for why the direct Download/ write is avoided on Android).
+        file = await _tempBackupFile(fileName);
+      }
+      final String filePath = file.path;
+
+      final Uint8List jsonBytes = const Utf8Encoder().convert(jsonStr);
+      final RandomAccessFile raf = await file.open(mode: FileMode.writeOnly);
+      try {
+        await raf.writeFrom(_int32BigEndianBytes(jsonBytes.length));
+        await raf.writeFrom(jsonBytes);
+        for (final att in attMap) {
+          final attFile = File(att);
+          await raf.writeFrom(_int32BigEndianBytes(attFile.lengthSync()));
+          await raf.writeFrom(await attFile.readAsBytes());
+        }
+        await raf.flush();
+      } finally {
+        await raf.close();
       }
 
-      final File file = File(filePath);
-      if (await file.exists()) await file.delete();
-      await file.create(recursive: true);
-      final Uint8List jsonBytes = const Utf8Encoder().convert(jsonStr);
-      await file.writeAsBytes(_int32BigEndianBytes(jsonBytes.length), mode: FileMode.append);
-      await file.writeAsBytes(jsonBytes, mode: FileMode.append);
-      for (final att in attMap) {
-        final attFile = File(att);
-        await file.writeAsBytes(_int32BigEndianBytes(attFile.lengthSync()), mode: FileMode.append);
-        await file.writeAsBytes(await attFile.readAsBytes(), mode: FileMode.append);
+      if (!kIsDesktop) {
+        await _publishToDownloads(file);
       }
 
       _dismissBlockingProgress();
       showSnackbar(
         "Success",
-        "Messages exported successfully to ${kIsDesktop ? filePath : "downloads folder"}",
-        durationMs: kIsDesktop ? 4000 : 2000,
+        "Messages exported to ${kIsDesktop ? filePath : "Downloads/$fileName"} (${(await file.length() / 1048576).toStringAsFixed(1)} MB)",
+        durationMs: 5000,
         button: TextButton(
           style: TextButton.styleFrom(backgroundColor: Get.theme.colorScheme.secondary),
           onPressed: () {
@@ -974,7 +1041,7 @@ class _BackupRestorePanelState extends State<BackupRestorePanel> with ThemeHelpe
               revealInFileManager(filePath);
               return;
             }
-            Share.files([filePath]);
+            Share.files([filePath], mimeType: 'application/json');
           },
           child: Text(kIsDesktop ? "OPEN FOLDER" : "SHARE",
               style: TextStyle(color: context.theme.colorScheme.onSecondary)),
