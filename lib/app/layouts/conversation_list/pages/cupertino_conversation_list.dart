@@ -8,6 +8,7 @@ import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/app/wrappers/bb_app_bar.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/pages/conversation_list.dart';
+import 'package:bluebubbles/app/layouts/conversation_list/pages/search/inline_search.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/tile/conversation_tile.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/tile/pinned_conversation_tile.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/conversation_list_fab.dart';
@@ -88,15 +89,36 @@ class CupertinoConversationListState extends State<CupertinoConversationList> wi
     }());
   }
 
+  /// Search in place: the iOS-style field with Cancel where the large title
+  /// was, results below. Only the system back gesture is intercepted while
+  /// it is open; otherwise the page behaves exactly as before.
+  Widget _buildSearch(BuildContext context) {
+    return SafeArea(
+      bottom: false,
+      child: Column(
+        children: [
+          CupertinoInlineSearchBar(search: controller.search),
+          Expanded(child: InlineSearchResults(search: controller.search)),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Obx(() => PopScope(
+      canPop: !controller.search.active.value,
+      onPopInvokedWithResult: <T>(bool didPop, T? other) {
+        if (didPop) return;
+        controller.search.close();
+      },
+      child: Scaffold(
       backgroundColor: SettingsSvc.settings.windowEffect.value != WindowEffect.disabled
           ? Colors.transparent
           : context.theme.colorScheme.surface,
       extendBodyBehindAppBar: !showArchived && !showUnknown && !showDeleted,
       floatingActionButton: Obx(() =>
-          !SettingsSvc.settings.moveChatCreatorToHeader.value && !showArchived && !showUnknown && !showDeleted
+          !SettingsSvc.settings.moveChatCreatorToHeader.value && !showArchived && !showUnknown && !showDeleted && !controller.search.active.value
               ? ConversationListFAB(parentController: controller)
               : const SizedBox.shrink()),
       appBar: showArchived || showUnknown || showDeleted
@@ -111,7 +133,7 @@ class CupertinoConversationListState extends State<CupertinoConversationList> wi
               backgroundColor: Colors.transparent,
             )
           : null,
-      body: Obx(() => Stack(
+      body: Obx(() => controller.search.active.value ? _buildSearch(context) : Stack(
         children: [
           ScrollbarWrapper(
             showScrollbar: true,
@@ -552,6 +574,7 @@ class CupertinoConversationListState extends State<CupertinoConversationList> wi
             ),
         ],
       )),
-    );
+      ),
+    ));
   }
 }

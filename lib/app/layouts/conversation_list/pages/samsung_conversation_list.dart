@@ -1,6 +1,7 @@
 import 'package:bluebubbles/app/components/sliver_decoration.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/pages/conversation_list.dart';
+import 'package:bluebubbles/app/layouts/conversation_list/pages/search/inline_search.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/conversation_list_fab.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/filters/custom_group_filter_chip_row.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/footer/samsung_footer.dart';
@@ -59,6 +60,10 @@ class _SamsungConversationListState extends State<SamsungConversationList> with 
       canPop: false,
       onPopInvokedWithResult: <T>(bool didPop, T? other) {
         if (didPop) return;
+        if (controller.search.active.value) {
+          controller.search.close();
+          return;
+        }
         if (controller.selectedChats.isNotEmpty) {
           controller.clearSelectedChats();
           return;
@@ -72,10 +77,18 @@ class _SamsungConversationListState extends State<SamsungConversationList> with 
       },
       child: Scaffold(
         backgroundColor: backgroundColor,
-        floatingActionButton:
-            !showArchived && !showUnknown && !showDeleted ? ConversationListFAB(parentController: controller) : const SizedBox.shrink(),
+        floatingActionButton: Obx(() => !showArchived && !showUnknown && !showDeleted && !controller.search.active.value
+            ? ConversationListFAB(parentController: controller)
+            : const SizedBox.shrink()),
         body: SafeArea(
-          child: NotificationListener<ScrollEndNotification>(
+          child: Obx(() => controller.search.active.value
+              ? Column(
+                  children: [
+                    InlineSearchBar(search: controller.search),
+                    Expanded(child: InlineSearchResults(search: controller.search)),
+                  ],
+                )
+              : NotificationListener<ScrollEndNotification>(
             onNotification: (_) {
               if (kIsWeb || kIsDesktop) return false;
               final scrollDistance = context.height / 3 - 57;
@@ -200,7 +213,7 @@ class _SamsungConversationListState extends State<SamsungConversationList> with 
                 );
               }),
             ),
-          ),
+          )),
         ),
         bottomNavigationBar: SamsungFooter(parentController: controller),
       ),

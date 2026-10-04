@@ -9,6 +9,7 @@ import 'package:bluebubbles/app/layouts/handle_selector_view/handle_selector_vie
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/services.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -116,12 +117,142 @@ class InlineSearchBar extends StatelessWidget {
     );
   }
 
-  void _showFilters(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      showDragHandle: true,
-      backgroundColor: context.theme.colorScheme.surfaceContainerLow,
-      builder: (ctx) => _FilterSheet(search: search),
+  void _showFilters(BuildContext context) => showInlineSearchFilters(context, search);
+}
+
+/// The filter sheet (from me / to me / in chat / from / since); shared by the
+/// Material, Samsung and iOS bars.
+void showInlineSearchFilters(BuildContext context, InlineSearchController search) {
+  showModalBottomSheet(
+    context: context,
+    showDragHandle: true,
+    backgroundColor: context.theme.colorScheme.surfaceContainerLow,
+    builder: (ctx) => _FilterSheet(search: search),
+  );
+}
+
+/// iOS skin: the native pattern, a rounded grey field with the magnifier
+/// inside it and a "Cancel" text button to its right. Filters sit behind the
+/// sliders icon inside the field.
+class CupertinoInlineSearchBar extends StatelessWidget {
+  const CupertinoInlineSearchBar({super.key, required this.search});
+
+  final InlineSearchController search;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = context.theme.colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 6, 8, 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: Container(
+              height: 38,
+              decoration: BoxDecoration(
+                color: scheme.surfaceContainerHighest.withValues(alpha: 0.7),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                children: [
+                  const SizedBox(width: 8),
+                  Icon(CupertinoIcons.search, size: 18, color: scheme.onSurfaceVariant),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: TextField(
+                      controller: search.textController,
+                      focusNode: search.focusNode,
+                      textInputAction: TextInputAction.search,
+                      textCapitalization: TextCapitalization.none,
+                      autocorrect: false,
+                      style: context.theme.textTheme.bodyLarge!.copyWith(color: scheme.onSurface),
+                      cursorColor: scheme.primary,
+                      decoration: InputDecoration(
+                        isCollapsed: true,
+                        border: InputBorder.none,
+                        hintText: "Search",
+                        hintStyle: context.theme.textTheme.bodyLarge!.copyWith(color: scheme.onSurfaceVariant),
+                      ),
+                    ),
+                  ),
+                  Obx(() {
+                    if (search.isSearching.value) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        child: SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: scheme.primary),
+                        ),
+                      );
+                    }
+                    if (search.term.value.isEmpty) return const SizedBox.shrink();
+                    return GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () {
+                        search.textController.clear();
+                        search.focusNode.requestFocus();
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: Icon(CupertinoIcons.xmark_circle_fill, size: 18, color: scheme.onSurfaceVariant),
+                      ),
+                    );
+                  }),
+                  Obx(() {
+                    final n = search.filterCount;
+                    return GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        search.focusNode.unfocus();
+                        showInlineSearchFilters(context, search);
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 2, right: 10),
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Icon(
+                              CupertinoIcons.slider_horizontal_3,
+                              size: 18,
+                              color: n > 0 ? scheme.primary : scheme.onSurfaceVariant,
+                            ),
+                            if (n > 0)
+                              Positioned(
+                                right: -6,
+                                top: -6,
+                                child: Container(
+                                  width: 14,
+                                  height: 14,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(color: scheme.primary, shape: BoxShape.circle),
+                                  child: Text(
+                                    "$n",
+                                    style: context.theme.textTheme.labelSmall!.copyWith(
+                                      color: scheme.onPrimary,
+                                      fontSize: 9,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ),
+          CupertinoButton(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            minimumSize: Size.zero,
+            onPressed: search.close,
+            child: Text("Cancel", style: context.theme.textTheme.bodyLarge!.copyWith(color: scheme.primary)),
+          ),
+        ],
+      ),
     );
   }
 }

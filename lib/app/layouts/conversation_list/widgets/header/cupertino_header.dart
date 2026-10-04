@@ -3,7 +3,6 @@ import 'dart:ui';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/pages/conversation_list.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/header/header_widgets.dart';
-import 'package:bluebubbles/app/layouts/conversation_list/pages/search/search_view.dart';
 import 'package:bluebubbles/app/wrappers/fade_on_scroll.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
@@ -70,9 +69,7 @@ class CupertinoHeader extends StatelessWidget {
                             child: InkWell(
                               child: Icon(CupertinoIcons.search,
                                   color: context.theme.colorScheme.onSurfaceVariant, size: 18),
-                              onTap: () {
-                                NavigationSvc.pushLeft(context, const SearchView());
-                              },
+                              onTap: () => controller.search.open(),
                             ),
                           ),
                         ),
