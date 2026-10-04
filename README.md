@@ -84,6 +84,34 @@ Features and fixes:
   filters in a bottom sheet.
 - Log export includes the rustpush log.
 
+### Building
+
+Tested with Flutter 3.44 (Dart 3.12), Java 21, Android SDK 36, NDK
+28.2.13676358, a stable Rust toolchain and `protoc`. Clone with submodules;
+`telephony_plus` has a nested one, so `--recursive` matters:
+
+```
+git clone --recursive -b merge-bb https://github.com/stealth658/openbubbles-app.git
+cd openbubbles-app
+flutter pub get
+flutter build apk --release --flavor alpha --target-platform android-arm64
+```
+
+The Rust side needs Apple FairPlay certificates in `rustpush/certs/fairplay/`
+to sign device activation. Those are private to the OpenBubbles maintainer
+and are not in any repository. Without them the build still compiles if you
+copy the placeholder pair from `rustpush/certs/legacy-fairplay/` under the
+names upstream's CI uses (see the "Set up fake Fairplay keys" step in
+OpenBubbles' `.github/workflows/build.yml`), but the resulting app cannot
+register with Apple. A working install therefore needs the Rust library
+(`lib/arm64-v8a/librust_lib_bluebubbles.so`) from an official OpenBubbles
+release in place of the one you built; the Dart and Kotlin code in this
+branch runs unchanged against it.
+
+The build is memory-hungry: `android/gradle.properties` is tuned down for a
+capped container (small heap, one worker, no daemon). On a normal machine
+you can raise those values again.
+
 ### Known limitations
 
 - Find My friends: on the tested device, friend positions never advance past
