@@ -71,7 +71,9 @@ Features and fixes:
   the app bar; tapping the name in the chat header opens details. iOS keeps
   its profile poster.
 - Tracking numbers open the carrier's own tracking page.
-- "Read on another device" clears the notification and the unread dot.
+- iMessage read on another of your devices clears the notification and the
+  unread dot (rustpush's Read notice, command 102). Forwarded SMS is not
+  covered; see Known limitations.
 - Backup and restore: local backups are written through MediaStore and land
   in Downloads; messages restore works on a fresh install (handles, chats,
   messages and attachments re-created with fresh IDs); Reset App deregisters
@@ -125,6 +127,15 @@ capped container (small heap, one worker, no daemon). On a normal machine
 you can raise those values again.
 
 ### Known limitations
+
+- Forwarded SMS read on another device (iPhone, iPad, Mac) stays unread here.
+  Apple sends that notice on the SMS forwarding service as command 147 with
+  the message GUID and read time (`{"g": <guid>, "e": <date>}`). rustpush only
+  sends 147 and has no decoder for it on receipt (true of both the pinned
+  `a7fab47` and upstream `cb2361c`), so it is dropped before reaching the app.
+  A fix needs rustpush to turn an incoming 147 into a Read for message `g`,
+  and the Dart handler in `rustpush_service.dart` to accept SMS chats as well
+  as iMessage ones.
 
 - Find My friends: on the tested device, friend positions never advance past
   what Apple's server already holds. The Rust log shows no Find My IDS
