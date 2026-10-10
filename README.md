@@ -45,6 +45,9 @@ Merge integrity (regressions found after the merge):
   API tiles, and routed external downloads (emoji font, sounds, GIFs) through
   the server API guard, so they failed instantly. Both restored to the
   no-server behaviour.
+- Incoming edits and unsends were dropped by the merged incoming-message
+  handler as duplicates (they carry the original's guid); dispatched as
+  updates now.
 - Gradle tuned for memory-capped CI containers.
 
 Upstream BlueBubbles cherry-picks taken after the merge point: restore
@@ -95,6 +98,9 @@ Features and fixes:
 - Samsung skin: chat list blocks inset with One UI's 26dp radius (the custom
   sliver decoration was not painting the long block); details page under a
   bare toolbar with round labelled action buttons.
+- Reply quote (Material) drawn as a small faded quote without a repeated
+  author name; reply thread view uses the thread's own neighbours for time
+  headers and sender names.
 - Contact photos keep their aspect ratio (the avatar decode squashed
   non-square photos into a square).
 
