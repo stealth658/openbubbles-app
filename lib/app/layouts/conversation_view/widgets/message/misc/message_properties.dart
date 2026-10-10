@@ -99,7 +99,7 @@ class _MessagePropertiesState extends State<MessageProperties> with ThemeHelpers
     }
     if (replyList.isNotEmpty) {
       properties.add(TextSpan(
-          text: "${replyList.length} repl${replyList.length > 1 ? "ies" : "y"}",
+          text: "${replyList.length} ${replyList.length > 1 ? "Replies" : "Reply"}",
           recognizer: TapGestureRecognizer()
             ..onTap = () {
               if (controller.cvController == null) return;
@@ -162,8 +162,8 @@ class _MessagePropertiesState extends State<MessageProperties> with ThemeHelpers
                   TextSpan(
                     children: intersperse(const TextSpan(text: " • "), props).toList(),
                   ),
-                  style: context.theme.textTheme.labelSmall!
-                      .copyWith(color: context.theme.colorScheme.primary, fontWeight: FontWeight.bold),
+                  style: context.theme.textTheme.labelMedium!
+                      .copyWith(color: context.theme.colorScheme.primary, fontWeight: FontWeight.w500),
                 ),
               )
             : const SizedBox.shrink(),

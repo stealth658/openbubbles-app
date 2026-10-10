@@ -18,7 +18,6 @@ import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/misc/s
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/misc/swipe_to_reply_wrapper.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/misc/tail_clipper.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/popup/message_popup_holder.dart';
-import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/reply/reply_line_painter.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/text/text_bubble.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/timestamp/message_timestamp.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/timestamp/timestamp_separator.dart';
@@ -300,7 +299,24 @@ class _MessageHolderState extends State<MessageHolder> with AutomaticKeepAliveCl
                       crossAxisAlignment: isFromMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                       children: [
                         // message column
-                        ...messageParts.mapIndexed((index, e) => Padding(
+                        ...messageParts.mapIndexed((index, e) {
+                          // Reply threading, drawn the same way on every skin
+                          // (iMessage's layout): when the original is not right
+                          // above, a quote of it with a small avatar of its
+                          // author sits in the avatar column; a thin line runs
+                          // down that column to this message's own avatar.
+                          final isReply = index == 0 &&
+                              !widget.isReplyThread &&
+                              olderMessage != null &&
+                              message.threadOriginatorGuid != null &&
+                              replyTo != null &&
+                              service.getMessageStateIfExists(replyTo!.guid!) != null;
+                          final showQuote = isReply && message.showUpperMessage(olderMessage!);
+                          final avatarsOn = showAvatar || alwaysShowAvatars;
+                          final lineInColumn = isReply && !message.isFromMe! && !message.isGroupEvent && avatarsOn;
+                          final avatarHere = message.showTail(newerMessage) && e.part == controller.parts.length - 1;
+                          final bodyAvatarSize = (iOS ? 30.0 : 35.0) * avatarScale;
+                          return Padding(
                               padding: const EdgeInsets.symmetric(vertical: 2.0),
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
@@ -315,38 +331,28 @@ class _MessageHolderState extends State<MessageHolder> with AutomaticKeepAliveCl
                                       alwaysShowAvatars: alwaysShowAvatars,
                                       avatarScale: avatarScale,
                                     ),
-                                  if (iOS &&
-                                      index == 0 &&
-                                      !widget.isReplyThread &&
-                                      olderMessage != null &&
-                                      message.threadOriginatorGuid != null &&
-                                      message.showUpperMessage(olderMessage!) &&
-                                      replyTo != null &&
-                                      service.getMessageStateIfExists(replyTo!.guid!) != null)
-                                    Padding(
-                                      padding: EdgeInsets.only(
-                                          left: (showAvatar || alwaysShowAvatars) && replyTo!.isFromMe! ? 35 : 0),
-                                      child: DecoratedBox(
-                                        decoration: replyTo!.isFromMe == message.isFromMe
-                                            ? ReplyLineDecoration(
-                                                isFromMe: message.isFromMe!,
-                                                color: context.theme.colorScheme.surfaceContainerHighest,
-                                                connectUpper: false,
-                                                connectLower: true,
-                                                context: context,
-                                              )
-                                            : const BoxDecoration(),
-                                        child: ReplyBubbleSection(
-                                          replyTo: replyTo!,
-                                          cvController: widget.cvController,
-                                          showAvatar: showAvatar,
-                                          alwaysShowAvatars: alwaysShowAvatars,
-                                          avatarScale: avatarScale,
-                                          isIOS: true,
-                                          isFirstPart: true,
-                                        ),
-                                      ),
+                                  if (showQuote)
+                                    ReplyBubbleSection(
+                                      replyTo: replyTo!,
+                                      cvController: widget.cvController,
+                                      showAvatar: showAvatar,
+                                      alwaysShowAvatars: alwaysShowAvatars,
+                                      avatarScale: avatarScale,
+                                      isIOS: iOS,
+                                      isFirstPart: true,
                                     ),
+                                  CustomPaint(
+                                    painter: lineInColumn
+                                        ? _AvatarColumnLinePainter(
+                                            color: replyLineColor(context),
+                                            x: 5.0 + bodyAvatarSize / 2,
+                                            stopAbove: avatarHere ? bodyAvatarSize + 3.0 : 0.0,
+                                          )
+                                        : null,
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      crossAxisAlignment: isFromMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                                      children: [
                                   // show sender, if needed
                                   if (chat.isGroup &&
                                       !message.isFromMe! &&
@@ -356,94 +362,16 @@ class _MessageHolderState extends State<MessageHolder> with AutomaticKeepAliveCl
                                       padding: showAvatar || alwaysShowAvatars
                                           ? EdgeInsets.only(left: 35.0 * avatarScale)
                                           : EdgeInsets.zero,
-                                      child: iOS && !widget.isReplyThread && message.threadOriginatorGuid != null
-                                          ? SizedBox(
-                                              width: double.infinity,
-                                              child: CustomPaint(
-                                                painter: _ReplyLinePainter(
-                                                  color: context.theme.colorScheme.surfaceContainerHighest,
-                                                  isFromMe: message.isFromMe!,
-                                                ),
-                                                child: MessageSender(olderMessage: olderMessage),
-                                              ),
-                                            )
-                                          : MessageSender(olderMessage: olderMessage),
+                                      child: MessageSender(olderMessage: olderMessage),
                                     ),
                                   // add a box to account for height of reactions
-                                  iOS &&
-                                          !widget.isReplyThread &&
-                                          message.threadOriginatorGuid != null &&
-                                          replyTo != null &&
-                                          replyTo!.isFromMe!
-                                      ? SizedBox(
-                                          width: double.infinity,
-                                          child: CustomPaint(
-                                            painter: _ReplyLinePainter(
-                                              color: context.theme.colorScheme.surfaceContainerHighest,
-                                              isFromMe: message.isFromMe!,
-                                            ),
-                                            child: ReactionSpacing(
-                                              messageParts: messageParts,
-                                              part: e,
-                                              reactionsForPart: reactionsForPart,
-                                              minHeightWhenNoReactions: message.isFromMe! ? 8 : 0,
-                                            ),
-                                          ),
-                                        )
-                                      : ReactionSpacing(
-                                          messageParts: messageParts,
-                                          part: e,
-                                          reactionsForPart: reactionsForPart,
-                                          minHeightWhenNoReactions: iOS &&
-                                                  !widget.isReplyThread &&
-                                                  message.threadOriginatorGuid != null &&
-                                                  message.isFromMe!
-                                              ? 8
-                                              : 0,
-                                        ),
-                                  if (!iOS &&
-                                      index == 0 &&
-                                      !widget.isReplyThread &&
-                                      olderMessage != null &&
-                                      message.threadOriginatorGuid != null &&
-                                      replyTo != null &&
-                                      service.getMessageStateIfExists(replyTo!.guid!) != null)
-                                    ReplyBubbleSection(
-                                      replyTo: replyTo!,
-                                      cvController: widget.cvController,
-                                      showAvatar: showAvatar,
-                                      alwaysShowAvatars: alwaysShowAvatars,
-                                      avatarScale: avatarScale,
-                                      isIOS: false,
-                                      isFirstPart: true,
-                                    ),
-                                  CustomPaint(
-                                    // Material: the quote above put a small avatar
-                                    // of the original's author in the avatar
-                                    // column; keep its line running down the
-                                    // column, past the body, to the reply's own
-                                    // avatar (matters when the body is tall, e.g.
-                                    // an image).
-                                    painter: !iOS &&
-                                            index == 0 &&
-                                            !widget.isReplyThread &&
-                                            olderMessage != null &&
-                                            message.threadOriginatorGuid != null &&
-                                            replyTo != null &&
-                                            !message.isFromMe! &&
-                                            !message.isGroupEvent &&
-                                            (showAvatar || alwaysShowAvatars) &&
-                                            service.getMessageStateIfExists(replyTo!.guid!) != null
-                                        ? _AvatarColumnLinePainter(
-                                            color: context.theme.colorScheme.outlineVariant,
-                                            x: 5.0 + 17.5 * avatarScale,
-                                            stopAbove: message.showTail(newerMessage) &&
-                                                    e.part == controller.parts.length - 1
-                                                ? 35.0 * avatarScale + 3.0
-                                                : 0.0,
-                                          )
-                                        : null,
-                                    child: Stack(
+                                  ReactionSpacing(
+                                    messageParts: messageParts,
+                                    part: e,
+                                    reactionsForPart: reactionsForPart,
+                                    minHeightWhenNoReactions: 0,
+                                  ),
+                                  Stack(
                                     alignment: Alignment.bottomLeft,
                                     children: [
                                       // avatar, if needed
@@ -468,23 +396,7 @@ class _MessageHolderState extends State<MessageHolder> with AutomaticKeepAliveCl
                                                     left: 35.0 * avatarScale + (e.isMediaGallery ? 12.0 : 0.0))
                                                 : EdgeInsets.zero,
                                         child: DecoratedBox(
-                                          decoration: iOS &&
-                                                  !widget.isReplyThread &&
-                                                  ((index == 0 &&
-                                                          message.threadOriginatorGuid != null &&
-                                                          olderMessage != null) ||
-                                                      (index == messageParts.length - 1 &&
-                                                          service.struct.threads(message.guid!, index).isNotEmpty &&
-                                                          newerMessage != null))
-                                              ? ReplyLineDecoration(
-                                                  isFromMe: message.isFromMe!,
-                                                  color: context.theme.colorScheme.surfaceContainerHighest,
-                                                  connectUpper: message.connectToUpper(),
-                                                  connectLower:
-                                                      newerMessage != null && message.connectToLower(newerMessage!),
-                                                  context: context,
-                                                )
-                                              : const BoxDecoration(),
+                                          decoration: const BoxDecoration(),
                                           child: SelectModeWrapper(
                                             cvController: widget.cvController,
                                             tapped: tapped,
@@ -702,6 +614,8 @@ class _MessageHolderState extends State<MessageHolder> with AutomaticKeepAliveCl
                                       ),
                                     ],
                                   ),
+                                      ],
+                                    ),
                                   ),
                                   // message properties (replies, edits, effect)
                                   Padding(
@@ -713,7 +627,8 @@ class _MessageHolderState extends State<MessageHolder> with AutomaticKeepAliveCl
                                   ),
                                 ],
                               ),
-                            )),
+                            );
+                        }),
                         // delivered / read receipt
                         DeliveredIndicatorObserver(tapped: tapped),
                       ],
@@ -759,31 +674,3 @@ class _AvatarColumnLinePainter extends CustomPainter {
   bool shouldRepaint(_AvatarColumnLinePainter old) => old.color != color || old.x != x || old.stopAbove != stopAbove;
 }
 
-/// Custom painter to draw a simple vertical line for the reply thread
-/// connecting through the message sender
-class _ReplyLinePainter extends CustomPainter {
-  final Color color;
-  final bool isFromMe;
-
-  _ReplyLinePainter({required this.color, required this.isFromMe});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 3
-      ..style = PaintingStyle.stroke;
-
-    // Draw vertical line at the same position as the reply line
-    // Position depends on message direction: left side if from me, right side if not
-    final x = isFromMe ? 35.0 : size.width - 35;
-    canvas.drawLine(
-      Offset(x, -5),
-      Offset(x, size.height - (!isFromMe ? 0 : 5)),
-      paint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_ReplyLinePainter oldDelegate) => oldDelegate.color != color || oldDelegate.isFromMe != isFromMe;
-}

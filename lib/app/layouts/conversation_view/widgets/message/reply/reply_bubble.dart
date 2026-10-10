@@ -251,7 +251,8 @@ class _ReplyBubbleState extends State<ReplyBubble> with ThemeHelpers {
         ),
       ),
     );
-    return hasBackground ? iOSContent : Opacity(opacity: 0.6, child: iOSContent);
+    // Slightly dimmed, as iMessage draws the quoted original.
+    return hasBackground ? iOSContent : Opacity(opacity: 0.75, child: iOSContent);
   }
 }
 
