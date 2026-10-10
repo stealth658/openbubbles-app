@@ -561,7 +561,11 @@ void showSnackbar(String title, String message,
     int durationMs = 1500,
     String? actionLabel,
     VoidCallback? onAction}) {
-  final isError = type == SnackbarType.error;
+  // Many call sites predate [SnackbarType]; their titles say what they are.
+  final isError = type == SnackbarType.error ||
+      const ["Error", "Failed", "Failure", "Failure! Please try again", "Unsupported", "SMS denied", "Relog required!",
+          "Relog Required", "Invalid Date Selection"].contains(title);
+  if (isError) type = SnackbarType.error;
   if (!kIsDesktop) {
     if (isError) {
       unawaited(showToast(message, isError: true));

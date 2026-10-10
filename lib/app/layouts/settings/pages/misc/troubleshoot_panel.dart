@@ -357,9 +357,8 @@ class _TroubleshootPanelState extends State<TroubleshootPanel> with ThemeHelpers
                         "Logs Exported",
                         "Logs have been exported to your downloads folder. Tap here to share it.",
                         durationMs: 5000,
-                        onTap: (snackbar) async {
-                          Share.files([newPath]);
-                        },
+                        actionLabel: "SHARE",
+                        onAction: () => Share.files([newPath]),
                       );
                     },
                   ),

@@ -542,26 +542,16 @@ class _BackupRestorePanelState extends State<BackupRestorePanel> with ThemeHelpe
             "Success",
             "Settings exported to ${kIsDesktop ? filePath : "Downloads/$fileName"}",
             durationMs: 5000,
-            button: TextButton(
-              style: TextButton.styleFrom(backgroundColor: Get.theme.colorScheme.secondary),
-              onPressed: () {
-                if (kIsDesktop) {
-                  revealInFileManager(filePath);
-                }
-                Share.files([filePath], mimeType: 'application/json');
-              },
-              child: Text(kIsDesktop ? "OPEN FOLDER" : "SHARE",
-                  style: TextStyle(color: context.theme.colorScheme.onSecondary)),
-            ),
+            actionLabel: kIsDesktop ? "OPEN FOLDER" : "SHARE",
+            onAction: () =>
+                kIsDesktop ? revealInFileManager(filePath) : Share.files([filePath], mimeType: 'application/json'),
           );
         }
-        showSnackbar(
-          "Success",
-          "Settings exported successfully to ${kIsDesktop ? filePath : "downloads folder"}",
-          durationMs: kIsDesktop ? 4000 : 2000,
-          actionLabel: kIsDesktop ? "OPEN FOLDER" : "SHARE",
-          onAction: () => kIsDesktop ? revealInFileManager(filePath) : Share.files([filePath]),
-        );
+        // Only the cloud list is server-backed; a local save has nothing to re-fetch.
+        if (destination.isCloud) refresh();
+      } catch (e, s) {
+        Logger.error("Failed to create settings backup!", error: e, trace: s);
+        showSnackbar("Error", "Failed to create settings backup! Error: ${e.toString()}", durationMs: 6000);
       }
     }
 
@@ -791,30 +781,14 @@ class _BackupRestorePanelState extends State<BackupRestorePanel> with ThemeHelpe
           "Success",
           "Theming exported to ${kIsDesktop ? filePath : "Downloads/$themeFilename"}",
           durationMs: 5000,
-          button: TextButton(
-            style: TextButton.styleFrom(backgroundColor: Get.theme.colorScheme.secondary),
-            onPressed: () {
-              if (kIsDesktop) {
-                revealInFileManager(filePath);
-                return;
-              }
-              Share.files([filePath], mimeType: 'application/json');
-            },
-            child: Text(kIsDesktop ? "OPEN FOLDER" : "SHARE",
-                style: TextStyle(color: context.theme.colorScheme.onSecondary)),
-          ),
+          actionLabel: kIsDesktop ? "OPEN FOLDER" : "SHARE",
+          onAction: () =>
+              kIsDesktop ? revealInFileManager(filePath) : Share.files([filePath], mimeType: 'application/json'),
         );
       } catch (e, s) {
         Logger.error("Failed to create theme backup!", error: e, trace: s);
         showSnackbar("Error", "Failed to create theme backup! Error: ${e.toString()}", durationMs: 6000);
       }
-      showSnackbar(
-        "Success",
-        "Theming exported successfully to ${kIsDesktop ? filePath : "downloads folder"}",
-        durationMs: kIsDesktop ? 4000 : 2000,
-        actionLabel: kIsDesktop ? "OPEN FOLDER" : "SHARE",
-        onAction: () => kIsDesktop ? revealInFileManager(filePath) : Share.files([filePath]),
-      );
     }
     if (destination.isCloud) refresh();
   }
@@ -1055,18 +1029,9 @@ class _BackupRestorePanelState extends State<BackupRestorePanel> with ThemeHelpe
         "Success",
         "Messages exported to ${kIsDesktop ? filePath : "Downloads/$fileName"} (${(await file.length() / 1048576).toStringAsFixed(1)} MB)",
         durationMs: 5000,
-        button: TextButton(
-          style: TextButton.styleFrom(backgroundColor: Get.theme.colorScheme.secondary),
-          onPressed: () {
-            if (kIsDesktop) {
-              revealInFileManager(filePath);
-              return;
-            }
-            Share.files([filePath], mimeType: 'application/json');
-          },
-          child: Text(kIsDesktop ? "OPEN FOLDER" : "SHARE",
-              style: TextStyle(color: context.theme.colorScheme.onSecondary)),
-        ),
+        actionLabel: kIsDesktop ? "OPEN FOLDER" : "SHARE",
+        onAction: () =>
+            kIsDesktop ? revealInFileManager(filePath) : Share.files([filePath], mimeType: 'application/json'),
       );
     } catch (e, s) {
       _dismissBlockingProgress();

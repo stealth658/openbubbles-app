@@ -134,6 +134,12 @@ class ThemesService {
     }
   }
 
+  final Rx<MovieTween> gradientTween = Rx<MovieTween>(MovieTween()
+    ..scene(begin: Duration.zero, duration: const Duration(seconds: 3))
+        .tween("color1", Tween<double>(begin: 0, end: 0.2))
+    ..scene(begin: Duration.zero, duration: const Duration(seconds: 3))
+        .tween("color2", Tween<double>(begin: 0.8, end: 1)));
+
   Future<void> init() async {
     // on Linux these block the GTK thread and freeze the splash
     // spinner; defer to initDynamicColorsDeferred (post-splash) instead.
