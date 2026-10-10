@@ -787,8 +787,10 @@ class ChatsService {
     final currentIndex = _sortedChats.indexWhere((c) => c.guid == chat.guid);
 
     if (currentIndex == -1) {
-      // Chat not found, just insert it
+      // Chat not found: insert it and redraw, so a chat that reached the list
+      // through a new message shows up without a restart.
       _insertChatSorted(chat);
+      _scheduleListVersionUpdate(immediate: immediate);
       return;
     }
 
@@ -1731,8 +1733,16 @@ class ChatsService {
   /// The 2s tolerance allows a temp->real GUID swap. [allowOlder] opts out for the
   /// post-deletion recompute, which must fall back to an older surviving message.
   void updateChatLatestMessage(String chatGuid, Message message, {bool allowOlder = false}) {
-    final state = getChatState(chatGuid);
-    if (state == null) return;
+    ChatState? state = getChatState(chatGuid);
+    if (state == null) {
+      // A chat the list has not met yet (e.g. opened straight from the chat
+      // creator or a share): bring it in rather than dropping the update,
+      // which left the tile stale until the next restart.
+      final chat = message.chat.target ?? Chat.findOne(guid: chatGuid);
+      if (chat == null || chat.dateDeleted != null || chat.isRoutingStub) return;
+      Logger.info("Chat $chatGuid had no list state; adding it on new message", tag: "ChatsService");
+      state = getOrCreateChatState(chat);
+    }
 
     if (!allowOlder) {
       final current = state.latestMessage.value;

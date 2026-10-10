@@ -43,7 +43,8 @@ class SearchResultsList extends StatelessWidget {
     if (selected.any((c) => (c as SelectedContact).address == query)) {
       return false;
     }
-    // Already surfaced in a contact row — don't duplicate
+    // An existing conversation for this address is listed below; use that.
+    if (controller.chatForAddress(query) != null) return false;
     return true;
   }
 
@@ -206,6 +207,7 @@ class SearchResultsList extends StatelessWidget {
                 key: ValueKey(contacts[index].nativeContactId),
                 contact: contacts[index],
                 controller: controller,
+                listedChatGuids: chats.map((c) => c.guid).toSet(),
               ),
               childCount: contacts.length,
             ),

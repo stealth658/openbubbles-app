@@ -106,7 +106,13 @@ class ChatCreatorController extends StatefulController {
       filteredChats.value = result.chats;
       filteredContacts.value = result.contacts;
       if (text.isNotEmpty) {
-        filteredChats.sort((a, b) => a.handles.length.compareTo(b.handles.length));
+        // Most recent conversation first; fewer participants wins a tie, so a
+        // 1:1 chat sits above a group that happens to include the person.
+        filteredChats.sort((a, b) {
+          final byDate = (lastMessageDate(b) ?? DateTime(0)).compareTo(lastMessageDate(a) ?? DateTime(0));
+          if (byDate != 0) return byDate;
+          return a.handles.length.compareTo(b.handles.length);
+        });
       }
     });
   }
@@ -141,6 +147,7 @@ class ChatCreatorController extends StatefulController {
     }
 
     final q = query.toLowerCase();
+    final qDigits = _digits(q);
     final contacts = _allContacts
         .where((e) =>
             _contactHasAddressForService(e) &&
@@ -155,10 +162,37 @@ class ChatCreatorController extends StatefulController {
     final chats = _allChats.where((e) {
       if (!_chatMatchesService(e)) return false;
       return e.getTitle().toLowerCase().contains(q) ||
-          e.handles.firstWhereOrNull((h) => h.address.contains(q) || h.displayName.toLowerCase().contains(q)) != null;
+          e.handles.firstWhereOrNull((h) =>
+                  h.address.toLowerCase().contains(q) ||
+                  h.displayName.toLowerCase().contains(q) ||
+                  // "(646) 893" should find +16468938923.
+                  (qDigits.length >= 3 && _digits(h.address).contains(qDigits))) !=
+              null;
     }).toList();
 
     return _SearchResult(chats: chats, contacts: contacts);
+  }
+
+  static String _digits(String s) => s.replaceAll(RegExp(r"[^0-9]"), "");
+
+  /// When the chat last had a message, for ranking.
+  DateTime? lastMessageDate(Chat c) =>
+      ChatsSvc.getChatState(c.guid)?.latestMessage.value?.dateCreated ?? c.dbOnlyLatestMessageDate;
+
+  /// The existing 1:1 chat for [address] on any service, if there is one.
+  Chat? chatForAddress(String address) {
+    final isEmail = address.isEmail;
+    final digits = isEmail ? "" : _digits(address);
+    for (final c in _allChats) {
+      if (c.handles.length != 1 || c.isRoutingStub || c.dateDeleted != null) continue;
+      final h = c.handles.first.address;
+      if (isEmail) {
+        if (h.toLowerCase() == address.toLowerCase()) return c;
+      } else if (digits.length >= 7 && _digits(h).endsWith(digits)) {
+        return c;
+      }
+    }
+    return null;
   }
 
   bool _chatMatchesService(Chat c) {
@@ -185,10 +219,9 @@ class ChatCreatorController extends StatefulController {
   }
 
   Future<void> _loadData() async {
-    // Load contacts first (won't block chat loading)
-    if (initialAttachments.isEmpty) {
-      _allContacts = await ContactsSvcV2.getAllContacts();
-    }
+    // Load contacts first (won't block chat loading). Shared files used to
+    // skip this, which left a photo share with no contacts to pick from.
+    _allContacts = await ContactsSvcV2.getAllContacts();
 
     // Load chats
     if (ChatsSvc.loadedAllChats.isCompleted) {
@@ -334,6 +367,17 @@ class ChatCreatorController extends StatefulController {
           existingChat = Chat.findOne(chatIdentifier: slugify(address, delimiter: ''));
         }
       } catch (_) {}
+      // The raw lookup can return a deleted chat or an SMS routing stub, and
+      // it returns a fresh DB instance. Prefer the instance the chat list
+      // holds (so sends update the list), and never use a hidden chat.
+      if (existingChat != null) {
+        final listed = ChatsSvc.allChats.firstWhereOrNull((c) => c.guid == existingChat!.guid);
+        if (listed != null) {
+          existingChat = listed;
+        } else if (existingChat.isRoutingStub || (existingChat.dateDeleted != null && !checkDeleted)) {
+          existingChat = null;
+        }
+      }
     }
 
     // Multi-contact: match by participant handles.
@@ -482,6 +526,12 @@ class ChatCreatorController extends StatefulController {
 
     // Re-check for an existing chat in case the debounce hasn't fired yet.
     Chat? resolvedChat = activeController.value?.chat ?? await findExistingChat(checkDeleted: true, update: false);
+    Logger.info(
+        "Chat creator send: resolved chat ${resolvedChat?.guid ?? 'none'} "
+        "(listed: ${resolvedChat == null ? '-' : ChatsSvc.allChats.any((c) => c.guid == resolvedChat!.guid)}, "
+        "deleted: ${resolvedChat?.dateDeleted != null}, stub: ${resolvedChat?.isRoutingStub ?? false}) "
+        "for ${selectedContacts.map((c) => c.address).join(', ')}",
+        tag: "ChatCreator");
     bool messageSentWithChat = false;
     // Messages already synced to the DB during the new-chat creation flow.
     // Pre-seeded into messagesService.struct before navigation so MessagesView's

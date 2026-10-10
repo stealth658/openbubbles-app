@@ -4,6 +4,7 @@ import 'package:bluebubbles/app/layouts/chat_creator/new_chat_creator.dart';
 import 'package:bluebubbles/app/layouts/facetime/facetime.dart';
 import 'package:bluebubbles/app/layouts/findmy/findmy_page.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/misc/shared_streams_panel.dart';
+import 'package:bluebubbles/app/layouts/share/share_picker.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/passwords/passwords_panel.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/profile/profile_panel.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/scheduling/scheduled_messages_panel.dart';
@@ -219,8 +220,19 @@ class IntentsService {
     Logger.info("Handling open chat intent with guid: $guid", tag: "IntentsService");
 
     if (guid == null) {
-      Logger.debug("Opening new chat creator..", tag: "IntentsService");
       await StartupTasks.waitForUI();
+      if (text != null || attachments.isNotEmpty) {
+        // Shared from another app with no target chosen: pick a conversation
+        // (or start a new one) first, like AOSP Messaging's share dialog.
+        Logger.debug("Opening share picker..", tag: "IntentsService");
+        NavigationSvc.pushAndRemoveUntil(
+          Get.context!,
+          SharePicker(text: text, attachments: attachments),
+          (route) => route.isFirst,
+        );
+        return;
+      }
+      Logger.debug("Opening new chat creator..", tag: "IntentsService");
       NavigationSvc.pushAndRemoveUntil(
         Get.context!,
         NewChatCreator(
