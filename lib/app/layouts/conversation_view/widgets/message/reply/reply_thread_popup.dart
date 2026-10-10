@@ -50,6 +50,45 @@ void _buildThreadView(
   // Capture the ChatState so it can be re-provided inside the new route,
   // which has its own widget tree without a ChatStateScope.
   final capturedChatState = ChatsSvc.getOrCreateChatState(cvController.chat);
+  final themed = (Widget child) => ChatStateScope(
+        chatState: capturedChatState,
+        child: Theme(
+          data: capturedTheme.copyWith(
+            primaryColor: capturedBubbleExt?.iMessageBubbleColor ?? capturedTheme.colorScheme.primary,
+            colorScheme: capturedTheme.colorScheme.copyWith(
+              primary: capturedBubbleExt?.iMessageBubbleColor ?? capturedTheme.colorScheme.primary,
+              onPrimary: capturedBubbleExt?.oniMessageBubbleColor ?? capturedTheme.colorScheme.onPrimary,
+              surface: capturedIsM3 ? null : capturedBubbleExt?.receivedBubbleColor,
+              onSurface: capturedIsM3 ? null : capturedBubbleExt?.onReceivedBubbleColor,
+            ),
+          ),
+          child: DeferredPointerHandler(child: child),
+        ),
+      );
+  // Material and Samsung: a Material 3 bottom sheet over a plain scrim.
+  // iOS keeps the blurred overlay below.
+  if (SettingsSvc.settings.skin.value != Skins.iOS && !kIsDesktop && !kIsWeb) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      backgroundColor: capturedTheme.colorScheme.surfaceContainerLow,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+      constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.8),
+      builder: (sheetCtx) => themed(_ThreadSheet(
+        messages: _messages,
+        originatorPart: originatorPart,
+        cvController: cvController,
+        scrollController: controller,
+        theme: capturedTheme,
+        parentContext: context,
+      )),
+    ).then((_) {
+      if (kIsDesktop || kIsWeb) cvController.focusNode.requestFocus();
+    });
+    return;
+  }
   Navigator.push(
     context,
     PageRouteBuilder(
@@ -315,6 +354,168 @@ class _ThreadOverlayState extends State<_ThreadOverlay> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Material 3 thread view: a bottom sheet with a small header, the thread,
+/// and a reply field pinned at the bottom (grows with the keyboard).
+class _ThreadSheet extends StatefulWidget {
+  const _ThreadSheet({
+    required this.messages,
+    required this.originatorPart,
+    required this.cvController,
+    required this.scrollController,
+    required this.theme,
+    required this.parentContext,
+  });
+
+  final List<Message> messages;
+  final int? originatorPart;
+  final ConversationViewController cvController;
+  final ScrollController scrollController;
+  final ThemeData theme;
+  final BuildContext parentContext;
+
+  @override
+  State<_ThreadSheet> createState() => _ThreadSheetState();
+}
+
+class _ThreadSheetState extends State<_ThreadSheet> {
+  final TextEditingController _replyText = TextEditingController();
+  bool _sending = false;
+
+  List<Message> get messages => widget.messages;
+  int? get originatorPart => widget.originatorPart;
+  ConversationViewController get cvController => widget.cvController;
+  bool get _isThread => originatorPart != null;
+
+  @override
+  void dispose() {
+    _replyText.dispose();
+    super.dispose();
+  }
+
+  void _close() => Navigator.of(context).pop();
+
+  Future<void> _sendReply() async {
+    final text = _replyText.text.trim();
+    if (text.isEmpty || _sending) return;
+    setState(() => _sending = true);
+    final original = messages.first;
+    try {
+      await cvController.send(SendData(
+        attachments: const [],
+        text: text,
+        subject: "",
+        replyGuid: original.threadOriginatorGuid ?? original.guid,
+        replyPart: originatorPart,
+      ));
+    } finally {
+      if (mounted) _close();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = widget.theme;
+    final scheme = theme.colorScheme;
+    final replyCount = _isThread ? messages.length - 1 : messages.length;
+    final title = _isThread
+        ? "$replyCount ${replyCount == 1 ? "Reply" : "Replies"}"
+        : "$replyCount ${replyCount == 1 ? "Bookmark" : "Bookmarks"}";
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 0, 8, 4),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(title, style: theme.textTheme.titleMedium!.copyWith(color: scheme.onSurface)),
+                ),
+                IconButton(
+                  tooltip: "Close",
+                  icon: Icon(Icons.close, color: scheme.onSurfaceVariant),
+                  onPressed: _close,
+                ),
+              ],
+            ),
+          ),
+          Flexible(
+            child: ListView(
+              controller: widget.scrollController,
+              shrinkWrap: true,
+              padding: const EdgeInsets.fromLTRB(8, 4, 8, 12),
+              children: messages
+                  .mapIndexed((index, e) => GestureDetector(
+                        onTap: () {
+                          _close();
+                          MessagesSvc(cvController.chat.guid).jumpToMessage.call(e.guid!);
+                        },
+                        child: AbsorbPointer(
+                          absorbing: true,
+                          child: MessageHolder(
+                            cvController: cvController,
+                            message: messages[index],
+                            oldMessage: index > 0 ? messages[index - 1] : null,
+                            newMessage: index < messages.length - 1 ? messages[index + 1] : null,
+                            isReplyThread: true,
+                            replyPart: index == 0 ? originatorPart : null,
+                          ),
+                        ),
+                      ))
+                  .toList(),
+            ),
+          ),
+          if (_isThread)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+              child: Container(
+                constraints: const BoxConstraints(minHeight: 48),
+                padding: const EdgeInsets.only(left: 18, right: 4),
+                decoration: BoxDecoration(
+                  color: scheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(28),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _replyText,
+                        autofocus: true,
+                        minLines: 1,
+                        maxLines: 4,
+                        textInputAction: TextInputAction.send,
+                        textCapitalization: TextCapitalization.sentences,
+                        onSubmitted: (_) => _sendReply(),
+                        style: theme.textTheme.bodyLarge!.copyWith(color: scheme.onSurface),
+                        cursorColor: scheme.primary,
+                        decoration: InputDecoration(
+                          isCollapsed: true,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                          border: InputBorder.none,
+                          hintText: "Reply in thread",
+                          hintStyle: theme.textTheme.bodyLarge!.copyWith(color: scheme.onSurfaceVariant),
+                        ),
+                      ),
+                    ),
+                    ValueListenableBuilder<TextEditingValue>(
+                      valueListenable: _replyText,
+                      builder: (_, v, __) => IconButton(
+                        tooltip: "Send",
+                        onPressed: v.text.trim().isEmpty || _sending ? null : _sendReply,
+                        icon: Icon(Icons.send, color: scheme.primary),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
