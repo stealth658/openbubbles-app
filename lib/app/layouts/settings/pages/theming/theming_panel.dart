@@ -542,6 +542,38 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                 Obx(() => SettingsSection(
                   backgroundColor: tileColor,
                   children: [
+                    SettingsOptions<String>(
+                      title: "App Font",
+                      subtitle: "Used everywhere in the app, over every theme",
+                      initial: SettingsSvc.settings.appFont.value,
+                      options: ThemesService.appFontChoices,
+                      capitalize: false,
+                      clampWidth: false,
+                      secondaryColor: headerColor,
+                      useCupertino: false,
+                      textProcessing: ThemesService.appFontLabel,
+                      onChanged: (value) async {
+                        if (value == null) return;
+                        if (value == ThemesService.customAppFontFamily) {
+                          final loaded = await _pickCustomAppFont(context);
+                          if (!loaded) return;
+                        }
+                        SettingsSvc.settings.appFont.value = value;
+                        await SettingsSvc.settings.saveOneAsync('appFont');
+                        if (context.mounted) await ThemeSvc.changeTheme(context);
+                      },
+                    ),
+                    if (SettingsSvc.settings.appFont.value == ThemesService.customAppFontFamily)
+                      SettingsTile(
+                        title: "Replace Custom Font File",
+                        subtitle: "Pick another .ttf or .otf to use as the app font",
+                        onTap: () async {
+                          final loaded = await _pickCustomAppFont(context);
+                          if (loaded) {
+                            showSnackbar("Notice", "Font file replaced. Restart the app to see the new font.");
+                          }
+                        },
+                      ),
                     if (!FilesystemSvc.fontExistsOnDisk.value)
                         SettingsTile(
                           onTap: () async {
@@ -663,6 +695,26 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
         ],
       ),
     );
+  }
+
+  /// Lets the user pick a .ttf/.otf, copies it into the app's font folder and
+  /// registers it as the custom app font. Returns true when it is ready to use.
+  Future<bool> _pickCustomAppFont(BuildContext context) async {
+    try {
+      final res = await FilePicker.pickFiles(
+          withData: true, type: FileType.custom, allowedExtensions: ["ttf", "otf"]);
+      if (res == null || res.files.isEmpty || res.files.first.bytes == null) return false;
+      final file = File(join(FilesystemSvc.fontPath, 'app-font.ttf'));
+      await file.create(recursive: true);
+      await file.writeAsBytes(res.files.first.bytes!, flush: true);
+      final ok = await ThemesService.loadCustomAppFont();
+      if (!ok) showSnackbar("Error", "That file could not be loaded as a font.");
+      return ok;
+    } catch (e, s) {
+      Logger.error("Failed to load app font file", error: e, trace: s);
+      showSnackbar("Error", "Failed to load the font file. Please make sure it is a valid .ttf or .otf.");
+      return false;
+    }
   }
 
   void showMonetDialog(BuildContext context) {

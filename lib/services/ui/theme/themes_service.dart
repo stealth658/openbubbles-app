@@ -8,12 +8,16 @@ import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show FontLoader;
 import 'package:get/get.dart' hide GetStringUtils;
 import 'package:material_color_utilities/material_color_utilities.dart' as mui_utils;
 import 'package:simple_animations/simple_animations.dart';
 import 'package:bluebubbles/models/models.dart' show ThemePair;
 import 'package:universal_io/io.dart';
 import 'package:get_it/get_it.dart';
+import 'package:bluebubbles/utils/logger/logger.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:path/path.dart' show join;
 
 // ignore: non_constant_identifier_names
 ThemesService get ThemeSvc => GetIt.I<ThemesService>();
@@ -47,6 +51,92 @@ class ThemesService {
   };
   mui_utils.CorePalette? monetPalette;
   Color? desktopAccentColor;
+
+  /// Family name registered for a font file the user picked (App Font > Custom).
+  static const String customAppFontFamily = "AppCustomFont";
+
+  /// Families built into Android; anything else in [appFontChoices] is
+  /// fetched from Google Fonts on first use (static weight files, so bold and
+  /// medium render properly, unlike the variable Inter asset used by posters).
+  static const List<String> bundledAppFonts = ["Roboto"];
+
+  /// What Settings > Theming > App Font offers. "" is each theme's own font.
+  static const List<String> appFontChoices = [
+    "",
+    "Inter",
+    "Roboto",
+    "Roboto Flex",
+    "Open Sans",
+    "Noto Sans",
+    "Lato",
+    "Nunito",
+    "Manrope",
+    "Poppins",
+    "Source Sans 3",
+    customAppFontFamily,
+  ];
+
+  static String appFontLabel(String font) {
+    if (font.isEmpty) return "Theme default";
+    if (font == customAppFontFamily) return "Custom font file";
+    if (font == "Inter") return "Inter (SF Pro style)";
+    return font;
+  }
+
+  /// Lays the app-wide font over [base]'s text styles, keeping every size,
+  /// weight and colour the theme set. Google Fonts families come back as
+  /// their own text theme (the package loads the files on first use).
+  static ThemeData applyAppFont(ThemeData base, String font) {
+    if (font.isEmpty) return base;
+    TextTheme text;
+    TextTheme primaryText;
+    if (bundledAppFonts.contains(font) || font == customAppFontFamily) {
+      text = base.textTheme.apply(fontFamily: font);
+      primaryText = base.primaryTextTheme.apply(fontFamily: font);
+    } else {
+      try {
+        text = GoogleFonts.getTextTheme(font, base.textTheme);
+        primaryText = GoogleFonts.getTextTheme(font, base.primaryTextTheme);
+      } catch (e) {
+        Logger.warn("App font '$font' is not available: $e");
+        return base;
+      }
+    }
+    final bubble = base.extensions[BubbleText] as BubbleText?;
+    final family = text.bodyLarge?.fontFamily ?? font;
+    return base.copyWith(
+      textTheme: text,
+      primaryTextTheme: primaryText,
+      extensions: [
+        ...base.extensions.values.where((e) => e is! BubbleText),
+        if (bubble != null)
+          BubbleText(
+            bubbleText: bubble.bubbleText.copyWith(
+              fontFamily: family,
+              fontFamilyFallback: text.bodyLarge?.fontFamilyFallback,
+            ),
+          ),
+      ],
+    );
+  }
+
+  /// Loads the user's picked font file (if any) under [customAppFontFamily].
+  /// Called at startup and right after a new file is picked.
+  static Future<bool> loadCustomAppFont() async {
+    if (kIsWeb) return false;
+    final file = File(join(FilesystemSvc.fontPath, 'app-font.ttf'));
+    if (!await file.exists()) return false;
+    try {
+      final bytes = await file.readAsBytes();
+      final loader = FontLoader(customAppFontFamily);
+      loader.addFont(Future.value(ByteData.view(bytes.buffer)));
+      await loader.load();
+      return true;
+    } catch (e) {
+      Logger.warn("Could not load custom app font: $e");
+      return false;
+    }
+  }
 
   final Rx<MovieTween> gradientTween = Rx<MovieTween>(MovieTween()
     ..scene(begin: Duration.zero, duration: const Duration(seconds: 3))

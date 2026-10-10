@@ -95,7 +95,9 @@ class ReplyBubbleSection extends StatelessWidget {
       // avatar column, with the line running from it down to the reply's
       // avatar; on our own side the line alone, to the right of the quote.
       if (!message.isFromMe! && avatarsOn) {
-        final column = 35.0 * avatarScale + 5.0; // the reply's avatar column (see MessageHolder)
+        // Same box as the reply's avatar (5px in, 35*scale wide, see
+        // MessageHolder), so the small avatar and the line are centred on it.
+        final column = 35.0 * avatarScale;
         return Padding(
           padding: const EdgeInsets.only(left: 5.0, right: 10),
           child: IntrinsicHeight(
@@ -123,7 +125,7 @@ class ReplyBubbleSection extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(width: 5),
+                const SizedBox(width: 10),
                 Flexible(child: Align(alignment: Alignment.centerLeft, child: quote)),
               ],
             ),

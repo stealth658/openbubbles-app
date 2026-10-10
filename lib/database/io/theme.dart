@@ -21,7 +21,34 @@ class ThemeStruct {
   String name;
   bool gradientBg = false;
   String googleFont;
-  ThemeData data;
+  ThemeData _data;
+
+  // Cache of [_data] with the app-wide font applied, keyed by that font.
+  ThemeData? _styled;
+  String? _styledFor;
+
+  /// The theme as the app should render it: the stored theme with the
+  /// app-wide font (Settings > Theming > App Font) laid over it. Everything
+  /// that draws from a theme (main app, per-chat themes, details pages) reads
+  /// this, so the font applies everywhere.
+  ThemeData get data {
+    final font = SettingsSvc.settings.appFont.value;
+    if (font.isEmpty) return _data;
+    if (_styled == null || _styledFor != font) {
+      _styled = ThemesService.applyAppFont(_data, font);
+      _styledFor = font;
+    }
+    return _styled!;
+  }
+
+  set data(ThemeData value) {
+    _data = value;
+    _styled = null;
+    _styledFor = null;
+  }
+
+  /// The stored theme without the app-wide font.
+  ThemeData get rawData => _data;
 
   String get dbThemeData {
     final map = toMap()['data'];
@@ -39,7 +66,7 @@ class ThemeStruct {
     this.gradientBg = false,
     this.googleFont = 'Default',
     ThemeData? themeData,
-  }) : data = themeData ?? ThemesService.whiteLightTheme {
+  }) : _data = themeData ?? ThemesService.whiteLightTheme {
     if (googleFont.isEmpty) googleFont = 'Default';
   }
 
@@ -143,76 +170,76 @@ class ThemeStruct {
           "textTheme": {
             "font": googleFont,
             "titleLarge": {
-              "color": data.textTheme.titleLarge!.color!.toARGB32(),
-              "fontWeight": data.textTheme.titleLarge!.fontWeight!.index,
-              "fontSize": data.textTheme.titleLarge!.fontSize,
+              "color": rawData.textTheme.titleLarge!.color!.toARGB32(),
+              "fontWeight": rawData.textTheme.titleLarge!.fontWeight!.index,
+              "fontSize": rawData.textTheme.titleLarge!.fontSize,
             },
             "bodyLarge": {
-              "color": data.textTheme.bodyLarge!.color!.toARGB32(),
-              "fontWeight": data.textTheme.bodyLarge!.fontWeight!.index,
-              "fontSize": data.textTheme.bodyLarge!.fontSize,
+              "color": rawData.textTheme.bodyLarge!.color!.toARGB32(),
+              "fontWeight": rawData.textTheme.bodyLarge!.fontWeight!.index,
+              "fontSize": rawData.textTheme.bodyLarge!.fontSize,
             },
             "bodyMedium": {
-              "color": data.textTheme.bodyMedium!.color!.toARGB32(),
-              "fontWeight": data.textTheme.bodyMedium!.fontWeight!.index,
-              "fontSize": data.textTheme.bodyMedium!.fontSize,
+              "color": rawData.textTheme.bodyMedium!.color!.toARGB32(),
+              "fontWeight": rawData.textTheme.bodyMedium!.fontWeight!.index,
+              "fontSize": rawData.textTheme.bodyMedium!.fontSize,
             },
             "bodySmall": {
-              "color": data.textTheme.bodySmall!.color!.toARGB32(),
-              "fontWeight": data.textTheme.bodySmall!.fontWeight!.index,
-              "fontSize": data.textTheme.bodySmall!.fontSize,
+              "color": rawData.textTheme.bodySmall!.color!.toARGB32(),
+              "fontWeight": rawData.textTheme.bodySmall!.fontWeight!.index,
+              "fontSize": rawData.textTheme.bodySmall!.fontSize,
             },
             "labelLarge": {
-              "color": data.textTheme.labelLarge!.color!.toARGB32(),
-              "fontWeight": data.textTheme.labelLarge!.fontWeight!.index,
-              "fontSize": data.textTheme.labelLarge!.fontSize,
+              "color": rawData.textTheme.labelLarge!.color!.toARGB32(),
+              "fontWeight": rawData.textTheme.labelLarge!.fontWeight!.index,
+              "fontSize": rawData.textTheme.labelLarge!.fontSize,
             },
             "labelSmall": {
-              "color": data.textTheme.labelSmall!.color!.toARGB32(),
-              "fontWeight": data.textTheme.labelSmall!.fontWeight!.index,
-              "fontSize": data.textTheme.labelSmall!.fontSize,
+              "color": rawData.textTheme.labelSmall!.color!.toARGB32(),
+              "fontWeight": rawData.textTheme.labelSmall!.fontWeight!.index,
+              "fontSize": rawData.textTheme.labelSmall!.fontSize,
             },
             "bubbleText": {
-              "fontSize": (data.extensions[BubbleText] as BubbleText).bubbleText.fontSize,
+              "fontSize": (rawData.extensions[BubbleText] as BubbleText).bubbleText.fontSize,
             }
           },
           "colorScheme": {
-            "primary": data.colorScheme.primary.toARGB32(),
-            "onPrimary": data.colorScheme.onPrimary.toARGB32(),
-            "primaryContainer": data.colorScheme.primaryContainer.toARGB32(),
-            "onPrimaryContainer": data.colorScheme.onPrimaryContainer.toARGB32(),
-            "secondary": data.colorScheme.secondary.toARGB32(),
-            "onSecondary": data.colorScheme.onSecondary.toARGB32(),
-            "secondaryContainer": data.colorScheme.secondaryContainer.toARGB32(),
-            "onSecondaryContainer": data.colorScheme.onSecondaryContainer.toARGB32(),
-            "tertiary": data.colorScheme.tertiary.toARGB32(),
-            "onTertiary": data.colorScheme.onTertiary.toARGB32(),
-            "tertiaryContainer": data.colorScheme.tertiaryContainer.toARGB32(),
-            "onTertiaryContainer": data.colorScheme.onTertiaryContainer.toARGB32(),
-            "error": data.colorScheme.error.toARGB32(),
-            "onError": data.colorScheme.onError.toARGB32(),
-            "errorContainer": data.colorScheme.errorContainer.toARGB32(),
-            "onErrorContainer": data.colorScheme.onErrorContainer.toARGB32(),
+            "primary": rawData.colorScheme.primary.toARGB32(),
+            "onPrimary": rawData.colorScheme.onPrimary.toARGB32(),
+            "primaryContainer": rawData.colorScheme.primaryContainer.toARGB32(),
+            "onPrimaryContainer": rawData.colorScheme.onPrimaryContainer.toARGB32(),
+            "secondary": rawData.colorScheme.secondary.toARGB32(),
+            "onSecondary": rawData.colorScheme.onSecondary.toARGB32(),
+            "secondaryContainer": rawData.colorScheme.secondaryContainer.toARGB32(),
+            "onSecondaryContainer": rawData.colorScheme.onSecondaryContainer.toARGB32(),
+            "tertiary": rawData.colorScheme.tertiary.toARGB32(),
+            "onTertiary": rawData.colorScheme.onTertiary.toARGB32(),
+            "tertiaryContainer": rawData.colorScheme.tertiaryContainer.toARGB32(),
+            "onTertiaryContainer": rawData.colorScheme.onTertiaryContainer.toARGB32(),
+            "error": rawData.colorScheme.error.toARGB32(),
+            "onError": rawData.colorScheme.onError.toARGB32(),
+            "errorContainer": rawData.colorScheme.errorContainer.toARGB32(),
+            "onErrorContainer": rawData.colorScheme.onErrorContainer.toARGB32(),
             // "background" kept as compat stub for older app versions reading this JSON
-            "background": data.colorScheme.surface.toARGB32(),
-            "onBackground": data.colorScheme.onSurface.toARGB32(),
-            "surface": data.colorScheme.surface.toARGB32(),
-            "onSurface": data.colorScheme.onSurface.toARGB32(),
-            "surfaceVariant": data.colorScheme.surfaceVariant.toARGB32(),
-            "onSurfaceVariant": data.colorScheme.onSurfaceVariant.toARGB32(),
-            "outline": data.colorScheme.outline.toARGB32(),
-            "shadow": data.colorScheme.shadow.toARGB32(),
-            "inverseSurface": data.colorScheme.inverseSurface.toARGB32(),
-            "onInverseSurface": data.colorScheme.onInverseSurface.toARGB32(),
-            "inversePrimary": data.colorScheme.inversePrimary.toARGB32(),
-            "surfaceContainerHighest": data.colorScheme.surfaceContainerHighest.toARGB32(),
-            "iMessageBubble": (data.extensions[BubbleColors] as BubbleColors?)?.iMessageBubbleColor?.toARGB32(),
-            "oniMessageBubble": (data.extensions[BubbleColors] as BubbleColors?)?.oniMessageBubbleColor?.toARGB32(),
-            "smsBubble": (data.extensions[BubbleColors] as BubbleColors?)?.smsBubbleColor?.toARGB32(),
-            "onSmsBubble": (data.extensions[BubbleColors] as BubbleColors?)?.onSmsBubbleColor?.toARGB32(),
-            "receivedBubble": (data.extensions[BubbleColors] as BubbleColors?)?.receivedBubbleColor?.toARGB32(),
-            "onReceivedBubble": (data.extensions[BubbleColors] as BubbleColors?)?.onReceivedBubbleColor?.toARGB32(),
-            "brightness": data.colorScheme.brightness.index,
+            "background": rawData.colorScheme.surface.toARGB32(),
+            "onBackground": rawData.colorScheme.onSurface.toARGB32(),
+            "surface": rawData.colorScheme.surface.toARGB32(),
+            "onSurface": rawData.colorScheme.onSurface.toARGB32(),
+            "surfaceVariant": rawData.colorScheme.surfaceVariant.toARGB32(),
+            "onSurfaceVariant": rawData.colorScheme.onSurfaceVariant.toARGB32(),
+            "outline": rawData.colorScheme.outline.toARGB32(),
+            "shadow": rawData.colorScheme.shadow.toARGB32(),
+            "inverseSurface": rawData.colorScheme.inverseSurface.toARGB32(),
+            "onInverseSurface": rawData.colorScheme.onInverseSurface.toARGB32(),
+            "inversePrimary": rawData.colorScheme.inversePrimary.toARGB32(),
+            "surfaceContainerHighest": rawData.colorScheme.surfaceContainerHighest.toARGB32(),
+            "iMessageBubble": (rawData.extensions[BubbleColors] as BubbleColors?)?.iMessageBubbleColor?.toARGB32(),
+            "oniMessageBubble": (rawData.extensions[BubbleColors] as BubbleColors?)?.oniMessageBubbleColor?.toARGB32(),
+            "smsBubble": (rawData.extensions[BubbleColors] as BubbleColors?)?.smsBubbleColor?.toARGB32(),
+            "onSmsBubble": (rawData.extensions[BubbleColors] as BubbleColors?)?.onSmsBubbleColor?.toARGB32(),
+            "receivedBubble": (rawData.extensions[BubbleColors] as BubbleColors?)?.receivedBubbleColor?.toARGB32(),
+            "onReceivedBubble": (rawData.extensions[BubbleColors] as BubbleColors?)?.onReceivedBubbleColor?.toARGB32(),
+            "brightness": rawData.colorScheme.brightness.index,
           },
         },
       };

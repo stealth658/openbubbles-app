@@ -99,6 +99,9 @@ class Settings {
   final RxBool startVideosMutedFullscreen = true.obs;
   final RxBool use24HrFormat = false.obs;
   final RxBool alwaysShowAvatars = false.obs;
+  /// App-wide font: "" = each theme's own, a bundled family ("Inter", "Roboto"),
+  /// a Google Fonts family name, or [customAppFontFamily] for a picked file.
+  final RxString appFont = "".obs;
   final RxBool notifyOnChatList = false.obs;
   final RxBool notifyReactions = true.obs;
   final RxBool colorsFromMedia = false.obs;
@@ -434,6 +437,7 @@ class Settings {
       'startVideosMutedFullscreen': startVideosMutedFullscreen.value,
       'use24HrFormat': use24HrFormat.value,
       'alwaysShowAvatars': alwaysShowAvatars.value,
+      'appFont': appFont.value,
       'notifyOnChatList': notifyOnChatList.value,
       'notifyReactions': notifyReactions.value,
       'globalTextDetection': globalTextDetection.value,
@@ -672,6 +676,7 @@ class Settings {
     SettingsSvc.settings.use24HrFormat.value = map['use24HrFormat'] ?? SettingsSvc.settings.use24HrFormat.value;
     SettingsSvc.settings.alwaysShowAvatars.value =
         map['alwaysShowAvatars'] ?? SettingsSvc.settings.alwaysShowAvatars.value;
+    SettingsSvc.settings.appFont.value = map['appFont'] ?? SettingsSvc.settings.appFont.value;
     SettingsSvc.settings.notifyOnChatList.value =
         map['notifyOnChatList'] ?? SettingsSvc.settings.notifyOnChatList.value;
     SettingsSvc.settings.notifyReactions.value = map['notifyReactions'] ?? SettingsSvc.settings.notifyReactions.value;
@@ -973,6 +978,7 @@ class Settings {
     s.startVideosMutedFullscreen.value = map['startVideosMutedFullscreen'] ?? true;
     s.use24HrFormat.value = map['use24HrFormat'] ?? false;
     s.alwaysShowAvatars.value = map['alwaysShowAvatars'] ?? false;
+    s.appFont.value = map['appFont'] ?? "";
     s.notifyOnChatList.value = map['notifyOnChatList'] ?? false;
     s.notifyReactions.value = map['notifyReactions'] ?? true;
     s.colorsFromMedia.value = map['colorsFromMedia'] ?? false;

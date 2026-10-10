@@ -252,6 +252,11 @@ Future<Null> initApp(bool bubble, List<String> arguments) async {
 
       /* ----- EMOJI FONT INITIALIZATION ----- */
       Future.microtask(() => FilesystemSvc.checkFont());
+
+      /* ----- APP FONT (user-picked file) ----- */
+      if (SettingsSvc.settings.appFont.value == ThemesService.customAppFontFamily) {
+        await ThemesService.loadCustomAppFont();
+      }
     } catch (e, s) {
       print(s.toString());
       Logger.error("Failure during app initialization!", error: e, trace: s);

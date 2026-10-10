@@ -417,7 +417,33 @@ class _MessageHolderState extends State<MessageHolder> with AutomaticKeepAliveCl
                                       isIOS: false,
                                       isFirstPart: true,
                                     ),
-                                  Stack(
+                                  CustomPaint(
+                                    // Material: the quote above put a small avatar
+                                    // of the original's author in the avatar
+                                    // column; keep its line running down the
+                                    // column, past the body, to the reply's own
+                                    // avatar (matters when the body is tall, e.g.
+                                    // an image).
+                                    painter: !iOS &&
+                                            index == 0 &&
+                                            !widget.isReplyThread &&
+                                            olderMessage != null &&
+                                            message.threadOriginatorGuid != null &&
+                                            replyTo != null &&
+                                            !message.isFromMe! &&
+                                            !message.isGroupEvent &&
+                                            (showAvatar || alwaysShowAvatars) &&
+                                            service.getMessageStateIfExists(replyTo!.guid!) != null
+                                        ? _AvatarColumnLinePainter(
+                                            color: context.theme.colorScheme.outlineVariant,
+                                            x: 5.0 + 17.5 * avatarScale,
+                                            stopAbove: message.showTail(newerMessage) &&
+                                                    e.part == controller.parts.length - 1
+                                                ? 35.0 * avatarScale + 3.0
+                                                : 0.0,
+                                          )
+                                        : null,
+                                    child: Stack(
                                     alignment: Alignment.bottomLeft,
                                     children: [
                                       // avatar, if needed
@@ -676,6 +702,7 @@ class _MessageHolderState extends State<MessageHolder> with AutomaticKeepAliveCl
                                       ),
                                     ],
                                   ),
+                                  ),
                                   // message properties (replies, edits, effect)
                                   Padding(
                                     padding: showAvatar || alwaysShowAvatars
@@ -704,6 +731,32 @@ class _MessageHolderState extends State<MessageHolder> with AutomaticKeepAliveCl
       }),
     );
   }
+}
+
+/// Material reply quote: the 2px line in the avatar column, continued down
+/// the message body from the quote above to the reply's avatar (stopping
+/// [stopAbove] px short of the bottom when the avatar sits in this part).
+class _AvatarColumnLinePainter extends CustomPainter {
+  final Color color;
+  final double x;
+  final double stopAbove;
+
+  _AvatarColumnLinePainter({required this.color, required this.x, required this.stopAbove});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final bottom = size.height - stopAbove;
+    if (bottom <= 0) return;
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 2
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+    canvas.drawLine(Offset(x, 0), Offset(x, bottom), paint);
+  }
+
+  @override
+  bool shouldRepaint(_AvatarColumnLinePainter old) => old.color != color || old.x != x || old.stopAbove != stopAbove;
 }
 
 /// Custom painter to draw a simple vertical line for the reply thread
