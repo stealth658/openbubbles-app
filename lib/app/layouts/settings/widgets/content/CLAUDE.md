@@ -30,11 +30,11 @@ SettingsTile(
 
 // Toggle with reactive value
 Obx(() => SettingsSwitch(
-  title: 'Show Delivery Timestamps',
-  initialVal: SettingsSvc.settings.showDeliveryTimestamps.value,
-  onChanged: (val) async {
-    SettingsSvc.settings.showDeliveryTimestamps.value = val;
-    await SettingsSvc.settings.saveOneAsync('showDeliveryTimestamps');
+  title: 'Send Read Receipts',
+  initialVal: SettingsSvc.settings.sendReadReceipts.value,
+  onChanged: (val) {
+    SettingsSvc.settings.sendReadReceipts.value = val;
+    SettingsSvc.saveSettings();
   },
 ))
 
@@ -51,13 +51,8 @@ SettingsOptions<Skins>(
 ## Rules
 
 - `SettingsTile` is purely presentational (no reactive observables) — wrap in `Obx()` at the call site if the value is reactive.
-- `SettingsSwitch.initialVal` is the current value shown; `onChanged` is the write handler. Always persist the new value inside `onChanged` — `SettingsSvc.saveSettings()` no longer exists. Use:
-  - `SettingsSvc.settings.saveOneAsync('key')` — preferred; writes just the one setting.
-  - `SettingsSvc.settings.saveManyAsync(['keyA', 'keyB'])` — when one handler changes several settings at once.
-  - `SettingsSvc.settings.saveAsync()` — whole-object write; only when the change is broad enough to justify it.
-
-  The key string is the field name as it appears in `Settings.toMap()` (`lib/database/global/settings.dart`). All three are `Future`s — `await` them, or `unawaited(...)` if the handler cannot be async.
-- `SettingsOptions` is generic — `T` can be any enum or value type. Provide `textProcessing` to format the display label.
+- `SettingsSwitch.initialVal` is the current value shown; `onChanged` is the write handler. Always call `SettingsSvc.saveSettings()` inside `onChanged`.
+- `SettingsOptions` is generic — `T` can be any enum or value type. Provide `textProcessing` to format the display label; without it the label is `toString()` (fine for `String` options, wrong for enums, which print as `Enum.value`).
 - Use `SettingsLeadingIcon` for the `leading` parameter to keep visual consistency across all settings pages.
 
 ## See Also
