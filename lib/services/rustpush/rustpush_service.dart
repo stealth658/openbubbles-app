@@ -3772,9 +3772,21 @@ class RustPushService extends GetxService {
       if (myMsg.verificationFailed) return;
       var msg = myMsg.message as api.Message_SmsConfirmSent;
       if (msg.field0) {
+        // The iPhone accepted the relayed text: swap the temp guid for the
+        // real one in the DB and, crucially, tell the open conversation, or the
+        // bubble keeps saying "Sending..." (the guid swap is what ends that
+        // state) and the Delivered that follows a second later finds no match.
+        final tempGuid = message.guid;
         message.guid = message.stagingGuid;
         message.stagingGuid = null;
         message.save();
+        final chat = message.chat.target;
+        if (chat != null) {
+          if (Get.isRegistered<MessagesService>(tag: chat.guid)) {
+            MessagesSvc(chat.guid).updateMessage(message, oldGuid: tempGuid);
+          }
+          ChatsSvc.updateChatLatestMessage(chat.guid, message);
+        }
       } else {
         // message failed to send
         var m = message;
