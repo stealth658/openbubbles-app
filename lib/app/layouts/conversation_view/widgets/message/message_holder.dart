@@ -215,6 +215,62 @@ class _MessageHolderState extends State<MessageHolder> with AutomaticKeepAliveCl
     return collapsed;
   }
 
+
+  /// Google Messages style: the replied-to message as a lighter card at the
+  /// top of this bubble, author and one-line excerpt, tap to jump to it.
+  Widget _withReplyCard(BuildContext context, Widget inner, MessagePart part) {
+    final original = replyTo!;
+    final scheme = context.theme.colorScheme;
+    final bubbleExt = context.theme.extensions[BubbleColors] as BubbleColors?;
+    final bubbleColor = message.isFromMe!
+        ? scheme.bubble(context, chat.isIMessage)
+        : (bubbleExt?.receivedBubbleColor ?? scheme.surfaceContainerHighest);
+    final author = original.isFromMe == true
+        ? "You"
+        : (original.handleRelation.target?.displayName ?? original.handle?.displayName ?? "");
+    final excerpt = original.getNotificationText(hideMessageContent: false);
+    final card = Padding(
+      padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+      child: Material(
+        color: scheme.surface.withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(16),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => service.jumpToMessage.call(original.guid!),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (author.isNotEmpty)
+                  Text(author,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: context.theme.textTheme.bodyMedium!.copyWith(color: scheme.onSurface)),
+                Text(excerpt,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: context.theme.textTheme.bodyMedium!.copyWith(color: scheme.onSurfaceVariant)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: NavigationSvc.width(context) * MessageState.maxBubbleSizeFactor),
+      child: Container(
+        color: bubbleColor,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [card, inner],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -311,9 +367,14 @@ class _MessageHolderState extends State<MessageHolder> with AutomaticKeepAliveCl
                               message.threadOriginatorGuid != null &&
                               replyTo != null &&
                               service.getMessageStateIfExists(replyTo!.guid!) != null;
-                          final showQuote = isReply && message.showUpperMessage(olderMessage!);
+                          // Material follows Google Messages: the reply is a card nested
+                          // inside the bubble (see _replyCard), no quote or thread line;
+                          // avatars sit beside the sender's name, not the bubble.
+                          final googleStyle = material;
+                          final showQuote = !googleStyle && isReply && message.showUpperMessage(olderMessage!);
                           final avatarsOn = showAvatar || alwaysShowAvatars;
-                          final lineInColumn = isReply && !message.isFromMe! && !message.isGroupEvent && avatarsOn;
+                          final lineInColumn =
+                              !googleStyle && isReply && !message.isFromMe! && !message.isGroupEvent && avatarsOn;
                           final avatarHere = message.showTail(newerMessage) && e.part == controller.parts.length - 1;
                           final bodyAvatarSize = (iOS ? 30.0 : 35.0) * avatarScale;
                           return Padding(
@@ -359,10 +420,14 @@ class _MessageHolderState extends State<MessageHolder> with AutomaticKeepAliveCl
                                       showSender &&
                                       e.part == (messageParts.firstWhereOrNull((e) => !e.isUnsent)?.part))
                                     Padding(
-                                      padding: showAvatar || alwaysShowAvatars
+                                      padding: !googleStyle && (showAvatar || alwaysShowAvatars)
                                           ? EdgeInsets.only(left: 35.0 * avatarScale)
                                           : EdgeInsets.zero,
-                                      child: MessageSender(olderMessage: olderMessage),
+                                      child: MessageSender(
+                                        olderMessage: olderMessage,
+                                        googleStyle: googleStyle,
+                                        showAvatar: googleStyle && (showAvatar || alwaysShowAvatars),
+                                      ),
                                     ),
                                   // add a box to account for height of reactions
                                   ReactionSpacing(
@@ -375,7 +440,8 @@ class _MessageHolderState extends State<MessageHolder> with AutomaticKeepAliveCl
                                     alignment: Alignment.bottomLeft,
                                     children: [
                                       // avatar, if needed
-                                      if (message.showTail(newerMessage) &&
+                                      if (!googleStyle &&
+                                          message.showTail(newerMessage) &&
                                           e.part == controller.parts.length - 1 &&
                                           (showAvatar || SettingsSvc.settings.alwaysShowAvatars.value) &&
                                           !message.isFromMe! &&
@@ -533,7 +599,16 @@ class _MessageHolderState extends State<MessageHolder> with AutomaticKeepAliveCl
                                                                                 }),
                                                                             ],
                                                                           );
-                                                                          if (isGallery) return inner;
+                                                                          // Google Messages style reply: the
+                                                                          // original as a card at the top of
+                                                                          // this bubble.
+                                                                          final body = googleStyle &&
+                                                                                  isReply &&
+                                                                                  !e.isUnsent &&
+                                                                                  !message.isGroupEvent
+                                                                              ? _withReplyCard(context, inner, e)
+                                                                              : inner;
+                                                                          if (isGallery) return body;
                                                                           final tailClipper = TailClipper(
                                                                             isFromMe: message.isFromMe!,
                                                                             showTail: !e.isPkPass &&
@@ -551,7 +626,7 @@ class _MessageHolderState extends State<MessageHolder> with AutomaticKeepAliveCl
                                                                           );
                                                                           final clipped = ClipPath(
                                                                             clipper: tailClipper,
-                                                                            child: inner,
+                                                                            child: body,
                                                                           );
                                                                           // OpenBubbles: scheduled ("Send Later")
                                                                           // messages get a dashed outline.

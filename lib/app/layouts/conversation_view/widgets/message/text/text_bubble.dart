@@ -145,7 +145,11 @@ class _TextBubbleState extends State<TextBubble> with ThemeHelpers {
               : NavigationSvc.width(context) * MessageState.maxBubbleSizeFactor - 40,
           minHeight: 36,
         ),
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 15).add(EdgeInsets.only(
+        // Google Messages pads its bubbles a touch more generously.
+        padding: (SettingsSvc.settings.skin.value == Skins.Material
+                ? const EdgeInsets.symmetric(vertical: 11, horizontal: 16)
+                : const EdgeInsets.symmetric(vertical: 8, horizontal: 15))
+            .add(EdgeInsets.only(
             left: isFromMe || message.isBigEmoji ? 0 : 10, right: isFromMe && !message.isBigEmoji ? 10 : 0)),
         color: isFromMe && !message.isBigEmoji && !isScheduled
             ? (selected

@@ -10,6 +10,7 @@ import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:get/get.dart';
 import 'package:pull_down_button/pull_down_button.dart';
 
@@ -44,6 +45,10 @@ class TimestampSeparator extends StatelessWidget {
       final time = message.chatViewDate!;
       if (SettingsSvc.settings.skin.value == Skins.iOS) {
         return _TimestampParts(date: time.isToday() ? "Today" : buildDate(time), time: buildTime(time));
+      } else if (SettingsSvc.settings.skin.value == Skins.Material) {
+        // Google Messages: "9:00 AM" today, otherwise "Sunday, Aug 23 • 12:27 AM".
+        return _TimestampParts(
+            date: time.isToday() ? null : "${DateFormat("EEEE, MMM d").format(time)} •", time: buildTime(time));
       } else {
         return _TimestampParts(
             date: time.isToday() ? "Today" : buildSeparatorDateMaterial(time), time: buildTime(time));
@@ -64,11 +69,14 @@ class TimestampSeparator extends StatelessWidget {
     final textColor = hasBackground ? context.theme.colorScheme.onSurfaceVariant : context.theme.colorScheme.outline;
 
     final isScheduled = message.dateScheduled != null;
+    final isMaterial = SettingsSvc.settings.skin.value == Skins.Material;
+    // Google Messages draws its date lines a step larger than iMessage does.
+    final baseStyle = isMaterial ? context.theme.textTheme.bodySmall! : context.theme.textTheme.labelSmall!;
 
     final richText = RichText(
       textAlign: TextAlign.center,
       text: TextSpan(
-        style: context.theme.textTheme.labelSmall!.copyWith(color: textColor, fontWeight: FontWeight.normal),
+        style: baseStyle.copyWith(color: textColor, fontWeight: FontWeight.normal),
         children: [
           // OpenBubbles: header above a run of scheduled ("Send Later") messages.
           if (isScheduled && olderMessage?.dateScheduled == null)
@@ -80,7 +88,7 @@ class TimestampSeparator extends StatelessWidget {
           if (timestamp.date != null)
             TextSpan(
               text: "${timestamp.date!} ",
-              style: context.theme.textTheme.labelSmall!.copyWith(fontWeight: FontWeight.w600, color: textColor),
+              style: baseStyle.copyWith(fontWeight: isMaterial ? FontWeight.normal : FontWeight.w600, color: textColor),
             ),
           TextSpan(text: timestamp.time),
           if (isScheduled)
