@@ -20,7 +20,9 @@ import 'package:get/get.dart';
 class GenAi {
   GenAi._();
 
-  static const features = ['summarize', 'proofread', 'rewrite', 'prompt'];
+  /// Only suggested replies ('prompt') are used; summarise/proofread/rewrite
+  /// were dropped from the UI as not useful in a chat app.
+  static const features = ['prompt'];
 
   /// Last known per-feature status: available | downloadable | downloading | unavailable.
   static final RxMap<String, String> status = <String, String>{}.obs;

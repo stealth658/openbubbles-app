@@ -36,7 +36,22 @@ class TextFieldComponent extends StatefulWidget {
     this.initialAttachments = const [],
     this.alwaysShowSend = false,
     this.hideMediaPicker = false,
+    this.leading,
+    this.trailing,
+    this.borderRadius = 20,
   });
+
+  /// Material (Google Messages style) composer: a control drawn inside the
+  /// pill at its start (the "+" button) ...
+  final Widget? leading;
+
+  /// ... and controls drawn inside the pill at its end (emoji, gallery). When
+  /// set, the default mic/send suffix is not drawn; the caller puts the
+  /// mic/send button outside the pill.
+  final Widget? trailing;
+
+  /// Corner radius of the pill.
+  final double borderRadius;
 
   final SpellCheckTextEditingController? subjectTextController;
   final MentionTextEditingController textController;
@@ -180,12 +195,12 @@ class TextFieldComponentState extends State<TextFieldComponent> {
                             : context.theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
                         width: 1,
                       )),
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(widget.borderRadius),
                     )
                   : null,
               decoration: BoxDecoration(
                 color: (!iOS || hasBackground) ? context.theme.colorScheme.surfaceContainerHighest : null,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(widget.borderRadius),
               ),
               clipBehavior: Clip.antiAlias,
               child: AnimatedSize(
@@ -327,8 +342,11 @@ class TextFieldComponentState extends State<TextFieldComponent> {
                               .extension<BubbleText>()!
                               .bubbleText
                               .copyWith(color: context.theme.colorScheme.outline),
+                          prefixIconConstraints: const BoxConstraints(minHeight: 0, minWidth: 0),
+                          prefixIcon: widget.leading,
                           suffixIconConstraints: const BoxConstraints(minHeight: 0),
-                          suffixIcon: samsung && !isChatCreator
+                          suffixIcon: widget.trailing ??
+                              (samsung && !isChatCreator
                               ? null
                               : Padding(
                                   padding: EdgeInsets.only(right: iOS ? 0.0 : 5.0),
@@ -342,7 +360,7 @@ class TextFieldComponentState extends State<TextFieldComponent> {
                                     alwaysShowSend: widget.alwaysShowSend,
                                     hasInitialAttachments: initialAttachments.isNotEmpty,
                                   ),
-                                ),
+                                )),
                         ),
                         contextMenuBuilder: (BuildContext context, EditableTextState editableTextState) {
                           final start = editableTextState.textEditingValue.selection.start;
