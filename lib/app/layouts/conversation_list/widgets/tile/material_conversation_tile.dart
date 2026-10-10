@@ -1,6 +1,9 @@
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/tile/conversation_tile.dart';
 import 'package:bluebubbles/app/layouts/conversation_list/widgets/tile/trailing_state_mixin.dart';
+import 'package:bluebubbles/app/state/chat_state.dart';
 import 'package:bluebubbles/app/state/chat_state_scope.dart';
+import 'package:bluebubbles/database/database.dart';
+import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -80,7 +83,8 @@ class _MaterialConversationTileState extends CustomState<MaterialConversationTil
                   parentController: controller,
                   style: context.theme.textTheme.bodyMedium!
                       .copyWith(
-                        fontWeight: unread ? FontWeight.w500 : null,
+                        // Google Messages: an unread preview reads in bold onSurface.
+                        fontWeight: unread ? FontWeight.w600 : null,
                         color: controller.shouldHighlight.value || unread
                             ? isMonet
                                 ? context.theme.colorScheme.onSurface
@@ -240,14 +244,7 @@ class _MaterialTrailingState extends CustomState<MaterialTrailing, void, Convers
                   Icon(Icons.push_pin_outlined, size: 18, color: context.theme.colorScheme.outline),
                 if (muteType != "mute" && unread) ...[
                   if (chatState.isPinned.value) const SizedBox(width: 5),
-                  Container(
-                    width: 13,
-                    height: 13,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: context.theme.colorScheme.primary,
-                    ),
-                  ),
+                  UnreadCountBadge(chatState: chatState),
                 ],
                 if (muteType == "mute") const SizedBox(width: 5),
                 if (muteType == "mute")
@@ -299,5 +296,56 @@ class _UnreadIconState extends CustomState<UnreadIcon, void, ConversationTileCon
                 )
               : const SizedBox(width: 10),
         ));
+  }
+}
+
+/// Google Messages style unread marker for the Material list: a small
+/// onSurface pill with the number of messages received since the chat was
+/// last opened. Falls back to a plain dot when the count is unknown (the
+/// chat has never been opened on this device).
+class UnreadCountBadge extends StatelessWidget {
+  const UnreadCountBadge({super.key, required this.chatState});
+
+  final ChatState chatState;
+
+  int? _unreadCount() {
+    final lastReadGuid = chatState.lastReadMessageGuid.value;
+    if (lastReadGuid == null) return null;
+    final lastRead = Message.findOne(guid: lastReadGuid);
+    final since = lastRead?.dateCreated?.millisecondsSinceEpoch;
+    if (since == null) return null;
+    final query = (Database.messages.query(
+      Message_.isFromMe.equals(false) & Message_.dateCreated.greaterThan(since),
+    )..link(Message_.chat, Chat_.guid.equals(chatState.chat.guid)))
+        .build();
+    try {
+      return query.count();
+    } finally {
+      query.close();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = context.theme.colorScheme;
+    final count = _unreadCount();
+    if (count == null || count == 0) {
+      return Container(
+        width: 13,
+        height: 13,
+        decoration: BoxDecoration(shape: BoxShape.circle, color: scheme.primary),
+      );
+    }
+    return Container(
+      constraints: const BoxConstraints(minWidth: 20),
+      height: 20,
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), color: scheme.onSurface),
+      alignment: Alignment.center,
+      child: Text(
+        count > 99 ? "99+" : "$count",
+        style: context.theme.textTheme.labelSmall!.copyWith(color: scheme.surface, fontWeight: FontWeight.w600, height: 1),
+      ),
+    );
   }
 }
