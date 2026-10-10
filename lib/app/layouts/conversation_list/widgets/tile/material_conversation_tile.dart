@@ -67,8 +67,7 @@ class _MaterialConversationTileState extends CustomState<MaterialConversationTil
                               ? FontWeight.bold
                               : null,
                       color: ThemeSvc.isAnyMaterialYouSelected ? context.theme.colorScheme.onSurface : null,
-                    )
-                    .apply(fontSizeFactor: 1.1),
+                    ),
               )),
           subtitle: widget.deletedMode
               ? Builder(builder: (context) {
@@ -93,8 +92,7 @@ class _MaterialConversationTileState extends CustomState<MaterialConversationTil
                                 ? context.theme.colorScheme.onSurfaceVariant
                                 : context.theme.colorScheme.outline,
                         height: 1.5,
-                      )
-                      .apply(fontSizeFactor: 1.05),
+                      ),
                 );
               }),
           contentPadding: const EdgeInsets.only(left: 6, right: 16),
@@ -228,8 +226,7 @@ class _MaterialTrailingState extends CustomState<MaterialTrailing, void, Convers
                             : controller.shouldHighlight.value
                                 ? FontWeight.w500
                                 : null,
-                      )
-                      .apply(fontSizeFactor: 1.1),
+                      ),
                   overflow: TextOverflow.clip,
                 ),
               ],

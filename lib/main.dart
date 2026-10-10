@@ -424,7 +424,14 @@ class Main extends StatelessWidget {
           LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyI): const OpenChatDetailsIntent(),
           LogicalKeySet(LogicalKeyboardKey.escape): const GoBackIntent(),
         },
-        builder: (context, child) => SafeArea(
+        // Text size: Android's font-size setting by default (Flutter applies it
+        // through MediaQuery.textScaler), or the app's own slider.
+        builder: (context, child) => Obx(() {
+          final mq = MediaQuery.of(context);
+          final scaler = SettingsSvc.settings.useSystemTextSize.value
+              ? mq.textScaler
+              : TextScaler.linear(SettingsSvc.settings.appTextScale.value);
+          return MediaQuery(data: mq.copyWith(textScaler: scaler), child: SafeArea(
           top: false,
           bottom: false,
           // secure_application has no Linux implementation; mounting it (and the
@@ -524,7 +531,8 @@ class Main extends StatelessWidget {
                     },
                   ),
                 ),
-        ),
+        ));
+        }),
         defaultTransition: Transition.cupertino,
       ),
     );

@@ -563,6 +563,36 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                         if (context.mounted) await ThemeSvc.changeTheme(context);
                       },
                     ),
+                    SettingsSwitch(
+                      title: "Use System Text Size",
+                      subtitle: "Follow Android's font size setting, as Google Messages does",
+                      initialVal: SettingsSvc.settings.useSystemTextSize.value,
+                      backgroundColor: tileColor,
+                      onChanged: (val) async {
+                        SettingsSvc.settings.useSystemTextSize.value = val;
+                        if (!val) {
+                          // Start the slider where the system setting is now.
+                          SettingsSvc.settings.appTextScale.value =
+                              (MediaQuery.textScalerOf(context).scale(100) / 100).clamp(0.8, 1.6).toDouble();
+                        }
+                        await SettingsSvc.settings.saveManyAsync(['useSystemTextSize', 'appTextScale']);
+                      },
+                    ),
+                    if (!SettingsSvc.settings.useSystemTextSize.value)
+                      SettingsSlider(
+                        leading: const Padding(
+                          padding: EdgeInsets.only(left: 6),
+                          child: Text("Aa", style: TextStyle(fontSize: 13)),
+                        ),
+                        startingVal: SettingsSvc.settings.appTextScale.value,
+                        update: (double val) => SettingsSvc.settings.appTextScale.value = val,
+                        onChangeEnd: (double val) async => await SettingsSvc.settings.saveOneAsync('appTextScale'),
+                        formatValue: (double val) => "${(val * 100).round()}%",
+                        backgroundColor: tileColor,
+                        min: 0.8,
+                        max: 1.6,
+                        divisions: 16,
+                      ),
                     if (SettingsSvc.settings.appFont.value == ThemesService.customAppFontFamily)
                       SettingsTile(
                         title: "Replace Custom Font Files",

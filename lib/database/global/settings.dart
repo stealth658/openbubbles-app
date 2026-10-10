@@ -112,6 +112,9 @@ class Settings {
   /// App-wide font: "" = each theme's own, a bundled family ("Inter", "Roboto"),
   /// a Google Fonts family name, or [customAppFontFamily] for a picked file.
   final RxString appFont = "".obs;
+  /// Text size: follow Android's font size (default), or use [appTextScale].
+  final RxBool useSystemTextSize = true.obs;
+  final RxDouble appTextScale = 1.0.obs;
   final RxBool notifyOnChatList = false.obs;
   final RxBool notifyReactions = true.obs;
   final RxBool colorsFromMedia = false.obs;
@@ -448,6 +451,8 @@ class Settings {
       'use24HrFormat': use24HrFormat.value,
       'alwaysShowAvatars': alwaysShowAvatars.value,
       'appFont': appFont.value,
+      'useSystemTextSize': useSystemTextSize.value,
+      'appTextScale': appTextScale.value,
       'notifyOnChatList': notifyOnChatList.value,
       'notifyReactions': notifyReactions.value,
       'globalTextDetection': globalTextDetection.value,
@@ -690,6 +695,10 @@ class Settings {
     SettingsSvc.settings.alwaysShowAvatars.value =
         map['alwaysShowAvatars'] ?? SettingsSvc.settings.alwaysShowAvatars.value;
     SettingsSvc.settings.appFont.value = map['appFont'] ?? SettingsSvc.settings.appFont.value;
+    SettingsSvc.settings.useSystemTextSize.value =
+        map['useSystemTextSize'] ?? SettingsSvc.settings.useSystemTextSize.value;
+    SettingsSvc.settings.appTextScale.value =
+        (map['appTextScale'] as num?)?.toDouble() ?? SettingsSvc.settings.appTextScale.value;
     SettingsSvc.settings.notifyOnChatList.value =
         map['notifyOnChatList'] ?? SettingsSvc.settings.notifyOnChatList.value;
     SettingsSvc.settings.notifyReactions.value = map['notifyReactions'] ?? SettingsSvc.settings.notifyReactions.value;
@@ -998,6 +1007,8 @@ class Settings {
     s.use24HrFormat.value = map['use24HrFormat'] ?? false;
     s.alwaysShowAvatars.value = map['alwaysShowAvatars'] ?? false;
     s.appFont.value = map['appFont'] ?? "";
+    s.useSystemTextSize.value = map['useSystemTextSize'] ?? true;
+    s.appTextScale.value = (map['appTextScale'] as num?)?.toDouble() ?? 1.0;
     s.notifyOnChatList.value = map['notifyOnChatList'] ?? false;
     s.notifyReactions.value = map['notifyReactions'] ?? true;
     s.colorsFromMedia.value = map['colorsFromMedia'] ?? false;

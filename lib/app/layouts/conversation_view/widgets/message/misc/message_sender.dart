@@ -80,8 +80,8 @@ class MessageSender extends StatelessWidget {
               if (showAvatar) ...[
                 ContactAvatarWidget(
                   handle: state.message.handleRelation.target,
-                  size: 28,
-                  fontSize: 12,
+                  size: 24,
+                  fontSize: 10,
                   borderThickness: 0.1,
                   editable: false,
                   scaleSize: false,
