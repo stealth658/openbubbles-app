@@ -351,18 +351,22 @@ flutter:
           weight: 600
         - asset: assets/fonts/sf-pro/SF-Pro-Text-Bold.otf
           weight: 700
+    # Google Sans Flex (SIL OFL 1.1, from github.com/google/fonts ofl/googlesansflex),
+    # instanced to static weights at the text optical size (opsz 14).
     - family: Google Sans
       fonts:
-        - asset: assets/fonts/google-sans/GoogleSans-Regular.ttf
+        - asset: assets/fonts/google-sans/GoogleSansFlex-Regular.ttf
           weight: 400
-        - asset: assets/fonts/google-sans/GoogleSans-Italic.ttf
+        - asset: assets/fonts/google-sans/GoogleSansFlex-Italic.ttf
           weight: 400
           style: italic
-        - asset: assets/fonts/google-sans/GoogleSans-Medium.ttf
+        - asset: assets/fonts/google-sans/GoogleSansFlex-Medium.ttf
           weight: 500
-        - asset: assets/fonts/google-sans/GoogleSans-Bold.ttf
+        - asset: assets/fonts/google-sans/GoogleSansFlex-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/google-sans/GoogleSansFlex-Bold.ttf
           weight: 700
-        - asset: assets/fonts/google-sans/GoogleSans-BoldItalic.ttf
+        - asset: assets/fonts/google-sans/GoogleSansFlex-BoldItalic.ttf
           weight: 700
           style: italic
   # To add assets to your application, add an assets section, like this:
