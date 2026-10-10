@@ -11,6 +11,8 @@ import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/utils/share.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/media_picker/attachment_picker_file.dart';
+import 'package:bluebubbles/app/layouts/conversation_view/widgets/text_field/buttons/text_field_button.dart';
+import 'package:bluebubbles/app/layouts/conversation_view/widgets/text_field/text_field_icon_bar.dart' show showGifPicker;
 import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:bluebubbles/database/global/platform_file.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -35,9 +37,15 @@ class AttachmentPicker extends StatefulWidget {
   const AttachmentPicker({
     super.key,
     required this.controller,
+    this.googleStyle = false,
   });
 
   final ConversationViewController controller;
+
+  /// Material skin: Google Messages' "+" tray, a grid of round buttons with
+  /// labels (Gallery, Camera, GIFs, Files, Location, Schedule, ...), with the
+  /// recent-photos grid one tap away under Gallery.
+  final bool googleStyle;
 
   @override
   State<AttachmentPicker> createState() => _AttachmentPickerState();
@@ -51,6 +59,9 @@ class _AttachmentPickerState extends State<AttachmentPicker> with ThemeHelpers {
   App? currentApp;
   bool _isLoadingImages = false;
   bool _permissionDenied = false;
+
+  /// Google-style tray: whether the recent-photos grid is open (Gallery tile).
+  bool _galleryOpen = false;
 
   ConversationViewController get controller => widget.controller;
 
@@ -170,6 +181,7 @@ class _AttachmentPickerState extends State<AttachmentPicker> with ThemeHelpers {
         ),
       );
     }
+    if (widget.googleStyle) return _buildGoogleTray(context);
     return Container(
       color: context.theme.colorScheme.surface,
       child: SizedBox(
@@ -214,6 +226,94 @@ class _AttachmentPickerState extends State<AttachmentPicker> with ThemeHelpers {
           ),
         ),
       ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Google Messages style tray (Material skin)
+
+  List<_TrayAction> _trayActions(BuildContext context) => [
+        _TrayAction(Icons.image_outlined, "Gallery", () => setState(() => _galleryOpen = true)),
+        _TrayAction(Icons.photo_camera_outlined, "Camera", () => openFullCamera(type: 'camera')),
+        _TrayAction(Icons.videocam_outlined, "Video", () => openFullCamera(type: 'video')),
+        if (SettingsSvc.settings.textFieldButtons.platformSupportedButtons.contains(TextFieldButton.Gif))
+          _TrayAction(Icons.gif_box_outlined, "GIFs", () => showGifPicker(context, controller)),
+        _TrayAction(Icons.attach_file, "Files", _handleFilePicker),
+        _TrayAction(Icons.location_on_outlined, "Location", _handleLocation),
+        if (controller.chat.isIMessage)
+          _TrayAction(Icons.schedule_outlined, "Schedule Send", () => _handleSchedule(context)),
+        _TrayAction(Icons.draw_outlined, "Handwritten", () => _handleHandwritten(context)),
+        if (controller.chat.isIMessage) _TrayAction(Icons.how_to_vote_outlined, "Polls", () => _handlePolls(context)),
+        if (controller.chat.isIMessage)
+          ...es.cachedStatus.where((app) => app.available != null).map(
+                (app) => _TrayAction(Icons.extension_outlined, app.available!.name,
+                    () => setState(() => currentApp = app),
+                    logo: base64Decode(app.available!.icon)),
+              ),
+      ];
+
+  Widget _buildGoogleTray(BuildContext context) {
+    final scheme = context.theme.colorScheme;
+    return Container(
+      height: 340,
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainer,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: _galleryOpen ? _buildGoogleGallery(context) : _buildGoogleGrid(context),
+    );
+  }
+
+  Widget _buildGoogleGrid(BuildContext context) {
+    final actions = _trayActions(context);
+    return GridView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+      physics: const BouncingScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 4,
+        mainAxisSpacing: 18,
+        crossAxisSpacing: 12,
+        childAspectRatio: 0.78,
+      ),
+      itemCount: actions.length,
+      itemBuilder: (context, i) => _TrayButton(action: actions[i]),
+    );
+  }
+
+  /// Recent photos, three across, with a way back to the grid and to the
+  /// system picker for everything else.
+  Widget _buildGoogleGallery(BuildContext context) {
+    final scheme = context.theme.colorScheme;
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(8, 8, 16, 0),
+          child: Row(
+            children: [
+              IconButton(
+                tooltip: "Back",
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => setState(() => _galleryOpen = false),
+              ),
+              Text("Recent photos", style: context.theme.textTheme.titleMedium!.copyWith(color: scheme.onSurface)),
+              const Spacer(),
+              TextButton(onPressed: _handleGallery, child: const Text("All photos")),
+            ],
+          ),
+        ),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+            child: CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                _buildImageGrid(crossAxisCount: 3),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -602,12 +702,13 @@ class _AttachmentPickerState extends State<AttachmentPicker> with ThemeHelpers {
     );
   }
 
-  Widget _buildImageGrid() {
+  Widget _buildImageGrid({int crossAxisCount = 2}) {
     if (_isLoadingImages) {
       return const SliverToBoxAdapter(
         // Explicit width so the item occupies space in the horizontal CustomScrollView.
         child: SizedBox(
           width: 280,
+          height: 80,
           child: Center(child: CupertinoActivityIndicator()),
         ),
       );
@@ -658,10 +759,10 @@ class _AttachmentPickerState extends State<AttachmentPicker> with ThemeHelpers {
     }
 
     return SliverGrid(
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
+        crossAxisSpacing: crossAxisCount == 2 ? 10 : 6,
+        mainAxisSpacing: crossAxisCount == 2 ? 10 : 6,
       ),
       delegate: SliverChildBuilderDelegate(
         (context, index) {
@@ -752,6 +853,58 @@ class _QuickActionItem extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// One tile of the Google-style tray.
+class _TrayAction {
+  const _TrayAction(this.icon, this.label, this.onTap, {this.logo});
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final Uint8List? logo;
+}
+
+class _TrayButton extends StatelessWidget {
+  const _TrayButton({required this.action});
+
+  final _TrayAction action;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = context.theme.colorScheme;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Material(
+          color: scheme.surface,
+          shape: const CircleBorder(),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: action.onTap,
+            child: SizedBox(
+              width: 64,
+              height: 64,
+              child: action.logo != null
+                  ? Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: ClipRRect(borderRadius: BorderRadius.circular(100), child: Image.memory(action.logo!)),
+                    )
+                  : Icon(action.icon, size: 26, color: scheme.onSurface),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          action.label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+          style: context.theme.textTheme.labelMedium!.copyWith(color: scheme.onSurface),
+        ),
+      ],
     );
   }
 }

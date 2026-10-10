@@ -437,6 +437,130 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
     }
   }
 
+  /// Material skin, after Google Messages: one pill holding the "+" (an X
+  /// while the tray is open), the text, and the emoji and gallery buttons;
+  /// beside it a round button that records a voice note, or sends when there
+  /// is something to send.
+  Widget _googleComposerRow(BuildContext context) {
+    final scheme = context.theme.colorScheme;
+    Widget pillIcon(IconData icon, String tooltip, VoidCallback onTap) => IconButton(
+          tooltip: tooltip,
+          icon: Icon(icon, size: 24, color: scheme.onSurfaceVariant),
+          visualDensity: VisualDensity.compact,
+          onPressed: onTap,
+        );
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Expanded(
+            child: Stack(
+              alignment: Alignment.centerLeft,
+              clipBehavior: Clip.none,
+              children: [
+                TextFieldComponent(
+                  key: controller.textFieldKey,
+                  subjectTextController: controller.subjectTextController,
+                  textController: controller.textController,
+                  controller: controller,
+                  recorderController: recorderController,
+                  sendMessage: sendMessage,
+                  borderRadius: 28,
+                  leading: Padding(
+                    padding: const EdgeInsets.only(left: 6),
+                    child: Obx(() => pillIcon(
+                          showAttachmentPicker ? Icons.close : Icons.add_circle_outline,
+                          showAttachmentPicker ? "Close" : "Attach",
+                          () {
+                            if (!showAttachmentPicker) {
+                              controller.focusNode.unfocus();
+                              controller.subjectFocusNode.unfocus();
+                            }
+                            controller.showAttachmentPicker.value = !showAttachmentPicker;
+                          },
+                        )),
+                  ),
+                  trailing: Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        pillIcon(Icons.emoji_emotions_outlined, "Emoji", () {
+                          controller.showEmojiPicker.value = !controller.showEmojiPicker.value;
+                          (controller.editing.lastOrNull?.controller.focusNode ?? controller.lastFocusedNode)
+                              .requestFocus();
+                        }),
+                        pillIcon(Icons.image_outlined, "Photos", () async {
+                          final files = await ImagePicker().pickMultiImage();
+                          for (final file in files) {
+                            final size = await file.length();
+                            if (size / 1024000 > 1000) {
+                              showSnackbar("Error", "This file is over 1 GB! Please compress it before sending.");
+                              continue;
+                            }
+                            controller.pickedAttachments.add(PlatformFile(
+                              path: file.path,
+                              name: file.path.split('/').last,
+                              size: size,
+                              bytes: null,
+                            ));
+                          }
+                        }),
+                      ],
+                    ),
+                  ),
+                ),
+                if (!kIsWeb)
+                  Positioned(
+                    top: 0,
+                    bottom: 0,
+                    child: TextFieldRecordingOverlay(
+                      controller: controller,
+                      recorderController: recorderController,
+                    ),
+                  ),
+                SendAnimation(parentController: controller),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          // Voice note at rest; turns into the send button, in the accent
+          // colour, as soon as there is something to send.
+          ValueListenableBuilder<TextEditingValue>(
+            valueListenable: controller.textController,
+            builder: (context, value, child) => Obx(() {
+              final canSend = value.text.isNotEmpty ||
+                  controller.subjectTextController.text.isNotEmpty ||
+                  controller.pickedAttachments.isNotEmpty ||
+                  controller.pickedApp.value != null;
+              final recording = controller.showRecording.value;
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: canSend && !recording ? scheme.primary : scheme.surfaceContainerHighest,
+                ),
+                child: child,
+              );
+            }),
+            child: Center(
+              child: TextFieldSuffix(
+                subjectTextController: controller.subjectTextController,
+                textController: controller.textController,
+                controller: controller,
+                recorderController: recorderController,
+                sendMessage: sendMessage,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Obx(() => Padding(
@@ -448,6 +572,9 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
             mainAxisSize: MainAxisSize.min,
             children: [
               ComposerSuggestions(controller: controller),
+              if (material && !kIsDesktop && !kIsWeb)
+                _googleComposerRow(context)
+              else
               Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
                 TextFieldIconBar(controller: controller, localController: localController),
                 Expanded(
@@ -506,6 +633,7 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
                                 const SizedBox(height: 8),
                                 AttachmentPicker(
                                   controller: controller,
+                                  googleStyle: material && !kIsDesktop && !kIsWeb,
                                 ),
                               ],
                             ),

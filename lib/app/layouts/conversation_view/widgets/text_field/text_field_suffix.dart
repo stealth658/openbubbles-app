@@ -226,7 +226,11 @@ class _RecordingButton extends StatelessWidget {
         child: !isChatCreator && !showRecording
             ? CupertinoIconWrapper(
                 icon: Icon(
-                  isIOS ? CupertinoIcons.mic_fill : Icons.mic_none,
+                  isIOS
+                      ? CupertinoIcons.mic_fill
+                      : SettingsSvc.settings.skin.value == Skins.Material
+                          ? Icons.graphic_eq
+                          : Icons.mic_none,
                   color: isIOS
                       ? context.theme.colorScheme.outline.withValues(alpha: 0.8)
                       : context.theme.colorScheme.onSurfaceVariant,

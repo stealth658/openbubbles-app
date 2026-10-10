@@ -148,97 +148,9 @@ class TextFieldIconBar extends StatelessWidget {
   }
 
   Widget _gifButton(BuildContext context) => IconButton(
-              icon: Icon(Icons.gif, color: context.theme.colorScheme.outline, size: 28),
-              onPressed: () async {
-                if (kIsDesktop || kIsWeb) {
-                  controller.showingOverlays = true;
-                }
-                KlipyClient klipy = KlipyClient(apiKey: kIsWeb ? KLIPY_API_KEY : dotenv.get('KLIPY_API_KEY'));
-                TextEditingController klipyController = TextEditingController();
-                FocusNode focus = FocusNode();
-                Future<KlipyResultObject?> resultFuture = klipy.showAsBottomSheet(
-                  maxExtent: 0.8,
-                  minExtent: 0.5,
-                  debounce: const Duration(seconds: 1),
-                  context: context,
-                  searchFieldController: klipyController,
-                  // Copied and slightly modified from source, just so I can autofocus
-                  searchFieldWidget: Padding(
-                    padding: const EdgeInsets.all(8),
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        TextField(
-                          focusNode: focus,
-                          controller: klipyController,
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: const BorderSide(
-                                width: 0,
-                                style: BorderStyle.none,
-                              ),
-                            ),
-                            contentPadding: const EdgeInsets.fromLTRB(28, 5, 32, 7),
-                            filled: true,
-                            hintStyle: const KlipySearchFieldStyle().hintStyle,
-                            hintText: "Search KLIPY",
-                            isCollapsed: true,
-                            isDense: true,
-                          ),
-                          style: context.theme.textTheme.bodyMedium!,
-                        ),
-                        const Positioned(
-                          left: 4,
-                          child: Icon(
-                            Icons.search,
-                            color: Color(0xFF8A8A86),
-                            size: 22,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  style: KlipyStyle(
-                    color: context.theme.colorScheme.surfaceContainerHighest,
-                    attributionStyle: KlipyAttributionStyle(brightnes: context.theme.brightness),
-                    tabBarStyle: KlipyTabBarStyle(
-                      decoration: BoxDecoration(
-                          color: context.theme.colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(8)),
-                      indicator: BoxDecoration(
-                        color: context.theme.colorScheme.primary,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      labelColor: context.theme.colorScheme.onSurface,
-                      unselectedLabelColor: context.theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                    ),
-                  ),
-                );
-                focus.requestFocus();
-                KlipyResultObject? result = await resultFuture;
-                if (kIsDesktop || kIsWeb) {
-                  controller.showingOverlays = false;
-                }
-                final selectedGif = result?.media.tinyGif ?? result?.media.tinyGifTransparent;
-                if (result != null && selectedGif != null) {
-                  final response = await HttpSvc.downloadFromUrl(selectedGif.url);
-                  if (response.statusCode == 200) {
-                    try {
-                      final Uint8List data = response.data;
-                      controller.pickedAttachments.add(PlatformFile(
-                        path: null,
-                        name: "${result.id}.gif",
-                        size: data.length,
-                        bytes: data,
-                      ));
-                      return;
-                    } catch (e, s) {
-                      Logger.warn("Failed to attach GIF from picker", error: e, trace: s, tag: 'TextFieldIconBar');
-                    }
-                  }
-                }
-              });
+        icon: Icon(Icons.gif, color: context.theme.colorScheme.outline, size: 28),
+        onPressed: () => showGifPicker(context, controller),
+      );
 
   Widget _emojiButton(BuildContext context) => IconButton(
         icon: Icon(_iOS ? CupertinoIcons.smiley_fill : Icons.emoji_emotions,
@@ -256,4 +168,96 @@ class TextFieldIconBar extends StatelessWidget {
           await Share.location(_chat);
         },
       );
+}
+
+/// Opens the KLIPY GIF search sheet and attaches the chosen GIF.
+Future<void> showGifPicker(BuildContext context, ConversationViewController controller) async {
+      if (kIsDesktop || kIsWeb) {
+        controller.showingOverlays = true;
+      }
+      KlipyClient klipy = KlipyClient(apiKey: kIsWeb ? KLIPY_API_KEY : dotenv.get('KLIPY_API_KEY'));
+      TextEditingController klipyController = TextEditingController();
+      FocusNode focus = FocusNode();
+      Future<KlipyResultObject?> resultFuture = klipy.showAsBottomSheet(
+        maxExtent: 0.8,
+        minExtent: 0.5,
+        debounce: const Duration(seconds: 1),
+        context: context,
+        searchFieldController: klipyController,
+        // Copied and slightly modified from source, just so I can autofocus
+        searchFieldWidget: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              TextField(
+                focusNode: focus,
+                controller: klipyController,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(
+                      width: 0,
+                      style: BorderStyle.none,
+                    ),
+                  ),
+                  contentPadding: const EdgeInsets.fromLTRB(28, 5, 32, 7),
+                  filled: true,
+                  hintStyle: const KlipySearchFieldStyle().hintStyle,
+                  hintText: "Search KLIPY",
+                  isCollapsed: true,
+                  isDense: true,
+                ),
+                style: context.theme.textTheme.bodyMedium!,
+              ),
+              const Positioned(
+                left: 4,
+                child: Icon(
+                  Icons.search,
+                  color: Color(0xFF8A8A86),
+                  size: 22,
+                ),
+              ),
+            ],
+          ),
+        ),
+        style: KlipyStyle(
+          color: context.theme.colorScheme.surfaceContainerHighest,
+          attributionStyle: KlipyAttributionStyle(brightnes: context.theme.brightness),
+          tabBarStyle: KlipyTabBarStyle(
+            decoration: BoxDecoration(
+                color: context.theme.colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(8)),
+            indicator: BoxDecoration(
+              color: context.theme.colorScheme.primary,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            labelColor: context.theme.colorScheme.onSurface,
+            unselectedLabelColor: context.theme.colorScheme.onSurface.withValues(alpha: 0.5),
+          ),
+        ),
+      );
+      focus.requestFocus();
+      KlipyResultObject? result = await resultFuture;
+      if (kIsDesktop || kIsWeb) {
+        controller.showingOverlays = false;
+      }
+      final selectedGif = result?.media.tinyGif ?? result?.media.tinyGifTransparent;
+      if (result != null && selectedGif != null) {
+        final response = await HttpSvc.downloadFromUrl(selectedGif.url);
+        if (response.statusCode == 200) {
+          try {
+            final Uint8List data = response.data;
+            controller.pickedAttachments.add(PlatformFile(
+              path: null,
+              name: "${result.id}.gif",
+              size: data.length,
+              bytes: data,
+            ));
+            return;
+          } catch (e, s) {
+            Logger.warn("Failed to attach GIF from picker", error: e, trace: s, tag: 'TextFieldIconBar');
+          }
+        }
+      }
 }
