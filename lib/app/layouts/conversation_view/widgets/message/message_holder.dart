@@ -64,9 +64,13 @@ class _MessageHolderState extends State<MessageHolder> with AutomaticKeepAliveCl
 
   Message get message => controller.message;
 
-  Message? get olderMessage => controller.oldMessage;
+  // In the reply-thread view the neighbours are the thread's, passed in by the
+  // popup; the message state still holds its main-list neighbours, which made
+  // time headers, sender names and spacing in the thread follow the wrong
+  // messages (no "Today 9:31 PM" header above an original from hours earlier).
+  Message? get olderMessage => widget.isReplyThread ? widget.oldMessage : controller.oldMessage;
 
-  Message? get newerMessage => controller.newMessage;
+  Message? get newerMessage => widget.isReplyThread ? widget.newMessage : controller.newMessage;
 
   // Computed reactive replyTo getter
   Message? get replyTo => message.threadOriginatorGuid == null

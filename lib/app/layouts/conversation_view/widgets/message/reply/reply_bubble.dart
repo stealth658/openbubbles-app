@@ -18,11 +18,15 @@ class ReplyBubble extends StatefulWidget {
     required this.part,
     required this.showAvatar,
     required this.cvController,
+    this.showSenderName = true,
   });
 
   final int part;
   final bool showAvatar;
   final ConversationViewController cvController;
+
+  /// Material only: whether the quote names the original's author.
+  final bool showSenderName;
 
   @override
   State<StatefulWidget> createState() => _ReplyBubbleState();
@@ -75,28 +79,23 @@ class _ReplyBubbleState extends State<ReplyBubble> with ThemeHelpers {
               showReplyThread(context, message, part, MessagesSvc(chatGuid), widget.cvController);
             },
             child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
-              decoration: hasBackground
-                  ? BoxDecoration(
-                      color: context.theme.colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(12),
-                    )
-                  : null,
+              padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 12),
               child: Text.rich(
                 TextSpan(children: [
-                  TextSpan(
-                    text: controller.senderDisplayName,
-                    style: context.textTheme.bodyMedium!
-                        .copyWith(fontWeight: FontWeight.w400, color: context.theme.colorScheme.outline),
-                  ),
-                  const TextSpan(text: "\n"),
+                  if (widget.showSenderName) ...[
+                    TextSpan(
+                      text: controller.senderDisplayName,
+                      style: context.textTheme.labelMedium!
+                          .copyWith(fontWeight: FontWeight.w600, color: context.theme.colorScheme.onSurfaceVariant),
+                    ),
+                    const TextSpan(text: "\n"),
+                  ],
                   TextSpan(
                     text: text,
-                    style: context.textTheme.bodyMedium!.apply(fontSizeFactor: 1.15),
+                    style: context.textTheme.bodyMedium!.copyWith(color: context.theme.colorScheme.onSurfaceVariant),
                   ),
                 ]),
-                style: context.textTheme.labelLarge!.copyWith(color: context.theme.colorScheme.onSurface),
-                maxLines: 2,
+                maxLines: widget.showSenderName ? 3 : 2,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
