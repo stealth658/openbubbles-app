@@ -4009,11 +4009,16 @@ class RustPushService extends GetxService {
     var reflected = await pushService.reflectMessageDyn(myMsg);
     Logger.info("Reflect finished ${myMsg.id}");
     if (reflected != null) {
-      Logger.info("Queing");
+      // An edit or unsend is reflected onto the *original* message, so the
+      // result carries the original's guid. Queued as a new message, the
+      // merged IncomingMessageHandler drops it as an already-processed
+      // duplicate and the old text stays on screen. It is an update.
+      final isUpdate = myMsg.message is api.Message_Edit || myMsg.message is api.Message_Unsend;
+      Logger.info(isUpdate ? "Queing update of ${reflected.guid}" : "Queing");
       await IncomingMsgHandler.handle(IncomingPayload(
         chat: chat,
         message: reflected,
-        type: MessageEventType.newMessage,
+        type: isUpdate ? MessageEventType.updatedMessage : MessageEventType.newMessage,
         source: MessageSource.socket,
       ));
     }

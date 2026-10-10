@@ -46,6 +46,9 @@ class ReplyBubbleSection extends StatelessWidget {
         part: part,
         showAvatar: showReplyAvatar,
         cvController: cvController,
+        // The reply already has its sender's name above it; repeating the same
+        // name inside the quote read as two messages from that person.
+        showSenderName: !message.sameSender(replyTo),
       ),
     );
 
@@ -67,21 +70,26 @@ class ReplyBubbleSection extends StatelessWidget {
         ),
       );
     } else {
-      // Android/Material style - separate decorative box
+      // Android/Material style: a small, faded quote of the original above the
+      // reply (lighter than a message, so it does not read as one), aligned to
+      // the side the original was sent from.
       final hasBackground = ChatStateScope.maybeOf(context)?.hasCustomWallpaper ?? false;
       return Padding(
         padding: showAvatar || alwaysShowAvatars
-            ? const EdgeInsets.only(left: 45.0, right: 10)
-            : const EdgeInsets.symmetric(horizontal: 10),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(25),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(25),
-              color: hasBackground ? context.theme.colorScheme.surfaceContainerHighest : null,
-              border: Border.fromBorderSide(BorderSide(color: context.theme.colorScheme.surfaceContainerHighest)),
+            ? const EdgeInsets.only(left: 45.0, right: 10, bottom: 2)
+            : const EdgeInsets.only(left: 10, right: 10, bottom: 2),
+        child: Align(
+          alignment: message.isFromMe! ? Alignment.centerRight : Alignment.centerLeft,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(18),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(18),
+                color: context.theme.colorScheme.surfaceContainerHighest
+                    .withValues(alpha: hasBackground ? 0.85 : 0.45),
+              ),
+              child: replyBubble,
             ),
-            child: replyBubble,
           ),
         ),
       );
