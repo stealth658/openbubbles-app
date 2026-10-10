@@ -10,7 +10,6 @@ import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:universal_io/io.dart';
 
 /// Displays a group of contact avatars for a chat.
 ///
@@ -128,11 +127,8 @@ class ContactAvatarGroupWidget extends StatelessWidget {
         return CircleAvatar(
           key: ValueKey(customAvatarPath),
           radius: avatarSize / 2,
-          backgroundImage: ResizeImage(
-            FileImage(File(customAvatarPath)),
-            width: ContactAvatarWidget.avatarDecodeSize,
-            height: ContactAvatarWidget.avatarDecodeSize,
-          ),
+          // Same provider as single avatars (fit policy keeps the aspect ratio).
+          backgroundImage: ContactAvatarWidget.avatarImage(customAvatarPath),
           backgroundColor: Colors.transparent,
         );
       }

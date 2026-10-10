@@ -31,7 +31,6 @@ import 'package:bluebubbles/app/wrappers/theme_switcher.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:universal_io/io.dart';
 
 class ConversationListController extends StatefulController {
   final bool showArchivedChats;
@@ -245,10 +244,7 @@ class _ConversationListState extends CustomState<ConversationList, void, Convers
       if (customPath != null) {
         // Same ResizeImage params as ContactAvatarGroupWidget, or the warmed
         // entry is never hit and the photo decodes a second time at full size.
-        unawaited(precacheImage(
-          ResizeImage(FileImage(File(customPath)), width: decodeSize, height: decodeSize),
-          context,
-        ));
+        unawaited(precacheImage(ContactAvatarWidget.avatarImage(customPath), context));
         continue;
       }
       for (final hs in state.participants) {
