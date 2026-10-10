@@ -1,3 +1,5 @@
+import 'dart:math';
+import 'dart:async';
 import 'package:bluebubbles/database/models.dart' hide Entity;
 import 'package:bluebubbles/utils/logger/logger.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
@@ -95,6 +97,59 @@ List<InlineSpan> buildMessageSpans(BuildContext context, MessagePart part, Messa
   return textSpans;
 }
 
+/// One ML Kit entity extractor for the whole app.
+///
+/// Each `EntityExtractor()` gets its own id, and the plugin creates and keeps
+/// a native ML Kit client per id until `close()` is called. This used to be
+/// constructed per message part and never closed, so every message with text
+/// that scrolled past left a native extractor (and its model state) behind --
+/// unbounded native memory growth, a far likelier cause of the native crashes
+/// that led upstream to cap message length than the text itself.
+EntityExtractor? _sharedExtractor;
+Future<void> _extractorQueue = Future.value();
+
+/// ML Kit entity extraction over the whole of [text]. Long text is fed in
+/// chunks of at most 500 code units, split at paragraph, line, sentence or
+/// word boundaries (never inside a surrogate pair), and the results are
+/// shifted back to offsets in [text]. Calls are serialised on the shared
+/// extractor.
+Future<List<EntityAnnotation>> annotateEntities(String text) {
+  final completer = Completer<List<EntityAnnotation>>();
+  _extractorQueue = _extractorQueue.then((_) async {
+    try {
+      _sharedExtractor ??= EntityExtractor(language: EntityExtractorLanguage.english);
+      final results = <EntityAnnotation>[];
+      const chunkSize = 500;
+      var start = 0;
+      while (start < text.length) {
+        var end = min(start + chunkSize, text.length);
+        if (end < text.length) {
+          final window = text.substring(start, end);
+          for (final sep in const ["\n\n", "\n", ". ", " "]) {
+            final i = window.lastIndexOf(sep);
+            if (i > chunkSize ~/ 4) {
+              end = start + i + sep.length;
+              break;
+            }
+          }
+          final last = text.codeUnitAt(end - 1);
+          if (last >= 0xD800 && last <= 0xDBFF) end--;
+        }
+        final chunk = sanitizeForMlKit(text.substring(start, end));
+        final found = await _sharedExtractor!.annotateText(chunk);
+        for (final a in found) {
+          results.add(EntityAnnotation(start: a.start + start, end: a.end + start, text: a.text, entities: a.entities));
+        }
+        start = end;
+      }
+      completer.complete(results);
+    } catch (e, s) {
+      completer.completeError(e, s);
+    }
+  });
+  return completer.future;
+}
+
 Future<List<InlineSpan>> buildEnrichedMessageSpans(BuildContext context, MessagePart part, Message message,
     {Color? colorOverride, bool hideBodyText = false}) async {
   final textSpans = <InlineSpan>[];
@@ -154,9 +209,7 @@ Future<List<InlineSpan>> buildEnrichedMessageSpans(BuildContext context, Message
     if (!kIsWeb && !kIsDesktop && SettingsSvc.settings.smartReply.value) {
       if (controller.mlKitParsedText["${message.guid!}-${part.part}"] == null) {
         try {
-          controller.mlKitParsedText["${message.guid!}-${part.part}"] =
-              await EntityExtractor(language: EntityExtractorLanguage.english)
-                  .annotateText(sanitizeForMlKit(part.text!));
+          controller.mlKitParsedText["${message.guid!}-${part.part}"] = await annotateEntities(part.text!);
         } catch (ex, stack) {
           Logger.warn('Failed to extract entities using mlkit!', error: ex, trace: stack);
         }
@@ -185,9 +238,8 @@ Future<List<InlineSpan>> buildEnrichedMessageSpans(BuildContext context, Message
           markRange(Tuple3("flight", [element.start, element.end], [ent.airlineCode, ent.flightNumber]));
         }
       }
-      // ML Kit only sees the first 500 characters (see sanitizeForMlKit), so a
-      // link near the end of a long message was never marked. Mark any URL
-      // the regex finds that ML Kit did not already cover.
+      // Belt and braces: mark any URL the regex finds that ML Kit did not
+      // already cover (ML Kit occasionally misses bare short-link domains).
       final covered = entities.where((e) => e.entities.first is UrlEntity).map((e) => [e.start, e.end]).toList();
       for (final match in urlRegex.allMatches(part.text!)) {
         final overlaps = covered.any((r) => match.start < r[1] && match.end > r[0]);
