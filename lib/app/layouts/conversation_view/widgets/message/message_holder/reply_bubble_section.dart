@@ -1,6 +1,7 @@
 import 'package:bluebubbles/app/components/avatars/contact_avatar_widget.dart';
 import 'package:bluebubbles/app/state/message_state_scope.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/reply/reply_bubble.dart';
+import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/reply/reply_thread_popup.dart';
 import 'package:bluebubbles/app/state/chat_state_scope.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
@@ -71,6 +72,34 @@ class ReplyBubbleSection extends StatelessWidget {
         ),
       );
     }
+    // "N Replies" under the quoted copy too, as iMessage does; opens the thread.
+    final service = MessagesSvc(cvController.chat.guid);
+    final replyCount = service.struct.threads(replyTo.guid!, part, returnOriginator: false).length;
+    final Widget quoteWithCount = replyCount == 0
+        ? quote
+        : Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: message.isFromMe! ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+            children: [
+              quote,
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  final replyPart = replyToState.parts.length > part ? replyToState.parts[part] : null;
+                  if (replyPart == null) return;
+                  showReplyThread(context, replyTo, replyPart, service, cvController);
+                },
+                child: Padding(
+                  padding: EdgeInsets.only(left: isIOS ? 14 : 12, right: 12, top: isIOS ? 0 : 4, bottom: 2),
+                  child: Text(
+                    "$replyCount ${replyCount > 1 ? "Replies" : "Reply"}",
+                    style: context.theme.textTheme.labelMedium!
+                        .copyWith(color: context.theme.colorScheme.primary, fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ),
+            ],
+          );
     final line = Container(
       width: 2,
       decoration: BoxDecoration(color: lineColor, borderRadius: BorderRadius.circular(1)),
@@ -108,7 +137,7 @@ class ReplyBubbleSection extends StatelessWidget {
                 ),
               ),
               SizedBox(width: isIOS ? 0 : 10),
-              Flexible(child: Align(alignment: Alignment.centerLeft, child: quote)),
+              Flexible(child: Align(alignment: Alignment.centerLeft, child: quoteWithCount)),
             ],
           ),
         ),
@@ -123,8 +152,8 @@ class ReplyBubbleSection extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: message.isFromMe!
-                ? [Flexible(child: quote), const SizedBox(width: 6), Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: line)]
-                : [Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: line), const SizedBox(width: 6), Flexible(child: quote)],
+                ? [Flexible(child: quoteWithCount), const SizedBox(width: 6), Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: line)]
+                : [Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: line), const SizedBox(width: 6), Flexible(child: quoteWithCount)],
           ),
         ),
       ),
