@@ -5,7 +5,7 @@ import 'package:bluebubbles/app/state/chat_state_scope.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/database/database.dart';
 import 'package:bluebubbles/database/models.dart';
-import 'package:bluebubbles/models/models.dart' show MessageReplyContext;
+import 'package:bluebubbles/services/ui/chat/send_data.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:collection/collection.dart';
 import 'package:defer_pointer/defer_pointer.dart';
@@ -97,7 +97,7 @@ void _buildThreadView(
 /// chat header stays visible and sharp above, the thread sits on a blurred
 /// backdrop, an X closes it, and a "Reply" bar at the bottom starts a reply
 /// to the thread's original message in the real composer.
-class _ThreadOverlay extends StatelessWidget {
+class _ThreadOverlay extends StatefulWidget {
   const _ThreadOverlay({
     required this.messages,
     required this.originatorPart,
@@ -114,15 +114,48 @@ class _ThreadOverlay extends StatelessWidget {
   final ThemeData theme;
   final BuildContext parentContext;
 
+  @override
+  State<_ThreadOverlay> createState() => _ThreadOverlayState();
+}
+
+class _ThreadOverlayState extends State<_ThreadOverlay> {
+  final TextEditingController _replyText = TextEditingController();
+  final FocusNode _replyFocus = FocusNode();
+  bool _sending = false;
+
+  List<Message> get messages => widget.messages;
+  int? get originatorPart => widget.originatorPart;
+  ConversationViewController get cvController => widget.cvController;
+  ThemeData get theme => widget.theme;
   bool get _isThread => originatorPart != null;
 
-  void _close() => Navigator.of(parentContext).pop();
+  @override
+  void dispose() {
+    _replyText.dispose();
+    _replyFocus.dispose();
+    super.dispose();
+  }
 
-  void _reply() {
+  void _close() => Navigator.of(widget.parentContext).pop();
+
+  /// Sends the typed text as a reply to the thread's original message, the
+  /// way the iPhone's in-thread field does, then closes the thread.
+  Future<void> _sendReply() async {
+    final text = _replyText.text.trim();
+    if (text.isEmpty || _sending) return;
+    setState(() => _sending = true);
     final original = messages.first;
-    _close();
-    cvController.replyToMessage = MessageReplyContext(original, originatorPart!);
-    cvController.focusNode.requestFocus();
+    try {
+      await cvController.send(SendData(
+        attachments: const [],
+        text: text,
+        subject: "",
+        replyGuid: original.threadOriginatorGuid ?? original.guid,
+        replyPart: originatorPart,
+      ));
+    } finally {
+      if (mounted) _close();
+    }
   }
 
   @override
@@ -178,10 +211,18 @@ class _ThreadOverlay extends StatelessWidget {
                                 ),
                               ),
                             )
-                          : IconButton(
-                              tooltip: "Close thread",
-                              onPressed: _close,
-                              icon: Icon(Icons.close, color: scheme.onSurface),
+                          // Sits where the header's overflow button is; the
+                          // patch is the header's own colour so the X replaces
+                          // that button instead of overlapping it.
+                          : Container(
+                              width: 48,
+                              height: kToolbarHeight,
+                              color: scheme.surfaceContainerHighest,
+                              child: IconButton(
+                                tooltip: "Close thread",
+                                onPressed: _close,
+                                icon: Icon(Icons.close, color: scheme.onSurfaceVariant),
+                              ),
                             ),
                     ),
                   ),
@@ -191,7 +232,7 @@ class _ThreadOverlay extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: 8.0),
                     child: Center(
                       child: SingleChildScrollView(
-                        controller: scrollController,
+                        controller: widget.scrollController,
                         child: Column(
                           children: messages
                               .mapIndexed((index, e) => GestureDetector(
@@ -199,7 +240,7 @@ class _ThreadOverlay extends StatelessWidget {
                                       _close();
                                       if (originatorPart == null && iOS) {
                                         // pop twice to remove convo details page
-                                        Navigator.of(parentContext).pop();
+                                        Navigator.of(widget.parentContext).pop();
                                       }
                                       MessagesSvc(cvController.chat.guid).jumpToMessage.call(e.guid!);
                                     },
@@ -226,22 +267,47 @@ class _ThreadOverlay extends StatelessWidget {
                 ),
                 if (_isThread)
                   Padding(
-                    padding: EdgeInsets.fromLTRB(16, 6, 16, padding.bottom + 10),
-                    child: GestureDetector(
-                      onTap: _reply,
-                      child: Container(
-                        height: 44,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        alignment: Alignment.centerLeft,
-                        decoration: BoxDecoration(
-                          color: iOS ? scheme.surface.withValues(alpha: 0.9) : scheme.surfaceContainerHigh,
-                          borderRadius: BorderRadius.circular(22),
-                          border: iOS ? Border.all(color: scheme.outlineVariant) : null,
-                        ),
-                        child: Text(
-                          "Reply",
-                          style: theme.textTheme.bodyLarge!.copyWith(color: scheme.onSurfaceVariant),
-                        ),
+                    padding: EdgeInsets.fromLTRB(16, 6, 16, MediaQuery.of(context).viewInsets.bottom + padding.bottom + 10),
+                    child: Container(
+                      constraints: const BoxConstraints(minHeight: 44),
+                      padding: const EdgeInsets.only(left: 16, right: 4),
+                      decoration: BoxDecoration(
+                        color: iOS ? scheme.surface.withValues(alpha: 0.9) : scheme.surfaceContainerHigh,
+                        borderRadius: BorderRadius.circular(22),
+                        border: iOS ? Border.all(color: scheme.outlineVariant) : null,
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _replyText,
+                              focusNode: _replyFocus,
+                              autofocus: true,
+                              minLines: 1,
+                              maxLines: 4,
+                              textInputAction: TextInputAction.send,
+                              textCapitalization: TextCapitalization.sentences,
+                              onSubmitted: (_) => _sendReply(),
+                              style: theme.textTheme.bodyLarge!.copyWith(color: scheme.onSurface),
+                              cursorColor: scheme.primary,
+                              decoration: InputDecoration(
+                                isCollapsed: true,
+                                contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                                border: InputBorder.none,
+                                hintText: "Reply",
+                                hintStyle: theme.textTheme.bodyLarge!.copyWith(color: scheme.onSurfaceVariant),
+                              ),
+                            ),
+                          ),
+                          ValueListenableBuilder<TextEditingValue>(
+                            valueListenable: _replyText,
+                            builder: (_, v, __) => IconButton(
+                              tooltip: "Send",
+                              onPressed: v.text.trim().isEmpty || _sending ? null : _sendReply,
+                              icon: Icon(iOS ? Icons.arrow_upward : Icons.send, color: scheme.primary),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),

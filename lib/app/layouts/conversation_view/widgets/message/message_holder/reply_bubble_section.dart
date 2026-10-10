@@ -74,21 +74,37 @@ class ReplyBubbleSection extends StatelessWidget {
       // reply (lighter than a message, so it does not read as one), aligned to
       // the side the original was sent from.
       final hasBackground = ChatStateScope.maybeOf(context)?.hasCustomWallpaper ?? false;
+      final lineColor = context.theme.colorScheme.outlineVariant;
+      final quote = ClipRRect(
+        borderRadius: BorderRadius.circular(18),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            color: context.theme.colorScheme.surfaceContainerHighest.withValues(alpha: hasBackground ? 0.85 : 0.45),
+          ),
+          child: replyBubble,
+        ),
+      );
+      // A thin line beside the quote that runs down into the reply, the way
+      // iMessage ties the two together.
+      final line = Container(
+        width: 2,
+        margin: const EdgeInsets.symmetric(vertical: 6),
+        decoration: BoxDecoration(color: lineColor, borderRadius: BorderRadius.circular(1)),
+      );
       return Padding(
         padding: showAvatar || alwaysShowAvatars
-            ? const EdgeInsets.only(left: 45.0, right: 10, bottom: 2)
-            : const EdgeInsets.only(left: 10, right: 10, bottom: 2),
+            ? const EdgeInsets.only(left: 45.0, right: 10)
+            : const EdgeInsets.only(left: 10, right: 10),
         child: Align(
           alignment: message.isFromMe! ? Alignment.centerRight : Alignment.centerLeft,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(18),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(18),
-                color: context.theme.colorScheme.surfaceContainerHighest
-                    .withValues(alpha: hasBackground ? 0.85 : 0.45),
-              ),
-              child: replyBubble,
+          child: IntrinsicHeight(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: message.isFromMe!
+                  ? [Flexible(child: quote), const SizedBox(width: 6), line]
+                  : [line, const SizedBox(width: 6), Flexible(child: quote)],
             ),
           ),
         ),
