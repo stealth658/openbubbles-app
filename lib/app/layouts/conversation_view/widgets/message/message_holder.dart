@@ -31,6 +31,7 @@ import 'package:collection/collection.dart';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:universal_io/io.dart';
 
 class MessageHolder extends StatefulWidget {
   MessageHolder({
@@ -229,6 +230,21 @@ class _MessageHolderState extends State<MessageHolder> with AutomaticKeepAliveCl
         ? "You"
         : (original.handleRelation.target?.displayName ?? original.handle?.displayName ?? "");
     final excerpt = original.getNotificationText(hideMessageContent: false);
+    // An image original gets a small thumbnail beside the text, as in
+    // Google Messages.
+    final imageAtt = original.dbAttachments.firstWhereOrNull((a) => a.mimeStart == "image" && a.existsOnDisk);
+    final Widget? thumb = imageAtt == null
+        ? null
+        : ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image(
+              image: ResizeImage(FileImage(File(imageAtt.path)), width: 240),
+              width: 80,
+              height: 80,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+            ),
+          );
     final card = Padding(
       padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
       child: Material(
@@ -239,33 +255,46 @@ class _MessageHolderState extends State<MessageHolder> with AutomaticKeepAliveCl
           onTap: () => service.jumpToMessage.call(original.guid!),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (author.isNotEmpty)
-                  Text(author,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: context.theme.textTheme.bodyMedium!.copyWith(color: scheme.onSurface)),
-                Text(excerpt,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: context.theme.textTheme.bodyMedium!.copyWith(color: scheme.onSurfaceVariant)),
+                if (thumb != null) ...[thumb, const SizedBox(width: 14)],
+                Flexible(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (author.isNotEmpty)
+                        Text(author,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: context.theme.textTheme.bodyMedium!.copyWith(color: scheme.onSurface)),
+                      Text(excerpt,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: context.theme.textTheme.bodyMedium!.copyWith(color: scheme.onSurfaceVariant)),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
         ),
       ),
     );
+    // IntrinsicWidth: the bubble is as wide as the wider of the card and the
+    // reply text, and the card stretches to that; the text sits at the left
+    // like Google's, instead of floating right in a max-width bubble.
     return ConstrainedBox(
       constraints: BoxConstraints(maxWidth: NavigationSvc.width(context) * MessageState.maxBubbleSizeFactor),
-      child: Container(
-        color: bubbleColor,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [card, inner],
+      child: IntrinsicWidth(
+        child: Container(
+          color: bubbleColor,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [card, Align(alignment: Alignment.centerLeft, child: inner)],
+          ),
         ),
       ),
     );

@@ -27,9 +27,10 @@ class MessageSender extends StatelessWidget {
       return Padding(
         padding: const EdgeInsets.only(left: 5, right: 25, bottom: 4, top: 2),
         child: Obx(() {
-          final hex = state.sender?.color.value;
-          final address = state.sender?.handle.address ?? state.message.handleRelation.target?.address;
-          final nameColor = hex != null ? HexColor(hex) : toColorGradient(address).first;
+          // Same colour the avatar uses (custom colour, else the address gradient).
+          final handle = state.sender?.handle ?? state.message.handleRelation.target;
+          final hex = state.sender?.color.value ?? handle?.color;
+          final nameColor = hex != null ? HexColor(hex) : toColorGradient(handle?.address).first;
           return Row(
             mainAxisSize: MainAxisSize.min,
             children: [
