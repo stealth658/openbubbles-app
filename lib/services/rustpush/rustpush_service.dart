@@ -587,7 +587,7 @@ class RustPushBackend implements BackendService {
   @override
   Future<Message> sendAttachment(Chat chat, Message m, bool isAudioMessage, Attachment att, {void Function(int p1, int p2)? onSendProgress, CancelToken? cancelToken}) async {
     if (chat.isRpSms && !smsForwardingEnabled()) {
-      throw Exception("SMS is not enabled (enable in settings -> user)");
+      throw Exception("Text message forwarding from your iPhone is not connected, so this SMS/MMS chat cannot send. On the iPhone, open Settings > Apps > Messages > Text Message Forwarding and turn on this device.");
     }
     var stream = api.uploadAttachment(
         aps: pushService.state!.conn,
@@ -923,7 +923,7 @@ class RustPushBackend implements BackendService {
   @override
   Future<Message> sendMessage(Chat chat, Message m, {CancelToken? cancelToken}) async {
     if (chat.isRpSms && !smsForwardingEnabled()) {
-      throw Exception("SMS is not enabled (enable in settings -> user)");
+      throw Exception("Text message forwarding from your iPhone is not connected, so this SMS/MMS chat cannot send. On the iPhone, open Settings > Apps > Messages > Text Message Forwarding and turn on this device.");
     }
     api.LinkMeta? linkMeta;
     try {
@@ -3871,7 +3871,11 @@ class RustPushService extends GetxService {
         return;
       }
       if (myMsg.verificationFailed) return;
-      if (myHandles.contains(myMsg.sender) && message.chat.target!.isIMessage) {
+      // A receipt from one of my own handles is my other device talking. SMS
+      // has no read receipts from the far side, so a Read from me on an SMS
+      // chat can only be a read-elsewhere sync too; keep clearing for those.
+      if (myHandles.contains(myMsg.sender) &&
+          (message.chat.target!.isIMessage || myMsg.message is api.Message_Read)) {
         if (myMsg.message is api.Message_Read) {
           var chat = message.chat.target!;
           Logger.info("Read on another device: clearing unread + notification for ${chat.guid} "

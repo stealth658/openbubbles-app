@@ -340,7 +340,13 @@ class Chat {
         if (isRoutingStub) {
           usingHandle = (await api.getMyPhoneHandles(state: pushService.state!.client))[0];
         } else {
-          usingHandle = SettingsSvc.settings.smsForwardingTargets.keys.firstOrNull!;
+          // No iPhone is forwarding texts to this device right now. Say so
+          // instead of failing on a null check when the chat is opened.
+          final forwarding = SettingsSvc.settings.smsForwardingTargets.keys.firstOrNull;
+          if (forwarding == null) {
+            throw Exception("Text message forwarding from your iPhone is not connected (Settings > Apps > Messages > Text Message Forwarding).");
+          }
+          usingHandle = forwarding;
         }
         save(updateUsingHandle: true);
       } else {
@@ -1758,7 +1764,11 @@ class Chat {
   }
 
   /// The messaging service this chat belongs to, derived from the GUID prefix.
-  ChatServiceType get service => ChatServiceType.fromGuid(guid);
+  /// OpenBubbles: rustpush SMS-relay chats have plain uuid guids, so the
+  /// guid prefix says nothing; the isRpSms flag decides. (The merge briefly
+  /// derived this from the guid alone, which made every SMS chat look like
+  /// iMessage to isIMessage callers.)
+  ChatServiceType get service => isRpSms ? ChatServiceType.sms : ChatServiceType.fromGuid(guid);
 
   /// OpenBubbles: rustpush SMS-relay chats count as text forwarding too.
   bool get isTextForwarding => service == ChatServiceType.sms || isRpSms;
