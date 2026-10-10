@@ -99,8 +99,9 @@ Features and fixes:
   sliver decoration was not painting the long block); details page under a
   bare toolbar with round labelled action buttons.
 - Reply quote (Material) drawn as a small faded quote without a repeated
-  author name; reply thread view uses the thread's own neighbours for time
-  headers and sender names.
+  author name; reply thread opens in place under the chat header with an X and
+  a Reply bar, and uses the thread's own neighbours for time headers and
+  sender names.
 - Contact photos keep their aspect ratio (the avatar decode squashed
   non-square photos into a square).
 
