@@ -3883,12 +3883,16 @@ class RustPushService extends GetxService {
         return;
       }
       if (myMsg.verificationFailed) return;
-      // A receipt from one of my own handles is my other device talking. SMS
-      // has no read receipts from the far side, so a Read from me on an SMS
-      // chat can only be a read-elsewhere sync too; keep clearing for those.
-      if (myHandles.contains(myMsg.sender) &&
-          (message.chat.target!.isIMessage || myMsg.message is api.Message_Read)) {
-        if (myMsg.message is api.Message_Read) {
+      // A receipt from one of my own handles: for a message I *received* it is
+      // my other device saying it was read there (clear the unread state); for
+      // a message I *sent* it is my other device reporting on that message.
+      // On iMessage that is only "delivered to my other device" and is
+      // ignored, but on relayed texts the iPhone reports the far side's
+      // Delivered and Read (RCS) through the same handle, so those apply.
+      final ownHandle = myHandles.contains(myMsg.sender);
+      final relayedReceipt = ownHandle && message.isFromMe == true && !message.chat.target!.isIMessage;
+      if (ownHandle && !relayedReceipt) {
+        if (myMsg.message is api.Message_Read && message.isFromMe != true) {
           var chat = message.chat.target!;
           Logger.info("Read on another device: clearing unread + notification for ${chat.guid} "
               "(was hasUnread=${chat.hasUnreadMessage})");
