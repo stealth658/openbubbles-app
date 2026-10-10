@@ -1,3 +1,4 @@
+import 'package:bluebubbles/app/components/avatars/contact_avatar_widget.dart';
 import 'package:bluebubbles/app/state/message_state_scope.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/reply/reply_bubble.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/reply/reply_line_painter.dart';
@@ -85,17 +86,52 @@ class ReplyBubbleSection extends StatelessWidget {
           child: replyBubble,
         ),
       );
-      // A thin line beside the quote that runs down into the reply, the way
-      // iMessage ties the two together.
       final line = Container(
         width: 2,
-        margin: const EdgeInsets.symmetric(vertical: 6),
         decoration: BoxDecoration(color: lineColor, borderRadius: BorderRadius.circular(1)),
       );
+      final avatarsOn = showAvatar || alwaysShowAvatars;
+      // iMessage's layout: a small faded avatar of the original's author in the
+      // avatar column, with the line running from it down to the reply's
+      // avatar; on our own side the line alone, to the right of the quote.
+      if (!message.isFromMe! && avatarsOn) {
+        final column = 35.0 * avatarScale + 5.0; // the reply's avatar column (see MessageHolder)
+        return Padding(
+          padding: const EdgeInsets.only(left: 5.0, right: 10),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SizedBox(
+                  width: column,
+                  child: Column(
+                    children: [
+                      if (!replyTo.isFromMe!)
+                        Opacity(
+                          opacity: 0.7,
+                          child: ContactAvatarWidget(
+                            handle: replyTo.handleRelation.target,
+                            size: 22,
+                            fontSize: 11,
+                            borderThickness: 0.1,
+                            editable: false,
+                            scaleSize: false,
+                          ),
+                        ),
+                      const SizedBox(height: 3),
+                      Expanded(child: Center(child: line)),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 5),
+                Flexible(child: Align(alignment: Alignment.centerLeft, child: quote)),
+              ],
+            ),
+          ),
+        );
+      }
       return Padding(
-        padding: showAvatar || alwaysShowAvatars
-            ? const EdgeInsets.only(left: 45.0, right: 10)
-            : const EdgeInsets.only(left: 10, right: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 10),
         child: Align(
           alignment: message.isFromMe! ? Alignment.centerRight : Alignment.centerLeft,
           child: IntrinsicHeight(
@@ -103,8 +139,8 @@ class ReplyBubbleSection extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: message.isFromMe!
-                  ? [Flexible(child: quote), const SizedBox(width: 6), line]
-                  : [line, const SizedBox(width: 6), Flexible(child: quote)],
+                  ? [Flexible(child: quote), const SizedBox(width: 6), Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: line)]
+                  : [Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: line), const SizedBox(width: 6), Flexible(child: quote)],
             ),
           ),
         ),
