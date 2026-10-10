@@ -22,7 +22,9 @@ const int _mlKitMaxTextLength = 500;
 /// UTF-16 surrogates (which can otherwise reach the native tokenizer as invalid
 /// input), and truncates to a safe length. Not intended for display text.
 String sanitizeForMlKit(String input) {
-  final sanitized = sanitizeString(input);
+  // Characters are replaced with a space rather than removed, so offsets ML
+  // Kit reports (entity start/end) still line up with the original text.
+  final sanitized = input.replaceAll(String.fromCharCode(65532), ' ');
   final buffer = StringBuffer();
   final units = sanitized.codeUnits;
   int written = 0;
@@ -54,6 +56,8 @@ String sanitizeForMlKit(String input) {
     final isBidiOverride = (unit >= 0x202A && unit <= 0x202E) || (unit >= 0x2066 && unit <= 0x2069);
     final isBom = unit == 0xFEFF;
     if (isC0Control || isC1Control || isBidiOverride || isBom) {
+      buffer.write(' ');
+      written++;
       continue;
     }
 

@@ -185,6 +185,14 @@ Future<List<InlineSpan>> buildEnrichedMessageSpans(BuildContext context, Message
           markRange(Tuple3("flight", [element.start, element.end], [ent.airlineCode, ent.flightNumber]));
         }
       }
+      // ML Kit only sees the first 500 characters (see sanitizeForMlKit), so a
+      // link near the end of a long message was never marked. Mark any URL
+      // the regex finds that ML Kit did not already cover.
+      final covered = entities.where((e) => e.entities.first is UrlEntity).map((e) => [e.start, e.end]).toList();
+      for (final match in urlRegex.allMatches(part.text!)) {
+        final overlaps = covered.any((r) => match.start < r[1] && match.end > r[0]);
+        if (!overlaps) markRange(Tuple3("link", [match.start, match.end], null));
+      }
     } else {
       List<RegExpMatch> matches = urlRegex.allMatches(part.text!).toList();
       for (RegExpMatch match in matches) {
@@ -220,7 +228,11 @@ Future<List<InlineSpan>> buildEnrichedMessageSpans(BuildContext context, Message
           style.apply(fontWeightDelta: 2),
           recognizer: TapGestureRecognizer()..onTap = () => _openMention(e.mentionedAddress),
         ));
-      } else if (urlRegex.hasMatch(text) ||
+      } else if (type == "link" ||
+          // Only a run that *is* a link is styled as one. Testing for a URL
+          // anywhere in the run underlined whole paragraphs whenever a link
+          // in them had not been split out as its own run.
+          (type == null && urlRegex.stringMatch(text) == text.trim() && text.trim().isNotEmpty) ||
           type == "map" ||
           text.isPhoneNumber ||
           text.isEmail ||
