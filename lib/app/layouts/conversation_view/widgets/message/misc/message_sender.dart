@@ -1,4 +1,8 @@
+import 'dart:math';
 import 'dart:ui';
+
+import 'package:palette_generator/palette_generator.dart';
+import 'package:universal_io/io.dart';
 
 import 'package:bluebubbles/app/components/avatars/contact_avatar_widget.dart';
 import 'package:bluebubbles/app/state/chat_state_scope.dart';
@@ -18,6 +22,39 @@ class MessageSender extends StatelessWidget {
   final bool googleStyle;
   final bool showAvatar;
 
+  static final Map<String, Color?> _photoColors = {};
+
+  /// Dominant colour of a contact photo, computed once per path.
+  static Future<Color?> _photoColor(String path) async {
+    if (_photoColors.containsKey(path)) return _photoColors[path];
+    Color? c;
+    try {
+      final palette = await PaletteGenerator.fromImageProvider(
+        ResizeImage(FileImage(File(path)), width: 48, height: 48),
+        maximumColorCount: 6,
+      );
+      c = palette.dominantColor?.color;
+    } catch (_) {}
+    _photoColors[path] = c;
+    return c;
+  }
+
+  /// [c] nudged darker (light theme) or lighter (dark theme) until it has at
+  /// least 4.5:1 contrast with [bg].
+  static Color _readable(Color c, Color bg) {
+    double contrast(Color a, Color b) {
+      final la = a.computeLuminance(), lb = b.computeLuminance();
+      return (max(la, lb) + 0.05) / (min(la, lb) + 0.05);
+    }
+
+    final darkBg = bg.computeLuminance() < 0.5;
+    var hsl = HSLColor.fromColor(c);
+    for (var i = 0; i < 20 && contrast(hsl.toColor(), bg) < 4.5; i++) {
+      hsl = hsl.withLightness((hsl.lightness + (darkBg ? 0.04 : -0.04)).clamp(0.0, 1.0));
+    }
+    return hsl.toColor();
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = MessageStateScope.maybeOf(context);
@@ -27,10 +64,16 @@ class MessageSender extends StatelessWidget {
       return Padding(
         padding: const EdgeInsets.only(left: 5, right: 25, bottom: 4, top: 2),
         child: Obx(() {
-          // Same colour the avatar uses (custom colour, else the address gradient).
+          // The name takes the colour of the avatar it sits beside: the
+          // contact photo's dominant colour when there is a photo (contact
+          // tiles are often coloured monogram photos), else the custom or
+          // address-gradient colour; then darkened/lightened until it reads
+          // against the background.
           final handle = state.sender?.handle ?? state.message.handleRelation.target;
           final hex = state.sender?.color.value ?? handle?.color;
-          final nameColor = hex != null ? HexColor(hex) : toColorGradient(handle?.address).first;
+          final base = hex != null ? HexColor(hex) : toColorGradient(handle?.address).first;
+          final photo = state.sender?.avatarPath.value;
+          final bg = context.theme.colorScheme.surface;
           return Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -46,11 +89,16 @@ class MessageSender extends StatelessWidget {
                 const SizedBox(width: 8),
               ],
               Flexible(
-                child: Text(
-                  state.senderDisplayName,
-                  style: context.theme.textTheme.labelLarge!.copyWith(color: nameColor, fontWeight: FontWeight.w500),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                child: FutureBuilder<Color?>(
+                  future: photo == null ? null : _photoColor(photo),
+                  initialData: photo == null ? null : _photoColors[photo],
+                  builder: (context, snap) => Text(
+                    state.senderDisplayName,
+                    style: context.theme.textTheme.labelLarge!
+                        .copyWith(color: _readable(snap.data ?? base, bg), fontWeight: FontWeight.w500),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ),
             ],

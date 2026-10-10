@@ -2,7 +2,9 @@ import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/attach
 import 'package:bluebubbles/app/state/message_state_scope.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/reaction/reaction_holder.dart';
 import 'package:bluebubbles/database/models.dart';
+import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/helpers/ui/reaction_helpers.dart';
+import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/services/ui/chat/conversation_view_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -41,6 +43,18 @@ class ReactionObserver extends StatelessWidget {
           .toList();
       final reactionList = messageParts.length == 1 ? reactions : reactionsForPart(part.part, reactions).toList();
 
+      if (SettingsSvc.settings.skin.value == Skins.Material) {
+        // Google Messages: a small pill of the reaction emoji (with a count
+        // when there is more than one) overlapping the bubble's bottom edge,
+        // on the sender's side. 10px clears TailClipper's hidden gutter.
+        if (reactionList.isEmpty) return const SizedBox.shrink();
+        return Positioned(
+          bottom: -16,
+          left: isFromMe ? null : 18,
+          right: isFromMe ? 18 : null,
+          child: _GoogleReactionPill(reactions: reactionList),
+        );
+      }
       return Positioned(
         top: -14,
         left: isFromMe ? -20 : null,
@@ -50,6 +64,44 @@ class ReactionObserver extends StatelessWidget {
         ),
       );
     });
+  }
+}
+
+class _GoogleReactionPill extends StatelessWidget {
+  const _GoogleReactionPill({required this.reactions});
+
+  final List<Message> reactions;
+
+  @override
+  Widget build(BuildContext context) {
+    final unique = getUniqueReactionMessages(reactions);
+    final emojis = <String>[];
+    for (final r in unique) {
+      final type = r.associatedMessageType?.replaceAll("-", "");
+      final emoji = ReactionTypes.reactionToEmoji[type] ?? r.associatedMessageEmoji;
+      if (emoji != null && !emojis.contains(emoji)) emojis.add(emoji);
+    }
+    if (emojis.isEmpty) return const SizedBox.shrink();
+    final scheme = context.theme.colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: scheme.surface, width: 2),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(emojis.take(3).join(), style: const TextStyle(fontSize: 15, height: 1.3)),
+          if (unique.length > 1) ...[
+            const SizedBox(width: 3),
+            Text("${unique.length}",
+                style: context.theme.textTheme.labelSmall!.copyWith(color: scheme.onSurfaceVariant)),
+          ],
+        ],
+      ),
+    );
   }
 }
 

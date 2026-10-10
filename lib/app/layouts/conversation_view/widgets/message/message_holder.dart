@@ -30,6 +30,7 @@ import 'package:bluebubbles/services/network/backend_service.dart';
 import 'package:collection/collection.dart';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderProxyBox;
 import 'package:get/get.dart';
 import 'package:universal_io/io.dart';
 
@@ -245,8 +246,17 @@ class _MessageHolderState extends State<MessageHolder> with AutomaticKeepAliveCl
               errorBuilder: (_, __, ___) => const SizedBox.shrink(),
             ),
           );
-    final card = Padding(
-      padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+    // TailClipper keeps a 10px tail gutter on the sender's side that is
+    // clipped away (left for received, right for sent); inset the card from
+    // the *visible* edge, not the box edge, or it touches the bubble side.
+    final gutterL = message.isFromMe! ? 0.0 : 10.0;
+    final gutterR = message.isFromMe! ? 10.0 : 0.0;
+    // Media replies: the picture decides the bubble's width and fills it
+    // edge to edge under the card, as Google does; the card gives up its
+    // intrinsic width so a long excerpt can't widen the bubble past the image.
+    final mediaReply = part.attachments.isNotEmpty && isNullOrEmpty(part.text);
+    final cardBody = Padding(
+      padding: EdgeInsets.fromLTRB(gutterL + 6, 6, gutterR + 6, mediaReply ? 6 : 0),
       child: Material(
         color: scheme.surface.withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(16),
@@ -282,9 +292,10 @@ class _MessageHolderState extends State<MessageHolder> with AutomaticKeepAliveCl
         ),
       ),
     );
+    final Widget card = mediaReply ? _ZeroIntrinsicWidth(child: cardBody) : cardBody;
     // IntrinsicWidth: the bubble is as wide as the wider of the card and the
-    // reply text, and the card stretches to that; the text sits at the left
-    // like Google's, instead of floating right in a max-width bubble.
+    // reply text (or as wide as the picture), and the card stretches to that;
+    // the text sits at the left like Google's.
     return ConstrainedBox(
       constraints: BoxConstraints(maxWidth: NavigationSvc.width(context) * MessageState.maxBubbleSizeFactor),
       child: IntrinsicWidth(
@@ -459,12 +470,14 @@ class _MessageHolderState extends State<MessageHolder> with AutomaticKeepAliveCl
                                       ),
                                     ),
                                   // add a box to account for height of reactions
-                                  ReactionSpacing(
-                                    messageParts: messageParts,
-                                    part: e,
-                                    reactionsForPart: reactionsForPart,
-                                    minHeightWhenNoReactions: 0,
-                                  ),
+                                  // (Material draws them under the bubble instead)
+                                  if (!googleStyle)
+                                    ReactionSpacing(
+                                      messageParts: messageParts,
+                                      part: e,
+                                      reactionsForPart: reactionsForPart,
+                                      minHeightWhenNoReactions: 0,
+                                    ),
                                   Stack(
                                     alignment: Alignment.bottomLeft,
                                     children: [
@@ -488,7 +501,10 @@ class _MessageHolderState extends State<MessageHolder> with AutomaticKeepAliveCl
                                         padding:
                                             (showAvatar || alwaysShowAvatars) && !(message.isGroupEvent || e.isUnsent)
                                                 ? EdgeInsets.only(
-                                                    left: 35.0 * avatarScale + (e.isMediaGallery ? 12.0 : 0.0))
+                                                    // Google: the avatar sits by the name above, so the
+                                                    // bubble only steps in slightly under it.
+                                                    left: (googleStyle ? 8.0 : 35.0 * avatarScale) +
+                                                        (e.isMediaGallery ? 12.0 : 0.0))
                                                 : EdgeInsets.zero,
                                         child: DecoratedBox(
                                           decoration: const BoxDecoration(),
@@ -718,13 +734,22 @@ class _MessageHolderState extends State<MessageHolder> with AutomaticKeepAliveCl
                                       ),
                                     ],
                                   ),
+                                  // Material: reactions hang off the bottom edge,
+                                  // so leave room for them below the bubble.
+                                  if (googleStyle)
+                                    ReactionSpacing(
+                                      messageParts: messageParts,
+                                      part: e,
+                                      reactionsForPart: reactionsForPart,
+                                      minHeightWhenNoReactions: 0,
+                                    ),
                                       ],
                                     ),
                                   ),
                                   // message properties (replies, edits, effect)
                                   Padding(
                                     padding: showAvatar || alwaysShowAvatars
-                                        ? EdgeInsets.only(left: 35.0 * avatarScale)
+                                        ? EdgeInsets.only(left: googleStyle ? 18.0 : 35.0 * avatarScale)
                                         : EdgeInsets.zero,
                                     child:
                                         MessageProperties(globalKey: keys.length > index ? keys[index] : null, part: e),
@@ -776,5 +801,22 @@ class _AvatarColumnLinePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_AvatarColumnLinePainter old) => old.color != color || old.x != x || old.stopAbove != stopAbove;
+}
+
+/// Reports zero intrinsic width, so an enclosing [IntrinsicWidth] sizes to
+/// its siblings; the child still lays out at whatever width it is given.
+class _ZeroIntrinsicWidth extends SingleChildRenderObjectWidget {
+  const _ZeroIntrinsicWidth({required super.child});
+
+  @override
+  RenderObject createRenderObject(BuildContext context) => _RenderZeroIntrinsicWidth();
+}
+
+class _RenderZeroIntrinsicWidth extends RenderProxyBox {
+  @override
+  double computeMinIntrinsicWidth(double height) => 0;
+
+  @override
+  double computeMaxIntrinsicWidth(double height) => 0;
 }
 
