@@ -182,7 +182,7 @@ class ThemesService {
     BubbleColors(
       iMessageBubbleColor: HexColor("1982FC"),
       oniMessageBubbleColor: Colors.white,
-      smsBubbleColor: HexColor("43CC47"),
+      smsBubbleColor: HexColor("30D158"),
       onSmsBubbleColor: Colors.white,
       receivedBubbleColor: HexColor("323332"),
       onReceivedBubbleColor: Colors.white,
@@ -238,7 +238,7 @@ class ThemesService {
         BubbleColors(
           iMessageBubbleColor: HexColor("1982FC"),
           oniMessageBubbleColor: Colors.white,
-          smsBubbleColor: HexColor("43CC47"),
+          smsBubbleColor: HexColor("34C759"),
           onSmsBubbleColor: Colors.white,
           receivedBubbleColor: HexColor("e9e9ea"),
           onReceivedBubbleColor: Colors.black,
@@ -526,8 +526,10 @@ class ThemesService {
         BubbleColors(
           iMessageBubbleColor: primary,
           oniMessageBubbleColor: onPrimary,
-          smsBubbleColor: secondary,
-          onSmsBubbleColor: onSecondary,
+          // Texts (SMS/MMS/RCS through the iPhone) are iOS green on every
+          // theme so they read as texts at a glance, like Messages on iOS.
+          smsBubbleColor: isDark ? HexColor("30D158") : HexColor("34C759"),
+          onSmsBubbleColor: Colors.white,
           receivedBubbleColor: surfaceVariant,
           onReceivedBubbleColor: onSurfaceVariant,
         ),

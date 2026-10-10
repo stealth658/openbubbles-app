@@ -435,7 +435,7 @@ class ThemeStruct {
       "onSurfaceVariant": finalData.colorScheme.onSurfaceVariant,
       "inverseSurface": finalData.colorScheme.inverseSurface,
       "onInverseSurface": finalData.colorScheme.onInverseSurface,
-      "smsBubble": (finalData.extensions[BubbleColors] as BubbleColors?)?.smsBubbleColor ?? HexColor("43CC47"),
+      "smsBubble": (finalData.extensions[BubbleColors] as BubbleColors?)?.smsBubbleColor ?? HexColor("34C759"),
       "onSmsBubble": (finalData.extensions[BubbleColors] as BubbleColors?)?.onSmsBubbleColor ?? Colors.white,
       // the following get their own customization card, rather than
       // being paired like the above
