@@ -55,31 +55,15 @@ class ThemesService {
   /// Family name registered for a font file the user picked (App Font > Custom).
   static const String customAppFontFamily = "AppCustomFont";
 
-  /// Families built into Android; anything else in [appFontChoices] is
-  /// fetched from Google Fonts on first use (static weight files, so bold and
-  /// medium render properly, unlike the variable Inter asset used by posters).
-  static const List<String> bundledAppFonts = ["Roboto"];
+  /// Families shipped in the APK (pubspec fonts) or built into Android.
+  static const List<String> bundledAppFonts = ["SF Pro", "Google Sans", "Roboto"];
 
   /// What Settings > Theming > App Font offers. "" is each theme's own font.
-  static const List<String> appFontChoices = [
-    "",
-    "Inter",
-    "Roboto",
-    "Roboto Flex",
-    "Open Sans",
-    "Noto Sans",
-    "Lato",
-    "Nunito",
-    "Manrope",
-    "Poppins",
-    "Source Sans 3",
-    customAppFontFamily,
-  ];
+  static const List<String> appFontChoices = ["", "SF Pro", "Google Sans", "Roboto", customAppFontFamily];
 
   static String appFontLabel(String font) {
     if (font.isEmpty) return "Theme default";
-    if (font == customAppFontFamily) return "Custom font file";
-    if (font == "Inter") return "Inter (SF Pro style)";
+    if (font == customAppFontFamily) return "Custom font files";
     return font;
   }
 
@@ -120,16 +104,28 @@ class ThemesService {
     );
   }
 
-  /// Loads the user's picked font file (if any) under [customAppFontFamily].
-  /// Called at startup and right after a new file is picked.
+  /// Folder holding the user's picked font files (one family, any weights).
+  static String get customAppFontDir => join(FilesystemSvc.fontPath, 'app-font');
+
+  /// Loads every font file the user picked under [customAppFontFamily]. Each
+  /// file keeps the weight/style declared inside it, so picking Regular,
+  /// Medium, Semibold and Bold together gives real weights instead of a
+  /// synthesised bold. Called at startup and right after files are picked.
   static Future<bool> loadCustomAppFont() async {
     if (kIsWeb) return false;
-    final file = File(join(FilesystemSvc.fontPath, 'app-font.ttf'));
-    if (!await file.exists()) return false;
+    final dir = Directory(customAppFontDir);
+    final files = <File>[
+      // Single file from the first version of this setting.
+      File(join(FilesystemSvc.fontPath, 'app-font.ttf')),
+      if (await dir.exists()) ...dir.listSync().whereType<File>(),
+    ].where((f) => f.existsSync()).toList();
+    if (files.isEmpty) return false;
     try {
-      final bytes = await file.readAsBytes();
       final loader = FontLoader(customAppFontFamily);
-      loader.addFont(Future.value(ByteData.view(bytes.buffer)));
+      for (final f in files) {
+        final bytes = await f.readAsBytes();
+        loader.addFont(Future.value(ByteData.view(bytes.buffer)));
+      }
       await loader.load();
       return true;
     } catch (e) {
@@ -137,12 +133,6 @@ class ThemesService {
       return false;
     }
   }
-
-  final Rx<MovieTween> gradientTween = Rx<MovieTween>(MovieTween()
-    ..scene(begin: Duration.zero, duration: const Duration(seconds: 3))
-        .tween("color1", Tween<double>(begin: 0, end: 0.2))
-    ..scene(begin: Duration.zero, duration: const Duration(seconds: 3))
-        .tween("color2", Tween<double>(begin: 0.8, end: 1)));
 
   Future<void> init() async {
     // on Linux these block the GTK thread and freeze the splash
