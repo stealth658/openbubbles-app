@@ -30,7 +30,7 @@ class TrimMemoryHandler : MethodCallHandlerImpl() {
 
     override fun handleMethodCall(call: MethodCall, result: MethodChannel.Result, context: Context) {
         try {
-            val engine = MainActivity.getEngine()
+            val engine = MainActivity.engine
             if (engine == null) {
                 PersistentLog.w(context, Constants.logTag, "$tag: no main engine attached, nothing to purge")
                 result.success(false)
