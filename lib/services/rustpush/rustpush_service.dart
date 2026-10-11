@@ -39,6 +39,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:slugify/slugify.dart';
 import 'package:supercharged/supercharged.dart';
 import 'package:universal_io/io.dart';
+import 'package:bluebubbles/services/network/http_overrides.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../network/backend_service.dart';
 import 'package:dio/dio.dart';
@@ -73,6 +74,18 @@ class SyncIsolate {
 
 @pragma('vm:entry-point')
 Future<void> backgroundSyncIsolate() async {
+  // This runs as the root isolate of a second FlutterEngine (see
+  // NativeSyncIsolateHandler.kt). Nothing has initialised the Flutter bindings
+  // here, and the very first service (FilesystemService) goes through a platform
+  // channel for the documents directory. Without the binding that call throws
+  // before the logger exists, the isolate dies silently and the UI sits on
+  // "Starting Sync..." forever. The DartWorker entry point does the same two
+  // calls for the same reason.
+  debugPrint("(SYNC ISOLATE) Starting up...");
+  WidgetsFlutterBinding.ensureInitialized();
+  ui.DartPluginRegistrant.ensureInitialized();
+  HttpOverrides.global = CustomHttpContext();
+
   final receive = ReceivePort();
   ui.IsolateNameServer.registerPortWithName(receive.sendPort, "bg_sync");
   List<SendPort> ports = [];
@@ -2304,8 +2317,25 @@ class RustPushService extends GetxService {
       return;
     }
     isSyncing.value = "Starting Sync...";
-    await MethodChannelSvc.invokeMethod("native-sync-isolate");
-    
+    try {
+      // Kotlin answers once the sync engine's Dart side signals "ready"; if that
+      // engine never comes up the call would otherwise hang here forever.
+      await MethodChannelSvc.invokeMethod("native-sync-isolate").timeout(const Duration(seconds: 90));
+    } catch (e, s) {
+      Logger.error("Sync isolate failed to start", error: e, trace: s, tag: "CloudSync");
+      isSyncing.value = null;
+      showSnackbar("Error", "iCloud sync could not start: $e");
+      return;
+    }
+
+    syncing = ui.IsolateNameServer.lookupPortByName("bg_sync");
+    if (syncing == null) {
+      Logger.error("Sync isolate started but never registered its port", tag: "CloudSync");
+      isSyncing.value = null;
+      showSnackbar("Error", "iCloud sync could not start (no sync port)");
+      return;
+    }
+
     var port = ReceivePort();
     port.listen((data) {
       if (data == null) {
@@ -2313,8 +2343,7 @@ class RustPushService extends GetxService {
       }
       isSyncing.value = data;
     });
-    syncing = ui.IsolateNameServer.lookupPortByName("bg_sync");
-    syncing!.send(port.sendPort);
+    syncing.send(port.sendPort);
   }
 
   String formatBytes(int bytes, [int decimals = 2]) {
