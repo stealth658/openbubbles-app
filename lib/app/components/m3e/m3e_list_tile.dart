@@ -59,14 +59,14 @@ class M3EListTile extends StatelessWidget {
         child: Padding(
           padding: EdgeInsets.only(left: nested ? 32 : 0),
           child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: google ? 64 : 48),
+            constraints: BoxConstraints(minHeight: google ? 56 : 48),
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: google ? 20 : 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
                 children: [
                   if (google)
                     SizedBox(
-                      width: 40,
+                      width: 24,
                       height: 40,
                       child: Icon(icon,
                           color: destructive ? colorScheme.error : (iconColor ?? colorScheme.onSurfaceVariant),
@@ -82,7 +82,7 @@ class M3EListTile extends StatelessWidget {
                       ),
                       child: Icon(icon, color: accent, size: 22),
                     ),
-                  SizedBox(width: google ? 20 : 16),
+                  SizedBox(width: google ? 12 : 16),
                   Expanded(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,

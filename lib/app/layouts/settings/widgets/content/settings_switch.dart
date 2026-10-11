@@ -1,3 +1,5 @@
+import 'package:bluebubbles/helpers/types/constants.dart';
+import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/app/components/bb_switch.dart';
 import 'package:bluebubbles/app/layouts/settings/widgets/content/settings_leading_icon.dart';
 import 'package:bluebubbles/helpers/helpers.dart';
@@ -36,8 +38,9 @@ class SettingsSwitch extends StatelessWidget {
         child: ListTile(
           mouseCursor: MouseCursor.defer,
           enableFeedback: true,
-          minVerticalPadding: 10,
-          horizontalTitleGap: 10,
+          minVerticalPadding: SettingsSvc.settings.skin.value == Skins.Material ? 8 : 10,
+          minTileHeight: SettingsSvc.settings.skin.value == Skins.Material ? 56 : null,
+          horizontalTitleGap: SettingsSvc.settings.skin.value == Skins.Material ? 12 : 10,
           title: Text(
             title,
             style: context.theme.textTheme.bodyLarge,
@@ -45,7 +48,9 @@ class SettingsSwitch extends StatelessWidget {
           leading: leading == null
               ? null
               : Padding(
-                  padding: EdgeInsets.only(bottom: isThreeLine ? 10 : 0.0, right: 5, left: 5),
+                  padding: SettingsSvc.settings.skin.value == Skins.Material
+                      ? EdgeInsets.zero
+                      : EdgeInsets.only(bottom: isThreeLine ? 10 : 0.0, right: 5, left: 5),
                   child: leading,
                 ),
           trailing: BBSwitch(

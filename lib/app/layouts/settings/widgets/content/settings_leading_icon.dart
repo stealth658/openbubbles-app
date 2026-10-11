@@ -32,7 +32,7 @@ class SettingsLeadingIcon extends StatelessWidget {
             // colour, no tinted tile. The 40dp box keeps titles aligned with
             // rows that have no icon.
             return SizedBox(
-              width: boxSize ?? 40,
+              width: boxSize ?? 24,
               height: boxSize ?? 40,
               child: Center(
                 child: Icon(materialIcon,

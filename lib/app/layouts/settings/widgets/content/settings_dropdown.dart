@@ -87,7 +87,9 @@ class SettingsOptions<T extends Object> extends StatelessWidget {
       color: Colors.transparent,
       width: double.infinity,
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: SettingsSvc.settings.skin.value == Skins.Material
+            ? const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0)
+            : const EdgeInsets.all(16.0),
         child: _layout(context, [
             if (leading != null)
               Padding(

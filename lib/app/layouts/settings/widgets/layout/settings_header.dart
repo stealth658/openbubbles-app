@@ -20,11 +20,11 @@ class SettingsHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     if (SettingsSvc.settings.skin.value == Skins.Samsung) return const SizedBox(height: 10);
     return Container(
-      height: height ?? (SettingsSvc.settings.skin.value == Skins.iOS ? 60 : 40),
+      height: height ?? (SettingsSvc.settings.skin.value == Skins.iOS ? 60 : 44),
       alignment: Alignment.bottomLeft,
       color: Colors.transparent,
       child: Padding(
-        padding: EdgeInsets.only(bottom: 8.0, left: SettingsSvc.settings.skin.value == Skins.iOS ? 30 : 15),
+        padding: EdgeInsets.only(bottom: 12.0, left: SettingsSvc.settings.skin.value == Skins.iOS ? 30 : 16),
         child: Text(text.psCapitalize,
             style: SettingsSvc.settings.skin.value == Skins.iOS ? iosSubtitle : materialSubtitle),
       ),

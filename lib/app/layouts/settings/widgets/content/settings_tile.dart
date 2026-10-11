@@ -63,13 +63,17 @@ class SettingsTile extends StatelessWidget {
             child: ListTile(
               mouseCursor: MouseCursor.defer,
               enableFeedback: true,
-              minVerticalPadding: minVerticalPadding ?? (SettingsSvc.settings.skin.value == Skins.iOS ? 14 : 6),
-              horizontalTitleGap: 10,
+              minVerticalPadding: minVerticalPadding ?? (SettingsSvc.settings.skin.value == Skins.iOS ? 14 : 8),
+              // Google Messages rows: 56dp single line, 16dp side padding, 24dp icon, 12dp gap.
+              minTileHeight: SettingsSvc.settings.skin.value == Skins.Material ? 56 : null,
+              horizontalTitleGap: SettingsSvc.settings.skin.value == Skins.Material ? 12 : 10,
               dense: false,
               leading: leading == null
                   ? null
                   : Padding(
-                      padding: EdgeInsets.only(bottom: isThreeLine ? 10 : 0.0, right: 5, left: 5),
+                      padding: SettingsSvc.settings.skin.value == Skins.Material
+                          ? EdgeInsets.zero
+                          : EdgeInsets.only(bottom: isThreeLine ? 10 : 0.0, right: 5, left: 5),
                       child: leading,
                     ),
               title: title != null
@@ -117,7 +121,12 @@ class SettingsTile extends StatelessWidget {
                     )
                   : null,
               contentPadding: EdgeInsets.symmetric(
-                  horizontal: 16.0, vertical: SettingsSvc.settings.skin.value == Skins.iOS ? 0.0 : 4.0),
+                  horizontal: 16.0,
+                  vertical: SettingsSvc.settings.skin.value == Skins.iOS
+                      ? 0.0
+                      : SettingsSvc.settings.skin.value == Skins.Material
+                          ? 0.0
+                          : 4.0),
             ),
           ),
         ),

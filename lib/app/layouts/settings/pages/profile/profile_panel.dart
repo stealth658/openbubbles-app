@@ -375,7 +375,7 @@ class _ProfilePanelState extends State<ProfilePanel> with WidgetsBindingObserver
         backgroundColor: tileColor,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 12, 16),
+            padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
             child: Row(
               children: [
                 GestureDetector(
@@ -470,11 +470,11 @@ class _ProfilePanelState extends State<ProfilePanel> with WidgetsBindingObserver
           ? null
           : "${pushService.formatBytes(quota.messagesBytes)} used, ${pushService.formatBytes(quota.availableBytes)} available in iCloud";
       return Padding(
-        padding: const EdgeInsets.fromLTRB(20, 8, 12, 8),
+        padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
         child: Row(
           children: [
             SizedBox(
-              width: 40,
+              width: 24,
               child: syncing != null
                   ? Center(
                       child: SizedBox(
@@ -484,7 +484,7 @@ class _ProfilePanelState extends State<ProfilePanel> with WidgetsBindingObserver
                               strokeWidth: 2, color: context.theme.colorScheme.onSurfaceVariant)))
                   : Icon(Icons.cloud_done_outlined, color: context.theme.colorScheme.onSurfaceVariant),
             ),
-            const SizedBox(width: 20),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -525,12 +525,12 @@ class _ProfilePanelState extends State<ProfilePanel> with WidgetsBindingObserver
     // so a dot next to a two-line row lines up with its title. Single-line rows are 48dp.
     Widget row({required Widget leading, required String title, String? subtitle, Widget? trailing, bool dense = false}) =>
         Padding(
-          padding: EdgeInsets.fromLTRB(20, dense ? 4 : 8, 12, dense ? 4 : 8),
+          padding: EdgeInsets.fromLTRB(16, dense ? 4 : 8, 8, dense ? 4 : 8),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(width: 40, height: 24, child: Center(child: leading)),
-              const SizedBox(width: 20),
+              SizedBox(width: 24, height: 24, child: Center(child: leading)),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -577,8 +577,8 @@ class _ProfilePanelState extends State<ProfilePanel> with WidgetsBindingObserver
                 ),
                 if (aliases.isNotEmpty)
                   Padding(
-                    // Aligned with the text column (20 pad + 40 icon + 20 gap).
-                    padding: const EdgeInsets.fromLTRB(80, 12, 20, 4),
+                    // Aligned with the text column (16 pad + 24 icon + 12 gap).
+                    padding: const EdgeInsets.fromLTRB(52, 12, 16, 4),
                     child: Text("Addresses", style: context.theme.textTheme.labelLarge?.copyWith(color: context.theme.colorScheme.onSurfaceVariant)),
                   ),
                 for (final e in aliases)
