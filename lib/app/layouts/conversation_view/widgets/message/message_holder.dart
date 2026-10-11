@@ -262,7 +262,9 @@ class _MessageHolderState extends State<MessageHolder> with AutomaticKeepAliveCl
     final mediaReply = part.attachments.isNotEmpty && isNullOrEmpty(part.text);
     const f = GoogleBubbleShape.frame;
     final cardBody = Padding(
-      padding: EdgeInsets.fromLTRB(gutterL + f, f, gutterR + f, mediaReply ? f : 0),
+      // The frame runs all the way round the quote box, so the text strip
+      // (or picture) below starts 8dp under it.
+      padding: EdgeInsets.fromLTRB(gutterL + f, f, gutterR + f, f),
       child: Material(
         color: scheme.surface.withValues(alpha: 0.92),
         borderRadius: GoogleBubbleShape.quote(outerRadii),
