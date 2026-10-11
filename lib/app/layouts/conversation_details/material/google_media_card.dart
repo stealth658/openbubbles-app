@@ -52,7 +52,7 @@ class _GoogleAttachmentCardsState extends State<GoogleAttachmentCards> {
               Message_.balloonBundleId.contains("URLBalloonProvider"))
             ..link(Message_.chat, Chat_.id.equals(widget.chat.id!)))
           .build();
-      final count = await query.countAsync();
+      final count = query.count();
       query.close();
       if (mounted) setState(() => _linkCount = count);
     } catch (_) {}
