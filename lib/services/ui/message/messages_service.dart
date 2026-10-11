@@ -1028,6 +1028,24 @@ class MessagesService extends GetxController {
     }
 
     _normalizeDeliveredVsRead();
+    _sweepIndicatorOwners();
+  }
+
+  /// Guarantees the invariant the UI relies on: at most one state shows
+  /// "Delivered" and one shows "Read". A previous owner that was not cleared
+  /// (temp/real GUID races, states recreated under a new key) otherwise keeps
+  /// its label and the chat shows "Delivered" under several messages at once.
+  void _sweepIndicatorOwners() {
+    final deliveredOwner = _lastDeliveredInfo?.guid;
+    final readOwner = _lastReadInfo?.guid;
+    for (final entry in messageStates.entries) {
+      if (entry.key != deliveredOwner && entry.value.showDeliveredIndicator.value) {
+        entry.value.updateShowDeliveredIndicatorInternal(false);
+      }
+      if (entry.key != readOwner && entry.value.showReadIndicator.value) {
+        entry.value.updateShowReadIndicatorInternal(false);
+      }
+    }
   }
 
   /// Targeted rescan for the delivered tier only.  Called when the previous
