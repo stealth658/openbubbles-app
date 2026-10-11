@@ -2581,6 +2581,10 @@ class RustPushService extends GetxService {
 
     // we must have one uniform cutoff time to ensure we don't upload duplicates
     var (cutoffTime, cutoffDateTime) = getCutoffTime();
+    Logger.info(
+        "Sync history limit: pref=${PrefsSvc.i.getInt('syncHistoryTime')} settings=${SettingsSvc.settings.syncHistoryTime.value} "
+        "cutoff=${cutoffTime == 0 ? 'none' : cutoffDateTime.toIso8601String()}",
+        tag: "CloudSync");
     var attCount = 0;
     currentState = 0;
     while (currentState != 3) {
@@ -2661,8 +2665,9 @@ class RustPushService extends GetxService {
       currentState = state2;
 
       List<String> dupDeleteMessages = [];
-      Logger.info("Syncing group of ${items2.length} messages, total $totalMessages");
       totalMessages += items2.length;
+      // Per-page accounting so the log shows what the page held and what became of it.
+      int pageOldest = 0, pageNewest = 0, pageNew = 0, pageExisting = 0, pageOld = 0, pageNoChat = 0, pageDeleted = 0;
 
       for (var item in items2.entries) {
         try {
@@ -2672,13 +2677,21 @@ class RustPushService extends GetxService {
             syncStopDelete = true;
             if (result != null) Message.delete(result.guid!);
             syncStopDelete = false;
+            pageDeleted++;
             continue;
           }
           if (dupDeleteMessages.contains(item.key)) continue;
 
-          if (cutoffTime > item.value!.time && currentState != 3) {
-            Logger.info("Stopping message sync for cutoff!");
-            currentState = 3;
+          final t = item.value!.time;
+          if (pageOldest == 0 || t < pageOldest) pageOldest = t;
+          if (t > pageNewest) pageNewest = t;
+
+          if (cutoffTime > t) {
+            // Pages come in CloudKit change order, not message order, so an old
+            // message does not mean the rest of the sync is old. Skip it and keep
+            // going; the limit then holds whatever the order.
+            pageOld++;
+            continue;
           }
 
           var existing = Message.findOne(guid: item.value!.guid);
@@ -2699,11 +2712,23 @@ class RustPushService extends GetxService {
           } // don't overwrite existing
           var message = Message();
           message.applyFromCloud(item.value!, item.key);
-          remoteNew++;
+          if (message.guid == null) {
+            // applyFromCloud bails before setting anything when no local chat matches
+            // the record's chat id (or the chat is a relayed SMS one).
+            pageNoChat++;
+          } else {
+            pageNew++;
+          }
         } catch (e, s) {
-          Logger.error("Failed to sync attachment ${item.key}", error: e, trace: s);
+          Logger.error("Failed to sync message ${item.key}", error: e, trace: s);
         }
       }
+      pageExisting = items2.length - pageNew - pageOld - pageNoChat - pageDeleted;
+      String d(int ns) => ns == 0 ? "-" : RustPushBBUtils.fromNsSinceAppleEpoch(ns).toIso8601String().substring(0, 10);
+      Logger.info(
+          "Message page: ${items2.length} items (total $totalMessages), ${d(pageOldest)} to ${d(pageNewest)}; "
+          "new $pageNew, existing $pageExisting, older than limit $pageOld, no chat $pageNoChat, deleted $pageDeleted",
+          tag: "CloudSync");
 
       if (dupDeleteMessages.isNotEmpty) {
         Logger.info("Deleting ${dupDeleteMessages.length} duplicate messages");
