@@ -82,6 +82,7 @@ class _MaterialConversationTileState extends CustomState<MaterialConversationTil
                   parentController: controller,
                   style: context.theme.textTheme.bodyMedium!
                       .copyWith(
+                        fontSize: context.theme.textTheme.bodyMedium!.fontSize! * GoogleTextScale.listSubtitle,
                         // Google Messages: an unread preview reads in bold onSurface.
                         fontWeight: unread ? FontWeight.w600 : null,
                         color: controller.shouldHighlight.value || unread

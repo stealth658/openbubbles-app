@@ -420,8 +420,12 @@ class GoogleTextScale {
   /// Message bubbles and the composer: Google Messages uses 16 to our 15.
   static const double bubble = 16 / 15;
 
+  /// Conversation list preview: Google Messages' preview sits closer to the
+  /// name's size than ours did (its x-height measured ~12% taller).
+  static const double listSubtitle = 1.1;
+
   /// Chat header name, relative to the size it had before.
-  static const double header = 0.94;
+  static const double header = 0.97;
 
   /// Group sender name above a bubble (labelLarge 14 -> 12).
   static const double senderName = 12 / 14;
