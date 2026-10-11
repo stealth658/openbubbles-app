@@ -3588,7 +3588,12 @@ class RustPushService extends GetxService {
             SettingsSvc.settings.smsForwardingTargets.remove(myMsg.sender!);
           }
         }
-        SettingsSvc.settings.saveOneAsync('smsForwardingTargets');
+        // The map of iPhone -> forwarding device is serialised under the key
+        // 'smsIncomingTargets' (toMap: 'smsForwardingTargets' is the list of
+        // routing uuids). Saving the other key left the activation in memory
+        // only, so every process restart came back with forwarding "disabled"
+        // until the iPhone happened to resend it.
+        await SettingsSvc.settings.saveOneAsync('smsIncomingTargets');
       } catch (e) {
         showSnackbar("Error", "Error activating SMS forwarding");
         rethrow;
