@@ -1,3 +1,4 @@
+import 'package:bluebubbles/utils/ime_inset_check.dart';
 import 'dart:async';
 import 'dart:typed_data';
 
@@ -463,6 +464,7 @@ class ConversationViewController extends StatefulController with GetSingleTicker
   }
 
   void close() {
+    ImeInsetCheck.afterLeavingChat();
     updateSmartReplyLayout(visible: false, height: 0);
     ChatsSvc.setAllInactiveSync();
     Get.delete<ConversationViewController>(tag: tag);

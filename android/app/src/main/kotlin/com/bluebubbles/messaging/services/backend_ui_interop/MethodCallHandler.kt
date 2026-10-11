@@ -58,6 +58,7 @@ import com.bluebubbles.messaging.services.system.GetFullResolution
 import com.bluebubbles.messaging.services.system.GetZenMode
 import com.bluebubbles.messaging.services.system.HeifDecoder
 import com.bluebubbles.messaging.services.system.HeifEncoder
+import com.bluebubbles.messaging.services.system.ImeStateHandler
 import com.bluebubbles.messaging.services.system.NativeSyncIsolateHandler
 import com.bluebubbles.messaging.services.system.OpenSMSAppHandler
 import com.bluebubbles.messaging.services.system.RecentContactsRequestHandler
@@ -211,6 +212,7 @@ class MethodCallHandler {
             EAPAKAGateway.tag -> EAPAKAGateway().handleMethodCall(call, result, context)
             KeystoreUnlockHandler.tag -> KeystoreUnlockHandler().handleMethodCall(call, result, context)
             TrimMemoryHandler.tag -> TrimMemoryHandler().handleMethodCall(call, result, context)
+            ImeStateHandler.tag -> ImeStateHandler().handleMethodCall(call, result, context)
             MemoryStatsHandler.tag -> MemoryStatsHandler().handleMethodCall(call, result, context)
             else -> {
                 val error = "Could not find method call handler for ${call.method}!"
