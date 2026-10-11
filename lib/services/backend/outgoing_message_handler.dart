@@ -1011,8 +1011,22 @@ class OutgoingMessageHandler {
         final stale = Message.findOne(guid: existingGuid);
         if (stale != null) {
           Message.delete(stale.guid!);
-          if (Get.isRegistered<MessagesService>(tag: chat.guid)) {
-            MessagesSvc(chat.guid).updateMessage(replacement, oldGuid: existingGuid);
+        }
+        // Tell the open chat about the GUID change whether or not a temp row was
+        // left behind. The rustpush backend renames the temp row in place before
+        // it returns (sendMessage: `m.guid = msg.id; m.save()`), so on that path
+        // there is never a stale row, and gating the notification on one meant
+        // the chat's MessagesService kept the message under its temp GUID for the
+        // rest of the session: MessageState.isSending stayed true, which hid the
+        // tapback row and Reply in the long-press menu (both need a sent message)
+        // and made every message sent in the session show its own "Delivered"
+        // line, and receipts that arrived after the rename missed the entry.
+        if (Get.isRegistered<MessagesService>(tag: chat.guid)) {
+          final svc = MessagesSvc(chat.guid);
+          if (svc.struct.getMessage(existingGuid) != null) {
+            // Re-read the row: it carries the id and any receipt dates that
+            // were written while the send was still in flight.
+            svc.updateMessage(Message.findOne(guid: replacement.guid) ?? replacement, oldGuid: existingGuid);
           }
         }
       } else {}
