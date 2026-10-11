@@ -186,7 +186,7 @@ class _ConversationDetailsState extends State<ConversationDetails> with WidgetsB
               // chat's settings are behind the gear (ConversationSettings).
               FindMyLocationCard(chat: chat, tileColor: chatDetailTheme.tileColor),
               if (googleLayout)
-                GoogleMediaCard(
+                GoogleAttachmentCards(
                     chat: chat, media: media, docs: docs, locations: locations, isLoading: isLoadingAttachments)
               else ...[
                 MediaGridSection(chat: chat, media: media, selected: selected, isLoading: isLoadingAttachments),
