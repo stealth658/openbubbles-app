@@ -456,6 +456,15 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
   /// is something to send.
   Widget _googleComposerRow(BuildContext context) {
     final scheme = context.theme.colorScheme;
+    // The pill's one-line height: TextFieldComponent pads one line of bubble
+    // text by 12.5 on each side. Measured with the live font and text scale
+    // so the button beside it always matches, whatever the text size.
+    final line = TextPainter(
+      text: TextSpan(text: "Ag", style: context.theme.extension<BubbleText>()!.bubbleText),
+      textDirection: TextDirection.ltr,
+      textScaler: MediaQuery.textScalerOf(context),
+    )..layout();
+    final pillHeight = line.height + 25;
     Widget pillIcon(IconData icon, String tooltip, VoidCallback onTap) => IconButton(
           tooltip: tooltip,
           icon: Icon(icon, size: 24, color: scheme.onSurfaceVariant),
@@ -542,14 +551,14 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
                   controller.pickedAttachments.isNotEmpty ||
                   controller.pickedApp.value != null;
               final recording = controller.showRecording.value;
-              // Same height as the one-line pill beside it (12.5 padding
-              // round one line of bubble text), so the two line up top and
-              // bottom; the row is bottom-aligned, so when the field grows
-              // the button stays by the last line, as in Google Messages.
+              // Same height as the one-line pill beside it, so the two line
+              // up top and bottom; the row is bottom-aligned, so when the
+              // field grows the button stays by the last line, as in Google
+              // Messages.
               return AnimatedContainer(
                 duration: const Duration(milliseconds: 150),
-                width: 46,
-                height: 46,
+                width: pillHeight,
+                height: pillHeight,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: canSend && !recording ? scheme.primary : scheme.surfaceContainerHighest,
