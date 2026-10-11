@@ -298,7 +298,7 @@ class _UnreadIconState extends CustomState<UnreadIcon, void, ConversationTileCon
 }
 
 /// Google Messages style unread marker for the Material list: a small
-/// onSurface pill with the number of messages received since the chat was
+/// primary-coloured pill with the number of messages received since the chat was
 /// last opened. Falls back to a plain dot when the count is unknown (the
 /// chat has never been opened on this device).
 class UnreadCountBadge extends StatelessWidget {
@@ -338,11 +338,12 @@ class UnreadCountBadge extends StatelessWidget {
       constraints: const BoxConstraints(minWidth: 20),
       height: 20,
       padding: const EdgeInsets.symmetric(horizontal: 6),
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), color: scheme.onSurface),
+      // Same colour as the dot above: both mean "unread".
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), color: scheme.primary),
       alignment: Alignment.center,
       child: Text(
         count > 99 ? "99+" : "$count",
-        style: context.theme.textTheme.labelSmall!.copyWith(color: scheme.surface, fontWeight: FontWeight.w600, height: 1),
+        style: context.theme.textTheme.labelSmall!.copyWith(color: scheme.onPrimary, fontWeight: FontWeight.w600, height: 1),
       ),
     );
   }

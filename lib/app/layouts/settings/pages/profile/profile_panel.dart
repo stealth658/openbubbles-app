@@ -4,7 +4,6 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:bluebubbles/app/components/avatars/contact_avatar_widget.dart';
-import 'package:bluebubbles/app/components/m3e/m3e_list_tile.dart';
 import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:bluebubbles/app/layouts/settings/pages/profile/posterkit.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/profile/profile_scaffold.dart';
@@ -1292,8 +1291,7 @@ class _ProfilePanelState extends State<ProfilePanel> with WidgetsBindingObserver
         headerColor: headerColor,
         tileColor: tileColor,
         bodySlivers: [
-          if (material) ...bodySlivers.map((w) => w is SliverToBoxAdapter ? SliverToBoxAdapter(child: GoogleTileStyle(child: w.child!)) : w)
-          else ...bodySlivers,
+          ...bodySlivers,
         ],
       );
     }

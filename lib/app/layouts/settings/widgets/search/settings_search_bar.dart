@@ -8,7 +8,15 @@ class SettingsSearchBar extends StatefulWidget {
   final bool iOS;
   final Color? tileColor;
 
-  const SettingsSearchBar({super.key, this.onChanged, required this.iOS, this.tileColor});
+  /// Material skin: the outlined pill from Android's Settings app.
+  final bool androidStyle;
+
+  /// Shown to the left of the field. The Settings home has no title bar on
+  /// Material, so its back arrow lives here.
+  final Widget? leading;
+
+  const SettingsSearchBar(
+      {super.key, this.onChanged, required this.iOS, this.tileColor, this.androidStyle = false, this.leading});
 
   @override
   State<SettingsSearchBar> createState() => _SettingsSearchBarState();
@@ -56,6 +64,7 @@ class _SettingsSearchBarState extends State<SettingsSearchBar> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.androidStyle) return _androidField(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 6, 20, 8),
       child: widget.iOS
@@ -103,6 +112,58 @@ class _SettingsSearchBarState extends State<SettingsSearchBar> {
                   ),
               ],
             ),
+    );
+  }
+
+  void _clear() {
+    _debounceTimer?.cancel();
+    setState(() {
+      searchValue = '';
+      _controller.text = '';
+      _focusNode.unfocus();
+    });
+    widget.onChanged?.call('');
+  }
+
+  /// Android Settings' search field: a full-width outlined pill on the card
+  /// fill, 64dp tall, search glyph and a large "Search Settings" hint. Lines up
+  /// with the cards below it (16dp from the screen edge).
+  Widget _androidField(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final text = Theme.of(context).textTheme.titleLarge!.copyWith(fontSize: 20, fontWeight: FontWeight.w400);
+    return Padding(
+      padding: EdgeInsets.fromLTRB(widget.leading != null ? 4 : 16, 8, 16, 12),
+      child: Row(
+        children: [
+          if (widget.leading != null) widget.leading!,
+          Expanded(
+            child: SearchBar(
+              controller: _controller,
+              focusNode: _focusNode,
+              constraints: const BoxConstraints(minHeight: 64, maxHeight: 64),
+              backgroundColor: WidgetStatePropertyAll(widget.tileColor ?? scheme.surface),
+              surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
+              overlayColor: const WidgetStatePropertyAll(Colors.transparent),
+              elevation: const WidgetStatePropertyAll(0),
+              shape: const WidgetStatePropertyAll(StadiumBorder()),
+              side: WidgetStatePropertyAll(BorderSide(color: scheme.outline, width: 1)),
+              padding: const WidgetStatePropertyAll(EdgeInsets.only(left: 24, right: 12)),
+              hintText: 'Search Settings',
+              hintStyle: WidgetStatePropertyAll(text.copyWith(color: scheme.onSurfaceVariant)),
+              textStyle: WidgetStatePropertyAll(text.copyWith(color: scheme.onSurface)),
+              onChanged: _onSearchChanged,
+              leading: Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: Icon(Icons.search, color: scheme.onSurface, size: 26),
+              ),
+              trailing: <Widget>[
+                if (searchValue.isNotEmpty)
+                  IconButton(tooltip: 'Clear search', onPressed: _clear, icon: const Icon(Icons.clear)),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

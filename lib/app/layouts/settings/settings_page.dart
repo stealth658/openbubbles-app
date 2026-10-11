@@ -298,6 +298,7 @@ class _SettingsPageState extends State<SettingsPage> with ThemeHelpers {
                   allowResize: true,
                   left: SettingsScaffold(
                     title: "Settings",
+                    noTitleBar: true,
                     initialHeader: kIsWeb ? "Server & Message Management" : null,
                     iosSubtitle: iosSubtitle,
                     materialSubtitle: materialSubtitle,
@@ -309,6 +310,8 @@ class _SettingsPageState extends State<SettingsPage> with ThemeHelpers {
                           SettingsSearchBar(
                             iOS: iOS,
                             tileColor: tileColor,
+                            androidStyle: material,
+                            leading: material ? buildBackButton(context) : null,
                             onChanged: (value) {
                               setState(() {
                                 searchQuery = value.trim().toLowerCase();

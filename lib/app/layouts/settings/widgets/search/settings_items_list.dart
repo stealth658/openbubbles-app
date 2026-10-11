@@ -57,10 +57,12 @@ List<Widget> buildSettingItemList({
 
   // return searchable items, headers, tiles, or sections
   return [
-    SearchableSettingItem(
-      title: "Profile",
-      child: SettingsHeader(height: 40, iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Profile"),
-    ),
+    // Google's account sheet opens straight on the account card, no label above it.
+    if (SettingsSvc.settings.skin.value != Skins.Material)
+      SearchableSettingItem(
+        title: "Profile",
+        child: SettingsHeader(height: 40, iosSubtitle: iosSubtitle, materialSubtitle: materialSubtitle, text: "Profile"),
+      ),
     SearchableSettingItem(
       title: SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value
           ? "User Name"
@@ -68,6 +70,13 @@ List<Widget> buildSettingItemList({
       child: SettingsSection(
         backgroundColor: tileColor,
         children: [
+          if (SettingsSvc.settings.skin.value == Skins.Material)
+            _AccountCard(
+              onTap: () {
+                ns.pushAndRemoveSettingsUntil(context, const ProfilePanel(), (Route route) => route.isFirst);
+              },
+            )
+          else
           SettingsTile(
             backgroundColor: tileColor,
             activePage: ProfilePanel,
@@ -838,4 +847,70 @@ List<Widget> buildSettingItemList({
       ],
     ),
   ];
+}
+
+
+/// The account card at the top of the Settings home on the Material skin, after
+/// Google Messages' account sheet: 64dp avatar, name at title size, Apple ID
+/// underneath.
+class _AccountCard extends StatelessWidget {
+  const _AccountCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final redact = SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
+      final name = redact ? "User Name" : SettingsSvc.settings.userName.value;
+      final account = redact ? "User iCloud" : SettingsSvc.settings.iCloudAccount.value;
+      final scheme = context.theme.colorScheme;
+      return Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                const ContactAvatarWidget(
+                  handle: null,
+                  borderThickness: 0.1,
+                  editable: false,
+                  fontSize: 26,
+                  size: 64,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: context.theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w400),
+                      ),
+                      if (account.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Text(
+                            account,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: context.theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right, color: scheme.onSurfaceVariant),
+              ],
+            ),
+          ),
+        ),
+      );
+    });
+  }
 }

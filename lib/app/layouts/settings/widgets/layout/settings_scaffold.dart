@@ -25,6 +25,10 @@ class SettingsScaffold extends StatelessWidget {
   final Widget? leading;
   final bool minimalAppBar;
 
+  /// Material only: no title bar at all. The Settings home uses this; its search
+  /// field carries the back arrow, the way Android's own Settings opens.
+  final bool noTitleBar;
+
   SettingsScaffold({
     super.key,
     required this.title,
@@ -40,6 +44,7 @@ class SettingsScaffold extends StatelessWidget {
     this.fab,
     this.leading,
     this.minimalAppBar = false,
+    this.noTitleBar = false,
   });
 
   bool get _expressiveMaterial => SettingsSvc.settings.skin.value == Skins.Material;
@@ -76,7 +81,7 @@ class SettingsScaffold extends StatelessWidget {
             ),
       floatingActionButton: fab,
       extendBodyBehindAppBar: false,
-      safeAreaTop: _minimalMaterial || _minimalSamsung,
+      safeAreaTop: _minimalMaterial || _minimalSamsung || (_expressiveMaterial && noTitleBar),
       body: NotificationListener<ScrollEndNotification>(
         onNotification: (_) {
           // Snap only applies to Samsung's expandable large-title header.
@@ -122,12 +127,15 @@ class SettingsScaffold extends StatelessWidget {
                               ),
                             ),
                           ),
-                        if (_expressiveMaterial && !minimalAppBar)
-                          SliverAppBar.large(
+                        if (_expressiveMaterial && !minimalAppBar && !noTitleBar)
+                          // Google Messages ("Messages settings"): a plain 64dp bar, back
+                          // arrow then a 22sp regular title. No collapsing large title.
+                          SliverAppBar(
+                            toolbarHeight: 64,
+                            titleSpacing: 4,
                             title: Text(
                               title,
-                              // Google Messages: regular weight, neutral colour (not the theme primary).
-                              style: context.theme.textTheme.headlineMedium
+                              style: context.theme.textTheme.titleLarge
                                   ?.copyWith(fontWeight: FontWeight.w400, color: context.theme.colorScheme.onSurface),
                             ),
                             leading: leading ?? buildBackButton(context),
