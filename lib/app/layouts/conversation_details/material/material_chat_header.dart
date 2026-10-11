@@ -36,7 +36,8 @@ class ExpressiveChatHeader extends StatelessWidget {
   bool get _canCall =>
       !kIsWeb &&
       !kIsDesktop &&
-      !chat.chatIdentifier!.startsWith("urn:biz") &&
+      // Text-forwarding chats have no chat identifier.
+      !(chat.chatIdentifier?.startsWith("urn:biz") ?? false) &&
       (chat.handles.isNotEmpty &&
           ((chat.handles.first.contactsV2.firstOrNull?.phoneNumbers.isNotEmpty ?? false) ||
               !chat.handles.first.address.contains("@")));
@@ -393,9 +394,12 @@ class _GoogleActionRow extends StatelessWidget {
           Expanded(
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Material(
-                  color: scheme.surfaceContainerHigh,
+                  // Same fill as the cards below, so it reads on a black
+                  // background too (surfaceContainerHigh vanished there).
+                  color: context.tileColor,
                   shape: const StadiumBorder(),
                   clipBehavior: Clip.antiAlias,
                   child: InkWell(
@@ -403,6 +407,7 @@ class _GoogleActionRow extends StatelessWidget {
                     onLongPress: items[i].onLongPress,
                     child: SizedBox(
                       height: 56,
+                      width: double.infinity,
                       child: Icon(items[i].icon, size: 24, color: scheme.onSurface),
                     ),
                   ),
@@ -412,6 +417,7 @@ class _GoogleActionRow extends StatelessWidget {
                   items[i].label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
                   style: context.theme.textTheme.labelLarge!.copyWith(color: scheme.onSurface),
                 ),
               ],
