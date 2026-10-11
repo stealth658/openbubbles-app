@@ -7,6 +7,7 @@ import 'package:bluebubbles/helpers/ui/reaction_helpers.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/services/ui/chat/conversation_view_controller.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 
 /// Isolated widget for reaction display
@@ -52,7 +53,12 @@ class ReactionObserver extends StatelessWidget {
           bottom: -16,
           left: isFromMe ? null : 18,
           right: isFromMe ? 18 : null,
-          child: _GoogleReactionPill(reactions: reactionList),
+          child: _GoogleReactionPill(
+            reactions: reactionList,
+            // With the iOS-style tapback menu the reactions were picked as
+            // iMessage tapbacks, so draw them with the same tapback icons.
+            iosIcons: SettingsSvc.settings.materialIosMessageMenu.value,
+          ),
         );
       }
       return Positioned(
@@ -68,21 +74,39 @@ class ReactionObserver extends StatelessWidget {
 }
 
 class _GoogleReactionPill extends StatelessWidget {
-  const _GoogleReactionPill({required this.reactions});
+  const _GoogleReactionPill({required this.reactions, required this.iosIcons});
 
   final List<Message> reactions;
+  final bool iosIcons;
 
   @override
   Widget build(BuildContext context) {
+    final scheme = context.theme.colorScheme;
     final unique = getUniqueReactionMessages(reactions);
-    final emojis = <String>[];
+    final seen = <String>{};
+    final glyphs = <Widget>[];
     for (final r in unique) {
       final type = r.associatedMessageType?.replaceAll("-", "");
+      final isTapback = type != null && type != ReactionTypes.EMOJI && ReactionTypes.reactionToEmoji.containsKey(type);
       final emoji = ReactionTypes.reactionToEmoji[type] ?? r.associatedMessageEmoji;
-      if (emoji != null && !emojis.contains(emoji)) emojis.add(emoji);
+      if (emoji == null) continue;
+      if (!seen.add(isTapback ? type : emoji)) continue;
+      if (glyphs.length == 3) break;
+      if (iosIcons && isTapback) {
+        glyphs.add(Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 1.5, vertical: 2.5),
+          child: SvgPicture.asset(
+            'assets/reactions/$type-black.svg',
+            width: 14,
+            height: 14,
+            colorFilter: ColorFilter.mode(type == "love" ? Colors.pink : scheme.onSurfaceVariant, BlendMode.srcIn),
+          ),
+        ));
+      } else {
+        glyphs.add(Text(emoji, style: const TextStyle(fontSize: 15, height: 1.3)));
+      }
     }
-    if (emojis.isEmpty) return const SizedBox.shrink();
-    final scheme = context.theme.colorScheme;
+    if (glyphs.isEmpty) return const SizedBox.shrink();
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
@@ -93,7 +117,7 @@ class _GoogleReactionPill extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(emojis.take(3).join(), style: const TextStyle(fontSize: 15, height: 1.3)),
+          ...glyphs,
           if (unique.length > 1) ...[
             const SizedBox(width: 3),
             Text("${unique.length}",
