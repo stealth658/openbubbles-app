@@ -273,6 +273,11 @@ Future<List<InlineSpan>> buildEnrichedMessageSpans(BuildContext context, Message
       final text = part.displayText!.substring(range.first, range.last);
 
       final style = _styleForAnnotation(textStyle, e);
+      // Only a run that *is* a link is styled (and opens) as one. Testing for
+      // a URL anywhere in the run underlined whole paragraphs whenever a link
+      // in them had not been split out as its own run.
+      final isUrlRun = type == "link" ||
+          (type == null && text.trim().isNotEmpty && urlRegex.stringMatch(text) == text.trim());
 
       if (e.mentionedAddress != null) {
         textSpans.addAll(MessageHelper.buildEmojiText(
@@ -280,11 +285,7 @@ Future<List<InlineSpan>> buildEnrichedMessageSpans(BuildContext context, Message
           style.apply(fontWeightDelta: 2),
           recognizer: TapGestureRecognizer()..onTap = () => _openMention(e.mentionedAddress),
         ));
-      } else if (type == "link" ||
-          // Only a run that *is* a link is styled as one. Testing for a URL
-          // anywhere in the run underlined whole paragraphs whenever a link
-          // in them had not been split out as its own run.
-          (type == null && urlRegex.stringMatch(text) == text.trim() && text.trim().isNotEmpty) ||
+      } else if (isUrlRun ||
           type == "map" ||
           text.isPhoneNumber ||
           text.isEmail ||
@@ -296,8 +297,8 @@ Future<List<InlineSpan>> buildEnrichedMessageSpans(BuildContext context, Message
             text: text,
             recognizer: TapGestureRecognizer()
               ..onTap = () async {
-                if (type == "link") {
-                  String url = text;
+                if (isUrlRun) {
+                  String url = text.trim();
                   if (!url.startsWith("http://") && !url.startsWith("https://")) {
                     url = "http://$url";
                   }

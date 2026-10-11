@@ -16,6 +16,7 @@ import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/misc/m
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/misc/select_checkbox.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/misc/slide_to_reply.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/misc/swipe_to_reply_wrapper.dart';
+import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/misc/google_bubble_shape.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/misc/tail_clipper.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/popup/message_popup_holder.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/text/text_bubble.dart';
@@ -220,13 +221,17 @@ class _MessageHolderState extends State<MessageHolder> with AutomaticKeepAliveCl
 
   /// Google Messages style: the replied-to message as a lighter card at the
   /// top of this bubble, author and one-line excerpt, tap to jump to it.
-  Widget _withReplyCard(BuildContext context, Widget inner, MessagePart part) {
+  Widget _withReplyCard(BuildContext context, Widget inner, MessagePart part, BorderRadius outerRadii) {
     final original = replyTo!;
     final scheme = context.theme.colorScheme;
     final bubbleExt = context.theme.extensions[BubbleColors] as BubbleColors?;
     final bubbleColor = message.isFromMe!
         ? scheme.bubble(context, chat.isIMessage)
         : (bubbleExt?.receivedBubbleColor ?? scheme.surfaceContainerHighest);
+    // Google: the frame around the quote is the neutral (received) colour on
+    // both sides; a sent reply's text sits in a full-width strip of the sent
+    // colour below it, with a straight top edge.
+    final frameColor = bubbleExt?.receivedBubbleColor ?? scheme.surfaceContainerHighest;
     final author = original.isFromMe == true
         ? "You"
         : (original.handleRelation.target?.displayName ?? original.handle?.displayName ?? "");
@@ -255,11 +260,12 @@ class _MessageHolderState extends State<MessageHolder> with AutomaticKeepAliveCl
     // edge to edge under the card, as Google does; the card gives up its
     // intrinsic width so a long excerpt can't widen the bubble past the image.
     final mediaReply = part.attachments.isNotEmpty && isNullOrEmpty(part.text);
+    const f = GoogleBubbleShape.frame;
     final cardBody = Padding(
-      padding: EdgeInsets.fromLTRB(gutterL + 6, 6, gutterR + 6, mediaReply ? 6 : 0),
+      padding: EdgeInsets.fromLTRB(gutterL + f, f, gutterR + f, mediaReply ? f : 0),
       child: Material(
         color: scheme.surface.withValues(alpha: 0.92),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: GoogleBubbleShape.quote(outerRadii),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: () => service.jumpToMessage.call(original.guid!),
@@ -297,14 +303,24 @@ class _MessageHolderState extends State<MessageHolder> with AutomaticKeepAliveCl
     // reply text (or as wide as the picture), and the card stretches to that;
     // the text sits at the left like Google's.
     return ConstrainedBox(
-      constraints: BoxConstraints(maxWidth: NavigationSvc.width(context) * MessageState.maxBubbleSizeFactor),
+      constraints: BoxConstraints(
+        // The box includes the 10px gutter the clip removes.
+        minWidth: GoogleBubbleShape.replyMinWidth + 10,
+        maxWidth: NavigationSvc.width(context) * MessageState.maxBubbleSizeFactor,
+      ),
       child: IntrinsicWidth(
         child: Container(
-          color: bubbleColor,
+          color: frameColor,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [card, Align(alignment: Alignment.centerLeft, child: inner)],
+            children: [
+              card,
+              // A media reply's picture replaces the strip.
+              mediaReply
+                  ? Align(alignment: Alignment.centerLeft, child: inner)
+                  : Container(color: bubbleColor, child: Align(alignment: Alignment.centerLeft, child: inner)),
+            ],
           ),
         ),
       ),
@@ -418,7 +434,8 @@ class _MessageHolderState extends State<MessageHolder> with AutomaticKeepAliveCl
                           final avatarHere = message.showTail(newerMessage) && e.part == controller.parts.length - 1;
                           final bodyAvatarSize = (iOS ? 30.0 : 35.0) * avatarScale;
                           return Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 2.0),
+                              // Google: bubbles in a run sit 2dp apart.
+                              padding: EdgeInsets.symmetric(vertical: googleStyle ? 1.0 : 2.0),
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 crossAxisAlignment: isFromMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
@@ -647,14 +664,25 @@ class _MessageHolderState extends State<MessageHolder> with AutomaticKeepAliveCl
                                                                           // Google Messages style reply: the
                                                                           // original as a card at the top of
                                                                           // this bubble.
-                                                                          final body = googleStyle &&
-                                                                                  isReply &&
-                                                                                  !e.isUnsent &&
-                                                                                  !message.isGroupEvent
-                                                                              ? _withReplyCard(context, inner, e)
+                                                                          // Google: the corner on the sender's side tightens where
+                                                                          // this bubble meets another of the same run (another part
+                                                                          // of this message, or a neighbour within a minute).
+                                                                          final lastPart = e.part == controller.parts.length - 1;
+                                                                          final joinTop = e.part != 0 || GoogleBubbleShape.groups(message, olderMessage);
+                                                                          final joinBottom = !lastPart || GoogleBubbleShape.groups(message, newerMessage);
+                                                                          final googleRadii = GoogleBubbleShape.outer(
+                                                                              isFromMe: message.isFromMe!,
+                                                                              joinTop: joinTop,
+                                                                              joinBottom: joinBottom,
+                                                                              height: double.infinity);
+                                                                          final body = googleStyle && isReply && !e.isUnsent && !message.isGroupEvent
+                                                                              ? _withReplyCard(context, inner, e, googleRadii)
                                                                               : inner;
                                                                           if (isGallery) return body;
-                                                                          final tailClipper = TailClipper(
+                                                                          final CustomClipper<Path> tailClipper = googleStyle
+                                                                              ? GoogleBubbleClipper(
+                                                                                  isFromMe: message.isFromMe!, joinTop: joinTop, joinBottom: joinBottom)
+                                                                              : TailClipper(
                                                                             isFromMe: message.isFromMe!,
                                                                             showTail: !e.isPkPass &&
                                                                                 message.showTail(newerMessage) &&
