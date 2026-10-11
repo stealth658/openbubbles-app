@@ -542,10 +542,14 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
                   controller.pickedAttachments.isNotEmpty ||
                   controller.pickedApp.value != null;
               final recording = controller.showRecording.value;
+              // Same height as the one-line pill beside it (12.5 padding
+              // round one line of bubble text), so the two line up top and
+              // bottom; the row is bottom-aligned, so when the field grows
+              // the button stays by the last line, as in Google Messages.
               return AnimatedContainer(
                 duration: const Duration(milliseconds: 150),
-                width: 52,
-                height: 52,
+                width: 46,
+                height: 46,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: canSend && !recording ? scheme.primary : scheme.surfaceContainerHighest,
