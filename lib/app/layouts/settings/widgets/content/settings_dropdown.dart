@@ -146,7 +146,9 @@ class SettingsOptions<T extends Object> extends StatelessWidget {
                                 Icons.arrow_drop_down,
                                 color: context.theme.textTheme.bodyLarge!.color,
                               ),
-                              isExpanded: true,
+                              // Material: size to the longest option, so the control and its
+                              // menu are only as wide as they need to be (Google Messages).
+                              isExpanded: SettingsSvc.settings.skin.value != Skins.Material,
                               value: initial,
                               items: options.map<DropdownMenuItem<T>>((e) {
                                 return DropdownMenuItem(
@@ -154,6 +156,8 @@ class SettingsOptions<T extends Object> extends StatelessWidget {
                                   child: materialCustomWidgets?.call(e) ??
                                       Text(
                                         _labelFor(e),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                         style: context.theme.textTheme.bodyLarge,
                                       ),
                                 );
