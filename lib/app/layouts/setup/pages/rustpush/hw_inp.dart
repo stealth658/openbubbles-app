@@ -523,6 +523,7 @@ class HwInpState extends OptimizedState<HwInp> {
         child: Align(
           alignment: Alignment.centerLeft,
           child: RichText(
+            textScaler: MediaQuery.textScalerOf(context),
             text: TextSpan(
               style: context.theme.textTheme.bodyLarge!.apply(
                 fontSizeDelta: 1.5,

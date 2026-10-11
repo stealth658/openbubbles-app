@@ -224,6 +224,7 @@ class PhoneNumberState extends OptimizedState<PhoneNumber> {
                                           style: Get.textTheme.labelLarge,
                                         ),),
                                         RichText(
+                                          textScaler: MediaQuery.textScalerOf(context),
                                           text: TextSpan(
                                             style: Get.textTheme.bodyMedium,
                                             children: [
@@ -253,6 +254,7 @@ class PhoneNumberState extends OptimizedState<PhoneNumber> {
                                         ),
                                         GestureDetector(
                                           child: RichText(
+                                            textScaler: MediaQuery.textScalerOf(context),
                                             text: TextSpan(
                                               style: context.theme.textTheme.bodySmall,
                                               children: [

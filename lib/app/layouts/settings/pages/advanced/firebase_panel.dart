@@ -40,6 +40,7 @@ class _FirebasePanelState extends State<FirebasePanel> with ThemeHelpers {
                     Padding(
                       padding: const EdgeInsets.only(bottom: 8, left: 15, top: 15, right: 15),
                       child: RichText(
+                        textScaler: MediaQuery.textScalerOf(context),
                         text: TextSpan(
                           children: [
                             const TextSpan(

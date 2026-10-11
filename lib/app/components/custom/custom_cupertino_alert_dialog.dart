@@ -220,13 +220,12 @@ class CupertinoAlertDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final CupertinoLocalizations localizations = CupertinoLocalizations.of(context);
     final bool isInAccessibilityMode = _isInAccessibilityMode(context);
-    final double textScaleFactor = MediaQuery.of(context).textScaleFactor;
     return CupertinoUserInterfaceLevel(
       data: CupertinoUserInterfaceLevelData.elevated,
       child: MediaQuery(
         data: MediaQuery.of(context).copyWith(
-          // iOS does not shrink dialog content below a 1.0 scale factor
-          textScaler: TextScaler.linear(math.max(textScaleFactor, 1.0)),
+          // Follows the phone's text size, smaller sizes included.
+          textScaler: MediaQuery.textScalerOf(context),
         ),
         child: LayoutBuilder(
           builder: (BuildContext context, BoxConstraints constraints) {

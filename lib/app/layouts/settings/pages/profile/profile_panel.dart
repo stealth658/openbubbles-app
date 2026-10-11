@@ -370,6 +370,7 @@ class _ProfilePanelState extends State<ProfilePanel> with WidgetsBindingObserver
                           await updateName();
                         },
                         title: RichText(
+                          textScaler: MediaQuery.textScalerOf(context),
                           text: TextSpan(
                             style: context.theme.textTheme.bodyLarge,
                             children: MessageHelper.buildEmojiText(

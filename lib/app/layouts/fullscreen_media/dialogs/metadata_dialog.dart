@@ -13,6 +13,7 @@ void showMetadataDialog(Attachment a, BuildContext context) {
   }..addAll(a.metadata ?? {});
   for (MapEntry entry in metadataMap.entries.where((element) => element.value != null)) {
     metaWidgets.add(RichText(
+      textScaler: MediaQuery.textScalerOf(context),
       text: TextSpan(
         children: [
           TextSpan(text: "${entry.key}: ", style: context.theme.textTheme.bodyLarge!.apply(fontWeightDelta: 2)),

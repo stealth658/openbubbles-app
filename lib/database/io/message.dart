@@ -1452,6 +1452,7 @@ class Message {
       minHeight: minHeightOverride ?? Theme.of(context).textTheme.bodySmall!.fontSize! * fontSizeFactor,
     );
     final renderParagraph = RichText(
+      textScaler: MediaQuery.textScalerOf(context),
       text: TextSpan(
         text: textOverride ?? fullText,
         style: context.theme.textTheme.bodySmall!.apply(color: Colors.white, fontSizeFactor: fontSizeFactor),

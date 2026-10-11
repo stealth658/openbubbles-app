@@ -1019,6 +1019,7 @@ class _PageNumberState extends CustomState<PageNumber, int, SetupViewController>
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 13),
         child: RichText(
+          textScaler: MediaQuery.textScalerOf(context),
           text: TextSpan(
             children: [
               TextSpan(

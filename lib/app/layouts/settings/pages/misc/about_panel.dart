@@ -27,6 +27,7 @@ class _AboutPanelState extends State<AboutPanel> with ThemeHelpers {
     var splice = format.split("**");
     bool bold = false;
     return RichText(
+      textScaler: MediaQuery.textScalerOf(context),
       text: TextSpan(
           style: context.theme.textTheme.bodyMedium?.apply(fontSizeFactor: 1.1),
           children: splice.map((item) {
@@ -79,6 +80,7 @@ class _AboutPanelState extends State<AboutPanel> with ThemeHelpers {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       RichText(
+                        textScaler: MediaQuery.textScalerOf(context),
                         text: TextSpan(
                           style: context.theme.textTheme.titleLarge,
                           children: [
@@ -102,6 +104,7 @@ class _AboutPanelState extends State<AboutPanel> with ThemeHelpers {
                       buildFormatted("It **doesn't have to be physical or even spoken**. It just has to be a **clear and consistent message**"),
                       const SizedBox(height: 25),
                       RichText(
+                        textScaler: MediaQuery.textScalerOf(context),
                         text: TextSpan(
                           style: context.theme.textTheme.bodyMedium?.apply(fontSizeFactor: 1.2),
                           children: [
@@ -129,6 +132,7 @@ class _AboutPanelState extends State<AboutPanel> with ThemeHelpers {
                       const SizedBox(height: 15),
                       Text("We can fix this together", style: context.theme.textTheme.bodyMedium?.apply(fontWeightDelta: 2, fontSizeFactor: 1.2)),
                       RichText(
+                        textScaler: MediaQuery.textScalerOf(context),
                         text: TextSpan(
                           style: context.theme.textTheme.bodyMedium?.apply(fontWeightDelta: 2, fontSizeFactor: 1.2),
                           children: [
@@ -317,6 +321,7 @@ class _AboutPanelState extends State<AboutPanel> with ThemeHelpers {
                                       alignment: Alignment.center,
                                       padding: const EdgeInsets.all(8),
                                       child: RichText(
+                                        textScaler: MediaQuery.textScalerOf(context),
                                         text: TextSpan(
                                             text: e.key,
                                             style: context.theme.textTheme.bodyLarge!.copyWith(

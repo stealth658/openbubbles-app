@@ -316,11 +316,13 @@ class SettingsService {
                       ),
                     );
                   },
-                  child: const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 8),
-                    child: Text(
-                      "Enable Private API Features",
-                      textScaler: TextScaler.linear(1.2),
+                  child: Builder(
+                    builder: (context) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Text(
+                        "Enable Private API Features",
+                        textScaler: context.textScaleTimes(1.2),
+                      ),
                     ),
                   ),
                 ),

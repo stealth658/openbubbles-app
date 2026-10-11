@@ -438,3 +438,11 @@ class GoogleTextScale {
     ]);
   }
 }
+
+extension AppTextScale on BuildContext {
+  /// The phone's (or the app slider's) text scale times [factor], for text
+  /// drawn deliberately larger than its style. A fixed TextScaler.linear
+  /// would ignore the phone's text size.
+  TextScaler textScaleTimes(double factor) =>
+      TextScaler.linear(MediaQuery.textScalerOf(this).scale(14) / 14 * factor);
+}

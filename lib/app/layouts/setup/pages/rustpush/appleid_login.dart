@@ -147,6 +147,7 @@ class _AppleIdLoginState extends OptimizedState<AppleIdLogin> {
         child: Align(
           alignment: Alignment.centerLeft,
           child: RichText(
+            textScaler: MediaQuery.textScalerOf(context),
             text: TextSpan(
               style: context.theme.textTheme.bodyLarge!.apply(
                 fontSizeDelta: 1.5,
@@ -345,6 +346,7 @@ class _AppleIdLoginState extends OptimizedState<AppleIdLogin> {
                                 connect(availableUser!, null);
                               },
                               title: RichText(
+                                textScaler: MediaQuery.textScalerOf(context),
                                 text: TextSpan(
                                   style: context.theme.textTheme.bodyLarge,
                                   children: MessageHelper.buildEmojiText(

@@ -186,9 +186,9 @@ class _ServerCredentialsState extends State<ServerCredentials> with ThemeHelpers
                           alignment: Alignment.center,
                           width: double.maxFinite,
                           padding: const EdgeInsets.all(24),
-                          child: const Text(
+                          child: Text(
                             "No Firebase Projects found!\n\nMake sure you're signed in to the same Google account that you used on your server!",
-                            textScaler: TextScaler.linear(1.1),
+                            textScaler: context.textScaleTimes(1.1),
                             textAlign: TextAlign.center,
                           ),
                         ),

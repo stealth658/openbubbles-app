@@ -177,6 +177,7 @@ class _RedactedModePanelState extends State<RedactedModePanel> with ThemeHelpers
                                       child: Center(
                                         widthFactor: 1,
                                         child: RichText(
+                                          textScaler: MediaQuery.textScalerOf(context),
                                           text: TextSpan(
                                             children: buildMessageSpans(
                                               context,

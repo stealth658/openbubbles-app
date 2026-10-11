@@ -76,6 +76,7 @@ class _MiscPanelState extends State<MiscPanel> with ThemeHelpers {
                               child: Padding(
                                 padding: const EdgeInsets.only(bottom: 8.0, left: 15, top: 8.0, right: 15),
                                 child: RichText(
+                                  textScaler: MediaQuery.textScalerOf(context),
                                   text: TextSpan(
                                     children: [
                                       const TextSpan(children: [

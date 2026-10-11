@@ -40,6 +40,7 @@ class _UnifiedPushPanelState extends CustomState<UnifiedPushPanel, void, Unified
               Padding(
                 padding: const EdgeInsets.only(bottom: 8, left: 15, top: 15, right: 15),
                 child: RichText(
+                  textScaler: MediaQuery.textScalerOf(context),
                   text: TextSpan(
                     children: [
                       const TextSpan(
@@ -60,6 +61,7 @@ class _UnifiedPushPanelState extends CustomState<UnifiedPushPanel, void, Unified
               Padding(
                 padding: const EdgeInsets.only(bottom: 8, left: 15, top: 15, right: 15),
                 child: RichText(
+                  textScaler: MediaQuery.textScalerOf(context),
                   text: TextSpan(
                     children: [
                       const TextSpan(text: "We recommend using "),

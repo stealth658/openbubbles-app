@@ -34,6 +34,7 @@ class _NotificationProvidersState extends State<NotificationProvidersPanel> with
               Padding(
                 padding: const EdgeInsets.only(bottom: 15, left: 15, top: 15, right: 15),
                 child: RichText(
+                  textScaler: MediaQuery.textScalerOf(context),
                   text: TextSpan(
                     children: [
                       const TextSpan(

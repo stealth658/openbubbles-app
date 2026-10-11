@@ -262,7 +262,7 @@ class _ChatInfoState extends State<ChatInfo> with ThemeHelpers {
               child: Text(
                 "${(chat.displayName?.isNotEmpty ?? false) ? "Change" : "Add"} Name",
                 style: context.theme.textTheme.bodyMedium!.apply(color: context.theme.primaryColor),
-                textScaler: const TextScaler.linear(1.15),
+                textScaler: context.textScaleTimes(1.15),
               ),
               onPressed: () async {
                 bool? papi = false;
