@@ -1,3 +1,4 @@
+import 'package:bluebubbles/helpers/types/constants.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
@@ -175,16 +176,22 @@ class DropdownMenuCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final windowEffect = SettingsSvc.settings.windowEffect.value;
-    final cardColor = context.theme.colorScheme.surfaceContainerHighest
+    // Material 3 menu surface (Google Messages): surfaceContainer tone, elevation
+    // level 2 (3dp) instead of the Material 2 8dp drop shadow, 28dp corners.
+    final m3 = SettingsSvc.settings.skin.value == Skins.Material;
+    final cardColor = (m3 ? context.theme.colorScheme.surfaceContainer : context.theme.colorScheme.surfaceContainerHighest)
         .withValues(alpha: windowEffect != WindowEffect.disabled ? 0.95 : 1.0);
+    final radius = m3 ? 28.0 : 16.0;
     return Material(
-      elevation: 8,
-      borderRadius: BorderRadius.circular(16),
+      elevation: m3 ? 3 : 8,
+      shadowColor: context.theme.colorScheme.shadow,
+      surfaceTintColor: Colors.transparent,
+      borderRadius: BorderRadius.circular(radius),
       color: cardColor,
       child: SizedBox(
         width: width,
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(radius),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: children,

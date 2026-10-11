@@ -1,4 +1,3 @@
-import 'package:bluebubbles/app/components/m3e/m3e_shapes.dart';
 import 'package:bluebubbles/helpers/types/constants.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/material.dart';
@@ -29,16 +28,15 @@ class SettingsLeadingIcon extends StatelessWidget {
       children: [
         Obx(() {
           if (SettingsSvc.settings.skin.value == Skins.Material) {
-            final accent = containerColor ?? context.theme.colorScheme.primary;
-            return Container(
+            // Google Messages settings: a plain icon in the neutral variant
+            // colour, no tinted tile. The 40dp box keeps titles aligned with
+            // rows that have no icon.
+            return SizedBox(
               width: boxSize ?? 40,
               height: boxSize ?? 40,
-              decoration: BoxDecoration(
-                color: accent.withValues(alpha: 0.15),
-                borderRadius: const BorderRadius.all(Radius.circular(M3EShapes.md)),
-              ),
               child: Center(
-                child: Icon(materialIcon, color: accent, size: iconSizeMaterial ?? 22),
+                child: Icon(materialIcon,
+                    color: context.theme.colorScheme.onSurfaceVariant, size: iconSizeMaterial ?? 24),
               ),
             );
           }

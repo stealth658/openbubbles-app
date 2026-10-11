@@ -126,7 +126,9 @@ class SettingsScaffold extends StatelessWidget {
                           SliverAppBar.large(
                             title: Text(
                               title,
-                              style: context.theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w700),
+                              // Google Messages: regular weight, neutral colour (not the theme primary).
+                              style: context.theme.textTheme.headlineMedium
+                                  ?.copyWith(fontWeight: FontWeight.w400, color: context.theme.colorScheme.onSurface),
                             ),
                             leading: leading ?? buildBackButton(context),
                             actions: actions,

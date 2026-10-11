@@ -110,12 +110,17 @@ Widget buildBackButton(BuildContext context,
               },
         child: IconButton(
           iconSize: iconSize ?? (SettingsSvc.settings.skin.value != Skins.Material ? 30 : 24),
+          // Material (Google Messages): neutral arrow; iOS and Samsung keep the tinted chevron.
           icon: skin != null
               ? Icon(skin != Skins.Material ? CupertinoIcons.back : Icons.arrow_back,
-                  color: context.theme.colorScheme.primary)
+                  color: skin != Skins.Material
+                      ? context.theme.colorScheme.primary
+                      : context.theme.colorScheme.onSurface)
               : Obx(() => Icon(
                   SettingsSvc.settings.skin.value != Skins.Material ? CupertinoIcons.back : Icons.arrow_back,
-                  color: context.theme.colorScheme.primary)),
+                  color: SettingsSvc.settings.skin.value != Skins.Material
+                      ? context.theme.colorScheme.primary
+                      : context.theme.colorScheme.onSurface)),
           onPressed: () {
             if (kIsDesktop) return;
             final result = callback?.call() ?? true;

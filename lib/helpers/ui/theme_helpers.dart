@@ -125,8 +125,12 @@ mixin ThemeHelpers<T extends StatefulWidget> on State<T> {
       fontWeight: FontWeight.w300);
 
   /// Material / Samsung skin [ListTile] subtitle [TextStyle]s
-  TextStyle get materialSubtitle => context.theme.textTheme.labelLarge!
-      .copyWith(color: context.theme.colorScheme.primary, fontWeight: FontWeight.bold);
+  TextStyle get materialSubtitle => SettingsSvc.settings.skin.value == Skins.Material
+      // Google Messages: section labels are small, medium weight, neutral.
+      ? context.theme.textTheme.labelLarge!
+          .copyWith(color: context.theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.w500)
+      : context.theme.textTheme.labelLarge!
+          .copyWith(color: context.theme.colorScheme.primary, fontWeight: FontWeight.bold);
 
   /// Header / background color on settings pages
   Color get headerColor => (ThemeSvc.inDarkMode(context)
@@ -203,8 +207,9 @@ extension BuildContextThemeHelpers on BuildContext {
 
   /// Material / Samsung skin [ListTile] subtitle [TextStyle] — mirrors
   /// [ThemeHelpers.materialSubtitle].
-  TextStyle get materialSubtitle =>
-      theme.textTheme.labelLarge!.copyWith(color: theme.colorScheme.primary, fontWeight: FontWeight.bold);
+  TextStyle get materialSubtitle => SettingsSvc.settings.skin.value == Skins.Material
+      ? theme.textTheme.labelLarge!.copyWith(color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.w500)
+      : theme.textTheme.labelLarge!.copyWith(color: theme.colorScheme.primary, fontWeight: FontWeight.bold);
 }
 
 extension ColorSchemeHelpers on ColorScheme {
