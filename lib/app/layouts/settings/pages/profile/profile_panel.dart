@@ -340,6 +340,18 @@ class _ProfilePanelState extends State<ProfilePanel> with WidgetsBindingObserver
 
   bool get _redact => SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
 
+  /// Apple returns the aliases in registration order. Show phone numbers first,
+  /// then emails alphabetically, the way Messages lists them.
+  List<dynamic> get _sortedAliases {
+    final list = List<dynamic>.from(accountInfo['vetted_aliases'] as List<dynamic>? ?? []);
+    int rank(dynamic a) => GetUtils.isEmail(a['Alias'].toString()) ? 1 : 0;
+    list.sort((a, b) {
+      final r = rank(a).compareTo(rank(b));
+      return r != 0 ? r : a['Alias'].toString().toLowerCase().compareTo(b['Alias'].toString().toLowerCase());
+    });
+    return list;
+  }
+
   Widget _statusDot(BuildContext context, bool ok) => Container(
         width: 8,
         height: 8,
@@ -506,7 +518,7 @@ class _ProfilePanelState extends State<ProfilePanel> with WidgetsBindingObserver
     final connected = status.startsWith("Connected");
     final fwdEnabled = accountInfo['sms_forwarding_enabled'] == true;
     final fwdCapable = accountInfo['sms_forwarding_capable'] == true;
-    final aliases = (accountInfo['vetted_aliases'] as List<dynamic>? ?? []);
+    final aliases = _sortedAliases;
     final sub = context.theme.textTheme.bodyMedium?.copyWith(color: context.theme.colorScheme.onSurfaceVariant);
 
     // Leading sits on the first text line (bodyLarge is 24dp tall), not the row's centre,
@@ -1170,8 +1182,7 @@ class _ProfilePanelState extends State<ProfilePanel> with WidgetsBindingObserver
                           title: "Start Chats Using",
                           initial: accountInfo['active_alias'],
                           clampWidth: false,
-                          options:
-                              accountInfo['vetted_aliases'].map((e) => e['Alias'].toString()).toList().cast<String>(),
+                          options: _sortedAliases.map((e) => e['Alias'].toString()).toList().cast<String>(),
                           secondaryColor: headerColor,
                           useCupertino: false,
                           textProcessing: (str) => SettingsSvc.settings.redactedMode.value ? (GetUtils.isEmail(str) ? "Redacted Email" : "Redacted Phone") : str,
