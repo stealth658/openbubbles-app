@@ -565,7 +565,7 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                     ),
                     SettingsSwitch(
                       title: "Use System Text Size",
-                      subtitle: "Follow Android's font size setting, as Google Messages does",
+                      subtitle: "Follow Android's font size setting",
                       initialVal: SettingsSvc.settings.useSystemTextSize.value,
                       backgroundColor: tileColor,
                       onChanged: (val) async {
