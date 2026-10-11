@@ -42,7 +42,7 @@ class PrivateAPITile extends StatelessWidget {
         },
         leading: SettingsLeadingIcon(
           iosIcon: CupertinoIcons.exclamationmark_shield_fill,
-          materialIcon: Icons.gpp_maybe,
+          materialIcon: Icons.gpp_maybe_outlined,
           containerColor: SettingsSvc.settings.enablePrivateAPI.value
               ? SettingsSvc.settings.serverPrivateAPI.value == false
                     ? Colors.red[700]

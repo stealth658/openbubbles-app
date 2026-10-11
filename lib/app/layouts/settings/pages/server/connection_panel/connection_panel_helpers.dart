@@ -69,28 +69,28 @@ mixin ConnectionPanelHelpersMixin {
       key: 'api',
       label: 'API Connection',
       iosIcon: CupertinoIcons.wifi,
-      materialIcon: Icons.wifi,
+      materialIcon: Icons.wifi_outlined,
       containerColor: Colors.green,
     ),
     StatusItemConfig(
       key: 'socket',
       label: 'Socket',
       iosIcon: CupertinoIcons.bolt,
-      materialIcon: Icons.electric_bolt,
+      materialIcon: Icons.electric_bolt_outlined,
       containerColor: Colors.blue,
     ),
     StatusItemConfig(
       key: 'privateApi',
       label: 'Private API',
       iosIcon: CupertinoIcons.lock_shield,
-      materialIcon: Icons.security,
+      materialIcon: Icons.security_outlined,
       containerColor: Colors.orange,
     ),
     StatusItemConfig(
       key: 'helperBundle',
       label: 'Helper Bundle',
       iosIcon: CupertinoIcons.plus_bubble,
-      materialIcon: Icons.extension,
+      materialIcon: Icons.extension_outlined,
       containerColor: Colors.purple,
     ),
   ];
@@ -100,21 +100,21 @@ mixin ConnectionPanelHelpersMixin {
       key: 'serverVersion',
       label: 'Server Version',
       iosIcon: CupertinoIcons.desktopcomputer,
-      materialIcon: Icons.dvr,
+      materialIcon: Icons.dvr_outlined,
       containerColor: Colors.blueGrey,
     ),
     const InfoItemConfig(
       key: 'macosVersion',
       label: 'macOS Version',
       iosIcon: CupertinoIcons.macwindow,
-      materialIcon: Icons.computer,
+      materialIcon: Icons.computer_outlined,
       containerColor: Colors.blueGrey,
     ),
     InfoItemConfig(
       key: 'serverUrl',
       label: 'Server URL',
       iosIcon: CupertinoIcons.link,
-      materialIcon: Icons.link,
+      materialIcon: Icons.link_outlined,
       containerColor: Colors.teal,
       onTap: (context, controller) {
         Clipboard.setData(ClipboardData(text: HttpSvc.origin));
@@ -127,35 +127,35 @@ mixin ConnectionPanelHelpersMixin {
       key: 'firebaseDb',
       label: 'Firebase DB',
       iosIcon: CupertinoIcons.flame,
-      materialIcon: Icons.local_fire_department,
+      materialIcon: Icons.local_fire_department_outlined,
       containerColor: Colors.orange,
     ),
     const InfoItemConfig(
       key: 'icloudAccount',
       label: 'iCloud Account',
       iosIcon: CupertinoIcons.cloud,
-      materialIcon: Icons.cloud,
+      materialIcon: Icons.cloud_outlined,
       containerColor: Colors.blue,
     ),
     const InfoItemConfig(
       key: 'proxyService',
       label: 'Proxy Service',
       iosIcon: CupertinoIcons.arrow_2_squarepath,
-      materialIcon: Icons.swap_horiz,
+      materialIcon: Icons.swap_horiz_outlined,
       containerColor: Colors.purple,
     ),
     const InfoItemConfig(
       key: 'latency',
       label: 'Latency',
       iosIcon: CupertinoIcons.timer,
-      materialIcon: Icons.speed,
+      materialIcon: Icons.speed_outlined,
       containerColor: Colors.blue,
     ),
     const InfoItemConfig(
       key: 'timeSync',
       label: 'Time Sync',
       iosIcon: CupertinoIcons.clock,
-      materialIcon: Icons.access_time,
+      materialIcon: Icons.access_time_outlined,
       containerColor: Colors.teal,
     ),
   ];
@@ -297,7 +297,7 @@ mixin ConnectionPanelHelpersMixin {
       backgroundColor: tileColor,
       leading: const SettingsLeadingIcon(
         iosIcon: CupertinoIcons.chart_bar_square,
-        materialIcon: Icons.stacked_bar_chart,
+        materialIcon: Icons.stacked_bar_chart_outlined,
         containerColor: Colors.green,
       ),
       trailing: Obx(() => Icon(
@@ -339,7 +339,7 @@ mixin ConnectionPanelHelpersMixin {
               isThreeLine: kIsWeb || kIsDesktop ? false : true,
               leading: const SettingsLeadingIcon(
                 iosIcon: CupertinoIcons.gear,
-                materialIcon: Icons.room_preferences,
+                materialIcon: Icons.room_preferences_outlined,
                 containerColor: Colors.blueAccent,
               ),
               onLongPress: kIsWeb || kIsDesktop
@@ -402,7 +402,7 @@ mixin ConnectionPanelHelpersMixin {
                   backgroundColor: tileColor,
                   leading: SettingsLeadingIcon(
                     iosIcon: CupertinoIcons.arrow_2_circlepath,
-                    materialIcon: Icons.sync,
+                    materialIcon: Icons.sync_outlined,
                     containerColor: Colors.yellow[700],
                   ),
                   onTap: () async {
@@ -439,7 +439,7 @@ mixin ConnectionPanelHelpersMixin {
             SettingsTile(
               leading: const SettingsLeadingIcon(
                 iosIcon: CupertinoIcons.pencil,
-                materialIcon: Icons.edit,
+                materialIcon: Icons.edit_outlined,
                 containerColor: Colors.teal,
               ),
               title: "Configure Custom Headers",
@@ -510,7 +510,7 @@ mixin ConnectionPanelHelpersMixin {
             SettingsTile(
               leading: const SettingsLeadingIcon(
                 iosIcon: CupertinoIcons.refresh,
-                materialIcon: Icons.refresh,
+                materialIcon: Icons.refresh_outlined,
                 containerColor: Colors.blueAccent,
               ),
               title: "Fetch Latest URL",
@@ -534,7 +534,7 @@ mixin ConnectionPanelHelpersMixin {
                     backgroundColor: tileColor,
                     leading: const SettingsLeadingIcon(
                       iosIcon: CupertinoIcons.wifi,
-                      materialIcon: Icons.wifi,
+                      materialIcon: Icons.wifi_outlined,
                       containerColor: Colors.green,
                     ),
                     onChanged: (bool val) async {
@@ -630,7 +630,7 @@ mixin ConnectionPanelHelpersMixin {
                   backgroundColor: tileColor,
                   leading: const SettingsLeadingIcon(
                     iosIcon: CupertinoIcons.doc_plaintext,
-                    materialIcon: Icons.article,
+                    materialIcon: Icons.article_outlined,
                     containerColor: Colors.lightBlue,
                   ),
                   onTap: () {
@@ -677,7 +677,7 @@ mixin ConnectionPanelHelpersMixin {
                   backgroundColor: tileColor,
                   leading: const SettingsLeadingIcon(
                     iosIcon: CupertinoIcons.chat_bubble,
-                    materialIcon: Icons.sms,
+                    materialIcon: Icons.sms_outlined,
                     containerColor: Colors.blueAccent,
                   ),
                   onTap: () async {
@@ -723,7 +723,7 @@ mixin ConnectionPanelHelpersMixin {
                         backgroundColor: tileColor,
                         leading: const SettingsLeadingIcon(
                           iosIcon: CupertinoIcons.exclamationmark_shield,
-                          materialIcon: Icons.gpp_maybe,
+                          materialIcon: Icons.gpp_maybe_outlined,
                           containerColor: Colors.orange,
                         ),
                         onTap: () async {
@@ -769,7 +769,7 @@ mixin ConnectionPanelHelpersMixin {
                       controller.isRestarting.value ? "Restart in progress..." : "This will briefly disconnect you",
                   leading: const SettingsLeadingIcon(
                     iosIcon: CupertinoIcons.desktopcomputer,
-                    materialIcon: Icons.dvr,
+                    materialIcon: Icons.dvr_outlined,
                     containerColor: Colors.redAccent,
                   ),
                   onTap: () async {
@@ -824,7 +824,7 @@ mixin ConnectionPanelHelpersMixin {
                         backgroundColor: tileColor,
                         leading: const SettingsLeadingIcon(
                           iosIcon: CupertinoIcons.desktopcomputer,
-                          materialIcon: Icons.dvr,
+                          materialIcon: Icons.dvr_outlined,
                           containerColor: Colors.green,
                         ),
                         onTap: () async {

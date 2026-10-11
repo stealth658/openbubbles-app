@@ -23,7 +23,7 @@ Future<bool> showCustomHeadersDialog(BuildContext context) async {
         context: context,
         builder: (context) => AlertDialog(
           title: Text("Custom Headers", style: context.theme.textTheme.titleLarge),
-          backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+          backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
           content: SingleChildScrollView(
             child: SizedBox(
               width: double.maxFinite,
@@ -86,7 +86,7 @@ Future<bool> showCustomHeadersDialog(BuildContext context) async {
                       }),
                     ),
                     const SizedBox(height: 5),
-                    ElevatedButton.icon(
+                    FilledButton.icon(
                       onPressed: () {
                         keyControllers.add(TextEditingController());
                         valueControllers.add(TextEditingController());

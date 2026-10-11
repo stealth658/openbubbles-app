@@ -685,8 +685,8 @@ class _AttachmentPickerState extends State<AttachmentPicker> with ThemeHelpers {
                   ),
                 ),
                 const SizedBox(height: 12),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
+                FilledButton(
+                  style: FilledButton.styleFrom(
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     backgroundColor: context.theme.colorScheme.primary,
                     foregroundColor: context.theme.colorScheme.onPrimary,

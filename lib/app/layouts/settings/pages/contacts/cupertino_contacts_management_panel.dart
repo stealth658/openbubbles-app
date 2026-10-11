@@ -87,7 +87,7 @@ class CupertinoContactsManagementPanel extends StatelessWidget with ContactsMana
                       },
                       leading: const SettingsLeadingIcon(
                         iosIcon: CupertinoIcons.person_2,
-                        materialIcon: Icons.people,
+                        materialIcon: Icons.people_outlined,
                         containerColor: Colors.green,
                       ),
                     )),
@@ -95,7 +95,7 @@ class CupertinoContactsManagementPanel extends StatelessWidget with ContactsMana
                 SettingsTile(
                   leading: const SettingsLeadingIcon(
                     iosIcon: CupertinoIcons.group_solid,
-                    materialIcon: Icons.contacts,
+                    materialIcon: Icons.contacts_outlined,
                     containerColor: Colors.green,
                   ),
                   title: "Export Contacts",

@@ -17,7 +17,7 @@ void showVersionDialog(BuildContext context) {
                 left: 24,
                 right: 24,
               ),
-              elevation: 10.0,
+              elevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(
                   10.0,

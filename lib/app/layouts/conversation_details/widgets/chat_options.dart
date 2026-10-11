@@ -151,7 +151,7 @@ class _ChatOptionsState extends State<ChatOptions> with ThemeHelpers {
           subtitle: "Set an image or animated wallpaper for this chat",
           leading: const SettingsLeadingIcon(
             iosIcon: CupertinoIcons.photo_fill,
-            materialIcon: Icons.wallpaper,
+            materialIcon: Icons.wallpaper_outlined,
             containerColor: Colors.deepPurple,
           ),
           trailing: const NextButton(),
@@ -166,7 +166,7 @@ class _ChatOptionsState extends State<ChatOptions> with ThemeHelpers {
           subtitle: "Set an Apple transcript poster for this chat",
           leading: const SettingsLeadingIcon(
             iosIcon: CupertinoIcons.photo,
-            materialIcon: Icons.photo,
+            materialIcon: Icons.photo_outlined,
             containerColor: Colors.pink,
           ),
           onTap: () {
@@ -213,7 +213,7 @@ class _ChatOptionsState extends State<ChatOptions> with ThemeHelpers {
           title: "Remove Chat Background",
           leading: const SettingsLeadingIcon(
             iosIcon: CupertinoIcons.clear,
-            materialIcon: Icons.clear,
+            materialIcon: Icons.clear_outlined,
             containerColor: Colors.pink,
           ),
           onTap: () async {
@@ -237,7 +237,7 @@ class _ChatOptionsState extends State<ChatOptions> with ThemeHelpers {
           backgroundColor: tileColor,
           leading: const SettingsLeadingIcon(
             iosIcon: CupertinoIcons.paintbrush_fill,
-            materialIcon: Icons.palette,
+            materialIcon: Icons.palette_outlined,
             containerColor: Colors.purple,
           ),
           trailing: const NextButton(),
@@ -284,7 +284,7 @@ class _ChatOptionsState extends State<ChatOptions> with ThemeHelpers {
           subtitle: "Customize sounds, importance, and more for this chat",
           leading: const SettingsLeadingIcon(
             iosIcon: CupertinoIcons.bell_fill,
-            materialIcon: Icons.notifications_on,
+            materialIcon: Icons.notifications_on_outlined,
             containerColor: Colors.deepOrange,
           ),
           trailing: const NextButton(),
@@ -415,7 +415,7 @@ class _ChatOptionsState extends State<ChatOptions> with ThemeHelpers {
           subtitle: "Stop receiving notifications and calls from this contact",
           leading: SettingsLeadingIcon(
             iosIcon: CupertinoIcons.nosign,
-            materialIcon: Icons.block,
+            materialIcon: Icons.block_outlined,
             containerColor: context.theme.colorScheme.error,
           ),
           initialVal: chat.handles.first.isBlocked(),
@@ -430,7 +430,7 @@ class _ChatOptionsState extends State<ChatOptions> with ThemeHelpers {
               context: context,
               builder: (BuildContext context) {
                 return AlertDialog(
-                  backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+                  backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
                   title: Text("Are you sure you want to block?", style: context.theme.textTheme.titleLarge),
                   content: Text(
                     'You will not receive notifications or calls from this user, and their messages will not be marked as delivered.',
@@ -521,7 +521,7 @@ class _ChatOptionsState extends State<ChatOptions> with ThemeHelpers {
               "Typing Indicators ${SettingsSvc.settings.privateSendTypingIndicators.value ? "Enabled" : "Disabled"}",
           leading: const SettingsLeadingIcon(
             iosIcon: CupertinoIcons.arrow_2_circlepath,
-            materialIcon: Icons.sync,
+            materialIcon: Icons.sync_outlined,
             containerColor: Colors.teal,
           ),
           initialVal: chatState?.autoSendTypingIndicators.value == null,
@@ -545,7 +545,7 @@ class _ChatOptionsState extends State<ChatOptions> with ThemeHelpers {
           subtitle: "Overrides the global read receipt setting",
           leading: const SettingsLeadingIcon(
             iosIcon: CupertinoIcons.checkmark_circle_fill,
-            materialIcon: Icons.done_all,
+            materialIcon: Icons.done_all_outlined,
             containerColor: Colors.blueAccent,
           ),
           initialVal: chatState?.autoSendReadReceipts.value ?? SettingsSvc.settings.privateMarkChatAsRead.value,
@@ -568,7 +568,7 @@ class _ChatOptionsState extends State<ChatOptions> with ThemeHelpers {
               "${SettingsSvc.settings.privateManualMarkAsRead.value ? "Automatic " : ""}Read Receipts ${SettingsSvc.settings.privateMarkChatAsRead.value ? "Enabled" : "Disabled"}",
           leading: const SettingsLeadingIcon(
             iosIcon: CupertinoIcons.arrow_2_circlepath,
-            materialIcon: Icons.sync,
+            materialIcon: Icons.sync_outlined,
             containerColor: Colors.teal,
           ),
           initialVal: chatState?.autoSendReadReceipts.value == null,
@@ -598,7 +598,7 @@ class _ChatOptionsState extends State<ChatOptions> with ThemeHelpers {
           subtitle: "View texting patterns, response times, and activity",
           leading: const SettingsLeadingIcon(
             iosIcon: CupertinoIcons.chart_bar_alt_fill,
-            materialIcon: Icons.insights,
+            materialIcon: Icons.insights_outlined,
             containerColor: Colors.blue,
           ),
           trailing: const NextButton(),
@@ -614,7 +614,7 @@ class _ChatOptionsState extends State<ChatOptions> with ThemeHelpers {
           backgroundColor: tileColor,
           leading: const SettingsLeadingIcon(
             iosIcon: CupertinoIcons.chart_pie_fill,
-            materialIcon: Icons.pie_chart_outline,
+            materialIcon: Icons.pie_chart_outline_outlined,
             containerColor: Colors.orange,
           ),
           trailing: const NextButton(),
@@ -630,7 +630,7 @@ class _ChatOptionsState extends State<ChatOptions> with ThemeHelpers {
           backgroundColor: tileColor,
           leading: const SettingsLeadingIcon(
             iosIcon: CupertinoIcons.bookmark_fill,
-            materialIcon: Icons.bookmark,
+            materialIcon: Icons.bookmark_outlined,
             containerColor: Colors.indigo,
           ),
           trailing: const NextButton(),
@@ -648,7 +648,7 @@ class _ChatOptionsState extends State<ChatOptions> with ThemeHelpers {
           backgroundColor: tileColor,
           leading: const SettingsLeadingIcon(
             iosIcon: CupertinoIcons.chat_bubble_fill,
-            materialIcon: Icons.sms,
+            materialIcon: Icons.sms_outlined,
             containerColor: Colors.green,
           ),
           onTap: () async {
@@ -672,7 +672,7 @@ class _ChatOptionsState extends State<ChatOptions> with ThemeHelpers {
           subtitle: "Sync messages from the server for a selected time range",
           leading: const SettingsLeadingIcon(
             iosIcon: CupertinoIcons.arrow_counterclockwise,
-            materialIcon: Icons.replay,
+            materialIcon: Icons.replay_outlined,
             containerColor: Colors.teal,
           ),
           onTap: () async {
@@ -930,7 +930,7 @@ class _ChatOptionsState extends State<ChatOptions> with ThemeHelpers {
           subtitle: "You will no longer receive messages from this group",
           leading: SettingsLeadingIcon(
             iosIcon: CupertinoIcons.arrow_right_square_fill,
-            materialIcon: Icons.logout,
+            materialIcon: Icons.logout_outlined,
             containerColor: context.theme.colorScheme.error,
           ),
           onTap: () => _leaveChat(context),

@@ -55,7 +55,7 @@ class ContactTile extends StatelessWidget {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+          backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
           title: Text(
             "Removing participant...",
             style: context.theme.textTheme.titleLarge,
@@ -122,6 +122,7 @@ class ContactTile extends StatelessWidget {
               },
         onSecondaryTap: () {
           showModalBottomSheet(
+      showDragHandle: true,
             context: context,
             backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
             shape: const RoundedRectangleBorder(

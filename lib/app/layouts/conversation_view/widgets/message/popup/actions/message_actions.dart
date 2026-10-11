@@ -111,7 +111,7 @@ void messageInfo(MessagePopupActionContext ctx) {
       data: adaptiveTheme,
       child: AlertDialog(
         title: Text("Message Info", style: adaptiveTheme.textTheme.titleLarge),
-        backgroundColor: adaptiveTheme.colorScheme.surfaceContainerHighest,
+        backgroundColor: adaptiveTheme.colorScheme.surfaceContainerHigh,
         content: SizedBox(
           width: NavigationSvc.width(ctx.widthContext) * 3 / 5,
           height: context.height * 1 / 4,

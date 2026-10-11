@@ -263,8 +263,8 @@ class ProfileScaffoldState
                             Positioned(
                               right: 10,
                               top: kIsDesktop ? 30 : MediaQuery.of(context).viewPadding.top,
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
+                              child: FilledButton(
+                                style: FilledButton.styleFrom(
                                   backgroundColor: context.theme.colorScheme.outline.withAlpha(96),
                                   padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 13),
                                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -326,8 +326,8 @@ class ProfileScaffoldState
                             Positioned(
                               left: 10,
                               top: kIsDesktop ? 30 : MediaQuery.of(context).viewPadding.top,
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
+                              child: FilledButton(
+                                style: FilledButton.styleFrom(
                                   backgroundColor: context.theme.colorScheme.outline.withAlpha(96),
                                   padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
                                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,

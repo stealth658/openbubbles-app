@@ -38,7 +38,7 @@ class RedactedModeTile extends StatelessWidget {
         },
         leading: SettingsLeadingIcon(
           iosIcon: CupertinoIcons.wand_stars,
-          materialIcon: Icons.auto_fix_high,
+          materialIcon: Icons.auto_fix_high_outlined,
           containerColor: SettingsSvc.settings.redactedMode.value ? Colors.green : Colors.red[700],
         ),
       ),

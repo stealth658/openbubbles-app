@@ -221,7 +221,7 @@ class _DesktopPanelState extends State<DesktopPanel> with ThemeHelpers {
                         backgroundColor: tileColor,
                         leading: const SettingsLeadingIcon(
                           iosIcon: CupertinoIcons.tray_arrow_down_fill,
-                          materialIcon: Icons.expand_circle_down,
+                          materialIcon: Icons.expand_circle_down_outlined,
                           containerColor: Colors.green,
                         ),
                       )),

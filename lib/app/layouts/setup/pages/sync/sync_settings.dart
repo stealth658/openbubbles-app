@@ -139,7 +139,7 @@ class SyncSettings extends StatelessWidget {
           ),
         ),
         height: 40,
-        child: ElevatedButton(
+        child: FilledButton(
           style: ButtonStyle(
             shape: WidgetStateProperty.all<RoundedRectangleBorder>(
               RoundedRectangleBorder(

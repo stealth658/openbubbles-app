@@ -600,7 +600,8 @@ void showSnackbar(String title, String message,
     icon: Icon(icon, color: foreground),
     shouldIconPulse: false,
     snackPosition: SnackPosition.TOP,
-    borderRadius: 12,
+    // Material 3 snackbar corner (4dp); iOS keeps the rounder toast.
+    borderRadius: iOS ? 12 : 4,
     backgroundColor: background,
     barBlur: 0,
     padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
@@ -980,7 +981,7 @@ class _AreYouSureDialogState extends State<_AreYouSureDialog> {
     return AlertDialog(
       title: Text(widget.title ?? "Are you sure?", style: context.theme.textTheme.titleLarge),
       content: _loading ? SizedBox(height: 70, child: Center(child: buildProgressIndicator(context))) : widget.content,
-      backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+      backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
       actions: _loading
           ? null
           : [

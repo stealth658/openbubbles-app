@@ -307,8 +307,8 @@ class _ActionButton extends StatelessWidget {
             colors: [HexColor('2772C3'), HexColor('5CA7F8').darkenPercent(5)],
           ),
         ),
-        child: ElevatedButton.icon(
-          style: ElevatedButton.styleFrom(
+        child: FilledButton.icon(
+          style: FilledButton.styleFrom(
             backgroundColor: Colors.transparent,
             shadowColor: Colors.transparent,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

@@ -30,6 +30,9 @@ class BBSwitch extends StatelessWidget {
       value: value,
       onChanged: onChanged,
       activeColor: activeColor,
+      // Material 3: a check in the thumb while on (Google Messages does this).
+      thumbIcon: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected) ? const Icon(Icons.check) : null),
     );
   }
 }

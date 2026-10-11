@@ -307,7 +307,7 @@ class ExpressiveChatHeader extends StatelessWidget {
     showDialog(
       context: ctx,
       builder: (context) => AlertDialog(
-        backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+        backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
         title: const Text('Choose your friends wisely'),
         content: Text(
           "Apple may block devices due to spam or exceeding 20 users.",

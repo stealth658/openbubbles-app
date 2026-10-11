@@ -158,7 +158,7 @@ class _TroubleshootPanelState extends State<TroubleshootPanel> with ThemeHelpers
                         },
                         leading: const SettingsLeadingIcon(
                           iosIcon: CupertinoIcons.group,
-                          materialIcon: Icons.contacts,
+                          materialIcon: Icons.contacts_outlined,
                           containerColor: Colors.green,
                         ),
                         title: "Fetch Contacts With Verbose Logging",
@@ -193,7 +193,7 @@ class _TroubleshootPanelState extends State<TroubleshootPanel> with ThemeHelpers
                       () => SettingsTile(
                           leading: const SettingsLeadingIcon(
                             iosIcon: CupertinoIcons.share_up,
-                            materialIcon: Icons.share,
+                            materialIcon: Icons.share_outlined,
                             containerColor: Colors.green,
                           ),
                           title: "Download / Share Logs",
@@ -238,7 +238,7 @@ class _TroubleshootPanelState extends State<TroubleshootPanel> with ThemeHelpers
                     SettingsTile(
                         leading: const SettingsLeadingIcon(
                           iosIcon: CupertinoIcons.doc,
-                          materialIcon: Icons.file_open,
+                          materialIcon: Icons.file_open_outlined,
                           containerColor: Colors.blueGrey,
                         ),
                         title: "Open Logs",
@@ -254,7 +254,7 @@ class _TroubleshootPanelState extends State<TroubleshootPanel> with ThemeHelpers
                   SettingsTile(
                       leading: const SettingsLeadingIcon(
                         iosIcon: CupertinoIcons.trash,
-                        materialIcon: Icons.delete,
+                        materialIcon: Icons.delete_outlined,
                         containerColor: Colors.redAccent,
                       ),
                       title: "Clear Logs",
@@ -269,7 +269,7 @@ class _TroubleshootPanelState extends State<TroubleshootPanel> with ThemeHelpers
                     SettingsTile(
                       leading: const SettingsLeadingIcon(
                         iosIcon: CupertinoIcons.folder,
-                        materialIcon: Icons.folder,
+                        materialIcon: Icons.folder_outlined,
                         containerColor: Colors.purple,
                       ),
                       title: "Open App Data Location",
@@ -300,7 +300,7 @@ class _TroubleshootPanelState extends State<TroubleshootPanel> with ThemeHelpers
                         },
                         leading: SettingsLeadingIcon(
                           iosIcon: CupertinoIcons.battery_25,
-                          materialIcon: Icons.battery_5_bar,
+                          materialIcon: Icons.battery_5_bar_outlined,
                           containerColor: optimizationsDisabled.value ? Colors.green : Colors.redAccent,
                         ),
                         title: "Battery Optimizations",
@@ -317,7 +317,7 @@ class _TroubleshootPanelState extends State<TroubleshootPanel> with ThemeHelpers
                   SettingsTile(
                     leading: const SettingsLeadingIcon(
                       iosIcon: CupertinoIcons.share,
-                      materialIcon: Icons.share,
+                      materialIcon: Icons.share_outlined,
                     ),
                     title: "Export OB logs",
                     subtitle:
@@ -381,7 +381,7 @@ class _TroubleshootPanelState extends State<TroubleshootPanel> with ThemeHelpers
                     onTap: () => NavigationSvc.pushSettings(context, const SoftDeletedChatsPanel()),
                     leading: const SettingsLeadingIcon(
                       iosIcon: CupertinoIcons.trash_slash,
-                      materialIcon: Icons.restore_from_trash,
+                      materialIcon: Icons.restore_from_trash_outlined,
                       containerColor: Colors.orangeAccent,
                     ),
                     title: "View Soft-Deleted Chats",
@@ -432,7 +432,7 @@ class _TroubleshootPanelState extends State<TroubleshootPanel> with ThemeHelpers
                       },
                       leading: const SettingsLeadingIcon(
                         iosIcon: CupertinoIcons.chat_bubble_2,
-                        materialIcon: Icons.delete_forever,
+                        materialIcon: Icons.delete_forever_outlined,
                         containerColor: Colors.redAccent,
                       ),
                       title: "Delete a Chat",
@@ -512,7 +512,7 @@ class _TroubleshootPanelState extends State<TroubleshootPanel> with ThemeHelpers
                       },
                       leading: const SettingsLeadingIcon(
                         iosIcon: CupertinoIcons.trash,
-                        materialIcon: Icons.delete_forever,
+                        materialIcon: Icons.delete_forever_outlined,
                         containerColor: Colors.redAccent,
                       ),
                       title: "Delete All Messaging Data",
@@ -525,7 +525,7 @@ class _TroubleshootPanelState extends State<TroubleshootPanel> with ThemeHelpers
                     onTap: () => NavigationSvc.pushSettings(context, const HandleAuditPanel()),
                     leading: const SettingsLeadingIcon(
                       iosIcon: CupertinoIcons.person_crop_circle_badge_exclam,
-                      materialIcon: Icons.person_search,
+                      materialIcon: Icons.person_search_outlined,
                       containerColor: Colors.deepPurpleAccent,
                     ),
                     title: "Audit Handles",
@@ -725,7 +725,7 @@ class _TroubleshootPanelState extends State<TroubleshootPanel> with ThemeHelpers
                                   context: context,
                                   builder: (BuildContext context) {
                                     return AlertDialog(
-                                        backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+                                        backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
                                         title:
                                             Text("Enable development mode?", style: context.theme.textTheme.titleLarge),
                                         content: Text(
@@ -772,7 +772,7 @@ class _TroubleshootPanelState extends State<TroubleshootPanel> with ThemeHelpers
                     onTap: () => NavigationSvc.pushSettings(context, const CacheTuningPanel()),
                     leading: const SettingsLeadingIcon(
                       iosIcon: CupertinoIcons.memories,
-                      materialIcon: Icons.memory,
+                      materialIcon: Icons.memory_outlined,
                       containerColor: Colors.teal,
                     ),
                     title: "Cache Tuning",

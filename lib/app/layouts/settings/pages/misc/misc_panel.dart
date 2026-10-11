@@ -64,7 +64,7 @@ class _MiscPanelState extends State<MiscPanel> with ThemeHelpers {
                             backgroundColor: tileColor,
                             leading: SettingsLeadingIcon(
                                 iosIcon: CupertinoIcons.lock_fill,
-                                materialIcon: Icons.lock,
+                                materialIcon: Icons.lock_outlined,
                                 containerColor:
                                     (SettingsSvc.settings.shouldSecure.value) ? Colors.green : Colors.redAccent),
                           )),
@@ -160,7 +160,7 @@ class _MiscPanelState extends State<MiscPanel> with ThemeHelpers {
                             backgroundColor: tileColor,
                             leading: const SettingsLeadingIcon(
                                 iosIcon: CupertinoIcons.keyboard,
-                                materialIcon: Icons.keyboard,
+                                materialIcon: Icons.keyboard_outlined,
                                 containerColor: Colors.teal),
                           )),
                   ],
@@ -245,10 +245,10 @@ class _MiscPanelState extends State<MiscPanel> with ThemeHelpers {
                                 "Controls the duration (in seconds) until a network request will time out.\nIncrease this setting if you have poor connection.",
                             leading: const SettingsLeadingIcon(
                                 iosIcon: CupertinoIcons.stopwatch,
-                                materialIcon: Icons.timer,
+                                materialIcon: Icons.timer_outlined,
                                 containerColor: Colors.red),
                             trailing: SettingsSvc.settings.apiTimeout.value != 30000
-                                ? ElevatedButton(
+                                ? FilledButton(
                                     onPressed: () async {
                                       SettingsSvc.settings.apiTimeout.value = 30000;
                                       await SettingsSvc.settings.saveOneAsync('apiTimeout');
@@ -370,7 +370,7 @@ class _MiscPanelState extends State<MiscPanel> with ThemeHelpers {
                             "Adds a delay before sending a message to prevent accidental sends. During this time, you can cancel the message.",
                         backgroundColor: tileColor,
                         leading: const SettingsLeadingIcon(
-                            iosIcon: CupertinoIcons.timer, materialIcon: Icons.timer, containerColor: Colors.green),
+                            iosIcon: CupertinoIcons.timer, materialIcon: Icons.timer_outlined, containerColor: Colors.green),
                       )),
                   Obx(() {
                     if (!isNullOrZero(SettingsSvc.settings.sendDelay.value)) {
@@ -402,7 +402,7 @@ class _MiscPanelState extends State<MiscPanel> with ThemeHelpers {
                         backgroundColor: tileColor,
                         leading: const SettingsLeadingIcon(
                             iosIcon: CupertinoIcons.clock,
-                            materialIcon: Icons.access_time,
+                            materialIcon: Icons.access_time_outlined,
                             containerColor: Colors.blue),
                       )),
                   const SettingsDivider(),
@@ -423,7 +423,7 @@ class _MiscPanelState extends State<MiscPanel> with ThemeHelpers {
                           backgroundColor: tileColor,
                           leading: const SettingsLeadingIcon(
                               iosIcon: CupertinoIcons.rotate_right,
-                              materialIcon: Icons.screen_rotation,
+                              materialIcon: Icons.screen_rotation_outlined,
                               containerColor: Colors.orange),
                         )),
                   if (Platform.isAndroid) const SettingsDivider(),
@@ -435,7 +435,7 @@ class _MiscPanelState extends State<MiscPanel> with ThemeHelpers {
                         isThreeLine: true,
                         leading: SettingsLeadingIcon(
                             iosIcon: CupertinoIcons.person_2,
-                            materialIcon: Icons.people,
+                            materialIcon: Icons.people_outlined,
                             containerColor: Colors.purple),
                       );
                     } else {

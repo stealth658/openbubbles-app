@@ -309,8 +309,8 @@ class ShareProfileBanner extends StatelessWidget {
               ],
             ),
             const Spacer(),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
+            FilledButton(
+              style: FilledButton.styleFrom(
                 backgroundColor: context.theme.colorScheme.outline.withValues(alpha: 0.25),
                 padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 13),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -344,7 +344,7 @@ class ShareProfileBanner extends StatelessWidget {
                   color: context.theme.colorScheme.outline,
                   size: 24,
                 ),
-                style: ElevatedButton.styleFrom(splashFactory: NoSplash.splashFactory),
+                style: FilledButton.styleFrom(splashFactory: NoSplash.splashFactory),
                 visualDensity: Platform.isAndroid ? VisualDensity.compact : null,
                 onPressed: () async {
                   SettingsSvc.settings.dismissedContacts.add(controller.chat.participants.first.address);

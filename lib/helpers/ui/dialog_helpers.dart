@@ -93,7 +93,7 @@ Future<T?> showBBDialog<T>({
     builder: (ctx) => AlertDialog(
       title: title != null ? Text(title, style: ctx.textTheme.titleLarge) : null,
       content: bodyWidget,
-      backgroundColor: ctx.colorScheme.surfaceContainerHighest,
+      backgroundColor: ctx.colorScheme.surfaceContainerHigh,
       // Default AlertDialog leaves a 24px gap below the content, right above
       // the action buttons — tighten just that, leave the rest as default.
       contentPadding: const EdgeInsets.fromLTRB(24, 12, 24, 6),
@@ -459,7 +459,7 @@ class BBProgressDialog extends StatelessWidget {
     // Material / Samsung
     return AlertDialog(
       title: Text(title, style: context.textTheme.titleLarge),
-      backgroundColor: context.colorScheme.surfaceContainerHighest,
+      backgroundColor: context.colorScheme.surfaceContainerHigh,
       content: body ??
           SizedBox(
             height: 5,

@@ -87,7 +87,7 @@ class _ProfilePanelState extends State<ProfilePanel> with WidgetsBindingObserver
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+          backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
           title: Text(
             text,
             style: context.theme.textTheme.titleLarge,
@@ -164,7 +164,7 @@ class _ProfilePanelState extends State<ProfilePanel> with WidgetsBindingObserver
             context: Get.context!,
             builder: (BuildContext context) {
               return AlertDialog(
-                backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+                backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
                 title: Text(
                   "Updating profile...",
                   style: context.theme.textTheme.titleLarge,
@@ -706,7 +706,7 @@ class _ProfilePanelState extends State<ProfilePanel> with WidgetsBindingObserver
                                       "We're so sorry!",
                                       style: context.theme.textTheme.titleLarge,
                                     ),
-                                    backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+                                    backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
                                     content: Text(description, style: context.theme.textTheme.bodyLarge),
                                     actions: [
                                       TextButton(
@@ -801,7 +801,7 @@ class _ProfilePanelState extends State<ProfilePanel> with WidgetsBindingObserver
                                 "Get a different hosted device?",
                                 style: context.theme.textTheme.titleLarge,
                               ),
-                              backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+                              backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
                               content: Text("You will have to log in again with your Apple Account.", style: context.theme.textTheme.bodyLarge),
                               actions: [
                                 TextButton(

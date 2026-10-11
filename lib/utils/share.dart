@@ -157,7 +157,7 @@ class Share {
               if (bytes == null) {
                 return AbsorbPointer(
                   child: AlertDialog(
-                    backgroundColor: Get.theme.colorScheme.surfaceContainerHighest,
+                    backgroundColor: Get.theme.colorScheme.surfaceContainerHigh,
                     title: Text(
                       snapshot.hasError ? "Couldn't Get Location" : "Loading Location...",
                       style: Get.textTheme.titleLarge,
@@ -170,7 +170,7 @@ class Share {
                 );
               }
               return AlertDialog(
-                backgroundColor: Get.theme.colorScheme.surfaceContainerHighest,
+                backgroundColor: Get.theme.colorScheme.surfaceContainerHigh,
                 title: Text("Send Location?", style: Get.textTheme.titleLarge),
                 content: SizedBox(
                   width: 150,

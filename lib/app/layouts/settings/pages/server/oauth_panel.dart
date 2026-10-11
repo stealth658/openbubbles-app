@@ -257,7 +257,7 @@ class _OauthPanelState extends State<OauthPanel> with ThemeHelpers {
                                   if (fetchingFirebase.value) const CircularProgressIndicator(),
                                   const SizedBox(height: 10),
                                   if (!fetchingFirebase.value)
-                                    ElevatedButton(
+                                    FilledButton(
                                       onPressed: googleFlow.retryConnections,
                                       child: const Text("Retry Connections"),
                                     ),
@@ -285,7 +285,7 @@ class _OauthPanelState extends State<OauthPanel> with ThemeHelpers {
                     ),
                     height: 40,
                     padding: const EdgeInsets.all(2),
-                    child: ElevatedButton(
+                    child: FilledButton(
                       style: ButtonStyle(
                         shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                           RoundedRectangleBorder(
@@ -335,7 +335,7 @@ class _OauthPanelState extends State<OauthPanel> with ThemeHelpers {
                     ),
                     height: 40,
                     width: buttonSize.width,
-                    child: ElevatedButton(
+                    child: FilledButton(
                       style: ButtonStyle(
                         shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                           RoundedRectangleBorder(

@@ -124,7 +124,7 @@ class ThemeManagementSection extends StatelessWidget {
                       subtitle: "Overwrite all colors with the built-in defaults",
                       leading: SettingsLeadingIcon(
                         iosIcon: Icons.restart_alt,
-                        materialIcon: Icons.restart_alt,
+                        materialIcon: Icons.restart_alt_outlined,
                         containerColor: context.theme.colorScheme.error,
                       ),
                       onTap: () => _confirmAction(
@@ -142,7 +142,7 @@ class ThemeManagementSection extends StatelessWidget {
                       subtitle: "Permanently remove \"${controller.activeTheme.name}\"",
                       leading: SettingsLeadingIcon(
                         iosIcon: Icons.delete_outline,
-                        materialIcon: Icons.delete_outline,
+                        materialIcon: Icons.delete_outline_outlined,
                         containerColor: context.theme.colorScheme.error,
                       ),
                       onTap: () => _confirmAction(
@@ -294,7 +294,7 @@ class _ExportDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+      backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
       title: Text("Export — $themeName", style: context.theme.textTheme.titleLarge),
       content: SizedBox(
         width: 440,

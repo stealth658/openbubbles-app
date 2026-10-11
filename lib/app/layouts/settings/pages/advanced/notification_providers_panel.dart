@@ -120,7 +120,7 @@ class _NotificationProvidersState extends State<NotificationProvidersPanel> with
                         backgroundColor: tileColor,
                         leading: const SettingsLeadingIcon(
                             iosIcon: CupertinoIcons.bolt_badge_a_fill,
-                            materialIcon: Icons.bolt,
+                            materialIcon: Icons.bolt_outlined,
                             containerColor: Colors.blueAccent),
                       )),
                 const SettingsDivider(),

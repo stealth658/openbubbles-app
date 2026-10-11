@@ -397,7 +397,7 @@ class _AppleIdLoginState extends OptimizedState<AppleIdLogin> {
                               ),
                               height: 40,
                               padding: const EdgeInsets.all(2),
-                              child: ElevatedButton(
+                              child: FilledButton(
                                 style: ButtonStyle(
                                   shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                                     RoundedRectangleBorder(
@@ -452,7 +452,7 @@ class _AppleIdLoginState extends OptimizedState<AppleIdLogin> {
                                 ),
                               ),
                               height: 40,
-                              child: ElevatedButton(
+                              child: FilledButton(
                                 style: ButtonStyle(
                                   shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                                     RoundedRectangleBorder(
@@ -500,7 +500,7 @@ class _AppleIdLoginState extends OptimizedState<AppleIdLogin> {
                               ),
                               height: 40,
                               padding: const EdgeInsets.all(2),
-                              child: ElevatedButton(
+                              child: FilledButton(
                                 style: ButtonStyle(
                                   shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                                     RoundedRectangleBorder(

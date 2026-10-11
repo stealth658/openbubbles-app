@@ -266,7 +266,7 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                           title: "Background Opacity (Light)",
                           trailing: SettingsSvc.settings.windowEffectCustomOpacityLight.value !=
                                   WindowEffects.defaultOpacity(dark: false)
-                              ? ElevatedButton(
+                              ? FilledButton(
                                   onPressed: () async {
                                     SettingsSvc.settings.windowEffectCustomOpacityLight.value =
                                         WindowEffects.defaultOpacity(dark: false);
@@ -303,7 +303,7 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                           title: "Background Opacity (Dark)",
                           trailing: SettingsSvc.settings.windowEffectCustomOpacityDark.value !=
                                   WindowEffects.defaultOpacity(dark: true)
-                              ? ElevatedButton(
+                              ? FilledButton(
                                   onPressed: () async {
                                     SettingsSvc.settings.windowEffectCustomOpacityDark.value =
                                         WindowEffects.defaultOpacity(dark: true);
@@ -636,7 +636,7 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                             showDialog(
                               context: context,
                               builder: (context) => AlertDialog(
-                                backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+                                backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
                                 title: Text("Downloading font file...", style: context.theme.textTheme.titleLarge),
                                 content: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
@@ -760,7 +760,7 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
         context: context,
         builder: (context) => AlertDialog(
               title: Text("Monet Theming Info", style: context.theme.textTheme.titleLarge),
-              backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+              backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
               content: Text(
                 "Off - Uses your selected static preset/custom themes.\r\n"
                 "Full - Uses dynamic Material You preset themes that follow your system colors.\r\n",

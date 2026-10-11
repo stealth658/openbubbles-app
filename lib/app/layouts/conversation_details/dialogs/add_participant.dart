@@ -53,7 +53,7 @@ void showAddParticipant(BuildContext context, Chat chat) {
                     context: context,
                     builder: (context) => AlertDialog(
                           title: Text("Pick Contact", style: context.theme.textTheme.titleLarge),
-                          backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+                          backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
                           content: SingleChildScrollView(
                             child: SizedBox(
                               width: double.maxFinite,
@@ -114,7 +114,7 @@ void showAddParticipant(BuildContext context, Chat chat) {
                     context: context,
                     builder: (BuildContext context) {
                       return AlertDialog(
-                        backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+                        backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
                         title: Text(
                           "Adding ${participantController.text}...",
                           style: context.theme.textTheme.titleLarge,

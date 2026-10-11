@@ -15,7 +15,7 @@ class FailedToConnectDialog extends StatelessWidget {
         Navigator.of(context).pop();
       },
       child: AlertDialog(
-        backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+        backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
         title: Text(
           "Failed To Connect!",
           style: context.theme.textTheme.titleLarge,

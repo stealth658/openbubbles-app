@@ -841,7 +841,7 @@ class HwInpState extends OptimizedState<HwInp> {
                               ),
                               height: 40,
                               padding: const EdgeInsets.all(2),
-                              child: ElevatedButton(
+                              child: FilledButton(
                                 style: ButtonStyle(
                                   shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                                     RoundedRectangleBorder(
@@ -889,7 +889,7 @@ class HwInpState extends OptimizedState<HwInp> {
                               ),
                               height: 40,
                               padding: const EdgeInsets.all(2),
-                              child: ElevatedButton(
+                              child: FilledButton(
                                 style: ButtonStyle(
                                   shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                                     RoundedRectangleBorder(
@@ -926,7 +926,7 @@ class HwInpState extends OptimizedState<HwInp> {
                                 ),
                               ),
                               height: 40,
-                              child: ElevatedButton(
+                              child: FilledButton(
                                 style: ButtonStyle(
                                   shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                                     RoundedRectangleBorder(

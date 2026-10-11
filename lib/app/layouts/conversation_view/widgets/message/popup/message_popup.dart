@@ -245,7 +245,7 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
     );
     Get.dialog(
       AlertDialog(
-        backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+        backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
         content: content,
       ),
       name: 'Popup Menu',

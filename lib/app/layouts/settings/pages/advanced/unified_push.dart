@@ -92,7 +92,7 @@ class _UnifiedPushPanelState extends CustomState<UnifiedPushPanel, void, Unified
                 },
                 leading: const SettingsLeadingIcon(
                   iosIcon: CupertinoIcons.arrow_up_right,
-                  materialIcon: Icons.arrow_outward,
+                  materialIcon: Icons.arrow_outward_outlined,
                   containerColor: Colors.blueAccent,
                 ),
               ),

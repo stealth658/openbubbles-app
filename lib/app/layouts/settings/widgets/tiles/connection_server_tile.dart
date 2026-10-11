@@ -60,7 +60,7 @@ class ConnectionServerTile extends StatelessWidget {
         },
         leading: SettingsLeadingIcon(
           iosIcon: CupertinoIcons.antenna_radiowaves_left_right,
-          materialIcon: Icons.router,
+          materialIcon: Icons.router_outlined,
           containerColor: getIndicatorColor(SocketSvc.state.value),
         ),
         trailing: Row(

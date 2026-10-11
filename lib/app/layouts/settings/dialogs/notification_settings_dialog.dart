@@ -44,7 +44,7 @@ class NotificationSettingsDialog extends StatelessWidget {
                   context: context,
                   builder: (context) => AlertDialog(
                         title: Text("Mute Individuals", style: context.theme.textTheme.titleLarge),
-                        backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+                        backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
                         content: SingleChildScrollView(
                           child: SizedBox(
                             width: double.maxFinite,
@@ -212,7 +212,7 @@ class TextDetectionDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text("Text detection", style: context.theme.textTheme.titleLarge),
-      backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+      backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
       content: Column(mainAxisSize: MainAxisSize.min, children: [
         Padding(
           padding: const EdgeInsets.all(8.0),

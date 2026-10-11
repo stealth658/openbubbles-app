@@ -173,7 +173,7 @@ List<Widget> buildSettingItemList({
                 trailing: const NextButton(),
                 leading: const SettingsLeadingIcon(
                   iosIcon: CupertinoIcons.alarm_fill,
-                  materialIcon: Icons.alarm,
+                  materialIcon: Icons.alarm_outlined,
                   containerColor: Colors.indigo,
                 ),
               ),
@@ -229,7 +229,7 @@ List<Widget> buildSettingItemList({
             ),
             leading: const SettingsLeadingIcon(
               iosIcon: CupertinoIcons.paintbrush_fill,
-              materialIcon: Icons.palette,
+              materialIcon: Icons.palette_outlined,
               containerColor: Colors.purple,
             ),
           ),
@@ -271,7 +271,7 @@ List<Widget> buildSettingItemList({
             },
             leading: const SettingsLeadingIcon(
               iosIcon: CupertinoIcons.photo_fill,
-              materialIcon: Icons.attachment,
+              materialIcon: Icons.attachment_outlined,
               iconSize: 18,
               containerColor: Colors.deepPurple,
             ),
@@ -304,7 +304,7 @@ List<Widget> buildSettingItemList({
             },
             leading: const SettingsLeadingIcon(
               iosIcon: CupertinoIcons.bell_fill,
-              materialIcon: Icons.notifications_on,
+              materialIcon: Icons.notifications_on_outlined,
               containerColor: Colors.deepOrange,
             ),
             trailing: const NextButton(),
@@ -345,7 +345,7 @@ List<Widget> buildSettingItemList({
             },
             leading: const SettingsLeadingIcon(
               iosIcon: CupertinoIcons.square_list_fill,
-              materialIcon: Icons.list,
+              materialIcon: Icons.list_outlined,
               containerColor: Colors.blue,
             ),
             trailing: const NextButton(),
@@ -388,7 +388,7 @@ List<Widget> buildSettingItemList({
             },
             leading: const SettingsLeadingIcon(
               iosIcon: CupertinoIcons.chat_bubble_fill,
-              materialIcon: Icons.sms,
+              materialIcon: Icons.sms_outlined,
               containerColor: Colors.green,
             ),
             trailing: const NextButton(),
@@ -446,7 +446,7 @@ List<Widget> buildSettingItemList({
               },
               leading: const SettingsLeadingIcon(
                 iosIcon: CupertinoIcons.desktopcomputer,
-                materialIcon: Icons.desktop_windows,
+                materialIcon: Icons.desktop_windows_outlined,
                 containerColor: Colors.blueGrey,
               ),
               trailing: const NextButton(),
@@ -484,7 +484,7 @@ List<Widget> buildSettingItemList({
             },
             leading: const SettingsLeadingIcon(
               iosIcon: CupertinoIcons.ellipsis_circle_fill,
-              materialIcon: Icons.more_vert,
+              materialIcon: Icons.more_vert_outlined,
               containerColor: Colors.brown,
             ),
             trailing: const NextButton(),
@@ -580,7 +580,7 @@ List<Widget> buildSettingItemList({
             },
             leading: const SettingsLeadingIcon(
               iosIcon: CupertinoIcons.bell,
-              materialIcon: Icons.notifications,
+              materialIcon: Icons.notifications_outlined,
               containerColor: Colors.cyan,
             ),
             title: "Notification Providers",
@@ -634,7 +634,7 @@ List<Widget> buildSettingItemList({
               },
               leading: SettingsLeadingIcon(
                 iosIcon: CupertinoIcons.chart_pie_fill,
-                materialIcon: Icons.pie_chart_outline,
+                materialIcon: Icons.pie_chart_outline_outlined,
                 containerColor: Colors.red[700],
               ),
               title: "Storage Analyzer",
@@ -670,7 +670,7 @@ List<Widget> buildSettingItemList({
             },
             leading: const SettingsLeadingIcon(
               iosIcon: CupertinoIcons.wrench_fill,
-              materialIcon: Icons.adb,
+              materialIcon: Icons.adb_outlined,
               containerColor: Colors.lightBlue,
             ),
             title: "Developer Tools",
@@ -708,7 +708,7 @@ List<Widget> buildSettingItemList({
             trailing: const NextButton(),
             leading: const SettingsLeadingIcon(
               iosIcon: CupertinoIcons.cloud_upload_fill,
-              materialIcon: Icons.backup,
+              materialIcon: Icons.backup_outlined,
               containerColor: Colors.blueGrey,
             ),
             title: "Backup & Restore",
@@ -724,7 +724,7 @@ List<Widget> buildSettingItemList({
             onTap: SettingsItemsActions.openStoreReview,
             leading: SettingsLeadingIcon(
               iosIcon: CupertinoIcons.star_fill,
-              materialIcon: Icons.star,
+              materialIcon: Icons.star_outlined,
               containerColor: Colors.blue,
             ),
           ),
@@ -738,7 +738,7 @@ List<Widget> buildSettingItemList({
               onTap: SettingsItemsActions.openDonationPage,
               leading: SettingsLeadingIcon(
                 iosIcon: CupertinoIcons.money_dollar_circle,
-                materialIcon: Icons.attach_money,
+                materialIcon: Icons.attach_money_outlined,
                 containerColor: Colors.green,
               ),
             ),
@@ -751,7 +751,7 @@ List<Widget> buildSettingItemList({
             onTap: SettingsItemsActions.openDiscord,
             leading: SettingsLeadingIcon(
               iosIcon: Icons.discord,
-              materialIcon: Icons.discord,
+              materialIcon: Icons.discord_outlined,
               containerColor: HexColor('#7785CC'),
             ),
           ),
@@ -782,7 +782,7 @@ List<Widget> buildSettingItemList({
             trailing: const NextButton(),
             leading: const SettingsLeadingIcon(
               iosIcon: CupertinoIcons.info_circle_fill,
-              materialIcon: Icons.info,
+              materialIcon: Icons.info_outlined,
               containerColor: Colors.blue,
             ),
           ),

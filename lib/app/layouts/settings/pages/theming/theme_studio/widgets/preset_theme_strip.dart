@@ -882,7 +882,7 @@ class _ImportDialogState extends State<_ImportDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+      backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
       title: Text("Import Theme", style: context.theme.textTheme.titleLarge),
       content: SizedBox(
         width: 320,

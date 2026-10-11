@@ -31,7 +31,7 @@ class _MaterialScheduledMessagesPanelState extends State<MaterialScheduledMessag
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
       child: Card(
-        elevation: 1,
+        elevation: 0,
         color: context.theme.colorScheme.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: Padding(

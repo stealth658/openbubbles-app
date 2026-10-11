@@ -571,7 +571,7 @@ class ChatCreatorController extends StatefulController {
         context: context,
         barrierDismissible: false,
         builder: (ctx) => AlertDialog(
-          backgroundColor: ctx.theme.colorScheme.surfaceContainerHighest,
+          backgroundColor: ctx.theme.colorScheme.surfaceContainerHigh,
           title: Text(
             'Finding or creating chat...',
             style: ctx.theme.textTheme.titleLarge,

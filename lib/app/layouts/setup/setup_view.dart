@@ -387,7 +387,7 @@ class SetupViewController extends StatefulController {
       context: Get.context!,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+          backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
           title: Text(
             text,
             style: context.theme.textTheme.titleLarge,
@@ -443,7 +443,7 @@ class SetupViewController extends StatefulController {
         await showDialog(
           context: Get.context!,
           builder: (context) => AlertDialog(
-                backgroundColor: Get.theme.colorScheme.surfaceContainerHighest,
+                backgroundColor: Get.theme.colorScheme.surfaceContainerHigh,
                 title: Text(
                   response.title,
                   style: Get.textTheme.titleLarge,
@@ -707,7 +707,7 @@ class SetupViewController extends StatefulController {
             "Sorry, your hosted device is currently offline!",
             style: context.theme.textTheme.titleLarge,
           ),
-          backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+          backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
           content: Text("You can wait for it to come back, or change your device.", style: context.theme.textTheme.bodyLarge),
           actions: [
             TextButton(
@@ -1161,7 +1161,7 @@ class _ErrorTextState extends CustomState<ErrorText, String, SetupViewController
                           context: context,
                           builder: (BuildContext context) {
                             return AlertDialog(
-                              backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+                              backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
                               title: Text(
                                 "Uploading log...",
                                 style: context.theme.textTheme.titleLarge,

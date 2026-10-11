@@ -32,7 +32,7 @@ void showChangeName(Chat chat, String method, BuildContext context) {
                 context: context,
                 builder: (BuildContext context) {
                   return AlertDialog(
-                    backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+                    backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
                     title: Text(
                       controller.text.isEmpty ? "Removing name..." : "Changing name to ${controller.text}...",
                       style: context.theme.textTheme.titleLarge,

@@ -256,8 +256,8 @@ class _BackgroundCropState extends State<BackgroundCrop> with ThemeHelpers {
                 ),
         ),
         const SizedBox(height: 16),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(
+        FilledButton(
+          style: FilledButton.styleFrom(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
               side: BorderSide(color: context.theme.colorScheme.onPrimaryContainer),

@@ -233,7 +233,7 @@ class _FinalizePageState extends OptimizedState<FinalizePage> {
                                 ),
                               ),
                               height: 40,
-                              child: ElevatedButton(
+                              child: FilledButton(
                                 style: ButtonStyle(
                                   shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                                     RoundedRectangleBorder(

@@ -80,8 +80,8 @@ void showAddressPicker(ContactV2? contact, Handle handle, BuildContext context,
                       },
                     ),
                   ),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
+                  FilledButton(
+                    style: FilledButton.styleFrom(
                         backgroundColor: Colors.transparent, padding: const EdgeInsets.only(left: 5), elevation: 0.0),
                     onPressed: () {
                       data = data.toggle();

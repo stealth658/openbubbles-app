@@ -105,7 +105,7 @@ class _ManualEntryDialogState extends State<ManualEntryDialog> {
             "Enter Server Details",
             style: context.theme.textTheme.titleLarge,
           ),
-          backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+          backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
           content: AutofillGroup(
             child: Column(
               mainAxisSize: MainAxisSize.min,

@@ -48,7 +48,7 @@ class _MaterialIMessageStatsPageState
   Widget _buildStatCard(StatItemConfig item, dynamic rawValue) {
     final count = formatCount(rawValue);
     return Card(
-      elevation: 2,
+      elevation: 0,
       margin: const EdgeInsets.all(6),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       color: tileColor,
@@ -90,7 +90,7 @@ class _MaterialIMessageStatsPageState
   Widget _buildMediaRow(StatItemConfig item, dynamic rawValue) {
     final count = formatCount(rawValue);
     return Card(
-      elevation: 1,
+      elevation: 0,
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       color: tileColor,

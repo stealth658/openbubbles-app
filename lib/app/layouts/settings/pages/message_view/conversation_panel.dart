@@ -375,7 +375,7 @@ class _ConversationPanelState extends State<ConversationPanel> with ThemeHelpers
                             barrierDismissible: false,
                             builder: (BuildContext context) {
                               return AlertDialog(
-                                backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+                                backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
                                 title: Text(
                                   "Downloading sounds...",
                                   style: context.theme.textTheme.titleLarge,
@@ -736,7 +736,7 @@ class _ConversationPanelState extends State<ConversationPanel> with ThemeHelpers
                                       isThreeLine: true,
                                       leading: const SettingsLeadingIcon(
                                         iosIcon: CupertinoIcons.rectangle_fill_badge_checkmark,
-                                        materialIcon: Icons.playlist_add_check,
+                                        materialIcon: Icons.playlist_add_check_outlined,
                                         containerColor: Colors.blueAccent,
                                       )),
                                 ],
@@ -761,7 +761,7 @@ class _ConversationPanelState extends State<ConversationPanel> with ThemeHelpers
                               isThreeLine: true,
                               leading: const SettingsLeadingIcon(
                                 iosIcon: CupertinoIcons.check_mark_circled,
-                                materialIcon: Icons.check_circle_outline,
+                                materialIcon: Icons.check_circle_outline_outlined,
                                 containerColor: Colors.orange,
                               ),
                             ),
@@ -826,7 +826,7 @@ class _ConversationPanelState extends State<ConversationPanel> with ThemeHelpers
                               backgroundColor: tileColor,
                               leading: const SettingsLeadingIcon(
                                 iosIcon: CupertinoIcons.arrow_up_square,
-                                materialIcon: Icons.arrow_circle_up,
+                                materialIcon: Icons.arrow_circle_up_outlined,
                                 containerColor: Colors.redAccent,
                               ),
                             ),

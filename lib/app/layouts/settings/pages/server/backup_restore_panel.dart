@@ -300,7 +300,7 @@ class _BackupRestorePanelState extends State<BackupRestorePanel> with ThemeHelpe
           title: createLabel,
           leading: SettingsLeadingIcon(
             iosIcon: CupertinoIcons.add,
-            materialIcon: Icons.add,
+            materialIcon: Icons.add_outlined,
             containerColor: context.theme.colorScheme.primary,
           ),
           onTap: onCreate,
@@ -882,7 +882,7 @@ class _BackupRestorePanelState extends State<BackupRestorePanel> with ThemeHelpe
           title: "Create New",
           leading: SettingsLeadingIcon(
             iosIcon: CupertinoIcons.add,
-            materialIcon: Icons.add,
+            materialIcon: Icons.add_outlined,
             containerColor: context.theme.colorScheme.primary,
           ),
           onTap: _createMessagesBackup,
@@ -916,7 +916,7 @@ class _BackupRestorePanelState extends State<BackupRestorePanel> with ThemeHelpe
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) => AlertDialog(
-        backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+        backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
         title: Text(title, style: context.theme.textTheme.titleLarge),
         content: SizedBox(
           height: status == null ? 70 : 100,

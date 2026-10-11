@@ -112,7 +112,7 @@ class _SettingsPageState extends State<SettingsPage> with ThemeHelpers {
                       trailing: const NextButton(),
                       leading: const SettingsLeadingIcon(
                         iosIcon: CupertinoIcons.device_laptop,
-                        materialIcon: Icons.laptop,
+                        materialIcon: Icons.laptop_outlined,
                         containerColor: Colors.indigoAccent,
                       ),
                     ),
@@ -152,7 +152,7 @@ class _SettingsPageState extends State<SettingsPage> with ThemeHelpers {
                 onTap: () => _confirmRelogin(context, changeHardware: false),
                 leading: SettingsLeadingIcon(
                   iosIcon: CupertinoIcons.wrench_fill,
-                  materialIcon: Icons.settings,
+                  materialIcon: Icons.settings_outlined,
                   containerColor: Colors.red[700],
                 ),
                 title: "Reconfigure",
@@ -168,7 +168,7 @@ class _SettingsPageState extends State<SettingsPage> with ThemeHelpers {
                 onTap: () => _confirmRelogin(context, changeHardware: true),
                 leading: SettingsLeadingIcon(
                   iosIcon: CupertinoIcons.device_laptop,
-                  materialIcon: Icons.laptop,
+                  materialIcon: Icons.laptop_outlined,
                   containerColor: Colors.red[700],
                 ),
                 title: "Change Apple Hardware",

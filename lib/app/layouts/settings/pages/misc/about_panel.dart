@@ -165,7 +165,7 @@ class _AboutPanelState extends State<AboutPanel> with ThemeHelpers {
                       },
                       leading: const SettingsLeadingIcon(
                         iosIcon: CupertinoIcons.globe,
-                        materialIcon: Icons.language,
+                        materialIcon: Icons.language_outlined,
                         containerColor: Colors.green,
                       ),
                       trailing: const NextButton()
@@ -179,7 +179,7 @@ class _AboutPanelState extends State<AboutPanel> with ThemeHelpers {
                       },
                       leading: const SettingsLeadingIcon(
                         iosIcon: CupertinoIcons.money_dollar_circle,
-                        materialIcon: Icons.attach_money,
+                        materialIcon: Icons.attach_money_outlined,
                         containerColor: Colors.green,
                       ),
                       isThreeLine: false,
@@ -193,7 +193,7 @@ class _AboutPanelState extends State<AboutPanel> with ThemeHelpers {
                       },
                       leading: const SettingsLeadingIcon(
                         iosIcon: CupertinoIcons.doc_append,
-                        materialIcon: Icons.document_scanner,
+                        materialIcon: Icons.document_scanner_outlined,
                         containerColor: Colors.blueAccent,
                       ),
                       trailing: const NextButton()
@@ -210,7 +210,7 @@ class _AboutPanelState extends State<AboutPanel> with ThemeHelpers {
                       },
                       leading: const SettingsLeadingIcon(
                         iosIcon: CupertinoIcons.chevron_left_slash_chevron_right,
-                        materialIcon: Icons.code,
+                        materialIcon: Icons.code_outlined,
                         containerColor: Colors.orange,
                       ),
                       trailing: const NextButton()
@@ -224,7 +224,7 @@ class _AboutPanelState extends State<AboutPanel> with ThemeHelpers {
                       },
                       leading: const SettingsLeadingIcon(
                         iosIcon: CupertinoIcons.globe,
-                        materialIcon: Icons.language,
+                        materialIcon: Icons.language_outlined,
                         containerColor: Colors.green,
                       ),
                       trailing: const NextButton()
@@ -238,7 +238,7 @@ class _AboutPanelState extends State<AboutPanel> with ThemeHelpers {
                       },
                       leading: const SettingsLeadingIcon(
                         iosIcon: CupertinoIcons.triangle_righthalf_fill,
-                        materialIcon: Icons.bug_report,
+                        materialIcon: Icons.bug_report_outlined,
                         containerColor: Colors.redAccent,
                       ),
                       trailing: const NextButton()
@@ -297,7 +297,7 @@ class _AboutPanelState extends State<AboutPanel> with ThemeHelpers {
                       subtitle: "See what's new in the latest version",
                       leading: const SettingsLeadingIcon(
                         iosIcon: CupertinoIcons.doc_plaintext,
-                        materialIcon: Icons.article,
+                        materialIcon: Icons.article_outlined,
                         containerColor: Colors.blueAccent,
                       ),
                     ),
@@ -347,7 +347,7 @@ class _AboutPanelState extends State<AboutPanel> with ThemeHelpers {
                       subtitle: "Meet the developers behind OpenBubbles",
                       leading: const SettingsLeadingIcon(
                         iosIcon: CupertinoIcons.person_alt,
-                        materialIcon: Icons.person,
+                        materialIcon: Icons.person_outlined,
                         containerColor: Colors.green,
                       ),
                     ),
@@ -496,7 +496,7 @@ class _AboutPanelState extends State<AboutPanel> with ThemeHelpers {
                         },
                         leading: const SettingsLeadingIcon(
                           iosIcon: CupertinoIcons.keyboard,
-                          materialIcon: Icons.keyboard,
+                          materialIcon: Icons.keyboard_outlined,
                           containerColor: Colors.teal,
                         ),
                       ),
@@ -517,7 +517,7 @@ class _AboutPanelState extends State<AboutPanel> with ThemeHelpers {
                                       left: 24,
                                       right: 24,
                                     ),
-                                    elevation: 10.0,
+                                    elevation: 0,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(
                                         10.0,
@@ -608,7 +608,7 @@ class _AboutPanelState extends State<AboutPanel> with ThemeHelpers {
                       },
                       leading: const SettingsLeadingIcon(
                         iosIcon: CupertinoIcons.info_circle,
-                        materialIcon: Icons.info,
+                        materialIcon: Icons.info_outlined,
                         containerColor: Colors.blue,
                       ),
                     ),

@@ -173,7 +173,7 @@ class _ServerCredentialsState extends State<ServerCredentials> with ThemeHelpers
                                 if (fetchingFirebase.value) const CircularProgressIndicator(),
                                 const SizedBox(height: 10),
                                 if (!fetchingFirebase.value)
-                                  ElevatedButton(
+                                  FilledButton(
                                     onPressed: googleFlow.retryConnections,
                                     child: const Text("Retry Connections"),
                                   ),
@@ -213,7 +213,7 @@ class _ServerCredentialsState extends State<ServerCredentials> with ThemeHelpers
                   ),
                   height: 40,
                   padding: const EdgeInsets.all(2),
-                  child: ElevatedButton(
+                  child: FilledButton(
                     style: ButtonStyle(
                       shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                         RoundedRectangleBorder(
@@ -262,7 +262,7 @@ class _ServerCredentialsState extends State<ServerCredentials> with ThemeHelpers
                     color: HexColor('4285F4'),
                   ),
                   height: 40,
-                  child: ElevatedButton(
+                  child: FilledButton(
                     style: ButtonStyle(
                       shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                         RoundedRectangleBorder(
@@ -316,7 +316,7 @@ class _ServerCredentialsState extends State<ServerCredentials> with ThemeHelpers
                     ),
                   ),
                   height: 40,
-                  child: ElevatedButton(
+                  child: FilledButton(
                     style: ButtonStyle(
                       shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                         RoundedRectangleBorder(
@@ -357,7 +357,7 @@ class _ServerCredentialsState extends State<ServerCredentials> with ThemeHelpers
                   ),
                   height: 40,
                   padding: const EdgeInsets.all(2),
-                  child: ElevatedButton(
+                  child: FilledButton(
                     style: ButtonStyle(
                       shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                         RoundedRectangleBorder(
@@ -475,7 +475,7 @@ class _ServerCredentialsState extends State<ServerCredentials> with ThemeHelpers
                                         ),
                                         height: 40,
                                         padding: const EdgeInsets.all(2),
-                                        child: ElevatedButton(
+                                        child: FilledButton(
                                           style: ButtonStyle(
                                             shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                                               RoundedRectangleBorder(
@@ -511,7 +511,7 @@ class _ServerCredentialsState extends State<ServerCredentials> with ThemeHelpers
                                           ),
                                         ),
                                         height: 40,
-                                        child: ElevatedButton(
+                                        child: FilledButton(
                                           style: ButtonStyle(
                                             shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                                               RoundedRectangleBorder(
@@ -666,7 +666,7 @@ class _ServerCredentialsState extends State<ServerCredentials> with ThemeHelpers
               "Fetching server info...",
               style: context.theme.textTheme.titleLarge,
             ),
-            backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+            backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
             content: LinearProgressIndicator(
               backgroundColor: context.theme.colorScheme.outline,
               valueColor: AlwaysStoppedAnimation<Color>(context.theme.colorScheme.primary),

@@ -43,7 +43,7 @@ class _ChatInfoState extends State<ChatInfo> with ThemeHelpers {
     return await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+        backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
         title: Text(title, style: context.theme.textTheme.titleLarge),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -94,7 +94,7 @@ class _ChatInfoState extends State<ChatInfo> with ThemeHelpers {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+          backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
           title: Text(
             "Updating group photo...",
             style: context.theme.textTheme.titleLarge,
@@ -373,7 +373,7 @@ class ShareButton extends StatelessWidget {
             showDialog(
               context: Get.context!,
               builder: (context) => AlertDialog(
-                backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+                backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
                 title: const Text('Choose your friends wisely'),
                 content: Text(
                   "Apple may block devices due to spam or exceeding 20 users.",

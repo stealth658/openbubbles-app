@@ -247,7 +247,7 @@ class _CacheTuningPanelState extends State<CacheTuningPanel> with ThemeHelpers, 
                     backgroundColor: tileColor,
                     leading: const SettingsLeadingIcon(
                       iosIcon: CupertinoIcons.memories,
-                      materialIcon: Icons.memory,
+                      materialIcon: Icons.memory_outlined,
                       containerColor: Colors.blueGrey,
                     ),
                   ),

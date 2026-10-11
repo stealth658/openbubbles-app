@@ -67,7 +67,7 @@ Future<void> updatePhoto(BuildContext context, Chat chat) async {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+          backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
           title: Text(
             "Updating group photo...",
             style: context.theme.textTheme.titleLarge,

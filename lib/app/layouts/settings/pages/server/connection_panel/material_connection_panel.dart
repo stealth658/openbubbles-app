@@ -27,7 +27,7 @@ class _MaterialConnectionPanelState extends CustomState<MaterialConnectionPanel,
     final value = resolveValue(controller, item.key);
     final color = resolveStatusColor(controller, item.key);
     return Card(
-      elevation: 1,
+      elevation: 0,
       margin: const EdgeInsets.all(6),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       color: tileColor,

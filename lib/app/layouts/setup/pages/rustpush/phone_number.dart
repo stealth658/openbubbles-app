@@ -333,7 +333,7 @@ class PhoneNumberState extends OptimizedState<PhoneNumber> {
                               ),
                               height: 40,
                               padding: const EdgeInsets.all(2),
-                              child: ElevatedButton(
+                              child: FilledButton(
                                 style: ButtonStyle(
                                   shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                                     RoundedRectangleBorder(
@@ -372,7 +372,7 @@ class PhoneNumberState extends OptimizedState<PhoneNumber> {
                               ),
                               height: 40,
                               padding: const EdgeInsets.all(2),
-                              child: ElevatedButton(
+                              child: FilledButton(
                                 style: ButtonStyle(
                                   shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                                     RoundedRectangleBorder(

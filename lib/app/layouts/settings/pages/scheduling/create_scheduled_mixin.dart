@@ -72,7 +72,7 @@ mixin CreateScheduledMixin<T extends StatefulWidget> on State<T> {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+          backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
           title: Text(
             "Scheduling message...",
             style: context.theme.textTheme.titleLarge,

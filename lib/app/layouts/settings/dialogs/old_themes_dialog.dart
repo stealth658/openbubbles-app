@@ -18,7 +18,7 @@ class OldThemesDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text("Old Themes", style: context.theme.textTheme.titleLarge),
-      backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+      backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
       content: SingleChildScrollView(
         child: SizedBox(
           width: double.maxFinite,

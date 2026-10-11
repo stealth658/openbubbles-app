@@ -37,7 +37,7 @@ class ChatCreatorDialogs {
 
   static Widget buildCreatingChatDialog(BuildContext context, String method) {
     return AlertDialog(
-      backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+      backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
       title: Text(
         "Creating a new $method chat...",
         style: context.theme.textTheme.titleLarge,
@@ -56,7 +56,7 @@ class ChatCreatorDialogs {
 
   static Widget buildCreateChatErrorDialog(BuildContext context, Object error) {
     return AlertDialog(
-      backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+      backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
       title: Text(
         "Failed to create chat!",
         style: context.theme.textTheme.titleLarge,

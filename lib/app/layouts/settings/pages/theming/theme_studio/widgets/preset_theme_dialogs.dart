@@ -19,6 +19,7 @@ class PresetThemeDialogs {
   void showContextMenu(BuildContext context, ThemeStruct theme) {
     final isCustom = !theme.isPreset;
     showModalBottomSheet(
+      showDragHandle: true,
       context: context,
       backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
       shape: const RoundedRectangleBorder(

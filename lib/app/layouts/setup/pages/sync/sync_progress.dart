@@ -136,7 +136,7 @@ class _SyncProgressState extends State<SyncProgress> {
                       ),
                       height: 40,
                       padding: const EdgeInsets.all(2),
-                      child: ElevatedButton(
+                      child: FilledButton(
                         style: ButtonStyle(
                           shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                             RoundedRectangleBorder(
@@ -190,7 +190,7 @@ class _SyncProgressState extends State<SyncProgress> {
                         ),
                       ),
                       height: 40,
-                      child: ElevatedButton(
+                      child: FilledButton(
                         style: ButtonStyle(
                           shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                             RoundedRectangleBorder(

@@ -142,7 +142,7 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
                           },
                           leading: const SettingsLeadingIcon(
                             iosIcon: CupertinoIcons.checkmark_shield,
-                            materialIcon: Icons.privacy_tip,
+                            materialIcon: Icons.privacy_tip_outlined,
                             containerColor: Colors.blue,
                           ),
                         ),
@@ -213,7 +213,7 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
                                           isThreeLine: true,
                                           leading: const SettingsLeadingIcon(
                                             iosIcon: CupertinoIcons.rectangle_fill_badge_checkmark,
-                                            materialIcon: Icons.playlist_add_check,
+                                            materialIcon: Icons.playlist_add_check_outlined,
                                             containerColor: Colors.blueAccent,
                                           )),
                                     ],
@@ -238,7 +238,7 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
                                   isThreeLine: true,
                                   leading: const SettingsLeadingIcon(
                                     iosIcon: CupertinoIcons.check_mark_circled,
-                                    materialIcon: Icons.check_circle_outline,
+                                    materialIcon: Icons.check_circle_outline_outlined,
                                     containerColor: Colors.orange,
                                   ),
                                 ),
@@ -304,7 +304,7 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
                                   backgroundColor: tileColor,
                                   leading: const SettingsLeadingIcon(
                                     iosIcon: CupertinoIcons.arrow_up_square,
-                                    materialIcon: Icons.arrow_circle_up,
+                                    materialIcon: Icons.arrow_circle_up_outlined,
                                     containerColor: Colors.redAccent,
                                   ),
                                 ),
@@ -354,7 +354,7 @@ class _PrivateAPIPanelState extends CustomState<PrivateAPIPanel, void, PrivateAP
                                   isThreeLine: true,
                                   leading: const SettingsLeadingIcon(
                                     iosIcon: CupertinoIcons.bubble_right,
-                                    materialIcon: Icons.chat_bubble_outline,
+                                    materialIcon: Icons.chat_bubble_outline_outlined,
                                     containerColor: Colors.green,
                                   ),
                                 ),

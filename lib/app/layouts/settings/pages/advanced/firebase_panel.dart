@@ -105,7 +105,7 @@ class _FirebasePanelState extends State<FirebasePanel> with ThemeHelpers {
                             backgroundColor: tileColor,
                             leading: const SettingsLeadingIcon(
                               iosIcon: CupertinoIcons.bell_fill,
-                              materialIcon: Icons.notifications_active,
+                              materialIcon: Icons.notifications_active_outlined,
                               containerColor: Colors.blueAccent,
                             ),
                           )),
@@ -122,7 +122,7 @@ class _FirebasePanelState extends State<FirebasePanel> with ThemeHelpers {
                         ]),
                         leading: SettingsLeadingIcon(
                           iosIcon: CupertinoIcons.settings,
-                          materialIcon: Icons.settings,
+                          materialIcon: Icons.settings_outlined,
                           containerColor: statusOk ? Colors.green : Colors.redAccent,
                         )),
                     if (fcmEnabled && !socketReady) const SettingsDivider(),
@@ -142,7 +142,7 @@ class _FirebasePanelState extends State<FirebasePanel> with ThemeHelpers {
                             : const SizedBox.shrink()),
                         leading: const SettingsLeadingIcon(
                           iosIcon: CupertinoIcons.cloud_download,
-                          materialIcon: Icons.download,
+                          materialIcon: Icons.download_outlined,
                           containerColor: Colors.blue,
                         ),
                         onTap: () async {
@@ -167,7 +167,7 @@ class _FirebasePanelState extends State<FirebasePanel> with ThemeHelpers {
                             context: context,
                             builder: (BuildContext context) {
                               return AlertDialog(
-                                  backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+                                  backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
                                   title: Obx(() => Text(
                                       error.value != null
                                           ? "Error!"
@@ -270,7 +270,7 @@ class _FirebasePanelState extends State<FirebasePanel> with ThemeHelpers {
                             : const SizedBox.shrink()),
                         leading: const SettingsLeadingIcon(
                           iosIcon: CupertinoIcons.device_phone_portrait,
-                          materialIcon: Icons.devices,
+                          materialIcon: Icons.devices_outlined,
                           containerColor: Colors.blueGrey,
                         ),
                         onTap: () async {
@@ -342,7 +342,7 @@ class _FirebasePanelState extends State<FirebasePanel> with ThemeHelpers {
                           ]),
                           leading: const SettingsLeadingIcon(
                             iosIcon: CupertinoIcons.trash,
-                            materialIcon: Icons.delete,
+                            materialIcon: Icons.delete_outlined,
                             containerColor: Colors.redAccent,
                           ),
                           onTap: () {

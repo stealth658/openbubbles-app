@@ -225,11 +225,11 @@ class _ComposeFAB extends StatelessWidget {
         bindings: newMessageShortcuts(context, controller),
         child: FloatingActionButton(
           focusNode: controller.newMessageFocusNode,
-          backgroundColor: context.theme.colorScheme.primary,
+          backgroundColor: context.theme.colorScheme.primaryContainer,
           onPressed: () => controller.openNewChatCreator(context),
           child: Icon(
             isIOS ? CupertinoIcons.pencil : Icons.message,
-            color: context.theme.colorScheme.onPrimary,
+            color: context.theme.colorScheme.onPrimaryContainer,
             size: 25,
           ),
         ),
@@ -296,11 +296,11 @@ class _ScrollToTopFAB extends StatelessWidget {
       duration: const Duration(milliseconds: 300),
       child: FloatingActionButton.small(
         heroTag: null,
-        backgroundColor: context.theme.colorScheme.secondary,
+        backgroundColor: context.theme.colorScheme.primaryContainer,
         onPressed: onPressed,
         child: Icon(
           Icons.arrow_upward,
-          color: context.theme.colorScheme.onSecondary,
+          color: context.theme.colorScheme.onPrimaryContainer,
         ),
       ),
     );

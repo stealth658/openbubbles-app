@@ -175,7 +175,7 @@ class IntentsService {
           context: Get.context!,
           builder: (BuildContext context) {
             return AlertDialog(
-              backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+              backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
               title: Text(
                 "Generating link for call...",
                 style: context.theme.textTheme.titleLarge,

@@ -680,7 +680,7 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
       context: context,
       builder: (context) => AlertDialog(
         title: const Text("Find My diagnostics"),
-        backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+        backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
         content: SizedBox(
           width: NavigationSvc.width(context) * 4 / 5,
           child: SingleChildScrollView(child: SelectableText(buf.toString(), style: context.theme.textTheme.bodySmall)),
@@ -823,7 +823,7 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
                                 "Raw FindMy Data",
                                 style: context.theme.textTheme.titleLarge,
                               ),
-                              backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+                              backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
                               content: SizedBox(
                                 width: NavigationSvc.width(context) * 3 / 5,
                                 height: context.height * 1 / 4,
@@ -904,8 +904,8 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
                             Row(
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
-                                ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
+                                FilledButton(
+                                  style: FilledButton.styleFrom(
                                     backgroundColor: context.theme.colorScheme.outline.withAlpha(64),
                                     padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 13),
                                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -918,8 +918,8 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
                                   child: Text("Don't Add", style: context.theme.textTheme.titleMedium),
                                 ),
                                 const SizedBox(width: 10),
-                                ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
+                                FilledButton(
+                                  style: FilledButton.styleFrom(
                                     backgroundColor: context.theme.colorScheme.primary,
                                     padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 13),
                                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -975,7 +975,7 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
                                 "Raw FindMy Data",
                                 style: context.theme.textTheme.titleLarge,
                               ),
-                              backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+                              backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
                               content: SizedBox(
                                 width: NavigationSvc.width(context) * 3 / 5,
                                 height: context.height * 1 / 4,
@@ -1054,7 +1054,7 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
                                         "Raw FindMy Data",
                                         style: context.theme.textTheme.titleLarge,
                                       ),
-                                      backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+                                      backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
                                       content: SizedBox(
                                         width: NavigationSvc.width(context) * 3 / 5,
                                         height: context.height * 1 / 4,
@@ -1186,7 +1186,7 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
                                 "Raw FindMy Data",
                                 style: context.theme.textTheme.titleLarge,
                               ),
-                              backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+                              backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
                               content: SizedBox(
                                 width: NavigationSvc.width(context) * 3 / 5,
                                 height: context.height / 2,
@@ -1251,7 +1251,7 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
                                         "Raw FindMy Data",
                                         style: context.theme.textTheme.titleLarge,
                                       ),
-                                      backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+                                      backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
                                       content: SizedBox(
                                         width: NavigationSvc.width(context) * 3 / 5,
                                         height: context.height * 1 / 4,
@@ -1483,7 +1483,7 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
                 barrierDismissible: false,
                 builder: (BuildContext context) {
                   return AlertDialog(
-                    backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+                    backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
                     title: Text(
                       "Deleting...",
                       style: context.theme.textTheme.titleLarge,

@@ -19,7 +19,7 @@ class FindMyRawDataDialog extends StatelessWidget {
         "Raw FindMy Data",
         style: context.theme.textTheme.titleLarge,
       ),
-      backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+      backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
       content: SizedBox(
         width: NavigationSvc.width(context) * 3 / 5,
         height: context.height * 1 / 4,

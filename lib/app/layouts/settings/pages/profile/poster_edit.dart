@@ -726,8 +726,8 @@ class PosterEditState
               Positioned(
                 left: 15,
                 top: MediaQuery.of(context).viewPadding.top,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
+                child: FilledButton(
+                  style: FilledButton.styleFrom(
                     backgroundColor: context.theme.colorScheme.outline.withAlpha(96),
                     padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -745,8 +745,8 @@ class PosterEditState
                 left: 27,
                 child: Column(children: [
                   if (poster.type is! api.PosterType_Monogram && transcriptPoster == null)
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
+                  FilledButton(
+                    style: FilledButton.styleFrom(
                       backgroundColor: Colors.transparent,
                       padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -836,8 +836,8 @@ class PosterEditState
                     child: const Icon(CupertinoIcons.textformat, color: Colors.white, size: 32,),
                   ),
                   const SizedBox(height: 15,),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
+                  FilledButton(
+                    style: FilledButton.styleFrom(
                       backgroundColor: Colors.transparent,
                       padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -855,8 +855,8 @@ class PosterEditState
               Positioned(
                 right: 15,
                 bottom: 12 + MediaQuery.of(context).padding.bottom,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
+                child: FilledButton(
+                  style: FilledButton.styleFrom(
                     backgroundColor: context.theme.colorScheme.bubble(context, true),
                     padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -1392,8 +1392,8 @@ class PosterEditState
                           Positioned(
                             right: 16,
                             top: 16,
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
+                            child: FilledButton(
+                              style: FilledButton.styleFrom(
                                 backgroundColor: context.theme.colorScheme.outline.withAlpha(48),
                                 padding: const EdgeInsets.all(5),
                                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,

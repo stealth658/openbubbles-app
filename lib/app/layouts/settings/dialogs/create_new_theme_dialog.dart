@@ -16,7 +16,7 @@ class CreateNewThemeDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      backgroundColor: context.theme.colorScheme.surfaceContainerHighest,
+      backgroundColor: context.theme.colorScheme.surfaceContainerHigh,
       actions: [
         TextButton(
           child: Text("Cancel",
