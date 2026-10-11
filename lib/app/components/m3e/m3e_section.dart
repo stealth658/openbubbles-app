@@ -38,11 +38,40 @@ class M3ESection extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    // Google Messages: every row is its own fully rounded card.
     final google = GoogleTileStyle.of(context);
     final fill = tone == M3ESectionTone.error
         ? Color.lerp(backgroundColor, context.theme.colorScheme.errorContainer, 0.35)!
         : backgroundColor;
+
+    if (google) {
+      // Google Messages: one rounded card per group, hairline dividers between rows.
+      return Padding(
+        padding: margin,
+        child: ClipRRect(
+          borderRadius: const BorderRadius.all(Radius.circular(24)),
+          child: Container(
+            color: fill,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (int i = 0; i < displayedChildren.length; i++) ...[
+                  if (i > 0)
+                    Divider(
+                      height: 1,
+                      thickness: 1,
+                      indent: 20,
+                      endIndent: 20,
+                      color: context.theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+                    ),
+                  displayedChildren[i],
+                ],
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     return Padding(
       padding: margin,
@@ -53,9 +82,7 @@ class M3ESection extends StatelessWidget {
           for (int i = 0; i < displayedChildren.length; i++) ...[
             if (i > 0) SizedBox(height: gap),
             ClipRRect(
-              borderRadius: google
-                  ? const BorderRadius.all(Radius.circular(24))
-                  : M3EShapes.grouped(i, displayedChildren.length),
+              borderRadius: M3EShapes.grouped(i, displayedChildren.length),
               child: Container(
                 color: fill,
                 child: displayedChildren[i],

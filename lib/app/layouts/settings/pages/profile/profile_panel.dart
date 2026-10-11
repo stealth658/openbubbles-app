@@ -341,8 +341,8 @@ class _ProfilePanelState extends State<ProfilePanel> with WidgetsBindingObserver
   bool get _redact => SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
 
   Widget _statusDot(BuildContext context, bool ok) => Container(
-        width: 10,
-        height: 10,
+        width: 8,
+        height: 8,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: getIndicatorColor(ok ? SocketState.connected : SocketState.disconnected),
@@ -464,7 +464,12 @@ class _ProfilePanelState extends State<ProfilePanel> with WidgetsBindingObserver
             SizedBox(
               width: 40,
               child: syncing != null
-                  ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.5)))
+                  ? Center(
+                      child: SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: context.theme.colorScheme.onSurfaceVariant)))
                   : Icon(Icons.cloud_done_outlined, color: context.theme.colorScheme.onSurfaceVariant),
             ),
             const SizedBox(width: 20),
@@ -504,11 +509,15 @@ class _ProfilePanelState extends State<ProfilePanel> with WidgetsBindingObserver
     final aliases = (accountInfo['vetted_aliases'] as List<dynamic>? ?? []);
     final sub = context.theme.textTheme.bodyMedium?.copyWith(color: context.theme.colorScheme.onSurfaceVariant);
 
-    Widget row({required Widget leading, required String title, String? subtitle, Widget? trailing}) => Padding(
-          padding: const EdgeInsets.fromLTRB(20, 8, 12, 8),
+    // Leading sits on the first text line (bodyLarge is 24dp tall), not the row's centre,
+    // so a dot next to a two-line row lines up with its title. Single-line rows are 48dp.
+    Widget row({required Widget leading, required String title, String? subtitle, Widget? trailing, bool dense = false}) =>
+        Padding(
+          padding: EdgeInsets.fromLTRB(20, dense ? 4 : 8, 12, dense ? 4 : 8),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(width: 40, child: Center(child: leading)),
+              SizedBox(width: 40, height: 24, child: Center(child: leading)),
               const SizedBox(width: 20),
               Expanded(
                 child: Column(
@@ -519,7 +528,7 @@ class _ProfilePanelState extends State<ProfilePanel> with WidgetsBindingObserver
                   ],
                 ),
               ),
-              if (trailing != null) trailing,
+              if (trailing != null) SizedBox(height: 24, child: Center(child: trailing)),
             ],
           ),
         );
@@ -556,15 +565,17 @@ class _ProfilePanelState extends State<ProfilePanel> with WidgetsBindingObserver
                 ),
                 if (aliases.isNotEmpty)
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+                    // Aligned with the text column (20 pad + 40 icon + 20 gap).
+                    padding: const EdgeInsets.fromLTRB(80, 12, 20, 4),
                     child: Text("Addresses", style: context.theme.textTheme.labelLarge?.copyWith(color: context.theme.colorScheme.onSurfaceVariant)),
                   ),
                 for (final e in aliases)
                   row(
+                    dense: true,
                     leading: _statusDot(context, e['Status'] == 3),
                     title: redact ? (GetUtils.isEmail(e['Alias']) ? "Redacted Email" : "Redacted Phone") : "${e['Alias']}",
                   ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 8),
               ],
             ),
           )),

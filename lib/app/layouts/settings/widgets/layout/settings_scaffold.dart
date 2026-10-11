@@ -133,8 +133,9 @@ class SettingsScaffold extends StatelessWidget {
                             leading: leading ?? buildBackButton(context),
                             actions: actions,
                             backgroundColor: headerColor,
-                            surfaceTintColor: context.theme.colorScheme.surfaceTint,
-                            scrolledUnderElevation: 3,
+                            // Google Messages: the bar stays flat when the list scrolls under it.
+                            surfaceTintColor: Colors.transparent,
+                            scrolledUnderElevation: 0,
                             pinned: true,
                             automaticallyImplyLeading: false,
                           ),

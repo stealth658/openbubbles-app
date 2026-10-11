@@ -88,13 +88,7 @@ class SettingsOptions<T extends Object> extends StatelessWidget {
       width: double.infinity,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Wrap(
-          alignment: WrapAlignment.spaceBetween,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          runAlignment: WrapAlignment.spaceBetween,
-          runSpacing: 8.0,
-          spacing: 15.0,
-          children: [
+        child: _layout(context, [
             if (leading != null)
               Padding(
                 padding: const EdgeInsets.only(left: 5.0, right: 10.0),
@@ -188,9 +182,34 @@ class SettingsOptions<T extends Object> extends StatelessWidget {
                 }
               },
             ),
-          ],
-        ),
+        ]),
       ),
+    );
+  }
+
+  /// Material (Google Messages): one row, title left, control right, the control
+  /// shrinking before the row wraps. Other skins keep the wrapping layout.
+  Widget _layout(BuildContext context, List<Widget> children) {
+    if (SettingsSvc.settings.skin.value != Skins.Material) {
+      return Wrap(
+        alignment: WrapAlignment.spaceBetween,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        runAlignment: WrapAlignment.spaceBetween,
+        runSpacing: 8.0,
+        spacing: 15.0,
+        children: children,
+      );
+    }
+    final control = children.last;
+    final rest = children.sublist(0, children.length - 1);
+    final hasTitle = title.isNotEmpty;
+    return Row(
+      children: [
+        if (leading != null) rest.first,
+        if (hasTitle) Expanded(child: rest.last) else const Spacer(),
+        const SizedBox(width: 15),
+        Flexible(child: Align(alignment: Alignment.centerRight, child: control)),
+      ],
     );
   }
 }
