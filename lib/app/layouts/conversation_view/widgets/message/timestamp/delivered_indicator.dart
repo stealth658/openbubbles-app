@@ -32,7 +32,6 @@ class _DeliveredIndicatorState extends State<DeliveredIndicator> with ThemeHelpe
   // but stays true for at least _sendingMinDisplayMs after sending ends so the
   // "Sending..." label outlives the send animation (~650 ms total).
   bool _isSendingDisplayed = false;
-  String? _chatGuid;
   Timer? _sendingTimer;
   Worker? _isSendingWorker;
   static const int _sendingMinDisplayMs = 700;
@@ -43,7 +42,6 @@ class _DeliveredIndicatorState extends State<DeliveredIndicator> with ThemeHelpe
     controller = MessageStateScope.readStateOnce(context);
     final fallbackChat = ChatStateScope.maybeReadChatOnce(context);
     _isGroup = controller.cvController?.chat.isGroup ?? fallbackChat?.isGroup ?? false;
-    _chatGuid = controller.cvController?.chat.guid ?? fallbackChat?.guid ?? message.chat.target?.guid;
     _isSendingDisplayed = controller.isSending.value;
     _isSendingWorker = ever(controller.isSending, _onIsSendingChange);
   }
@@ -94,26 +92,7 @@ class _DeliveredIndicatorState extends State<DeliveredIndicator> with ThemeHelpe
     // Visibility for "last delivered/read/sent" is computed by
     // MessagesService._recomputeDeliveredIndicators and stored reactively on
     // the MessageState — each tier is independent.
-    if (controller.showReadIndicator.value) return true;
-    if (!controller.showDeliveredIndicator.value) return false;
-    // Belt and braces: a "Delivered" label belongs only under the newest
-    // outgoing message that has been delivered or read. If a newer one exists
-    // in the loaded list, this one stays quiet whatever the stored flag says.
-    return !_newerDeliveredExists;
-  }
-
-  bool get _newerDeliveredExists {
-    final guid = _chatGuid;
-    if (guid == null || message.dateCreated == null) return false;
-    final svc = maybeFindMessagesSvc(guid);
-    if (svc == null) return false;
-    final mine = message.dateCreated!;
-    return svc.struct.messages.any((e) =>
-        e.isFromMe == true &&
-        e.guid != message.guid &&
-        e.dateCreated != null &&
-        e.dateCreated!.isAfter(mine) &&
-        (e.dateDelivered != null || e.isDelivered || e.dateRead != null));
+    return controller.showReadIndicator.value || controller.showDeliveredIndicator.value;
   }
 
   List<InlineSpan> buildTwoPiece(String action, String? date) {
@@ -180,9 +159,6 @@ class _DeliveredIndicatorState extends State<DeliveredIndicator> with ThemeHelpe
         controller.audioWasKept.value;
         controller.dateDelivered.value;
         controller.dateRead.value;
-        // Any message update in this chat (a newer message being delivered)
-        // re-evaluates whether this label still belongs here.
-        if (_chatGuid != null) maybeFindMessagesSvc(_chatGuid!)?.messageUpdateTrigger.length;
         final edited = controller.parts.any((p) => p.isEdited);
         final receipt = shouldShow ? getText() : const <InlineSpan>[];
         if (receipt.isEmpty && !edited) return const SizedBox.shrink();
