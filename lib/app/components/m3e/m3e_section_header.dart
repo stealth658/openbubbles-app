@@ -1,3 +1,5 @@
+import 'package:bluebubbles/helpers/types/constants.dart';
+import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -24,10 +26,16 @@ class M3ESectionHeader extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: context.theme.textTheme.titleSmall?.copyWith(
-                color: context.theme.colorScheme.primary,
-                fontWeight: FontWeight.w600,
-              ),
+              // Material (Google Messages): small neutral label; Samsung keeps the tinted header.
+              style: SettingsSvc.settings.skin.value == Skins.Material
+                  ? context.theme.textTheme.labelLarge?.copyWith(
+                      color: context.theme.colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w500,
+                    )
+                  : context.theme.textTheme.titleSmall?.copyWith(
+                      color: context.theme.colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
             ),
           ),
           ?trailing,

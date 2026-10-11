@@ -4,6 +4,8 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:bluebubbles/app/components/avatars/contact_avatar_widget.dart';
+import 'package:bluebubbles/app/components/m3e/m3e_list_tile.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:bluebubbles/app/layouts/settings/pages/profile/posterkit.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/profile/profile_scaffold.dart';
 import 'package:bluebubbles/app/layouts/settings/pages/theming/avatar/avatar_crop.dart';
@@ -332,20 +334,252 @@ class _ProfilePanelState extends State<ProfilePanel> with WidgetsBindingObserver
     profileDirty = true;
   }
 
+
+  /// Material and Samsung get the card layout; iOS keeps Apple's poster page.
+  bool get _google => SettingsSvc.settings.skin.value != Skins.iOS;
+
+  bool get _redact => SettingsSvc.settings.redactedMode.value && SettingsSvc.settings.hideContactInfo.value;
+
+  Widget _statusDot(BuildContext context, bool ok) => Container(
+        width: 10,
+        height: 10,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: getIndicatorColor(ok ? SocketState.connected : SocketState.disconnected),
+        ),
+      );
+
+  /// Google account-sheet style card: big avatar with a pencil badge, name, Apple ID.
+  Widget _profileCard(BuildContext context) {
+    final name = _redact ? "User Name" : SettingsSvc.settings.userName.value;
+    final account = _redact
+        ? "User iCloud"
+        : SettingsSvc.settings.iCloudAccount.isEmpty
+            ? "Unknown iCloud account"
+            : SettingsSvc.settings.iCloudAccount.value;
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: SettingsSection(
+        backgroundColor: tileColor,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 12, 16),
+            child: Row(
+              children: [
+                GestureDetector(
+                  onTap: updatePhoto,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      const ContactAvatarWidget(
+                        handle: null,
+                        borderThickness: 0.1,
+                        editable: false,
+                        fontSize: 26,
+                        size: 64,
+                      ),
+                      Positioned(
+                        right: -2,
+                        bottom: -2,
+                        child: Container(
+                          width: 26,
+                          height: 26,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: context.theme.colorScheme.surfaceContainerHighest,
+                            border: Border.all(color: tileColor, width: 2),
+                          ),
+                          child: Icon(Icons.edit_outlined, size: 14, color: context.theme.colorScheme.onSurfaceVariant),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: updateName,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          RichText(
+                            textScaler: MediaQuery.textScalerOf(context),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            text: TextSpan(
+                              style: context.theme.textTheme.titleMedium,
+                              children: MessageHelper.buildEmojiText(name, context.theme.textTheme.titleMedium!),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(account,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: context.theme.textTheme.bodyMedium!
+                                  .copyWith(color: context.theme.colorScheme.onSurfaceVariant)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                IconButton(
+                  tooltip: "Edit name",
+                  onPressed: updateName,
+                  icon: Icon(Icons.edit_outlined, color: context.theme.colorScheme.onSurfaceVariant),
+                ),
+              ],
+            ),
+          ),
+          Obx(() => SettingsSvc.settings.userAvatarPath.value != null
+              ? SettingsTile(
+                  title: "Remove photo",
+                  leading: const SettingsLeadingIcon(iosIcon: CupertinoIcons.trash, materialIcon: Icons.delete_outline),
+                  onTap: removePhoto,
+                )
+              : const SizedBox.shrink()),
+        ],
+      ),
+    );
+  }
+
+  /// One row: sync progress or last sync time, iCloud usage underneath, Sync Now at the right.
+  Widget _syncStatusRow(BuildContext context) {
+    return Obx(() {
+      final syncing = pushService.isSyncing.value;
+      final last = PrefsSvc.i.getInt("lastSynced") ?? 0;
+      final title = syncing ??
+          (last == 0 ? "Not synced" : "Synced ${buildChatListDateMaterial(DateTime.fromMillisecondsSinceEpoch(last))}");
+      final quota = quotaInfo.value;
+      final usage = quota == null
+          ? null
+          : "${pushService.formatBytes(quota.messagesBytes)} used, ${pushService.formatBytes(quota.availableBytes)} available in iCloud";
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(20, 8, 12, 8),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 40,
+              child: syncing != null
+                  ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.5)))
+                  : Icon(Icons.cloud_done_outlined, color: context.theme.colorScheme.onSurfaceVariant),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: context.theme.textTheme.bodyLarge),
+                  if (usage != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(usage,
+                          style: context.theme.textTheme.bodyMedium
+                              ?.copyWith(color: context.theme.colorScheme.onSurfaceVariant)),
+                    ),
+                ],
+              ),
+            ),
+            if (syncing == null)
+              TextButton(
+                onPressed: () => pushService.doCloudKitSync(),
+                child: const Text("Sync now"),
+              ),
+          ],
+        ),
+      );
+    });
+  }
+
+  /// Apple account rows: name and Apple ID with a refresh, iMessage status, forwarding status, addresses.
+  List<Widget> _accountRows(BuildContext context) {
+    final redact = SettingsSvc.settings.redactedMode.value;
+    final status = accountInfo['login_status_message']?.toString() ?? "";
+    final connected = status.startsWith("Connected");
+    final fwdEnabled = accountInfo['sms_forwarding_enabled'] == true;
+    final fwdCapable = accountInfo['sms_forwarding_capable'] == true;
+    final aliases = (accountInfo['vetted_aliases'] as List<dynamic>? ?? []);
+    final sub = context.theme.textTheme.bodyMedium?.copyWith(color: context.theme.colorScheme.onSurfaceVariant);
+
+    Widget row({required Widget leading, required String title, String? subtitle, Widget? trailing}) => Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 12, 8),
+          child: Row(
+            children: [
+              SizedBox(width: 40, child: Center(child: leading)),
+              const SizedBox(width: 20),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: context.theme.textTheme.bodyLarge),
+                    if (subtitle != null) Padding(padding: const EdgeInsets.only(top: 2), child: Text(subtitle, style: sub)),
+                  ],
+                ),
+              ),
+              if (trailing != null) trailing,
+            ],
+          ),
+        );
+
+    return [
+      Obx(() => AnimatedOpacity(
+            duration: const Duration(milliseconds: 300),
+            opacity: opacity.value,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                row(
+                  leading: Icon(Icons.person_outline, color: context.theme.colorScheme.onSurfaceVariant),
+                  title: redact ? "Account Name" : "${accountInfo['account_name'] ?? ''}",
+                  subtitle: redact ? "Apple ID" : "${accountInfo['apple_id'] ?? ''}",
+                  trailing: IconButton(
+                    tooltip: "Refresh",
+                    onPressed: () {
+                      opacity.value = 0.0;
+                      getDetails();
+                    },
+                    icon: Icon(Icons.refresh, color: context.theme.colorScheme.onSurfaceVariant),
+                  ),
+                ),
+                row(
+                  leading: _statusDot(context, connected),
+                  title: "iMessage",
+                  subtitle: status.isEmpty ? "Unknown" : status,
+                ),
+                row(
+                  leading: _statusDot(context, fwdEnabled),
+                  title: "Text message forwarding",
+                  subtitle: "${fwdEnabled ? "Enabled" : "Disabled"}, ${fwdCapable ? "capable" : "not capable"}",
+                ),
+                if (aliases.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+                    child: Text("Addresses", style: context.theme.textTheme.labelLarge?.copyWith(color: context.theme.colorScheme.onSurfaceVariant)),
+                  ),
+                for (final e in aliases)
+                  row(
+                    leading: _statusDot(context, e['Status'] == 3),
+                    title: redact ? (GetUtils.isEmail(e['Alias']) ? "Redacted Email" : "Redacted Phone") : "${e['Alias']}",
+                  ),
+                const SizedBox(height: 4),
+              ],
+            ),
+          )),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
-    return ProfileScaffold(
-      handle: null,
-      posterEdited: () {
-        cloudKitRecordDirty = true;
-        profileDirty = true;
-      },
-      bodySlivers: [
+    final bodySlivers = <Widget>[
         SliverToBoxAdapter(
           child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                if (_google) _profileCard(context) else ...[
                 SettingsHeader(
                   iosSubtitle: iosSubtitle,
                   materialSubtitle: materialSubtitle,
@@ -425,6 +659,7 @@ class _ProfilePanelState extends State<ProfilePanel> with WidgetsBindingObserver
                         )
                       : const SizedBox.shrink()),
                 ]),
+                ],
                 SettingsHeader(
                     iosSubtitle: iosSubtitle,
                     materialSubtitle: materialSubtitle,
@@ -528,6 +763,8 @@ class _ProfilePanelState extends State<ProfilePanel> with WidgetsBindingObserver
                           pushService.doCloudKitSync();
                         },
                       ),
+                      if (_google && SettingsSvc.settings.cloudSyncingEnabled.value) _syncStatusRow(context)
+                      else ...[
                       if (quotaInfo.value != null && SettingsSvc.settings.cloudSyncingEnabled.value)
                       Container(
                           child: Padding(
@@ -559,6 +796,7 @@ class _ProfilePanelState extends State<ProfilePanel> with WidgetsBindingObserver
                             )
                           ),
                       ),
+                      ],
                     ]
                 )),
                 if (kIsDesktop)
@@ -630,6 +868,7 @@ class _ProfilePanelState extends State<ProfilePanel> with WidgetsBindingObserver
                   child: SettingsSection(
                     backgroundColor: tileColor,
                     children: [
+                      if (_google) ..._accountRows(context) else
                       Obx(() {
                         bool redact = SettingsSvc.settings.redactedMode.value;
                         return SizedBox(
@@ -788,7 +1027,9 @@ class _ProfilePanelState extends State<ProfilePanel> with WidgetsBindingObserver
                             pushService.wantAddNumber();
                           },
                           trailing: const NextButton(),
-                          leading: Icon(Icons.add, color: context.theme.colorScheme.outline),
+                          leading: _google
+                              ? const SettingsLeadingIcon(iosIcon: CupertinoIcons.add, materialIcon: Icons.add)
+                              : Icon(Icons.add, color: context.theme.colorScheme.outline),
                         ),
                         if (accountInfo['login_status_message']?.contains("Sorry, your hosted device is currently offline!") ?? false)
                         SettingsTile(
@@ -871,6 +1112,7 @@ class _ProfilePanelState extends State<ProfilePanel> with WidgetsBindingObserver
                       if ((accountInfo['vetted_aliases'] as List<dynamic>? ?? []).any((a) => (a['Alias'] as String).isEmail))
                         SettingsTile(
                           title: "Get a verification code",
+                          leading: _google ? const SettingsLeadingIcon(iosIcon: CupertinoIcons.number, materialIcon: Icons.pin_outlined) : null,
                           onTap: () async {
                             var code = await api.get2FaCode(anisette: pushService.state!.anisette);
                             await showDialog(
@@ -906,6 +1148,7 @@ class _ProfilePanelState extends State<ProfilePanel> with WidgetsBindingObserver
                       if (!(accountInfo['login_status_message']?.contains("Subscription not active!") ?? false) && SettingsSvc.settings.deviceIsHosted.value)
                         SettingsTile(
                         title: "Manage subscription",
+                        leading: _google ? const SettingsLeadingIcon(iosIcon: CupertinoIcons.creditcard, materialIcon: Icons.credit_card_outlined) : null,
                         onTap: () async {
                           launchUrl(Uri.parse("https://play.google.com/store/account/subscriptions?sku=monthly_hosted&package=com.openbubbles.messaging"), mode: LaunchMode.externalNonBrowserApplication);
                         },
@@ -1015,7 +1258,30 @@ class _ProfilePanelState extends State<ProfilePanel> with WidgetsBindingObserver
         const SliverPadding(
           padding: EdgeInsets.only(top: 50),
         ),
-      ],
+    ];
+    if (_google) {
+      // Material / Samsung: the plain settings page (back arrow, title, cards),
+      // modelled on Google Messages' account sheet. iOS keeps the poster.
+      return SettingsScaffold(
+        title: "Profile",
+        initialHeader: null,
+        iosSubtitle: iosSubtitle,
+        materialSubtitle: materialSubtitle,
+        headerColor: headerColor,
+        tileColor: tileColor,
+        bodySlivers: [
+          if (material) ...bodySlivers.map((w) => w is SliverToBoxAdapter ? SliverToBoxAdapter(child: GoogleTileStyle(child: w.child!)) : w)
+          else ...bodySlivers,
+        ],
+      );
+    }
+    return ProfileScaffold(
+      handle: null,
+      posterEdited: () {
+        cloudKitRecordDirty = true;
+        profileDirty = true;
+      },
+      bodySlivers: bodySlivers,
     );
   }
 }
