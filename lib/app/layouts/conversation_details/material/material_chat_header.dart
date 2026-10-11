@@ -48,6 +48,12 @@ class ExpressiveChatHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final chatState = ChatsSvc.getChatState(chat.guid);
     final colorScheme = context.theme.colorScheme;
+    // Google Messages: a regular-weight name over a plain gray line, and a
+    // row of pill buttons with the label underneath each.
+    final google = SettingsSvc.settings.skin.value == Skins.Material;
+    final titleStyle = google
+        ? context.theme.textTheme.headlineSmall!.copyWith(fontWeight: FontWeight.w400, color: colorScheme.onSurface)
+        : context.theme.textTheme.headlineMedium!.copyWith(fontWeight: FontWeight.w700, color: colorScheme.onSurface);
 
     return DeferredPointerHandler(
       child: Padding(
@@ -126,27 +132,20 @@ class ExpressiveChatHeader extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.center,
                     text: TextSpan(
-                      style: context.theme.textTheme.headlineMedium!.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: colorScheme.onSurface,
-                      ),
-                      children: MessageHelper.buildEmojiText(
-                        chatState?.title.value ?? chat.getTitle(),
-                        context.theme.textTheme.headlineMedium!.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: colorScheme.onSurface,
-                        ),
-                      ),
+                      style: titleStyle,
+                      children: MessageHelper.buildEmojiText(chatState?.title.value ?? chat.getTitle(), titleStyle),
                     ),
                   )),
             ),
             _buildSupportingLine(context, chatState),
-            const SizedBox(height: 20),
+            SizedBox(height: google ? 24 : 20),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: SettingsSvc.settings.skin.value == Skins.Samsung
                   ? _OneUiActionRow(items: _buildActions(context, chatState))
-                  : M3EButtonGroup(items: _buildActions(context, chatState)),
+                  : google
+                      ? _GoogleActionRow(items: _buildActions(context, chatState))
+                      : M3EButtonGroup(items: _buildActions(context, chatState)),
             ),
           ],
         ),
@@ -373,6 +372,53 @@ class _OneUiActionRow extends StatelessWidget {
                 ],
               ))
           .toList(),
+    );
+  }
+}
+
+/// Google Messages' contact actions: equal-width pill buttons holding just
+/// the icon, with the label underneath each.
+class _GoogleActionRow extends StatelessWidget {
+  const _GoogleActionRow({required this.items});
+
+  final List<M3EButtonGroupItem> items;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = context.theme.colorScheme;
+    return Row(
+      children: [
+        for (var i = 0; i < items.length; i++) ...[
+          if (i > 0) const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Material(
+                  color: scheme.surfaceContainerHigh,
+                  shape: const StadiumBorder(),
+                  clipBehavior: Clip.antiAlias,
+                  child: InkWell(
+                    onTap: items[i].onPressed,
+                    onLongPress: items[i].onLongPress,
+                    child: SizedBox(
+                      height: 56,
+                      child: Icon(items[i].icon, size: 24, color: scheme.onSurface),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  items[i].label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: context.theme.textTheme.labelLarge!.copyWith(color: scheme.onSurface),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
     );
   }
 }

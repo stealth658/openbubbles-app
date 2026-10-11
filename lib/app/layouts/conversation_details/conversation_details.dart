@@ -1,6 +1,7 @@
 import 'package:bluebubbles/app/layouts/conversation_details/conversation_settings.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/material/chat_detail_theme.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/material/findmy_location_card.dart';
+import 'package:bluebubbles/app/layouts/conversation_details/material/google_media_card.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/material/material_chat_header.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/material/material_participants_section.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/widgets/attachments_loader.dart';
@@ -121,6 +122,11 @@ class _ConversationDetailsState extends State<ConversationDetails> with WidgetsB
             ? ChatInfo(chat: chat, ftSupportedParticipants: ftSupportedParticipants)
             : ExpressiveChatHeader(chat: chat, ftSupportedParticipants: ftSupportedParticipants);
         final materialLayout = !iosSkin;
+        // Material follows Google Messages' details page: no Members list for
+        // a 1:1 chat, and one media card (images strip plus "Videos, links, &
+        // more") instead of the separate photo, link, location and file
+        // sections. Everything is still reachable from the card.
+        final googleLayout = SettingsSvc.settings.skin.value == Skins.Material;
 
         final actions = <Widget>[
               // Chat settings live on their own page now; the gear is always there.
@@ -167,7 +173,10 @@ class _ConversationDetailsState extends State<ConversationDetails> with WidgetsB
                 SliverToBoxAdapter(
                   child: header,
                 ),
-              iosSkin ? ParticipantsList(chat: chat) : ExpressiveParticipantsSection(chat: chat),
+              if (iosSkin)
+                ParticipantsList(chat: chat)
+              else if (!googleLayout || chat.isGroup)
+                ExpressiveParticipantsSection(chat: chat),
               // Hidden widget that loads attachments in the background
               SliverToBoxAdapter(
                 child: AttachmentsLoader(chat: chat, onAttachmentsLoaded: onAttachmentsLoaded),
@@ -176,10 +185,15 @@ class _ConversationDetailsState extends State<ConversationDetails> with WidgetsB
               // What you came for: where they are, photos, links, files. The
               // chat's settings are behind the gear (ConversationSettings).
               FindMyLocationCard(chat: chat, tileColor: chatDetailTheme.tileColor),
-              MediaGridSection(chat: chat, media: media, selected: selected, isLoading: isLoadingAttachments),
-              LinksSection(chat: chat),
-              LocationsSection(chat: chat, locations: locations, isLoading: isLoadingAttachments),
-              DocumentsSection(chat: chat, docs: docs, isLoading: isLoadingAttachments),
+              if (googleLayout)
+                GoogleMediaCard(
+                    chat: chat, media: media, docs: docs, locations: locations, isLoading: isLoadingAttachments)
+              else ...[
+                MediaGridSection(chat: chat, media: media, selected: selected, isLoading: isLoadingAttachments),
+                LinksSection(chat: chat),
+                LocationsSection(chat: chat, locations: locations, isLoading: isLoadingAttachments),
+                DocumentsSection(chat: chat, docs: docs, isLoading: isLoadingAttachments),
+              ],
               const SliverPadding(padding: EdgeInsets.only(top: 50)),
         ];
 

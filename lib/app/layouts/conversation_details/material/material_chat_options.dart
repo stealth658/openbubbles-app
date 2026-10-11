@@ -45,17 +45,19 @@ class ExpressiveChatOptions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final column = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildAppearanceGroup(context),
+        Obx(() => _buildConversationGroup(context)),
+        _buildContentGroup(context),
+        Obx(() => _buildDangerZoneGroup(context)),
+      ],
+    );
+    // Material: Google Messages' row style (plain icons, one card per row).
     return SliverToBoxAdapter(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildAppearanceGroup(context),
-          Obx(() => _buildConversationGroup(context)),
-          _buildContentGroup(context),
-          Obx(() => _buildDangerZoneGroup(context)),
-        ],
-      ),
+      child: SettingsSvc.settings.skin.value == Skins.Material ? GoogleTileStyle(child: column) : column,
     );
   }
 

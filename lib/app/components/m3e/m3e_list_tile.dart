@@ -2,6 +2,18 @@ import 'package:bluebubbles/app/components/m3e/m3e_shapes.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+/// Marks a subtree whose rows draw in Google Messages' style: a plain icon
+/// in onSurfaceVariant instead of a tonal icon container, each row its own
+/// fully rounded card. Read by [M3EListTile] and [M3ESection].
+class GoogleTileStyle extends InheritedWidget {
+  const GoogleTileStyle({super.key, required super.child});
+
+  static bool of(BuildContext context) => context.dependOnInheritedWidgetOfExactType<GoogleTileStyle>() != null;
+
+  @override
+  bool updateShouldNotify(GoogleTileStyle oldWidget) => false;
+}
+
 /// M3E list row: leading tonal icon container, title, optional supporting text, trailing widget.
 class M3EListTile extends StatelessWidget {
   final IconData icon;
@@ -36,6 +48,7 @@ class M3EListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = context.theme.colorScheme;
     final accent = iconColor ?? (destructive ? colorScheme.error : colorScheme.primary);
+    final google = GoogleTileStyle.of(context);
 
     return Material(
       color: Colors.transparent,
@@ -46,21 +59,30 @@ class M3EListTile extends StatelessWidget {
         child: Padding(
           padding: EdgeInsets.only(left: nested ? 32 : 0),
           child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 48),
+            constraints: BoxConstraints(minHeight: google ? 64 : 48),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: EdgeInsets.symmetric(horizontal: google ? 20 : 16, vertical: 8),
               child: Row(
                 children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: accent.withValues(alpha: 0.15),
-                      borderRadius: const BorderRadius.all(Radius.circular(M3EShapes.md)),
+                  if (google)
+                    SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: Icon(icon,
+                          color: destructive ? colorScheme.error : (iconColor ?? colorScheme.onSurfaceVariant),
+                          size: 24),
+                    )
+                  else
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: accent.withValues(alpha: 0.15),
+                        borderRadius: const BorderRadius.all(Radius.circular(M3EShapes.md)),
+                      ),
+                      child: Icon(icon, color: accent, size: 22),
                     ),
-                    child: Icon(icon, color: accent, size: 22),
-                  ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: google ? 20 : 16),
                   Expanded(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
