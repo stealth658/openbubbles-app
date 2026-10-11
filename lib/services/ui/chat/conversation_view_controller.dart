@@ -13,6 +13,8 @@ import 'package:bluebubbles/app/wrappers/stateful_boilerplate.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/backend/interfaces/prefs_interface.dart';
 import 'package:bluebubbles/services/services.dart';
+import 'package:bluebubbles/helpers/types/helpers/misc_helpers.dart' show kIsDesktop;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:get/get.dart';
@@ -106,6 +108,42 @@ class ConversationViewController extends StatefulController with GetSingleTicker
   // text field items
   final RxBool showAttachmentPicker = false.obs;
   RxBool showEmojiPicker = false.obs;
+
+  bool get _isMobile => !kIsDesktop && !kIsWeb;
+
+  /// Emoji panel toggle. On phones the emoji panel, the attachment tray and
+  /// the keyboard replace one another (only one shows at a time), as in
+  /// Google Messages. Desktop keeps upstream's behaviour: the panel opens
+  /// beside a focused text field.
+  void toggleEmojiPicker() {
+    final show = !showEmojiPicker.value;
+    final node = editing.lastOrNull?.controller.focusNode ?? lastFocusedNode;
+    if (!_isMobile) {
+      showEmojiPicker.value = show;
+      node.requestFocus();
+      return;
+    }
+    if (show) {
+      showAttachmentPicker.value = false;
+      focusNode.unfocus();
+      subjectFocusNode.unfocus();
+      editing.lastOrNull?.controller.focusNode?.unfocus();
+      showEmojiPicker.value = true;
+    } else {
+      showEmojiPicker.value = false;
+      node.requestFocus();
+    }
+  }
+
+  /// Attachment tray toggle; opening it hides the keyboard and the emoji panel.
+  void toggleAttachmentPicker() {
+    if (!showAttachmentPicker.value) {
+      focusNode.unfocus();
+      subjectFocusNode.unfocus();
+      showEmojiPicker.value = false;
+    }
+    showAttachmentPicker.value = !showAttachmentPicker.value;
+  }
   final GlobalKey textFieldKey = GlobalKey();
   final RxList<PlatformFile> pickedAttachments = <PlatformFile>[].obs;
   final focusNode = FocusNode();

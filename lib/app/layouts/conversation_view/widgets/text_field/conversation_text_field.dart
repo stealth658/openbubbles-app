@@ -90,7 +90,7 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
     controller.textController.addListener(_onTextChange);
     controller.subjectTextController.addListener(_onSubjectTextChange);
 
-    if (kIsDesktop || kIsWeb) {
+    {
       proxyController.addListener(() {
         if (proxyController.text.isEmpty) return;
         String emoji = proxyController.text;
@@ -99,11 +99,19 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
             controller.editing.lastOrNull?.controller ?? controller.lastFocusedTextController;
         String text = realController.text;
         TextSelection selection = realController.selection;
+        // The field may never have had a cursor (panel opened first): append.
+        if (!selection.isValid || selection.end > text.length) {
+          selection = TextSelection.collapsed(offset: text.length);
+        }
 
         realController.text = text.substring(0, selection.start) + emoji + text.substring(selection.end);
         realController.selection = TextSelection.collapsed(offset: selection.start + emoji.length);
 
-        (controller.editing.lastOrNull?.controller.focusNode ?? controller.lastFocusedNode).requestFocus();
+        // On phones the panel stands in for the keyboard, so don't refocus
+        // (that would bring the keyboard back up after every emoji).
+        if (kIsDesktop || kIsWeb) {
+          (controller.editing.lastOrNull?.controller.focusNode ?? controller.lastFocusedNode).requestFocus();
+        }
       });
     }
   }
@@ -165,6 +173,11 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
     // OPTIMIZATION: Only update if state actually needs to change
     if (_focusNode.hasFocus && controller.showAttachmentPicker.value) {
       controller.showAttachmentPicker.value = false;
+    }
+    // Phones: tapping into the field brings the keyboard back in place of
+    // the emoji panel rather than stacking the two.
+    if (_focusNode.hasFocus && controller.showEmojiPicker.value && !kIsDesktop && !kIsWeb) {
+      controller.showEmojiPicker.value = false;
     }
   }
 
@@ -472,13 +485,7 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
                     child: Obx(() => pillIcon(
                           showAttachmentPicker ? Icons.close : Icons.add_circle_outline,
                           showAttachmentPicker ? "Close" : "Attach",
-                          () {
-                            if (!showAttachmentPicker) {
-                              controller.focusNode.unfocus();
-                              controller.subjectFocusNode.unfocus();
-                            }
-                            controller.showAttachmentPicker.value = !showAttachmentPicker;
-                          },
+                          controller.toggleAttachmentPicker,
                         )),
                   ),
                   trailing: Padding(
@@ -486,11 +493,11 @@ class ConversationTextFieldState extends CustomState<ConversationTextField, void
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        pillIcon(Icons.emoji_emotions_outlined, "Emoji", () {
-                          controller.showEmojiPicker.value = !controller.showEmojiPicker.value;
-                          (controller.editing.lastOrNull?.controller.focusNode ?? controller.lastFocusedNode)
-                              .requestFocus();
-                        }),
+                        // While the emoji panel is up this becomes a keyboard
+                        // button that switches back, as in Google Messages.
+                        Obx(() => controller.showEmojiPicker.value
+                            ? pillIcon(Icons.keyboard_outlined, "Keyboard", controller.toggleEmojiPicker)
+                            : pillIcon(Icons.emoji_emotions_outlined, "Emoji", controller.toggleEmojiPicker)),
                         pillIcon(Icons.image_outlined, "Photos", () async {
                           final files = await ImagePicker().pickMultiImage();
                           for (final file in files) {

@@ -2,6 +2,7 @@ import 'package:bluebubbles/helpers/helpers.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart' hide Emoji;
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -102,7 +103,7 @@ class TextFieldEmojiPickerSection extends StatelessWidget {
                                   ),
                                   onPressed: () {
                                     controller.showEmojiPicker.value = false;
-                                    controller.lastFocusedNode.requestFocus();
+                                    if (kIsDesktop || kIsWeb) controller.lastFocusedNode.requestFocus();
                                   },
                                 ),
                               ),

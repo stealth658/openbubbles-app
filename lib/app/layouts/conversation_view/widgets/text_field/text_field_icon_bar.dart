@@ -136,11 +136,7 @@ class TextFieldIconBar extends StatelessWidget {
                   ),
                 );
               } else {
-                if (!_showAttachmentPicker) {
-                  controller.focusNode.unfocus();
-                  controller.subjectFocusNode.unfocus();
-                }
-                controller.showAttachmentPicker.value = !_showAttachmentPicker;
+                controller.toggleAttachmentPicker();
               }
             },
           ),
@@ -155,10 +151,7 @@ class TextFieldIconBar extends StatelessWidget {
   Widget _emojiButton(BuildContext context) => IconButton(
         icon: Icon(_iOS ? CupertinoIcons.smiley_fill : Icons.emoji_emotions,
             color: context.theme.colorScheme.outline, size: 28),
-        onPressed: () {
-          controller.showEmojiPicker.value = !controller.showEmojiPicker.value;
-          (controller.editing.lastOrNull?.controller.focusNode ?? controller.lastFocusedNode).requestFocus();
-        },
+        onPressed: controller.toggleEmojiPicker,
       );
 
   Widget _locationButton(BuildContext context) => IconButton(

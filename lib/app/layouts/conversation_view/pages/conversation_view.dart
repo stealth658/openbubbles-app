@@ -285,6 +285,11 @@ class ConversationViewState extends State<ConversationView> with ThemeHelpers<Co
                 controller.updateWidgets<ConversationTextField>(null);
                 return;
               }
+              // Back closes the emoji panel first, like the keyboard.
+              if (controller.showEmojiPicker.value) {
+                controller.showEmojiPicker.value = false;
+                return;
+              }
               if (LifecycleSvc.isBubble) {
                 SystemNavigator.pop();
               }
