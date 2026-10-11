@@ -81,6 +81,16 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
   /// blur, which looks wrong over Material surfaces.
   bool get _trueIOS => SettingsSvc.settings.skin.value == Skins.iOS;
 
+  /// Material skin: same overlay layout, Material 3 surfaces. A dim scrim, a
+  /// tonal tapback pill above the bubble and a menu card below it.
+  bool get _m3 => SettingsSvc.settings.skin.value == Skins.Material;
+
+  /// The Material 3 menu's 8dp padding above and below its rows.
+  double get _menuPad => _m3 ? 16 : 0;
+
+  /// "More" was tapped: the menu lists every action instead of the first few.
+  bool _expanded = false;
+
   /// The tapback glyphs the picker can actually draw. `ReactionTypes.toList()`
   /// also carries EMOJI and STICKERBACK, which have no entry in
   /// reactionToEmoji and rendered as a literal "X" in the row.
@@ -184,7 +194,8 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
             final remainingHeight = max(Get.height - Get.statusBarHeight - 135 - measuredHeight, itemHeight);
             numberToShow = min(remainingHeight ~/ itemHeight, 5);
           }
-          messageOffset = itemHeight * numberToShow + 40;
+          if (_m3) numberToShow = min(numberToShow, max(_allActions.length, 1));
+          messageOffset = itemHeight * numberToShow + 40 + _menuPad;
         }
       });
     });
@@ -269,7 +280,8 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
     final double reactionPickerAvailableWidth = message.isFromMe!
         ? screenWidth - reactionPickerEdgeMargin - reactionPickerEdgeMargin
         : screenWidth - (widget.childPosition.dx + 10) - reactionPickerEdgeMargin;
-    final double reactionItemWidth = iOS ? 47.0 : 44.0; // icon/emoji + its fixed padding, see item build below
+    // icon/emoji + its fixed padding, see item build below (Material 3: 48dp targets)
+    final double reactionItemWidth = _m3 ? 48.0 : (iOS ? 47.0 : 44.0);
     // Count what is actually rendered: the drawable glyphs plus the trailing
     // "more" smiley. Counting ReactionTypes.toList() (8) instead of the 6 + 1
     // on screen over-estimated the row and wrapped it to two lines for no
@@ -339,7 +351,10 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
                 children: [
                   GestureDetector(
                     onTap: popDetails,
-                    child: iOS
+                    child: _m3
+                        // Material 3: a plain scrim, no blur.
+                        ? Container(color: context.theme.colorScheme.scrim.withValues(alpha: 0.4))
+                        : iOS
                         ? (SettingsSvc.settings.highPerfMode.value
                             ? Container(color: context.theme.colorScheme.surface.withValues(alpha: 0.5))
                             : BackdropFilter(
@@ -423,7 +438,10 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
                           chat.isIMessage &&
                           message.dateScheduled == null)
                     Positioned(
-                      bottom: (iOS
+                      bottom: (_m3
+                              // 8dp above the bubble (whose bottom edge sits at messageOffset).
+                              ? itemHeight * numberToShow + 40 + _menuPad + (_measuredChildHeight ?? widget.size.height) + 8
+                              : iOS
                               ? itemHeight * numberToShow + 35 + (_measuredChildHeight ?? widget.size.height)
                               : context.height - materialOffset)
                           .clamp(0, context.height - (narrowScreen ? 200 : 125)),
@@ -434,7 +452,9 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
                         alignment: message.isFromMe! ? Alignment.centerRight : Alignment.centerLeft,
                         duration: const Duration(milliseconds: 250),
                         child: currentlySelectedReaction == "init"
-                            ? const SizedBox(height: 80)
+                            ? SizedBox(height: _m3 ? 56 : 80)
+                            : _m3
+                            ? _m3TapbackBar(context, narrowScreen)
                             : ClipShadowPath(
                                 shadow: iOS
                                     ? BoxShadow(
@@ -583,7 +603,8 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
                             reverseCurve: Curves.easeInCubic,
                           ),
                           child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                            crossAxisAlignment:
+                                _m3 && message.isFromMe! ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                             children: [
                               const SizedBox(height: 5),
                               buildDetailsMenu(context),
@@ -829,7 +850,181 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
     return [...lead, ...middle, ...trail];
   }
 
+  // ---- Material 3 presentation ---------------------------------------------
+
+  /// Tapback bar: a tonal pill with 48dp targets. The current choice sits on a
+  /// secondary-container circle; the last target opens the emoji picker. Icons
+  /// are iMessage glyphs or emoji according to "iOS-Style Tapback Icons".
+  Widget _m3TapbackBar(BuildContext context, bool wrap) {
+    final scheme = context.theme.colorScheme;
+
+    Widget target({required Widget child, required VoidCallback onTap, bool selected = false}) => SizedBox(
+          width: 48,
+          height: 48,
+          child: Center(
+            child: Material(
+              color: selected ? scheme.secondaryContainer : Colors.transparent,
+              shape: const CircleBorder(),
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: onTap,
+                child: SizedBox(width: 40, height: 40, child: Center(child: child)),
+              ),
+            ),
+          ),
+        );
+
+    Widget glyph(String e, bool selected) {
+      if (useIosTapbacks) {
+        return Padding(
+          padding: EdgeInsets.only(right: e == "emphasize" ? 2 : 0),
+          child: SvgPicture.asset(
+            'assets/reactions/$e-black.svg',
+            width: 22,
+            height: 22,
+            colorFilter: ColorFilter.mode(
+                e == "love" && selected
+                    ? Colors.pink
+                    : (selected ? scheme.onSecondaryContainer : scheme.onSurfaceVariant),
+                BlendMode.srcIn),
+          ),
+        );
+      }
+      final text = Text(
+        ReactionTypes.reactionToEmoji[e] ?? "",
+        style: const TextStyle(fontSize: 22, fontFamily: 'Apple Color Emoji'),
+        textAlign: TextAlign.center,
+      );
+      // rotate thumbs down to match iOS
+      return e == "dislike"
+          ? Transform(transform: Matrix4.identity()..rotateY(pi), alignment: FractionalOffset.center, child: text)
+          : text;
+    }
+
+    final items = <Widget>[
+      for (final e in _pickerReactions)
+        target(
+          selected: currentlySelectedReaction == e,
+          onTap: () {
+            setState(() => currentlySelectedReaction = currentlySelectedReaction == e ? null : e);
+            HapticFeedback.lightImpact();
+            widget.sendTapback(selfReaction == e ? "-$e" : e, part.part);
+            popDetails();
+          },
+          child: glyph(e, currentlySelectedReaction == e),
+        ),
+      // OpenBubbles: arbitrary-emoji tapbacks.
+      target(
+        onTap: showEmojiReactionPicker,
+        child: Icon(Icons.add_reaction_outlined, size: 22, color: scheme.onSurfaceVariant),
+      ),
+    ];
+    final split = (items.length / 2).ceil();
+    final rows = wrap ? [items.sublist(0, split), items.sublist(split)] : [items];
+
+    return Material(
+      color: scheme.surfaceContainerHigh,
+      elevation: 3,
+      shadowColor: scheme.shadow,
+      surfaceTintColor: Colors.transparent,
+      borderRadius: BorderRadius.circular(28),
+      child: Padding(
+        padding: const EdgeInsets.all(4),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: message.isFromMe! ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          children: [for (final r in rows) Row(mainAxisSize: MainAxisSize.min, children: r)],
+        ),
+      ),
+    );
+  }
+
+  /// How many 48dp rows fit between the status bar and the bottom of the screen
+  /// alongside the bubble and the tapback bar.
+  int get _rowsThatFit {
+    final childHeight = _measuredChildHeight ?? widget.size.height;
+    return max((Get.height - Get.statusBarHeight - 135 - _menuPad - childHeight) ~/ itemHeight, 1);
+  }
+
+  /// "More": grow the menu in place to list every action, as far as the screen
+  /// allows (it scrolls beyond that), and move the bubble up with it.
+  void _expandMenu() {
+    HapticFeedback.selectionClick();
+    setState(() {
+      _expanded = true;
+      numberToShow = max(min(_allActions.length, _rowsThatFit), numberToShow);
+      messageOffset = itemHeight * numberToShow + 40 + _menuPad;
+    });
+  }
+
+  /// Options as a Material 3 menu: container tone, level-2 elevation, leading
+  /// icon then label, one row per action.
+  Widget _m3Menu(BuildContext context) {
+    final scheme = context.theme.colorScheme;
+    final all = _allActions;
+    final showMore = !_expanded && all.length > numberToShow;
+    final visible = showMore ? all.sublist(0, max(numberToShow - 1, 0)) : all;
+
+    Widget row(IconData icon, String label, VoidCallback? onTap, {bool disabled = false}) => InkWell(
+          onTap: disabled ? null : onTap,
+          child: SizedBox(
+            height: itemHeight,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  Icon(icon,
+                      size: 24, color: disabled ? scheme.onSurface.withValues(alpha: 0.38) : scheme.onSurfaceVariant),
+                  const SizedBox(width: 12),
+                  Flexible(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: context.theme.textTheme.bodyLarge?.copyWith(
+                          color: disabled ? scheme.onSurface.withValues(alpha: 0.38) : scheme.onSurface),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+
+    final double maxWidth = min(280.0, NavigationSvc.width(widthContext) * 4 / 5);
+    return Material(
+      color: scheme.surfaceContainer,
+      elevation: 3,
+      shadowColor: scheme.shadow,
+      surfaceTintColor: Colors.transparent,
+      borderRadius: BorderRadius.circular(16),
+      clipBehavior: Clip.antiAlias,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+            minWidth: min(200.0, maxWidth), maxWidth: maxWidth, maxHeight: itemHeight * numberToShow + _menuPad),
+        child: IntrinsicWidth(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final a in visible)
+                  row(a.nonIosIcon, a.title, a.onTap,
+                      disabled: a.action == DetailsMenuAction.Edit &&
+                          !(message.dateCreated?.toUtc().isWithin(DateTime.now().toUtc(), minutes: 15) ?? false)),
+                if (showMore) row(Icons.more_horiz, "More", _expandMenu),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget buildDetailsMenu(BuildContext context) {
+    if (_m3) return _m3Menu(context);
     double maxMenuWidth =
         min(max(NavigationSvc.width(widthContext) * 3 / 5, 200), NavigationSvc.width(widthContext) * 4 / 5);
 

@@ -157,8 +157,12 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                               await SettingsSvc.settings.saveOneAsync('materialIosMessageMenu');
                             },
                             initialVal: SettingsSvc.settings.materialIosMessageMenu.value,
-                            title: "iOS-Style Tapback Menu",
-                            subtitle: "Long-press a message for the iOS tapback glyphs and options list",
+                            title: SettingsSvc.settings.skin.value == Skins.Material
+                                ? "iOS-Style Tapback Icons"
+                                : "iOS-Style Tapback Menu",
+                            subtitle: SettingsSvc.settings.skin.value == Skins.Material
+                                ? "Show iMessage tapback icons instead of emoji"
+                                : "Long-press a message for the iOS tapback glyphs and options list",
                             backgroundColor: tileColor,
                             isThreeLine: true,
                           ),

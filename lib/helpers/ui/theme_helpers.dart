@@ -170,8 +170,15 @@ mixin ThemeHelpers<T extends StatefulWidget> on State<T> {
 /// (glyph tapbacks over a blurred backdrop plus an options list). True on the
 /// iOS skin, and on Material when the user has opted in. Deliberately a
 /// free-standing getter so widgets that are not ThemeHelpers can use it too.
+///
+/// The Material skin always uses this overlay layout (tapback bar above the
+/// bubble, options below), drawn with Material 3 surfaces; there the setting
+/// only chooses between iMessage tapback icons and emoji ([useIosTapbacks]).
+/// Samsung still switches layouts with the setting.
 bool get iosStyleMessagePopup =>
-    SettingsSvc.settings.skin.value == Skins.iOS || SettingsSvc.settings.materialIosMessageMenu.value;
+    SettingsSvc.settings.skin.value == Skins.iOS ||
+    SettingsSvc.settings.skin.value == Skins.Material ||
+    SettingsSvc.settings.materialIosMessageMenu.value;
 
 /// Extension to provide BuildContext with easy access to commonly used theme helper values
 extension BuildContextThemeHelpers on BuildContext {
