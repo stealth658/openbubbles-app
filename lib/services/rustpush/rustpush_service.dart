@@ -2356,8 +2356,14 @@ class RustPushService extends GetxService {
 
   (int, DateTime) getCutoffTime() {
     // yes, we call this a lot, it's a bit of a shame.
-    PrefsSvc.i.reloadCache();
-    var time = PrefsSvc.i.getInt('syncHistoryTime') ?? 0;
+    // Read the setting, not the raw pref: in the sync engine the raw key came back
+    // null while the loaded Settings held the chosen value (log 2026-10-11 12:38,
+    // "pref=null settings=15552000000"), so the limit was silently "none".
+    var time = SettingsSvc.settings.syncHistoryTime.value;
+    if (time == 0) {
+      PrefsSvc.i.reloadCache();
+      time = PrefsSvc.i.getInt('syncHistoryTime') ?? 0;
+    }
 
     var cutoffDateTime = DateTime.fromMillisecondsSinceEpoch(0);
     var cutoffTime = 0;

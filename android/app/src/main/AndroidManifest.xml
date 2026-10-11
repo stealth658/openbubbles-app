@@ -462,9 +462,14 @@
                 android:name="io.flutter.embedding.android.EnableImpeller"
                 android:value="false" />
 
+            <!-- Keep the Dart UI isolate off Android's main thread. With the merged
+                 thread the CloudKit sync engine (a second FlutterEngine) ran its
+                 synchronous work on the main thread and tripped "isn't responding"
+                 every few seconds during a sync (2026-10-11). This engine build has
+                 no per-engine thread policy, so it is set app-wide. -->
             <meta-data
                 android:name="io.flutter.embedding.android.DisableMergedPlatformUIThread"
-                android:value="false" />
+                android:value="true" />
         </activity>
         <activity
             android:name=".BubbleActivity"
