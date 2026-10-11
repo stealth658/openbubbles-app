@@ -393,6 +393,7 @@ class SearchViewState extends State<SearchView> with ThemeHelpers {
                           child: ListTile(
                             mouseCursor: MouseCursor.defer,
                             title: RichText(
+                              textScaler: MediaQuery.textScalerOf(context),
                               text: TextSpan(
                                 children: MessageHelper.buildEmojiText(
                                   ChatsSvc.getChatState(chat.guid)?.title.value ?? chat.getTitle(),
@@ -402,6 +403,7 @@ class SearchViewState extends State<SearchView> with ThemeHelpers {
                               overflow: TextOverflow.ellipsis,
                             ),
                             subtitle: RichText(
+                              textScaler: MediaQuery.textScalerOf(context),
                               text: TextSpan(
                                 children: spans,
                               ),

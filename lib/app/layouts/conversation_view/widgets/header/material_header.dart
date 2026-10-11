@@ -267,8 +267,9 @@ class _ChatIconAndTitleState extends CustomState<_ChatIconAndTitle, void, Conver
                     : chatState.title.value ?? controller.chat.getTitle();
                 return Text(
                   _title,
-                  style: context.theme.textTheme.titleLarge!
-                      .apply(color: context.theme.colorScheme.onSurfaceVariant, fontSizeFactor: 0.85),
+                  style: context.theme.textTheme.titleLarge!.apply(
+                      color: context.theme.colorScheme.onSurfaceVariant,
+                      fontSizeFactor: 0.85 * (GoogleTextScale.active ? GoogleTextScale.header : 1)),
                   maxLines: 1,
                   overflow: TextOverflow.fade,
                 );

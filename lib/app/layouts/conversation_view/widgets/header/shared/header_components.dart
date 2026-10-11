@@ -182,6 +182,7 @@ class _ChatTitleAndAvatarState extends State<ChatTitleAndAvatar> with ChatTitleM
             child: Obx(() {
               String displayTitle = title.value ?? '';
               return RichText(
+                textScaler: MediaQuery.textScalerOf(context),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,

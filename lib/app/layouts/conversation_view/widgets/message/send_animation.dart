@@ -454,6 +454,7 @@ class _SendAnimationState extends CustomState<SendAnimation, SendData, Conversat
                               ? const EdgeInsets.only(left: 3, right: 3)
                               : EdgeInsets.zero,
                           child: RichText(
+                            textScaler: MediaQuery.textScalerOf(context),
                             text: TextSpan(
                               children: buildMessageSpans(context,
                                   MessagePart(part: 0, text: message!.text, subject: message!.subject), message!,

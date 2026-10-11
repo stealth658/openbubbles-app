@@ -121,6 +121,7 @@ class ExpressiveChatHeader extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Obx(() => RichText(
+                textScaler: MediaQuery.textScalerOf(context),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.center,

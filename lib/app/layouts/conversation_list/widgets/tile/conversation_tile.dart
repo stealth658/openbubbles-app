@@ -356,6 +356,7 @@ class _ChatTitleState extends CustomState<ChatTitle, void, ConversationTileContr
       final _title = controller.chatState.title.value ?? controller.chat.getTitle();
 
       return RichText(
+        textScaler: MediaQuery.textScalerOf(context),
         text: TextSpan(
           children: MessageHelper.buildEmojiText(
             _title,
@@ -439,6 +440,7 @@ class _ChatSubtitleState extends CustomState<ChatSubtitle, void, ConversationTil
       }
 
       final richText = RichText(
+        textScaler: MediaQuery.textScalerOf(context),
         text: subtitleSpan,
         overflow: TextOverflow.ellipsis,
         maxLines: maxLines,

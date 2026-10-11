@@ -74,6 +74,7 @@ class TimestampSeparator extends StatelessWidget {
     final baseStyle = isMaterial ? context.theme.textTheme.bodySmall! : context.theme.textTheme.labelSmall!;
 
     final richText = RichText(
+      textScaler: MediaQuery.textScalerOf(context),
       textAlign: TextAlign.center,
       text: TextSpan(
         style: baseStyle.copyWith(color: textColor, fontWeight: FontWeight.normal),

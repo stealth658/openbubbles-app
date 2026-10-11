@@ -33,10 +33,15 @@ class ThemeStruct {
   /// this, so the font applies everywhere.
   ThemeData get data {
     final font = SettingsSvc.settings.appFont.value;
-    if (font.isEmpty) return _data;
-    if (_styled == null || _styledFor != font) {
-      _styled = ThemesService.applyAppFont(_data, font);
-      _styledFor = font;
+    // Material skin: bubble text sized to match Google Messages.
+    final google = GoogleTextScale.active;
+    if (font.isEmpty && !google) return _data;
+    final key = "$font|$google";
+    if (_styled == null || _styledFor != key) {
+      var styled = ThemesService.applyAppFont(_data, font);
+      if (google) styled = GoogleTextScale.applyToTheme(styled);
+      _styled = styled;
+      _styledFor = key;
     }
     return _styled!;
   }
@@ -101,7 +106,7 @@ class ThemeStruct {
   static ThemeStruct _clonePreset(dynamic preset) {
     return ThemeStruct(
       name: preset.name,
-      themeData: preset.data,
+      themeData: preset is ThemeStruct ? preset.rawData : preset.data,
       gradientBg: preset.gradientBg,
       googleFont: preset.googleFont,
     );
@@ -480,15 +485,16 @@ class ThemeStruct {
         "outline": "outline is used for most outlined elements, as well as most small label-style text.",
       };
 
-  /// Returns the current text sizes for a theme
+  /// Returns the current text sizes for a theme (as stored, before the
+  /// skin's display scaling, so the theme editor round-trips them).
   Map<String, double> get textSizes => {
-        "titleLarge": data.textTheme.titleLarge!.fontSize!,
-        "bodyLarge": data.textTheme.bodyLarge!.fontSize!,
-        "bodyMedium": data.textTheme.bodyMedium!.fontSize!,
-        "bodySmall": data.textTheme.bodySmall!.fontSize!,
-        "labelLarge": data.textTheme.labelLarge!.fontSize!,
-        "labelSmall": data.textTheme.labelSmall!.fontSize!,
-        "bubbleText": (data.extensions[BubbleText] as BubbleText).bubbleText.fontSize!,
+        "titleLarge": rawData.textTheme.titleLarge!.fontSize!,
+        "bodyLarge": rawData.textTheme.bodyLarge!.fontSize!,
+        "bodyMedium": rawData.textTheme.bodyMedium!.fontSize!,
+        "bodySmall": rawData.textTheme.bodySmall!.fontSize!,
+        "labelLarge": rawData.textTheme.labelLarge!.fontSize!,
+        "labelSmall": rawData.textTheme.labelSmall!.fontSize!,
+        "bubbleText": (rawData.extensions[BubbleText] as BubbleText).bubbleText.fontSize!,
       };
 
   /// Returns the default text sizes

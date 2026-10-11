@@ -13,6 +13,9 @@ class ThemeStruct {
   String googleFont;
   ThemeData data;
 
+  /// Web has no skin-specific display scaling, so stored and shown are the same.
+  ThemeData get rawData => data;
+
   String get dbThemeData {
     final map = toMap()['data'];
     return jsonEncode(map);

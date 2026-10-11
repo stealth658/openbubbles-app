@@ -206,6 +206,7 @@ class _ChatInfoState extends State<ChatInfo> with ThemeHelpers {
             padding: const EdgeInsets.only(top: 12.0, left: 20.0, right: 20.0),
             child: Center(
               child: Obx(() => RichText(
+                textScaler: MediaQuery.textScalerOf(context),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.center,

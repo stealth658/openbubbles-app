@@ -908,6 +908,7 @@ class ReportJunkBanner extends StatelessWidget {
           child: GestureDetector(
             onTap: () => _confirm(context),
             child: RichText(
+              textScaler: MediaQuery.textScalerOf(context),
               textAlign: TextAlign.center,
               text: TextSpan(
                 style: context.theme.textTheme.labelMedium!

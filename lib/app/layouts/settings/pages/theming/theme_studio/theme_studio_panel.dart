@@ -291,7 +291,7 @@ class ThemeStudioController extends StatefulController {
     if (!isEditable) return;
     final brightness = isDark.value ? Brightness.dark : Brightness.light;
     final swatch = ColorScheme.fromSeed(seedColor: seed, brightness: brightness);
-    activeTheme.data = activeTheme.data.copyWith(colorScheme: swatch);
+    activeTheme.data = activeTheme.rawData.copyWith(colorScheme: swatch);
     themeDataVersion.value++;
     pendingChanges.value = true;
   }
@@ -304,7 +304,7 @@ class ThemeStudioController extends StatefulController {
     final image = MemoryImage(res.files.first.bytes!);
     final swatch = await ColorScheme.fromImageProvider(
         provider: image, brightness: isDark.value ? Brightness.dark : Brightness.light);
-    activeTheme.data = activeTheme.data.copyWith(colorScheme: swatch);
+    activeTheme.data = activeTheme.rawData.copyWith(colorScheme: swatch);
     themeDataVersion.value++;
     pendingChanges.value = true;
   }

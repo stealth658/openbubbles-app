@@ -394,6 +394,7 @@ void sendEffectAction(
                                                         scale: value1,
                                                         alignment: Alignment.center,
                                                         child: RichText(
+                                                          textScaler: MediaQuery.textScalerOf(context),
                                                           text: TextSpan(
                                                             children: buildMessageSpans(
                                                               context,

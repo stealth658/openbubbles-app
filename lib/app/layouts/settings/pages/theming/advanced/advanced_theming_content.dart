@@ -262,7 +262,7 @@ class _AdvancedThemingContentState extends State<AdvancedThemingContent> with Th
                             final swatch = await ColorScheme.fromImageProvider(
                                 provider: image, brightness: widget.isDarkMode ? Brightness.dark : Brightness.light);
                             oldData.value = currentTheme.data;
-                            currentTheme.data = currentTheme.data.copyWith(colorScheme: swatch);
+                            currentTheme.data = currentTheme.rawData.copyWith(colorScheme: swatch);
                             currentTheme.save();
                             if (widget.isDarkMode) {
                               await ThemeSvc.changeTheme(context, dark: currentTheme);

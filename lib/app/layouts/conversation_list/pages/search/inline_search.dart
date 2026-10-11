@@ -488,6 +488,7 @@ class _ChatHit extends StatelessWidget {
     return ListTile(
       leading: ContactAvatarGroupWidget(chat: chat, size: 40, editable: false),
       title: RichText(
+        textScaler: MediaQuery.textScalerOf(context),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         text: TextSpan(children: highlight(title, term, base, mark)),
@@ -495,6 +496,7 @@ class _ChatHit extends StatelessWidget {
       subtitle: subtitle.isEmpty
           ? null
           : RichText(
+            textScaler: MediaQuery.textScalerOf(context),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               text: TextSpan(
@@ -556,6 +558,7 @@ class _MessageHit extends StatelessWidget {
         ],
       ),
       subtitle: RichText(
+        textScaler: MediaQuery.textScalerOf(context),
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
         text: TextSpan(

@@ -404,3 +404,37 @@ List<Color> toColorGradient(String? str) {
     return [HexColor("a78df3"), HexColor("bcabfc")]; // Purple
   }
 }
+
+/// Material skin text sizes relative to the theme's sizes, set so the app
+/// matches Google Messages on the same phone at the same system text size.
+/// Measured from side-by-side screenshots (Pixel, App Font "Google Sans"):
+/// cap height, x-height and letter widths of the same strings in both apps,
+/// after making every text widget follow the system text size. The list
+/// name, preview, date and chips already matched; these are the ones that
+/// did not. The bundled fonts (Google Sans Flex, SF Pro Text, Roboto) are
+/// within about 2% of each other at a given size, so one set of factors
+/// serves all of them.
+class GoogleTextScale {
+  GoogleTextScale._();
+
+  /// Message bubbles and the composer: Google Messages uses 16 to our 15.
+  static const double bubble = 16 / 15;
+
+  /// Chat header name, relative to the size it had before.
+  static const double header = 0.94;
+
+  /// Group sender name above a bubble (labelLarge 14 -> 12).
+  static const double senderName = 12 / 14;
+
+  static bool get active => SettingsSvc.settings.skin.value == Skins.Material;
+
+  /// [theme] with the bubble text scaled for the Material skin.
+  static ThemeData applyToTheme(ThemeData theme) {
+    final bubble = theme.extensions[BubbleText] as BubbleText?;
+    if (bubble == null || bubble.bubbleText.fontSize == null) return theme;
+    return theme.copyWith(extensions: [
+      ...theme.extensions.values.where((e) => e is! BubbleText),
+      BubbleText(bubbleText: bubble.bubbleText.copyWith(fontSize: bubble.bubbleText.fontSize! * GoogleTextScale.bubble)),
+    ]);
+  }
+}

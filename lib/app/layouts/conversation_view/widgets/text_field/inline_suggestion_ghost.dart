@@ -90,6 +90,7 @@ class _InlineSuggestionGhostState extends State<InlineSuggestionGhost> {
                   const SizedBox(width: 6),
                   Flexible(
                     child: RichText(
+                      textScaler: MediaQuery.textScalerOf(context),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       text: TextSpan(children: MessageHelper.buildEmojiText(suggestion, ghostStyle)),

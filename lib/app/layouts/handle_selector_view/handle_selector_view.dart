@@ -195,6 +195,7 @@ class HandleSelectorViewState extends State<HandleSelectorView> with ThemeHelper
                                             minVerticalPadding: 10,
                                             horizontalTitleGap: 10,
                                             title: RichText(
+                                              textScaler: MediaQuery.textScalerOf(context),
                                               text: TextSpan(
                                                 children: MessageHelper.buildEmojiText(
                                                   _title,

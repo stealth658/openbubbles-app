@@ -346,6 +346,7 @@ class _ChatTitleState extends CustomState<ChatTitle, void, ConversationTileContr
                 ),
                 Flexible(
                   child: RichText(
+                    textScaler: MediaQuery.textScalerOf(context),
                     text: TextSpan(
                       children: MessageHelper.buildEmojiText(_title, style),
                       style: style,

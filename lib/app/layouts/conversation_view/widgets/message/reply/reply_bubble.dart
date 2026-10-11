@@ -223,6 +223,7 @@ class _ReplyBubbleState extends State<ReplyBubble> with ThemeHelpers {
                                                 builder: (context, snapshot) {
                                                   if (snapshot.data != null) {
                                                     return RichText(
+                                                      textScaler: MediaQuery.textScalerOf(context),
                                                       text: TextSpan(
                                                         children: snapshot.data!,
                                                       ),

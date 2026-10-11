@@ -666,8 +666,8 @@ class ThemesService {
     final lightTheme = ThemeStruct.getThemes().firstWhere((e) => e.name == "Music Theme ☀");
     final lightScheme = await ColorScheme.fromImageProvider(provider: MemoryImage(art), brightness: Brightness.light);
     final darkScheme = await ColorScheme.fromImageProvider(provider: MemoryImage(art), brightness: Brightness.dark);
-    lightTheme.data = lightTheme.data.copyWith(colorScheme: lightScheme);
-    darkTheme.data = darkTheme.data.copyWith(colorScheme: darkScheme);
+    lightTheme.data = lightTheme.rawData.copyWith(colorScheme: lightScheme);
+    darkTheme.data = darkTheme.rawData.copyWith(colorScheme: darkScheme);
     changeTheme(Get.context!, light: lightTheme, dark: darkTheme);
   }
 

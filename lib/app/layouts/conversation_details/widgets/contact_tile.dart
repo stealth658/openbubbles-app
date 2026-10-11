@@ -178,6 +178,7 @@ class ContactTile extends StatelessWidget {
         },
         child: ListTile(
           title: RichText(
+            textScaler: MediaQuery.textScalerOf(context),
             text: TextSpan(
               children: MessageHelper.buildEmojiText(
                 displayName,

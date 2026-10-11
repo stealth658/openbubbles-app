@@ -64,8 +64,8 @@ class SuggestionChip extends StatelessWidget {
             child: Center(
               widthFactor: 1,
               child: label == null
-                  ? RichText(text: TextSpan(children: MessageHelper.buildEmojiText(text, style)))
-                  : Obx(() => RichText(text: TextSpan(children: MessageHelper.buildEmojiText(label!(), style)))),
+                  ? RichText(textScaler: MediaQuery.textScalerOf(context), text: TextSpan(children: MessageHelper.buildEmojiText(text, style)))
+                  : Obx(() => RichText(textScaler: MediaQuery.textScalerOf(context), text: TextSpan(children: MessageHelper.buildEmojiText(label!(), style)))),
             ),
           ),
         ),

@@ -309,6 +309,7 @@ class _ChatIconAndTitleState extends CustomState<_ChatIconAndTitle, void, Conver
                   maxWidth: NavigationSvc.width(context) / 2.5,
                 ),
                 child: RichText(
+                  textScaler: MediaQuery.textScalerOf(context),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,

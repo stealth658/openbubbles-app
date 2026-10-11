@@ -95,7 +95,10 @@ class MessageSender extends StatelessWidget {
                   builder: (context, snap) => Text(
                     state.senderDisplayName,
                     style: context.theme.textTheme.labelLarge!
-                        .copyWith(color: _readable(snap.data ?? base, bg), fontWeight: FontWeight.w500),
+                        .copyWith(
+                            color: _readable(snap.data ?? base, bg),
+                            fontWeight: FontWeight.w500,
+                            fontSize: context.theme.textTheme.labelLarge!.fontSize! * GoogleTextScale.senderName),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),

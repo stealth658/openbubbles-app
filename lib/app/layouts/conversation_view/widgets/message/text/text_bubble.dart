@@ -217,6 +217,7 @@ class _TextBubbleState extends State<TextBubble> with ThemeHelpers {
                           return Transform.scale(scale: value1, alignment: Alignment.center, child: child);
                         },
                         child: RichText(
+                          textScaler: MediaQuery.textScalerOf(context),
                           text: TextSpan(
                             children: snapshot.data!,
                           ),
@@ -229,6 +230,7 @@ class _TextBubbleState extends State<TextBubble> with ThemeHelpers {
                       padding:
                           message.fullText.length == 1 ? const EdgeInsets.only(left: 3, right: 3) : EdgeInsets.zero,
                       child: RichText(
+                        textScaler: MediaQuery.textScalerOf(context),
                         text: TextSpan(
                           children: snapshot.data!,
                         ),

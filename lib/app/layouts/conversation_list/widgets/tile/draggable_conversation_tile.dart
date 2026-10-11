@@ -37,6 +37,7 @@ class DraggableConversationTile extends StatelessWidget {
             final chatState = ChatsSvc.getChatState(chat.guid);
             final title = chatState?.title.value ?? chat.getTitle();
             return RichText(
+              textScaler: MediaQuery.textScalerOf(context),
               text: TextSpan(
                 children: MessageHelper.buildEmojiText(
                   title,
