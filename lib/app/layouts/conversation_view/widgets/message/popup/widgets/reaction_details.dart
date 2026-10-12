@@ -18,121 +18,8 @@ class ReactionDetails extends StatelessWidget {
 
   final List<Message> reactions;
 
-  String? _nameFor(Message message) {
-    if (SettingsSvc.settings.hideNamesForReactions.value) return null;
-    final handle = message.handleRelation.target;
-    if (message.isFromMe!) return SettingsSvc.settings.userName.value;
-    if (handle != null) return HandleSvc.getOrCreateHandleState(handle).reactionDisplayName.value;
-    return null;
-  }
-
-  /// Material 3: a compact card sized to its content, on the same tone and
-  /// elevation as the tapback bar. Each person is an avatar with their tapback
-  /// as a badge on its corner and their name underneath. No glass.
-  Widget _material3(BuildContext context) {
-    final scheme = context.theme.colorScheme;
-
-    Widget badge(Message message) {
-      final type = message.associatedMessageType;
-      final Widget glyph;
-      if (type == ReactionTypes.EMOJI && message.associatedMessageEmoji != null) {
-        glyph = Text(message.associatedMessageEmoji!,
-            style: const TextStyle(fontSize: 13, fontFamily: 'Apple Color Emoji', height: 1.1));
-      } else if (useIosTapbacks) {
-        glyph = SvgPicture.asset(
-          'assets/reactions/$type-black.svg',
-          width: 13,
-          height: 13,
-          colorFilter: ColorFilter.mode(type == "love" ? Colors.pink : scheme.onSecondaryContainer, BlendMode.srcIn),
-        );
-      } else {
-        final text = Text(ReactionTypes.reactionToEmoji[type] ?? "",
-            style: const TextStyle(fontSize: 13, fontFamily: 'Apple Color Emoji', height: 1.1));
-        glyph = type == "dislike"
-            ? Transform(transform: Matrix4.identity()..rotateY(pi), alignment: FractionalOffset.center, child: text)
-            : text;
-      }
-      return Container(
-        width: 24,
-        height: 24,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: scheme.secondaryContainer,
-          border: Border.all(color: scheme.surfaceContainerHigh, width: 2),
-        ),
-        child: glyph,
-      );
-    }
-
-    return Obx(() => Center(
-          child: Material(
-            color: scheme.surfaceContainerHigh,
-            elevation: 3,
-            shadowColor: scheme.shadow,
-            surfaceTintColor: Colors.transparent,
-            borderRadius: BorderRadius.circular(28),
-            clipBehavior: Clip.antiAlias,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  for (int i = 0; i < reactions.length; i++) ...[
-                    if (i > 0) const SizedBox(width: 16),
-                    ConstrainedBox(
-                      key: ValueKey(reactions[i].guid!),
-                      constraints: const BoxConstraints(minWidth: 56, maxWidth: 88),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          SizedBox(
-                            width: 48,
-                            height: 44,
-                            child: Stack(
-                              clipBehavior: Clip.none,
-                              children: [
-                                Positioned(
-                                  left: 4,
-                                  top: 0,
-                                  child: ContactAvatarWidget(
-                                    handle: reactions[i].handleRelation.target,
-                                    borderThickness: 0.1,
-                                    editable: false,
-                                    fontSize: 16,
-                                    size: 40,
-                                  ),
-                                ),
-                                Positioned(right: -2, bottom: -2, child: badge(reactions[i])),
-                              ],
-                            ),
-                          ),
-                          if ((_nameFor(reactions[i]) ?? "").isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 6),
-                              child: Text(
-                                _nameFor(reactions[i])!,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: context.theme.textTheme.labelMedium!.copyWith(color: scheme.onSurfaceVariant),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        ));
-  }
-
   @override
   Widget build(BuildContext context) {
-    if (SettingsSvc.settings.skin.value == Skins.Material) return _material3(context);
     return Obx(
       () => Material(
         color: Colors.transparent,
@@ -249,5 +136,154 @@ class ReactionDetails extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+
+/// Who reacted, as the header of the Material 3 long-press menu.
+///
+/// Up to [maxRows] people are listed one per row: avatar, name, their tapback
+/// at the end. With more people, or with names hidden in settings, it becomes a
+/// single scrolling line of avatars carrying the tapback as a corner badge.
+class MenuReactors extends StatelessWidget {
+  const MenuReactors({super.key, required this.reactions});
+
+  final List<Message> reactions;
+
+  static const int maxRows = 3;
+  static const double rowHeight = 40;
+  static const double stripHeight = 52;
+
+  static bool _asRows(List<Message> reactions) =>
+      reactions.length <= maxRows && !SettingsSvc.settings.hideNamesForReactions.value;
+
+  /// The height this header takes for [reactions], divider included. The popup
+  /// positions the bubble and the tapback bar from the menu's height, so it
+  /// needs this before layout.
+  static double heightFor(List<Message> reactions) {
+    if (reactions.isEmpty) return 0;
+    return (_asRows(reactions) ? reactions.length * rowHeight : stripHeight) + 9;
+  }
+
+  static String _nameFor(Message message) {
+    final handle = message.handleRelation.target;
+    if (message.isFromMe!) return "You";
+    if (handle != null) return HandleSvc.getOrCreateHandleState(handle).reactionDisplayName.value ?? "";
+    return "";
+  }
+
+  Widget _glyph(BuildContext context, Message message, double size, Color color) {
+    final type = message.associatedMessageType;
+    if (type == ReactionTypes.EMOJI && message.associatedMessageEmoji != null) {
+      return Text(message.associatedMessageEmoji!,
+          style: TextStyle(fontSize: size, fontFamily: 'Apple Color Emoji', height: 1.1));
+    }
+    if (useIosTapbacks) {
+      return SvgPicture.asset(
+        'assets/reactions/$type-black.svg',
+        width: size,
+        height: size,
+        colorFilter: ColorFilter.mode(type == "love" ? Colors.pink : color, BlendMode.srcIn),
+      );
+    }
+    final text = Text(ReactionTypes.reactionToEmoji[type] ?? "",
+        style: TextStyle(fontSize: size, fontFamily: 'Apple Color Emoji', height: 1.1));
+    return type == "dislike"
+        ? Transform(transform: Matrix4.identity()..rotateY(pi), alignment: FractionalOffset.center, child: text)
+        : text;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = context.theme.colorScheme;
+    return Obx(() {
+      if (reactions.isEmpty) return const SizedBox.shrink();
+      final Widget body;
+      if (_asRows(reactions)) {
+        body = Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final r in reactions)
+              SizedBox(
+                height: rowHeight,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: [
+                      ContactAvatarWidget(
+                        handle: r.handleRelation.target,
+                        borderThickness: 0.1,
+                        editable: false,
+                        fontSize: 10,
+                        size: 24,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          _nameFor(r),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: context.theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      _glyph(context, r, 18, scheme.onSurfaceVariant),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        );
+      } else {
+        body = SizedBox(
+          height: stripHeight,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            itemCount: reactions.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            itemBuilder: (context, i) => SizedBox(
+              width: 40,
+              height: 36,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  ContactAvatarWidget(
+                    handle: reactions[i].handleRelation.target,
+                    borderThickness: 0.1,
+                    editable: false,
+                    fontSize: 13,
+                    size: 32,
+                  ),
+                  Positioned(
+                    right: 0,
+                    bottom: -2,
+                    child: Container(
+                      width: 20,
+                      height: 20,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: scheme.secondaryContainer,
+                        border: Border.all(color: scheme.surfaceContainer, width: 1.5),
+                      ),
+                      child: _glyph(context, reactions[i], 11, scheme.onSecondaryContainer),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(padding: const EdgeInsets.only(top: 8), child: body),
+          Divider(height: 1, thickness: 1, color: scheme.outlineVariant),
+        ],
+      );
+    });
   }
 }

@@ -85,8 +85,9 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
   /// tonal tapback pill above the bubble and a menu card below it.
   bool get _m3 => SettingsSvc.settings.skin.value == Skins.Material;
 
-  /// The Material 3 menu's 8dp padding above and below its rows.
-  double get _menuPad => _m3 ? 16 : 0;
+  /// What the Material 3 menu adds to its rows' height: 8dp padding above and
+  /// below them, plus the who-reacted header when the message has tapbacks.
+  double get _menuPad => _m3 ? 16 + MenuReactors.heightFor(reactions) : 0;
 
   /// "More" was tapped: the menu lists every action instead of the first few.
   bool _expanded = false;
@@ -191,7 +192,9 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
         if (iOS) {
           if (measuredHeight != null) {
             _measuredChildHeight = measuredHeight;
-            final remainingHeight = max(Get.height - Get.statusBarHeight - 135 - measuredHeight, itemHeight);
+            // _menuPad: the Material menu's padding and who-reacted header also need room.
+            final remainingHeight =
+                max(Get.height - Get.statusBarHeight - 135 - _menuPad - measuredHeight, itemHeight);
             numberToShow = min(remainingHeight ~/ itemHeight, 5);
           }
           if (_m3) numberToShow = min(numberToShow, max(_allActions.length, 1));
@@ -420,11 +423,12 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
                         },
                       ),
                     ),
-                  if (iOS)
+                  // Material lists who reacted at the top of the menu card instead.
+                  if (iOS && !_m3)
                     Positioned(
-                      top: _m3 ? MediaQuery.viewPaddingOf(context).top + 8 : 40,
-                      left: _m3 ? 16 : 15,
-                      right: _m3 ? 16 : 15,
+                      top: 40,
+                      left: 15,
+                      right: 15,
                       child: AnimatedSize(
                         duration: const Duration(milliseconds: 500),
                         curve: Sprung.underDamped,
@@ -1004,19 +1008,29 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
         constraints: BoxConstraints(
             minWidth: min(200.0, maxWidth), maxWidth: maxWidth, maxHeight: itemHeight * numberToShow + _menuPad),
         child: IntrinsicWidth(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                for (final a in visible)
-                  row(a.nonIosIcon, a.title, a.onTap,
-                      disabled: a.action == DetailsMenuAction.Edit &&
-                          !(message.dateCreated?.toUtc().isWithin(DateTime.now().toUtc(), minutes: 15) ?? false)),
-                if (showMore) row(Icons.more_horiz, "More", _expandMenu),
-              ],
-            ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Who reacted, above the actions.
+              MenuReactors(reactions: reactions),
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (final a in visible)
+                        row(a.nonIosIcon, a.title, a.onTap,
+                            disabled: a.action == DetailsMenuAction.Edit &&
+                                !(message.dateCreated?.toUtc().isWithin(DateTime.now().toUtc(), minutes: 15) ?? false)),
+                      if (showMore) row(Icons.more_horiz, "More", _expandMenu),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
