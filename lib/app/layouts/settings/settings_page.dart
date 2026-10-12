@@ -67,12 +67,13 @@ class _SettingsPageState extends State<SettingsPage> with ThemeHelpers {
         ns: NavigationSvc,
       ),
       ..._openBubblesItems(context),
+      ...buildVersionFooter(context: context, tileColor: tileColor),
     ];
   }
 
   /// OpenBubbles-only settings entries. Upstream's `buildSettingItemList` owns the shared
   /// list; these are appended so the fork's rustpush pages stay reachable without forking
-  /// that helper. They sit after upstream's trailing version footer.
+  /// that helper. The version footer follows them, at the very bottom.
   List<Widget> _openBubblesItems(BuildContext context) {
     return [
       if (usingRustPush)

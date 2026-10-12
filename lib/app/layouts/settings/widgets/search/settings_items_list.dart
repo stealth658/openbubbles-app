@@ -830,6 +830,14 @@ List<Widget> buildSettingItemList({
           ),
       ],
     ),
+  ];
+}
+
+/// The app version line. Kept out of [buildSettingItemList] so the page can put
+/// it after everything else, including the fork's own sections (Device, Danger
+/// Zone), at the very bottom of Settings.
+List<Widget> buildVersionFooter({required BuildContext context, required Color tileColor}) {
+  return [
     const SizedBox(height: 16.0),
     SearchableSettingItem(
       title: "App Version: $appVersion",
