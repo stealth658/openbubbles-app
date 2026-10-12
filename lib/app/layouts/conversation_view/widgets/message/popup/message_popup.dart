@@ -422,9 +422,9 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
                     ),
                   if (iOS)
                     Positioned(
-                      top: 40,
-                      left: 15,
-                      right: 15,
+                      top: _m3 ? MediaQuery.viewPaddingOf(context).top + 8 : 40,
+                      left: _m3 ? 16 : 15,
+                      right: _m3 ? 16 : 15,
                       child: AnimatedSize(
                         duration: const Duration(milliseconds: 500),
                         curve: Sprung.underDamped,

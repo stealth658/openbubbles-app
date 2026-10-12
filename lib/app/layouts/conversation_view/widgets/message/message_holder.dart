@@ -59,6 +59,9 @@ class MessageHolder extends StatefulWidget {
 }
 
 class _MessageHolderState extends State<MessageHolder> with AutomaticKeepAliveClientMixin, ThemeHelpers {
+  /// The part whose long-press menu is open, if any (see MessagePopupHolder.onPopupOpenChanged).
+  final RxnInt _popupOpenPart = RxnInt();
+
   @override
   bool get wantKeepAlive => true;
 
@@ -592,7 +595,11 @@ class _MessageHolderState extends State<MessageHolder> with AutomaticKeepAliveCl
                                                           children: [
                                                             // Inner Stack: bubble + reactions, sized by the bubble alone
                                                             // so reactions are always anchored to the bubble edge
-                                                            Stack(
+                                                            Obx(() => AnimatedOpacity(
+                                                                // Hidden while this part's long-press menu shows its lifted copy (Material).
+                                                                opacity: _popupOpenPart.value == e.part ? 0.0 : 1.0,
+                                                                duration: const Duration(milliseconds: 80),
+                                                                child: Stack(
                                                               alignment: isFromMe
                                                                   ? Alignment.centerRight
                                                                   : Alignment.centerLeft,
@@ -607,6 +614,7 @@ class _MessageHolderState extends State<MessageHolder> with AutomaticKeepAliveCl
                                                                       e.part == controller.parts.length - 1,
                                                                   messageState: controller,
                                                                   child: MessagePopupHolder(
+                                                                    onPopupOpenChanged: (open) => _popupOpenPart.value = open ? e.part : null,
                                                                     key: keys.length > index ? keys[index] : null,
                                                                     controller: controller,
                                                                     cvController: widget.cvController,
@@ -736,6 +744,7 @@ class _MessageHolderState extends State<MessageHolder> with AutomaticKeepAliveCl
                                                                   ),
                                                               ],
                                                             ),
+                                                              )),
                                                             // Stickers are in the outer Stack so they contribute to
                                                             // the message holder's size but don't affect bubble alignment
                                                             StickerObserver(

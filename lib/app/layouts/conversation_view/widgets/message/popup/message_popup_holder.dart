@@ -24,6 +24,7 @@ class MessagePopupHolder extends StatefulWidget {
     required this.cvController,
     required this.isEditing,
     this.galleryCurrentIndex,
+    this.onPopupOpenChanged,
   });
 
   final Widget child;
@@ -35,6 +36,12 @@ class MessagePopupHolder extends StatefulWidget {
   /// For gallery parts: tracks which attachment is currently at the front.
   /// When set, [openPopup] scopes the popup to just the selected attachment.
   final ValueNotifier<int>? galleryCurrentIndex;
+
+  /// Material skin: called with true just before the long-press menu opens and
+  /// false once it has closed. The menu lifts a copy of the bubble over a plain
+  /// scrim, so the row hides its own copy meanwhile; without that the message
+  /// shows twice (the iOS skin's blur is what hides the original there).
+  final ValueChanged<bool>? onPopupOpenChanged;
 
   @override
   State<StatefulWidget> createState() => _MessagePopupHolderState();
@@ -125,6 +132,8 @@ class _MessagePopupHolderState extends State<MessagePopupHolder> with ThemeHelpe
     final capturedTheme = context.theme;
     final capturedIsM3 = ThemeSvc.isMaterialYouActive(context);
     final capturedBubbleExt = capturedTheme.extensions[BubbleColors] as BubbleColors?;
+    final hideOriginal = SettingsSvc.settings.skin.value == Skins.Material;
+    if (hideOriginal) widget.onPopupOpenChanged?.call(true);
     final result = await Navigator.push(
       iOS ? Get.context! : context,
       PageRouteBuilder(
@@ -168,6 +177,7 @@ class _MessagePopupHolderState extends State<MessagePopupHolder> with ThemeHelpe
         barrierDismissible: true,
       ),
     );
+    if (hideOriginal) widget.onPopupOpenChanged?.call(false);
     if (result != false) {
       widget.cvController.selected.clear();
     }
