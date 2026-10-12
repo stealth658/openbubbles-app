@@ -1,3 +1,4 @@
+import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/popup/m3_popup_placement.dart';
 import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
@@ -92,6 +93,39 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
   /// "More" was tapped: the menu lists every action instead of the first few.
   bool _expanded = false;
 
+  // Material keeps the bubble where it is and places the bar and the menu
+  // around it (see M3PopupPlacement). Everything is in logical pixels from the
+  // top of the screen.
+
+  /// Where the bubble rests once the keyboard has gone. The position was
+  /// measured with the keyboard still up, and the list slides down by the
+  /// keyboard's height as it closes, so that height is added here.
+  late final double _bubbleTop;
+  late final double _topLimit;
+  late final double _bottomLimit;
+  double _barHeight = 56;
+  M3PopupPlacement? _placement;
+
+  double get _bubbleHeight => _measuredChildHeight ?? widget.size.height;
+
+  double get _menuHeight => itemHeight * numberToShow + _menuPad;
+
+  /// First layout: five rows, or as many as fit on the roomier side of the bubble.
+  void _chooseRowsForM3() {
+    final total = max(_allActions.length, 1);
+    final want = min(5, total);
+    final fit = M3PopupPlacement.rowsThatFit(
+        bubbleTop: _bubbleTop,
+        bubbleHeight: _bubbleHeight,
+        topLimit: _topLimit,
+        bottomLimit: _bottomLimit,
+        rowHeight: itemHeight,
+        extra: _menuPad + _barHeight + M3PopupPlacement.gap);
+    // Fewer than two rows fit only beside a bubble about as tall as the screen;
+    // the menu then lies over it at full size.
+    numberToShow = fit >= 2 ? min(want, fit) : want;
+  }
+
   /// The tapback glyphs the picker can actually draw. `ReactionTypes.toList()`
   /// also carries EMOJI and STICKERBACK, which have no entry in
   /// reactionToEmoji and rendered as a literal "X" in the row.
@@ -165,6 +199,11 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
   void initState() {
     super.initState();
     controller.forward();
+    final view = WidgetsBinding.instance.platformDispatcher.views.first;
+    final dpr = view.devicePixelRatio;
+    _bubbleTop = widget.childPosition.dy + view.viewInsets.bottom / dpr;
+    _topLimit = view.viewPadding.top / dpr + 8;
+    _bottomLimit = view.physicalSize.height / dpr - max(view.viewPadding.bottom / dpr, 16) - 8;
     if (iOS) {
       final remainingHeight = max(Get.height - Get.statusBarHeight - 135 - widget.size.height, itemHeight);
       numberToShow = min(remainingHeight ~/ itemHeight, 5);
@@ -189,16 +228,16 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
         currentlySelectedReaction = selfReaction;
       }
       setState(() {
-        if (iOS) {
+        if (_m3) {
+          if (measuredHeight != null) _measuredChildHeight = measuredHeight;
+          _chooseRowsForM3();
+        } else if (iOS) {
           if (measuredHeight != null) {
             _measuredChildHeight = measuredHeight;
-            // _menuPad: the Material menu's padding and who-reacted header also need room.
-            final remainingHeight =
-                max(Get.height - Get.statusBarHeight - 135 - _menuPad - measuredHeight, itemHeight);
+            final remainingHeight = max(Get.height - Get.statusBarHeight - 135 - measuredHeight, itemHeight);
             numberToShow = min(remainingHeight ~/ itemHeight, 5);
           }
-          if (_m3) numberToShow = min(numberToShow, max(_allActions.length, 1));
-          messageOffset = itemHeight * numberToShow + 40 + _menuPad;
+          messageOffset = itemHeight * numberToShow + 40;
         }
       });
     });
@@ -302,6 +341,17 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
     final double shiftedAvailableWidth = screenWidth - reactionPickerLeft - reactionPickerEdgeMargin;
     bool narrowScreen = reactionRowContentWidth > max(reactionPickerAvailableWidth, shiftedAvailableWidth);
 
+    // Material: the bubble stays put; the bar and the menu go above or below it.
+    _barHeight = narrowScreen ? 104 : 56;
+    final placement = M3PopupPlacement.compute(
+        bubbleTop: _bubbleTop,
+        bubbleHeight: _bubbleHeight,
+        menuHeight: _menuHeight,
+        barHeight: _barHeight,
+        topLimit: _topLimit,
+        bottomLimit: _bottomLimit);
+    _placement = placement;
+
     return Theme(
       data: context.theme.copyWith(
         // in case some components still use legacy theming
@@ -387,7 +437,8 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
                       duration: const Duration(milliseconds: 250),
                       curve: Curves.easeOutBack,
                       left: widget.childPosition.dx,
-                      bottom: messageOffset,
+                      top: _m3 ? _bubbleTop : null,
+                      bottom: _m3 ? null : messageOffset,
                       child: TweenAnimationBuilder<double>(
                         tween: Tween<double>(begin: 0.8, end: 1),
                         curve: Curves.easeOutBack,
@@ -442,13 +493,13 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
                           chat.isIMessage &&
                           message.dateScheduled == null)
                     Positioned(
-                      bottom: (_m3
-                              // 8dp above the bubble (whose bottom edge sits at messageOffset).
-                              ? itemHeight * numberToShow + 40 + _menuPad + (_measuredChildHeight ?? widget.size.height) + 8
-                              : iOS
-                              ? itemHeight * numberToShow + 35 + (_measuredChildHeight ?? widget.size.height)
-                              : context.height - materialOffset)
-                          .clamp(0, context.height - (narrowScreen ? 200 : 125)),
+                      top: _m3 ? placement.barTop : null,
+                      bottom: _m3
+                          ? null
+                          : (iOS
+                                  ? itemHeight * numberToShow + 35 + (_measuredChildHeight ?? widget.size.height)
+                                  : context.height - materialOffset)
+                              .clamp(0, context.height - (narrowScreen ? 200 : 125)),
                       right: message.isFromMe! ? 15 : null,
                       left: !message.isFromMe! ? reactionPickerLeft : null,
                       child: AnimatedSize(
@@ -595,7 +646,8 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
                     Positioned(
                       right: message.isFromMe! ? 15 : null,
                       left: !message.isFromMe! ? widget.childPosition.dx + 10 : null,
-                      bottom: 30,
+                      top: _m3 ? placement.menuTop : null,
+                      bottom: _m3 ? null : 30,
                       child: TweenAnimationBuilder<double>(
                         tween: Tween<double>(begin: 0.8, end: 1),
                         curve: Curves.easeOutBack,
@@ -610,7 +662,7 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
                             crossAxisAlignment:
                                 _m3 && message.isFromMe! ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                             children: [
-                              const SizedBox(height: 5),
+                              if (!_m3) const SizedBox(height: 5),
                               buildDetailsMenu(context),
                             ],
                           ),
@@ -944,21 +996,25 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
     );
   }
 
-  /// How many 48dp rows fit between the status bar and the bottom of the screen
-  /// alongside the bubble and the tapback bar.
-  int get _rowsThatFit {
-    final childHeight = _measuredChildHeight ?? widget.size.height;
-    return max((Get.height - Get.statusBarHeight - 135 - _menuPad - childHeight) ~/ itemHeight, 1);
-  }
-
-  /// "More": grow the menu in place to list every action, as far as the screen
-  /// allows (it scrolls beyond that), and move the bubble up with it.
+  /// "More": grow the menu to list every action, as far as there is room on
+  /// the side it is already on. Beyond that the list scrolls. The bubble does
+  /// not move.
   void _expandMenu() {
     HapticFeedback.selectionClick();
+    final p = _placement;
+    final barOnMenuSide = p != null && p.menuBelow == (p.barTop > _bubbleTop);
+    final fit = M3PopupPlacement.rowsThatFit(
+        bubbleTop: _bubbleTop,
+        bubbleHeight: _bubbleHeight,
+        topLimit: _topLimit,
+        bottomLimit: _bottomLimit,
+        rowHeight: itemHeight,
+        // When the bar sits on the same side as the menu it needs its room too.
+        extra: _menuPad + (barOnMenuSide ? _barHeight + M3PopupPlacement.gap : 0),
+        below: _placement?.menuBelow);
     setState(() {
       _expanded = true;
-      numberToShow = max(min(_allActions.length, _rowsThatFit), numberToShow);
-      messageOffset = itemHeight * numberToShow + 40 + _menuPad;
+      numberToShow = max(min(_allActions.length, fit), numberToShow);
     });
   }
 
