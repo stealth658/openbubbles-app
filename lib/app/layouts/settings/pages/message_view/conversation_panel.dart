@@ -337,6 +337,25 @@ class _ConversationPanelState extends State<ConversationPanel> with ThemeHelpers
                             "Enable this to hide names under participant avatars when you view a message's reactions",
                         backgroundColor: tileColor,
                       )),
+                  // Material: only chooses iMessage tapback icons or emoji; the long-press
+                  // menu itself is always the Material 3 one. Samsung: also switches the
+                  // menu to the iOS layout. The iOS skin always uses the icons.
+                  Obx(() {
+                    if (SettingsSvc.settings.skin.value == Skins.iOS) return const SizedBox.shrink();
+                    final material = SettingsSvc.settings.skin.value == Skins.Material;
+                    return SettingsSwitch(
+                      onChanged: (bool val) async {
+                        SettingsSvc.settings.materialIosMessageMenu.value = val;
+                        await SettingsSvc.settings.saveOneAsync('materialIosMessageMenu');
+                      },
+                      initialVal: SettingsSvc.settings.materialIosMessageMenu.value,
+                      title: material ? "iOS-Style Tapback Icons" : "iOS-Style Tapback Menu",
+                      subtitle: material
+                          ? "Show iMessage tapback icons instead of emoji"
+                          : "Long-press a message for the iOS tapback glyphs and options list",
+                      backgroundColor: tileColor,
+                    );
+                  }),
                 ],
               ),
               if (!kIsWeb)

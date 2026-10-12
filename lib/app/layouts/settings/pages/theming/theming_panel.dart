@@ -144,31 +144,6 @@ class _ThemingPanelState extends CustomState<ThemingPanel, void, ThemingPanelCon
                           secondaryColor: headerColor,
                           useModernMenu: true,
                         )),
-                    // The iOS skin always uses this menu; Material and Samsung
-                    // draw emoji tapbacks in a Material sheet unless opted in.
-                    Obx(() {
-                      if (SettingsSvc.settings.skin.value == Skins.iOS) return const SizedBox.shrink();
-                      return Column(
-                        children: [
-                          const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
-                          SettingsSwitch(
-                            onChanged: (bool val) async {
-                              SettingsSvc.settings.materialIosMessageMenu.value = val;
-                              await SettingsSvc.settings.saveOneAsync('materialIosMessageMenu');
-                            },
-                            initialVal: SettingsSvc.settings.materialIosMessageMenu.value,
-                            title: SettingsSvc.settings.skin.value == Skins.Material
-                                ? "iOS-Style Tapback Icons"
-                                : "iOS-Style Tapback Menu",
-                            subtitle: SettingsSvc.settings.skin.value == Skins.Material
-                                ? "Show iMessage tapback icons instead of emoji"
-                                : "Long-press a message for the iOS tapback glyphs and options list",
-                            backgroundColor: tileColor,
-                            isThreeLine: true,
-                          ),
-                        ],
-                      );
-                    }),
                     if (!kIsDesktop) const SettingsDivider(padding: EdgeInsets.only(left: 16.0)),
                     if (!kIsDesktop)
                       Obx(() => SettingsSwitch(
