@@ -1835,8 +1835,13 @@ class _FindMyPageState extends State<FindMyPage> with SingleTickerProviderStateM
         PopupMarkerLayer(
           options: PopupMarkerLayerOptions(
             onPopupEvent: (ev, m) async {
-              final item = m.isEmpty ? null : friends
-                      .firstWhere((e) => e.latitude == m[0].point.latitude && e.longitude == m[0].point.longitude).id;
+              // A device or item marker matches no friend; firstWhere threw for those.
+              final item = m.isEmpty
+                  ? null
+                  : friends
+                      .firstWhereOrNull(
+                          (e) => e.latitude == m[0].point.latitude && e.longitude == m[0].point.longitude)
+                      ?.id;
               await api.selectFriend(config: pushService.state!.osConfig, client: fmfClient!, friend: item);
             },
             popupController: popupController,
