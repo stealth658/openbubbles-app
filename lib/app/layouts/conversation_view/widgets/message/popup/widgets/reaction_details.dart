@@ -154,8 +154,10 @@ class MenuReactors extends StatelessWidget {
   static const double rowHeight = 40;
   static const double stripHeight = 52;
 
+  // The setting is read first so that the Obx in build always has an
+  // observable to listen to; Obx throws when its builder reads none.
   static bool _asRows(List<Message> reactions) =>
-      reactions.length <= maxRows && !SettingsSvc.settings.hideNamesForReactions.value;
+      !SettingsSvc.settings.hideNamesForReactions.value && reactions.length <= maxRows;
 
   /// The height this header takes for [reactions], divider included. The popup
   /// positions the bubble and the tapback bar from the menu's height, so it
@@ -195,9 +197,9 @@ class MenuReactors extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (reactions.isEmpty) return const SizedBox.shrink();
     final scheme = context.theme.colorScheme;
     return Obx(() {
-      if (reactions.isEmpty) return const SizedBox.shrink();
       final Widget body;
       if (_asRows(reactions)) {
         body = Column(
