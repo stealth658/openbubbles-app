@@ -2406,6 +2406,7 @@ class RustPushService extends GetxService {
 
     // var counter = 0;
     for (var message in messages) {
+      await _yieldToMainThread();
       // counter += 1;
       // Logger.info("Processing message $counter of ${messages.length}");
       if (message.chat.target?.isRpSms == true) {
@@ -2508,6 +2509,17 @@ class RustPushService extends GetxService {
     showSnackbar("Success", "Attachment uploaded");
   }
 
+  /// Lets Android's main thread run between items of a sync loop.
+  ///
+  /// Flutter 3.44 runs every engine's Dart isolate on Android's main thread,
+  /// this sync engine included, and the loops below only await database calls
+  /// that complete without going back to the event loop. A page of 200 items
+  /// ran as one uninterrupted task: 6.4 s on 2026-10-16 (MainThreadWatchdog),
+  /// and Android's ANR traces of Oct 11, 12 and 15 show the main thread inside
+  /// an ObjectBox query during a sync. A zero delay ends the task so input and
+  /// frames are handled between items.
+  Future<void> _yieldToMainThread() => Future.delayed(Duration.zero);
+
   Future<void> doCloudKitSyncPrivate() async {
     isSyncing.value = "Syncing Now...";
 
@@ -2546,6 +2558,7 @@ class RustPushService extends GetxService {
       currentState = state;
       List<String> dupDeleteChats = [];
       for (var item in items.entries) {
+        await _yieldToMainThread();
         try {
           if (item.value == null) {
             final query = Database.chats.query(Chat_.ckRecordId.equals(item.key)).build();
@@ -2614,6 +2627,7 @@ class RustPushService extends GetxService {
         "cutoff=${cutoffTime == 0 ? 'none' : cutoffDateTime.toIso8601String()}",
         tag: "CloudSync");
     var attCount = 0;
+    var skippedOldAttachments = 0;
     currentState = 0;
     while (currentState != 3) {
       var (token3, items3, state3) = await api.syncAttachments(cloudMessagesClient: pushService.state!.icloudServices!.cloudMessagesClient!, 
@@ -2621,6 +2635,7 @@ class RustPushService extends GetxService {
       currentState = state3;
       List<String> dupDeleteAttachments = [];
       for (var item in items3.entries) {
+        await _yieldToMainThread();
         try {
           if (item.value == null) {
             final query = Database.attachments.query(Attachment_.ckRecordId.equals(item.key)).build();
@@ -2633,9 +2648,22 @@ class RustPushService extends GetxService {
           if (dupDeleteAttachments.contains(item.key)) continue;
           var decoded = api.decodeAttachmentmeta(wrapped: item.value!.cm);
 
-          if (cutoffTime > decoded.createdDate && currentState != 3) {
-            Logger.info("Stopping attachment sync for cutoff!");
-            currentState = 3;
+          if (cutoffTime > decoded.createdDate) {
+            if (currentState != 3) {
+              Logger.info("Stopping attachment sync for cutoff!");
+              currentState = 3;
+            }
+            // Older than the sync limit. Messages that old are not synced, so
+            // unless the message is already on the device the attachment was
+            // saved with no message. Every sync since 2026-10-11 logged about
+            // 200 such "new" attachments, one write transaction each. (Not
+            // established whether they are the same rows again, which the
+            // message-joined lookup below would not find, or older ones.)
+            final messageGuid = decoded.guid.startsWith("at") ? decoded.guid.split("_")[2] : null;
+            if (messageGuid == null || Message.findOne(guid: messageGuid) == null) {
+              skippedOldAttachments++;
+              continue;
+            }
           }
 
           var existing = await Attachment.findOneAsync(convertAttachmentGuid(decoded.guid));
@@ -2673,6 +2701,9 @@ class RustPushService extends GetxService {
 
       attCount += items3.length;
       isSyncing.value = "Downloaded $attCount attachments";
+      if (skippedOldAttachments > 0) {
+        Logger.info("Skipped $skippedOldAttachments attachments older than the limit with no local message", tag: "CloudSync");
+      }
 
       PrefsSvc.i.setString("attachmentSyncToken", base64Encode(token3));
     }
@@ -2698,6 +2729,7 @@ class RustPushService extends GetxService {
       int pageOldest = 0, pageNewest = 0, pageNew = 0, pageExisting = 0, pageOld = 0, pageNoChat = 0, pageDeleted = 0;
 
       for (var item in items2.entries) {
+        await _yieldToMainThread();
         try {
           if (item.value == null) {
             final query = Database.messages.query(Message_.ckRecordId.equals(item.key)).build();
