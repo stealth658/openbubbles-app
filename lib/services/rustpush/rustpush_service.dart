@@ -1403,7 +1403,7 @@ class RustPushBackend implements BackendService {
         icon: base64Decode(appdata.appIcon!),
       ) : null)
     );
-    await sendMsg(msg);
+    await _sendBestEffort(msg, "started typing");
   }
 
   @override
@@ -1414,7 +1414,19 @@ class RustPushBackend implements BackendService {
       sender: await c.ensureHandle(),
       message: const api.Message.typing(false)
     );
-    await sendMsg(msg);
+    await _sendBestEffort(msg, "stopped typing");
+  }
+
+  /// Typing indicators are fire-and-forget (`void` in BackendService), so a
+  /// send that fails on a dropped connection ("Broken pipe", "Software caused
+  /// connection abort") had nowhere to go and surfaced as an unhandled
+  /// exception. There is nothing to retry; log it.
+  Future<void> _sendBestEffort(api.MessageInst msg, String what) async {
+    try {
+      await sendMsg(msg);
+    } catch (e) {
+      Logger.warn("Could not send $what: $e", tag: "RustPush");
+    }
   }
 
   @override

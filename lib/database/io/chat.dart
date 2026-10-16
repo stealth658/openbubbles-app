@@ -1218,10 +1218,14 @@ class Chat {
       // rather than ChatInterface/HttpSvc.
       if (privateMark && changed) {
         if (!hasUnread) {
-          backend.markRead(
-              this,
-              SettingsSvc.settings.enablePrivateAPI.value &&
-                  (autoSendReadReceipts ?? SettingsSvc.settings.privateMarkChatAsRead.value));
+          // Not awaited; a send failure (dropped connection) was an unhandled
+          // exception. The chat is marked read locally either way.
+          unawaited(backend
+              .markRead(
+                  this,
+                  SettingsSvc.settings.enablePrivateAPI.value &&
+                      (autoSendReadReceipts ?? SettingsSvc.settings.privateMarkChatAsRead.value))
+              .then((_) {}, onError: (e) => Logger.warn("Could not send read receipt: $e", tag: "Chat")));
         } else {
           backend.markUnread(this);
         }
@@ -1563,7 +1567,9 @@ class Chat {
     this.autoSendReadReceipts = autoSendReadReceipts;
     await saveAsync(updateAutoSendReadReceipts: true);
     // OpenBubbles routes this through the BackendService (rustpush).
-    backend.markRead(this, autoSendReadReceipts ?? SettingsSvc.settings.privateMarkChatAsRead.value);
+    unawaited(backend
+        .markRead(this, autoSendReadReceipts ?? SettingsSvc.settings.privateMarkChatAsRead.value)
+        .then((_) {}, onError: (e) => Logger.warn("Could not send read receipt: $e", tag: "Chat")));
     return this;
   }
 
