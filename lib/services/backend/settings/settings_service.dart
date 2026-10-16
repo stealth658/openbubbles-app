@@ -479,9 +479,11 @@ class SettingsService {
     if (Platform.isAndroid) {
       buildNumber =
           FilesystemSvc.packageInfo.buildNumber.lastChars(min(4, FilesystemSvc.packageInfo.buildNumber.length));
-      if (int.parse(code) <= int.parse(buildNumber) ||
-          PrefsSvc.server.getClientUpdateCheckCode() == code ||
-          (Platform.isAndroid && isDesktopRelease)) {
+      // A desktop tag ("+desktop.93") has no Android build code; test it first
+      // so int.parse never sees it (FormatException in the logs, 2026-10-15).
+      if ((Platform.isAndroid && isDesktopRelease) ||
+          int.parse(code) <= int.parse(buildNumber) ||
+          PrefsSvc.server.getClientUpdateCheckCode() == code) {
         available = false;
       }
     } else {
