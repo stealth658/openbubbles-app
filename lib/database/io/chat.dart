@@ -98,6 +98,12 @@ class Chat {
   /// Update the latest-message relation and its sort-key in one step.
   /// Persists both fields to the DB asynchronously (fire-and-forget).
   void setLatestMessage(Message m) {
+    // ObjectBox attaches a ToOne on put only when it already has a value, so a
+    // chat created and saved before its first latest message (a new
+    // conversation) keeps an unattached relation. Setting the target then
+    // leaves its id "unknown", and toMap()'s targetId threw "ToOne relation
+    // field not initialized" from saveAsync, losing the save.
+    dbLatestMessage.attach(Database.store);
     dbLatestMessage.target = m;
     dbOnlyLatestMessageDate = m.dateCreated;
     unawaited(saveAsync(updateLatestMessage: true));
