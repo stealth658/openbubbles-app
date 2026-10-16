@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bluebubbles/app/components/custom_text_editing_controllers.dart';
 import 'package:bluebubbles/app/state/message_state.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/chat_event/chat_event.dart';
@@ -19,6 +21,7 @@ import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/misc/s
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/misc/google_bubble_shape.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/misc/tail_clipper.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/popup/message_popup_holder.dart';
+import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/reply/reply_thread_popup.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/text/text_bubble.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/timestamp/message_timestamp.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/timestamp/timestamp_separator.dart';
@@ -273,7 +276,9 @@ class _MessageHolderState extends State<MessageHolder> with AutomaticKeepAliveCl
         borderRadius: GoogleBubbleShape.quote(outerRadii),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: () => service.jumpToMessage.call(original.guid!),
+          // Opens the thread (original and every reply, as "N Replies" does);
+          // the arrow in its header goes to the original in the conversation.
+          onTap: () => unawaited(showReplyThread(context, message, part, service, widget.cvController)),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             child: Row(

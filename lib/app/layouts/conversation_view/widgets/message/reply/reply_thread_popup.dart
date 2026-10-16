@@ -14,12 +14,47 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
 
-void showReplyThread(BuildContext context, Message message, MessagePart part, MessagesService service,
-    ConversationViewController cvController) {
+Future<void> showReplyThread(BuildContext context, Message message, MessagePart part, MessagesService service,
+    ConversationViewController cvController) async {
+  final originatorGuid = message.threadOriginatorGuid ?? message.guid!;
   final originatorPart = message.threadOriginatorGuid != null ? message.normalizedThreadPart : part.part;
-  final _messages = service.struct.threads(message.threadOriginatorGuid ?? message.guid!, originatorPart);
-  _messages.sort((a, b) => Message.sort(a, b, descending: false));
-  _buildThreadView(_messages, originatorPart, cvController, context);
+  final byGuid = <String, Message>{
+    for (final m in service.struct.threads(originatorGuid, originatorPart))
+      if (m.guid != null) m.guid!: m,
+  };
+  // The struct holds only the loaded stretch of the conversation. Tapping the
+  // quote on a reply to an older message can point at an original, or at
+  // replies, that are not loaded; fill those in from the database. Loaded
+  // instances win so their live state is used.
+  for (final m in await _threadFromDb(cvController.chat, originatorGuid, originatorPart)) {
+    byGuid.putIfAbsent(m.guid!, () => m);
+  }
+  if (!context.mounted) return;
+  final _messages = byGuid.values.toList()..sort((a, b) => Message.sort(a, b, descending: false));
+  _buildThreadView(_messages, originatorPart, cvController, context, originatorGuid: originatorGuid);
+}
+
+/// The original and its replies on [originatorPart], straight from the
+/// database. Scoped to the chat through the relation index and run with
+/// findAsync, so it does not scan the message table on the main thread.
+Future<List<Message>> _threadFromDb(Chat chat, String originatorGuid, int originatorPart) async {
+  if (kIsWeb || chat.id == null) return [];
+  final query = Database.messages
+      .query(Message_.chat
+          .equals(chat.id!)
+          .and(Message_.dateDeleted.isNull())
+          .and(Message_.threadOriginatorGuid.equals(originatorGuid).or(Message_.guid.equals(originatorGuid))))
+      .build();
+  final found = await query.findAsync();
+  query.close();
+  final thread = found
+      .where((m) => m.guid != null && (m.guid == originatorGuid || m.normalizedThreadPart == originatorPart))
+      .toList();
+  for (final m in thread) {
+    m.realAttachments;
+    m.fetchAssociatedMessages();
+  }
+  return thread;
 }
 
 void showBookmarksThread(ConversationViewController cvController, BuildContext context) async {
@@ -40,7 +75,8 @@ void showBookmarksThread(ConversationViewController cvController, BuildContext c
 }
 
 void _buildThreadView(
-    List<Message> _messages, int? originatorPart, ConversationViewController cvController, BuildContext context) {
+    List<Message> _messages, int? originatorPart, ConversationViewController cvController, BuildContext context,
+    {String? originatorGuid}) {
   final controller = ScrollController();
   // Capture the conversation's theme before pushing the route — if adaptive
   // theming is active, context.theme is already the per-chat theme.
@@ -79,6 +115,7 @@ void _buildThreadView(
       builder: (sheetCtx) => themed(_ThreadSheet(
         messages: _messages,
         originatorPart: originatorPart,
+        originatorGuid: originatorGuid,
         cvController: cvController,
         scrollController: controller,
         theme: capturedTheme,
@@ -365,6 +402,7 @@ class _ThreadSheet extends StatefulWidget {
   const _ThreadSheet({
     required this.messages,
     required this.originatorPart,
+    this.originatorGuid,
     required this.cvController,
     required this.scrollController,
     required this.theme,
@@ -373,6 +411,7 @@ class _ThreadSheet extends StatefulWidget {
 
   final List<Message> messages;
   final int? originatorPart;
+  final String? originatorGuid;
   final ConversationViewController cvController;
   final ScrollController scrollController;
   final ThemeData theme;
@@ -437,6 +476,16 @@ class _ThreadSheetState extends State<_ThreadSheet> {
                 Expanded(
                   child: Text(title, style: theme.textTheme.titleMedium!.copyWith(color: scheme.onSurface)),
                 ),
+                // Back to the original where it sits in the conversation.
+                if (_isThread && widget.originatorGuid != null)
+                  IconButton(
+                    tooltip: "Go to original",
+                    icon: Icon(Icons.arrow_upward, color: scheme.onSurfaceVariant),
+                    onPressed: () {
+                      _close();
+                      MessagesSvc(cvController.chat.guid).jumpToMessage.call(widget.originatorGuid!);
+                    },
+                  ),
                 IconButton(
                   tooltip: "Close",
                   icon: Icon(Icons.close, color: scheme.onSurfaceVariant),
