@@ -165,6 +165,10 @@ class FaceTimeBtnState extends State<FaceTimeBtn> with ThemeHelpers {
     super.initState();
     (() async {
       try {
+        // A chat opened straight from a cold start (notification, share) builds
+        // this before rustpush has finished starting; state! was null then.
+        await pushService.initFuture;
+        if (!mounted) return;
         final data = await chat.getConversationData();
         final supported = await api.validateTargetsFacetime(
           state: pushService.state!.client,

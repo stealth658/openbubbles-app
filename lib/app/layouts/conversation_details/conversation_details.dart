@@ -62,6 +62,8 @@ class _ConversationDetailsState extends State<ConversationDetails> with WidgetsB
   Future<void> _loadFaceTimeTargets() async {
     if (kIsWeb) return;
     try {
+      // Wait for rustpush rather than giving up when the page opens first.
+      await pushService.initFuture;
       final client = pushService.state?.client;
       if (client == null) return;
       final data = await chat.getConversationData();
