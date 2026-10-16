@@ -402,6 +402,13 @@ extension MessageNotificationExtension on Message {
         if (associatedMessage != null) {
           // grab the verb we'll use from the reactionToVerb map
           String? verb = ReactionTypes.reactionToVerb[associatedMessageType];
+          // Emoji tapbacks' verb is "reacted emoji_placeholder to". OpenBubbles
+          // filled it in MessageHelper (6364309db); upstream moved this text
+          // here and the merge lost it, so notifications and the chat list
+          // read "reacted emoji_placeholder to".
+          if (verb != null && associatedMessageEmoji != null) {
+            verb = verb.replaceFirst("emoji_placeholder", associatedMessageEmoji!);
+          }
           // we need to check balloonBundleId first because for some reason
           // game pigeon messages have the text "�"
           if (associatedMessage.isInteractive) {
