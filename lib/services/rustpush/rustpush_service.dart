@@ -2420,7 +2420,17 @@ class RustPushService extends GetxService {
       try {
         saveMessages[message.ckRecordId!] = message.toCloud(!saveMessageAttachments);
       } catch (e, s) {
-        Logger.warn("Failure to convert to cloud", error: e, trace: s);
+        // Which messages fail is not known yet (RangeError on attributedBody[0]
+        // for about 1 in 8 uploads, Oct 2026); say what the message is.
+        Logger.warn(
+            "Failure to convert to cloud: ${message.guid} fromMe=${message.isFromMe} "
+            "itemType=${message.itemType} text=${message.text?.length ?? "null"} chars "
+            "body=${message.attributedBody.length} attachments=${message.attachments.length} "
+            "balloon=${message.balloonBundleId} assoc=${message.associatedMessageType} "
+            "edited=${message.dateEdited != null} summaryInfo=${message.messageSummaryInfo.length} "
+            "created=${message.dateCreated?.toUtc().toIso8601String()}",
+            error: e,
+            trace: s);
         continue;
       } finally {
         message.ckSyncState = true;
@@ -5133,6 +5143,14 @@ class RustPushService extends GetxService {
     // Fire-and-forget, but never as a bare un-awaited future: an error here
     // would otherwise surface as an unhandled async exception with no context.
     unawaited(api.doFirstTimeInit(path: FilesystemSvc.appDocDir.path).catchError((e, s) {
+      // doFirstTimeInit only installs the Rust logger, which is process-wide.
+      // Every further engine in the process (DartWorker, iCloud sync, a
+      // restarted UI engine) calls it again and Rust panics with
+      // SetLoggerError; the logger from the first call keeps working.
+      if (e.toString().contains("SetLoggerError")) {
+        Logger.info("Rust logger already set up in this process", tag: "RustPush");
+        return;
+      }
       Logger.error("doFirstTimeInit failed", error: e, trace: s);
     }));
     initFuture = (() async {
