@@ -14,6 +14,7 @@ import com.bluebubbles.messaging.services.rustpush.APNService
 import com.bluebubbles.messaging.services.system.CreateDocumentHandler
 import com.bluebubbles.messaging.services.system.EnableBTHandler
 import com.bluebubbles.messaging.utils.PersistentLog
+import com.bluebubbles.messaging.utils.MainThreadWatchdog
 import com.google.firebase.firestore.FirebaseFirestoreException
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -66,6 +67,7 @@ class MainActivity : FlutterFragmentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        MainThreadWatchdog.start(this)
         // OpenBubbles talks to APNs itself; the push service must be running for the
         // whole life of the app, not just while a chat is open.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
