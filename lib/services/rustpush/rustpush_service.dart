@@ -2649,16 +2649,14 @@ class RustPushService extends GetxService {
           var decoded = api.decodeAttachmentmeta(wrapped: item.value!.cm);
 
           if (cutoffTime > decoded.createdDate) {
-            if (currentState != 3) {
-              Logger.info("Stopping attachment sync for cutoff!");
-              currentState = 3;
-            }
-            // Older than the sync limit. Messages that old are not synced, so
-            // unless the message is already on the device the attachment was
-            // saved with no message. Every sync since 2026-10-11 logged about
-            // 200 such "new" attachments, one write transaction each. (Not
-            // established whether they are the same rows again, which the
-            // message-joined lookup below would not find, or older ones.)
+            // Pages come in CloudKit change order, not by date, so an old
+            // attachment does not mean the rest are old. Upstream stopped the
+            // run at the first one, which meant every sync advanced exactly
+            // one page and the walk never reached the end (200 "new" old
+            // attachments per sync, Oct 11 to 16). Skip it and keep going, as
+            // the message loop does; keep it only when its message is on the
+            // device, since messages that old are not synced and the row
+            // would have no message.
             final messageGuid = decoded.guid.startsWith("at") ? decoded.guid.split("_")[2] : null;
             if (messageGuid == null || Message.findOne(guid: messageGuid) == null) {
               skippedOldAttachments++;
@@ -2701,9 +2699,10 @@ class RustPushService extends GetxService {
 
       attCount += items3.length;
       isSyncing.value = "Downloaded $attCount attachments";
-      if (skippedOldAttachments > 0) {
-        Logger.info("Skipped $skippedOldAttachments attachments older than the limit with no local message", tag: "CloudSync");
-      }
+      Logger.info(
+          "Attachment page: ${items3.length} items (total $attCount), ${skippedOldAttachments} older than the limit "
+          "with no local message so far, state $currentState",
+          tag: "CloudSync");
 
       PrefsSvc.i.setString("attachmentSyncToken", base64Encode(token3));
     }
