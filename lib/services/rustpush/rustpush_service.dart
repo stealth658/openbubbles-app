@@ -488,22 +488,58 @@ class RustPushBackend implements BackendService {
     return const api.MessageType.iMessage();
   }
 
-  Future<void> sendMsg(api.MessageInst msg) async {
+  /// How long a message keeps trying while the network is out before it is
+  /// shown as failed. rustpush gives up on a single send after 15 s (aps.rs
+  /// wait_for_timeout), which is one subway stop; the iPhone keeps a message
+  /// in "sending" for far longer. Attempts back off 5, 10, 20, 30, 30... s,
+  /// the same MessageInst (same id) each time, so a message that did get
+  /// through while the reply was lost is not duplicated at the other end.
+  static const transientSendRetryWindow = Duration(minutes: 2);
+
+  /// Errors worth retrying: the connection or a lookup failed, not iMessage
+  /// refusing the message. rustpush's "Do not retry" wrapper means it already
+  /// retried once itself; for an IO error that is still just no network.
+  static bool isTransientSendError(Object e) {
+    if (e is! AnyhowException) return false;
+    final m = e.message;
+    return m.contains("Send timeout") ||
+        m.contains("IO error") ||
+        m.contains("timed out") ||
+        m.contains("lookup address") ||
+        m.contains("Broken pipe") ||
+        m.contains("connection abort") ||
+        m.contains("Connection reset");
+  }
+
+  Future<void> sendMsg(api.MessageInst msg, {bool retryTransient = false}) async {
     var message = Message.findOne(guid: msg.id);
     if (message != null) {
       message.sendingServiceId = pushService.serviceId;
       message.save(updateSendingServiceId: true);
     }
     var stillRunning = false;
+    final deadline = DateTime.now().add(transientSendRetryWindow);
+    var attempt = 0;
     try {
-      stillRunning = await api.send(state: pushService.state!.client, local: pushService.state!.localBroadcast, msg: msg);
-    } catch (e) {
-      if (e is AnyhowException) {
-        if (e.message.contains("Failed to generate resource") && e.message.contains("not retrying")) {
-          pushService.markFailedToLogin();
+      while (true) {
+        try {
+          stillRunning =
+              await api.send(state: pushService.state!.client, local: pushService.state!.localBroadcast, msg: msg);
+          break;
+        } catch (e) {
+          if (e is AnyhowException) {
+            if (e.message.contains("Failed to generate resource") && e.message.contains("not retrying")) {
+              pushService.markFailedToLogin();
+            }
+          }
+          if (!retryTransient || !isTransientSendError(e) || DateTime.now().isAfter(deadline)) rethrow;
+          attempt++;
+          final wait = Duration(seconds: min(5 * (1 << (attempt - 1)), 30));
+          Logger.warn("Send of ${msg.id} failed (attempt $attempt): $e; retrying in ${wait.inSeconds}s",
+              tag: "RustPush");
+          await Future.delayed(wait);
         }
       }
-      rethrow;
     } finally {
       if (!stillRunning) {
         message = Message.findOne(guid: msg.id);
@@ -541,7 +577,7 @@ class RustPushBackend implements BackendService {
       if (chat.isRpSms) {
         msg.target = await getSMSTargets(handle);
       }
-      await sendMsg(msg);
+      await sendMsg(msg, retryTransient: true);
       msg.sentTimestamp = DateTime.now().millisecondsSinceEpoch;
 
       final newMessage = (await pushService.reflectMessageDyn(msg))!;
@@ -649,7 +685,7 @@ class RustPushBackend implements BackendService {
     }
     m.stagingGuid = msg.id; // in case delivered comes in before sending "finishes" (also for retries, duh)
     m.save(chat: chat);
-    await sendMsg(msg);
+    await sendMsg(msg, retryTransient: true);
     if (chat.isRpSms) {
       m.stagingGuid = msg.id;
     } else {
@@ -1039,7 +1075,7 @@ class RustPushBackend implements BackendService {
     m.stagingGuid = msg.id; // in case delivered comes in before sending "finishes" (also for retries, duh)
     m.save(chat: chat);
     try {
-      await sendMsg(msg);
+      await sendMsg(msg, retryTransient: true);
     } catch (e) {
       Logger.error(e);
       if (!chat.isRpSms || !SettingsSvc.settings.isSmsRouter.value) {
@@ -1241,7 +1277,7 @@ class RustPushBackend implements BackendService {
             embeddedProfile: await pushService.getShareProfileMessageFor(chat.participants),
             toText: selected.text ?? "",
             reaction: api.ReactMessageType.react(reaction: reactionMap[reaction]?.call() ?? api.Reaction.emoji(reaction), enable: enabled))));
-    await sendMsg(msg);
+    await sendMsg(msg, retryTransient: true);
     msg.sentTimestamp = DateTime.now().millisecondsSinceEpoch;
     return (await pushService.reflectMessageDyn(msg))!;
   }
@@ -1309,7 +1345,7 @@ class RustPushBackend implements BackendService {
         sender: await msgObj.chat.target!.ensureHandle(),
         conversation: await msgObj.chat.target!.getConversationData(),
         message: api.Message.unsend(api.UnsendMessage(tuuid: msgObj.guid!, editPart: part.part)));
-    await sendMsg(msg);
+    await sendMsg(msg, retryTransient: true);
 
     if (msgObj.ckRecordId != null) {
       await api.saveMessages(cloudMessagesClient: pushService.state!.icloudServices!.cloudMessagesClient!, messages: {msgObj.ckRecordId!: msgObj.toCloud(true)});
@@ -1333,7 +1369,7 @@ class RustPushBackend implements BackendService {
             tuuid: msgObj.guid!,
             editPart: part,
             newParts: await partsFromBody(text))));
-    await sendMsg(msg);
+    await sendMsg(msg, retryTransient: true);
 
     if (msgObj.ckRecordId != null) {
       await pushService.uploadMessages([msgObj], [], {}, true);
