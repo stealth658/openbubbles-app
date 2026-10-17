@@ -1,9 +1,12 @@
 package com.bluebubbles.messaging.utils
 
+import android.app.Activity
 import android.app.ActivityManager
+import android.app.Application
 import android.app.ApplicationExitInfo
 import android.content.Context
 import android.os.Build
+import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
@@ -26,6 +29,11 @@ import java.util.concurrent.atomic.AtomicBoolean
 ///  - "Android recorded ANR": at start-up, ANR exits Android kept for this app
 ///    (only when the process was closed or killed, not when "Wait" was chosen),
 ///    with the main thread section of Android's trace.
+///
+/// Watches only while one of the app's activities is on screen (the popup
+/// only appears for input to a visible app); in the background the thread
+/// sleeps in 2 s steps instead of posting to the main thread twice a second
+/// for the life of the process.
 object MainThreadWatchdog {
     private const val TAG = "MainThreadWatchdog"
     private const val TICK_MS = 500L
@@ -35,11 +43,26 @@ object MainThreadWatchdog {
     private const val PREFS = "main_thread_watchdog"
     private const val LAST_ANR_KEY = "lastAnrTimestamp"
 
+    private const val IDLE_MS = 2000L
+
     private val started = AtomicBoolean(false)
+    @Volatile private var resumedActivities = 0
 
     fun start(context: Context) {
         if (!started.compareAndSet(false, true)) return
         val app = context.applicationContext
+        (app as? Application)?.registerActivityLifecycleCallbacks(object : Application.ActivityLifecycleCallbacks {
+            override fun onActivityResumed(activity: Activity) { resumedActivities++ }
+            override fun onActivityPaused(activity: Activity) { resumedActivities = maxOf(0, resumedActivities - 1) }
+            override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {}
+            override fun onActivityStarted(activity: Activity) {}
+            override fun onActivityStopped(activity: Activity) {}
+            override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
+            override fun onActivityDestroyed(activity: Activity) {}
+        })
+        // The activity that starts this is about to resume; count it until the
+        // callback takes over.
+        if (context is Activity) resumedActivities = 1
         Thread({ logRecordedAnrs(app) }, "MainThreadWatchdog-exits").apply { isDaemon = true }.start()
         Thread({ watch(app) }, "MainThreadWatchdog").apply { isDaemon = true }.start()
     }
@@ -48,6 +71,10 @@ object MainThreadWatchdog {
         val main = Handler(Looper.getMainLooper())
         while (true) {
             try {
+                if (resumedActivities == 0) {
+                    Thread.sleep(IDLE_MS)
+                    continue
+                }
                 val ran = AtomicBoolean(false)
                 val posted = SystemClock.uptimeMillis()
                 main.post { ran.set(true) }
