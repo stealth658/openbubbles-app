@@ -55,6 +55,7 @@ class ReactionObserver extends StatelessWidget {
           right: isFromMe ? 18 : null,
           child: _GoogleReactionPill(
             reactions: reactionList,
+            iMessage: ChatsSvc.getChatState(chatGuid)?.chat.isIMessage ?? true,
             // With the iOS-style tapback menu the reactions were picked as
             // iMessage tapbacks, so draw them with the same tapback icons.
             iosIcons: SettingsSvc.settings.materialIosMessageMenu.value,
@@ -73,19 +74,41 @@ class ReactionObserver extends StatelessWidget {
   }
 }
 
+/// Reactions under a bubble on the Material skin, coloured the way iMessage
+/// on the iPhone does it: other people's reactions on a pill in the received
+/// bubble's grey with the icon in the sent colour, yours on a pill in the
+/// sent bubble's colour with a white icon. When both are present they are two
+/// pills side by side, so it stays clear which reaction is yours.
 class _GoogleReactionPill extends StatelessWidget {
-  const _GoogleReactionPill({required this.reactions, required this.iosIcons});
+  const _GoogleReactionPill({required this.reactions, required this.iosIcons, required this.iMessage});
 
   final List<Message> reactions;
   final bool iosIcons;
+  final bool iMessage;
 
   @override
   Widget build(BuildContext context) {
-    final scheme = context.theme.colorScheme;
     final unique = getUniqueReactionMessages(reactions);
+    final mine = unique.where((r) => r.isFromMe == true).toList();
+    final others = unique.where((r) => r.isFromMe != true).toList();
+    final pills = [
+      if (others.isNotEmpty) _pill(context, others, mine: false),
+      if (mine.isNotEmpty) _pill(context, mine, mine: true),
+    ].whereType<Widget>().toList();
+    if (pills.isEmpty) return const SizedBox.shrink();
+    if (pills.length == 1) return pills.first;
+    return Row(mainAxisSize: MainAxisSize.min, children: [pills[0], const SizedBox(width: 2), pills[1]]);
+  }
+
+  Widget? _pill(BuildContext context, List<Message> group, {required bool mine}) {
+    final scheme = context.theme.colorScheme;
+    final bubbleExt = context.theme.extensions[BubbleColors] as BubbleColors?;
+    final sent = scheme.bubble(context, iMessage);
+    final background = mine ? sent : (bubbleExt?.receivedBubbleColor ?? scheme.surfaceContainerHighest);
+    final foreground = mine ? scheme.onBubble(context, iMessage) : sent;
     final seen = <String>{};
     final glyphs = <Widget>[];
-    for (final r in unique) {
+    for (final r in group) {
       final type = r.associatedMessageType?.replaceAll("-", "");
       final isTapback = type != null && type != ReactionTypes.EMOJI && ReactionTypes.reactionToEmoji.containsKey(type);
       final emoji = ReactionTypes.reactionToEmoji[type] ?? r.associatedMessageEmoji;
@@ -99,29 +122,31 @@ class _GoogleReactionPill extends StatelessWidget {
             'assets/reactions/$type-black.svg',
             width: 14,
             height: 14,
-            colorFilter: ColorFilter.mode(type == "love" ? Colors.pink : scheme.onSurfaceVariant, BlendMode.srcIn),
+            // As on the iPhone: someone else's heart is pink; your own
+            // reactions are white on your colour.
+            colorFilter: ColorFilter.mode(!mine && type == "love" ? Colors.pink : foreground, BlendMode.srcIn),
           ),
         ));
       } else {
         glyphs.add(Text(emoji, style: const TextStyle(fontSize: 15, height: 1.3)));
       }
     }
-    if (glyphs.isEmpty) return const SizedBox.shrink();
+    if (glyphs.isEmpty) return null;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: scheme.surfaceContainerHigh,
+        color: background,
         borderRadius: BorderRadius.circular(14),
+        // Background-coloured ring: cuts the pill out of the bubble it overlaps.
         border: Border.all(color: scheme.surface, width: 2),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           ...glyphs,
-          if (unique.length > 1) ...[
+          if (group.length > 1) ...[
             const SizedBox(width: 3),
-            Text("${unique.length}",
-                style: context.theme.textTheme.labelSmall!.copyWith(color: scheme.onSurfaceVariant)),
+            Text("${group.length}", style: context.theme.textTheme.labelSmall!.copyWith(color: foreground)),
           ],
         ],
       ),

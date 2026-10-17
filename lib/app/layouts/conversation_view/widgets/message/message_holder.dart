@@ -796,7 +796,10 @@ class _MessageHolderState extends State<MessageHolder> with AutomaticKeepAliveCl
                                         ? EdgeInsets.only(left: googleStyle ? 18.0 : 35.0 * avatarScale)
                                         : EdgeInsets.zero,
                                     child:
-                                        MessageProperties(globalKey: keys.length > index ? keys[index] : null, part: e),
+                                        MessageProperties(
+                                            globalKey: keys.length > index ? keys[index] : null,
+                                            part: e,
+                                            showReplyCount: !widget.isReplyThread),
                                   ),
                                 ],
                               ),

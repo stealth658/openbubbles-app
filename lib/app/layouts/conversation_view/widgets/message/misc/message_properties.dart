@@ -18,10 +18,15 @@ class MessageProperties extends StatefulWidget {
     super.key,
     required this.part,
     this.globalKey,
+    this.showReplyCount = true,
   });
 
   final MessagePart part;
   final GlobalKey? globalKey;
+
+  /// False inside the thread sheet, whose header already gives the count and
+  /// where the link cannot be tapped.
+  final bool showReplyCount;
 
   @override
   State<StatefulWidget> createState() => _MessagePropertiesState();
@@ -88,7 +93,9 @@ class _MessagePropertiesState extends State<MessageProperties> with ThemeHelpers
 
   List<TextSpan> getProperties() {
     final properties = <TextSpan>[];
-    final replyList = service.struct.threads(message.guid!, widget.part.part, returnOriginator: false);
+    final replyList = widget.showReplyCount
+        ? service.struct.threads(message.guid!, widget.part.part, returnOriginator: false)
+        : const <Message>[];
     if (message.expressiveSendStyleId != null) {
       final effect =
           effectMap.entries.firstWhereOrNull((element) => element.value == message.expressiveSendStyleId)?.key ??

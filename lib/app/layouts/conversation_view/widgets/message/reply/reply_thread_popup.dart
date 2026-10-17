@@ -535,7 +535,9 @@ class _ThreadSheetState extends State<_ThreadSheet> {
                     Expanded(
                       child: TextField(
                         controller: _replyText,
-                        autofocus: true,
+                        // Opened to read (a quote or "N Replies"); the keyboard
+                        // waits until the field is tapped.
+                        autofocus: false,
                         minLines: 1,
                         maxLines: 4,
                         textInputAction: TextInputAction.send,
