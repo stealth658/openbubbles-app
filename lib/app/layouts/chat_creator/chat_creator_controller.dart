@@ -171,7 +171,7 @@ class ChatCreatorController extends StatefulController {
           e.handles.firstWhereOrNull((h) =>
                   h.address.toLowerCase().contains(q) ||
                   h.displayName.toLowerCase().contains(q) ||
-                  // "(646) 893" should find +16468938923.
+                  // "(555) 010" should find +15550104242.
                   (qDigits.length >= 3 && _digits(h.address).contains(qDigits))) !=
               null;
     }).toList();

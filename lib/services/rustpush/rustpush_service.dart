@@ -162,7 +162,7 @@ class RustPushBBUtils {
   /// 2026-08-20), which the official .so we ship predates.
   ///
   /// SMS/MMS forwarded from the iPhone carry participant numbers the way the
-  /// carrier wrote them. Plain SMS come as "+1516...", but MMS (pictures, and
+  /// carrier wrote them. Plain SMS come as "+1555...", but MMS (pictures, and
   /// the long marketing texts that carriers upgrade to MMS) list every
   /// recipient as bare digits: "15550100100". The old .so prefixed "tel:" and
   /// nothing else, so the message arrived with participants
