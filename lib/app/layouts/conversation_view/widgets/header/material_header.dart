@@ -89,21 +89,30 @@ class MaterialHeader extends StatelessWidget implements PreferredSizeWidget {
                 child: ManualMark(controller: controller),
               ),
               SelectedMessageMenu(controller: controller),
-              if (Platform.isAndroid && !controller.chat.isGroup && controller.chat.handles.first.address.isPhoneNumber)
+              // Select mode: only Delete, Forward and the selection overflow; the
+              // chat's own buttons would otherwise squeeze "N selected" out.
+              if (!controller.inSelectMode.value &&
+                  Platform.isAndroid &&
+                  !controller.chat.isGroup &&
+                  controller.chat.handles.first.address.isPhoneNumber)
                 IconButton(
                   icon: Icon(Icons.call_outlined, color: _foregroundColor),
                   onPressed: () {
                     launchUrl(Uri(scheme: "tel", path: controller.chat.handles.first.address));
                   },
                 ),
-              if (Platform.isAndroid && !controller.chat.isGroup && controller.chat.handles.first.address.isEmail)
+              if (!controller.inSelectMode.value &&
+                  Platform.isAndroid &&
+                  !controller.chat.isGroup &&
+                  controller.chat.handles.first.address.isEmail)
                 IconButton(
                   icon: Icon(Icons.mail_outlined, color: _foregroundColor),
                   onPressed: () {
                     launchUrl(Uri(scheme: "mailto", path: controller.chat.handles.first.address));
                   },
                 ),
-              FaceTimeBtn(controller: controller),
+              if (!controller.inSelectMode.value) FaceTimeBtn(controller: controller),
+              if (!controller.inSelectMode.value)
               Padding(
                 padding: EdgeInsets.only(top: kIsDesktop ? 20 : 0),
                 child: PopupMenuButton<int>(
