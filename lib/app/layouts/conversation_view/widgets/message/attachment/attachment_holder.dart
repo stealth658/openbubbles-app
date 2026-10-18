@@ -27,12 +27,17 @@ class AttachmentHolder extends StatefulWidget {
     this.transparentBackground = false,
     this.showCardShadow = false,
     this.galleryAttachments,
+    this.uploadBadges = true,
   });
 
   final MessagePart message;
   final bool transparentBackground;
   final bool showCardShadow;
   final List<Attachment>? galleryAttachments;
+
+  /// False when the caller draws its own upload indicator (the collage, whose
+  /// tiles are scaled to fill, which would scale the corner badges too).
+  final bool uploadBadges;
 
   @override
   State<StatefulWidget> createState() => _AttachmentHolderState();
@@ -297,6 +302,7 @@ class _AttachmentHolderState extends State<AttachmentHolder> with ThemeHelpers {
       return UploadProgressContent(
         isiOS: isiOS,
         cvController: controller.cvController,
+        badges: widget.uploadBadges,
       );
     }
 

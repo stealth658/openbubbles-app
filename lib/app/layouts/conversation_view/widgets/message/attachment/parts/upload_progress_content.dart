@@ -16,10 +16,14 @@ class UploadProgressContent extends StatelessWidget {
     super.key,
     required this.isiOS,
     required this.cvController,
+    this.badges = true,
   });
 
   final bool isiOS;
   final ConversationViewController? cvController;
+
+  /// Whether to draw the cancel and progress badges in the top corners.
+  final bool badges;
 
   Widget _buildPreview(BuildContext context) {
     final attachmentState = AttachmentStateScope.of(context);
@@ -66,7 +70,7 @@ class UploadProgressContent extends StatelessWidget {
           ),
         ),
         // Top-left: circular cancel / waiting chip — styled like the Live photo tag.
-        if (messageError == 0)
+        if (badges && messageError == 0)
           Positioned(
             top: 8,
             left: 8,
@@ -94,6 +98,7 @@ class UploadProgressContent extends StatelessWidget {
           ),
         // Top-right: pill backdrop (matches cancel button) with a smaller
         // progress ring inset inside it.
+        if (badges)
         Positioned(
           top: 8,
           right: 16,

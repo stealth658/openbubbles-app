@@ -1,6 +1,8 @@
 import 'dart:math';
 
+import 'package:bluebubbles/app/components/circle_progress_bar.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/attachment/attachment_holder.dart';
+import 'package:bluebubbles/app/state/message_state_scope.dart';
 import 'package:bluebubbles/database/models.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:flutter/material.dart';
@@ -25,6 +27,7 @@ class MessageMediaCollage extends StatelessWidget {
   Widget build(BuildContext context) {
     final attachments = part.attachments;
     final n = attachments.length;
+    final messageState = MessageStateScope.of(context);
     final width = min(NavigationSvc.width(context) * 0.62, 340.0);
     final cell = (width - gap) / 2;
 
@@ -52,8 +55,37 @@ class MessageMediaCollage extends StatelessWidget {
                 ),
                 transparentBackground: true,
                 galleryAttachments: attachments,
+                // The tile is scaled to fill, which would scale the holder's
+                // corner badges; the ring below is drawn at natural size.
+                uploadBadges: false,
               ),
             ),
+            if (att.guid != null)
+              Obx(() {
+                final state = messageState.getAttachmentState(att.guid!);
+                if (state == null || !state.isSending.value) return const SizedBox.shrink();
+                return IgnorePointer(
+                  child: Center(
+                    child: Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.6), shape: BoxShape.circle),
+                      child: Center(
+                        child: SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircleProgressBar(
+                            value: state.uploadProgress.value ?? 0.0,
+                            backgroundColor: Colors.white.withValues(alpha: 0.35),
+                            foregroundColor: context.theme.colorScheme.primary,
+                            strokeWidth: 2.0,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }),
             if (extra > 0)
               IgnorePointer(
                 child: Container(
