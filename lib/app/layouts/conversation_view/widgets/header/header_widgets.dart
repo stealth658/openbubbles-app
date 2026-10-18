@@ -1,5 +1,14 @@
+import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/popup/actions/media_actions.dart'
+    as popup_media_actions;
+import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/popup/actions/message_actions.dart'
+    as popup_message_actions;
+import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/popup/actions/navigation_actions.dart'
+    as popup_navigation_actions;
+import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/popup/actions/text_actions.dart'
+    as popup_text_actions;
+import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/popup/details_menu_action.dart';
+import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/popup/message_popup_action_context.dart';
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:bluebubbles/app/layouts/chat_creator/new_chat_creator.dart';
 import 'package:bluebubbles/app/state/chat_state_scope.dart';
@@ -96,39 +105,15 @@ class ManualMarkState extends State<ManualMark> with ThemeHelpers {
                 color: !iOS ? context.theme.colorScheme.onSurface : context.theme.colorScheme.primary,
               ),
               onPressed: () async {
-                List<PlatformFile> attachments = [];
-                String text = "";
-                widget.controller.selected.sort((a, b) => Message.sort(a, b, descending: false));
-                for (Message m in widget.controller.selected) {
-                  final _attachments = m.dbAttachments
-                      .where((e) => AttachmentsSvc.getContent(e, autoDownload: false) is PlatformFile)
-                      .map((e) => AttachmentsSvc.getContent(e, autoDownload: false) as PlatformFile);
-                  for (PlatformFile a in _attachments) {
-                    Uint8List? bytes = a.bytes;
-                    bytes ??= await File(a.path!).readAsBytes();
-                    attachments.add(PlatformFile(
-                      name: a.name,
-                      path: a.path,
-                      size: bytes.length,
-                      bytes: bytes,
-                    ));
-                  }
-                  if (!isNullOrEmpty(m.text)) {
-                    if (text.isEmpty) {
-                      text = m.text!;
-                    } else {
-                      text = "$text\n\n${m.text}";
-                    }
-                  }
-                }
+                // Forwarded as separate messages, oldest first, the way the
+                // iPhone does it (they used to be merged into one).
+                final messages = widget.controller.selected.toList()
+                  ..sort((a, b) => Message.sort(a, b, descending: false));
                 widget.controller.inSelectMode.value = false;
                 widget.controller.selected.clear();
                 NavigationSvc.pushAndRemoveUntil(
                   context,
-                  NewChatCreator(
-                    initialText: text,
-                    initialAttachments: attachments,
-                  ),
+                  NewChatCreator(forwardMessages: messages),
                   (route) => route.isFirst,
                 );
               },
@@ -484,5 +469,94 @@ class HeaderProgressIndicator extends StatelessWidget {
             ),
           ),
         ));
+  }
+}
+
+
+/// Material select mode: the rarer actions for the one selected message, in
+/// an overflow menu beside Delete and Forward. This is where the long-press
+/// menu's "More…" leads, as on the iPhone. Each entry runs the same action
+/// the long-press menu used to, built from a popup-less context.
+class SelectedMessageMenu extends StatelessWidget {
+  const SelectedMessageMenu({super.key, required this.controller});
+
+  final ConversationViewController controller;
+
+  MessagePopupActionContext _ctx(BuildContext context, Message message, DetailsMenuAction action) {
+    final chat = controller.chat;
+    final service = MessagesSvc(chat.guid);
+    final state = service.getOrCreateState(message);
+    final part = state.parts.firstOrNull ??
+        MessagePart(part: 0, text: message.text, attachments: message.dbAttachments.toList());
+    final dmChat = ChatsSvc.allChats.firstWhereOrNull((c) =>
+        !c.isGroup && c.handles.any((h) => h.address == message.handleRelation.target?.address));
+    return MessagePopupActionContext(
+      context: context,
+      widthContext: context,
+      cvController: controller,
+      messageState: state,
+      message: message,
+      part: part,
+      chat: chat,
+      service: service,
+      serverDetails: const MessagePopupServerDetails(minSierra: true, minBigSur: true, supportsOriginalDownload: true),
+      action: action,
+      popDetails: ({bool returnVal = true}) {
+        controller.inSelectMode.value = false;
+        controller.selected.clear();
+      },
+      showSnack: showSnackbar,
+      dmChat: dmChat,
+      isEmbeddedMedia: false,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      if (!controller.inSelectMode.value || controller.selected.length != 1) return const SizedBox.shrink();
+      final message = controller.selected.first;
+      final chat = controller.chat;
+      final hasFile = message.dbAttachments.any((a) => AttachmentsSvc.hasLocalFile(a));
+      final hasText = !isNullOrEmptyString(message.text);
+      final inThread = message.threadOriginatorGuid != null ||
+          MessagesSvc(chat.guid).struct.threads(message.guid!, 0, returnOriginator: false).isNotEmpty;
+      final unknownSender = !message.isFromMe! &&
+          message.handleRelation.target != null &&
+          message.handleRelation.target!.contactsV2.isEmpty;
+      final sending = message.isFromMe! && OutgoingMsgHandler.hasPendingMessage(message.guid!);
+      final entries = <(DetailsMenuAction, String, void Function(MessagePopupActionContext))>[
+        (DetailsMenuAction.MessageInfo, "Message Info", popup_message_actions.messageInfo),
+        (DetailsMenuAction.Bookmark, message.isBookmarked ? "Remove Bookmark" : "Add Bookmark",
+            popup_message_actions.toggleBookmark),
+        (DetailsMenuAction.RemindLater, "Remind Later", popup_message_actions.remindLater),
+        if (hasFile) (DetailsMenuAction.Save, "Save", popup_media_actions.downloadAttachment),
+        if (hasFile || hasText) (DetailsMenuAction.Share, "Share", popup_media_actions.sharePart),
+        if (hasText) (DetailsMenuAction.CopySelection, "Copy Selection", popup_text_actions.copySelection),
+        if (message.text?.hasUrl ?? false) (DetailsMenuAction.OpenInBrowser, "Open in Browser", popup_text_actions.openLink),
+        if (inThread) (DetailsMenuAction.ViewThread, "View Thread", popup_navigation_actions.showThread),
+        if (chat.isGroup && !message.isFromMe!)
+          (DetailsMenuAction.StartConversation, "Start Conversation", (ctx) =>
+              ctx.dmChat != null ? popup_navigation_actions.openDm(ctx) : popup_navigation_actions.newConvo(ctx)),
+        if (unknownSender) (DetailsMenuAction.CreateContact, "Create Contact", popup_message_actions.createContact),
+        if (sending) (DetailsMenuAction.CancelSend, "Cancel Send", popup_message_actions.cancelSend),
+      ];
+      return PopupMenuButton<int>(
+        tooltip: "More",
+        icon: Icon(Icons.more_vert, color: context.theme.colorScheme.onSurface),
+        onSelected: (i) => entries[i].$3(_ctx(context, message, entries[i].$1)),
+        itemBuilder: (_) => [
+          for (var i = 0; i < entries.length; i++)
+            PopupMenuItem(
+              value: i,
+              child: Row(children: [
+                Icon(entries[i].$1.nonIosIcon, size: 22, color: context.theme.colorScheme.onSurfaceVariant),
+                const SizedBox(width: 12),
+                Text(entries[i].$2),
+              ]),
+            ),
+        ],
+      );
+    });
   }
 }

@@ -88,6 +88,7 @@ class MaterialHeader extends StatelessWidget implements PreferredSizeWidget {
                 padding: EdgeInsets.only(top: kIsDesktop ? 20 : 0),
                 child: ManualMark(controller: controller),
               ),
+              SelectedMessageMenu(controller: controller),
               if (Platform.isAndroid && !controller.chat.isGroup && controller.chat.handles.first.address.isPhoneNumber)
                 IconButton(
                   icon: Icon(Icons.call_outlined, color: _foregroundColor),

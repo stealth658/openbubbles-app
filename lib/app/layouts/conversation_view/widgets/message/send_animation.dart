@@ -127,9 +127,10 @@ class _SendAnimationState extends CustomState<SendAnimation, SendData, Conversat
     // between the _listKey recreation and the following setState flush, so
     // handleNewMessage's insertItem call finds a null currentState and silently
     // no-ops, causing the sent message to never appear in the list.
-    if (controller.pendingSend != null) {
-      final pendingData = controller.pendingSend!;
+    if (controller.pendingSend != null || controller.pendingSends.isNotEmpty) {
+      final pendingData = [if (controller.pendingSend != null) controller.pendingSend!, ...controller.pendingSends];
       controller.pendingSend = null;
+      controller.pendingSends = [];
       controller.messagesViewReady.then((_) {
         if (!mounted) return;
         WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -138,7 +139,9 @@ class _SendAnimationState extends CustomState<SendAnimation, SendData, Conversat
           // causing the sent message to never appear in the list.
           await Future.delayed(const Duration(milliseconds: 250));
           if (!mounted) return;
-          await send(pendingData);
+          for (final data in pendingData) {
+            await send(data);
+          }
 
           // Clear the text field and attachments now that the send has been queued,
           // mirroring what ConversationTextField.sendMessage() does for normal sends.

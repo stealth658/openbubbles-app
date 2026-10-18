@@ -202,6 +202,10 @@ class ConversationViewController extends StatefulController with GetSingleTicker
   /// Used by ChatCreator to pre-queue a send before navigating to ConversationView.
   SendData? pendingSend;
 
+  /// Further sends fired after [pendingSend], in order: forwarded messages,
+  /// one send each.
+  List<SendData> pendingSends = [];
+
   /// Completer that resolves once [MessagesView] has finished setting up its
   /// handlers AND its list key (both sync and async loadChunk paths).
   ///

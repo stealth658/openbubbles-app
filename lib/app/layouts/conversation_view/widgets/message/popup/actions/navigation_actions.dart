@@ -59,31 +59,16 @@ void newConvo(MessagePopupActionContext ctx) {
 
 Future<void> forward(MessagePopupActionContext ctx) async {
   ctx.popDetails();
-  final List<PlatformFile> attachments = [];
-  final _attachments = ctx.message.dbAttachments
-      .where((e) => AttachmentsSvc.getContent(e, autoDownload: false) is PlatformFile)
-      .map((e) => AttachmentsSvc.getContent(e, autoDownload: false) as PlatformFile);
-  for (final PlatformFile a in _attachments) {
-    Uint8List? bytes = a.bytes;
-    bytes ??= await File(a.path!).readAsBytes();
-    attachments.add(PlatformFile(
-      name: a.name,
-      path: a.path,
-      size: bytes.length,
-      bytes: bytes,
-    ));
-  }
-
-  if (attachments.isNotEmpty || !isNullOrEmpty(ctx.message.text)) {
+  final hasFile = ctx.message.dbAttachments.any((e) => AttachmentsSvc.getContent(e, autoDownload: false) is PlatformFile);
+  if (hasFile || !isNullOrEmpty(ctx.message.text)) {
     // This route replacement bypasses ConversationView's back-handler, so
     // explicitly close the active controller first.
     ctx.cvController.close();
+    // The message is sent as it is once a chat is chosen (text and
+    // attachments together), not merged into the composer.
     NavigationSvc.pushAndRemoveUntil(
       ctx.context,
-      NewChatCreator(
-        initialText: ctx.message.text,
-        initialAttachments: attachments,
-      ),
+      NewChatCreator(forwardMessages: [ctx.message]),
       (route) => route.isFirst,
     );
   }

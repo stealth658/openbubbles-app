@@ -17,6 +17,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:dlibphonenumber/dlibphonenumber.dart';
 import 'package:flutter/material.dart';
+import 'package:bluebubbles/helpers/ui/forward_helpers.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:get/get.dart' hide Response;
 import 'package:slugify/slugify.dart';
@@ -26,11 +27,16 @@ class ChatCreatorController extends StatefulController {
     this.initialText = "",
     this.initialAttachments = const [],
     this.initialSelected = const [],
+    this.forwardMessages = const [],
   });
 
   final String? initialText;
   final List<PlatformFile> initialAttachments;
   final List<SelectedContact> initialSelected;
+
+  /// Messages being forwarded: sent one by one, oldest first, once a chat is
+  /// chosen, before anything typed in the composer.
+  final List<Message> forwardMessages;
 
   // ---- State ----
   final RxList<SelectedContact> selectedContacts = <SelectedContact>[].obs;
@@ -548,7 +554,12 @@ class ChatCreatorController extends StatefulController {
       // API is enabled). Validate before making any network call so the
       // user gets immediate feedback.
       // ----------------------------------------------------------------
-      final messageText = textController.text.trim();
+      // A forward to someone new: the first forwarded text starts the chat.
+      var messageText = textController.text.trim();
+      if (messageText.isEmpty && forwardMessages.isNotEmpty) {
+        messageText = forwardMessages.map((m) => m.text ?? "").firstWhere((t) => t.trim().isNotEmpty, orElse: () => "");
+        if (messageText.isNotEmpty) textController.text = messageText;
+      }
       if (messageText.isEmpty) {
         showSnackbar('Error', 'A message is required to start a new conversation');
         return;
@@ -712,6 +723,16 @@ class ChatCreatorController extends StatefulController {
     // taps the send button from the chat creator with an existing chat but no
     // text/attachments (i.e. "open conversation" intent), skip the send step.
     final hasContent = capturedText.isNotEmpty || capturedAttachments.isNotEmpty;
+
+    // Forwarded messages go first, one send each. When the chat was just
+    // created from the first forwarded text, that one has already gone.
+    if (forwardMessages.isNotEmpty) {
+      var sends = await forwardSendData(forwardMessages);
+      if (messageSentWithChat && sends.isNotEmpty && sends.first.text == capturedText) {
+        sends = sends.sublist(1);
+      }
+      activeCVC.pendingSends = sends;
+    }
 
     // Pre-queue the send so _SendAnimationState fires it as soon as it wires up
     // sendFunc — after the ConversationView frame builds and MessagesView has

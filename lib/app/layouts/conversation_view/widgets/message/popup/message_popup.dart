@@ -1,5 +1,4 @@
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/popup/m3_popup_placement.dart';
-import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
 
@@ -25,7 +24,6 @@ import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/shared
 import 'package:bluebubbles/app/state/message_state_scope.dart';
 import 'package:bluebubbles/services/services.dart';
 import 'package:bluebubbles/services/network/backend_service.dart';
-import 'package:bluebubbles/services/rustpush/rustpush_service.dart';
 import 'package:collection/collection.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart' hide Emoji;
 import 'package:flutter/cupertino.dart' as cupertino;
@@ -91,7 +89,6 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
   double get _menuPad => _m3 ? 16 + MenuReactors.heightFor(reactions) : 0;
 
   /// "More" was tapped: the menu lists every action instead of the first few.
-  bool _expanded = false;
 
   // Material keeps the bubble where it is and places the bar and the menu
   // around it (see M3PopupPlacement). Everything is in logical pixels from the
@@ -110,10 +107,27 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
 
   double get _menuHeight => itemHeight * numberToShow + _menuPad;
 
-  /// First layout: five rows, or as many as fit on the roomier side of the bubble.
+  /// What the Material menu lists, as the iPhone's first menu does: the things
+  /// done on the spot. Everything else is reached through "More…", which
+  /// selects the message; the select-mode header carries the rest.
+  static const _m3PrimaryActions = {
+    DetailsMenuAction.Reply,
+    DetailsMenuAction.UndoSend,
+    DetailsMenuAction.Edit,
+    DetailsMenuAction.CopyText,
+    DetailsMenuAction.Save,
+    DetailsMenuAction.Forward,
+    DetailsMenuAction.Delete,
+  };
+
+  List<DetailsMenuActionWidget> get _m3Actions =>
+      _allActions.where((a) => _m3PrimaryActions.contains(a.action)).toList();
+
+  /// First layout: the rows of the menu, or as many as fit on the roomier side
+  /// of the bubble.
   void _chooseRowsForM3() {
-    final total = max(_allActions.length, 1);
-    final want = min(5, total);
+    final total = max(_m3Actions.length + 1, 1);
+    final want = min(8, total);
     final fit = M3PopupPlacement.rowsThatFit(
         bubbleTop: _bubbleTop,
         bubbleHeight: _bubbleHeight,
@@ -794,11 +808,6 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
           onTap: () => popup_media_actions.sharePart(_buildActionContext(DetailsMenuAction.Share)),
           action: DetailsMenuAction.Share,
         ),
-      if (showDownload)
-        DetailsMenuActionWidget(
-          onTap: () => popup_media_actions.redownload(_buildActionContext(DetailsMenuAction.ReDownloadFromServer)),
-          action: DetailsMenuAction.ReDownloadFromServer,
-        ),
       DetailsMenuActionWidget(
         onTap: () => popup_message_actions.remindLater(_buildActionContext(DetailsMenuAction.RemindLater)),
         action: DetailsMenuAction.RemindLater,
@@ -870,20 +879,6 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
         onTap: () => popup_message_actions.messageInfo(_buildActionContext(DetailsMenuAction.MessageInfo)),
         action: DetailsMenuAction.MessageInfo,
       ),
-      if (showRefreshPreview)
-        DetailsMenuActionWidget(
-          onTap: () => popup_media_actions.refreshPreview(_buildActionContext(DetailsMenuAction.RefreshPreview)),
-          action: DetailsMenuAction.RefreshPreview,
-        ),
-      // OpenBubbles-only actions.
-      if (message.dbAttachments.isNotEmpty && SettingsSvc.settings.cloudSyncingEnabled.value)
-        DetailsMenuActionWidget(
-          onTap: () {
-            unawaited(pushService.uploadAttachment(message));
-            popDetails();
-          },
-          action: DetailsMenuAction.UploadAttachment,
-        ),
     ].where((a) => a.action.isPlatformSupported).sorted((a, b) => SettingsSvc.settings.detailsMenuActions
         .indexOf(a.action)
         .compareTo(SettingsSvc.settings.detailsMenuActions.indexOf(b.action)));
@@ -996,35 +991,23 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
     );
   }
 
-  /// "More": grow the menu to list every action, as far as there is room on
-  /// the side it is already on. Beyond that the list scrolls. The bubble does
-  /// not move.
-  void _expandMenu() {
-    HapticFeedback.selectionClick();
-    final p = _placement;
-    final barOnMenuSide = p != null && p.menuBelow == (p.barTop > _bubbleTop);
-    final fit = M3PopupPlacement.rowsThatFit(
-        bubbleTop: _bubbleTop,
-        bubbleHeight: _bubbleHeight,
-        topLimit: _topLimit,
-        bottomLimit: _bottomLimit,
-        rowHeight: itemHeight,
-        // When the bar sits on the same side as the menu it needs its room too.
-        extra: _menuPad + (barOnMenuSide ? _barHeight + M3PopupPlacement.gap : 0),
-        below: _placement?.menuBelow);
-    setState(() {
-      _expanded = true;
-      numberToShow = max(min(_allActions.length, fit), numberToShow);
-    });
-  }
-
   /// Options as a Material 3 menu: container tone, level-2 elevation, leading
   /// icon then label, one row per action.
+  /// "More…": select this message, as on the iPhone. Delete and Forward sit in
+  /// the select-mode header, with the rarer actions under its overflow.
+  void _selectThisMessage() {
+    HapticFeedback.selectionClick();
+    widget.cvController.inSelectMode.value = true;
+    if (!widget.cvController.selected.any((m) => m.guid == message.guid)) {
+      widget.cvController.selected.add(message);
+    }
+    popDetails(returnVal: false);
+  }
+
   Widget _m3Menu(BuildContext context) {
     final scheme = context.theme.colorScheme;
-    final all = _allActions;
-    final showMore = !_expanded && all.length > numberToShow;
-    final visible = showMore ? all.sublist(0, max(numberToShow - 1, 0)) : all;
+    final all = _m3Actions;
+    final visible = all.length + 1 > numberToShow ? all.sublist(0, max(numberToShow - 1, 0)) : all;
 
     Widget row(IconData icon, String label, VoidCallback? onTap, {bool disabled = false}) => InkWell(
           onTap: disabled ? null : onTap,
@@ -1081,7 +1064,7 @@ class _MessagePopupState extends State<MessagePopup> with SingleTickerProviderSt
                         row(a.nonIosIcon, a.title, a.onTap,
                             disabled: a.action == DetailsMenuAction.Edit &&
                                 !(message.dateCreated?.toUtc().isWithin(DateTime.now().toUtc(), minutes: 15) ?? false)),
-                      if (showMore) row(Icons.more_horiz, "More", _expandMenu),
+                      row(Icons.more_horiz, "More…", _selectThisMessage),
                     ],
                   ),
                 ),

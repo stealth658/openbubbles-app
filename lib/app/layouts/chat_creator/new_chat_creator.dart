@@ -31,11 +31,15 @@ class NewChatCreator extends StatefulWidget {
     this.initialText = '',
     this.initialAttachments = const [],
     this.initialSelected = const [],
+    this.forwardMessages = const [],
   });
 
   final String? initialText;
   final List<PlatformFile> initialAttachments;
   final List<SelectedContact> initialSelected;
+
+  /// Messages to forward, one send each, once a chat is chosen.
+  final List<Message> forwardMessages;
 
   @override
   State<NewChatCreator> createState() => _NewChatCreatorState();
@@ -54,6 +58,7 @@ class _NewChatCreatorState extends State<NewChatCreator> with ThemeHelpers<NewCh
         initialText: widget.initialText,
         initialAttachments: widget.initialAttachments,
         initialSelected: widget.initialSelected,
+        forwardMessages: widget.forwardMessages,
       ),
       tag: _tag,
     );
