@@ -1193,9 +1193,13 @@ class MessagesService extends GetxController {
     //       prepAttachment → sendAttachment → onSuccess/onError.
     // The attachment.guid == message.guid invariant is established in
     // send_animation.dart for initial sends; we must restore it on retry.
-    for (Attachment? a in message.dbAttachments) {
-      if (a == null) continue;
+    final retryAtts = message.dbAttachments.whereType<Attachment>().toList();
+    for (var i = 0; i < retryAtts.length; i++) {
+      final a = retryAtts[i];
       final oldAttGuid = a.guid!;
+      // Several photos in one message: the first carries the message guid,
+      // the rest "<guid>-1", "-2", ... as when they were first sent.
+      final newAttGuid = i == 0 ? message.guid! : "${message.guid}-$i";
 
       // Read bytes while the file is still at the old (pre-rename) path.
       a.bytes = await File(a.path).readAsBytes();
@@ -1205,14 +1209,14 @@ class MessagesService extends GetxController {
       // populate uploadPreviewFile even before prepAttachment runs.
       if (!kIsWeb) {
         final oldDir = Directory("${Attachment.baseDirectory}/$oldAttGuid");
-        final newDir = Directory("${Attachment.baseDirectory}/${message.guid}");
+        final newDir = Directory("${Attachment.baseDirectory}/$newAttGuid");
         if (oldDir.existsSync() && !newDir.existsSync()) {
           oldDir.renameSync(newDir.path);
         }
       }
 
       // Sync attachment GUID with the new temp message GUID.
-      a.guid = message.guid;
+      a.guid = newAttGuid;
 
       // Persist the updated GUID to DB immediately (in-place update via
       // existing ObjectBox ID).  Without this there is a window between
@@ -1225,16 +1229,16 @@ class MessagesService extends GetxController {
       // finds the entry the moment the user re-enters, even before prepAttachment
       // runs its own add.  prepAttachment will add a second entry for the same
       // guid; both are cleaned up together by the removeWhere in onSuccess/onError.
-      if (!OutgoingMsgHandler.attachmentProgress.any((e) => e.guid == message.guid)) {
-        OutgoingMsgHandler.attachmentProgress.add(AttachmentUploadProgress(message.guid!, 0.0.obs));
+      if (!OutgoingMsgHandler.attachmentProgress.any((e) => e.guid == newAttGuid)) {
+        OutgoingMsgHandler.attachmentProgress.add(AttachmentUploadProgress(newAttGuid, 0.0.obs));
       }
 
       // Reset the existing AttachmentState in-place (re-key + uploading transition)
       // so the widget's Obx sees isSending=true without needing a full rebuild.
       final attState = messageState.attachmentStates.remove(oldAttGuid);
       if (attState != null) {
-        attState.resetForRetryInternal(message.guid!);
-        messageState.attachmentStates[message.guid!] = attState;
+        attState.resetForRetryInternal(newAttGuid);
+        messageState.attachmentStates[newAttGuid] = attState;
       }
     }
 
@@ -1244,7 +1248,8 @@ class MessagesService extends GetxController {
         OutgoingAttachment(
           chat: chat,
           message: message,
-          attachment: message.dbAttachments.first,
+          attachment: retryAtts.first,
+          moreAttachments: retryAtts.sublist(1),
           isAudioMessage: message.itemType == 5,
           isRetry: true,
         ),

@@ -634,29 +634,40 @@ class RustPushBackend implements BackendService {
   }
 
   @override
-  Future<Message> sendAttachment(Chat chat, Message m, bool isAudioMessage, Attachment att, {void Function(int p1, int p2)? onSendProgress, CancelToken? cancelToken}) async {
+  Future<Message> sendAttachment(Chat chat, Message m, bool isAudioMessage, Attachment att,
+      {List<Attachment> moreAttachments = const [],
+      void Function(int p1, int p2)? onSendProgress,
+      CancelToken? cancelToken}) async {
     if (chat.isRpSms && !smsForwardingEnabled()) {
       throw Exception("Text message forwarding from your iPhone is not connected, so this SMS/MMS chat cannot send. On the iPhone, open Settings > Apps > Messages > Text Message Forwarding and turn on this device.");
     }
-    var stream = api.uploadAttachment(
-        aps: pushService.state!.conn,
-        path: att.getFile().path!,
-        mime: att.mimeType ?? "application/octet-stream",
-        uti: att.uti ?? "public.data",
-        name: att.transferName!);
-    api.Attachment? attachment;
-    await for (final event in stream) {
-      if (event.attachment != null) {
-        Logger.info("upload finish");
-        attachment = event.attachment;
-        att.metadata = {"rustpush": await api.saveAttachment(att: attachment!)};
-        await att.saveAsync(m);
-      } else if (onSendProgress != null) {
-        Logger.info("upload progress ${event.prog} of ${event.total}");
-        onSendProgress(event.prog, event.total);
+    // Several files go up one after another and out as one message with one
+    // attachment part each, in order; the reflected message numbers them
+    // "<id>_0", "<id>_1", ... in the same order.
+    final atts = [att, ...moreAttachments];
+    final uploaded = <api.Attachment>[];
+    for (final a in atts) {
+      var stream = api.uploadAttachment(
+          aps: pushService.state!.conn,
+          path: a.getFile().path!,
+          mime: a.mimeType ?? "application/octet-stream",
+          uti: a.uti ?? "public.data",
+          name: a.transferName!);
+      api.Attachment? attachment;
+      await for (final event in stream) {
+        if (event.attachment != null) {
+          Logger.info("upload finish");
+          attachment = event.attachment;
+          a.metadata = {"rustpush": await api.saveAttachment(att: attachment!)};
+          await a.saveAsync(m);
+        } else if (onSendProgress != null) {
+          Logger.info("upload progress ${event.prog} of ${event.total}");
+          onSendProgress(event.prog, event.total);
+        }
       }
+      uploaded.add(attachment!);
     }
-    Logger.info("uploaded");
+    Logger.info("uploaded ${uploaded.length}");
     var msg = await api.newMsg(
         conversation: await chat.getConversationData(),
         sender: await chat.ensureHandle(),
@@ -665,7 +676,7 @@ class RustPushBackend implements BackendService {
               field0: [
                 if (m.payloadData?.appData?.first.ldText != null)
                 api.IndexedMessagePart(part_: api.MessagePart.object(m.payloadData!.appData!.first.ldText!)),
-                api.IndexedMessagePart(part_: api.MessagePart.attachment(attachment!))
+                for (final u in uploaded) api.IndexedMessagePart(part_: api.MessagePart.attachment(u)),
               ]),
           replyGuid: m.threadOriginatorGuid,
           replyPart: m.threadOriginatorGuid == null ? null : m.threadOriginatorPart,

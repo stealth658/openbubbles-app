@@ -215,10 +215,9 @@ class _SendAnimationState extends CustomState<SendAnimation, SendData, Conversat
         utiMap = const {};
       }
     }
-    for (int i = 0; i < attachments.length; i++) {
-      final file = attachments[i];
+    Attachment toAttachment(PlatformFile file) {
       final fileMime = mime(file.path) ?? mime(file.name);
-      final attachment = Attachment(
+      return Attachment(
         isOutgoing: true,
         mimeType: fileMime,
         uti: utiMap[fileMime] ?? "public.data",
@@ -230,13 +229,31 @@ class _SendAnimationState extends CustomState<SendAnimation, SendData, Conversat
         metadata: file.path != null ? {'source_path': file.path} : null,
         bytes: file.path == null ? file.bytes : null,
       );
+    }
 
+    bool isMedia(PlatformFile file) {
+      final m = mime(file.path) ?? mime(file.name) ?? "";
+      return m.startsWith("image/") || m.startsWith("video/");
+    }
+
+    // Pictures and videos picked together go out as one message, the way the
+    // iPhone sends them (the other end shows a gallery). Everything else, an
+    // audio message, or an iMessage-app payload stays one file per message.
+    final groupMedia = payload == null && !data.isAudioMessage && attachments.where(isMedia).length > 1;
+    final batches = <List<PlatformFile>>[
+      if (groupMedia) attachments.where(isMedia).toList(),
+      for (final f in attachments)
+        if (!groupMedia || !isMedia(f)) [f],
+    ];
+    for (int i = 0; i < batches.length; i++) {
+      final files = batches[i];
+      final first = files.first;
       final message = Message(
         text: "",
         dateCreated: DateTime.now(),
         dateScheduled: schedule,
         hasAttachments: true,
-        balloonBundleId: payload?.bundleId ?? file.balloonBundleId,
+        balloonBundleId: payload?.bundleId ?? first.balloonBundleId,
         isFromMe: true,
         handleId: 0,
         threadOriginatorGuid: i == 0 ? data.replyGuid : null,
@@ -246,12 +263,16 @@ class _SendAnimationState extends CustomState<SendAnimation, SendData, Conversat
         stagingGuid: payload != null ? uuid.v4().toUpperCase() : null,
       );
       message.generateTempGuid();
-      attachment.guid = message.guid;
+      final atts = files.map(toAttachment).toList();
+      for (var j = 0; j < atts.length; j++) {
+        atts[j].guid = j == 0 ? message.guid : "${message.guid}-$j";
+      }
       await OutgoingMsgHandler.queue(
         OutgoingAttachment(
           chat: controller.chat,
           message: message,
-          attachment: attachment,
+          attachment: atts.first,
+          moreAttachments: atts.sublist(1),
           isAudioMessage: data.isAudioMessage,
         ),
       );

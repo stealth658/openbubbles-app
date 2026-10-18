@@ -36,8 +36,11 @@ abstract class BackendService {
   Future<PlatformFile> downloadAttachment(Attachment attachment,
       {void Function(int, int)? onReceiveProgress, bool original = false, CancelToken? cancelToken});
   // returns the new message that was sent
+  // [moreAttachments] go in the same message after [attachment].
   Future<Message> sendAttachment(Chat c, Message m, bool isAudioMessage, Attachment attachment,
-      {void Function(int, int)? onSendProgress, CancelToken? cancelToken});
+      {List<Attachment> moreAttachments = const [],
+      void Function(int, int)? onSendProgress,
+      CancelToken? cancelToken});
   bool canCancelUploads();
   Future<bool> canUploadGroupPhotos();
   Future<bool> setChatIcon(Chat chat, String path,

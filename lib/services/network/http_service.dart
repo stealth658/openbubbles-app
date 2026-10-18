@@ -189,7 +189,12 @@ class HttpBackend implements BackendService {
   /// No current caller passes either.
   @override
   Future<Message> sendAttachment(Chat c, Message m, bool isAudioMessage, Attachment attachment,
-      {void Function(int, int)? onSendProgress, CancelToken? cancelToken}) async {
+      {List<Attachment> moreAttachments = const [],
+      void Function(int, int)? onSendProgress,
+      CancelToken? cancelToken}) async {
+    if (moreAttachments.isNotEmpty) {
+      throw UnsupportedError("The server backend sends one attachment per message");
+    }
     final data = await SendMessageInterface.sendAttachmentMessage(
       chatGuid: c.guid,
       tempGuid: attachment.guid!,

@@ -221,7 +221,12 @@ class OutgoingMessageHandler {
   /// which crashed [_prepItemWithRetry]'s old null-check assertion.
   void _ensureTempGuid(OutgoingQueueItem item) {
     if (item.message.guid == null) item.message.generateTempGuid();
-    if (item is OutgoingAttachment) item.attachment.guid = item.message.guid;
+    if (item is OutgoingAttachment) {
+      item.attachment.guid = item.message.guid;
+      for (var i = 0; i < item.moreAttachments.length; i++) {
+        item.moreAttachments[i].guid = "${item.message.guid}-${i + 1}";
+      }
+    }
   }
 
   /// Prep [item] with a bounded retry on transient failure.
@@ -259,7 +264,7 @@ class OutgoingMessageHandler {
       attempts = attempt;
       try {
         if (isAttachment) {
-          await prepAttachment(item.chat, item.message, item.attachment);
+          await prepAttachment(item.chat, item.message, item.attachment, moreAttachments: item.moreAttachments);
           return (ok: true, result: null);
         } else {
           return (
@@ -342,6 +347,7 @@ class OutgoingMessageHandler {
         chat: item.chat,
         message: message,
         attachment: item.attachment,
+        moreAttachments: item.moreAttachments,
         isAudioMessage: item.isAudioMessage,
         isRetry: item.isRetry,
         completer: item.completer,
@@ -516,6 +522,7 @@ class OutgoingMessageHandler {
           typed.message,
           typed.isAudioMessage,
           typed.attachment,
+          moreAttachments: typed.moreAttachments,
         );
     }
   }
@@ -625,14 +632,43 @@ class OutgoingMessageHandler {
   /// Attachment metadata carries the original source path so the file can be
   /// copied without loading it into memory (except GIFs, which need
   /// optimisation).
-  Future<void> prepAttachment(Chat c, Message m, Attachment? attachment) async {
+  Future<void> prepAttachment(Chat c, Message m, Attachment? attachment,
+      {List<Attachment> moreAttachments = const []}) async {
     if (attachment == null) {
       throw StateError('Missing attachment for sendAttachment prep on message ${m.guid}');
     }
+    final all = [attachment, ...moreAttachments];
+    for (final a in all) {
+      attachmentProgress.add(AttachmentUploadProgress(a.guid!, 0.0.obs));
+      await _stageAttachmentFile(m, a);
+    }
 
-    final progress = AttachmentUploadProgress(attachment.guid!, 0.0.obs);
-    attachmentProgress.add(progress);
+    // ChatInterface.addMessageToChat returns a DB-hydrated Message loaded from
+    // the main isolate's Store (Database.messages.get(id)) after the
+    // GlobalIsolate transaction commits.  This object has its id set and its
+    // dbAttachments ToMany linked to the main Store, so _handleNewMessage can
+    // reload attachments from DB without racing against cross-isolate write timing.
+    final savedMessage = (await c.addMessage(m, attachments: all)).message;
 
+    // The DB write goes through the GlobalIsolate, so the main-isolate OB watch
+    // subscription won't fire for it.  Explicitly push the message into the view
+    // using the Store-hydrated object so _handleNewMessage can load dbAttachments.
+    if (Get.isRegistered<MessagesService>(tag: c.guid)) {
+      await MessagesSvc(c.guid).addNewMessage(savedMessage);
+      // Register upload-in-progress state.  Must come after addNewMessage so the
+      // MessageState already exists.
+      for (final a in all) {
+        MessagesSvc(c.guid).notifyAttachmentUploadStarted(savedMessage, a);
+      }
+    }
+    // Update ChatState immediately so the tile reflects the outgoing attachment
+    // before the queue dispatches the HTTP call.
+    ChatsSvc.updateChatLatestMessage(c.guid, savedMessage);
+  }
+
+  /// Copies (or writes) one outgoing attachment's bytes to its own directory
+  /// and reads its image properties.
+  Future<void> _stageAttachmentFile(Message m, Attachment attachment) async {
     if (!kIsWeb) {
       final sourcePath = attachment.metadata?['source_path'] as String?;
       if (sourcePath == null && attachment.bytes == null) {
@@ -691,26 +727,6 @@ class OutgoingMessageHandler {
 
       attachment.isDownloaded = true;
     }
-
-    // ChatInterface.addMessageToChat returns a DB-hydrated Message loaded from
-    // the main isolate's Store (Database.messages.get(id)) after the
-    // GlobalIsolate transaction commits.  This object has its id set and its
-    // dbAttachments ToMany linked to the main Store, so _handleNewMessage can
-    // reload attachments from DB without racing against cross-isolate write timing.
-    final savedMessage = (await c.addMessage(m, attachments: [attachment])).message;
-
-    // The DB write goes through the GlobalIsolate, so the main-isolate OB watch
-    // subscription won't fire for it.  Explicitly push the message into the view
-    // using the Store-hydrated object so _handleNewMessage can load dbAttachments.
-    if (Get.isRegistered<MessagesService>(tag: c.guid)) {
-      await MessagesSvc(c.guid).addNewMessage(savedMessage);
-      // Register upload-in-progress state.  Must come after addNewMessage so the
-      // MessageState already exists.
-      MessagesSvc(c.guid).notifyAttachmentUploadStarted(savedMessage, attachment);
-    }
-    // Update ChatState immediately so the tile reflects the outgoing attachment
-    // before the queue dispatches the HTTP call.
-    ChatsSvc.updateChatLatestMessage(c.guid, savedMessage);
   }
 
   // ── Send methods ─────────────────────────────────────────────────────────
@@ -811,10 +827,12 @@ class OutgoingMessageHandler {
   }
 
   /// Sends an attachment message.
-  Future<void> sendAttachment(Chat c, Message m, bool isAudioMessage, Attachment? attachment) async {
+  Future<void> sendAttachment(Chat c, Message m, bool isAudioMessage, Attachment? attachment,
+      {List<Attachment> moreAttachments = const []}) async {
     if (attachment == null) {
       throw StateError('Missing attachment for sendAttachment on message ${m.guid}');
     }
+    final all = [attachment, ...moreAttachments];
 
     // Save both GUIDs before any mutation — attachment.guid == m.guid by design
     // (set in send_animation.dart: attachment.guid = message.guid).
@@ -831,21 +849,23 @@ class OutgoingMessageHandler {
     // On web the isolate path is not supported (web is deprecated).
     if (kIsWeb) return;
 
-    // Fail fast if the file was not staged correctly during prepAttachment.
-    if (!File(attachment.path).existsSync()) {
-      Logger.error('Attachment file not found at ${attachment.path}', tag: _tag);
-      return;
+    // Fail fast if a file was not staged correctly during prepAttachment.
+    for (final a in all) {
+      if (!File(a.path).existsSync()) {
+        Logger.error('Attachment file not found at ${a.path}', tag: _tag);
+        return;
+      }
     }
 
     return _sendWithRace(
       tempGuid: tempGuid,
       chat: c,
       // OpenBubbles: routed through `backend` so rustpush uploads work too.
-      sendCall: () => backend.sendAttachment(c, m, isAudioMessage, attachment),
+      sendCall: () => backend.sendAttachment(c, m, isAudioMessage, attachment, moreAttachments: moreAttachments),
       onSuccess: (Message newMessage) async {
-        // The BlueBubbles server hands back the real attachment records on the
-        // confirmed message; rustpush reuses the local Attachment (no GUID
-        // swap needed) and leaves this empty.
+        // The confirmed message carries the real attachment records (the
+        // server's, or rustpush's reflected "<id>_<n>" ones), in the order
+        // they were sent, so the n-th temp attachment becomes the n-th.
         final responseAttachments = newMessage.attachments.whereType<Attachment>().toList();
         // Detach them again before the message is persisted below: these
         // Attachment objects have no DB id yet, and Message.save() calls
@@ -853,9 +873,11 @@ class OutgoingMessageHandler {
         // duplicate rows. The swap below is what links the real records.
         newMessage.attachments = <Attachment?>[];
         // Swap attachment GUIDs first, then swap the message GUID.
-        for (final a in responseAttachments) {
+        for (var i = 0; i < responseAttachments.length; i++) {
+          final a = responseAttachments[i];
+          final tempAttGuid = i < all.length ? all[i].guid! : tempGuid;
           try {
-            await _matchAttachmentWithExisting(c, tempGuid, a);
+            await _matchAttachmentWithExisting(c, tempAttGuid, a);
             // Complete the attachment state.  We pass both the temp and real
             // message GUIDs because the socket event may have already moved
             // the MessageState to the real key before the HTTP response arrived.
@@ -863,7 +885,7 @@ class OutgoingMessageHandler {
             // so the Obx can still find it; _syncAttachmentStates promotes it
             // to the real key when updateMessage delivers the updated struct.
             if (Get.isRegistered<MessagesService>(tag: c.guid)) {
-              MessagesSvc(c.guid).notifyAttachmentSendComplete(tempGuid, newMessage.guid!, tempGuid, a);
+              MessagesSvc(c.guid).notifyAttachmentSendComplete(tempGuid, newMessage.guid!, tempAttGuid, a);
               MessagesSvc(c.guid).updateMessage(newMessage);
             }
           } catch (e, st) {
@@ -871,7 +893,7 @@ class OutgoingMessageHandler {
           }
         }
         await _matchMessageWithExisting(c, tempGuid, newMessage);
-        attachmentProgress.removeWhere((e) => e.guid == tempGuid);
+        attachmentProgress.removeWhere((e) => all.any((a) => a.guid == e.guid));
       },
       onError: (error, stack) => _finalizeOutgoingFailure(
         c,
@@ -885,9 +907,11 @@ class OutgoingMessageHandler {
           // re-keyed MessageState to errorMsg.guid, so notifyAttachmentTransferError
           // can use that key directly.
           if (Get.isRegistered<MessagesService>(tag: c.guid)) {
-            MessagesSvc(c.guid).notifyAttachmentTransferError(errorMsg.guid!, attachment.guid!);
+            for (final a in all) {
+              MessagesSvc(c.guid).notifyAttachmentTransferError(errorMsg.guid!, a.guid!);
+            }
           }
-          attachmentProgress.removeWhere((e) => e.guid == tempGuid);
+          attachmentProgress.removeWhere((e) => all.any((a) => a.guid == e.guid));
         },
       ),
     );

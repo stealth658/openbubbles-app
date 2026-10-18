@@ -72,6 +72,12 @@ class OutgoingReaction extends OutgoingQueueItem {
 
 class OutgoingAttachment extends OutgoingQueueItem {
   Attachment attachment;
+
+  /// Further attachments sent in the same message, after [attachment]: several
+  /// photos picked together go as one message, the way the iPhone sends them.
+  /// Their guids are "<message guid>-1", "-2", ... (still "temp-..." so the
+  /// in-flight checks that look for that prefix hold).
+  List<Attachment> moreAttachments;
   bool isAudioMessage;
   @override
   bool isRetry;
@@ -81,9 +87,12 @@ class OutgoingAttachment extends OutgoingQueueItem {
     required super.chat,
     required super.message,
     required this.attachment,
+    this.moreAttachments = const [],
     this.isAudioMessage = false,
     this.isRetry = false,
   }) : super(type: QueueType.sendAttachment);
+
+  List<Attachment> get attachments => [attachment, ...moreAttachments];
 }
 
 class OutgoingMultipartMessage extends OutgoingQueueItem {
