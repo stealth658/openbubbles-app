@@ -338,19 +338,10 @@ flutter:
     - family: RobotoCondensed
       fonts:
         - asset: assets/fonts/RobotoCondensed-VariableFont_wght.ttf
-    - family: SF Pro
-      fonts:
-        - asset: assets/fonts/sf-pro/SF-Pro-Text-Regular.otf
-          weight: 400
-        - asset: assets/fonts/sf-pro/SF-Pro-Text-RegularItalic.otf
-          weight: 400
-          style: italic
-        - asset: assets/fonts/sf-pro/SF-Pro-Text-Medium.otf
-          weight: 500
-        - asset: assets/fonts/sf-pro/SF-Pro-Text-Semibold.otf
-          weight: 600
-        - asset: assets/fonts/sf-pro/SF-Pro-Text-Bold.otf
-          weight: 700
+    # SF Pro is not in this repository: Apple's font licence does not allow
+    # redistribution. To use the "SF Pro" App Font option, put SF-Pro-Text-
+    # Regular/RegularItalic/Medium/Semibold/Bold .otf under assets/fonts/sf-pro
+    # and declare them here as a "SF Pro" family (weights 400/400 italic/500/600/700).
     # Google Sans Flex (SIL OFL 1.1, from github.com/google/fonts ofl/googlesansflex),
     # instanced to static weights at the text optical size (opsz 14).
     - family: Google Sans
