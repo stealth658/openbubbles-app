@@ -2940,27 +2940,6 @@ class RustPushService extends GetxService {
     Logger.info("Syncing messages");
     bool noAttachments = !SettingsSvc.settings.attachmentSyncEnabled.value;
 
-    // Once: sent texts that failed to convert (empty attributedBody) were
-    // marked synced on failure and never retried. Queue them again now that
-    // toCloud handles them.
-    if (PrefsSvc.i.getBool("cloudSyncRequeueBodylessV1") != true) {
-      final stuck = Database.messages
-          .query(Message_.ckRecordId
-              .isNull()
-              .and(Message_.ckSyncState.equals(true))
-              .and(Message_.error.equals(0))
-              .and(Message_.itemType.equals(0))
-              .and(Message_.dateCreated.greaterThanDate(cutoffDateTime)))
-          .build()
-          .find();
-      for (final m in stuck) {
-        m.ckSyncState = false;
-      }
-      if (stuck.isNotEmpty) Database.messages.putMany(stuck);
-      Logger.info("Requeued ${stuck.length} messages marked synced without a record id", tag: "CloudSync");
-      await PrefsSvc.i.setBool("cloudSyncRequeueBodylessV1", true);
-    }
-
 
     var unsyncedMessages = Database.messages.query(Message_.ckRecordId.isNull().and(Message_.itemType.equals(0)).and(Message_.ckSyncState.equals(false).or(Message_.ckSyncState.isNull()))
       .and(Message_.dateCreated.greaterThanDate(cutoffDateTime)))
