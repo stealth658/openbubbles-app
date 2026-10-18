@@ -1,5 +1,6 @@
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/attachment/attachment_holder.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/attachment/message_image_gallery.dart';
+import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/attachment/message_media_collage.dart';
 import 'package:bluebubbles/app/layouts/conversation_view/widgets/message/interactive/interactive_holder.dart';
 import 'package:bluebubbles/app/state/chat_state_scope.dart';
 import 'package:bluebubbles/app/state/message_state_scope.dart';
@@ -56,6 +57,10 @@ class MessagePartContent extends StatelessWidget {
     // Messages with attachments
     if (messagePart.attachments.isNotEmpty) {
       final iOS = SettingsSvc.settings.skin.value == Skins.iOS;
+      // Material: several pictures in one message tile into a collage.
+      if (SettingsSvc.settings.skin.value == Skins.Material && messagePart.isMediaGallery) {
+        return MessageMediaCollage(part: messagePart);
+      }
       if (iOS && messagePart.isMediaGallery) {
         final state = MessageStateScope.of(context);
         return Padding(

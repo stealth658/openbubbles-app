@@ -178,8 +178,15 @@ class _MessageHolderState extends State<MessageHolder> with AutomaticKeepAliveCl
     widget.cvController.lastFocusedNode.requestFocus();
   }
 
+  /// Original part indices folded into each collapsed media part, keyed by
+  /// the collapsed part's index, so reactions left on any of the pictures
+  /// still show on the group.
+  final Map<int, Set<int>> _collapsedPartIndices = {};
+
   List<MessagePart> _collapseImageGalleryParts(List<MessagePart> parts) {
-    if (!iOS) return parts;
+    // iOS fans them into a gallery; Material tiles them into a collage.
+    if (!iOS && !material) return parts;
+    _collapsedPartIndices.clear();
     final collapsed = <MessagePart>[];
     int i = 0;
     while (i < parts.length) {
@@ -204,6 +211,7 @@ class _MessageHolderState extends State<MessageHolder> with AutomaticKeepAliveCl
       }
 
       if (groupedAttachments.length > 1) {
+        _collapsedPartIndices[lastPart] = groupedPartIndices.toSet();
         collapsed.add(MessagePart(
           attachments: groupedAttachments,
           // Use the last grouped raw part index (not the first) so downstream
@@ -347,7 +355,8 @@ class _MessageHolderState extends State<MessageHolder> with AutomaticKeepAliveCl
     final avatarScale = SettingsSvc.settings.avatarScale.value;
 
     Iterable<Message> reactionsForPart(int part, List<Message> reactions) {
-      return reactions.where((s) => (s.associatedMessagePart ?? 0) == part);
+      final group = _collapsedPartIndices[part];
+      return reactions.where((s) => group?.contains(s.associatedMessagePart ?? 0) ?? (s.associatedMessagePart ?? 0) == part);
     }
 
     /// Layout tree
