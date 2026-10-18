@@ -104,6 +104,37 @@ Features and fixes:
   sender names.
 - Contact photos keep their aspect ratio (the avatar decode squashed
   non-square photos into a square).
+- Material skin after Google Messages (October 2026): tailless bubbles with
+  20dp/4dp corners by run, nested reply cards with a small avatar, sender row
+  with avatar, one-pill composer with a round voice/send button and a grid
+  attachment tray, emoji panel in place of the keyboard, reaction pills in
+  iPhone colours, several pictures in one message tiled as a collage, Material
+  3 long-press menu cut to the iPhone's first page (More selects), settings
+  as grouped cards with 56dp rows, details page with separate cards for
+  photos and videos, links, files and locations.
+- Text size: follows the system text size or an in-app slider (Theming);
+  RichText honours the scale too.
+- App Font setting (Theming): bundled Google Sans Flex (SIL OFL) plus custom
+  font files; see Building for SF Pro.
+- Cache service: purge on background and on Android memory trim, cache
+  tuning page under developer settings, group photos and chat backgrounds
+  decoded at display size.
+- Upstream BlueBubbles cherry-picks: snackbar rewrite, copy buttons for
+  addresses, image and video previews on pinned conversations, reverse
+  geocoded Find My locations, trackpad fix in the image gallery.
+- Sending: pictures and videos picked together go as one message; sends keep
+  trying for two minutes on a dropped connection before showing as failed;
+  Forward sends each selected message separately.
+- iCloud sync: walks to the end of the attachment feed, yields to the main
+  thread between items, uploads sent text-only messages, skips failed sends.
+- Relayed texts: the iPhone's Read receipt is applied to RCS messages you
+  sent.
+- Diagnostics: main thread watchdog and Android's ANR records in the log
+  export; failed typing indicators and read receipts are logged instead of
+  thrown.
+- Fixes: emoji tapback notifications name the emoji again; the FaceTime
+  target check waits for rustpush when a chat opens at start-up; the update
+  check no longer parses a desktop release tag as a build code.
 
 ### Building
 
@@ -128,6 +159,11 @@ register with Apple. A working install therefore needs the Rust library
 (`lib/arm64-v8a/librust_lib_bluebubbles.so`) from an official OpenBubbles
 release in place of the one you built; the Dart and Kotlin code in this
 branch runs unchanged against it.
+
+The "SF Pro" App Font option expects Apple's SF Pro Text files, which are
+not redistributable and are not in this repository. Without them the option
+falls back to the default font. See the note in `pubspec.yaml` to add them
+from your own copy.
 
 The build is memory-hungry: `android/gradle.properties` is tuned down for a
 capped container (small heap, one worker, no daemon). On a normal machine
