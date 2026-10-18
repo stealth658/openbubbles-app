@@ -782,7 +782,9 @@ class Message {
     if (body.isEmpty) return null;
     return api.nscoderEncode(value: body.map((b) => api.NSAttributedString(
       text: b.string,
-      ranges: b.runs.filter((run) => !noAttachments || run.attributes?.attachmentGuid == null).map((run) => (run.range[1], api.NSDictionaryTypedCoder(field0: {
+      // A run stored without a range (Run.fromMap gives []) threw RangeError on
+      // run.range[1] and the message never reached iCloud; it is left out.
+      ranges: b.runs.filter((run) => run.range.length >= 2 && (!noAttachments || run.attributes?.attachmentGuid == null)).map((run) => (run.range[1], api.NSDictionaryTypedCoder(field0: {
         if (run.attributes?.messagePart != null)
         "__kIMMessagePartAttributeName": api.NSNumber(field0: run.attributes!.messagePart!).encode(),
         if (run.attributes?.attachmentGuid != null)
@@ -847,6 +849,12 @@ class Message {
     // attributebody is null here, should really be Liked "text", but i am lazy
     if (attributedBody.isEmpty && associatedMessageType != null) {
       attributedBody = [AttributedBody.raw(" ")];
+    }
+    // A plain text with no stored body (sent messages kept none until
+    // 2026-10-18; see RustPushBackend.sendMessage) uploads as its text rather
+    // than throwing on attributedBody[0].
+    if (attributedBody.isEmpty) {
+      attributedBody = [AttributedBody.raw(text ?? "")];
     }
 
     if (noAttachments && attributedBody.isNotEmpty && attributedBody[0].runs.every((run) => run.attributes?.attachmentGuid != null)) {

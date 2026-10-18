@@ -1103,7 +1103,17 @@ class RustPushBackend implements BackendService {
     m.save(chat: chat);
     msg.sentTimestamp = DateTime.now().millisecondsSinceEpoch;
     if (m.hasBeenForwarded) return m; // do not reflect back, it will just send it out again
-    return (await pushService.reflectMessageDyn(msg)) ?? m;
+    final reflected = await pushService.reflectMessageDyn(msg);
+    // The row already carries the real guid from the save above, so the
+    // handler's replace step finds it "already present" and keeps it as is:
+    // a plain text (no mentions) is created with an empty attributedBody and
+    // stayed that way, which is why sent texts failed to upload to iCloud
+    // (RangeError on attributedBody[0], Oct 2026). Keep the reflected body.
+    if (reflected != null && m.attributedBody.isEmpty && reflected.attributedBody.isNotEmpty) {
+      m.attributedBody = reflected.attributedBody;
+      m.save(chat: chat);
+    }
+    return reflected ?? m;
   }
 
 
@@ -2452,12 +2462,20 @@ class RustPushService extends GetxService {
     }
 
     // var counter = 0;
+    var skippedFailed = 0;
     for (var message in messages) {
       await _yieldToMainThread();
       // counter += 1;
       // Logger.info("Processing message $counter of ${messages.length}");
       if (message.chat.target?.isRpSms == true) {
         message.ckSyncState = true;
+        continue;
+      }
+      // A message that never went out is not in the conversation on any
+      // other device; it stays local.
+      if (message.error != 0) {
+        message.ckSyncState = true;
+        skippedFailed++;
         continue;
       }
       message.fetchAttachments();
@@ -2494,6 +2512,8 @@ class RustPushService extends GetxService {
         }
       }
     }
+
+    if (skippedFailed > 0) Logger.info("Skipped $skippedFailed failed (never sent) messages", tag: "CloudSync");
 
     // sub 25 mb off the top just for other things
     if (totalSize != 0 && totalSize > availableSize.availableBytes - (25 * 1024 * 1024)) {
@@ -2919,6 +2939,27 @@ class RustPushService extends GetxService {
 
     Logger.info("Syncing messages");
     bool noAttachments = !SettingsSvc.settings.attachmentSyncEnabled.value;
+
+    // Once: sent texts that failed to convert (empty attributedBody) were
+    // marked synced on failure and never retried. Queue them again now that
+    // toCloud handles them.
+    if (PrefsSvc.i.getBool("cloudSyncRequeueBodylessV1") != true) {
+      final stuck = Database.messages
+          .query(Message_.ckRecordId
+              .isNull()
+              .and(Message_.ckSyncState.equals(true))
+              .and(Message_.error.equals(0))
+              .and(Message_.itemType.equals(0))
+              .and(Message_.dateCreated.greaterThanDate(cutoffDateTime)))
+          .build()
+          .find();
+      for (final m in stuck) {
+        m.ckSyncState = false;
+      }
+      if (stuck.isNotEmpty) Database.messages.putMany(stuck);
+      Logger.info("Requeued ${stuck.length} messages marked synced without a record id", tag: "CloudSync");
+      await PrefsSvc.i.setBool("cloudSyncRequeueBodylessV1", true);
+    }
 
 
     var unsyncedMessages = Database.messages.query(Message_.ckRecordId.isNull().and(Message_.itemType.equals(0)).and(Message_.ckSyncState.equals(false).or(Message_.ckSyncState.isNull()))
